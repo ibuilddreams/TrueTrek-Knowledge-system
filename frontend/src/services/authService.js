@@ -1,5 +1,10 @@
-import { apiClient } from "./apiClient";
-import { AUTH_ROLES } from "@/constants/auth";
+import { apiClient, backendClient } from "./apiClient";
+import { AUTH_COOKIE, AUTH_ROLES, BACKEND_ROLE_MAP } from "@/constants/auth";
+import {
+  getClientCookie,
+  removeClientCookie,
+  setClientCookie,
+} from "@/utils/cookies";
 
 /**
  * Auth service — all session persistence goes through httpOnly cookies
@@ -38,4 +43,45 @@ export async function logout() {
 
 export async function fetchCurrentUser() {
   return apiClient.get("/api/auth/me", { skipAuth: true });
+}
+
+function toPublicBackendUser(rawUser) {
+  return {
+    id: rawUser.id,
+    email: rawUser.email,
+    name: rawUser.full_name || `${rawUser.first_name} ${rawUser.last_name}`.trim(),
+    role: BACKEND_ROLE_MAP[rawUser.role] || AUTH_ROLES.GUEST,
+  };
+}
+
+export async function loginWithCredentials({ email, password }) {
+  const response = await backendClient.post("/auth/login/", {
+    email,
+    password,
+  });
+  const { access_token, refresh_token, user } = response?.data || {};
+  const publicUser = toPublicBackendUser(user);
+
+  setClientCookie(AUTH_COOKIE.ACCESS_TOKEN, access_token);
+  setClientCookie(AUTH_COOKIE.REFRESH_TOKEN, refresh_token);
+  setClientCookie(AUTH_COOKIE.USER, JSON.stringify(publicUser));
+
+  return { user: publicUser };
+}
+
+export function getStoredBackendUser() {
+  const accessToken = getClientCookie(AUTH_COOKIE.ACCESS_TOKEN);
+  const rawUser = getClientCookie(AUTH_COOKIE.USER);
+  if (!accessToken || !rawUser) return null;
+  try {
+    return JSON.parse(rawUser);
+  } catch {
+    return null;
+  }
+}
+
+export function clearBackendSession() {
+  removeClientCookie(AUTH_COOKIE.ACCESS_TOKEN);
+  removeClientCookie(AUTH_COOKIE.REFRESH_TOKEN);
+  removeClientCookie(AUTH_COOKIE.USER);
 }

@@ -8,7 +8,7 @@ import {
   authLoading,
   authSucceeded,
 } from "@/store/slices/auth/authSlice";
-import { fetchCurrentUser } from "@/services/authService";
+import { fetchCurrentUser, getStoredBackendUser } from "@/services/authService";
 import { addErrorInterceptor } from "@/services/apiClient";
 
 /**
@@ -23,6 +23,13 @@ export default function AuthProvider({ children }) {
 
     async function hydrate() {
       dispatch(authLoading());
+
+      const backendUser = getStoredBackendUser();
+      if (backendUser) {
+        if (!cancelled) dispatch(authSucceeded(backendUser));
+        return;
+      }
+
       try {
         const data = await fetchCurrentUser();
         if (cancelled) return;

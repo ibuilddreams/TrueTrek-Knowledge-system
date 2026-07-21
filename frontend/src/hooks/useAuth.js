@@ -15,9 +15,11 @@ import {
   selectIsStudent,
 } from "@/store/slices/auth/authSlice";
 import {
+  clearBackendSession,
   fetchCurrentUser,
   loginAsFaculty,
   loginAsStudent,
+  loginWithCredentials,
   logout as logoutRequest,
 } from "@/services/authService";
 import { AUTH_ROLES } from "@/constants/auth";
@@ -85,10 +87,26 @@ export function useAuth() {
     [dispatch]
   );
 
+  const login = useCallback(
+    async ({ email, password }) => {
+      dispatch(authLoading());
+      try {
+        const data = await loginWithCredentials({ email, password });
+        dispatch(authSucceeded(data.user));
+        return data;
+      } catch (error) {
+        dispatch(authFailed(error?.message));
+        throw error;
+      }
+    },
+    [dispatch]
+  );
+
   const logout = useCallback(async () => {
     try {
       await logoutRequest();
     } finally {
+      clearBackendSession();
       dispatch(authCleared());
     }
   }, [dispatch]);
@@ -100,9 +118,11 @@ export function useAuth() {
     role,
     isStudent,
     isFaculty,
+    isAdmin: role === AUTH_ROLES.ADMIN,
     isStudentSession:
       isAuthenticated && (role === AUTH_ROLES.STUDENT || !role),
     isFacultySession: isAuthenticated && role === AUTH_ROLES.FACULTY,
+    login,
     loginStudent,
     loginFaculty,
     logout,

@@ -14,14 +14,16 @@ export function proxy(request) {
   }
 
   const sessionCookie = request.cookies.get(AUTH_COOKIE.SESSION)?.value;
-  if (!sessionCookie) {
+  const backendUserCookie = request.cookies.get(AUTH_COOKIE.USER)?.value;
+
+  if (!sessionCookie && !backendUserCookie) {
     const response = NextResponse.next();
     response.headers.set("x-ttl-auth", "anonymous");
     return response;
   }
 
   try {
-    const session = JSON.parse(sessionCookie);
+    const session = JSON.parse(sessionCookie || backendUserCookie);
     const response = NextResponse.next();
     response.headers.set("x-ttl-auth", session?.role || AUTH_ROLES.GUEST);
     return response;

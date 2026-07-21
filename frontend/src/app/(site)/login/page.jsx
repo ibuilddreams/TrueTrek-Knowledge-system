@@ -1,9 +1,5 @@
-import { redirect } from "next/navigation";
-import { ROUTES } from "@/constants/routes";
+import LoginForm from "@/components/features/auth/LoginForm";
 
-/**
- * Login entry point — student vault authentication lives in the portal.
- */
 export default function LoginPage() {
-  redirect(ROUTES.PORTAL);
+  return <LoginForm />;
 }

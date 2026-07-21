@@ -2,6 +2,10 @@
  * Central Fetch API client with credentials + auth-ready interceptors.
  */
 
+import { API_BASE_URL } from "@/config/env";
+import { AUTH_COOKIE } from "@/constants/auth";
+import { getClientCookie } from "@/utils/cookies";
+
 const DEFAULT_HEADERS = {
   "Content-Type": "application/json",
   Accept: "application/json",
@@ -70,7 +74,7 @@ async function runErrorInterceptors(error) {
 
 /**
  * @param {string} path
- * @param {{ method?: string, body?: any, headers?: Record<string,string>, skipAuth?: boolean, credentials?: RequestCredentials }} [options]
+ * @param {{ method?: string, body?: any, headers?: Record<string,string>, skipAuth?: boolean, credentials?: RequestCredentials, baseUrl?: string }} [options]
  */
 export async function apiRequest(path, options = {}) {
   const {
@@ -79,23 +83,32 @@ export async function apiRequest(path, options = {}) {
     headers = {},
     skipAuth = false,
     credentials = "include",
+    baseUrl = "",
     ...rest
   } = options;
 
   let config = {
-    path,
+    path: `${baseUrl}${path}`,
     method,
     body,
     headers: { ...DEFAULT_HEADERS, ...headers },
     credentials,
     skipAuth,
+    baseUrl,
     ...rest,
   };
 
   config = await runRequestInterceptors(config);
 
-  // Future: when using bearer tokens from a BFF, attach here if !skipAuth.
-  // HttpOnly cookie auth relies on credentials: "include".
+  if (config.baseUrl === API_BASE_URL && !config.skipAuth) {
+    const accessToken = getClientCookie(AUTH_COOKIE.ACCESS_TOKEN);
+    if (accessToken) {
+      config.headers = {
+        ...config.headers,
+        Authorization: `Bearer ${accessToken}`,
+      };
+    }
+  }
 
   const response = await fetch(config.path, {
     method: config.method,
@@ -124,7 +137,10 @@ export async function apiRequest(path, options = {}) {
 
   if (!response.ok) {
     const error = new Error(
-      data?.error || data?.details || `Request failed (${response.status})`
+      data?.message ||
+        data?.error ||
+        data?.details ||
+        `Request failed (${response.status})`
     );
     error.status = response.status;
     error.data = data;
@@ -150,6 +166,34 @@ export const apiClient = {
     apiRequest(path, { ...options, method: "PATCH", body }),
   delete: (path, options) =>
     apiRequest(path, { ...options, method: "DELETE" }),
+};
+
+export const backendClient = {
+  get: (path, options) =>
+    apiRequest(path, { ...options, method: "GET", baseUrl: API_BASE_URL }),
+  post: (path, body, options) =>
+    apiRequest(path, {
+      ...options,
+      method: "POST",
+      body,
+      baseUrl: API_BASE_URL,
+    }),
+  put: (path, body, options) =>
+    apiRequest(path, {
+      ...options,
+      method: "PUT",
+      body,
+      baseUrl: API_BASE_URL,
+    }),
+  patch: (path, body, options) =>
+    apiRequest(path, {
+      ...options,
+      method: "PATCH",
+      body,
+      baseUrl: API_BASE_URL,
+    }),
+  delete: (path, options) =>
+    apiRequest(path, { ...options, method: "DELETE", baseUrl: API_BASE_URL }),
 };
 
 export default apiClient;
