@@ -7,10 +7,6 @@ from django.contrib.auth.base_user import BaseUserManager
 
 
 class CustomUserManager(BaseUserManager):
-    """
-    Custom manager for CustomUser where email is the unique identifier
-    instead of username.
-    """
 
     def create_user(self, email, password=None, **extra_fields):
         if not email:
