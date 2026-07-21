@@ -1,7 +1,8 @@
 "use client";
 
 import { useState, } from 'react';
-import { 
+import { useRouter } from 'next/navigation';
+import {
   Users, Award, BookOpen, FileText, CheckCircle, Search, Plus, Filter,
   TrendingUp, Download, Eye, GraduationCap, ChevronRight, AlertCircle,
   Clock, ShieldAlert, Sparkles, BookOpenCheck, Edit, Trash, Activity,
@@ -13,6 +14,8 @@ import { requestAdvisorAdvice } from '@/services/advisorService';
 import { getDaysAgoDateString, getDaysSinceLastDrill } from '@/lib/dates';
 import { useAuth } from '@/hooks/useAuth';
 import { AUTH_ROLES } from '@/constants/auth';
+import { ROUTES } from '@/constants/routes';
+import { toastSuccess } from '@/lib/toast';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
  Cell, AreaChart, Area
@@ -198,6 +201,7 @@ const TEACHER_MANUALS = [
 ];
 
 export default function TeacherPortal({ aggregateScore = 100 }) {
+  const router = useRouter();
   const [students, setStudents] = useState(INITIAL_STUDENTS);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [quickViewStudent, setQuickViewStudent] = useState(null);
@@ -309,6 +313,8 @@ export default function TeacherPortal({ aggregateScore = 100 }) {
     await logout();
     setFacultyEmail('');
     setFacultyPasscode('');
+    toastSuccess('Logged out.');
+    router.push(ROUTES.LOGIN);
   };
 
   const handleBypassOrPreview = async (previewRole) => {
