@@ -23,6 +23,7 @@ import {
 import StatCard from '@/components/ui/StatCard';
 import CloseButton from '@/components/ui/CloseButton';
 import Loader from '@/components/ui/Loader';
+import MarkdownMiniRenderer from '@/components/ui/MarkdownMiniRenderer';
 
 const INITIAL_STUDENTS = [
   {
@@ -1000,9 +1001,7 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
                       
                       <div className="prose prose-sm prose-invert font-light leading-relaxed text-xs sm:text-sm text-stone-300 max-w-none space-y-3">
                         {aiReport ? (
-                          <div className="whitespace-pre-wrap font-sans select-text select-all">
-                            {aiReport}
-                          </div>
+                          <MarkdownMiniRenderer text={aiReport} className="select-text select-all" />
                         ) : (
                           <div className="space-y-3 py-4">
                             <div className="h-4 bg-stone-900 rounded w-3/4 animate-pulse"></div>
