@@ -3,7 +3,7 @@
 import { useState, } from 'react';
 import { 
   Users, Award, BookOpen, FileText, CheckCircle, Search, Plus, Filter,
-  TrendingUp, Download, Eye, GraduationCap, ChevronRight, X, AlertCircle,
+  TrendingUp, Download, Eye, GraduationCap, ChevronRight, AlertCircle,
   Clock, ShieldAlert, Sparkles, BookOpenCheck, Edit, Trash, Activity,
   Lock, Unlock, Key
 } from 'lucide-react';
@@ -17,6 +17,8 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
  Cell, AreaChart, Area
 } from 'recharts';
+import StatCard from '@/components/ui/StatCard';
+import CloseButton from '@/components/ui/CloseButton';
 
 const INITIAL_STUDENTS = [
   {
@@ -803,57 +805,49 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
               {/* Quick High-Contrast Stats Cards */}
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
                 
-                <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-sm flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-mono uppercase tracking-wider text-stone-400">Total Enrolled</p>
-                    <p className="text-3xl font-serif font-bold text-stone-900 mt-2">{totalEnrollments}</p>
+                <StatCard
+                  label="Total Enrolled"
+                  value={totalEnrollments}
+                  icon={Users}
+                  footer={
                     <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1 mt-1 font-mono">
                       <span>● Active Slots Filled</span>
                     </p>
-                  </div>
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-750">
-                    <Users className="w-5 h-5" />
-                  </div>
-                </div>
+                  }
+                />
 
-                <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-sm flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-mono uppercase tracking-wider text-stone-400">Class Avg Score</p>
-                    <p className="text-3xl font-serif font-bold text-stone-900 mt-2">{averageComplianceScore}%</p>
+                <StatCard
+                  label="Class Avg Score"
+                  value={`${averageComplianceScore}%`}
+                  icon={Award}
+                  footer={
                     <p className="text-[11px] text-stone-400 font-medium mt-1 font-mono">
                       Scored out of 100 on quiz drills
                     </p>
-                  </div>
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-750">
-                    <Award className="w-5 h-5" />
-                  </div>
-                </div>
+                  }
+                />
 
-                <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-sm flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-mono uppercase tracking-wider text-stone-400">Avg Program Progress</p>
-                    <p className="text-3xl font-serif font-bold text-stone-900 mt-2">{averageProgress}%</p>
+                <StatCard
+                  label="Avg Program Progress"
+                  value={`${averageProgress}%`}
+                  icon={Activity}
+                  footer={
                     <div className="w-24 bg-stone-100 h-1.5 rounded-full mt-2.5 overflow-hidden">
                       <div className="bg-amber-600 h-full" style={{ width: `${averageProgress}%` }} />
                     </div>
-                  </div>
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-750">
-                    <Activity className="w-5 h-5" />
-                  </div>
-                </div>
+                  }
+                />
 
-                <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-sm flex items-start justify-between">
-                  <div>
-                    <p className="text-xs font-mono uppercase tracking-wider text-stone-400">Active Streaks ≥ 10d</p>
-                    <p className="text-3xl font-serif font-bold text-stone-900 mt-2">{highlyActiveCount}</p>
+                <StatCard
+                  label="Active Streaks ≥ 10d"
+                  value={highlyActiveCount}
+                  icon={Clock}
+                  footer={
                     <p className="text-[11px] text-stone-400 mt-1 font-mono">
                       Continuous daily learning cycles
                     </p>
-                  </div>
-                  <div className="w-10 h-10 rounded-xl bg-amber-50 flex items-center justify-center text-amber-750">
-                    <Clock className="w-5 h-5" />
-                  </div>
-                </div>
+                  }
+                />
                 
               </div>
 
@@ -1274,12 +1268,11 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
                             </div>
                           </div>
                           
-                          <button
+                          <CloseButton
                             onClick={() => setSelectedStudent(null)}
                             className="p-1.5 border border-stone-200 rounded-full text-stone-500 hover:text-stone-900 hover:bg-stone-50 transition"
-                          >
-                            <X className="w-4.5 h-4.5" />
-                          </button>
+                            iconClassName="w-4.5 h-4.5"
+                          />
                         </div>
 
                         {/* Metadata blocks */}
@@ -1416,14 +1409,12 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
                             <p className="text-[10px] font-mono text-stone-400 mt-0.5">{quickViewStudent.email}</p>
                           </div>
                         </div>
-                        <button
+                        <CloseButton
                           onClick={() => setQuickViewStudent(null)}
                           className="p-1 border border-stone-200 rounded-full text-stone-400 hover:text-stone-900 hover:bg-stone-50 transition shrink-0"
+                          iconClassName="w-4 h-4"
                           title="Close Quick View"
-                          aria-label="Close Quick View"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                        />
                       </div>
 
                       {/* Brief Metadata Context */}
@@ -1556,13 +1547,11 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
                           </h3>
                           <p className="text-[11px] text-stone-450 mt-0.5">TrueTrek Cohort validation slot allocation</p>
                         </div>
-                        <button
-                          type="button"
+                        <CloseButton
                           onClick={() => setIsRegistering(false)}
                           className="p-1 border border-stone-200 rounded-full text-stone-450 hover:bg-stone-50"
-                        >
-                          <X className="w-4 h-4" />
-                        </button>
+                          iconClassName="w-4 h-4"
+                        />
                       </div>
 
                       <div className="space-y-4 text-xs font-mono">

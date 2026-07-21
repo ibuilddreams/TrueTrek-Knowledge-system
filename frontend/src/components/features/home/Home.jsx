@@ -14,6 +14,9 @@ import { ADVISOR_PERSONAS } from '@/data/curriculum';
 import { INDEX_FAQ_ITEMS } from '@/constants/faq';
 import { ROUTES } from '@/constants/routes';
 import { requestAdvisorAdvice } from '@/services/advisorService';
+import SectionHeading from '@/components/ui/SectionHeading';
+import PingDotSpinner from '@/components/ui/PingDotSpinner';
+import PresetPromptPills from '@/components/ui/PresetPromptPills';
 
 export default function Home() {
   const router = useRouter();
@@ -284,15 +287,12 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       {/* Cinematic Walkthrough Broadcast Section */}
       <section id="cinematic-walkthrough-section" className="bg-[#141211] border-t border-stone-800/85 py-20 px-6 relative z-10">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-12">
-            <span className="text-amber-500 text-xs font-mono uppercase tracking-widest block mb-3">Multi-Channel Orientation Broadcast</span>
-            <h2 className="text-3xl md:text-4xl font-serif font-semibold tracking-tight text-white mb-4">
-              Step Inside the Academy Briefing Room
-            </h2>
-            <p className="text-stone-400 text-sm max-w-xl mx-auto font-light leading-relaxed">
-              Explore the interactive dashboard, browse core orientation channels, and auto-track high-compliance transcript decoders with Amanda Ross, Esq. and Dr. Simone Chen.
-            </p>
-          </div>
+          <SectionHeading
+            className="mb-12"
+            eyebrow="Multi-Channel Orientation Broadcast"
+            heading="Step Inside the Academy Briefing Room"
+            subtitle="Explore the interactive dashboard, browse core orientation channels, and auto-track high-compliance transcript decoders with Amanda Ross, Esq. and Dr. Simone Chen."
+          />
 
           <IntroVideo />
         </div>
@@ -301,15 +301,12 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       {/* Profile Discovery Segment (Bento Panel) */}
       <section id="pathway-audit-section" className="bg-[#141211] border-t border-stone-800/60 py-20 px-6">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <span className="text-amber-500 text-xs font-mono uppercase tracking-widest block mb-3">Custom Diagnostics</span>
-            <h2 className="text-3xl md:text-4xl font-serif font-semibold tracking-tight text-white mb-4">
-              Determine Your TrueTrek Learning Pathway
-            </h2>
-            <p className="text-stone-400 text-sm max-w-xl mx-auto font-light leading-relaxed">
-              Select your high-potential profile archetype below and see your recommended developmental curriculum, custom metrics, and action blueprint.
-            </p>
-          </div>
+          <SectionHeading
+            className="mb-16"
+            eyebrow="Custom Diagnostics"
+            heading="Determine Your TrueTrek Learning Pathway"
+            subtitle="Select your high-potential profile archetype below and see your recommended developmental curriculum, custom metrics, and action blueprint."
+          />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Left Selection Columns */}
@@ -400,15 +397,12 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
         <div id="inline-consult-glow" className="absolute -top-12 -left-12 w-80 h-80 rounded-full bg-amber-600/5 blur-[100px] pointer-events-none"></div>
         <div className="max-w-6xl mx-auto space-y-12 relative z-10">
           
-          <div className="text-center">
-            <span className="text-amber-500 text-xs font-mono uppercase tracking-widest block mb-3">Live Consulting Board</span>
-            <h2 className="text-3xl md:text-4xl font-serif font-black tracking-tight text-white mb-4">
-              Connect With the Senior Advisory Council
-            </h2>
-            <p className="text-stone-400 text-sm max-w-xl mx-auto font-light leading-relaxed">
-              Formulate a custom strategic curriculum roadmap in real-time. Describe your targets and get advice back from our leading advisors immediately.
-            </p>
-          </div>
+          <SectionHeading
+            eyebrow="Live Consulting Board"
+            heading="Connect With the Senior Advisory Council"
+            headingClassName="text-3xl md:text-4xl font-serif font-black tracking-tight text-white"
+            subtitle="Formulate a custom strategic curriculum roadmap in real-time. Describe your targets and get advice back from our leading advisors immediately."
+          />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Advisor Avatars selector */}
@@ -533,10 +527,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
 
                     {isConsulting ? (
                       <div className="flex flex-col items-center justify-center py-10 space-y-3">
-                        <span className="relative flex h-8 w-8">
-                          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                          <span className="relative inline-flex rounded-full h-8 w-8 bg-amber-600"></span>
-                        </span>
+                        <PingDotSpinner />
                         <p className="text-xs font-mono text-stone-500 animate-pulse tracking-wider">SECURE LINK PIPELINE CONFIGURED...</p>
                       </div>
                     ) : (
@@ -783,65 +774,53 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
               <div className="p-3 bg-[#141211] border-t border-stone-850 shrink-0 space-y-2.5 text-left">
                 {/* suggested pills shortcut */}
                 <div className="flex gap-1.5 overflow-x-auto scrollbar-none py-0.5 items-center justify-start">
-                  {selectedChatAdvisorId === 'legal' && [
-                    "What NIL traps exist in contracts?",
-                    "How to file single-member LLC?",
-                    "Protecting my brand assets"
-                  ].map((pText, pi) => (
-                    <button
-                      id={`chat-preset-legal-${pi}`}
-                      key={pi}
-                      onClick={() => handleSendChatMessage(pText)}
-                      className="bg-stone-900 hover:bg-stone-800 border border-stone-850 text-stone-300 rounded px-2.5 py-1 text-[9px] font-mono uppercase tracking-wide shrink-0 cursor-pointer"
-                    >
-                      {pText}
-                    </button>
-                  ))}
+                  {selectedChatAdvisorId === 'legal' && (
+                    <PresetPromptPills
+                      idPrefix="chat-preset-legal"
+                      prompts={[
+                        "What NIL traps exist in contracts?",
+                        "How to file single-member LLC?",
+                        "Protecting my brand assets",
+                      ]}
+                      onSelect={handleSendChatMessage}
+                    />
+                  )}
 
-                  {selectedChatAdvisorId === 'recruiter' && [
-                    "What do D1 scouts look for?",
-                    "Auditing highlight videos",
-                    "Coach communications syntax"
-                  ].map((pText, pi) => (
-                    <button
-                      id={`chat-preset-recruiter-${pi}`}
-                      key={pi}
-                      onClick={() => handleSendChatMessage(pText)}
-                      className="bg-stone-900 hover:bg-stone-800 border border-stone-850 text-stone-300 rounded px-2.5 py-1 text-[9px] font-mono uppercase tracking-wide shrink-0 cursor-pointer"
-                    >
-                      {pText}
-                    </button>
-                  ))}
+                  {selectedChatAdvisorId === 'recruiter' && (
+                    <PresetPromptPills
+                      idPrefix="chat-preset-recruiter"
+                      prompts={[
+                        "What do D1 scouts look for?",
+                        "Auditing highlight videos",
+                        "Coach communications syntax",
+                      ]}
+                      onSelect={handleSendChatMessage}
+                    />
+                  )}
 
-                  {selectedChatAdvisorId === 'psychology' && [
-                    "Daily Circadian checklist",
-                    "How sleep impacts focus?",
-                    "Lower exam stress drills"
-                  ].map((pText, pi) => (
-                    <button
-                      id={`chat-preset-psych-${pi}`}
-                      key={pi}
-                      onClick={() => handleSendChatMessage(pText)}
-                      className="bg-stone-900 hover:bg-stone-800 border border-stone-850 text-stone-300 rounded px-2.5 py-1 text-[9px] font-mono uppercase tracking-wide shrink-0 cursor-pointer"
-                    >
-                      {pText}
-                    </button>
-                  ))}
+                  {selectedChatAdvisorId === 'psychology' && (
+                    <PresetPromptPills
+                      idPrefix="chat-preset-psych"
+                      prompts={[
+                        "Daily Circadian checklist",
+                        "How sleep impacts focus?",
+                        "Lower exam stress drills",
+                      ]}
+                      onSelect={handleSendChatMessage}
+                    />
+                  )}
 
-                  {selectedChatAdvisorId === 'legacy' && [
-                    "How family offices build trusts?",
-                    "Axiological family charters",
-                    "Stewardship of venture reserves"
-                  ].map((pText, pi) => (
-                    <button
-                      id={`chat-preset-legacy-${pi}`}
-                      key={pi}
-                      onClick={() => handleSendChatMessage(pText)}
-                      className="bg-stone-900 hover:bg-stone-800 border border-stone-850 text-stone-300 rounded px-2.5 py-1 text-[9px] font-mono uppercase tracking-wide shrink-0 cursor-pointer"
-                    >
-                      {pText}
-                    </button>
-                  ))}
+                  {selectedChatAdvisorId === 'legacy' && (
+                    <PresetPromptPills
+                      idPrefix="chat-preset-legacy"
+                      prompts={[
+                        "How family offices build trusts?",
+                        "Axiological family charters",
+                        "Stewardship of venture reserves",
+                      ]}
+                      onSelect={handleSendChatMessage}
+                    />
+                  )}
                 </div>
 
                 {/* text input form bar */}

@@ -2,6 +2,7 @@
 
 import { useState, useMemo } from 'react';
 import { Landmark, Calculator, Users, Shield, Percent, HeartPulse } from 'lucide-react';
+import SectionHeading from '@/components/ui/SectionHeading';
 
 export default function Partnerships() {
   const [studentCount, setStudentCount] = useState(500);
@@ -50,15 +51,15 @@ export default function Partnerships() {
       <div className="max-w-6xl mx-auto">
         
         {/* Editorial Subtitle Block */}
-        <div className="text-center mb-16">
-          <span className="text-amber-800 text-xs font-mono uppercase tracking-widest block mb-3">Enterprise Licensing Portal</span>
-          <h2 className="text-4xl md:text-5xl font-serif text-stone-900 font-bold tracking-tight mb-4">
-            Institutional Masterclass Covenants
-          </h2>
-          <p className="text-stone-600 text-sm max-w-2xl mx-auto font-light leading-relaxed">
-            We license the complete TrueTrek Learning digital framework to selective High Schools, Collegiate Leagues, and Regional Sports Academies to reduce institutional liability and maximize student-athlete success.
-          </p>
-        </div>
+        <SectionHeading
+          className="mb-16"
+          eyebrow="Enterprise Licensing Portal"
+          eyebrowClassName="text-amber-800"
+          heading="Institutional Masterclass Covenants"
+          headingClassName="text-4xl md:text-5xl font-serif text-stone-900 font-bold tracking-tight"
+          subtitle="We license the complete TrueTrek Learning digital framework to selective High Schools, Collegiate Leagues, and Regional Sports Academies to reduce institutional liability and maximize student-athlete success."
+          subtitleClassName="text-stone-600 text-sm max-w-2xl mx-auto font-light leading-relaxed"
+        />
 
         {/* Benefits Grid Section */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8 mb-20">

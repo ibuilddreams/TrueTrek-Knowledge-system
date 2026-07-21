@@ -24,6 +24,11 @@ import {
   setUnlockedBadges as setUnlockedBadgesAction,
 } from '@/store/slices/portal/portalSlice';
 import { resolveUpdater } from '@/utils';
+import AuthGateCard from '@/components/ui/AuthGateCard';
+import AuthField from '@/components/ui/AuthField';
+import AuthSubmitButton from '@/components/ui/AuthSubmitButton';
+import CloseButton from '@/components/ui/CloseButton';
+import PingDotSpinner from '@/components/ui/PingDotSpinner';
 
 export default function Portal({
   isLoggedIn,
@@ -393,62 +398,47 @@ export default function Portal({
 
   if (!isLoggedIn) {
     return (
-      <div id="login-screen-wrapper" className="min-h-[80vh] flex items-center justify-center bg-[#faf9f6] py-16 px-6">
-        <div className="w-full max-w-md bg-white border border-stone-200/85 p-8 rounded-2xl shadow-xl relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-600 to-amber-800"></div>
+      <AuthGateCard
+        id="login-screen-wrapper"
+        icon={Lock}
+        title="Mastermind Vault Entry"
+        subtitle="Simulate access to the high-performance student analytical suite."
+      >
+        <form onSubmit={handleLogin} className="space-y-4">
+          <AuthField
+            id="input-login-email"
+            label="Mastermind Email"
+            type="email"
+            required
+            value={loginEmail}
+            onChange={(e) => setLoginEmail(e.target.value)}
+          />
 
-          <div className="text-center mb-8">
-            <div className="w-12 h-12 bg-amber-600/10 text-amber-700 rounded-xl flex items-center justify-center mx-auto mb-4 border border-amber-200/40">
-              <Lock className="w-6 h-6" />
-            </div>
-            <h2 className="text-2xl font-serif text-stone-900 font-bold mb-1.5">Mastermind Vault Entry</h2>
-            <p className="text-stone-500 text-xs font-light">Simulate access to the high-performance student analytical suite.</p>
+          <AuthField
+            id="input-login-password"
+            label="Administrative Password"
+            type="password"
+            required
+            value={loginPass}
+            onChange={(e) => setLoginPass(e.target.value)}
+            inputClassName="w-full p-3 rounded-lg border border-stone-200 text-xs font-mono bg-stone-50 text-stone-850 focus:outline-none focus:border-amber-600"
+          />
+
+          <div className="bg-stone-50 p-3.5 rounded-lg border border-stone-200/80 text-[11px] text-stone-500 leading-relaxed mb-4 flex gap-2">
+            <UserCheck className="w-4 h-4 text-amber-600 shrink-0" />
+            <span>
+              <strong>Simulation Profile Injector:</strong> A default athlete-scholar profile is loaded upon access. Click below to initiate safe portal simulation.
+            </span>
           </div>
 
-          <form onSubmit={handleLogin} className="space-y-4">
-            <div>
-              <label className="text-[10px] font-mono text-stone-400 block uppercase tracking-wider mb-1.5">Mastermind Email</label>
-              <input
-                id="input-login-email"
-                type="email"
-                required
-                value={loginEmail}
-                onChange={(e) => setLoginEmail(e.target.value)}
-                className="w-full p-3 rounded-lg border border-stone-200 text-xs font-mono bg-stone-50 text-stone-800 focus:outline-none focus:border-amber-600"
-              />
-            </div>
-
-            <div>
-              <label className="text-[10px] font-mono text-stone-400 block uppercase tracking-wider mb-1.5">Administrative Password</label>
-              <input
-                id="input-login-password"
-                type="password"
-                required
-                value={loginPass}
-                onChange={(e) => setLoginPass(e.target.value)}
-                className="w-full p-3 rounded-lg border border-stone-200 text-xs font-mono bg-stone-50 text-stone-850 focus:outline-none focus:border-amber-600"
-              />
-            </div>
-
-            <div className="bg-stone-50 p-3.5 rounded-lg border border-stone-200/80 text-[11px] text-stone-500 leading-relaxed mb-4 flex gap-2">
-              <UserCheck className="w-4 h-4 text-amber-600 shrink-0" />
-              <span>
-                <strong>Simulation Profile Injector:</strong> A default athlete-scholar profile is loaded upon access. Click below to initiate safe portal simulation.
-              </span>
-            </div>
-
-            <button
-              id="submit-login-btn"
-              type="submit"
-              className="w-full bg-stone-900 hover:bg-stone-800 text-white font-semibold py-3 px-4 rounded-lg text-xs uppercase tracking-wider transition"
-              title="Authenticate and load simulated scholar-athlete portal workspace"
-              aria-label="Authenticate and load simulated scholar-athlete portal workspace"
-            >
-              Simulate Safe Entry
-            </button>
-          </form>
-        </div>
-      </div>
+          <AuthSubmitButton
+            id="submit-login-btn"
+            label="Simulate Safe Entry"
+            title="Authenticate and load simulated scholar-athlete portal workspace"
+            aria-label="Authenticate and load simulated scholar-athlete portal workspace"
+          />
+        </form>
+      </AuthGateCard>
     );
   }
 
@@ -1224,14 +1214,13 @@ export default function Portal({
                   id="auditing-dialog-card" 
                   className="bg-white border border-stone-250/90 rounded-2xl max-w-xl w-full max-h-[90vh] overflow-y-auto p-6 md:p-8 space-y-6 shadow-2xl relative"
                 >
-                  <button 
+                  <CloseButton
                     onClick={() => setAuditingTier(null)}
                     className="absolute top-5 right-5 text-stone-400 hover:text-stone-900 p-1.5 hover:bg-stone-100 rounded-full transition"
                     title="Close certification dialog"
-                    aria-label="Close certification dialog"
                   >
                     ✕
-                  </button>
+                  </CloseButton>
 
                   <div className="space-y-1.5 pb-3 border-b text-left">
                     <span className="text-amber-700 uppercase font-mono text-[10px] tracking-widest font-bold block">{auditingTier.number} compliance dossier review</span>

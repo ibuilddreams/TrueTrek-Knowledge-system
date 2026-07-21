@@ -14,8 +14,6 @@ import {
   Package, 
   Download, 
   Info,
- 
-  X,
   ShieldCheck,
 
   Send,
@@ -27,6 +25,8 @@ import { motion, AnimatePresence } from 'motion/react';
 import { ADVISOR_PERSONAS } from '@/data/curriculum';
 import { requestAdvisorAdvice } from '@/services/advisorService';
 import MarkdownMiniRenderer from '@/components/ui/MarkdownMiniRenderer';
+import CloseButton from '@/components/ui/CloseButton';
+import PingDotSpinner from '@/components/ui/PingDotSpinner';
 
 const PRODUCTS = [
   {
@@ -479,10 +479,7 @@ Instructions:
 
                   {isAIRecommending ? (
                     <div className="flex flex-col items-center justify-center py-12 space-y-4">
-                      <span className="relative flex h-8 w-8">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-8 w-8 bg-amber-600"></span>
-                      </span>
+                      <PingDotSpinner />
                       <p className="text-xs font-mono text-stone-450 animate-pulse uppercase tracking-wider">Retrieving Council Match Intelligence...</p>
                     </div>
                   ) : (
@@ -661,12 +658,11 @@ Instructions:
                       <p className="text-[10px] font-mono text-stone-500 uppercase tracking-wide">Secured Checkout Protocol</p>
                     </div>
                   </div>
-                  <button 
+                  <CloseButton
                     onClick={() => setIsCartOpen(false)}
                     className="text-stone-400 hover:text-stone-750 p-1.5 rounded-full border border-stone-200 bg-white"
-                  >
-                    <X className="w-4 h-4" />
-                  </button>
+                    iconClassName="w-4 h-4"
+                  />
                 </div>
 
                 {/* Cart Body */}
@@ -953,12 +949,11 @@ Instructions:
               exit={{ scale: 0.95, opacity: 0 }}
               className="relative bg-white rounded-3xl overflow-hidden max-w-xl w-full border border-stone-200 shadow-2xl flex flex-col justify-between"
             >
-              <button 
+              <CloseButton
                 onClick={() => setViewingProduct(null)}
                 className="absolute top-4 right-4 text-stone-400 hover:text-stone-950 bg-white/90 p-2 rounded-full shadow-md z-10 border border-stone-200 transition"
-              >
-                <X className="w-4 h-4" />
-              </button>
+                iconClassName="w-4 h-4"
+              />
 
               <div className="relative h-64 bg-stone-100">
                 <img 

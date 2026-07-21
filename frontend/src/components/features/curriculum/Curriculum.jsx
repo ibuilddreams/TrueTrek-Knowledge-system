@@ -3,11 +3,13 @@
 import { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { CURRICULUM_TIERS } from '@/data/curriculum';
-import { Compass, Clock, GraduationCap, X, ChevronRight, Filter, CheckCircle, Lock, Flame } from 'lucide-react';
+import { Compass, Clock, GraduationCap, ChevronRight, Filter, CheckCircle, Lock, Flame } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { usePortalSession } from '@/hooks/usePortalSession';
 import { getTierRequirementText, getTierStatus as resolveTierStatus } from '@/lib/curriculumProgress';
 import { ROUTES } from '@/constants/routes';
+import CloseButton from '@/components/ui/CloseButton';
+import SectionHeading from '@/components/ui/SectionHeading';
 
 export default function Curriculum() {
   const router = useRouter();
@@ -50,15 +52,15 @@ export default function Curriculum() {
       <div className="max-w-6xl mx-auto">
         
         {/* Editorial Subheader */}
-        <div className="text-center mb-12">
-          <span className="text-amber-700 text-xs font-mono uppercase tracking-widest block mb-3">Modular Framework Structure</span>
-          <h2 className="text-4xl md:text-5xl font-serif text-stone-900 font-semibold tracking-tight mb-4">
-            The 14-Tier Life Incubator
-          </h2>
-          <p className="text-stone-600 text-sm max-w-2xl mx-auto font-light leading-relaxed mb-4">
-            A comprehensive, rigorous framework taking high school prodigies through collegiate recruitment and trademark law, all the way to family office management and generational wealth preservation.
-          </p>
-        </div>
+        <SectionHeading
+          className="mb-12"
+          eyebrow="Modular Framework Structure"
+          eyebrowClassName="text-amber-700"
+          heading="The 14-Tier Life Incubator"
+          headingClassName="text-4xl md:text-5xl font-serif text-stone-900 font-semibold tracking-tight"
+          subtitle="A comprehensive, rigorous framework taking high school prodigies through collegiate recruitment and trademark law, all the way to family office management and generational wealth preservation."
+          subtitleClassName="text-stone-600 text-sm max-w-2xl mx-auto font-light leading-relaxed mb-4"
+        />
 
         {/* Compliance Integration Header Indicator */}
         {isLoggedIn ? (
@@ -296,15 +298,11 @@ export default function Curriculum() {
                         </motion.div>
                       </AnimatePresence>
                     </div>
-                    <button
+                    <CloseButton
                       id="close-drawer-btn"
                       onClick={() => setActiveTier(null)}
-                      className="text-stone-400 hover:text-stone-900 p-2 hover:bg-stone-100 rounded-full transition"
                       title="Close details drawer"
-                      aria-label="Close details drawer"
-                    >
-                      <X className="w-5 h-5" />
-                    </button>
+                    />
                   </div>
 
                   {/* Title and descriptions */}
