@@ -6,6 +6,7 @@ from common.pagination import Pagination
 from common.response import success_response
 from rest_framework.permissions import IsAuthenticated
 
+from .permissions import IsAdmin
 from .serializers import CreateStudentSerializer, CustomTokenObtainPairSerializer, StudentSerializer
 
 UserModel = get_user_model()
@@ -28,6 +29,11 @@ class StudentListCreateView(generics.ListCreateAPIView):
     queryset = UserModel.objects.filter(role=UserModel.Roles.STUDENT)
     permission_classes = [IsAuthenticated]
     pagination_class = Pagination
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAdmin()]
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.request.method == "POST":

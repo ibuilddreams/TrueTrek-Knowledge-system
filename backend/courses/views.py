@@ -3,6 +3,7 @@ from rest_framework.permissions import IsAuthenticated
 
 from common.pagination import Pagination
 from common.response import success_response
+from users.permissions import IsAdmin
 
 from .models import Category, Course
 from .serializers import (
@@ -66,6 +67,11 @@ class CourseListCreateView(generics.ListCreateAPIView):
     queryset = Course.objects.select_related("category").all()
     permission_classes = [IsAuthenticated]
     pagination_class = Pagination
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsAdmin()]
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.request.method == "POST":

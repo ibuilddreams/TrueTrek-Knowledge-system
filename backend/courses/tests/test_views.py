@@ -15,6 +15,12 @@ class CategoryListCreateViewTests(APITestCase):
         self.user = UserModel.objects.create_user(
             username="categoryuser", email="categoryuser@example.com", password="StrongPass123!"
         )
+        self.admin = UserModel.objects.create_user(
+            username="categoryadmin",
+            email="categoryadmin@example.com",
+            password="StrongPass123!",
+            role=UserModel.Roles.ADMIN,
+        )
 
     def test_list_requires_authentication(self):
         response = self.client.get(self.url)
@@ -31,7 +37,7 @@ class CategoryListCreateViewTests(APITestCase):
         self.assertEqual(response.data["message"], "Categories fetched successfully")
 
     def test_create_valid_data_returns_201(self):
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
 
         response = self.client.post(self.url, {"name": "Marketing"})
 
@@ -40,7 +46,7 @@ class CategoryListCreateViewTests(APITestCase):
 
     def test_create_duplicate_name_returns_400(self):
         Category.objects.create(name="Marketing")
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
 
         response = self.client.post(self.url, {"name": "Marketing"})
 
@@ -95,6 +101,12 @@ class CourseListCreateViewTests(APITestCase):
         self.user = UserModel.objects.create_user(
             username="courseuser", email="courseuser@example.com", password="StrongPass123!"
         )
+        self.admin = UserModel.objects.create_user(
+            username="courseadmin",
+            email="courseadmin@example.com",
+            password="StrongPass123!",
+            role=UserModel.Roles.ADMIN,
+        )
 
     def test_list_requires_authentication(self):
         response = self.client.get(self.url)
@@ -111,7 +123,7 @@ class CourseListCreateViewTests(APITestCase):
         self.assertEqual(response.data["message"], "Courses fetched successfully")
 
     def test_create_valid_data_returns_201(self):
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
 
         response = self.client.post(
             self.url, {"title": "Advanced Django", "category": self.category.id}
@@ -122,13 +134,23 @@ class CourseListCreateViewTests(APITestCase):
 
     def test_create_duplicate_title_returns_400(self):
         Course.objects.create(title="Advanced Django", category=self.category)
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
 
         response = self.client.post(
             self.url, {"title": "Advanced Django", "category": self.category.id}
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_forbidden_for_non_admin(self):
+        self.client.force_authenticate(user=self.user)
+
+        response = self.client.post(
+            self.url, {"title": "Advanced Django", "category": self.category.id}
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(Course.objects.filter(title="Advanced Django").exists())
 
 
 class CourseDetailViewTests(APITestCase):

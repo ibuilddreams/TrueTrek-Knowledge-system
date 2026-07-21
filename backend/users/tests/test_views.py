@@ -136,3 +136,19 @@ class StudentListCreateViewTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_create_forbidden_for_teacher(self):
+        self.client.force_authenticate(user=self.teacher)
+
+        response = self.client.post(self.url, self._valid_student_payload())
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(UserModel.objects.filter(username="brandnewstudent").exists())
+
+    def test_create_forbidden_for_student(self):
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.post(self.url, self._valid_student_payload())
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(UserModel.objects.filter(username="brandnewstudent").exists())
