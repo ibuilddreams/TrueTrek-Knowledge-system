@@ -212,6 +212,7 @@ export default function TeacherPortal({ aggregateScore = 100 }) {
   const [facultyPasscode, setFacultyPasscode] = useState('');
   const [loginError, setLoginError] = useState('');
   const [successAnimation, setSuccessAnimation] = useState(false);
+  const [isLoggingOut, setIsLoggingOut] = useState(false);
   
   // UI Tabs
   const [activeTab, setActiveTab] = useState('dashboard');
@@ -310,11 +311,12 @@ export default function TeacherPortal({ aggregateScore = 100 }) {
   };
 
   const handleFacultyLogout = async () => {
+    setIsLoggingOut(true);
     await logout();
     setFacultyEmail('');
     setFacultyPasscode('');
     toastSuccess('Logged out.');
-    router.push(ROUTES.LOGIN);
+    router.replace(ROUTES.LOGIN);
   };
 
   const handleBypassOrPreview = async (previewRole) => {
@@ -497,6 +499,10 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
       setIsGeneratingAiReport(false);
     }
   };
+
+  if (isLoggingOut) {
+    return null;
+  }
 
   if (!isFacultyLoggedIn) {
     return (

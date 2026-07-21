@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Lock, LogIn } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -19,11 +19,21 @@ const ROLE_REDIRECTS = {
 
 export default function LoginForm() {
   const router = useRouter();
-  const { login } = useAuth();
+  const { login, status, isAuthenticated, role } = useAuth();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      router.replace(ROLE_REDIRECTS[role] || ROUTES.HOME);
+    }
+  }, [isAuthenticated, role, router]);
+
+  if (status !== "anonymous") {
+    return null;
+  }
 
   const handleSubmit = async (e) => {
     e.preventDefault();
