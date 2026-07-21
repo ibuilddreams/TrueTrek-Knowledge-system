@@ -1,0 +1,33 @@
+{
+  "name": "frontend",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@google/genai": "^2.12.0",
+    "@reduxjs/toolkit": "^2.12.0",
+    "canvas-confetti": "^1.9.4",
+    "lucide-react": "^1.24.0",
+    "motion": "^12.42.2",
+    "next": "^16.2.10",
+    "react": "^19.2.7",
+    "react-dom": "^19.2.7",
+    "react-redux": "^9.3.0",
+    "recharts": "^3.9.2",
+    "sonner": "^2.0.7",
+    "sonnet": "^0.0.1"
+  },
+  "devDependencies": {
+    "@eslint/eslintrc": "^3",
+    "@tailwindcss/postcss": "^4.3.2",
+    "eslint": "^9",
+    "eslint-config-next": "15.1.0",
+    "postcss": "^8",
+    "tailwindcss": "^4.3.2"
+  }
+}
