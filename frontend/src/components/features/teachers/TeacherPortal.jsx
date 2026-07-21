@@ -202,8 +202,8 @@ export default function TeacherPortal({ aggregateScore = 100 }) {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [quickViewStudent, setQuickViewStudent] = useState(null);
 
-  const { loginFaculty, logout, isFacultySession, isAuthenticated, role } = useAuth();
-  const isFacultyLoggedIn = isAuthenticated && role === AUTH_ROLES.FACULTY;
+  const { loginFaculty, logout, isFacultySession, isAuthenticated, isAdmin, role } = useAuth();
+  const isFacultyLoggedIn = isAuthenticated && (role === AUTH_ROLES.FACULTY || isAdmin);
   const [facultyEmail, setFacultyEmail] = useState('');
   const [facultyPasscode, setFacultyPasscode] = useState('');
   const [loginError, setLoginError] = useState('');
