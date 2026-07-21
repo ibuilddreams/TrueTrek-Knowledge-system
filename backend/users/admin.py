@@ -65,6 +65,7 @@ class CustomUserAdmin(UserAdmin):
                     "email",
                     "first_name",
                     "last_name",
+                    "gender",
                     "role",
                     "password1",
                     "password2",

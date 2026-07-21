@@ -4,6 +4,8 @@ from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
+from .models import UserProfile
+
 UserModel = get_user_model()
 
 
@@ -124,3 +126,53 @@ class StudentSerializer(serializers.ModelSerializer):
             "role",
         ]
         read_only_fields = fields
+
+
+class UserProfileSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = [
+            "avatar",
+            "bio",
+            "date_of_birth",
+            "phone_number",
+            "address",
+            "city",
+            "country",
+            "website",
+        ]
+        read_only_fields = fields
+
+
+class ProfileSerializer(serializers.ModelSerializer):
+    full_name = serializers.CharField(source="name", read_only=True)
+    profile = serializers.SerializerMethodField()
+
+    class Meta:
+        model = UserModel
+        fields = [
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "full_name",
+            "email",
+            "gender",
+            "role",
+            "account_status",
+            "is_verified",
+            "profile",
+        ]
+        read_only_fields = fields
+
+    def get_profile(self, instance):
+        profile = getattr(instance, "profile", None)
+        if profile is None:
+            return None
+        return UserProfileSerializer(profile).data
+
+    def to_representation(self, instance):
+        data = super().to_representation(instance)
+        if data.get("profile") is None:
+            data.pop("profile", None)
+        return data

@@ -7,7 +7,12 @@ from common.response import success_response
 from rest_framework.permissions import IsAuthenticated
 
 from .permissions import IsAdmin
-from .serializers import CreateStudentSerializer, CustomTokenObtainPairSerializer, StudentSerializer
+from .serializers import (
+    CreateStudentSerializer,
+    CustomTokenObtainPairSerializer,
+    ProfileSerializer,
+    StudentSerializer,
+)
 
 UserModel = get_user_model()
 
@@ -63,3 +68,17 @@ class StudentListCreateView(generics.ListCreateAPIView):
             message="Student created successfully",
             status_code=201,
         )
+
+
+class ProfileView(generics.RetrieveAPIView):
+    """Returns the profile information of the currently logged-in user."""
+
+    serializer_class = ProfileSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_object(self):
+        return self.request.user
+
+    def retrieve(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.get_object())
+        return success_response(serializer.data, message="Profile fetched successfully")
