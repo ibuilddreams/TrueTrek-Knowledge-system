@@ -40,6 +40,7 @@ INSTALLED_APPS = [
     'reports',
     'search',
     'uploads',
+    'audit_logs',
 ]
 
 MIDDLEWARE = [

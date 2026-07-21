@@ -42,6 +42,11 @@ class CustomUser(AbstractUser):
         FEMALE = "FEMALE", _("Female")
         OTHER = "OTHER", _("Other")
 
+    class AccountStatus(models.TextChoices):
+        ACTIVE = "ACTIVE", _("Active")
+        SUSPENDED = "SUSPENDED", _("Suspended")
+        DEACTIVATED = "DEACTIVATED", _("Deactivated")
+
     email = models.EmailField(_("email address"), unique=True)
     name = models.CharField(max_length=255, blank=True)
 
@@ -56,6 +61,14 @@ class CustomUser(AbstractUser):
         choices=Gender.choices,
         blank=True,
     )
+
+    account_status = models.CharField(
+        max_length=20,
+        choices=AccountStatus.choices,
+        default=AccountStatus.ACTIVE,
+    )
+    is_verified = models.BooleanField(default=False)
+    last_login_ip = models.GenericIPAddressField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
@@ -88,3 +101,26 @@ class CustomUser(AbstractUser):
     @property
     def is_student(self):
         return self.role == self.Roles.STUDENT
+
+
+class UserProfile(models.Model):
+    user = models.OneToOneField(
+        CustomUser, on_delete=models.CASCADE, related_name="profile"
+    )
+    avatar = models.ImageField(upload_to="avatars/", null=True, blank=True)
+    bio = models.TextField(blank=True)
+    date_of_birth = models.DateField(null=True, blank=True)
+    phone_number = models.CharField(max_length=20, blank=True)
+    address = models.CharField(max_length=255, blank=True)
+    city = models.CharField(max_length=100, blank=True)
+    country = models.CharField(max_length=100, blank=True)
+    website = models.URLField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+
+    class Meta:
+        verbose_name = _("User Profile")
+        verbose_name_plural = _("User Profiles")
+
+    def __str__(self):
+        return f"Profile of {self.user.username}"
