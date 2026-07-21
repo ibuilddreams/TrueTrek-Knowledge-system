@@ -10,6 +10,7 @@ import { toastError, toastSuccess } from "@/lib/toast";
 import AuthGateCard from "@/components/ui/AuthGateCard";
 import AuthField from "@/components/ui/AuthField";
 import AuthSubmitButton from "@/components/ui/AuthSubmitButton";
+import Loader from "@/components/ui/Loader";
 
 const ROLE_REDIRECTS = {
   [AUTH_ROLES.ADMIN]: ROUTES.DASHBOARD,
@@ -32,7 +33,7 @@ export default function LoginForm() {
   }, [isAuthenticated, role, router]);
 
   if (status !== "anonymous") {
-    return null;
+    return <Loader label="Checking Session..." />;
   }
 
   const handleSubmit = async (e) => {

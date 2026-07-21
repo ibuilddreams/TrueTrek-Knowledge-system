@@ -22,6 +22,7 @@ import {
 } from 'recharts';
 import StatCard from '@/components/ui/StatCard';
 import CloseButton from '@/components/ui/CloseButton';
+import Loader from '@/components/ui/Loader';
 
 const INITIAL_STUDENTS = [
   {
@@ -501,7 +502,7 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
   };
 
   if (isLoggingOut) {
-    return null;
+    return <Loader label="Signing Out..." />;
   }
 
   if (!isFacultyLoggedIn) {
