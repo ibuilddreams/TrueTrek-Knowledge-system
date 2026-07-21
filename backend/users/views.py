@@ -32,7 +32,13 @@ class StudentListCreateView(generics.ListCreateAPIView):
 
     def get_permissions(self):
         if self.request.method == "POST":
-            return [IsAdmin()]
+            permission = IsAdmin()
+            permission.message = (
+                "You don't have permission to perform this action. "
+                "This action can be performed only by admin. "
+                "Students can be created only by admin."
+            )
+            return [permission]
         return super().get_permissions()
 
     def get_serializer_class(self):
