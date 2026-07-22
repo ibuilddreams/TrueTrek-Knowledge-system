@@ -205,7 +205,7 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="name", required=False, allow_blank=False)
-    gender = serializers.ChoiceField(choices=UserModel.Gender.choices, required=False)
+    gender = serializers.ChoiceField(choices=UserModel.Gender.choices, required=False, allow_null=True)
     profile = UserProfileWriteSerializer(required=False)
 
     class Meta:
@@ -222,6 +222,8 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
         profile_data = validated_data.pop("profile", None)
 
         for attr, value in validated_data.items():
+            if value is None:
+                continue
             setattr(instance, attr, value)
         instance.save()
 
