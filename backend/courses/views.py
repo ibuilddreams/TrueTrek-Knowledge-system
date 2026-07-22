@@ -2,7 +2,7 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
 from common.pagination import Pagination
-from common.response import success_response
+from common.response import error_response, success_response
 from users.permissions import IsAdmin
 
 from .models import Category, Course
@@ -15,7 +15,7 @@ from .serializers import (
 
 
 class CategoryListCreateView(generics.ListCreateAPIView):
-    queryset = Category.objects.all()
+    queryset = Category.objects.prefetch_related("courses__tags", "courses__instructors__instructor")
     serializer_class = CategorySerializer
     permission_classes = [IsAuthenticated]
     pagination_class = Pagination
@@ -42,7 +42,13 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Category.objects.all()
     serializer_class = CategorySerializer
     permission_classes = [IsAuthenticated]
-    lookup_field = "slug"
+
+    def get_permissions(self):
+        if self.request.method == "DELETE":
+            permission = IsAdmin()
+            permission.message = "You do not have permission to perform this action. Only admin can perform this action."
+            return [permission]
+        return super().get_permissions()
 
     def retrieve(self, request, *args, **kwargs):
         category = self.get_object()
@@ -64,7 +70,7 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 
 class CourseListCreateView(generics.ListCreateAPIView):
-    queryset = Course.objects.select_related("category").all()
+    queryset = Course.objects.select_related("category").prefetch_related("tags", "instructors__instructor")
     permission_classes = [IsAuthenticated]
     pagination_class = Pagination
 
@@ -99,7 +105,13 @@ class CourseListCreateView(generics.ListCreateAPIView):
 class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Course.objects.select_related("category").all()
     permission_classes = [IsAuthenticated]
-    lookup_field = "slug"
+
+    def get_permissions(self):
+        if self.request.method in ("PUT", "PATCH", "DELETE"):
+            permission = IsAdmin()
+            permission.message = "You do not have permission to perform this action. Only admin can perform this action."
+            return [permission]
+        return super().get_permissions()
 
     def get_serializer_class(self):
         if self.request.method in ("PUT", "PATCH"):
@@ -122,6 +134,9 @@ class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):
         )
 
     def destroy(self, request, *args, **kwargs):
-        course = self.get_object()
+        try:
+            course = self.get_queryset().get(pk=kwargs["pk"])
+        except Course.DoesNotExist:
+            return error_response(message="Course with the given id does not exist.", status_code=404)
         course.delete()
         return success_response(None, message="Course deleted successfully")

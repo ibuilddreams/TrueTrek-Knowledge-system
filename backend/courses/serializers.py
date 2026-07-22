@@ -1,37 +1,105 @@
+from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
-from .models import Category, Course
+from .models import Category, Course, CourseInstructor, Tag
 
+UserModel = get_user_model()
 
-class CategorySerializer(serializers.ModelSerializer):
+class SimpleCourseSerializer(serializers.ModelSerializer):
     class Meta:
-        model = Category
-        fields = ["id", "name", "slug", "description", "created_at", "updated_at"]
-        read_only_fields = ["id", "slug", "created_at", "updated_at"]
+        model = Course
+        fields = ["id", "title", "slug"]
+        read_only_fields = fields
+
+class TagSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ["id", "name", "slug"]
+        read_only_fields = fields
 
 
-class CourseListSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(read_only=True)
+class CourseInstructorSerializer(serializers.ModelSerializer):
+    id = serializers.IntegerField(source="instructor.id", read_only=True)
+    name = serializers.CharField(source="instructor.name", read_only=True)
+    email = serializers.EmailField(source="instructor.email", read_only=True)
+
+    class Meta:
+        model = CourseInstructor
+        fields = ["id", "name", "email", "is_lead"]
+        read_only_fields = fields
+
+
+class CategoryCourseSerializer(serializers.ModelSerializer):
+    tags = TagSerializer(many=True, read_only=True)
+    instructors = CourseInstructorSerializer(many=True, read_only=True)
 
     class Meta:
         model = Course
-        fields = ["id", "title", "slug", "category", "status", "created_at", "updated_at"]
+        fields = ["id", "title", "slug", "status", "tags", "instructors"]
+        read_only_fields = fields
+
+
+class CategorySerializer(serializers.ModelSerializer):
+    courses = CategoryCourseSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Category
+        fields = ["id", "name", "slug", "description", "created_at", "updated_at", "courses"]
+        read_only_fields = ["id", "slug", "created_at", "updated_at"]
+
+
+class CourseCategorySerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Category
+        fields = ["id", "name", "slug", "description"]
+        read_only_fields = fields
+
+
+class CourseListSerializer(serializers.ModelSerializer):
+    category = CourseCategorySerializer(read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    instructors = CourseInstructorSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Course
+        fields = ["id", "title", "slug", "category", "status", "tags", "instructors", "created_at", "updated_at"]
         read_only_fields = fields
 
 
 class CourseDetailSerializer(serializers.ModelSerializer):
-    category = CategorySerializer(read_only=True)
+    category = CourseCategorySerializer(read_only=True)
+    tags = TagSerializer(many=True, read_only=True)
+    instructors = CourseInstructorSerializer(many=True, read_only=True)
 
     class Meta:
         model = Course
-        fields = ["id", "title", "slug", "description", "category", "status", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "title",
+            "slug",
+            "description",
+            "category",
+            "status",
+            "tags",
+            "instructors",
+        ]
         read_only_fields = fields
 
 
+class CourseInstructorWriteSerializer(serializers.Serializer):
+    instructor = serializers.PrimaryKeyRelatedField(
+        queryset=UserModel.objects.filter(role=UserModel.Roles.TEACHER)
+    )
+    is_lead = serializers.BooleanField(default=False)
+
+
 class CourseWriteSerializer(serializers.ModelSerializer):
+    tags = serializers.PrimaryKeyRelatedField(queryset=Tag.objects.all(), many=True, required=False)
+    instructors = CourseInstructorWriteSerializer(many=True, required=False)
+
     class Meta:
         model = Course
-        fields = ["id", "title", "description", "category", "status"]
+        fields = ["id", "title", "description", "category", "status", "tags", "instructors"]
         read_only_fields = ["id"]
 
     def validate_title(self, value):
@@ -41,3 +109,32 @@ class CourseWriteSerializer(serializers.ModelSerializer):
         if queryset.exists():
             raise serializers.ValidationError("A course with this title already exists.")
         return value
+
+    def create(self, validated_data):
+        tags = validated_data.pop("tags", [])
+        instructors = validated_data.pop("instructors", [])
+
+        course = Course.objects.create(**validated_data)
+        course.tags.set(tags)
+        for entry in instructors:
+            CourseInstructor.objects.create(course=course, **entry)
+
+        return course
+
+    def update(self, instance, validated_data):
+        tags = validated_data.pop("tags", None)
+        instructors = validated_data.pop("instructors", None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if tags is not None:
+            instance.tags.set(tags)
+
+        if instructors is not None:
+            instance.instructors.all().delete()
+            for entry in instructors:
+                CourseInstructor.objects.create(course=instance, **entry)
+
+        return instance
