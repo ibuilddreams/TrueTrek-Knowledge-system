@@ -2,7 +2,20 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Camera, Loader2, Save, User, X } from "lucide-react";
+import { motion } from "motion/react";
+import {
+  BadgeCheck,
+  Calendar,
+  Camera,
+  ChevronDown,
+  Loader2,
+  Mail,
+  Phone,
+  Save,
+  User,
+  VenusAndMars,
+  X,
+} from "lucide-react";
 import { getProfile, updateProfile } from "@/services/profileService";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { ROUTES } from "@/constants/routes";
@@ -59,6 +72,7 @@ export default function ProfileForm() {
   const [errors, setErrors] = useState({});
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [initialAvatarPreview, setInitialAvatarPreview] = useState(null);
+  const [roleLabel, setRoleLabel] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cropSource, setCropSource] = useState(null);
@@ -84,6 +98,7 @@ export default function ProfileForm() {
         setInitialForm(mapped);
         setAvatarPreview(profile?.profile?.avatar || null);
         setInitialAvatarPreview(profile?.profile?.avatar || null);
+        setRoleLabel(profile?.role || "");
       } catch (error) {
         if (!isMounted) return;
         toastError(error?.message || "Unable to load your profile.");
@@ -171,6 +186,7 @@ export default function ProfileForm() {
       setForm(mapped);
       setInitialForm(mapped);
       setInitialAvatarPreview(avatarPreview);
+      setRoleLabel(profile?.role || roleLabel);
       updateUserName(mapped.fullName);
       toastSuccess("Profile updated successfully.");
     } catch (error) {
@@ -198,13 +214,18 @@ export default function ProfileForm() {
         </p>
       </div>
 
-      <div className="bg-white border border-stone-200/95 rounded-2xl shadow-xl overflow-hidden relative">
+      <motion.div
+        initial={{ opacity: 0, y: 14 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.35, ease: "easeOut" }}
+        className="bg-white border border-stone-200/95 rounded-2xl shadow-xl overflow-hidden relative"
+      >
         <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-600 to-amber-800" />
 
         <form onSubmit={handleSubmit} className="p-6 sm:p-8">
-          <div className="flex flex-col items-center sm:items-start gap-3 mb-8 pb-8 border-b border-stone-100">
-            <div className="relative">
-              <div className="w-24 h-24 rounded-full bg-stone-100 border border-stone-200 flex items-center justify-center overflow-hidden shadow-inner">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8 pb-8 border-b border-stone-100">
+            <div className="relative shrink-0 mx-auto sm:mx-0">
+              <div className="w-28 h-28 rounded-full bg-stone-100 ring-4 ring-amber-500/10 border border-stone-200 flex items-center justify-center overflow-hidden shadow-inner">
                 {avatarPreview ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -213,17 +234,17 @@ export default function ProfileForm() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <User className="w-10 h-10 text-stone-400" />
+                  <User className="w-11 h-11 text-stone-400" />
                 )}
               </div>
               <button
                 type="button"
                 onClick={handleAvatarClick}
-                className="absolute bottom-0 right-0 w-8 h-8 rounded-full bg-stone-900 hover:bg-stone-800 text-white flex items-center justify-center shadow-md transition focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
+                className="absolute bottom-0.5 right-0.5 w-9 h-9 rounded-full bg-stone-900 hover:bg-stone-800 hover:scale-105 text-white flex items-center justify-center shadow-lg ring-4 ring-white transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
                 title="Change profile photo"
                 aria-label="Change profile photo"
               >
-                <Camera className="w-3.5 h-3.5" />
+                <Camera className="w-4 h-4" />
               </button>
               <input
                 ref={fileInputRef}
@@ -233,19 +254,45 @@ export default function ProfileForm() {
                 className="hidden"
               />
             </div>
-            <button
-              type="button"
-              onClick={handleAvatarClick}
-              className="text-[11px] font-mono font-semibold text-stone-500 hover:text-amber-800 uppercase tracking-wider transition"
-            >
-              Change Photo
-            </button>
+
+            <div className="flex-1 text-center sm:text-left">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-center sm:justify-start">
+                <h2 className="text-xl font-serif font-bold text-stone-900 truncate">
+                  {form.fullName || "Your Name"}
+                </h2>
+                {roleLabel && (
+                  <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200/60 rounded-full px-2.5 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider w-fit mx-auto sm:mx-0">
+                    <BadgeCheck className="w-3 h-3" />
+                    {roleLabel}
+                  </span>
+                )}
+              </div>
+              <p className="text-xs text-stone-400 font-mono mt-1 truncate">
+                {form.email}
+              </p>
+              <button
+                type="button"
+                onClick={handleAvatarClick}
+                className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold text-stone-500 hover:text-amber-800 uppercase tracking-wider transition bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-lg px-3 py-1.5"
+              >
+                <Camera className="w-3 h-3" />
+                Change Photo
+              </button>
+            </div>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-amber-600 font-bold shrink-0">
+              Basic Information
+            </span>
+            <div className="flex-1 h-px bg-stone-100" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
             <AuthField
               id="input-profile-full-name"
               label="Full Name"
+              icon={User}
               required
               autoComplete="name"
               value={form.fullName}
@@ -257,17 +304,28 @@ export default function ProfileForm() {
               id="input-profile-email"
               label="Email Address"
               type="email"
+              icon={Mail}
               required
               autoComplete="email"
               value={form.email}
               onChange={handleFieldChange("email")}
               error={errors.email}
             />
+          </div>
 
+          <div className="flex items-center gap-3 mb-4">
+            <span className="text-[10px] font-mono uppercase tracking-widest text-amber-600 font-bold shrink-0">
+              Additional Details
+            </span>
+            <div className="flex-1 h-px bg-stone-100" />
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
             <AuthField
               id="input-profile-phone"
               label="Phone Number"
               type="tel"
+              icon={Phone}
               autoComplete="tel"
               value={form.phone}
               onChange={handleFieldChange("phone")}
@@ -280,25 +338,30 @@ export default function ProfileForm() {
               >
                 Gender
               </label>
-              <select
-                id="input-profile-gender"
-                value={form.gender}
-                onChange={handleFieldChange("gender")}
-                className="w-full p-3 rounded-lg border border-stone-200 text-xs font-mono bg-stone-50 text-stone-800 focus:outline-none focus:border-amber-600 transition cursor-pointer"
-              >
-                <option value="">Select Gender</option>
-                {GENDER_OPTIONS.map((option) => (
-                  <option key={option.value} value={option.value}>
-                    {option.label}
-                  </option>
-                ))}
-              </select>
+              <div className="relative">
+                <VenusAndMars className="w-3.5 h-3.5 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+                <select
+                  id="input-profile-gender"
+                  value={form.gender}
+                  onChange={handleFieldChange("gender")}
+                  className="w-full p-3 pl-10 pr-9 rounded-lg border border-stone-200 text-xs font-mono bg-stone-50 text-stone-800 focus:outline-none focus:bg-white focus:border-amber-600 transition cursor-pointer appearance-none"
+                >
+                  <option value="">Select Gender</option>
+                  {GENDER_OPTIONS.map((option) => (
+                    <option key={option.value} value={option.value}>
+                      {option.label}
+                    </option>
+                  ))}
+                </select>
+                <ChevronDown className="w-3.5 h-3.5 text-stone-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
 
             <AuthField
               id="input-profile-dob"
               label="Date of Birth"
               type="date"
+              icon={Calendar}
               value={form.dob}
               onChange={handleFieldChange("dob")}
             />
@@ -334,7 +397,7 @@ export default function ProfileForm() {
             </button>
           </div>
         </form>
-      </div>
+      </motion.div>
 
       <AvatarCropModal
         isOpen={Boolean(cropSource)}
