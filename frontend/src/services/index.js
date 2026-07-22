@@ -9,4 +9,7 @@ export {
   fetchCurrentUser,
   getStoredBackendUser,
   clearBackendSession,
+  forgotPassword,
+  resetPassword,
 } from "./authService";
+export { getProfile, updateProfile } from "./profileService";

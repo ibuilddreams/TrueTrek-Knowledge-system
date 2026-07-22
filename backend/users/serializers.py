@@ -154,6 +154,20 @@ class UserProfileSerializer(serializers.ModelSerializer):
         return build_absolute_image_url(self.context.get("request"), instance.avatar)
 
 
+class UserProfileWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserProfile
+        fields = [
+            "bio",
+            "date_of_birth",
+            "phone_number",
+            "address",
+            "city",
+            "country",
+            "website",
+        ]
+
+
 class ProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="name", read_only=True)
     role = serializers.CharField(source="get_role_display", read_only=True)
@@ -187,6 +201,40 @@ class ProfileSerializer(serializers.ModelSerializer):
         if data.get("profile") is None:
             data.pop("profile", None)
         return data
+
+
+class ProfileUpdateSerializer(serializers.ModelSerializer):
+    full_name = serializers.CharField(source="name", required=False, allow_blank=False)
+    gender = serializers.ChoiceField(choices=UserModel.Gender.choices, required=False)
+    profile = UserProfileWriteSerializer(required=False)
+
+    class Meta:
+        model = UserModel
+        fields = ["full_name", "email", "gender", "profile"]
+
+    def validate_email(self, value):
+        email = UserModel.objects.normalize_email(value)
+        if UserModel.objects.filter(email__iexact=email).exclude(pk=self.instance.pk).exists():
+            raise ValidationError("A user with this email already exists.")
+        return email
+
+    def update(self, instance, validated_data):
+        profile_data = validated_data.pop("profile", None)
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        if profile_data:
+            profile, _ = UserProfile.objects.get_or_create(user=instance)
+            for attr, value in profile_data.items():
+                setattr(profile, attr, value)
+            profile.save()
+
+        return instance
+
+    def to_representation(self, instance):
+        return ProfileSerializer(instance, context=self.context).data
 
 
 class ForgotPasswordSerializer(serializers.Serializer):

@@ -12,6 +12,7 @@ from .serializers import (
     CustomTokenObtainPairSerializer,
     ForgotPasswordSerializer,
     ProfileSerializer,
+    ProfileUpdateSerializer,
     ResetPasswordSerializer,
     StudentSerializer,
 )
@@ -73,18 +74,29 @@ class StudentListCreateView(generics.ListCreateAPIView):
         )
 
 
-class ProfileView(generics.RetrieveAPIView):
-    """Returns the profile information of the currently logged-in user."""
+class ProfileView(generics.RetrieveUpdateAPIView):
+    """Returns and updates the profile information of the currently logged-in user."""
 
-    serializer_class = ProfileSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
 
+    def get_serializer_class(self):
+        if self.request.method in ("PUT", "PATCH"):
+            return ProfileUpdateSerializer
+        return ProfileSerializer
+
     def retrieve(self, request, *args, **kwargs):
         serializer = self.get_serializer(self.get_object())
         return success_response(serializer.data, message="Profile fetched successfully")
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        serializer = self.get_serializer(self.get_object(), data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return success_response(serializer.data, message="Profile updated successfully")
 
 
 class ForgotPasswordView(generics.GenericAPIView):

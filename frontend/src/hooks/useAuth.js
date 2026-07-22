@@ -13,6 +13,7 @@ import {
   selectIsAuthenticated,
   selectIsFaculty,
   selectIsStudent,
+  setAuthUser,
 } from "@/store/slices/auth/authSlice";
 import {
   clearBackendSession,
@@ -111,6 +112,14 @@ export function useAuth() {
     }
   }, [dispatch]);
 
+  const updateUserName = useCallback(
+    (name) => {
+      if (!user) return;
+      dispatch(setAuthUser({ ...user, name }));
+    },
+    [dispatch, user]
+  );
+
   return {
     ...auth,
     user,
@@ -127,5 +136,6 @@ export function useAuth() {
     loginFaculty,
     logout,
     refreshSession,
+    updateUserName,
   };
 }

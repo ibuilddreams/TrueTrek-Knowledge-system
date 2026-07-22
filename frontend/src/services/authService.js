@@ -69,6 +69,23 @@ export async function loginWithCredentials({ email, password }) {
   return { user: publicUser };
 }
 
+export async function forgotPassword({ email }) {
+  const response = await backendClient.post("/auth/forgot-password/", {
+    email,
+  });
+  return response?.message;
+}
+
+export async function resetPassword({ uid, token, newPassword, confirmPassword }) {
+  const response = await backendClient.post("/auth/reset-password/", {
+    uid,
+    token,
+    new_password: newPassword,
+    confirm_password: confirmPassword,
+  });
+  return response?.message;
+}
+
 export function getStoredBackendUser() {
   const accessToken = getClientCookie(AUTH_COOKIE.ACCESS_TOKEN);
   const rawUser = getClientCookie(AUTH_COOKIE.USER);

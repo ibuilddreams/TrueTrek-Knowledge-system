@@ -1,5 +1,7 @@
 "use client";
 
+import { Loader2 } from "lucide-react";
+
 export default function AuthSubmitButton({
   id,
   label,
@@ -14,16 +16,26 @@ export default function AuthSubmitButton({
       id={id}
       type="submit"
       disabled={isSubmitting}
+      aria-busy={isSubmitting}
       className={[
-        "w-full bg-stone-900 hover:bg-stone-800 text-white font-semibold py-3 px-4 rounded-lg text-xs uppercase tracking-wider transition",
+        "w-full bg-stone-900 hover:bg-stone-800 text-white font-semibold py-3 px-4 rounded-lg text-xs uppercase tracking-wider transition disabled:cursor-not-allowed",
         className,
       ]
         .filter(Boolean)
         .join(" ")}
       {...rest}
     >
-      {isSubmitting && loadingLabel ? loadingLabel : label}
-      {Icon && <Icon className="w-3.5 h-3.5" />}
+      {isSubmitting ? (
+        <>
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          {loadingLabel || label}
+        </>
+      ) : (
+        <>
+          {label}
+          {Icon && <Icon className="w-3.5 h-3.5" />}
+        </>
+      )}
     </button>
   );
 }
