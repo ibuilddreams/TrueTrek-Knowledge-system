@@ -237,15 +237,6 @@ export default function ProfileForm() {
                   <User className="w-11 h-11 text-stone-400" />
                 )}
               </div>
-              <button
-                type="button"
-                onClick={handleAvatarClick}
-                className="absolute bottom-0.5 right-0.5 w-9 h-9 rounded-full bg-stone-900 hover:bg-stone-800 hover:scale-105 text-white flex items-center justify-center shadow-lg ring-4 ring-white transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
-                title="Change profile photo"
-                aria-label="Change profile photo"
-              >
-                <Camera className="w-4 h-4" />
-              </button>
               <input
                 ref={fileInputRef}
                 type="file"
