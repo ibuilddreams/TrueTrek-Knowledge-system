@@ -32,7 +32,7 @@ export default function LoginForm() {
     }
   }, [isAuthenticated, role, router]);
 
-  if (status !== "anonymous") {
+  if (status !== "anonymous" && !isSubmitting) {
     return <Loader label="Checking Session..." />;
   }
 
