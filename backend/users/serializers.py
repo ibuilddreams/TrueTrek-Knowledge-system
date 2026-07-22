@@ -1,8 +1,13 @@
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
+from django.contrib.auth.tokens import default_token_generator
+from django.utils.encoding import force_str
+from django.utils.http import urlsafe_base64_decode
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+
+from common.image import build_absolute_image_url
 
 from .models import UserProfile
 
@@ -129,6 +134,8 @@ class StudentSerializer(serializers.ModelSerializer):
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
+    avatar = serializers.SerializerMethodField()
+
     class Meta:
         model = UserProfile
         fields = [
@@ -143,9 +150,13 @@ class UserProfileSerializer(serializers.ModelSerializer):
         ]
         read_only_fields = fields
 
+    def get_avatar(self, instance):
+        return build_absolute_image_url(self.context.get("request"), instance.avatar)
+
 
 class ProfileSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="name", read_only=True)
+    role = serializers.CharField(source="get_role_display", read_only=True)
     profile = serializers.SerializerMethodField()
 
     class Meta:
@@ -169,10 +180,43 @@ class ProfileSerializer(serializers.ModelSerializer):
         profile = getattr(instance, "profile", None)
         if profile is None:
             return None
-        return UserProfileSerializer(profile).data
+        return UserProfileSerializer(profile, context=self.context).data
 
     def to_representation(self, instance):
         data = super().to_representation(instance)
         if data.get("profile") is None:
             data.pop("profile", None)
         return data
+
+
+class ForgotPasswordSerializer(serializers.Serializer):
+    email = serializers.EmailField()
+
+
+class ResetPasswordSerializer(serializers.Serializer):
+    uid = serializers.CharField()
+    token = serializers.CharField()
+    new_password = serializers.CharField(write_only=True, validators=[validate_password])
+    confirm_password = serializers.CharField(write_only=True)
+
+    def validate(self, attrs):
+        if attrs["new_password"] != attrs["confirm_password"]:
+            raise ValidationError({"confirm_password": "Passwords do not match."})
+
+        try:
+            user_id = force_str(urlsafe_base64_decode(attrs["uid"]))
+            user = UserModel.objects.get(pk=user_id)
+        except (TypeError, ValueError, OverflowError, UserModel.DoesNotExist):
+            raise ValidationError({"uid": "This password reset link is invalid or has expired."})
+
+        if not default_token_generator.check_token(user, attrs["token"]):
+            raise ValidationError({"token": "This password reset link is invalid or has expired."})
+
+        attrs["user"] = user
+        return attrs
+
+    def save(self):
+        user = self.validated_data["user"]
+        user.set_password(self.validated_data["new_password"])
+        user.save(update_fields=["password"])
+        return user

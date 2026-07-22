@@ -4,15 +4,18 @@ from rest_framework_simplejwt.views import TokenObtainPairView
 
 from common.pagination import Pagination
 from common.response import success_response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
 from .permissions import IsAdmin
 from .serializers import (
     CreateStudentSerializer,
     CustomTokenObtainPairSerializer,
+    ForgotPasswordSerializer,
     ProfileSerializer,
+    ResetPasswordSerializer,
     StudentSerializer,
 )
+from .services import send_password_reset_email
 
 UserModel = get_user_model()
 
@@ -82,3 +85,32 @@ class ProfileView(generics.RetrieveAPIView):
     def retrieve(self, request, *args, **kwargs):
         serializer = self.get_serializer(self.get_object())
         return success_response(serializer.data, message="Profile fetched successfully")
+
+
+class ForgotPasswordView(generics.GenericAPIView):
+    """Sends a password reset link to the given email if an account exists."""
+
+    serializer_class = ForgotPasswordSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        send_password_reset_email(serializer.validated_data["email"])
+        return success_response(
+            None,
+            message="If an account exists with this email address, a password reset link has been sent.",
+        )
+
+
+class ResetPasswordView(generics.GenericAPIView):
+    """Resets a user's password given a valid uid/token pair."""
+
+    serializer_class = ResetPasswordSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        serializer.save()
+        return success_response(None, message="Your password has been reset successfully.")
