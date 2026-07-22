@@ -20,6 +20,13 @@ class CategoryListCreateView(generics.ListCreateAPIView):
     permission_classes = [IsAuthenticated]
     pagination_class = Pagination
 
+    def get_permissions(self):
+        if self.request.method == "POST":
+            permission = IsAdmin()
+            permission.message = "You do not have permission to perform this action. Only admin can perform this action."
+            return [permission]
+        return super().get_permissions()
+
     def list(self, request, *args, **kwargs):
         categories = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(categories)
@@ -44,7 +51,7 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
-        if self.request.method == "DELETE":
+        if self.request.method in ("PUT", "PATCH", "DELETE"):
             permission = IsAdmin()
             permission.message = "You do not have permission to perform this action. Only admin can perform this action."
             return [permission]
