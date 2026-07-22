@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { motion } from "motion/react";
 import {
+  AtSign,
   BadgeCheck,
   Calendar,
   Camera,
@@ -73,6 +74,7 @@ export default function ProfileForm() {
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [initialAvatarPreview, setInitialAvatarPreview] = useState(null);
   const [roleLabel, setRoleLabel] = useState("");
+  const [username, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [cropSource, setCropSource] = useState(null);
@@ -99,6 +101,7 @@ export default function ProfileForm() {
         setAvatarPreview(profile?.profile?.avatar || null);
         setInitialAvatarPreview(profile?.profile?.avatar || null);
         setRoleLabel(profile?.role || "");
+        setUsername(profile?.username || "");
       } catch (error) {
         if (!isMounted) return;
         toastError(error?.message || "Unable to load your profile.");
@@ -279,7 +282,23 @@ export default function ProfileForm() {
             <div className="flex-1 h-px bg-stone-100" />
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-5 mb-8">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
+            <div>
+              <AuthField
+                id="input-profile-username"
+                label="Username"
+                icon={AtSign}
+                readOnly
+                tabIndex={-1}
+                value={username}
+                onChange={() => {}}
+                inputClassName="w-full p-3 pl-10 rounded-lg border border-stone-200 text-xs font-mono bg-stone-100 text-stone-500 cursor-not-allowed focus:outline-none"
+              />
+              <p className="text-[10px] text-stone-400 font-light mt-1.5">
+                Username cannot be changed.
+              </p>
+            </div>
+
             <AuthField
               id="input-profile-full-name"
               label="Full Name"
