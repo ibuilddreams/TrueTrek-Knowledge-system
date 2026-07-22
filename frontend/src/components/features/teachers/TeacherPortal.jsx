@@ -23,6 +23,7 @@ import {
 import StatCard from '@/components/ui/StatCard';
 import CloseButton from '@/components/ui/CloseButton';
 import Loader from '@/components/ui/Loader';
+import AccountMenu from '@/components/ui/AccountMenu';
 import MarkdownMiniRenderer from '@/components/ui/MarkdownMiniRenderer';
 
 const INITIAL_STUDENTS = [
@@ -664,16 +665,6 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
         {/* Actions bar for Portal */}
         <div className="mt-4 md:mt-0 flex gap-3">
           <button
-            onClick={handleFacultyLogout}
-            className="px-4 py-2.5 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider hover:scale-[1.01] transition-all flex items-center gap-2 border border-stone-200 shadow-sm"
-            title="Log out of the Faculty administrative terminal workspace"
-            aria-label="Log out of the Faculty administrative terminal workspace"
-          >
-            <Lock className="w-4 h-4 text-stone-400" />
-            SIGN OUT
-          </button>
-          
-          <button
             onClick={handleOpenRegister}
             className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:scale-[1.01] transition-all flex items-center gap-2"
             title="Add and configure a new scholar-athlete registration profile"
@@ -682,6 +673,11 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
             <Plus className="w-4 h-4" />
             ENROLL STUDENT
           </button>
+
+          <AccountMenu
+            onProfile={() => router.push(ROUTES.PROFILE)}
+            onSignOut={handleFacultyLogout}
+          />
         </div>
       </div>
 

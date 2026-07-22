@@ -1,11 +1,16 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { Camera, Loader2, Save, User, X } from "lucide-react";
 import { getProfile, updateProfile } from "@/services/profileService";
 import { toastError, toastSuccess } from "@/lib/toast";
+import { ROUTES } from "@/constants/routes";
+import { useAuth } from "@/hooks/useAuth";
 import AuthField from "@/components/ui/AuthField";
 import Loader from "@/components/ui/Loader";
+import AvatarCropModal from "./AvatarCropModal";
+import DiscardChangesDialog from "./DiscardChangesDialog";
 
 const GENDER_OPTIONS = [
   { value: "MALE", label: "Male" },
@@ -45,6 +50,8 @@ function validateForm(form) {
 }
 
 export default function ProfileForm() {
+  const router = useRouter();
+  const { updateUserName } = useAuth();
   const fileInputRef = useRef(null);
 
   const [form, setForm] = useState(EMPTY_FORM);
@@ -54,6 +61,15 @@ export default function ProfileForm() {
   const [initialAvatarPreview, setInitialAvatarPreview] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [cropSource, setCropSource] = useState(null);
+  const [isDiscardDialogOpen, setIsDiscardDialogOpen] = useState(false);
+
+  const hasUnsavedChanges = useMemo(() => {
+    return (
+      JSON.stringify(form) !== JSON.stringify(initialForm) ||
+      avatarPreview !== initialAvatarPreview
+    );
+  }, [form, initialForm, avatarPreview, initialAvatarPreview]);
 
   useEffect(() => {
     let isMounted = true;
@@ -93,14 +109,42 @@ export default function ProfileForm() {
   const handleAvatarChange = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
-    setAvatarPreview(URL.createObjectURL(file));
+    setCropSource(URL.createObjectURL(file));
   };
 
-  const handleCancel = () => {
+  const closeCropModal = () => {
+    setCropSource(null);
+    if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleCropSave = ({ url }) => {
+    setAvatarPreview(url);
+    closeCropModal();
+  };
+
+  const resetFormToInitial = () => {
     setForm(initialForm);
     setErrors({});
     setAvatarPreview(initialAvatarPreview);
     if (fileInputRef.current) fileInputRef.current.value = "";
+  };
+
+  const handleCancel = () => {
+    if (hasUnsavedChanges) {
+      setIsDiscardDialogOpen(true);
+      return;
+    }
+    router.push(ROUTES.DASHBOARD);
+  };
+
+  const handleDiscardChanges = () => {
+    resetFormToInitial();
+    setIsDiscardDialogOpen(false);
+    router.push(ROUTES.DASHBOARD);
+  };
+
+  const handleContinueEditing = () => {
+    setIsDiscardDialogOpen(false);
   };
 
   const handleSubmit = async (event) => {
@@ -127,6 +171,7 @@ export default function ProfileForm() {
       setForm(mapped);
       setInitialForm(mapped);
       setInitialAvatarPreview(avatarPreview);
+      updateUserName(mapped.fullName);
       toastSuccess("Profile updated successfully.");
     } catch (error) {
       toastError(error?.message || "Unable to update your profile.");
@@ -290,6 +335,19 @@ export default function ProfileForm() {
           </div>
         </form>
       </div>
+
+      <AvatarCropModal
+        isOpen={Boolean(cropSource)}
+        imageSrc={cropSource}
+        onCancel={closeCropModal}
+        onSave={handleCropSave}
+      />
+
+      <DiscardChangesDialog
+        isOpen={isDiscardDialogOpen}
+        onDiscard={handleDiscardChanges}
+        onContinue={handleContinueEditing}
+      />
     </div>
   );
 }

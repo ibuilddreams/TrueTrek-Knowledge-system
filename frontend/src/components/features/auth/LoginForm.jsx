@@ -2,6 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { Lock, LogIn } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { AUTH_ROLES } from "@/constants/auth";
@@ -79,6 +80,15 @@ export default function LoginForm() {
           value={password}
           onChange={(e) => setPassword(e.target.value)}
         />
+
+        <div className="flex justify-end -mt-2">
+          <Link
+            href={ROUTES.FORGOT_PASSWORD}
+            className="text-[11px] font-mono font-semibold text-stone-500 hover:text-amber-800 uppercase tracking-wider transition"
+          >
+            Forgot Password?
+          </Link>
+        </div>
 
         {formError && (
           <p className="text-[11px] text-red-600 font-mono">{formError}</p>
