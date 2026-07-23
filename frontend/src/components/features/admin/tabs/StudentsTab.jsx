@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Edit3, Eye, UserPlus, UserX } from "lucide-react";
+import { Edit3, Eye, UserCheck, UserPlus, UserX } from "lucide-react";
 import { useAdminStudents } from "@/hooks/admin/useAdminStudents";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { deleteStudent } from "@/services/studentsService";
+import { deleteStudent, updateStudent } from "@/services/studentsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatDate } from "@/lib/adminFormatters";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -42,6 +42,8 @@ export default function StudentsTab() {
   const [editingStudent, setEditingStudent] = useState(null);
   const [deactivatingStudent, setDeactivatingStudent] = useState(null);
   const [isDeactivating, setIsDeactivating] = useState(false);
+  const [activatingStudent, setActivatingStudent] = useState(null);
+  const [isActivating, setIsActivating] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
@@ -91,6 +93,21 @@ export default function StudentsTab() {
     }
   };
 
+  const handleActivateConfirm = async () => {
+    if (!activatingStudent) return;
+    setIsActivating(true);
+    try {
+      await updateStudent(activatingStudent.id, { account_status: "ACTIVE" });
+      toastSuccess("Student activated successfully.");
+      setActivatingStudent(null);
+      loadStudents({ force: true });
+    } catch (error) {
+      toastError(getApiErrorMessage(error, "Unable to activate student."));
+    } finally {
+      setIsActivating(false);
+    }
+  };
+
   const columns = [
     {
       key: "name",
@@ -123,6 +140,12 @@ export default function StudentsTab() {
               icon: UserX,
               tone: "danger",
               onSelect: () => setDeactivatingStudent(student),
+            },
+            student.account_status !== "ACTIVE" && {
+              key: "activate",
+              label: "Activate",
+              icon: UserCheck,
+              onSelect: () => setActivatingStudent(student),
             },
           ]}
         />
@@ -189,6 +212,16 @@ export default function StudentsTab() {
         title="Deactivate Student"
         message={`Are you sure you want to deactivate "${deactivatingStudent?.full_name}"?`}
         confirmLabel="Deactivate"
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(activatingStudent)}
+        onClose={() => setActivatingStudent(null)}
+        onConfirm={handleActivateConfirm}
+        isConfirming={isActivating}
+        title="Activate Student"
+        message={`Are you sure you want to activate "${activatingStudent?.full_name}"?`}
+        confirmLabel="Activate"
       />
 
       <CreateStudentModal

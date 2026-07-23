@@ -1,11 +1,11 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Edit3, Eye, UserPlus, UserX } from "lucide-react";
+import { Edit3, Eye, UserCheck, UserPlus, UserX } from "lucide-react";
 import { useAdminTeachers } from "@/hooks/admin/useAdminTeachers";
 import { useAdminCourses } from "@/hooks/admin/useAdminCourses";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { deleteTeacher } from "@/services/teachersService";
+import { deleteTeacher, updateTeacher } from "@/services/teachersService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatDate } from "@/lib/adminFormatters";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -42,6 +42,8 @@ export default function TeachersTab() {
   const [editingTeacher, setEditingTeacher] = useState(null);
   const [deactivatingTeacher, setDeactivatingTeacher] = useState(null);
   const [isDeactivating, setIsDeactivating] = useState(false);
+  const [activatingTeacher, setActivatingTeacher] = useState(null);
+  const [isActivating, setIsActivating] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
@@ -93,6 +95,21 @@ export default function TeachersTab() {
     }
   };
 
+  const handleActivateConfirm = async () => {
+    if (!activatingTeacher) return;
+    setIsActivating(true);
+    try {
+      await updateTeacher(activatingTeacher.id, { account_status: "ACTIVE" });
+      toastSuccess("Teacher activated successfully.");
+      setActivatingTeacher(null);
+      loadTeachers({ force: true });
+    } catch (error) {
+      toastError(getApiErrorMessage(error, "Unable to activate teacher."));
+    } finally {
+      setIsActivating(false);
+    }
+  };
+
   const columns = [
     {
       key: "name",
@@ -125,6 +142,12 @@ export default function TeachersTab() {
               icon: UserX,
               tone: "danger",
               onSelect: () => setDeactivatingTeacher(teacher),
+            },
+            teacher.account_status !== "ACTIVE" && {
+              key: "activate",
+              label: "Activate",
+              icon: UserCheck,
+              onSelect: () => setActivatingTeacher(teacher),
             },
           ]}
         />
@@ -191,6 +214,16 @@ export default function TeachersTab() {
         title="Deactivate Teacher"
         message={`Are you sure you want to deactivate "${deactivatingTeacher?.full_name}"?`}
         confirmLabel="Deactivate"
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(activatingTeacher)}
+        onClose={() => setActivatingTeacher(null)}
+        onConfirm={handleActivateConfirm}
+        isConfirming={isActivating}
+        title="Activate Teacher"
+        message={`Are you sure you want to activate "${activatingTeacher?.full_name}"?`}
+        confirmLabel="Activate"
       />
 
       <CreateTeacherModal

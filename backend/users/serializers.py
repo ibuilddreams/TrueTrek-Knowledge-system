@@ -140,6 +140,16 @@ class StudentUpdateSerializer(serializers.ModelSerializer):
         model = UserModel
         fields = ["first_name", "last_name", "gender", "account_status"]
 
+    def update(self, instance, validated_data):
+        account_status = validated_data.get("account_status")
+        instance = super().update(instance, validated_data)
+
+        if account_status is not None:
+            instance.is_active = account_status == UserModel.AccountStatus.ACTIVE
+            instance.save(update_fields=["is_active"])
+
+        return instance
+
     def to_representation(self, instance):
         return StudentSerializer(instance).data
 
@@ -209,6 +219,16 @@ class TeacherUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
         fields = ["first_name", "last_name", "gender", "account_status"]
+
+    def update(self, instance, validated_data):
+        account_status = validated_data.get("account_status")
+        instance = super().update(instance, validated_data)
+
+        if account_status is not None:
+            instance.is_active = account_status == UserModel.AccountStatus.ACTIVE
+            instance.save(update_fields=["is_active"])
+
+        return instance
 
     def to_representation(self, instance):
         return TeacherSerializer(instance).data
