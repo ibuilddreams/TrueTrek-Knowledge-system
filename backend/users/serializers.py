@@ -144,6 +144,76 @@ class StudentUpdateSerializer(serializers.ModelSerializer):
         return StudentSerializer(instance).data
 
 
+class CreateTeacherSerializer(serializers.ModelSerializer):
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+    gender = serializers.ChoiceField(choices=UserModel.Gender.choices, required=True)
+
+    class Meta:
+        model = UserModel
+        fields = ["id", "username", "first_name", "last_name", "email", "password", "gender"]
+
+    def validate_email(self, value):
+        email = UserModel.objects.normalize_email(value)
+        if UserModel.objects.filter(email__iexact=email).exists():
+            raise ValidationError("A user with this email already exists.")
+        return email
+
+    def validate_username(self, value):
+        if UserModel.objects.filter(username__iexact=value).exists():
+            raise ValidationError("A user with this username already exists.")
+        return value
+
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+
+        return UserModel.objects.create_user(
+            password=password,
+            role=UserModel.Roles.TEACHER,
+            **validated_data,
+        )
+
+    def to_representation(self, instance):
+        return {
+            "id": instance.id,
+            "username": instance.username,
+            "first_name": instance.first_name,
+            "last_name": instance.last_name,
+            "full_name": instance.name,
+            "email": instance.email,
+            "gender": instance.gender,
+            "role": instance.role,
+        }
+
+
+class TeacherSerializer(serializers.ModelSerializer):
+    full_name = serializers.CharField(source="name", read_only=True)
+
+    class Meta:
+        model = UserModel
+        fields = [
+            "id",
+            "username",
+            "first_name",
+            "last_name",
+            "full_name",
+            "email",
+            "gender",
+            "role",
+            "account_status",
+            "date_joined",
+        ]
+        read_only_fields = fields
+
+
+class TeacherUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserModel
+        fields = ["first_name", "last_name", "gender", "account_status"]
+
+    def to_representation(self, instance):
+        return TeacherSerializer(instance).data
+
+
 class UserProfileSerializer(serializers.ModelSerializer):
     avatar = serializers.SerializerMethodField()
 

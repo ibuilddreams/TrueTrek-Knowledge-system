@@ -1,83 +1,163 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Info } from "lucide-react";
+import { Edit3, Eye, UserPlus, UserX } from "lucide-react";
+import { useAdminTeachers } from "@/hooks/admin/useAdminTeachers";
 import { useAdminCourses } from "@/hooks/admin/useAdminCourses";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { deleteTeacher } from "@/services/teachersService";
+import { getApiErrorMessage } from "@/lib/apiErrors";
+import { formatDate } from "@/lib/adminFormatters";
+import { toastError, toastSuccess } from "@/lib/toast";
 import SearchBar from "@/components/ui/SearchBar";
+import SearchableSelect from "@/components/ui/SearchableSelect";
 import DataTable from "@/components/ui/DataTable";
 import Pagination from "@/components/ui/Pagination";
+import StatusBadge from "@/components/ui/StatusBadge";
+import ActionMenu from "@/components/ui/ActionMenu";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import TeacherProfileModal from "@/components/features/admin/TeacherProfileModal";
+import CreateTeacherModal from "@/components/features/admin/CreateTeacherModal";
+import EditTeacherModal from "@/components/features/admin/EditTeacherModal";
 
 const PAGE_SIZE = 10;
 
+const STATUS_FILTER_OPTIONS = [
+  { value: "", label: "All Statuses" },
+  { value: "ACTIVE", label: "Active" },
+  { value: "SUSPENDED", label: "Suspended" },
+  { value: "DEACTIVATED", label: "Deactivated" },
+];
+
 export default function TeachersTab() {
-  const { items: courses, status, error, loadCourses } = useAdminCourses();
+  const { items, status, error, loadTeachers } = useAdminTeachers();
+  const { items: courses, loadCourses } = useAdminCourses();
 
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, 300);
+  const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
 
+  const [viewTeacherId, setViewTeacherId] = useState(null);
+  const [editingTeacher, setEditingTeacher] = useState(null);
+  const [deactivatingTeacher, setDeactivatingTeacher] = useState(null);
+  const [isDeactivating, setIsDeactivating] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+
   useEffect(() => {
+    loadTeachers();
     loadCourses();
-  }, [loadCourses]);
+  }, [loadTeachers, loadCourses]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch]);
+  }, [debouncedSearch, statusFilter]);
 
-  const teachers = useMemo(() => {
-    const teacherMap = new Map();
+  const courseCountByTeacherId = useMemo(() => {
+    const counts = {};
     courses.forEach((course) => {
       (course.instructors || []).forEach((instructor) => {
-        const existing = teacherMap.get(instructor.id);
-        if (existing) {
-          existing.courseTitles.push(course.title);
-        } else {
-          teacherMap.set(instructor.id, {
-            id: instructor.id,
-            name: instructor.name,
-            email: instructor.email,
-            courseTitles: [course.title],
-          });
-        }
+        const teacherId = instructor.id;
+        if (teacherId === undefined) return;
+        counts[teacherId] = (counts[teacherId] || 0) + 1;
       });
     });
-    return Array.from(teacherMap.values());
+    return counts;
   }, [courses]);
 
   const filteredTeachers = useMemo(() => {
     const query = debouncedSearch.trim().toLowerCase();
-    if (!query) return teachers;
-    return teachers.filter((teacher) => `${teacher.name} ${teacher.email}`.toLowerCase().includes(query));
-  }, [teachers, debouncedSearch]);
+    return items.filter((teacher) => {
+      const haystack = `${teacher.full_name || ""} ${teacher.email || ""}`.toLowerCase();
+      const matchesSearch = !query || haystack.includes(query);
+      const matchesStatus = !statusFilter || teacher.account_status === statusFilter;
+      return matchesSearch && matchesStatus;
+    });
+  }, [items, debouncedSearch, statusFilter]);
 
   const totalPages = Math.max(1, Math.ceil(filteredTeachers.length / PAGE_SIZE));
   const paginatedTeachers = filteredTeachers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  const handleDeactivateConfirm = async () => {
+    if (!deactivatingTeacher) return;
+    setIsDeactivating(true);
+    try {
+      await deleteTeacher(deactivatingTeacher.id);
+      toastSuccess("Teacher deactivated successfully.");
+      setDeactivatingTeacher(null);
+      loadTeachers({ force: true });
+    } catch (error) {
+      toastError(getApiErrorMessage(error, "Unable to deactivate teacher."));
+    } finally {
+      setIsDeactivating(false);
+    }
+  };
 
   const columns = [
     {
       key: "name",
       header: "Teacher Name",
-      render: (teacher) => <span className="font-semibold text-stone-800">{teacher.name}</span>,
+      render: (teacher) => <span className="font-semibold text-stone-800">{teacher.full_name}</span>,
     },
     { key: "email", header: "Email", render: (teacher) => teacher.email },
-    { key: "courses", header: "Assigned Courses", render: (teacher) => teacher.courseTitles.join(", ") },
-    { key: "status", header: "Status", render: () => "—" },
-    { key: "joined", header: "Joined Date", render: () => "—" },
+    { key: "status", header: "Status", render: (teacher) => <StatusBadge status={teacher.account_status} /> },
+    {
+      key: "courses",
+      header: "Assigned Courses",
+      render: (teacher) => courseCountByTeacherId[teacher.id] || 0,
+    },
+    {
+      key: "joined",
+      header: "Joined Date",
+      render: (teacher) => formatDate(teacher.date_joined),
+    },
+    {
+      key: "actions",
+      header: "Actions",
+      render: (teacher) => (
+        <ActionMenu
+          actions={[
+            { key: "view", label: "View Profile", icon: Eye, onSelect: () => setViewTeacherId(teacher.id) },
+            { key: "edit", label: "Edit Teacher", icon: Edit3, onSelect: () => setEditingTeacher(teacher) },
+            teacher.account_status !== "DEACTIVATED" && {
+              key: "deactivate",
+              label: "Deactivate",
+              icon: UserX,
+              tone: "danger",
+              onSelect: () => setDeactivatingTeacher(teacher),
+            },
+          ]}
+        />
+      ),
+    },
   ];
 
   return (
     <div className="space-y-5">
-      <div className="bg-amber-50 border border-amber-200/60 text-amber-800 rounded-xl p-4 flex items-start gap-3 text-xs">
-        <Info className="w-4 h-4 shrink-0 mt-0.5" />
-        <p className="font-light leading-relaxed">
-          The backend does not expose a dedicated teacher roster API. This list is derived from teachers already
-          assigned as instructors on at least one course, so status, joined date, and profile management actions
-          are not available here.
-        </p>
-      </div>
+      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 min-w-0">
+          <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search teachers by name or email..." />
+          <div className="w-full sm:w-56 shrink-0">
+            <SearchableSelect
+              placeholder="All Statuses"
+              options={STATUS_FILTER_OPTIONS}
+              value={statusFilter}
+              onChange={setStatusFilter}
+            />
+          </div>
+        </div>
 
-      <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search teachers by name or email..." />
+        <button
+          type="button"
+          onClick={() => setIsCreateModalOpen(true)}
+          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:scale-[1.01] transition-all flex items-center gap-2 shrink-0"
+          title="Create a new teacher account"
+          aria-label="Create a new teacher account"
+        >
+          <UserPlus className="w-4 h-4" />
+          ADD TEACHER
+        </button>
+      </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
         <DataTable
@@ -85,7 +165,7 @@ export default function TeachersTab() {
           rows={paginatedTeachers}
           isLoading={status === "loading" || status === "idle"}
           error={status === "failed" ? error : null}
-          onRetry={() => loadCourses({ force: true })}
+          onRetry={() => loadTeachers({ force: true })}
           emptyLabel="No teachers found."
         />
         <Pagination
@@ -95,6 +175,36 @@ export default function TeachersTab() {
           totalLabel={`${filteredTeachers.length} teacher${filteredTeachers.length === 1 ? "" : "s"}`}
         />
       </div>
+
+      <TeacherProfileModal
+        isOpen={Boolean(viewTeacherId)}
+        onClose={() => setViewTeacherId(null)}
+        teacherId={viewTeacherId}
+        courseCount={courseCountByTeacherId[viewTeacherId] || 0}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(deactivatingTeacher)}
+        onClose={() => setDeactivatingTeacher(null)}
+        onConfirm={handleDeactivateConfirm}
+        isConfirming={isDeactivating}
+        title="Deactivate Teacher"
+        message={`Are you sure you want to deactivate "${deactivatingTeacher?.full_name}"?`}
+        confirmLabel="Deactivate"
+      />
+
+      <CreateTeacherModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreated={() => loadTeachers({ force: true })}
+      />
+
+      <EditTeacherModal
+        isOpen={Boolean(editingTeacher)}
+        onClose={() => setEditingTeacher(null)}
+        teacher={editingTeacher}
+        onUpdated={() => loadTeachers({ force: true })}
+      />
     </div>
   );
 }

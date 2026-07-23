@@ -5,6 +5,7 @@ import portalReducer from "./slices/portal/portalSlice";
 import intakeReducer from "./slices/intake/intakeSlice";
 import coursesReducer from "./slices/courses/coursesSlice";
 import studentsReducer from "./slices/students/studentsSlice";
+import teachersReducer from "./slices/teachers/teachersSlice";
 import enrollmentsReducer from "./slices/enrollments/enrollmentsSlice";
 import adminOverviewReducer from "./slices/adminOverview/adminOverviewSlice";
 
@@ -18,6 +19,7 @@ const rootReducer = combineReducers({
   intake: intakeReducer,
   courses: coursesReducer,
   students: studentsReducer,
+  teachers: teachersReducer,
   enrollments: enrollmentsReducer,
   adminOverview: adminOverviewReducer,
 });
