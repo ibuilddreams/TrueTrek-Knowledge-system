@@ -15,6 +15,7 @@ from .serializers import (
     ProfileUpdateSerializer,
     ResetPasswordSerializer,
     StudentSerializer,
+    StudentUpdateSerializer,
 )
 from .services import send_password_reset_email
 
@@ -48,6 +49,14 @@ class StudentListCreateView(generics.ListCreateAPIView):
                 "Students can be created only by admin."
             )
             return [permission]
+        if self.request.method == "GET":
+            permission = IsAdmin()
+            permission.message = (
+                "You don't have permission to perform this action. "
+                "This action can be performed only by admin. "
+                "Students can be viewed only by admin."
+            )
+            return [permission]
         return super().get_permissions()
 
     def get_serializer_class(self):
@@ -72,6 +81,46 @@ class StudentListCreateView(generics.ListCreateAPIView):
             message="Student created successfully",
             status_code=201,
         )
+
+
+class StudentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    """Retrieves, updates, or deactivates a single student account."""
+
+    http_method_names = ["get", "patch", "delete", "head", "options"]
+    queryset = UserModel.objects.filter(role=UserModel.Roles.STUDENT)
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        if self.request.method in ("GET", "PATCH", "DELETE"):
+            permission = IsAdmin()
+            permission.message = "You do not have permission to perform this action. Only admin can perform this action."
+            return [permission]
+        return super().get_permissions()
+
+    def get_serializer_class(self):
+        if self.request.method == "PATCH":
+            return StudentUpdateSerializer
+        return StudentSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        student = self.get_object()
+        serializer = self.get_serializer(student)
+        return success_response(serializer.data, message="Student fetched successfully")
+
+    def update(self, request, *args, **kwargs):
+        partial = kwargs.pop("partial", False)
+        student = self.get_object()
+        serializer = self.get_serializer(student, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        student = serializer.save()
+        return success_response(serializer.data, message="Student updated successfully")
+
+    def destroy(self, request, *args, **kwargs):
+        student = self.get_object()
+        student.account_status = UserModel.AccountStatus.DEACTIVATED
+        student.is_active = False
+        student.save(update_fields=["account_status", "is_active"])
+        return success_response(None, message="Student deactivated successfully")
 
 
 class ProfileView(generics.RetrieveUpdateAPIView):

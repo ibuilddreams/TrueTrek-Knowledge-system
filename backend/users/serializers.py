@@ -129,8 +129,18 @@ class StudentSerializer(serializers.ModelSerializer):
             "email",
             "gender",
             "role",
+            "account_status",
         ]
         read_only_fields = fields
+
+
+class StudentUpdateSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserModel
+        fields = ["first_name", "last_name", "gender", "account_status"]
+
+    def to_representation(self, instance):
+        return StudentSerializer(instance).data
 
 
 class UserProfileSerializer(serializers.ModelSerializer):
