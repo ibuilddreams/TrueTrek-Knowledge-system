@@ -7,6 +7,7 @@ import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { deleteStudent } from "@/services/studentsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
+import { formatDate } from "@/lib/adminFormatters";
 import { toastError, toastSuccess } from "@/lib/toast";
 import SearchBar from "@/components/ui/SearchBar";
 import SearchableSelect from "@/components/ui/SearchableSelect";
@@ -101,7 +102,11 @@ export default function StudentsTab() {
       header: "Total Enrollments",
       render: (student) => enrollmentCountByStudentId[student.id] || 0,
     },
-    { key: "joined", header: "Joined Date", render: () => "—" },
+    {
+      key: "joined",
+      header: "Joined Date",
+      render: (student) => formatDate(student.date_joined),
+    },
     {
       key: "actions",
       header: "Actions",

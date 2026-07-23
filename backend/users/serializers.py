@@ -130,6 +130,7 @@ class StudentSerializer(serializers.ModelSerializer):
             "gender",
             "role",
             "account_status",
+            "date_joined",
         ]
         read_only_fields = fields
 

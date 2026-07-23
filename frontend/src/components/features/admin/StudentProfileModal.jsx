@@ -7,6 +7,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import Loader from "@/components/ui/Loader";
 import { getStudentById } from "@/services/studentsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
+import { formatDate } from "@/lib/adminFormatters";
 import { toastError } from "@/lib/toast";
 
 export default function StudentProfileModal({ isOpen, onClose, studentId, enrollmentCount = 0 }) {
@@ -58,6 +59,10 @@ export default function StudentProfileModal({ isOpen, onClose, studentId, enroll
             <div>
               <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mb-1">Gender</p>
               <p className="text-stone-700 font-semibold">{student.gender || "—"}</p>
+            </div>
+            <div>
+              <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mb-1">Joined Date</p>
+              <p className="text-stone-700 font-semibold">{formatDate(student.date_joined)}</p>
             </div>
             <div>
               <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mb-1">Total Enrollments</p>

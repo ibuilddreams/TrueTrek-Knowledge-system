@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { Check, UserPlus, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
-import SearchableSelect from "@/components/ui/SearchableSelect";
 import { createStudent } from "@/services/studentsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -16,12 +15,6 @@ const INITIAL_FORM = {
   password: "",
   gender: "",
 };
-
-const GENDER_OPTIONS = [
-  { value: "MALE", label: "Male" },
-  { value: "FEMALE", label: "Female" },
-  { value: "OTHER", label: "Other" },
-];
 
 const FIELD_CLASS =
   "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60";
@@ -160,14 +153,22 @@ export default function CreateStudentModal({ isOpen, onClose, onCreated }) {
           />
         </div>
 
-        <SearchableSelect
-          label="Gender"
-          placeholder="Select gender"
-          options={GENDER_OPTIONS}
-          value={form.gender}
-          onChange={(value) => setForm((prev) => ({ ...prev, gender: value }))}
-          disabled={isSubmitting}
-        />
+        <div>
+          <label className={LABEL_CLASS}>Gender</label>
+          <select
+            value={form.gender}
+            onChange={updateField("gender")}
+            disabled={isSubmitting}
+            className={`${FIELD_CLASS} ${form.gender ? "text-stone-850" : "text-stone-400"}`}
+          >
+            <option value="" disabled>
+              Select gender
+            </option>
+            <option value="MALE">Male</option>
+            <option value="FEMALE">Female</option>
+            <option value="OTHER">Other</option>
+          </select>
+        </div>
 
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-stone-100">
           <button
