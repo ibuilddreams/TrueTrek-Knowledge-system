@@ -1,3 +1,19 @@
 from django.urls import path
 
-urlpatterns = []
+from .views import (
+    AdminCourseEnrollmentListView,
+    AdminEnrollmentListView,
+    EnrollmentListCreateView,
+    TeacherEnrollmentListView,
+)
+
+urlpatterns = [
+    path("student/", EnrollmentListCreateView.as_view(), name="enrollment-student-list-create"),
+    path("admin/", AdminEnrollmentListView.as_view(), name="enrollment-admin-list"),
+    path("teacher/", TeacherEnrollmentListView.as_view(), name="enrollment-teacher-list"),
+    path(
+        "courses/<int:course_id>/admin/",
+        AdminCourseEnrollmentListView.as_view(),
+        name="enrollment-course-admin-list",
+    ),
+]

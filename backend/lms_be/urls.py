@@ -14,6 +14,8 @@ urlpatterns = [
     path('admin/', admin.site.urls),
     path('api/users/', include('users.urls')),
     path('api/courses/', include('courses.urls')),
+    path('api/enrollments/', include('enrollments.urls')),
+    path('api/progress/', include('progress.urls')),
     path('api/dashboard/', include('dashboard.urls')),
     path('api/auth/login/', CustomTokenObtainPairView.as_view()),
     path('api/auth/forgot-password/', ForgotPasswordView.as_view()),
