@@ -1,10 +1,11 @@
 "use client";
 
 import React, { useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { CURRICULUM_TIERS, DRILL_QUESTIONS, ADVISOR_PERSONAS } from '@/data/curriculum';
 
-import { 
-  Award, ShieldAlert, Sparkles, BookOpen, Brain, Scale, Calendar, 
+import {
+  Award, ShieldAlert, Sparkles, BookOpen, Brain, Scale, Calendar,
   Send, UserCheck, Flame, Medal, CheckCircle, HelpCircle, Lock, RefreshCw, Zap,
   Trophy, Crown, Clock,
 
@@ -16,6 +17,8 @@ import { requestAdvisorAdvice } from '@/services/advisorService';
 import { getUserLevelDetails } from '@/lib/portalLevels';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '@/hooks/useAuth';
+import { ROUTES } from '@/constants/routes';
+import { toastSuccess } from '@/lib/toast';
 import {
   selectPortal,
   setPoints as setPointsAction,
@@ -29,6 +32,7 @@ import AuthField from '@/components/ui/AuthField';
 import AuthSubmitButton from '@/components/ui/AuthSubmitButton';
 import CloseButton from '@/components/ui/CloseButton';
 import PingDotSpinner from '@/components/ui/PingDotSpinner';
+import AccountMenu from '@/components/ui/AccountMenu';
 
 export default function Portal({
   isLoggedIn,
@@ -47,9 +51,16 @@ export default function Portal({
   const [activeTab, setActiveTab] = useState('dashboard');
 
   // Gamification progress — Redux session state (not localStorage)
+  const router = useRouter();
   const dispatch = useDispatch();
   const portalState = useSelector(selectPortal);
-  const { loginStudent } = useAuth();
+  const { loginStudent, logout } = useAuth();
+
+  const handleSignOut = async () => {
+    await logout();
+    toastSuccess('Logged out.');
+    router.replace(ROUTES.LOGIN);
+  };
   const points = portalState.points;
   const setPoints = (value) =>
     dispatch(setPointsAction(resolveUpdater(value, portalState.points)));
@@ -527,6 +538,11 @@ export default function Portal({
               </div>
             </div>
           </div>
+
+          <AccountMenu
+            onProfile={() => router.push(ROUTES.PROFILE)}
+            onSignOut={handleSignOut}
+          />
         </div>
       </section>
 

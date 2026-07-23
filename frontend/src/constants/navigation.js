@@ -26,14 +26,6 @@ export const NAV_LINKS = [
     title: "Review academic institutional licenses and partnerships",
   },
   {
-    id: "nav-link-teachers",
-    key: ROUTE_KEYS.DASHBOARD,
-    href: ROUTES.DASHBOARD,
-    label: "Teacher Suite",
-    mobileLabel: "Teacher & Faculty Suite",
-    title: "Manage student admissions and review analytics on the Teacher Suite",
-  },
-  {
     id: "nav-link-store",
     key: ROUTE_KEYS.STORE,
     href: ROUTES.STORE,
@@ -56,11 +48,6 @@ export const FOOTER_LINKS = [
   { href: ROUTES.PARTNERSHIPS, label: "School Licensing cost" },
   { href: ROUTES.PORTAL, label: "Daily Drill Sandbox" },
   { href: ROUTES.STORE, label: "Strategic Merchant Store" },
-  {
-    href: ROUTES.DASHBOARD,
-    label: "★ Teacher & Faculty Suite",
-    highlight: true,
-  },
 ];
 
 export const GOVERNANCE_BADGES = [
