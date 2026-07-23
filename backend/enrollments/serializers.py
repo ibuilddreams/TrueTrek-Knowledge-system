@@ -58,3 +58,22 @@ class CourseEnrolledStudentSerializer(serializers.ModelSerializer):
         model = Enrollment
         fields = ["id", "student", "status", "enrolled_at"]
         read_only_fields = fields
+
+
+class AdminEnrollmentWriteSerializer(serializers.ModelSerializer):
+    student = serializers.PrimaryKeyRelatedField(
+        queryset=UserModel.objects.filter(role=UserModel.Roles.STUDENT)
+    )
+
+    class Meta:
+        model = Enrollment
+        fields = ["id", "student", "course"]
+        read_only_fields = ["id"]
+
+    def validate(self, attrs):
+        if Enrollment.objects.filter(student=attrs["student"], course=attrs["course"]).exists():
+            raise serializers.ValidationError("This student is already enrolled in this course.")
+        return attrs
+
+    def create(self, validated_data):
+        return Enrollment.objects.create(**validated_data)

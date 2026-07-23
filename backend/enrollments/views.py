@@ -8,6 +8,7 @@ from users.permissions import IsAdmin, IsStudent, IsTeacher
 
 from .models import Enrollment
 from .serializers import (
+    AdminEnrollmentWriteSerializer,
     CourseEnrolledStudentSerializer,
     EnrollmentListSerializer,
     EnrollmentManageSerializer,
@@ -16,12 +17,14 @@ from .serializers import (
 
 
 class EnrollmentListCreateView(generics.ListCreateAPIView):
+    # Student self-enroll (POST) is temporarily disabled — commented out below, not removed.
+    http_method_names = ["get", "head", "options"]
     permission_classes = [IsAuthenticated]
     pagination_class = Pagination
 
     def get_permissions(self):
-        if self.request.method == "POST":
-            return [IsStudent()]
+        # if self.request.method == "POST":
+        #     return [IsStudent()]
         return super().get_permissions()
 
     def get_queryset(self):
@@ -32,8 +35,8 @@ class EnrollmentListCreateView(generics.ListCreateAPIView):
         )
 
     def get_serializer_class(self):
-        if self.request.method == "POST":
-            return EnrollmentWriteSerializer
+        # if self.request.method == "POST":
+        #     return EnrollmentWriteSerializer
         return EnrollmentListSerializer
 
     def list(self, request, *args, **kwargs):
@@ -43,19 +46,18 @@ class EnrollmentListCreateView(generics.ListCreateAPIView):
         paginated_data = self.paginator.get_paginated_response(serializer.data).data
         return success_response(paginated_data, message="Enrollments fetched successfully")
 
-    def create(self, request, *args, **kwargs):
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-        enrollment = serializer.save()
-        return success_response(
-            EnrollmentListSerializer(enrollment).data,
-            message="Enrolled successfully",
-            status_code=201,
-        )
+    # def create(self, request, *args, **kwargs):
+    #     serializer = self.get_serializer(data=request.data)
+    #     serializer.is_valid(raise_exception=True)
+    #     enrollment = serializer.save()
+    #     return success_response(
+    #         EnrollmentListSerializer(enrollment).data,
+    #         message="Enrolled successfully",
+    #         status_code=201,
+    #     )
 
 
-class AdminEnrollmentListView(generics.ListAPIView):
-    serializer_class = EnrollmentManageSerializer
+class AdminEnrollmentListView(generics.ListCreateAPIView):
     permission_classes = [IsAdmin]
     pagination_class = Pagination
 
@@ -70,12 +72,27 @@ class AdminEnrollmentListView(generics.ListAPIView):
 
         return queryset
 
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return AdminEnrollmentWriteSerializer
+        return EnrollmentManageSerializer
+
     def list(self, request, *args, **kwargs):
         enrollments = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(enrollments)
         serializer = self.get_serializer(page, many=True)
         paginated_data = self.paginator.get_paginated_response(serializer.data).data
         return success_response(paginated_data, message="Enrollments fetched successfully")
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        enrollment = serializer.save()
+        return success_response(
+            EnrollmentManageSerializer(enrollment).data,
+            message="Student enrolled successfully",
+            status_code=201,
+        )
 
 
 class AdminCourseEnrollmentListView(generics.GenericAPIView):
