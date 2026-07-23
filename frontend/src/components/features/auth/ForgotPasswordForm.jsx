@@ -85,7 +85,6 @@ export default function ForgotPasswordForm() {
           label="Send Reset Link"
           loadingLabel="Sending..."
           isSubmitting={isSubmitting}
-          className="disabled:opacity-50 flex items-center justify-center gap-2"
         />
 
         <p className="text-center text-xs text-stone-500 font-light">

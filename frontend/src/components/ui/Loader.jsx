@@ -7,7 +7,10 @@ export default function Loader({ fullScreen = true, label }) {
 
   const spinner = (
     <div className="flex flex-col items-center justify-center gap-4">
-      <div className="w-10 h-10 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
+      <div
+        className="w-10 h-10 border-4 border-amber-600 border-t-transparent rounded-full animate-spin"
+        aria-hidden
+      />
       {label && (
         <p
           className={
@@ -27,9 +30,12 @@ export default function Loader({ fullScreen = true, label }) {
 
   return (
     <div
+      role="status"
+      aria-live="polite"
+      aria-label={label || "Loading"}
       className={
-        "min-h-[80vh] flex items-center justify-center " +
-        (isVault ? "bg-[#141211]" : "bg-[#faf9f6]")
+        "min-h-[calc(100vh-5rem)] w-full flex items-center justify-center " +
+        (isVault ? "bg-[#0c0b0a]" : "bg-[#faf9f6]")
       }
     >
       {spinner}

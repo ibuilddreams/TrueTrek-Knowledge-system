@@ -33,8 +33,17 @@ export default function LoginForm() {
     }
   }, [isAuthenticated, role, router]);
 
-  if (status !== "anonymous" && !isSubmitting) {
-    return <Loader label="Checking Session..." />;
+  const isSessionPending =
+    status === "idle" || status === "loading" || status === "authenticated";
+
+  if (isSessionPending && !isSubmitting) {
+    return (
+      <Loader
+        label={
+          status === "authenticated" ? "Redirecting..." : "Checking Session..."
+        }
+      />
+    );
   }
 
   const handleSubmit = async (e) => {
@@ -60,7 +69,7 @@ export default function LoginForm() {
       title="Sign In"
       subtitle="Enter your credentials to access your TrueTrek Learning account."
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} className="space-y-5">
         <AuthField
           id="input-login-email"
           label="Email"
@@ -71,23 +80,24 @@ export default function LoginForm() {
           onChange={(e) => setEmail(e.target.value)}
         />
 
-        <AuthField
-          id="input-login-password"
-          label="Password"
-          type="password"
-          required
-          autoComplete="current-password"
-          value={password}
-          onChange={(e) => setPassword(e.target.value)}
-        />
-
-        <div className="flex justify-end -mt-2">
-          <Link
-            href={ROUTES.FORGOT_PASSWORD}
-            className="text-[11px] font-mono font-semibold text-stone-500 hover:text-amber-800 uppercase tracking-wider transition"
-          >
-            Forgot Password?
-          </Link>
+        <div className="space-y-2">
+          <AuthField
+            id="input-login-password"
+            label="Password"
+            type="password"
+            required
+            autoComplete="current-password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
+          />
+          <div className="flex justify-end">
+            <Link
+              href={ROUTES.FORGOT_PASSWORD}
+              className="text-[11px] font-mono font-semibold text-stone-500 hover:text-amber-800 uppercase tracking-wider transition"
+            >
+              Forgot Password?
+            </Link>
+          </div>
         </div>
 
         {formError && (
@@ -100,7 +110,6 @@ export default function LoginForm() {
           loadingLabel="Signing In..."
           isSubmitting={isSubmitting}
           icon={LogIn}
-          className="disabled:opacity-50 flex items-center justify-center gap-2"
         />
       </form>
     </AuthGateCard>

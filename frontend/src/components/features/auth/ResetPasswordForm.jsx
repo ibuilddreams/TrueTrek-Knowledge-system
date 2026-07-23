@@ -172,7 +172,6 @@ export default function ResetPasswordForm() {
             label="Reset Password"
             loadingLabel="Resetting..."
             isSubmitting={isSubmitting}
-            className="disabled:opacity-50 flex items-center justify-center gap-2"
           />
         </form>
       )}
