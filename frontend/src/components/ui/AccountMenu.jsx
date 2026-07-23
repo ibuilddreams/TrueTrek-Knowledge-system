@@ -39,7 +39,12 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
 
   const displayLabel =
     label || getFirstName(backendProfile?.full_name || user?.name);
-  const roleLabel = !label ? backendProfile?.role || undefined : undefined;
+  const rawRoleLabel = !label ? backendProfile?.role || undefined : undefined;
+  const roleLabel =
+    rawRoleLabel &&
+    rawRoleLabel.trim().toLowerCase() !== displayLabel.trim().toLowerCase()
+      ? rawRoleLabel
+      : undefined;
   const [isOpen, setIsOpen] = useState(false);
   const containerRef = useRef(null);
   const triggerRef = useRef(null);
