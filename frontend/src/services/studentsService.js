@@ -12,6 +12,10 @@ export async function createStudent(payload) {
   return backendClient.post("/users/students/admin/", payload);
 }
 
+export async function updateStudent(id, payload) {
+  return backendClient.patch(`/users/students/${id}/admin/`, payload);
+}
+
 export async function deleteStudent(id) {
   return backendClient.delete(`/users/students/${id}/admin/`);
 }

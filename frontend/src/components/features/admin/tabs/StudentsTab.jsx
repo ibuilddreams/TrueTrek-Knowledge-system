@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Eye, UserPlus, UserX } from "lucide-react";
+import { Edit3, Eye, UserPlus, UserX } from "lucide-react";
 import { useAdminStudents } from "@/hooks/admin/useAdminStudents";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -18,6 +18,7 @@ import ActionMenu from "@/components/ui/ActionMenu";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import StudentProfileModal from "@/components/features/admin/StudentProfileModal";
 import CreateStudentModal from "@/components/features/admin/CreateStudentModal";
+import EditStudentModal from "@/components/features/admin/EditStudentModal";
 
 const PAGE_SIZE = 10;
 
@@ -38,6 +39,7 @@ export default function StudentsTab() {
   const [page, setPage] = useState(1);
 
   const [viewStudentId, setViewStudentId] = useState(null);
+  const [editingStudent, setEditingStudent] = useState(null);
   const [deactivatingStudent, setDeactivatingStudent] = useState(null);
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -114,6 +116,7 @@ export default function StudentsTab() {
         <ActionMenu
           actions={[
             { key: "view", label: "View Profile", icon: Eye, onSelect: () => setViewStudentId(student.id) },
+            { key: "edit", label: "Edit Student", icon: Edit3, onSelect: () => setEditingStudent(student) },
             student.account_status !== "DEACTIVATED" && {
               key: "deactivate",
               label: "Deactivate",
@@ -192,6 +195,13 @@ export default function StudentsTab() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCreated={() => loadStudents({ force: true })}
+      />
+
+      <EditStudentModal
+        isOpen={Boolean(editingStudent)}
+        onClose={() => setEditingStudent(null)}
+        student={editingStudent}
+        onUpdated={() => loadStudents({ force: true })}
       />
     </div>
   );
