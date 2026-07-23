@@ -14,7 +14,8 @@ function getFirstName(name) {
   return firstWord || FALLBACK_LABEL;
 }
 
-export default function AccountMenu({ label, onProfile }) {
+export default function AccountMenu({ label, onProfile, variant = "light" }) {
+  const isDark = variant === "dark";
   const { user } = useAuth();
   const { isSigningOut, signOut } = useLogoutFlow();
   const [backendProfile, setBackendProfile] = useState(null);
@@ -112,13 +113,20 @@ export default function AccountMenu({ label, onProfile }) {
         disabled={isSigningOut}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        className="px-4 py-2.5 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider hover:scale-[1.01] transition-all flex items-center gap-2 border border-stone-200 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
+        className={
+          "px-4 py-2.5 text-xs font-semibold font-mono rounded-xl tracking-wider hover:scale-[1.01] transition-all flex items-center gap-2 border shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 " +
+          (isDark
+            ? "bg-stone-850 hover:bg-stone-800 border-stone-800"
+            : "bg-stone-50 hover:bg-stone-100 border-stone-200")
+        }
         title="Open account menu"
         aria-label="Open account menu"
       >
         <User className="w-4 h-4 text-stone-400 shrink-0" />
         <span className="flex flex-col items-start leading-tight text-left">
-          <span className="font-semibold text-stone-800">{displayLabel}</span>
+          <span className={`font-semibold ${isDark ? "text-stone-100" : "text-stone-800"}`}>
+            {displayLabel}
+          </span>
           {roleLabel && (
             <span className="text-[11px] font-normal tracking-normal normal-case text-stone-400 mt-0.5">
               {roleLabel}

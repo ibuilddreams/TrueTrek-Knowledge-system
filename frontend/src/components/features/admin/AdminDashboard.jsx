@@ -13,6 +13,7 @@ import {
   AlertCircle,
   RefreshCw,
   Inbox,
+  UserPlus,
 } from "lucide-react";
 import {
   BarChart,
@@ -31,6 +32,7 @@ import StatCard from "@/components/ui/StatCard";
 import Loader from "@/components/ui/Loader";
 import AuthGateCard from "@/components/ui/AuthGateCard";
 import AccountMenu from "@/components/ui/AccountMenu";
+import EnrollStudentModal from "@/components/features/admin/EnrollStudentModal";
 
 const CHART_COLORS = ["#d97706", "#b45309", "#92400e", "#78350f", "#57534e"];
 
@@ -56,6 +58,7 @@ export default function AdminDashboard() {
   const [overview, setOverview] = useState(null);
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
+  const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
 
   const loadOverview = useCallback(async () => {
     setStatus("loading");
@@ -135,7 +138,20 @@ export default function AdminDashboard() {
             System-wide statistics, analytics, and recent activity.
           </p>
         </div>
-        <AccountMenu onProfile={() => router.push(ROUTES.PROFILE)} />
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => setIsEnrollModalOpen(true)}
+            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:scale-[1.01] transition-all flex items-center gap-2"
+            title="Enroll a student into a course"
+            aria-label="Enroll a student into a course"
+          >
+            <UserPlus className="w-4 h-4" />
+            ENROLL STUDENT
+          </button>
+
+          <AccountMenu onProfile={() => router.push(ROUTES.PROFILE)} />
+        </div>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">
@@ -210,6 +226,12 @@ export default function AdminDashboard() {
           )}
         </div>
       </div>
+
+      <EnrollStudentModal
+        isOpen={isEnrollModalOpen}
+        onClose={() => setIsEnrollModalOpen(false)}
+        onEnrolled={loadOverview}
+      />
     </div>
   );
 }
