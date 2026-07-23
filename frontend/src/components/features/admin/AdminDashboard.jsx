@@ -76,9 +76,11 @@ export default function AdminDashboard() {
       id="admin-dashboard-container"
       className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 font-sans"
     >
-      <div className="relative overflow-hidden rounded-3xl border border-stone-200/90 bg-white shadow-sm mb-8">
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-600 via-amber-700 to-amber-900" />
-        <div className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-amber-100/40 blur-3xl pointer-events-none" />
+      <div className="relative rounded-3xl border border-stone-200/90 bg-white shadow-sm mb-8 z-20">
+        <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
+          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-600 via-amber-700 to-amber-900" />
+          <div className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-amber-100/40 blur-3xl" />
+        </div>
         <div className="relative p-6 sm:p-8 flex flex-wrap items-center justify-between gap-5">
           <div className="flex items-start gap-4 min-w-0">
             <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-600 to-amber-800 text-white flex items-center justify-center shadow-md shrink-0">
@@ -98,7 +100,7 @@ export default function AdminDashboard() {
               </p>
             </div>
           </div>
-          <div className="flex items-center gap-3">
+          <div className="relative z-30 flex items-center gap-3">
             <AccountMenu onProfile={() => router.push(ROUTES.PROFILE)} />
           </div>
         </div>

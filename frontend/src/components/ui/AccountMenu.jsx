@@ -59,8 +59,19 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
       }
     };
 
+    const handleEscape = (event) => {
+      if (event.key === "Escape") {
+        setIsOpen(false);
+        triggerRef.current?.focus();
+      }
+    };
+
     document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
+    document.addEventListener("keydown", handleEscape);
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside);
+      document.removeEventListener("keydown", handleEscape);
+    };
   }, [isOpen]);
 
   useEffect(() => {
@@ -103,12 +114,25 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
   };
 
   const menuItems = [
-    { key: "profile", label: "Profile", icon: User, onSelect: onProfile, disabled: false },
-    { key: "sign-out", label: "Sign Out", icon: LogOut, onSelect: signOut, disabled: isSigningOut },
+    {
+      key: "profile",
+      label: "Profile",
+      icon: User,
+      onSelect: onProfile,
+      disabled: false,
+    },
+    {
+      key: "sign-out",
+      label: isSigningOut ? "Signing Out..." : "Sign Out",
+      icon: LogOut,
+      onSelect: signOut,
+      disabled: isSigningOut,
+      danger: true,
+    },
   ];
 
   return (
-    <div ref={containerRef} className="relative inline-block text-left">
+    <div ref={containerRef} className="relative inline-block text-left z-50">
       <button
         id="account-menu-trigger"
         ref={triggerRef}
@@ -119,27 +143,46 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         className={
-          "px-4 py-2.5 text-xs font-semibold font-mono rounded-xl tracking-wider hover:scale-[1.01] transition-all flex items-center gap-2 border shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100 " +
-          (isDark
-            ? "bg-stone-850 hover:bg-stone-800 border-stone-800"
-            : "bg-stone-50 hover:bg-stone-100 border-stone-200")
+          "px-3.5 py-2 text-xs font-semibold font-mono rounded-xl tracking-wider transition-all flex items-center gap-2 border shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed " +
+          (isOpen
+            ? isDark
+              ? "bg-stone-800 border-stone-700"
+              : "bg-white border-amber-200 ring-2 ring-amber-600/15"
+            : isDark
+              ? "bg-stone-850 hover:bg-stone-800 border-stone-800"
+              : "bg-stone-50 hover:bg-white border-stone-200 hover:border-stone-300")
         }
         title="Open account menu"
         aria-label="Open account menu"
       >
-        <User className="w-4 h-4 text-stone-400 shrink-0" />
-        <span className="flex flex-col items-start leading-tight text-left">
-          <span className={`font-semibold ${isDark ? "text-stone-100" : "text-stone-800"}`}>
+        <span
+          className={
+            "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 " +
+            (isDark
+              ? "bg-stone-900 text-amber-500 border border-stone-700"
+              : "bg-amber-50 text-amber-700 border border-amber-100")
+          }
+        >
+          <User className="w-3.5 h-3.5" />
+        </span>
+        <span className="flex flex-col items-start leading-tight text-left min-w-0">
+          <span
+            className={`font-semibold truncate max-w-[9rem] ${
+              isDark ? "text-stone-100" : "text-stone-800"
+            }`}
+          >
             {displayLabel}
           </span>
           {roleLabel && (
-            <span className="text-[11px] font-normal tracking-normal normal-case text-stone-400 mt-0.5">
+            <span className="text-[10px] font-normal tracking-normal normal-case text-stone-400 mt-0.5 truncate max-w-[9rem]">
               {roleLabel}
             </span>
           )}
         </span>
         <ChevronDown
-          className={`w-3.5 h-3.5 text-stone-400 transition-transform shrink-0 ${isOpen ? "rotate-180" : ""}`}
+          className={`w-3.5 h-3.5 text-stone-400 transition-transform duration-200 shrink-0 ${
+            isOpen ? "rotate-180" : ""
+          }`}
         />
       </button>
 
@@ -148,30 +191,54 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
           <motion.div
             role="menu"
             aria-labelledby="account-menu-trigger"
-            initial={{ opacity: 0, y: -6, scale: 0.98 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: -6, scale: 0.98 }}
-            transition={{ duration: 0.16, ease: "easeOut" }}
-            className="absolute right-0 mt-2 w-48 max-w-[calc(100vw-2rem)] bg-white border border-stone-200 rounded-xl shadow-lg py-1.5 z-50 origin-top-right"
+            initial={{ y: -4, scale: 0.98 }}
+            animate={{ y: 0, scale: 1 }}
+            exit={{ y: -4, scale: 0.98 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
+            className="absolute right-0 top-full mt-2 w-52 max-w-[calc(100vw-2rem)] bg-white border border-stone-200 rounded-xl shadow-xl py-1.5 z-[100] origin-top-right"
           >
-            {menuItems.map(({ key, label: itemLabel, icon: Icon, onSelect, disabled }, index) => (
-              <button
-                key={key}
-                ref={(el) => (itemRefs.current[index] = el)}
-                type="button"
-                role="menuitem"
-                disabled={disabled}
-                onClick={() => {
-                  closeMenu();
-                  onSelect?.();
-                }}
-                onKeyDown={(event) => handleItemKeyDown(event, index, menuItems.length)}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold font-mono text-stone-700 hover:bg-stone-50 focus:bg-stone-50 focus:outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-transparent"
-              >
-                <Icon className="w-4 h-4 text-stone-400" />
-                {itemLabel}
-              </button>
-            ))}
+            <div className="px-3.5 py-2 border-b border-stone-100 mb-1">
+              <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-semibold">
+                Account
+              </p>
+              <p className="text-xs font-semibold text-stone-800 truncate mt-0.5">
+                {displayLabel}
+              </p>
+            </div>
+            {menuItems.map(
+              (
+                { key, label: itemLabel, icon: Icon, onSelect, disabled, danger },
+                index
+              ) => (
+                <button
+                  key={key}
+                  ref={(el) => (itemRefs.current[index] = el)}
+                  type="button"
+                  role="menuitem"
+                  disabled={disabled}
+                  onClick={() => {
+                    closeMenu();
+                    onSelect?.();
+                  }}
+                  onKeyDown={(event) =>
+                    handleItemKeyDown(event, index, menuItems.length)
+                  }
+                  className={
+                    "w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold font-mono focus:outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-transparent " +
+                    (danger
+                      ? "text-rose-700 hover:bg-rose-50 focus:bg-rose-50"
+                      : "text-stone-700 hover:bg-stone-50 focus:bg-stone-50")
+                  }
+                >
+                  <Icon
+                    className={`w-4 h-4 ${
+                      danger ? "text-rose-500" : "text-stone-400"
+                    }`}
+                  />
+                  {itemLabel}
+                </button>
+              )
+            )}
           </motion.div>
         )}
       </AnimatePresence>
