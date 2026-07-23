@@ -21,8 +21,7 @@ export function usePortalSession() {
   const { isAuthenticated, role, loginStudent, logout } = useAuth();
 
   const isLoggedIn =
-    isAuthenticated &&
-    (role === AUTH_ROLES.STUDENT || role === AUTH_ROLES.FACULTY);
+    isAuthenticated && role === AUTH_ROLES.STUDENT;
 
   const setIsLoggedIn = useCallback(
     async (value) => {

@@ -1,7 +1,7 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   BookOpen,
   ClipboardList,
@@ -18,6 +18,7 @@ import AuthGateCard from "@/components/ui/AuthGateCard";
 import AccountMenu from "@/components/ui/AccountMenu";
 import TabNav from "@/components/ui/TabNav";
 import TabTransition from "@/components/ui/TabTransition";
+import Loader from "@/components/ui/Loader";
 import EnrollStudentModal from "@/components/features/admin/EnrollStudentModal";
 import DashboardTab from "@/components/features/admin/tabs/DashboardTab";
 import StatsTab from "@/components/features/admin/tabs/StatsTab";
@@ -43,12 +44,50 @@ const TAB_COMPONENTS = {
   teachers: TeachersTab,
 };
 
-export default function AdminDashboard() {
+const VALID_TABS = new Set(TABS.map((tab) => tab.id));
+const DEFAULT_TAB = "dashboard";
+
+function resolveTab(tabParam) {
+  if (tabParam && VALID_TABS.has(tabParam)) return tabParam;
+  return DEFAULT_TAB;
+}
+
+function AdminDashboardContent() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { isAdmin, isAuthenticated, user } = useAuth();
   const { loadEnrollments } = useAdminEnrollments();
-  const [activeTab, setActiveTab] = useState("dashboard");
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
+
+  const activeTab = useMemo(
+    () => resolveTab(searchParams.get("tab")),
+    [searchParams]
+  );
+
+  useEffect(() => {
+    const rawTab = searchParams.get("tab");
+    if (rawTab && !VALID_TABS.has(rawTab)) {
+      router.replace(pathname, { scroll: false });
+    }
+  }, [pathname, router, searchParams]);
+
+  const setActiveTab = useCallback(
+    (tabId) => {
+      const nextTab = resolveTab(tabId);
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (nextTab === DEFAULT_TAB) {
+        params.delete("tab");
+      } else {
+        params.set("tab", nextTab);
+      }
+
+      const query = params.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
 
   if (!isAuthenticated || !isAdmin) {
     return (
@@ -69,7 +108,7 @@ export default function AdminDashboard() {
     );
   }
 
-  const ActiveTabComponent = TAB_COMPONENTS[activeTab];
+  const ActiveTabComponent = TAB_COMPONENTS[activeTab] || DashboardTab;
 
   return (
     <div
@@ -120,5 +159,13 @@ export default function AdminDashboard() {
         onEnrolled={() => loadEnrollments({ force: true })}
       />
     </div>
+  );
+}
+
+export default function AdminDashboard() {
+  return (
+    <Suspense fallback={<Loader label="Loading Dashboard..." />}>
+      <AdminDashboardContent />
+    </Suspense>
   );
 }

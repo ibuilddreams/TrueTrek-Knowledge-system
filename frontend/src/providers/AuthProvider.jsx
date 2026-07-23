@@ -11,10 +11,6 @@ import {
 import { fetchCurrentUser, getStoredBackendUser } from "@/services/authService";
 import { addErrorInterceptor } from "@/services/apiClient";
 
-/**
- * Hydrates Redux auth from the httpOnly session cookie via /api/auth/me.
- * Also wires a global 401 interceptor for future protected APIs.
- */
 export default function AuthProvider({ children }) {
   const dispatch = useDispatch();
 
@@ -22,13 +18,13 @@ export default function AuthProvider({ children }) {
     let cancelled = false;
 
     async function hydrate() {
-      dispatch(authLoading());
-
       const backendUser = getStoredBackendUser();
       if (backendUser) {
         if (!cancelled) dispatch(authSucceeded(backendUser));
         return;
       }
+
+      dispatch(authLoading());
 
       try {
         const data = await fetchCurrentUser();

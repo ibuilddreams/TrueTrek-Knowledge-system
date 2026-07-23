@@ -2,9 +2,9 @@ import { createSlice } from "@reduxjs/toolkit";
 import { AUTH_ROLES } from "@/constants/auth";
 
 const initialState = {
-  status: "idle", // idle | loading | authenticated | anonymous
+  status: "loading",
   isAuthenticated: false,
-  user: null, // { id, email, name, role } — public only, never tokens
+  user: null,
   error: null,
 };
 

@@ -207,8 +207,9 @@ export default function TeacherPortal({ aggregateScore = 100 }) {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [quickViewStudent, setQuickViewStudent] = useState(null);
 
-  const { loginFaculty, isFacultySession, isAuthenticated, isAdmin, role } = useAuth();
-  const isFacultyLoggedIn = isAuthenticated && (role === AUTH_ROLES.FACULTY || isAdmin);
+  const { loginFaculty, isAuthenticated, role } = useAuth();
+  const isFacultyLoggedIn =
+    isAuthenticated && role === AUTH_ROLES.FACULTY;
   const [facultyEmail, setFacultyEmail] = useState('');
   const [facultyPasscode, setFacultyPasscode] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -490,6 +491,32 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
       setIsGeneratingAiReport(false);
     }
   };
+
+  if (!isFacultyLoggedIn) {
+    return (
+      <div className="min-h-[70vh] flex items-center justify-center px-6">
+        <div className="w-full max-w-md bg-white border border-stone-200 rounded-2xl shadow-xl p-8 text-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 to-amber-800" />
+          <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center">
+            <Lock className="w-6 h-6" />
+          </div>
+          <h2 className="text-2xl font-serif font-bold text-stone-900 mb-1.5">
+            Faculty Access Required
+          </h2>
+          <p className="text-xs text-stone-500 font-light mb-6">
+            Sign in with a teacher account to open the Faculty Suite.
+          </p>
+          <button
+            type="button"
+            onClick={() => router.push(ROUTES.LOGIN)}
+            className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl shadow-md transition"
+          >
+            Go to Sign In
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div id="teacher-portal-view" className="py-10 px-4 sm:px-6 md:px-10 max-w-7xl mx-auto min-h-[85vh] font-sans">
