@@ -15,14 +15,12 @@ import { getDaysAgoDateString, getDaysSinceLastDrill } from '@/lib/dates';
 import { useAuth } from '@/hooks/useAuth';
 import { AUTH_ROLES } from '@/constants/auth';
 import { ROUTES } from '@/constants/routes';
-import { toastSuccess } from '@/lib/toast';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
  Cell, AreaChart, Area
 } from 'recharts';
 import StatCard from '@/components/ui/StatCard';
 import CloseButton from '@/components/ui/CloseButton';
-import Loader from '@/components/ui/Loader';
 import AccountMenu from '@/components/ui/AccountMenu';
 import MarkdownMiniRenderer from '@/components/ui/MarkdownMiniRenderer';
 
@@ -209,14 +207,13 @@ export default function TeacherPortal({ aggregateScore = 100 }) {
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [quickViewStudent, setQuickViewStudent] = useState(null);
 
-  const { loginFaculty, logout, isFacultySession, isAuthenticated, isAdmin, role } = useAuth();
+  const { loginFaculty, isFacultySession, isAuthenticated, isAdmin, role } = useAuth();
   const isFacultyLoggedIn = isAuthenticated && (role === AUTH_ROLES.FACULTY || isAdmin);
   const [facultyEmail, setFacultyEmail] = useState('');
   const [facultyPasscode, setFacultyPasscode] = useState('');
   const [loginError, setLoginError] = useState('');
   const [successAnimation, setSuccessAnimation] = useState(false);
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  
+
   // UI Tabs
   const [activeTab, setActiveTab] = useState('dashboard');
   
@@ -311,15 +308,6 @@ export default function TeacherPortal({ aggregateScore = 100 }) {
     } finally {
       setSuccessAnimation(false);
     }
-  };
-
-  const handleFacultyLogout = async () => {
-    setIsLoggingOut(true);
-    await logout();
-    setFacultyEmail('');
-    setFacultyPasscode('');
-    toastSuccess('Logged out.');
-    router.replace(ROUTES.LOGIN);
   };
 
   const handleBypassOrPreview = async (previewRole) => {
@@ -503,10 +491,6 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
     }
   };
 
-  if (isLoggingOut) {
-    return <Loader label="Signing Out..." />;
-  }
-
   if (!isFacultyLoggedIn) {
     return (
       <div id="faculty-gate-container" className="py-16 px-4 max-w-lg mx-auto font-sans">
@@ -674,10 +658,7 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
             ENROLL STUDENT
           </button>
 
-          <AccountMenu
-            onProfile={() => router.push(ROUTES.PROFILE)}
-            onSignOut={handleFacultyLogout}
-          />
+          <AccountMenu onProfile={() => router.push(ROUTES.PROFILE)} />
         </div>
       </div>
 

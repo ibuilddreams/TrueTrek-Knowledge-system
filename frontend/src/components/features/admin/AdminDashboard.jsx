@@ -31,7 +31,6 @@ import StatCard from "@/components/ui/StatCard";
 import Loader from "@/components/ui/Loader";
 import AuthGateCard from "@/components/ui/AuthGateCard";
 import AccountMenu from "@/components/ui/AccountMenu";
-import { toastSuccess } from "@/lib/toast";
 
 const CHART_COLORS = ["#d97706", "#b45309", "#92400e", "#78350f", "#57534e"];
 
@@ -53,7 +52,7 @@ function formatDateTime(isoString) {
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { isAdmin, isAuthenticated, logout } = useAuth();
+  const { isAdmin, isAuthenticated } = useAuth();
   const [overview, setOverview] = useState(null);
   const [status, setStatus] = useState("idle");
   const [error, setError] = useState("");
@@ -76,12 +75,6 @@ export default function AdminDashboard() {
       loadOverview();
     }
   }, [isAuthenticated, isAdmin, loadOverview]);
-
-  const handleSignOut = async () => {
-    await logout();
-    toastSuccess("Logged out.");
-    router.replace(ROUTES.LOGIN);
-  };
 
   if (!isAuthenticated || !isAdmin) {
     return (
@@ -142,7 +135,7 @@ export default function AdminDashboard() {
             System-wide statistics, analytics, and recent activity.
           </p>
         </div>
-        <AccountMenu onProfile={() => router.push(ROUTES.PROFILE)} onSignOut={handleSignOut} />
+        <AccountMenu onProfile={() => router.push(ROUTES.PROFILE)} />
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-10">

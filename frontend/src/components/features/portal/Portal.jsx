@@ -18,7 +18,6 @@ import { getUserLevelDetails } from '@/lib/portalLevels';
 import { useDispatch, useSelector } from 'react-redux';
 import { useAuth } from '@/hooks/useAuth';
 import { ROUTES } from '@/constants/routes';
-import { toastSuccess } from '@/lib/toast';
 import {
   selectPortal,
   setPoints as setPointsAction,
@@ -54,13 +53,8 @@ export default function Portal({
   const router = useRouter();
   const dispatch = useDispatch();
   const portalState = useSelector(selectPortal);
-  const { loginStudent, logout } = useAuth();
+  const { loginStudent } = useAuth();
 
-  const handleSignOut = async () => {
-    await logout();
-    toastSuccess('Logged out.');
-    router.replace(ROUTES.LOGIN);
-  };
   const points = portalState.points;
   const setPoints = (value) =>
     dispatch(setPointsAction(resolveUpdater(value, portalState.points)));
@@ -539,10 +533,7 @@ export default function Portal({
             </div>
           </div>
 
-          <AccountMenu
-            onProfile={() => router.push(ROUTES.PROFILE)}
-            onSignOut={handleSignOut}
-          />
+          <AccountMenu onProfile={() => router.push(ROUTES.PROFILE)} />
         </div>
       </section>
 

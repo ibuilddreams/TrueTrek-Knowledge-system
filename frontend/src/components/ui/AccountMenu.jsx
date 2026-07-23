@@ -4,7 +4,9 @@ import { useEffect, useRef, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { User, ChevronDown, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useLogoutFlow } from "@/hooks/useLogoutFlow";
 import { getProfile } from "@/services/profileService";
+import LogoutOverlay from "@/components/ui/LogoutOverlay";
 
 const FALLBACK_LABEL = "My Account";
 
@@ -13,8 +15,9 @@ function getFirstName(name) {
   return firstWord || FALLBACK_LABEL;
 }
 
-export default function AccountMenu({ label, onProfile, onSignOut }) {
+export default function AccountMenu({ label, onProfile }) {
   const { user } = useAuth();
+  const { stage, isSigningOut, signOut } = useLogoutFlow();
   const [backendProfile, setBackendProfile] = useState(null);
 
   useEffect(() => {
@@ -95,8 +98,8 @@ export default function AccountMenu({ label, onProfile, onSignOut }) {
   };
 
   const menuItems = [
-    { key: "profile", label: "Profile", icon: User, onSelect: onProfile },
-    { key: "sign-out", label: "Sign Out", icon: LogOut, onSelect: onSignOut },
+    { key: "profile", label: "Profile", icon: User, onSelect: onProfile, disabled: false },
+    { key: "sign-out", label: "Sign Out", icon: LogOut, onSelect: signOut, disabled: isSigningOut },
   ];
 
   return (
@@ -107,9 +110,10 @@ export default function AccountMenu({ label, onProfile, onSignOut }) {
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         onKeyDown={handleTriggerKeyDown}
+        disabled={isSigningOut}
         aria-haspopup="menu"
         aria-expanded={isOpen}
-        className="px-4 py-2.5 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider hover:scale-[1.01] transition-all flex items-center gap-2 border border-stone-200 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2"
+        className="px-4 py-2.5 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider hover:scale-[1.01] transition-all flex items-center gap-2 border border-stone-200 shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
         title="Open account menu"
         aria-label="Open account menu"
       >
@@ -138,18 +142,19 @@ export default function AccountMenu({ label, onProfile, onSignOut }) {
             transition={{ duration: 0.16, ease: "easeOut" }}
             className="absolute right-0 mt-2 w-48 max-w-[calc(100vw-2rem)] bg-white border border-stone-200 rounded-xl shadow-lg py-1.5 z-50 origin-top-right"
           >
-            {menuItems.map(({ key, label: itemLabel, icon: Icon, onSelect }, index) => (
+            {menuItems.map(({ key, label: itemLabel, icon: Icon, onSelect, disabled }, index) => (
               <button
                 key={key}
                 ref={(el) => (itemRefs.current[index] = el)}
                 type="button"
                 role="menuitem"
+                disabled={disabled}
                 onClick={() => {
                   closeMenu();
                   onSelect?.();
                 }}
                 onKeyDown={(event) => handleItemKeyDown(event, index, menuItems.length)}
-                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold font-mono text-stone-700 hover:bg-stone-50 focus:bg-stone-50 focus:outline-none transition-colors"
+                className="w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold font-mono text-stone-700 hover:bg-stone-50 focus:bg-stone-50 focus:outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-transparent"
               >
                 <Icon className="w-4 h-4 text-stone-400" />
                 {itemLabel}
@@ -158,6 +163,8 @@ export default function AccountMenu({ label, onProfile, onSignOut }) {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <LogoutOverlay stage={stage} />
     </div>
   );
 }
