@@ -106,7 +106,7 @@ export default function AdminDashboard() {
         </div>
       </div>
 
-      <div className="mb-8 rounded-2xl border border-stone-200/90 bg-white/80 px-2 pt-2 shadow-sm">
+      <div className="mb-8">
         <TabNav tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
       </div>
 
