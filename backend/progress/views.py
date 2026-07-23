@@ -31,7 +31,11 @@ class CourseProgressDetailView(generics.GenericAPIView):
     permission_classes = [IsStudent]
 
     def get(self, request, course_id):
-        if not Enrollment.objects.filter(student=request.user, course_id=course_id).exists():
+        if not Enrollment.objects.filter(
+            student=request.user,
+            course_id=course_id,
+            status=Enrollment.EnrollmentStatus.ACTIVE,
+        ).exists():
             return error_response(
                 message="You are not enrolled in this course.", status_code=403
             )
