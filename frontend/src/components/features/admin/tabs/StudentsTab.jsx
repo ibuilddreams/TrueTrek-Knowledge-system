@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Eye, UserX } from "lucide-react";
+import { Eye, UserPlus, UserX } from "lucide-react";
 import { useAdminStudents } from "@/hooks/admin/useAdminStudents";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -16,6 +16,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import ActionMenu from "@/components/ui/ActionMenu";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import StudentProfileModal from "@/components/features/admin/StudentProfileModal";
+import CreateStudentModal from "@/components/features/admin/CreateStudentModal";
 
 const PAGE_SIZE = 10;
 
@@ -38,6 +39,7 @@ export default function StudentsTab() {
   const [viewStudentId, setViewStudentId] = useState(null);
   const [deactivatingStudent, setDeactivatingStudent] = useState(null);
   const [isDeactivating, setIsDeactivating] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
     loadStudents();
@@ -123,15 +125,28 @@ export default function StudentsTab() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search students by name or email..." />
-        <div className="w-full sm:w-56">
-          <SearchableSelect
-            placeholder="All Statuses"
-            options={STATUS_FILTER_OPTIONS}
-            value={statusFilter}
-            onChange={setStatusFilter}
-          />
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 min-w-0">
+          <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search students by name or email..." />
+          <div className="w-full sm:w-56 shrink-0">
+            <SearchableSelect
+              placeholder="All Statuses"
+              options={STATUS_FILTER_OPTIONS}
+              value={statusFilter}
+              onChange={setStatusFilter}
+            />
+          </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setIsCreateModalOpen(true)}
+          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:scale-[1.01] transition-all flex items-center gap-2 shrink-0"
+          title="Create a new student account"
+          aria-label="Create a new student account"
+        >
+          <UserPlus className="w-4 h-4" />
+          ADD STUDENT
+        </button>
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
@@ -166,6 +181,12 @@ export default function StudentsTab() {
         title="Deactivate Student"
         message={`Are you sure you want to deactivate "${deactivatingStudent?.full_name}"?`}
         confirmLabel="Deactivate"
+      />
+
+      <CreateStudentModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreated={() => loadStudents({ force: true })}
       />
     </div>
   );

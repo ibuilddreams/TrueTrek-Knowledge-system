@@ -1,0 +1,204 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Check, UserPlus, X } from "lucide-react";
+import Modal from "@/components/ui/Modal";
+import SearchableSelect from "@/components/ui/SearchableSelect";
+import { createStudent } from "@/services/studentsService";
+import { getApiErrorMessage } from "@/lib/apiErrors";
+import { toastError, toastSuccess } from "@/lib/toast";
+
+const INITIAL_FORM = {
+  username: "",
+  first_name: "",
+  last_name: "",
+  email: "",
+  password: "",
+  gender: "",
+};
+
+const GENDER_OPTIONS = [
+  { value: "MALE", label: "Male" },
+  { value: "FEMALE", label: "Female" },
+  { value: "OTHER", label: "Other" },
+];
+
+const FIELD_CLASS =
+  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60";
+
+const LABEL_CLASS =
+  "text-[10px] font-mono text-stone-450 block uppercase tracking-wider mb-1.5 font-semibold";
+
+export default function CreateStudentModal({ isOpen, onClose, onCreated }) {
+  const [form, setForm] = useState(INITIAL_FORM);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  useEffect(() => {
+    if (isOpen) {
+      setForm(INITIAL_FORM);
+    }
+  }, [isOpen]);
+
+  const handleClose = () => {
+    if (isSubmitting) return;
+    setForm(INITIAL_FORM);
+    onClose();
+  };
+
+  const updateField = (field) => (event) => {
+    setForm((prev) => ({ ...prev, [field]: event.target.value }));
+  };
+
+  const handleSubmit = async (event) => {
+    event.preventDefault();
+
+    const username = form.username.trim();
+    const firstName = form.first_name.trim();
+    const lastName = form.last_name.trim();
+    const email = form.email.trim();
+    const password = form.password;
+    const gender = form.gender;
+
+    if (!username || !firstName || !lastName || !email || !password || !gender) {
+      toastError("Please fill in all required fields.");
+      return;
+    }
+
+    setIsSubmitting(true);
+    try {
+      const response = await createStudent({
+        username,
+        first_name: firstName,
+        last_name: lastName,
+        email,
+        password,
+        gender,
+      });
+      toastSuccess(response?.message || "Student created successfully.");
+      onCreated?.();
+      handleClose();
+    } catch (error) {
+      toastError(getApiErrorMessage(error, "Unable to create student."));
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  return (
+    <Modal
+      isOpen={isOpen}
+      onClose={handleClose}
+      icon={UserPlus}
+      title="Add Student"
+      subtitle="Create a new student account."
+      maxWidth="max-w-xl"
+    >
+      <form onSubmit={handleSubmit} className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={LABEL_CLASS}>First Name</label>
+            <input
+              type="text"
+              value={form.first_name}
+              onChange={updateField("first_name")}
+              disabled={isSubmitting}
+              placeholder="First name"
+              className={FIELD_CLASS}
+              autoComplete="off"
+            />
+          </div>
+          <div>
+            <label className={LABEL_CLASS}>Last Name</label>
+            <input
+              type="text"
+              value={form.last_name}
+              onChange={updateField("last_name")}
+              disabled={isSubmitting}
+              placeholder="Last name"
+              className={FIELD_CLASS}
+              autoComplete="off"
+            />
+          </div>
+        </div>
+
+        <div>
+          <label className={LABEL_CLASS}>Username</label>
+          <input
+            type="text"
+            value={form.username}
+            onChange={updateField("username")}
+            disabled={isSubmitting}
+            placeholder="Username"
+            className={FIELD_CLASS}
+            autoComplete="off"
+          />
+        </div>
+
+        <div>
+          <label className={LABEL_CLASS}>Email</label>
+          <input
+            type="email"
+            value={form.email}
+            onChange={updateField("email")}
+            disabled={isSubmitting}
+            placeholder="student@example.com"
+            className={FIELD_CLASS}
+            autoComplete="off"
+          />
+        </div>
+
+        <div>
+          <label className={LABEL_CLASS}>Password</label>
+          <input
+            type="password"
+            value={form.password}
+            onChange={updateField("password")}
+            disabled={isSubmitting}
+            placeholder="Create a password"
+            className={FIELD_CLASS}
+            autoComplete="new-password"
+          />
+        </div>
+
+        <SearchableSelect
+          label="Gender"
+          placeholder="Select gender"
+          options={GENDER_OPTIONS}
+          value={form.gender}
+          onChange={(value) => setForm((prev) => ({ ...prev, gender: value }))}
+          disabled={isSubmitting}
+        />
+
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-stone-100">
+          <button
+            type="button"
+            onClick={handleClose}
+            disabled={isSubmitting}
+            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <X className="w-3.5 h-3.5" />
+            Cancel
+          </button>
+
+          <button
+            type="submit"
+            disabled={isSubmitting}
+            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2"
+          >
+            {isSubmitting ? (
+              <>
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                Creating...
+              </>
+            ) : (
+              <>
+                <Check className="w-3.5 h-3.5" />
+                Create Student
+              </>
+            )}
+          </button>
+        </div>
+      </form>
+    </Modal>
+  );
+}

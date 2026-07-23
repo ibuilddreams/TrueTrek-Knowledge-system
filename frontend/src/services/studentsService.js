@@ -8,6 +8,10 @@ export async function getStudentById(id) {
   return backendClient.get(`/users/students/${id}/admin/`);
 }
 
+export async function createStudent(payload) {
+  return backendClient.post("/users/students/admin/", payload);
+}
+
 export async function deleteStudent(id) {
   return backendClient.delete(`/users/students/${id}/admin/`);
 }
