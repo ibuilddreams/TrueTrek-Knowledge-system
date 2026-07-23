@@ -13,6 +13,7 @@ const initialState = {
   selectedCourse: null,
   selectedModule: null,
   selectedLesson: null,
+  logoutStage: "idle",
 };
 
 const uiSlice = createSlice({
@@ -60,6 +61,9 @@ const uiSlice = createSlice({
     setSelectedLesson(state, action) {
       state.selectedLesson = action.payload;
     },
+    setLogoutStage(state, action) {
+      state.logoutStage = action.payload;
+    },
   },
 });
 
@@ -77,9 +81,11 @@ export const {
   setSelectedCourse,
   setSelectedModule,
   setSelectedLesson,
+  setLogoutStage,
 } = uiSlice.actions;
 
 export const selectUi = (state) => state.ui;
 export const selectTheme = (state) => state.ui.theme;
+export const selectLogoutStage = (state) => state.ui.logoutStage;
 
 export default uiSlice.reducer;

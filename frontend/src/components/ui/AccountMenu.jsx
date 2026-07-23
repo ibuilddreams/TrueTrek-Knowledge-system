@@ -6,7 +6,6 @@ import { User, ChevronDown, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLogoutFlow } from "@/hooks/useLogoutFlow";
 import { getProfile } from "@/services/profileService";
-import LogoutOverlay from "@/components/ui/LogoutOverlay";
 
 const FALLBACK_LABEL = "My Account";
 
@@ -17,7 +16,7 @@ function getFirstName(name) {
 
 export default function AccountMenu({ label, onProfile }) {
   const { user } = useAuth();
-  const { stage, isSigningOut, signOut } = useLogoutFlow();
+  const { isSigningOut, signOut } = useLogoutFlow();
   const [backendProfile, setBackendProfile] = useState(null);
 
   useEffect(() => {
@@ -163,8 +162,6 @@ export default function AccountMenu({ label, onProfile }) {
           </motion.div>
         )}
       </AnimatePresence>
-
-      <LogoutOverlay stage={stage} />
     </div>
   );
 }

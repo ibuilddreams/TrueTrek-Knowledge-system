@@ -1,12 +1,16 @@
 "use client";
 
+import { useSelector } from "react-redux";
 import Navbar from "./Navbar";
 import MobileMenu from "./MobileMenu";
 import Footer from "./Footer";
 import { useTheme } from "@/hooks/useTheme";
+import { selectLogoutStage } from "@/store/slices/ui/uiSlice";
+import LogoutOverlay from "@/components/ui/LogoutOverlay";
 
 export default function SiteShell({ children }) {
   const { isVault } = useTheme();
+  const logoutStage = useSelector(selectLogoutStage);
 
   return (
     <div
@@ -23,6 +27,7 @@ export default function SiteShell({ children }) {
         {children}
       </main>
       <Footer />
+      <LogoutOverlay stage={logoutStage} />
     </div>
   );
 }

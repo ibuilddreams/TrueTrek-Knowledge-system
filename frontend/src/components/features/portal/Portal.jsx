@@ -401,51 +401,6 @@ export default function Portal({
     setActiveDrillIndex((prev) => (prev + 1) % DRILL_QUESTIONS.length);
   };
 
-  if (!isLoggedIn) {
-    return (
-      <AuthGateCard
-        id="login-screen-wrapper"
-        icon={Lock}
-        title="Mastermind Vault Entry"
-        subtitle="Simulate access to the high-performance student analytical suite."
-      >
-        <form onSubmit={handleLogin} className="space-y-4">
-          <AuthField
-            id="input-login-email"
-            label="Mastermind Email"
-            type="email"
-            required
-            value={loginEmail}
-            onChange={(e) => setLoginEmail(e.target.value)}
-          />
-
-          <AuthField
-            id="input-login-password"
-            label="Administrative Password"
-            type="password"
-            required
-            value={loginPass}
-            onChange={(e) => setLoginPass(e.target.value)}
-            inputClassName="w-full p-3 rounded-lg border border-stone-200 text-xs font-mono bg-stone-50 text-stone-850 focus:outline-none focus:border-amber-600"
-          />
-
-          <div className="bg-stone-50 p-3.5 rounded-lg border border-stone-200/80 text-[11px] text-stone-500 leading-relaxed mb-4 flex gap-2">
-            <UserCheck className="w-4 h-4 text-amber-600 shrink-0" />
-            <span>
-              <strong>Simulation Profile Injector:</strong> A default athlete-scholar profile is loaded upon access. Click below to initiate safe portal simulation.
-            </span>
-          </div>
-
-          <AuthSubmitButton
-            id="submit-login-btn"
-            label="Simulate Safe Entry"
-            title="Authenticate and load simulated scholar-athlete portal workspace"
-            aria-label="Authenticate and load simulated scholar-athlete portal workspace"
-          />
-        </form>
-      </AuthGateCard>
-    );
-  }
 
   return (
     <div id="portal-dashboard-page" className="bg-[#faf9f6] min-h-screen border-t border-stone-200">

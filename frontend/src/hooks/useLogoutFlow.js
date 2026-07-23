@@ -1,31 +1,35 @@
 "use client";
 
-import { useCallback, useState } from "react";
+import { useCallback } from "react";
 import { useRouter } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/constants/routes";
 import { toastError } from "@/lib/toast";
+import { selectLogoutStage, setLogoutStage } from "@/store/slices/ui/uiSlice";
 
 const SUCCESS_DISPLAY_MS = 1000;
 
 export function useLogoutFlow() {
   const router = useRouter();
+  const dispatch = useDispatch();
   const { logout } = useAuth();
-  const [stage, setStage] = useState("idle");
+  const stage = useSelector(selectLogoutStage);
 
   const signOut = useCallback(async () => {
     if (stage !== "idle") return;
-    setStage("loading");
+    dispatch(setLogoutStage("loading"));
     try {
       await logout();
-      setStage("success");
+      dispatch(setLogoutStage("success"));
       await new Promise((resolve) => setTimeout(resolve, SUCCESS_DISPLAY_MS));
       router.replace(ROUTES.LOGIN);
+      dispatch(setLogoutStage("idle"));
     } catch (error) {
-      setStage("idle");
+      dispatch(setLogoutStage("idle"));
       toastError(error?.message || "Unable to sign out. Please try again.");
     }
-  }, [logout, router, stage]);
+  }, [dispatch, logout, router, stage]);
 
   return {
     stage,
