@@ -13,13 +13,17 @@ class CategoryListCreateViewTests(APITestCase):
     def setUp(self):
         self.url = reverse("category-list-create")
         self.user = UserModel.objects.create_user(
-            username="categoryuser", email="categoryuser@example.com", password="StrongPass123!"
+            username="categoryuser",
+            email="categoryuser@example.com",
+            password="StrongPass123!",
+            gender=UserModel.Gender.MALE,
         )
         self.admin = UserModel.objects.create_user(
             username="categoryadmin",
             email="categoryadmin@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.ADMIN,
+            gender=UserModel.Gender.MALE,
         )
 
     def test_list_requires_authentication(self):
@@ -56,11 +60,19 @@ class CategoryListCreateViewTests(APITestCase):
 class CategoryDetailViewTests(APITestCase):
     def setUp(self):
         self.category = Category.objects.create(name="Design")
-        self.url = reverse("category-detail", kwargs={"slug": self.category.slug})
+        self.url = reverse("category-detail", kwargs={"pk": self.category.pk})
         self.user = UserModel.objects.create_user(
             username="categorydetailuser",
             email="categorydetailuser@example.com",
             password="StrongPass123!",
+            gender=UserModel.Gender.MALE,
+        )
+        self.admin = UserModel.objects.create_user(
+            username="categorydetailadmin",
+            email="categorydetailadmin@example.com",
+            password="StrongPass123!",
+            role=UserModel.Roles.ADMIN,
+            gender=UserModel.Gender.MALE,
         )
 
     def test_retrieve_requires_authentication(self):
@@ -77,7 +89,7 @@ class CategoryDetailViewTests(APITestCase):
         self.assertEqual(response.data["data"]["name"], "Design")
 
     def test_update_category(self):
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
 
         response = self.client.patch(self.url, {"name": "Design Updated"})
 
@@ -86,7 +98,7 @@ class CategoryDetailViewTests(APITestCase):
         self.assertEqual(self.category.name, "Design Updated")
 
     def test_delete_category(self):
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
 
         response = self.client.delete(self.url)
 
@@ -99,13 +111,17 @@ class CourseListCreateViewTests(APITestCase):
         self.url = reverse("course-list-create")
         self.category = Category.objects.create(name="Programming")
         self.user = UserModel.objects.create_user(
-            username="courseuser", email="courseuser@example.com", password="StrongPass123!"
+            username="courseuser",
+            email="courseuser@example.com",
+            password="StrongPass123!",
+            gender=UserModel.Gender.MALE,
         )
         self.admin = UserModel.objects.create_user(
             username="courseadmin",
             email="courseadmin@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.ADMIN,
+            gender=UserModel.Gender.MALE,
         )
 
     def test_list_requires_authentication(self):
@@ -157,11 +173,19 @@ class CourseDetailViewTests(APITestCase):
     def setUp(self):
         self.category = Category.objects.create(name="Programming")
         self.course = Course.objects.create(title="Intro to Python", category=self.category)
-        self.url = reverse("course-detail", kwargs={"slug": self.course.slug})
+        self.url = reverse("course-detail", kwargs={"pk": self.course.pk})
         self.user = UserModel.objects.create_user(
             username="coursedetailuser",
             email="coursedetailuser@example.com",
             password="StrongPass123!",
+            gender=UserModel.Gender.MALE,
+        )
+        self.admin = UserModel.objects.create_user(
+            username="coursedetailadmin",
+            email="coursedetailadmin@example.com",
+            password="StrongPass123!",
+            role=UserModel.Roles.ADMIN,
+            gender=UserModel.Gender.MALE,
         )
 
     def test_retrieve_requires_authentication(self):
@@ -178,7 +202,7 @@ class CourseDetailViewTests(APITestCase):
         self.assertEqual(response.data["data"]["title"], "Intro to Python")
 
     def test_update_course_status(self):
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
 
         response = self.client.patch(
             self.url, {"status": Status.PUBLISHED, "category": self.category.id}
@@ -189,7 +213,7 @@ class CourseDetailViewTests(APITestCase):
         self.assertEqual(self.course.status, Status.PUBLISHED)
 
     def test_delete_course(self):
-        self.client.force_authenticate(user=self.user)
+        self.client.force_authenticate(user=self.admin)
 
         response = self.client.delete(self.url)
 
