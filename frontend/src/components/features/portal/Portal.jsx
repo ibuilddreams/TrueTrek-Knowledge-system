@@ -433,26 +433,30 @@ export default function Portal({
 
       {/* Student credentials banner element */}
       <section id="portal-credential-banner" className="bg-stone-900 text-white py-6 px-6">
-        <div className="max-w-6xl mx-auto flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
-          <div className="flex items-center gap-4">
-            <div className="w-12 h-12 bg-amber-500 text-stone-950 font-black rounded-full flex items-center justify-center text-lg shadow-inner">
-              MJ
-            </div>
-            <div>
-              <div className="flex items-center gap-2">
-                <h3 className="text-lg font-serif font-bold text-white">Marcus Vance Jr. (Scholar-Athlete)</h3>
-                <span className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded">
-                  D1 Varsity Recruited
-                </span>
+        <div className="max-w-6xl mx-auto space-y-5">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div className="flex items-center gap-4">
+              <div className="w-12 h-12 bg-amber-500 text-stone-950 font-black rounded-full flex items-center justify-center text-lg shadow-inner shrink-0">
+                MJ
               </div>
-              <p className="text-xs text-stone-400 mt-0.5 font-light">
-                Primary Focus: <strong className="text-stone-300">Tier 2: Recruiting Window</strong> & <strong className="text-stone-300">Tier 6: NIL Intellectual IP</strong>
-              </p>
+              <div>
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-lg font-serif font-bold text-white">Marcus Vance Jr. (Scholar-Athlete)</h3>
+                  <span className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded">
+                    D1 Varsity Recruited
+                  </span>
+                </div>
+                <p className="text-xs text-stone-400 mt-0.5 font-light">
+                  Primary Focus: <strong className="text-stone-300">Tier 2: Recruiting Window</strong> & <strong className="text-stone-300">Tier 6: NIL Intellectual IP</strong>
+                </p>
+              </div>
             </div>
+
+            <AccountMenu variant="dark" onProfile={() => router.push(ROUTES.PROFILE)} />
           </div>
 
           {/* KPI Mini boxes */}
-          <div className="flex flex-wrap items-center gap-4 w-full md:w-auto">
+          <div className="flex flex-wrap items-center gap-4 w-full">
             <div className="bg-stone-850 border border-stone-800 p-2.5 rounded-xl flex items-center gap-2.5 flex-1 md:flex-initial">
               <Award className="w-5 h-5 text-amber-500 animate-pulse" />
               <div>
@@ -487,8 +491,6 @@ export default function Portal({
               </div>
             </div>
           </div>
-
-          <AccountMenu onProfile={() => router.push(ROUTES.PROFILE)} />
         </div>
       </section>
 
