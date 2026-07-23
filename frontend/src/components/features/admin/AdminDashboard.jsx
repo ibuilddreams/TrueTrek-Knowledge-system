@@ -3,13 +3,12 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import {
-  BarChart3,
   BookOpen,
   ClipboardList,
   GraduationCap,
   LayoutDashboard,
   Lock,
-  UserPlus,
+  Shield,
   Users,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -29,7 +28,6 @@ import TeachersTab from "@/components/features/admin/tabs/TeachersTab";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
-  // { id: "stats", label: "Stats", icon: BarChart3 },
   { id: "courses", label: "Courses", icon: BookOpen },
   { id: "enrollments", label: "Enrollments", icon: ClipboardList },
   { id: "students", label: "Students", icon: GraduationCap },
@@ -47,7 +45,7 @@ const TAB_COMPONENTS = {
 
 export default function AdminDashboard() {
   const router = useRouter();
-  const { isAdmin, isAuthenticated } = useAuth();
+  const { isAdmin, isAuthenticated, user } = useAuth();
   const { loadEnrollments } = useAdminEnrollments();
   const [activeTab, setActiveTab] = useState("dashboard");
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
@@ -74,20 +72,41 @@ export default function AdminDashboard() {
   const ActiveTabComponent = TAB_COMPONENTS[activeTab];
 
   return (
-    <div id="admin-dashboard-container" className="max-w-7xl mx-auto px-4 sm:px-6 py-10 font-sans">
-      <div className="flex flex-wrap items-center justify-between gap-4 mb-8">
-        <div>
-          <h1 className="text-3xl font-serif font-bold text-stone-900">Admin Control Center</h1>
-          <p className="text-xs text-stone-500 font-light mt-1">
-            System-wide statistics, analytics, and recent activity.
-          </p>
-        </div>
-        <div className="flex items-center gap-3">
-          <AccountMenu onProfile={() => router.push(ROUTES.PROFILE)} />
+    <div
+      id="admin-dashboard-container"
+      className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 font-sans"
+    >
+      <div className="relative overflow-hidden rounded-3xl border border-stone-200/90 bg-white shadow-sm mb-8">
+        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-600 via-amber-700 to-amber-900" />
+        <div className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-amber-100/40 blur-3xl pointer-events-none" />
+        <div className="relative p-6 sm:p-8 flex flex-wrap items-center justify-between gap-5">
+          <div className="flex items-start gap-4 min-w-0">
+            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-600 to-amber-800 text-white flex items-center justify-center shadow-md shrink-0">
+              <Shield className="w-6 h-6" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[10px] font-mono uppercase tracking-widest text-amber-700 font-bold">
+                Administration
+              </p>
+              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight">
+                Control Center
+              </h1>
+              <p className="text-xs text-stone-500 font-light mt-1.5 max-w-xl leading-relaxed">
+                Monitor platform health, manage courses and enrollments, and keep
+                learner progress under audit
+                {user?.name ? ` — signed in as ${user.name}` : ""}.
+              </p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3">
+            <AccountMenu onProfile={() => router.push(ROUTES.PROFILE)} />
+          </div>
         </div>
       </div>
 
-      <TabNav tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+      <div className="mb-8 rounded-2xl border border-stone-200/90 bg-white/80 px-2 pt-2 shadow-sm">
+        <TabNav tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+      </div>
 
       <TabTransition activeKey={activeTab}>
         <ActiveTabComponent />
