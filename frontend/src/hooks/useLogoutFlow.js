@@ -24,7 +24,6 @@ export function useLogoutFlow() {
       dispatch(setLogoutStage("success"));
       await new Promise((resolve) => setTimeout(resolve, SUCCESS_DISPLAY_MS));
       router.replace(ROUTES.LOGIN);
-      dispatch(setLogoutStage("idle"));
     } catch (error) {
       dispatch(setLogoutStage("idle"));
       toastError(error?.message || "Unable to sign out. Please try again.");

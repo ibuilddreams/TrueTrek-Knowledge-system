@@ -2,6 +2,7 @@
 
 import { AnimatePresence, motion } from "motion/react";
 import { CheckCircle2 } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
 
 const STAGE_COPY = {
   loading: "Signing out...",
@@ -9,39 +10,53 @@ const STAGE_COPY = {
 };
 
 export default function LogoutOverlay({ stage }) {
-  const isVisible = stage === "loading" || stage === "success";
+  const { isVault } = useTheme();
 
   return (
-    <AnimatePresence>
-      {isVisible && (
-        <motion.div
-          id="logout-overlay"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.2 }}
-          className="fixed inset-0 z-[200] flex items-center justify-center bg-stone-950/70 backdrop-blur-sm px-6"
-          role="alert"
-          aria-live="assertive"
-        >
-          <motion.div
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
-            transition={{ duration: 0.2 }}
-            className="bg-white border border-stone-200 rounded-2xl shadow-2xl px-8 py-10 flex flex-col items-center gap-4 max-w-xs w-full text-center"
-          >
-            {stage === "success" ? (
+    <div
+      id="logout-overlay"
+      role="alert"
+      aria-live="assertive"
+      className={
+        "min-h-screen flex items-center justify-center px-6 " +
+        (isVault ? "bg-[#0c0b0a]" : "bg-[#faf9f6]")
+      }
+    >
+      <div className="flex flex-col items-center gap-4">
+        <AnimatePresence mode="wait">
+          {stage === "success" ? (
+            <motion.div
+              key="success"
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.35, ease: "easeOut" }}
+            >
               <CheckCircle2 className="w-10 h-10 text-emerald-600" />
-            ) : (
-              <div className="w-10 h-10 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
-            )}
-            <p className="text-xs font-mono uppercase tracking-widest text-stone-600">
-              {STAGE_COPY[stage]}
-            </p>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="loading"
+              initial={{ opacity: 0, scale: 0.6 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.6 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
+              className="w-10 h-10 border-4 border-amber-600 border-t-transparent rounded-full animate-spin"
+            />
+          )}
+        </AnimatePresence>
+        <motion.p
+          key={stage}
+          initial={{ opacity: 0, y: 4 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.25 }}
+          className={
+            "text-xs font-mono uppercase tracking-widest " +
+            (isVault ? "text-stone-400" : "text-stone-600")
+          }
+        >
+          {STAGE_COPY[stage] || STAGE_COPY.loading}
+        </motion.p>
+      </div>
+    </div>
   );
 }

@@ -1,16 +1,31 @@
 "use client";
 
-import { useSelector } from "react-redux";
+import { useEffect } from "react";
+import { usePathname } from "next/navigation";
+import { useDispatch, useSelector } from "react-redux";
 import Navbar from "./Navbar";
 import MobileMenu from "./MobileMenu";
 import Footer from "./Footer";
 import { useTheme } from "@/hooks/useTheme";
-import { selectLogoutStage } from "@/store/slices/ui/uiSlice";
+import { ROUTES } from "@/constants/routes";
+import { selectLogoutStage, setLogoutStage } from "@/store/slices/ui/uiSlice";
 import LogoutOverlay from "@/components/ui/LogoutOverlay";
 
 export default function SiteShell({ children }) {
   const { isVault } = useTheme();
+  const dispatch = useDispatch();
+  const pathname = usePathname();
   const logoutStage = useSelector(selectLogoutStage);
+
+  useEffect(() => {
+    if (pathname === ROUTES.LOGIN && logoutStage !== "idle") {
+      dispatch(setLogoutStage("idle"));
+    }
+  }, [pathname, logoutStage, dispatch]);
+
+  if (logoutStage !== "idle") {
+    return <LogoutOverlay stage={logoutStage} />;
+  }
 
   return (
     <div
@@ -27,7 +42,6 @@ export default function SiteShell({ children }) {
         {children}
       </main>
       <Footer />
-      <LogoutOverlay stage={logoutStage} />
     </div>
   );
 }
