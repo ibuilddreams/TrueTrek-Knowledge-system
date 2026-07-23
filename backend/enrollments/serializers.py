@@ -77,3 +77,27 @@ class AdminEnrollmentWriteSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         return Enrollment.objects.create(**validated_data)
+
+
+class EnrollmentStatusUpdateSerializer(serializers.Serializer):
+    status = serializers.ChoiceField(choices=Enrollment.EnrollmentStatus.choices)
+    note = serializers.CharField(allow_blank=False)
+
+    def validate_status(self, value):
+        current = self.instance.status
+
+        if value == current:
+            raise serializers.ValidationError(f"Enrollment is already {current}.")
+
+        if current == Enrollment.EnrollmentStatus.COMPLETED:
+            raise serializers.ValidationError("A completed enrollment's status cannot be changed.")
+
+        if (
+            current == Enrollment.EnrollmentStatus.CANCELLED
+            and value == Enrollment.EnrollmentStatus.ACTIVE
+        ):
+            raise serializers.ValidationError(
+                "A cancelled enrollment cannot be reactivated. Create a new enrollment instead."
+            )
+
+        return value

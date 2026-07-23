@@ -6,12 +6,13 @@ from common.response import error_response, success_response
 from courses.models import Course
 from users.permissions import IsAdmin, IsStudent, IsTeacher
 
-from .models import Enrollment
+from .models import Enrollment, EnrollmentHistory
 from .serializers import (
     AdminEnrollmentWriteSerializer,
     CourseEnrolledStudentSerializer,
     EnrollmentListSerializer,
     EnrollmentManageSerializer,
+    EnrollmentStatusUpdateSerializer,
     EnrollmentWriteSerializer,
 )
 
@@ -92,6 +93,40 @@ class AdminEnrollmentListView(generics.ListCreateAPIView):
             EnrollmentManageSerializer(enrollment).data,
             message="Student enrolled successfully",
             status_code=201,
+        )
+
+
+class AdminEnrollmentDetailView(generics.GenericAPIView):
+    serializer_class = EnrollmentStatusUpdateSerializer
+    permission_classes = [IsAdmin]
+
+    def patch(self, request, pk):
+        try:
+            enrollment = Enrollment.objects.select_related(
+                "student", "course", "course__category"
+            ).get(pk=pk)
+        except Enrollment.DoesNotExist:
+            return error_response(
+                message="Enrollment with the given id does not exist.", status_code=404
+            )
+
+        serializer = self.get_serializer(instance=enrollment, data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        previous_status = enrollment.status
+        enrollment.status = serializer.validated_data["status"]
+        enrollment.save(update_fields=["status", "updated_at"])
+
+        EnrollmentHistory.objects.create(
+            enrollment=enrollment,
+            previous_status=previous_status,
+            new_status=enrollment.status,
+            note=serializer.validated_data["note"],
+        )
+
+        return success_response(
+            EnrollmentManageSerializer(enrollment).data,
+            message="Enrollment status updated successfully",
         )
 
 
