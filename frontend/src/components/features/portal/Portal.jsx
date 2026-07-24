@@ -32,6 +32,18 @@ import AuthSubmitButton from '@/components/ui/AuthSubmitButton';
 import CloseButton from '@/components/ui/CloseButton';
 import PingDotSpinner from '@/components/ui/PingDotSpinner';
 import AccountMenu from '@/components/ui/AccountMenu';
+import { getProfile } from '@/services/profileService';
+
+function getInitials(name) {
+  const initials = name
+    ?.trim()
+    .split(/\s+/)
+    .map((part) => part[0])
+    .join('')
+    .slice(0, 2)
+    .toUpperCase();
+  return initials || 'ST';
+}
 
 export default function Portal({
   isLoggedIn,
@@ -82,6 +94,33 @@ export default function Portal({
     );
 
   const [lastNotification, setLastNotification] = useState(null);
+
+  const [studentProfile, setStudentProfile] = useState(null);
+  const [studentProfileStatus, setStudentProfileStatus] = useState('idle');
+
+  React.useEffect(() => {
+    let isMounted = true;
+    setStudentProfileStatus('loading');
+
+    (async () => {
+      try {
+        const response = await getProfile();
+        if (!isMounted) return;
+        setStudentProfile(response?.data || null);
+        setStudentProfileStatus('succeeded');
+      } catch {
+        if (!isMounted) return;
+        setStudentProfile(null);
+        setStudentProfileStatus('failed');
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const studentDisplayName = studentProfile?.full_name?.trim() || 'Student';
   
   // Detail audit module view popup state
   const [auditingTier, setAuditingTier] = useState(null);
@@ -437,16 +476,32 @@ export default function Portal({
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
             <div className="flex items-center gap-4">
               <div className="w-12 h-12 bg-amber-500 text-stone-950 font-black rounded-full flex items-center justify-center text-lg shadow-inner shrink-0">
-                MJ
+                {studentProfileStatus === 'loading' ? (
+                  <div className="w-4 h-4 border-2 border-stone-950/40 border-t-stone-950 rounded-full animate-spin" />
+                ) : (
+                  getInitials(studentDisplayName)
+                )}
               </div>
-              <div>
-                <div className="flex flex-wrap items-center gap-2">
-                  <h3 className="text-lg font-serif font-bold text-white">Marcus Vance Jr. (Scholar-Athlete)</h3>
-                  <span className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded">
-                    D1 Varsity Recruited
-                  </span>
-                </div>
-                <p className="text-xs text-stone-400 mt-0.5 font-light">
+              <div className="min-w-0">
+                {studentProfileStatus === 'loading' ? (
+                  <div className="flex items-center gap-2.5">
+                    <div className="h-5 w-40 bg-stone-800 rounded-md animate-pulse" />
+                    <div className="h-4 w-24 bg-stone-800/70 rounded-md animate-pulse" />
+                  </div>
+                ) : (
+                  <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+                    <h3 className="text-lg sm:text-xl font-serif font-bold text-white leading-tight truncate max-w-56 sm:max-w-xs">
+                      {studentDisplayName}
+                    </h3>
+                    <span className="text-xs sm:text-sm font-medium text-stone-400 whitespace-nowrap">
+                      Scholar-Athlete
+                    </span>
+                    <span className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded shrink-0">
+                      D1 Varsity Recruited
+                    </span>
+                  </div>
+                )}
+                <p className="text-xs text-stone-400 mt-1.5 font-light">
                   Primary Focus: <strong className="text-stone-300">Tier 2: Recruiting Window</strong> & <strong className="text-stone-300">Tier 6: NIL Intellectual IP</strong>
                 </p>
               </div>
