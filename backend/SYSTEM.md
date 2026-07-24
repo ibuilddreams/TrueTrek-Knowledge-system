@@ -2,7 +2,7 @@
 
 Architecture and conventions for the LMS backend. For setup instructions, see [README.md](README.md).
 
-## Stack
+## Stacks
 
 | Concern       | Choice                                            |
 |---------------|----------------------------------------------------|
