@@ -9,9 +9,22 @@ import CloseButton from '@/components/ui/CloseButton';
 import EmptyState from '@/components/ui/EmptyState';
 
 const COURSE_STATUS_STYLES = {
-  PUBLISHED: 'bg-emerald-50 text-emerald-700 border-emerald-200/70',
-  DRAFT: 'bg-amber-50 text-amber-700 border-amber-200/70',
-  ARCHIVED: 'bg-stone-100 text-stone-500 border-stone-200',
+  PUBLISHED: 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-1 ring-emerald-100',
+  DRAFT: 'bg-amber-50 text-amber-700 border-amber-200 ring-1 ring-amber-100',
+  ARCHIVED: 'bg-stone-100 text-stone-500 border-stone-200 ring-1 ring-stone-100',
+};
+
+const COURSE_STATUS_DOT_STYLES = {
+  PUBLISHED: 'bg-emerald-500',
+  DRAFT: 'bg-amber-500',
+  ARCHIVED: 'bg-stone-400',
+};
+
+const ENROLLMENT_STATUS_STYLES = {
+  ACTIVE: 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  COMPLETED: 'bg-sky-50 text-sky-700 border-sky-200',
+  SUSPENDED: 'bg-rose-50 text-rose-700 border-rose-200',
+  CANCELLED: 'bg-stone-100 text-stone-500 border-stone-200',
 };
 
 export default function MyCoursesTab() {
@@ -98,56 +111,64 @@ export default function MyCoursesTab() {
             const isExpanded = expandedCourseId === course.id;
             const statusStyle = COURSE_STATUS_STYLES[course.status] || COURSE_STATUS_STYLES.DRAFT;
 
+            const enrollmentStatusStyle = (status) =>
+              ENROLLMENT_STATUS_STYLES[status] || ENROLLMENT_STATUS_STYLES.CANCELLED;
+
             return (
               <div
                 key={course.id}
-                className="group relative bg-white border border-stone-200/90 rounded-2xl shadow-sm overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-amber-200/80"
+                className="group relative self-start w-full bg-white border border-stone-200/90 rounded-2xl shadow-[0_1px_2px_rgba(28,25,23,0.04),0_8px_24px_-12px_rgba(28,25,23,0.08)] overflow-hidden transition-all duration-300 hover:shadow-[0_4px_10px_rgba(28,25,23,0.06),0_16px_32px_-14px_rgba(180,83,9,0.18)] hover:border-amber-200/80"
               >
                 <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 to-amber-800 opacity-80" />
 
-                <div className="p-5 sm:p-6 flex items-start gap-4">
-                  <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105">
+                <div className="p-6 sm:p-7 pb-4 sm:pb-5 flex items-start gap-4">
+                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/60 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0 shadow-xs transition-transform duration-300 group-hover:scale-105">
                     <Layers className="w-5 h-5" />
                   </div>
 
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-3">
                       <div className="min-w-0">
-                        <h3 className="font-serif font-bold text-base text-stone-900 truncate">{course.title}</h3>
-                        <p className="text-xs text-stone-400 font-light mt-0.5 truncate">
+                        <h3 className="font-serif font-bold text-base text-stone-900 leading-snug truncate">{course.title}</h3>
+                        <p className="text-xs text-stone-400 font-light mt-1 truncate">
                           {course.category?.name || 'Uncategorized'}
                         </p>
                       </div>
-                      <span className={`shrink-0 text-[9px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${statusStyle}`}>
+                      <span className={`shrink-0 inline-flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-full border ${statusStyle}`}>
+                        <span className={`w-1.5 h-1.5 rounded-full ${COURSE_STATUS_DOT_STYLES[course.status] || COURSE_STATUS_DOT_STYLES.ARCHIVED}`} />
                         {course.status}
                       </span>
-                    </div>
-
-                    <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-stone-100">
-                      <div className="flex items-center gap-2 text-stone-600">
-                        <Users className="w-4 h-4 text-stone-400" />
-                        <span className="text-sm font-serif font-bold text-stone-900">{course.total_students}</span>
-                        <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400">
-                          {course.total_students === 1 ? 'Student' : 'Students'}
-                        </span>
-                      </div>
-
-                      <button
-                        type="button"
-                        onClick={() => setExpandedCourseId(isExpanded ? null : course.id)}
-                        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-stone-50 hover:bg-amber-50 border border-stone-200 hover:border-amber-200 text-stone-700 hover:text-amber-800 text-[11px] font-mono font-semibold uppercase tracking-wider rounded-xl transition"
-                        title={isExpanded ? 'Hide enrolled students' : 'View enrolled students'}
-                        aria-label={isExpanded ? 'Hide enrolled students' : 'View enrolled students'}
-                      >
-                        {isExpanded ? 'Hide' : 'View'} Students
-                        <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                      </button>
                     </div>
                   </div>
                 </div>
 
+                <div className="px-6 sm:px-7 pb-6 sm:pb-7">
+                  <div className="flex items-center justify-between gap-3 rounded-xl bg-stone-50/80 border border-stone-100 px-4 py-3">
+                    <div className="flex items-center gap-2 text-stone-600">
+                      <div className="w-7 h-7 rounded-lg bg-white border border-stone-200 flex items-center justify-center shrink-0">
+                        <Users className="w-3.5 h-3.5 text-stone-400" />
+                      </div>
+                      <span className="text-sm font-serif font-bold text-stone-900">{course.total_students}</span>
+                      <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400">
+                        {course.total_students === 1 ? 'Student' : 'Students'}
+                      </span>
+                    </div>
+
+                    <button
+                      type="button"
+                      onClick={() => setExpandedCourseId(isExpanded ? null : course.id)}
+                      className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-amber-50 border border-stone-200 hover:border-amber-200 text-stone-700 hover:text-amber-800 text-[11px] font-mono font-semibold uppercase tracking-wider rounded-lg shadow-xs transition-colors"
+                      title={isExpanded ? 'Hide enrolled students' : 'View enrolled students'}
+                      aria-label={isExpanded ? 'Hide enrolled students' : 'View enrolled students'}
+                    >
+                      {isExpanded ? 'Hide' : 'View'} Students
+                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                    </button>
+                  </div>
+                </div>
+
                 {isExpanded && (
-                  <div className="border-t border-stone-100 bg-stone-50/50 px-5 sm:px-6 py-4">
+                  <div className="border-t border-stone-100 bg-stone-50/50 px-5 sm:px-7 py-4">
                     {roster.length === 0 ? (
                       <EmptyState
                         icon={Users}
@@ -156,11 +177,14 @@ export default function MyCoursesTab() {
                         compact
                       />
                     ) : (
-                      <ul className="divide-y divide-stone-100">
+                      <ul className="divide-y divide-stone-100/80">
                         {roster.map((enrollment) => (
-                          <li key={enrollment.id} className="py-3 flex items-center justify-between gap-3">
+                          <li
+                            key={enrollment.id}
+                            className="flex items-center justify-between gap-3 py-2.5 px-2.5 -mx-2.5 rounded-xl transition-colors hover:bg-white hover:shadow-xs"
+                          >
                             <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-8 h-8 rounded-full bg-white border border-stone-200 flex items-center justify-center font-bold text-stone-600 text-[10px] shadow-xs shrink-0">
+                              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-white to-stone-50 border border-stone-200 flex items-center justify-center font-bold text-stone-600 text-[10px] shadow-xs shrink-0">
                                 {enrollment.student.name
                                   ?.split(' ')
                                   .map((part) => part[0])
@@ -177,14 +201,14 @@ export default function MyCoursesTab() {
                                 </p>
                               </div>
                             </div>
-                            <div className="flex items-center gap-3 shrink-0">
-                              <span className="text-[9px] font-mono uppercase px-2 py-0.5 bg-white border border-stone-200 text-stone-500 rounded-lg">
+                            <div className="flex items-center gap-2.5 shrink-0">
+                              <span className={`text-[9px] font-mono font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border ${enrollmentStatusStyle(enrollment.status)}`}>
                                 {enrollment.status}
                               </span>
                               <button
                                 type="button"
                                 onClick={() => handleViewEnrolledStudent(enrollment.student.id)}
-                                className="p-1.5 text-stone-500 hover:text-amber-700 hover:bg-amber-100/60 rounded-lg transition"
+                                className="p-1.5 text-stone-500 hover:text-amber-700 hover:bg-amber-100/60 rounded-lg transition-colors"
                                 title="View student's enrollment details"
                                 aria-label="View student's enrollment details"
                               >
