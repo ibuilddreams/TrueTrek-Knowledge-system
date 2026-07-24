@@ -1,12 +1,12 @@
 "use client";
 
-import { useState, useEffect, useMemo } from 'react';
-import { useRouter } from 'next/navigation';
+import { useState, useEffect, useMemo, useCallback, Suspense } from 'react';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import {
   Users, Award, BookOpen, FileText, CheckCircle, Search, Plus, Filter,
   TrendingUp, Download, Eye, GraduationCap, ChevronRight, AlertCircle,
   Clock, ShieldAlert, Sparkles, BookOpenCheck, Edit, Trash, Activity,
-  Lock, Unlock, Key, RefreshCw, BookMarked
+  Lock, Unlock, Key, RefreshCw, BookMarked, ChevronDown, Layers
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { CURRICULUM_TIERS, DRILL_QUESTIONS } from '@/data/curriculum';
@@ -241,8 +241,24 @@ const TEACHER_TABS = [
   },
 ];
 
-export default function TeacherPortal() {
+const VALID_TEACHER_TABS = new Set(TEACHER_TABS.map((tab) => tab.id));
+const DEFAULT_TEACHER_TAB = 'dashboard';
+
+function resolveTeacherTab(tabParam) {
+  if (tabParam && VALID_TEACHER_TABS.has(tabParam)) return tabParam;
+  return DEFAULT_TEACHER_TAB;
+}
+
+const COURSE_STATUS_STYLES = {
+  PUBLISHED: 'bg-emerald-50 text-emerald-700 border-emerald-200/70',
+  DRAFT: 'bg-amber-50 text-amber-700 border-amber-200/70',
+  ARCHIVED: 'bg-stone-100 text-stone-500 border-stone-200',
+};
+
+function TeacherPortalContent() {
   const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const [students, setStudents] = useState(INITIAL_STUDENTS);
   const [selectedStudent, setSelectedStudent] = useState(null);
   const [quickViewStudent, setQuickViewStudent] = useState(null);
@@ -305,7 +321,34 @@ export default function TeacherPortal() {
   const [successAnimation, setSuccessAnimation] = useState(false);
 
   // UI Tabs
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const activeTab = useMemo(
+    () => resolveTeacherTab(searchParams.get('tab')),
+    [searchParams]
+  );
+
+  useEffect(() => {
+    const rawTab = searchParams.get('tab');
+    if (rawTab && !VALID_TEACHER_TABS.has(rawTab)) {
+      router.replace(pathname, { scroll: false });
+    }
+  }, [pathname, router, searchParams]);
+
+  const setActiveTab = useCallback(
+    (tabId) => {
+      const nextTab = resolveTeacherTab(tabId);
+      const params = new URLSearchParams(searchParams.toString());
+
+      if (nextTab === DEFAULT_TEACHER_TAB) {
+        params.delete('tab');
+      } else {
+        params.set('tab', nextTab);
+      }
+
+      const query = params.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
 
   const tabs = TEACHER_TABS.map((tab) =>
     tab.id === 'students' ? { ...tab, label: `${tab.label} (${students.length})` } : tab
@@ -1062,48 +1105,65 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
               )}
 
               {teacherCoursesStatus === 'succeeded' && assignedCoursesStats?.total_courses > 0 && (
-                <div className="space-y-5">
+                <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
                   {assignedCoursesStats.courses.map((course) => {
                     const courseWithStudents = assignedCoursesWithStudents?.courses?.find(
                       (entry) => entry.id === course.id
                     );
                     const roster = courseWithStudents?.students || [];
                     const isExpanded = expandedCourseId === course.id;
+                    const statusStyle = COURSE_STATUS_STYLES[course.status] || COURSE_STATUS_STYLES.DRAFT;
 
                     return (
-                      <div key={course.id} className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
-                        <div className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                          <div className="min-w-0">
-                            <div className="flex items-center gap-2 flex-wrap">
-                              <h3 className="font-serif font-bold text-base text-stone-900 truncate">{course.title}</h3>
-                              <span className="text-[9px] font-mono uppercase px-2 py-0.5 bg-stone-50 border border-stone-200 text-stone-500 rounded-lg">
+                      <div
+                        key={course.id}
+                        className="group relative bg-white border border-stone-200/90 rounded-2xl shadow-sm overflow-hidden transition-all duration-300 hover:shadow-lg hover:border-amber-200/80"
+                      >
+                        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 to-amber-800 opacity-80" />
+
+                        <div className="p-5 sm:p-6 flex items-start gap-4">
+                          <div className="w-11 h-11 rounded-2xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105">
+                            <Layers className="w-5 h-5" />
+                          </div>
+
+                          <div className="min-w-0 flex-1">
+                            <div className="flex items-start justify-between gap-3">
+                              <div className="min-w-0">
+                                <h3 className="font-serif font-bold text-base text-stone-900 truncate">{course.title}</h3>
+                                <p className="text-xs text-stone-400 font-light mt-0.5 truncate">
+                                  {course.category?.name || 'Uncategorized'}
+                                </p>
+                              </div>
+                              <span className={`shrink-0 text-[9px] font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg border ${statusStyle}`}>
                                 {course.status}
                               </span>
                             </div>
-                            <p className="text-xs text-stone-400 font-light mt-1">
-                              {course.category?.name || 'Uncategorized'}
-                            </p>
-                          </div>
 
-                          <div className="flex items-center gap-4 shrink-0">
-                            <div className="text-right">
-                              <p className="text-2xl font-serif font-bold text-stone-900">{course.total_students}</p>
-                              <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400">Students</p>
+                            <div className="flex items-center justify-between gap-3 mt-4 pt-4 border-t border-stone-100">
+                              <div className="flex items-center gap-2 text-stone-600">
+                                <Users className="w-4 h-4 text-stone-400" />
+                                <span className="text-sm font-serif font-bold text-stone-900">{course.total_students}</span>
+                                <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400">
+                                  {course.total_students === 1 ? 'Student' : 'Students'}
+                                </span>
+                              </div>
+
+                              <button
+                                type="button"
+                                onClick={() => setExpandedCourseId(isExpanded ? null : course.id)}
+                                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-stone-50 hover:bg-amber-50 border border-stone-200 hover:border-amber-200 text-stone-700 hover:text-amber-800 text-[11px] font-mono font-semibold uppercase tracking-wider rounded-xl transition"
+                                title={isExpanded ? 'Hide enrolled students' : 'View enrolled students'}
+                                aria-label={isExpanded ? 'Hide enrolled students' : 'View enrolled students'}
+                              >
+                                {isExpanded ? 'Hide' : 'View'} Students
+                                <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
+                              </button>
                             </div>
-                            <button
-                              type="button"
-                              onClick={() => setExpandedCourseId(isExpanded ? null : course.id)}
-                              className="px-4 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 text-xs font-mono font-semibold uppercase tracking-wider rounded-xl transition"
-                              title={isExpanded ? 'Hide enrolled students' : 'View enrolled students'}
-                              aria-label={isExpanded ? 'Hide enrolled students' : 'View enrolled students'}
-                            >
-                              {isExpanded ? 'Hide Students' : 'View Students'}
-                            </button>
                           </div>
                         </div>
 
                         {isExpanded && (
-                          <div className="border-t border-stone-100 px-5 sm:px-6 pb-5 sm:pb-6">
+                          <div className="border-t border-stone-100 bg-stone-50/50 px-5 sm:px-6 py-4">
                             {roster.length === 0 ? (
                               <EmptyState
                                 icon={Users}
@@ -1112,25 +1172,35 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
                                 compact
                               />
                             ) : (
-                              <ul className="divide-y divide-stone-100 mt-2">
+                              <ul className="divide-y divide-stone-100">
                                 {roster.map((enrollment) => (
                                   <li key={enrollment.id} className="py-3 flex items-center justify-between gap-3">
-                                    <div className="min-w-0">
-                                      <p className="text-xs font-semibold text-stone-800 truncate">
-                                        {enrollment.student.name}
-                                      </p>
-                                      <p className="text-[10px] font-mono text-stone-400 mt-0.5 truncate">
-                                        {enrollment.student.email}
-                                      </p>
+                                    <div className="flex items-center gap-3 min-w-0">
+                                      <div className="w-8 h-8 rounded-full bg-white border border-stone-200 flex items-center justify-center font-bold text-stone-600 text-[10px] shadow-xs shrink-0">
+                                        {enrollment.student.name
+                                          ?.split(' ')
+                                          .map((part) => part[0])
+                                          .join('')
+                                          .slice(0, 2)
+                                          .toUpperCase() || 'ST'}
+                                      </div>
+                                      <div className="min-w-0">
+                                        <p className="text-xs font-semibold text-stone-800 truncate">
+                                          {enrollment.student.name}
+                                        </p>
+                                        <p className="text-[10px] font-mono text-stone-400 mt-0.5 truncate">
+                                          {enrollment.student.email}
+                                        </p>
+                                      </div>
                                     </div>
                                     <div className="flex items-center gap-3 shrink-0">
-                                      <span className="text-[9px] font-mono uppercase px-2 py-0.5 bg-stone-50 border border-stone-200 text-stone-500 rounded-lg">
+                                      <span className="text-[9px] font-mono uppercase px-2 py-0.5 bg-white border border-stone-200 text-stone-500 rounded-lg">
                                         {enrollment.status}
                                       </span>
                                       <button
                                         type="button"
                                         onClick={() => handleViewEnrolledStudent(enrollment.student.id)}
-                                        className="p-1.5 text-stone-500 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition"
+                                        className="p-1.5 text-stone-500 hover:text-amber-700 hover:bg-amber-100/60 rounded-lg transition"
                                         title="View student's enrollment details"
                                         aria-label="View student's enrollment details"
                                       >
@@ -2098,5 +2168,13 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
       </TabTransition>
 
     </div>
+  );
+}
+
+export default function TeacherPortal() {
+  return (
+    <Suspense fallback={<Loader label="Loading Teacher Portal..." />}>
+      <TeacherPortalContent />
+    </Suspense>
   );
 }
