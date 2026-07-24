@@ -8,6 +8,7 @@ from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
 from common.image import build_absolute_image_url
+from courses.serializers import CourseListSerializer
 
 from .models import UserProfile
 
@@ -232,6 +233,13 @@ class TeacherUpdateSerializer(serializers.ModelSerializer):
 
     def to_representation(self, instance):
         return TeacherSerializer(instance).data
+
+
+class TeacherCourseStatsSerializer(CourseListSerializer):
+    total_students = serializers.IntegerField(read_only=True)
+
+    class Meta(CourseListSerializer.Meta):
+        fields = CourseListSerializer.Meta.fields + ["total_students"]
 
 
 class UserProfileSerializer(serializers.ModelSerializer):

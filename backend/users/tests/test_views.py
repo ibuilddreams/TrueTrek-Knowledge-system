@@ -1,7 +1,13 @@
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
 from rest_framework import status
 from rest_framework.test import APITestCase
+
+from courses.models import Category, Course, CourseInstructor
+from enrollments.models import Enrollment
+from progress.models import CourseProgress
 
 UserModel = get_user_model()
 
@@ -335,3 +341,126 @@ class TeacherDetailViewTests(APITestCase):
         self.assertEqual(self.teacher.account_status, UserModel.AccountStatus.DEACTIVATED)
         self.assertFalse(self.teacher.is_active)
         self.assertTrue(UserModel.objects.filter(pk=self.teacher.pk).exists())
+
+
+class TeacherSelfServiceViewsTests(APITestCase):
+    def setUp(self):
+        self.teacher = UserModel.objects.create_user(
+            username="selfteacher",
+            email="selfteacher@example.com",
+            password="StrongPass123!",
+            gender=UserModel.Gender.MALE,
+            role=UserModel.Roles.TEACHER,
+        )
+
+        self.other_teacher = UserModel.objects.create_user(
+            username="otherteacher",
+            email="otherteacher@example.com",
+            password="StrongPass123!",
+            gender=UserModel.Gender.MALE,
+            role=UserModel.Roles.TEACHER,
+        )
+
+        self.student_one = UserModel.objects.create_user(
+            username="enrolledstudentone",
+            email="enrolledstudentone@example.com",
+            password="StrongPass123!",
+            gender=UserModel.Gender.FEMALE,
+            role=UserModel.Roles.STUDENT,
+        )
+
+        self.student_two = UserModel.objects.create_user(
+            username="enrolledstudenttwo",
+            email="enrolledstudenttwo@example.com",
+            password="StrongPass123!",
+            gender=UserModel.Gender.FEMALE,
+            role=UserModel.Roles.STUDENT,
+        )
+
+        self.unrelated_student = UserModel.objects.create_user(
+            username="unrelatedstudent",
+            email="unrelatedstudent@example.com",
+            password="StrongPass123!",
+            gender=UserModel.Gender.OTHER,
+            role=UserModel.Roles.STUDENT,
+        )
+
+        self.category = Category.objects.create(name="Compliance")
+
+        self.assigned_course = Course.objects.create(
+            title="Assigned Course",
+            category=self.category,
+        )
+        CourseInstructor.objects.create(course=self.assigned_course, instructor=self.teacher)
+
+        self.other_course = Course.objects.create(
+            title="Other Teacher's Course",
+            category=self.category,
+        )
+        CourseInstructor.objects.create(course=self.other_course, instructor=self.other_teacher)
+
+        Enrollment.objects.create(student=self.student_one, course=self.assigned_course)
+        Enrollment.objects.create(student=self.student_two, course=self.assigned_course)
+        Enrollment.objects.create(student=self.unrelated_student, course=self.other_course)
+
+        CourseProgress.objects.create(
+            student=self.student_one,
+            course=self.assigned_course,
+            completion_percentage=50,
+        )
+
+    def test_assigned_courses_requires_teacher(self):
+        self.client.force_authenticate(user=self.student_one)
+
+        response = self.client.get(reverse("teacher-assigned-courses-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_assigned_courses_returns_only_own_courses_with_student_count(self):
+        self.client.force_authenticate(user=self.teacher)
+
+        response = self.client.get(reverse("teacher-assigned-courses-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data["data"]
+        self.assertEqual(data["total_courses"], 1)
+        self.assertEqual(data["courses"][0]["id"], self.assigned_course.id)
+        self.assertEqual(data["courses"][0]["total_students"], 2)
+
+    def test_assigned_courses_with_students_returns_enrolled_students(self):
+        self.client.force_authenticate(user=self.teacher)
+
+        response = self.client.get(reverse("teacher-assigned-courses-students-list"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data["data"]
+        self.assertEqual(data["total_courses"], 1)
+        course_data = data["courses"][0]
+        self.assertEqual(course_data["id"], self.assigned_course.id)
+        self.assertEqual(course_data["total_students"], 2)
+        returned_student_ids = [entry["student"]["id"] for entry in course_data["students"]]
+        self.assertIn(self.student_one.id, returned_student_ids)
+        self.assertIn(self.student_two.id, returned_student_ids)
+
+    def test_enrolled_student_detail_returns_student_scoped_to_teacher_courses(self):
+        self.client.force_authenticate(user=self.teacher)
+
+        response = self.client.get(
+            reverse("teacher-enrolled-student-detail", kwargs={"student_id": self.student_one.id})
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data["data"]
+        self.assertEqual(data["student"]["id"], self.student_one.id)
+        self.assertEqual(data["total_courses"], 1)
+        self.assertEqual(data["courses"][0]["course"]["id"], self.assigned_course.id)
+        self.assertEqual(data["courses"][0]["completion_percentage"], Decimal("50.00"))
+
+    def test_enrolled_student_detail_returns_404_for_unrelated_student(self):
+        self.client.force_authenticate(user=self.teacher)
+
+        response = self.client.get(
+            reverse("teacher-enrolled-student-detail", kwargs={"student_id": self.unrelated_student.id})
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

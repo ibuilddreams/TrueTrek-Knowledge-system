@@ -14,6 +14,8 @@ import { requestAdvisorAdvice } from '@/services/advisorService';
 import { getDaysAgoDateString, getDaysSinceLastDrill } from '@/lib/dates';
 import { useAuth } from '@/hooks/useAuth';
 import { useTeacherDashboard } from '@/hooks/useTeacherDashboard';
+import { useTeacherCourses } from '@/hooks/useTeacherCourses';
+import { useTeacherStudentDetail } from '@/hooks/useTeacherStudentDetail';
 import { AUTH_ROLES } from '@/constants/auth';
 import { ROUTES } from '@/constants/routes';
 import {
@@ -226,6 +228,42 @@ export default function TeacherPortal() {
       loadDashboard();
     }
   }, [isFacultyLoggedIn, loadDashboard]);
+
+  const {
+    stats: assignedCoursesStats,
+    withStudents: assignedCoursesWithStudents,
+    status: teacherCoursesStatus,
+    error: teacherCoursesError,
+    loadCourses,
+  } = useTeacherCourses();
+
+  useEffect(() => {
+    if (isFacultyLoggedIn) {
+      loadCourses();
+    }
+  }, [isFacultyLoggedIn, loadCourses]);
+
+  const {
+    data: studentDetailData,
+    status: studentDetailStatus,
+    error: studentDetailError,
+    loadStudentDetail,
+    clearStudentDetail,
+  } = useTeacherStudentDetail();
+
+  const [viewingEnrolledStudentId, setViewingEnrolledStudentId] = useState(null);
+  const [expandedCourseId, setExpandedCourseId] = useState(null);
+
+  const handleViewEnrolledStudent = (studentId) => {
+    setViewingEnrolledStudentId(studentId);
+    loadStudentDetail(studentId);
+  };
+
+  const handleCloseEnrolledStudent = () => {
+    setViewingEnrolledStudentId(null);
+    clearStudentDetail();
+  };
+
   const [facultyEmail, setFacultyEmail] = useState('');
   const [facultyPasscode, setFacultyPasscode] = useState('');
   const [loginError, setLoginError] = useState('');
@@ -597,6 +635,15 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
         >
           <TrendingUp className="w-4 h-4" />
           Analytics Dashboard
+        </button>
+        <button
+          onClick={() => setActiveTab('courses')}
+          className={`pb-4 px-3 flex items-center gap-2 border-b-2 transition-all ${activeTab === 'courses' ? 'border-amber-700 text-amber-800 font-bold' : 'border-transparent hover:text-stone-850'}`}
+          title="Switch tab to My Assigned Courses"
+          aria-label="Switch tab to My Assigned Courses"
+        >
+          <BookMarked className="w-4 h-4" />
+          My Courses
         </button>
         <button
           onClick={() => setActiveTab('students')}
@@ -981,6 +1028,226 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
                 </div>
               </div>
 
+            </div>
+          )}
+
+          {/* TAB: MY COURSES (live assigned courses + enrolled students) */}
+          {activeTab === 'courses' && (
+            <div className="space-y-6">
+              {(teacherCoursesStatus === 'loading' || teacherCoursesStatus === 'idle') && (
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6" aria-busy="true" aria-label="Loading assigned courses">
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <div key={i} className="h-40 rounded-2xl bg-stone-100 animate-pulse" />
+                  ))}
+                </div>
+              )}
+
+              {teacherCoursesStatus === 'failed' && (
+                <div className="bg-white border border-stone-200 rounded-2xl shadow-xl p-8 text-center max-w-lg mx-auto">
+                  <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                    <AlertCircle className="w-6 h-6" />
+                  </div>
+                  <h2 className="text-xl font-serif font-bold text-stone-900 mb-2">
+                    Failed to Load Your Courses
+                  </h2>
+                  <p className="text-xs text-stone-500 font-light mb-6">{teacherCoursesError}</p>
+                  <button
+                    type="button"
+                    onClick={() => loadCourses({ force: true })}
+                    className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl shadow-md transition"
+                  >
+                    <RefreshCw className="w-4 h-4" />
+                    Retry
+                  </button>
+                </div>
+              )}
+
+              {teacherCoursesStatus === 'succeeded' && !(assignedCoursesStats?.total_courses > 0) && (
+                <div className="bg-white border border-stone-200 rounded-2xl shadow-sm">
+                  <EmptyState
+                    icon={BookMarked}
+                    label="No assigned courses yet"
+                    description="Courses you've been assigned to teach will appear here along with their enrolled students."
+                  />
+                </div>
+              )}
+
+              {teacherCoursesStatus === 'succeeded' && assignedCoursesStats?.total_courses > 0 && (
+                <div className="space-y-5">
+                  {assignedCoursesStats.courses.map((course) => {
+                    const courseWithStudents = assignedCoursesWithStudents?.courses?.find(
+                      (entry) => entry.id === course.id
+                    );
+                    const roster = courseWithStudents?.students || [];
+                    const isExpanded = expandedCourseId === course.id;
+
+                    return (
+                      <div key={course.id} className="bg-white border border-stone-200 rounded-2xl shadow-sm overflow-hidden">
+                        <div className="p-5 sm:p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                          <div className="min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <h3 className="font-serif font-bold text-base text-stone-900 truncate">{course.title}</h3>
+                              <span className="text-[9px] font-mono uppercase px-2 py-0.5 bg-stone-50 border border-stone-200 text-stone-500 rounded-lg">
+                                {course.status}
+                              </span>
+                            </div>
+                            <p className="text-xs text-stone-400 font-light mt-1">
+                              {course.category?.name || 'Uncategorized'}
+                            </p>
+                          </div>
+
+                          <div className="flex items-center gap-4 shrink-0">
+                            <div className="text-right">
+                              <p className="text-2xl font-serif font-bold text-stone-900">{course.total_students}</p>
+                              <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400">Students</p>
+                            </div>
+                            <button
+                              type="button"
+                              onClick={() => setExpandedCourseId(isExpanded ? null : course.id)}
+                              className="px-4 py-2 bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-700 text-xs font-mono font-semibold uppercase tracking-wider rounded-xl transition"
+                              title={isExpanded ? 'Hide enrolled students' : 'View enrolled students'}
+                              aria-label={isExpanded ? 'Hide enrolled students' : 'View enrolled students'}
+                            >
+                              {isExpanded ? 'Hide Students' : 'View Students'}
+                            </button>
+                          </div>
+                        </div>
+
+                        {isExpanded && (
+                          <div className="border-t border-stone-100 px-5 sm:px-6 pb-5 sm:pb-6">
+                            {roster.length === 0 ? (
+                              <EmptyState
+                                icon={Users}
+                                label="No students enrolled yet"
+                                description="Once students enroll in this course, they'll show up here."
+                                compact
+                              />
+                            ) : (
+                              <ul className="divide-y divide-stone-100 mt-2">
+                                {roster.map((enrollment) => (
+                                  <li key={enrollment.id} className="py-3 flex items-center justify-between gap-3">
+                                    <div className="min-w-0">
+                                      <p className="text-xs font-semibold text-stone-800 truncate">
+                                        {enrollment.student.name}
+                                      </p>
+                                      <p className="text-[10px] font-mono text-stone-400 mt-0.5 truncate">
+                                        {enrollment.student.email}
+                                      </p>
+                                    </div>
+                                    <div className="flex items-center gap-3 shrink-0">
+                                      <span className="text-[9px] font-mono uppercase px-2 py-0.5 bg-stone-50 border border-stone-200 text-stone-500 rounded-lg">
+                                        {enrollment.status}
+                                      </span>
+                                      <button
+                                        type="button"
+                                        onClick={() => handleViewEnrolledStudent(enrollment.student.id)}
+                                        className="p-1.5 text-stone-500 hover:text-amber-700 hover:bg-amber-50 rounded-lg transition"
+                                        title="View student's enrollment details"
+                                        aria-label="View student's enrollment details"
+                                      >
+                                        <Eye className="w-4 h-4" />
+                                      </button>
+                                    </div>
+                                  </li>
+                                ))}
+                              </ul>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+                </div>
+              )}
+
+              <AnimatePresence>
+                {viewingEnrolledStudentId && (
+                  <motion.div
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="fixed inset-0 bg-stone-950/40 backdrop-blur-sm z-50 flex justify-end"
+                  >
+                    <motion.div
+                      initial={{ x: '100%' }}
+                      animate={{ x: 0 }}
+                      exit={{ x: '100%' }}
+                      transition={{ type: 'spring', damping: 25, stiffness: 180 }}
+                      className="w-full max-w-lg bg-white h-screen shadow-2xl p-6 sm:p-8 overflow-y-auto"
+                    >
+                      <div className="flex items-center justify-between pb-4 border-b border-stone-200 mb-6">
+                        <h3 className="font-serif font-black text-xl text-stone-900">Enrolled Student</h3>
+                        <CloseButton
+                          onClick={handleCloseEnrolledStudent}
+                          className="p-1.5 border border-stone-200 rounded-full text-stone-500 hover:text-stone-900 hover:bg-stone-50 transition"
+                          iconClassName="w-4.5 h-4.5"
+                        />
+                      </div>
+
+                      {(studentDetailStatus === 'loading' || studentDetailStatus === 'idle') && (
+                        <div className="space-y-3">
+                          <div className="h-4 bg-stone-100 rounded w-3/4 animate-pulse" />
+                          <div className="h-4 bg-stone-100 rounded w-1/2 animate-pulse" />
+                          <div className="h-24 bg-stone-100 rounded animate-pulse" />
+                        </div>
+                      )}
+
+                      {studentDetailStatus === 'failed' && (
+                        <div className="text-center py-8">
+                          <p className="text-xs text-rose-600 font-medium mb-4">{studentDetailError}</p>
+                          <button
+                            type="button"
+                            onClick={() => loadStudentDetail(viewingEnrolledStudentId)}
+                            className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition"
+                          >
+                            <RefreshCw className="w-3.5 h-3.5" />
+                            Retry
+                          </button>
+                        </div>
+                      )}
+
+                      {studentDetailStatus === 'succeeded' && studentDetailData && (
+                        <div className="space-y-6">
+                          <div>
+                            <p className="font-serif font-bold text-lg text-stone-900">
+                              {studentDetailData.student.full_name}
+                            </p>
+                            <p className="text-xs font-mono text-stone-400 mt-0.5">{studentDetailData.student.email}</p>
+                          </div>
+
+                          <div>
+                            <h4 className="text-xs font-mono uppercase tracking-wider text-stone-400 font-bold mb-3">
+                              Enrolled Courses ({studentDetailData.total_courses})
+                            </h4>
+                            <ul className="space-y-3">
+                              {studentDetailData.courses.map((entry, index) => (
+                                <li key={entry.course.id || index} className="p-4 rounded-xl border border-stone-100 bg-stone-50/50">
+                                  <div className="flex items-center justify-between gap-3 mb-2">
+                                    <span className="text-xs font-semibold text-stone-800 truncate">{entry.course.title}</span>
+                                    <span className="text-[10px] font-mono font-bold text-amber-800 shrink-0">
+                                      {Math.round(Number(entry.completion_percentage))}%
+                                    </span>
+                                  </div>
+                                  <div className="h-1.5 rounded-full bg-stone-200 overflow-hidden mb-2">
+                                    <div
+                                      className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-800"
+                                      style={{ width: `${Math.min(Math.max(Number(entry.completion_percentage), 0), 100)}%` }}
+                                    />
+                                  </div>
+                                  <div className="flex items-center justify-between text-[10px] font-mono text-stone-400">
+                                    <span>{entry.status}</span>
+                                    <span>{entry.is_completed ? 'Completed' : 'In Progress'}</span>
+                                  </div>
+                                </li>
+                              ))}
+                            </ul>
+                          </div>
+                        </div>
+                      )}
+                    </motion.div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </div>
           )}
 

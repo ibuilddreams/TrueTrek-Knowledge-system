@@ -3,10 +3,10 @@ from rest_framework import generics
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from common.pagination import Pagination
-from common.response import success_response
+from common.response import error_response, success_response
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
-from .permissions import IsAdmin
+from .permissions import IsAdmin, IsTeacher
 from .serializers import (
     CreateStudentSerializer,
     CreateTeacherSerializer,
@@ -17,10 +17,16 @@ from .serializers import (
     ResetPasswordSerializer,
     StudentSerializer,
     StudentUpdateSerializer,
+    TeacherCourseStatsSerializer,
     TeacherSerializer,
     TeacherUpdateSerializer,
 )
-from .services import send_password_reset_email
+from .services import (
+    get_teacher_assigned_courses,
+    get_teacher_assigned_courses_with_students,
+    get_teacher_enrolled_student_detail,
+    send_password_reset_email,
+)
 
 UserModel = get_user_model()
 
@@ -246,6 +252,46 @@ class ProfileView(generics.RetrieveUpdateAPIView):
         serializer.is_valid(raise_exception=True)
         serializer.save()
         return success_response(serializer.data, message="Profile updated successfully")
+
+
+class TeacherAssignedCoursesListView(generics.GenericAPIView):
+    serializer_class = TeacherCourseStatsSerializer
+    permission_classes = [IsTeacher]
+
+    def get(self, request):
+        courses = get_teacher_assigned_courses(request.user)
+        data = {
+            "total_courses": courses.count(),
+            "courses": self.get_serializer(courses, many=True).data,
+        }
+        return success_response(data, message="Assigned courses fetched successfully")
+
+
+class TeacherAssignedCoursesStudentsView(generics.GenericAPIView):
+    permission_classes = [IsTeacher]
+
+    def get(self, request):
+        courses_data = get_teacher_assigned_courses_with_students(request.user)
+        data = {
+            "total_courses": len(courses_data),
+            "courses": courses_data,
+        }
+        return success_response(
+            data, message="Assigned courses with enrolled students fetched successfully"
+        )
+
+
+class TeacherEnrolledStudentDetailView(generics.GenericAPIView):
+    permission_classes = [IsTeacher]
+
+    def get(self, request, student_id):
+        data = get_teacher_enrolled_student_detail(request.user, student_id)
+        if data is None:
+            return error_response(
+                message="Student is not enrolled in any of your assigned courses.",
+                status_code=404,
+            )
+        return success_response(data, message="Enrolled student's details fetched successfully")
 
 
 class ForgotPasswordView(generics.GenericAPIView):
