@@ -48,10 +48,11 @@ wait_for_http() {
 
 require_active_service() {
   local unit="$1"
-  if sudo systemctl is-active --quiet "${unit}"; then
+  # Use exact /bin/systemctl argv so sudoers NOPASSWD matches.
+  if sudo /bin/systemctl is-active "${unit}" >/dev/null; then
     log "Service ${unit}: active"
   else
-    sudo systemctl status "${unit}" --no-pager -l || true
+    sudo /bin/systemctl status "${unit}" || true
     die "Service ${unit} is not active"
   fi
 }
@@ -115,9 +116,9 @@ log "Validating Nginx configuration"
 sudo /usr/sbin/nginx -t
 
 log "Restarting application services"
-sudo systemctl restart truetrek-backend
-sudo systemctl restart truetrek-frontend
-sudo systemctl reload nginx
+sudo /bin/systemctl restart truetrek-backend
+sudo /bin/systemctl restart truetrek-frontend
+sudo /bin/systemctl reload nginx
 
 log "Verifying systemd units"
 require_active_service truetrek-backend
