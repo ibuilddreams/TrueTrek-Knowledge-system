@@ -4,7 +4,6 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import TeacherPortal from "@/components/features/teachers/TeacherPortal";
 import AdminDashboard from "@/components/features/admin/AdminDashboard";
-import { usePortalSession } from "@/hooks/usePortalSession";
 import { useAuth } from "@/hooks/useAuth";
 import { AUTH_ROLES } from "@/constants/auth";
 import { ROUTES } from "@/constants/routes";
@@ -12,7 +11,6 @@ import Loader from "@/components/ui/Loader";
 
 export default function DashboardPage() {
   const router = useRouter();
-  const { aggregateScore } = usePortalSession();
   const { role, status, isAuthenticated } = useAuth();
 
   const isResolving = status === "idle" || status === "loading";
@@ -47,7 +45,7 @@ export default function DashboardPage() {
   }
 
   if (role === AUTH_ROLES.FACULTY) {
-    return <TeacherPortal aggregateScore={aggregateScore} />;
+    return <TeacherPortal />;
   }
 
   return <Loader label="Checking Access..." />;
