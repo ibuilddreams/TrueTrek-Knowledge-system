@@ -30,12 +30,15 @@ sudo -u truetrek bash /opt/TrueTrek-Knowledge-system/deploy/deploy.sh
 |--------|---------|
 | `DEPLOY_HOST` | `31.97.146.95` |
 | `DEPLOY_USER` | `truetrek` |
-| `DEPLOY_SSH_KEY` | private key for deploy user |
-| `DEPLOY_PORT` | `22` (optional) |
+| `DEPLOY_SSH_KEY` | contents of `/home/truetrek/.ssh/github_actions_deploy` |
 
 On every push to `main`, the workflow SSHs in and runs `deploy/deploy.sh`.
 
-## Environment files (not in git)
+Configure secrets after authenticating `gh` on the server:
 
-- `/opt/TrueTrek-Knowledge-system/backend/.env`
-- `/opt/TrueTrek-Knowledge-system/frontend/.env`
+```bash
+gh auth login
+bash /opt/TrueTrek-Knowledge-system/deploy/setup-github-secrets.sh
+```
+
+Or set them in GitHub → Settings → Secrets and variables → Actions.
