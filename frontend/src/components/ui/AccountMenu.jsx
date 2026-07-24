@@ -132,7 +132,7 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
   ];
 
   return (
-    <div ref={containerRef} className="relative inline-block text-left z-50">
+    <div ref={containerRef} className="relative inline-block text-left">
       <button
         id="account-menu-trigger"
         ref={triggerRef}
