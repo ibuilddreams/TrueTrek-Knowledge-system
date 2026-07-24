@@ -28,6 +28,8 @@ import AccountMenu from '@/components/ui/AccountMenu';
 import MarkdownMiniRenderer from '@/components/ui/MarkdownMiniRenderer';
 import Loader from '@/components/ui/Loader';
 import EmptyState from '@/components/ui/EmptyState';
+import TabNav from '@/components/ui/TabNav';
+import TabTransition from '@/components/ui/TabTransition';
 
 const INITIAL_STUDENTS = [
   {
@@ -206,6 +208,39 @@ const TEACHER_MANUALS = [
   }
 ];
 
+const TEACHER_TABS = [
+  {
+    id: 'dashboard',
+    label: 'Analytics Dashboard',
+    icon: TrendingUp,
+    title: 'Switch tab to Faculty Analytics Dashboard',
+  },
+  {
+    id: 'courses',
+    label: 'My Courses',
+    icon: BookMarked,
+    title: 'Switch tab to My Assigned Courses',
+  },
+  {
+    id: 'students',
+    label: 'Enrollment & Scores',
+    icon: Users,
+    title: 'Switch tab to Scholar-Athlete Enrollment Slots and Compliance Scores',
+  },
+  {
+    id: 'manuals',
+    label: 'Instructional Manuals',
+    icon: BookOpenCheck,
+    title: 'Switch tab to Curriculum Instruction Manuals',
+  },
+  {
+    id: 'documents',
+    label: 'Curriculum Documents',
+    icon: FileText,
+    title: 'Switch tab to Curriculum PDF Resources and Guides',
+  },
+];
+
 export default function TeacherPortal() {
   const router = useRouter();
   const [students, setStudents] = useState(INITIAL_STUDENTS);
@@ -271,7 +306,12 @@ export default function TeacherPortal() {
 
   // UI Tabs
   const [activeTab, setActiveTab] = useState('dashboard');
-  
+
+  const tabs = TEACHER_TABS.map((tab) =>
+    tab.id === 'students' ? { ...tab, label: `${tab.label} (${students.length})` } : tab
+  );
+
+
   // Roster Filters
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedCategoryFilter, setSelectedCategoryFilter] = useState('all');
@@ -626,64 +666,13 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
       </div>
 
       {/* Tabs Menu */}
-      <div className="flex border-b border-stone-200/80 mb-8 overflow-x-auto whitespace-nowrap scrollbar-none gap-2 font-mono text-xs font-semibold tracking-wider uppercase text-stone-500">
-        <button
-          onClick={() => setActiveTab('dashboard')}
-          className={`pb-4 px-3 flex items-center gap-2 border-b-2 transition-all ${activeTab === 'dashboard' ? 'border-amber-700 text-amber-800 font-bold' : 'border-transparent hover:text-stone-850'}`}
-          title="Switch tab to Faculty Analytics Dashboard"
-          aria-label="Switch tab to Faculty Analytics Dashboard"
-        >
-          <TrendingUp className="w-4 h-4" />
-          Analytics Dashboard
-        </button>
-        <button
-          onClick={() => setActiveTab('courses')}
-          className={`pb-4 px-3 flex items-center gap-2 border-b-2 transition-all ${activeTab === 'courses' ? 'border-amber-700 text-amber-800 font-bold' : 'border-transparent hover:text-stone-850'}`}
-          title="Switch tab to My Assigned Courses"
-          aria-label="Switch tab to My Assigned Courses"
-        >
-          <BookMarked className="w-4 h-4" />
-          My Courses
-        </button>
-        <button
-          onClick={() => setActiveTab('students')}
-          className={`pb-4 px-3 flex items-center gap-2 border-b-2 transition-all ${activeTab === 'students' ? 'border-amber-700 text-amber-800 font-bold' : 'border-transparent hover:text-stone-850'}`}
-          title="Switch tab to Scholar-Athlete Enrollment Slots and Compliance Scores"
-          aria-label="Switch tab to Scholar-Athlete Enrollment Slots and Compliance Scores"
-        >
-          <Users className="w-4 h-4" />
-          Enrollment & Scores ({students.length})
-        </button>
-        <button
-          onClick={() => setActiveTab('manuals')}
-          className={`pb-4 px-3 flex items-center gap-2 border-b-2 transition-all ${activeTab === 'manuals' ? 'border-amber-700 text-amber-800 font-bold' : 'border-transparent hover:text-stone-850'}`}
-          title="Switch tab to Curriculum Instruction Manuals"
-          aria-label="Switch tab to Curriculum Instruction Manuals"
-        >
-          <BookOpenCheck className="w-4 h-4" />
-          Instructional Manuals
-        </button>
-        <button
-          onClick={() => setActiveTab('documents')}
-          className={`pb-4 px-3 flex items-center gap-2 border-b-2 transition-all ${activeTab === 'documents' ? 'border-amber-700 text-amber-800 font-bold' : 'border-transparent hover:text-stone-850'}`}
-          title="Switch tab to Curriculum PDF Resources and Guides"
-          aria-label="Switch tab to Curriculum PDF Resources and Guides"
-        >
-          <FileText className="w-4 h-4" />
-          Curriculum Documents
-        </button>
+      <div className="mb-8">
+        <TabNav tabs={tabs} activeTab={activeTab} onChange={setActiveTab} ariaLabel="Teacher sections" />
       </div>
 
       {/* RENDER ACTIVE TAB */}
-      <AnimatePresence mode="wait">
-        <motion.div
-          key={activeTab}
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          exit={{ opacity: 0, y: -15 }}
-          transition={{ duration: 0.22 }}
-        >
-          
+      <TabTransition activeKey={activeTab}>
+
           {/* TAB 1: ANALYTICS DASHBOARD */}
           {activeTab === 'dashboard' && (
             <div className="space-y-10">
@@ -2106,8 +2095,7 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
             </div>
           )}
 
-        </motion.div>
-      </AnimatePresence>
+      </TabTransition>
 
     </div>
   );

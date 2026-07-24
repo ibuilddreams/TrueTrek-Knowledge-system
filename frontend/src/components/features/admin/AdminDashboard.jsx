@@ -146,7 +146,7 @@ function AdminDashboardContent() {
       </div>
 
       <div className="mb-8">
-        <TabNav tabs={TABS} activeTab={activeTab} onChange={setActiveTab} />
+        <TabNav tabs={TABS} activeTab={activeTab} onChange={setActiveTab} ariaLabel="Admin sections" />
       </div>
 
       <TabTransition activeKey={activeTab}>

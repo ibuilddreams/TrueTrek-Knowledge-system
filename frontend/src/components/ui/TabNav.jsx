@@ -1,10 +1,10 @@
 "use client";
 
-export default function TabNav({ tabs, activeTab, onChange }) {
+export default function TabNav({ tabs, activeTab, onChange, ariaLabel = "Sections" }) {
   return (
     <div
       role="tablist"
-      aria-label="Admin sections"
+      aria-label={ariaLabel}
       className="flex w-full overflow-x-auto scrollbar-none gap-1.5 p-1.5 rounded-2xl border border-stone-200/90 bg-stone-100/70 shadow-inner"
     >
       {tabs.map((tab) => {
