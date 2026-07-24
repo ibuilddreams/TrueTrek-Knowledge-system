@@ -2,7 +2,11 @@
 
 import { useCallback } from "react";
 import { useDispatch, useSelector } from "react-redux";
-import { getDashboardOverview } from "@/services/adminService";
+import {
+  getAdminDashboardActivityProgress,
+  getAdminDashboardCharts,
+  getAdminDashboardStatistics,
+} from "@/services/adminService";
 import {
   overviewFetchFailed,
   overviewFetchStart,
@@ -22,8 +26,20 @@ export function useAdminOverview() {
 
       dispatch(overviewFetchStart());
       try {
-        const response = await getDashboardOverview();
-        dispatch(overviewFetchSucceeded(response?.data || null));
+        const [statisticsResponse, activityProgressResponse, chartsResponse] = await Promise.all([
+          getAdminDashboardStatistics(),
+          getAdminDashboardActivityProgress(),
+          getAdminDashboardCharts(),
+        ]);
+
+        dispatch(
+          overviewFetchSucceeded({
+            statistics: statisticsResponse?.data || null,
+            recent_activities: activityProgressResponse?.data?.recent_activities || [],
+            progress_summary: activityProgressResponse?.data?.progress_summary || [],
+            charts: chartsResponse?.data || null,
+          })
+        );
       } catch (error) {
         dispatch(overviewFetchFailed(error?.message || "Unable to load dashboard data."));
       }
