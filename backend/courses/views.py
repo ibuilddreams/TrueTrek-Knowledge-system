@@ -1,8 +1,11 @@
+from django.contrib.auth import get_user_model
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
 from common.pagination import Pagination
 from common.response import error_response, success_response
+from enrollments.models import Enrollment
+from enrollments.serializers import CourseEnrolledStudentSerializer
 from users.permissions import IsAdmin
 
 from .models import Category, Course
@@ -11,7 +14,10 @@ from .serializers import (
     CourseDetailSerializer,
     CourseListSerializer,
     CourseWriteSerializer,
+    TeacherSerializer,
 )
+
+UserModel = get_user_model()
 
 
 class CategoryListCreateView(generics.ListCreateAPIView):
@@ -147,3 +153,63 @@ class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):
             return error_response(message="Course with the given id does not exist.", status_code=404)
         course.delete()
         return success_response(None, message="Course deleted successfully")
+
+
+class AdminTeacherAssignedCoursesView(generics.GenericAPIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request, teacher_id):
+        try:
+            teacher = UserModel.objects.get(pk=teacher_id, role=UserModel.Roles.TEACHER)
+        except UserModel.DoesNotExist:
+            return error_response(
+                message="Teacher with the given id does not exist.", status_code=404
+            )
+
+        courses = Course.objects.filter(
+            instructors__instructor_id=teacher_id
+        ).select_related("category").prefetch_related("tags", "instructors__instructor")
+
+        data = {
+            "teacher": TeacherSerializer(teacher).data,
+            "total_courses": courses.count(),
+            "courses": CourseListSerializer(courses, many=True).data,
+        }
+        return success_response(data, message="Teacher's assigned courses fetched successfully")
+
+
+class AdminTeacherAssignedCoursesWithStudentsView(generics.GenericAPIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request, teacher_id):
+        try:
+            teacher = UserModel.objects.get(pk=teacher_id, role=UserModel.Roles.TEACHER)
+        except UserModel.DoesNotExist:
+            return error_response(
+                message="Teacher with the given id does not exist.", status_code=404
+            )
+
+        courses = Course.objects.filter(instructors__instructor_id=teacher_id)
+
+        courses_data = []
+        for course in courses:
+            enrollments = Enrollment.objects.filter(course=course).select_related("student")
+            courses_data.append(
+                {
+                    "id": course.id,
+                    "title": course.title,
+                    "slug": course.slug,
+                    "status": course.status,
+                    "total_students": enrollments.count(),
+                    "students": CourseEnrolledStudentSerializer(enrollments, many=True).data,
+                }
+            )
+
+        data = {
+            "teacher": TeacherSerializer(teacher).data,
+            "total_courses": len(courses_data),
+            "courses": courses_data,
+        }
+        return success_response(
+            data, message="Assigned courses with enrolled students fetched successfully"
+        )

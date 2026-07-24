@@ -1,7 +1,25 @@
 from django.urls import path
 
-from .views import DashboardOverviewView
+from .views import (
+    AdminDashboardActivityProgressView,
+    AdminDashboardChartsView,
+    AdminDashboardStatisticsView,
+)
 
 urlpatterns = [
-    path("overview/", DashboardOverviewView.as_view(), name="dashboard-overview"),
+    path(
+        "admin/statistics/",
+        AdminDashboardStatisticsView.as_view(),
+        name="dashboard-admin-statistics",
+    ),
+    path(
+        "admin/activity-progress/",
+        AdminDashboardActivityProgressView.as_view(),
+        name="dashboard-admin-activity-progress",
+    ),
+    path(
+        "admin/charts/",
+        AdminDashboardChartsView.as_view(),
+        name="dashboard-admin-charts",
+    ),
 ]

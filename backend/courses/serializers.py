@@ -86,6 +86,13 @@ class CourseDetailSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class TeacherSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = UserModel
+        fields = ["id", "name", "email"]
+        read_only_fields = fields
+
+
 class CourseInstructorWriteSerializer(serializers.Serializer):
     instructor = serializers.PrimaryKeyRelatedField(
         queryset=UserModel.objects.filter(role=UserModel.Roles.TEACHER)

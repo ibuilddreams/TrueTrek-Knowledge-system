@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
+from common.models import Status
 from courses.serializers import CourseListSerializer
 
 from .models import Enrollment
@@ -71,8 +72,18 @@ class AdminEnrollmentWriteSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
     def validate(self, attrs):
-        if Enrollment.objects.filter(student=attrs["student"], course=attrs["course"]).exists():
+        student = attrs["student"]
+        course = attrs["course"]
+
+        if student.account_status != UserModel.AccountStatus.ACTIVE:
+            raise serializers.ValidationError("This student's account is not active.")
+
+        if course.status != Status.PUBLISHED:
+            raise serializers.ValidationError("Enrollment is only allowed for published courses.")
+
+        if Enrollment.objects.filter(student=student, course=course).exists():
             raise serializers.ValidationError("This student is already enrolled in this course.")
+
         return attrs
 
     def create(self, validated_data):

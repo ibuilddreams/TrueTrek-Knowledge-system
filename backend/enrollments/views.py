@@ -1,9 +1,11 @@
+from django.contrib.auth import get_user_model
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
 from common.pagination import Pagination
 from common.response import error_response, success_response
 from courses.models import Course
+from courses.serializers import CourseListSerializer
 from users.permissions import IsAdmin, IsStudent, IsTeacher
 
 from .models import Enrollment, EnrollmentHistory
@@ -13,8 +15,11 @@ from .serializers import (
     EnrollmentListSerializer,
     EnrollmentManageSerializer,
     EnrollmentStatusUpdateSerializer,
+    EnrollmentStudentSerializer,
     EnrollmentWriteSerializer,
 )
+
+UserModel = get_user_model()
 
 
 class EnrollmentListCreateView(generics.ListCreateAPIView):
@@ -144,6 +149,29 @@ class AdminCourseEnrollmentListView(generics.GenericAPIView):
             "students": CourseEnrolledStudentSerializer(enrollments, many=True).data,
         }
         return success_response(data, message="Enrolled students fetched successfully")
+
+
+class AdminStudentEnrollmentListView(generics.GenericAPIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request, student_id):
+        try:
+            student = UserModel.objects.get(pk=student_id, role=UserModel.Roles.STUDENT)
+        except UserModel.DoesNotExist:
+            return error_response(
+                message="Student with the given id does not exist.", status_code=404
+            )
+
+        courses = Course.objects.filter(
+            enrollments__student_id=student_id
+        ).select_related("category").prefetch_related("tags", "instructors__instructor")
+
+        data = {
+            "student": EnrollmentStudentSerializer(student).data,
+            "total_courses": courses.count(),
+            "courses": CourseListSerializer(courses, many=True).data,
+        }
+        return success_response(data, message="Student's courses fetched successfully")
 
 
 class TeacherEnrollmentListView(generics.ListAPIView):
