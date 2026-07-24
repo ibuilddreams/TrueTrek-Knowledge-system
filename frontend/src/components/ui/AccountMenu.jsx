@@ -143,13 +143,13 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         className={
-          "px-3.5 py-2 text-xs font-semibold font-mono rounded-xl tracking-wider transition-all flex items-center gap-2 border shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed " +
+          "px-3.5 py-2.5 text-xs font-semibold font-mono rounded-xl tracking-wider transition-all duration-200 flex items-center gap-2 border shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed " +
           (isOpen
             ? isDark
-              ? "bg-stone-800 border-stone-700"
+              ? "bg-stone-800 border-stone-700 shadow-md"
               : "bg-white border-amber-200 ring-2 ring-amber-600/15"
             : isDark
-              ? "bg-stone-850 hover:bg-stone-800 border-stone-800"
+              ? "bg-stone-850 hover:bg-stone-800 border-stone-800 hover:border-stone-700 hover:shadow-md"
               : "bg-stone-50 hover:bg-white border-stone-200 hover:border-stone-300")
         }
         title="Open account menu"
@@ -157,28 +157,31 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
       >
         <span
           className={
-            "w-7 h-7 rounded-lg flex items-center justify-center shrink-0 " +
+            "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 " +
             (isDark
-              ? "bg-stone-900 text-amber-500 border border-stone-700"
+              ? "bg-stone-900 text-amber-500 border border-stone-700 shadow-inner"
               : "bg-amber-50 text-amber-700 border border-amber-100")
           }
         >
           <User className="w-3.5 h-3.5" />
         </span>
-        <span className="flex flex-col items-start leading-tight text-left min-w-0">
+        <span className="flex flex-col items-start leading-tight text-left min-w-0 gap-0.5">
           <span
-            className={`font-semibold truncate max-w-[9rem] ${
+            className={`font-semibold truncate max-w-36 ${
               isDark ? "text-stone-100" : "text-stone-800"
             }`}
           >
             {displayLabel}
           </span>
           {roleLabel && (
-            <span className="text-[10px] font-normal tracking-normal normal-case text-stone-400 mt-0.5 truncate max-w-[9rem]">
+            <span className={`text-[10px] font-normal tracking-normal normal-case truncate max-w-36 ${
+              isDark ? "text-stone-500" : "text-stone-400"
+            }`}>
               {roleLabel}
             </span>
           )}
         </span>
+        <span className={`w-px h-6 shrink-0 ${isDark ? "bg-stone-700" : "bg-stone-200"}`} />
         <ChevronDown
           className={`w-3.5 h-3.5 text-stone-400 transition-transform duration-200 shrink-0 ${
             isOpen ? "rotate-180" : ""

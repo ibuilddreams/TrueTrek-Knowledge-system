@@ -471,11 +471,11 @@ export default function Portal({
       )}
 
       {/* Student credentials banner element */}
-      <section id="portal-credential-banner" className="bg-stone-900 text-white py-6 px-6">
-        <div className="max-w-6xl mx-auto space-y-5">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div className="flex items-center gap-4">
-              <div className="w-12 h-12 bg-amber-500 text-stone-950 font-black rounded-full flex items-center justify-center text-lg shadow-inner shrink-0">
+      <section id="portal-credential-banner" className="bg-stone-900 text-white pt-8 sm:pt-9 pb-4 px-6">
+        <div className="max-w-6xl mx-auto space-y-2">
+          <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 lg:gap-5">
+            <div className="flex items-center gap-4 shrink-0">
+              <div className="w-14 h-14 bg-amber-500 text-stone-950 font-black rounded-full flex items-center justify-center text-lg shadow-[0_0_0_3px_rgba(28,25,23,1),0_0_0_4px_rgba(217,119,6,0.4)] ring-2 ring-amber-400/30 shrink-0">
                 {studentProfileStatus === 'loading' ? (
                   <div className="w-4 h-4 border-2 border-stone-950/40 border-t-stone-950 rounded-full animate-spin" />
                 ) : (
@@ -489,11 +489,11 @@ export default function Portal({
                     <div className="h-4 w-24 bg-stone-800/70 rounded-md animate-pulse" />
                   </div>
                 ) : (
-                  <div className="flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-                    <h3 className="text-lg sm:text-xl font-serif font-bold text-white leading-tight truncate max-w-56 sm:max-w-xs">
+                  <div className="flex flex-wrap items-center gap-x-3 gap-y-1.5">
+                    <h3 className="text-xl sm:text-2xl font-serif font-black text-white leading-tight tracking-tight truncate max-w-56 sm:max-w-xs">
                       {studentDisplayName}
                     </h3>
-                    <span className="text-xs sm:text-sm font-medium text-stone-400 whitespace-nowrap">
+                    <span className="text-xs sm:text-sm font-medium text-stone-500 whitespace-nowrap">
                       Scholar-Athlete
                     </span>
                     <span className="bg-emerald-500/15 border border-emerald-500/30 text-emerald-400 text-[10px] uppercase font-mono tracking-widest px-2 py-0.5 rounded shrink-0">
@@ -501,51 +501,60 @@ export default function Portal({
                     </span>
                   </div>
                 )}
-                <p className="text-xs text-stone-400 mt-1.5 font-light">
-                  Primary Focus: <strong className="text-stone-300">Tier 2: Recruiting Window</strong> & <strong className="text-stone-300">Tier 6: NIL Intellectual IP</strong>
-                </p>
               </div>
             </div>
 
-            <AccountMenu variant="dark" onProfile={() => router.push(ROUTES.PROFILE)} />
-          </div>
-
-          {/* KPI Mini boxes */}
-          <div className="flex flex-wrap items-center gap-4 w-full">
-            <div className="bg-stone-850 border border-stone-800 p-2.5 rounded-xl flex items-center gap-2.5 flex-1 md:flex-initial">
-              <Award className="w-5 h-5 text-amber-500 animate-pulse" />
-              <div>
-                <p className="text-[9px] font-mono uppercase text-stone-450 tracking-wider">INTELLIGENCE XP POINTS</p>
-                <p className="text-xs font-mono font-bold text-stone-100">{points} PTS (Lvl {getUserLevelDetails(points).level})</p>
+            <div className="flex flex-wrap lg:flex-nowrap items-center gap-3 lg:gap-2.5 lg:justify-end">
+              <div className="bg-stone-850 border border-stone-800 hover:border-stone-700 p-3.5 lg:p-2.5 rounded-xl flex items-center gap-3 lg:gap-2 flex-1 lg:flex-initial lg:shrink transition-all duration-200 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
+                <div className="w-9 h-9 lg:w-8 lg:h-8 rounded-lg bg-stone-900 border border-stone-800 flex items-center justify-center shrink-0">
+                  <Award className="w-4.5 h-4.5 lg:w-4 lg:h-4 text-amber-500 animate-pulse" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] font-mono uppercase text-stone-450 tracking-wider truncate">INTELLIGENCE XP POINTS</p>
+                  <p className="text-xs font-mono font-bold text-stone-100 mt-0.5 truncate">{points} PTS (Lvl {getUserLevelDetails(points).level})</p>
+                </div>
               </div>
-            </div>
 
-            <div className="bg-stone-850 border border-stone-800 p-2.5 rounded-xl flex items-center gap-2.5 flex-1 md:flex-initial">
-              <Flame className="w-5 h-5 text-amber-500" />
-              <div>
-                <p className="text-[9px] font-mono uppercase text-stone-450 tracking-wider">DAILY DRILLS STREAK</p>
-                <p className="text-xs font-mono font-bold text-stone-100">{streakDays} Days</p>
+              <div className="bg-stone-850 border border-stone-800 hover:border-stone-700 p-3.5 lg:p-2.5 rounded-xl flex items-center gap-3 lg:gap-2 flex-1 lg:flex-initial lg:shrink transition-all duration-200 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
+                <div className="w-9 h-9 lg:w-8 lg:h-8 rounded-lg bg-stone-900 border border-stone-800 flex items-center justify-center shrink-0">
+                  <Flame className="w-4.5 h-4.5 lg:w-4 lg:h-4 text-amber-500" />
+                </div>
+                <div className="min-w-0">
+                  <p className="text-[9px] font-mono uppercase text-stone-450 tracking-wider truncate">DAILY DRILLS STREAK</p>
+                  <p className="text-xs font-mono font-bold text-stone-100 mt-0.5 truncate">{streakDays} Days</p>
+                </div>
               </div>
-            </div>
 
-            <div className="bg-stone-850 border border-stone-800 p-2.5 rounded-xl flex items-center gap-2.5 flex-1 md:flex-initial">
-              <Medal className="w-5 h-5 text-amber-500 shrink-0" />
-              <div className="w-full">
-                <p className="text-[9px] font-mono uppercase text-stone-450 tracking-wider">AVERAGE COMPLIANCE SCORE</p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <p className="text-xs font-mono font-bold text-stone-100 shrink-0">{aggregateScore}% Green</p>
-                  <div className="w-16 bg-stone-900 h-1.5 rounded-full overflow-hidden shrink-0 hidden sm:block">
-                    <motion.div 
-                      className="bg-amber-500 h-full rounded-full"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${aggregateScore}%` }}
-                      transition={{ duration: 0.8 }}
-                    />
+              <div className="bg-stone-850 border border-stone-800 hover:border-stone-700 p-3.5 lg:p-2.5 rounded-xl flex items-center gap-3 lg:gap-2 flex-1 lg:flex-initial lg:shrink transition-all duration-200 hover:shadow-lg hover:shadow-black/20 hover:-translate-y-0.5">
+                <div className="w-9 h-9 lg:w-8 lg:h-8 rounded-lg bg-stone-900 border border-stone-800 flex items-center justify-center shrink-0">
+                  <Medal className="w-4.5 h-4.5 lg:w-4 lg:h-4 text-amber-500" />
+                </div>
+                <div className="w-full min-w-0">
+                  <p className="text-[9px] font-mono uppercase text-stone-450 tracking-wider truncate">AVERAGE COMPLIANCE SCORE</p>
+                  <div className="flex items-center gap-2 mt-0.5">
+                    <p className="text-xs font-mono font-bold text-stone-100 shrink-0">{aggregateScore}% Green</p>
+                    <div className="w-16 bg-stone-900 h-1.5 rounded-full overflow-hidden shrink-0 hidden sm:block">
+                      <motion.div
+                        className="bg-amber-500 h-full rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${aggregateScore}%` }}
+                        transition={{ duration: 0.8 }}
+                      />
+                    </div>
                   </div>
                 </div>
               </div>
+
+              <AccountMenu variant="dark" onProfile={() => router.push(ROUTES.PROFILE)} />
             </div>
           </div>
+
+          <p className="text-xs text-stone-400 font-light">
+            <span className="text-stone-500 uppercase tracking-wide text-[10px] font-mono mr-1.5">Primary Focus:</span>
+            <strong className="text-stone-200 font-semibold">Tier 2: Recruiting Window</strong>
+            <span className="text-stone-600 mx-1.5">&</span>
+            <strong className="text-stone-200 font-semibold">Tier 6: NIL Intellectual IP</strong>
+          </p>
         </div>
       </section>
 
