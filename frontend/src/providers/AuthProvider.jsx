@@ -1,18 +1,29 @@
 "use client";
 
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { useDispatch } from "react-redux";
+import { usePathname, useRouter } from "next/navigation";
 import {
   authCleared,
   authFailed,
   authLoading,
   authSucceeded,
 } from "@/store/slices/auth/authSlice";
-import { fetchCurrentUser, getStoredBackendUser } from "@/services/authService";
+import {
+  clearBackendSession,
+  fetchCurrentUser,
+  getStoredBackendUser,
+} from "@/services/authService";
 import { addErrorInterceptor } from "@/services/apiClient";
+import { ROUTES } from "@/constants/routes";
+import { toastError } from "@/lib/toast";
 
 export default function AuthProvider({ children }) {
   const dispatch = useDispatch();
+  const router = useRouter();
+  const pathname = usePathname();
+  const pathnameRef = useRef(pathname);
+  pathnameRef.current = pathname;
 
   useEffect(() => {
     let cancelled = false;
@@ -44,7 +55,14 @@ export default function AuthProvider({ children }) {
     hydrate();
 
     const remove = addErrorInterceptor(async (error) => {
-      if (error?.status === 401 || error?.code === "UNAUTHORIZED") {
+      if (error?.code === "SESSION_EXPIRED") {
+        clearBackendSession();
+        dispatch(authCleared());
+        if (pathnameRef.current !== ROUTES.LOGIN) {
+          toastError("Session expired. Please log in again.");
+          router.replace(ROUTES.LOGIN);
+        }
+      } else if (error?.status === 401 || error?.code === "UNAUTHORIZED") {
         dispatch(authCleared());
       }
       throw error;
@@ -54,7 +72,7 @@ export default function AuthProvider({ children }) {
       cancelled = true;
       remove();
     };
-  }, [dispatch]);
+  }, [dispatch, router]);
 
   return children;
 }

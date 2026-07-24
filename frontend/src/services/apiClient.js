@@ -4,7 +4,11 @@
 
 import { API_BASE_URL } from "@/config/env";
 import { AUTH_COOKIE } from "@/constants/auth";
-import { getClientCookie } from "@/utils/cookies";
+import {
+  getClientCookie,
+  removeClientCookie,
+  setClientCookie,
+} from "@/utils/cookies";
 
 const DEFAULT_HEADERS = {
   "Content-Type": "application/json",
@@ -72,6 +76,48 @@ async function runErrorInterceptors(error) {
   throw current;
 }
 
+let refreshPromise = null;
+
+async function refreshAccessToken() {
+  if (!refreshPromise) {
+    refreshPromise = (async () => {
+      const refreshToken = getClientCookie(AUTH_COOKIE.REFRESH_TOKEN);
+      if (!refreshToken) {
+        throw new Error("No refresh token available");
+      }
+
+      const response = await fetch(`${API_BASE_URL}/auth/refresh/`, {
+        method: "POST",
+        headers: DEFAULT_HEADERS,
+        credentials: "include",
+        body: JSON.stringify({ refresh: refreshToken }),
+      });
+
+      const data = await response.json().catch(() => null);
+      const accessToken = data?.data?.access;
+
+      if (!response.ok || !accessToken) {
+        throw new Error(data?.message || "Session expired");
+      }
+
+      setClientCookie(AUTH_COOKIE.ACCESS_TOKEN, accessToken);
+      return accessToken;
+    })();
+  }
+
+  try {
+    return await refreshPromise;
+  } finally {
+    refreshPromise = null;
+  }
+}
+
+function clearAuthCookies() {
+  removeClientCookie(AUTH_COOKIE.ACCESS_TOKEN);
+  removeClientCookie(AUTH_COOKIE.REFRESH_TOKEN);
+  removeClientCookie(AUTH_COOKIE.USER);
+}
+
 /**
  * @param {string} path
  * @param {{ method?: string, body?: any, headers?: Record<string,string>, skipAuth?: boolean, credentials?: RequestCredentials, baseUrl?: string }} [options]
@@ -84,6 +130,7 @@ export async function apiRequest(path, options = {}) {
     skipAuth = false,
     credentials = "include",
     baseUrl = "",
+    _retried = false,
     ...rest
   } = options;
 
@@ -146,8 +193,29 @@ export async function apiRequest(path, options = {}) {
     error.data = data;
     error.response = response;
 
+    const isAuthEndpoint = path.includes("/auth/login") || path.includes("/auth/refresh");
+    const hasRefreshToken = Boolean(getClientCookie(AUTH_COOKIE.REFRESH_TOKEN));
+
+    if (
+      response.status === 401 &&
+      !skipAuth &&
+      !isAuthEndpoint &&
+      !_retried &&
+      config.baseUrl === API_BASE_URL &&
+      hasRefreshToken
+    ) {
+      try {
+        await refreshAccessToken();
+        return apiRequest(path, { ...options, _retried: true });
+      } catch {
+        clearAuthCookies();
+        error.code = "SESSION_EXPIRED";
+        return runErrorInterceptors(error);
+      }
+    }
+
     if (response.status === 401 && !skipAuth) {
-      error.code = "UNAUTHORIZED";
+      error.code = isAuthEndpoint || !hasRefreshToken ? "UNAUTHORIZED" : "SESSION_EXPIRED";
     }
 
     return runErrorInterceptors(error);

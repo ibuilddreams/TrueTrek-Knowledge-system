@@ -6,6 +6,7 @@ from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, Spec
 from rest_framework.permissions import AllowAny
 from users.views import (
     CustomTokenObtainPairView,
+    CustomTokenRefreshView,
     ForgotPasswordView,
     ResetPasswordView,
 )
@@ -18,6 +19,7 @@ urlpatterns = [
     path('api/progress/', include('progress.urls')),
     path('api/dashboard/', include('dashboard.urls')),
     path('api/auth/login/', CustomTokenObtainPairView.as_view()),
+    path('api/auth/refresh/', CustomTokenRefreshView.as_view()),
     path('api/auth/forgot-password/', ForgotPasswordView.as_view()),
     path('api/auth/reset-password/', ResetPasswordView.as_view()),
     path('api/schema/', SpectacularAPIView.as_view(permission_classes=[AllowAny]), name='schema'),

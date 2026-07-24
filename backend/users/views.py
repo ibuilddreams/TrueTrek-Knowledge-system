@@ -1,6 +1,6 @@
 from django.contrib.auth import get_user_model
 from rest_framework import generics
-from rest_framework_simplejwt.views import TokenObtainPairView
+from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from common.pagination import Pagination
 from common.response import success_response
@@ -34,6 +34,13 @@ class CustomTokenObtainPairView(TokenObtainPairView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         return success_response(serializer.data, message="Login Successful")
+
+
+class CustomTokenRefreshView(TokenRefreshView):
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        return success_response(serializer.validated_data, message="Token refreshed")
 
 
 class StudentListCreateView(generics.ListCreateAPIView):
