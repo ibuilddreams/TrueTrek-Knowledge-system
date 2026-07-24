@@ -19,14 +19,97 @@ env:
   APP_DIR: /opt/TrueTrek-Knowledge-system
 
 jobs:
+  # ---------------------------------------------------------------------------
+  # Stage 1 — Code Validation
+  # - Checkout the repository
+  # - Set up Python and Node.js
+  # - Restore dependency caches
+  # - Install only required dependencies
+  # - Validate project structure and required files
+  # - Verify environment variables and configuration
+  # - Run linting and formatting checks if configured
+  # - Fail immediately if any validation step fails
+  # ---------------------------------------------------------------------------
   validate:
     name: Code Validation
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
     steps:
+      - name: Annotate stage scope
+        run: |
+          {
+            echo "::notice title=Stage 1 · Code Validation::Checkout · Python/Node setup · dependency caches · install deps · project structure · env config · lint/format · fail-fast"
+            echo "## Stage 1 · Code Validation"
+            echo ""
+            echo "- Checkout the repository"
+            echo "- Set up Python and Node.js"
+            echo "- Restore dependency caches"
+            echo "- Install only required dependencies"
+            echo "- Validate project structure and required files"
+            echo "- Verify environment variables and configuration"
+            echo "- Run linting and formatting checks if configured"
+            echo "- Fail immediately if any validation step fails"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+
       - name: Checkout repository
         uses: actions/checkout@v4
+
+      - name: Validate project structure and required files
+        run: |
+          set -euo pipefail
+          required_paths=(
+            backend/manage.py
+            backend/requirements.txt
+            backend/lms_be/wsgi.py
+            backend/lms_be/settings.py
+            backend/.env.example
+            frontend/package.json
+            frontend/package-lock.json
+            frontend/next.config.mjs
+            frontend/.env.example
+            frontend/src/app
+            deploy/deploy.sh
+            deploy/git-pull.sh
+            deploy/systemd/truetrek-backend.service
+            deploy/systemd/truetrek-frontend.service
+            deploy/nginx/truetrek.conf
+          )
+          for path in "${required_paths[@]}"; do
+            if [[ ! -e "${path}" ]]; then
+              echo "::error title=Missing required path::${path}"
+              exit 1
+            fi
+            echo "OK ${path}"
+          done
+          echo "::notice title=Project structure::All required paths present"
+
+      - name: Verify environment configuration templates
+        run: |
+          set -euo pipefail
+          backend_keys=(
+            SECRET_KEY
+            DEBUG
+            ALLOWED_HOSTS
+            DB_NAME
+            DB_USER
+            DB_PASSWORD
+            DB_HOST
+            DB_PORT
+          )
+          for key in "${backend_keys[@]}"; do
+            if ! grep -Eq "^${key}=" backend/.env.example; then
+              echo "::error title=Missing backend env key::${key}"
+              exit 1
+            fi
+            echo "OK backend ${key}"
+          done
+          if ! grep -Eq "^NEXT_PUBLIC_API_URL=" frontend/.env.example; then
+            echo "::error title=Missing frontend env key::NEXT_PUBLIC_API_URL"
+            exit 1
+          fi
+          echo "OK frontend NEXT_PUBLIC_API_URL"
+          echo "::notice title=Environment templates::Backend and frontend .env.example keys verified"
 
       - name: Set up Python ${{ env.PYTHON_VERSION }}
         uses: actions/setup-python@v5
@@ -38,6 +121,7 @@ jobs:
       - name: Install backend dependencies
         working-directory: backend
         run: |
+          set -euo pipefail
           echo "::group::pip install"
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -46,9 +130,9 @@ jobs:
       - name: Validate backend Python syntax
         working-directory: backend
         run: |
-          echo "Compiling Python sources..."
+          set -euo pipefail
           python -m compileall -q -f .
-          echo "Backend syntax validation passed."
+          echo "::notice title=Backend syntax::Python compileall passed"
 
       - name: Run Django system checks
         working-directory: backend
@@ -62,9 +146,9 @@ jobs:
           DB_HOST: localhost
           DB_PORT: "5432"
         run: |
-          echo "Running Django system checks..."
+          set -euo pipefail
           python manage.py check
-          echo "Django system checks passed."
+          echo "::notice title=Django checks::manage.py check passed"
 
       - name: Set up Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
@@ -76,6 +160,7 @@ jobs:
       - name: Install frontend dependencies
         working-directory: frontend
         run: |
+          set -euo pipefail
           echo "::group::npm ci"
           npm ci
           echo "::endgroup::"
@@ -83,17 +168,40 @@ jobs:
       - name: Lint frontend
         working-directory: frontend
         run: |
-          echo "Running ESLint..."
+          set -euo pipefail
           npm run lint
-          echo "Frontend lint passed."
+          echo "::notice title=Frontend lint::ESLint passed"
 
+  # ---------------------------------------------------------------------------
+  # Stage 2 — Build & Application Verification
+  # - Build the frontend production bundle
+  # - Verify the frontend builds successfully
+  # - Verify the backend starts successfully
+  # - Validate build artifacts
+  # - Cache dependencies and build outputs to reduce deployment time
+  # - Continue only if the build completes successfully
+  # ---------------------------------------------------------------------------
   build:
-    name: Build & Package
+    name: Build & Application Verification
     needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
+      - name: Annotate stage scope
+        run: |
+          {
+            echo "::notice title=Stage 2 · Build & Application Verification::Frontend production build · artifact checks · backend start · dependency/build caches · fail-fast"
+            echo "## Stage 2 · Build & Application Verification"
+            echo ""
+            echo "- Build the frontend production bundle"
+            echo "- Verify the frontend builds successfully"
+            echo "- Verify the backend starts successfully"
+            echo "- Validate build artifacts"
+            echo "- Cache dependencies and build outputs to reduce deployment time"
+            echo "- Continue only if the build completes successfully"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+
       - name: Checkout repository
         uses: actions/checkout@v4
 
@@ -104,9 +212,10 @@ jobs:
           cache: pip
           cache-dependency-path: backend/requirements.txt
 
-      - name: Verify backend package install
+      - name: Install backend dependencies
         working-directory: backend
         run: |
+          set -euo pipefail
           echo "::group::pip install"
           python -m pip install --upgrade pip
           pip install -r requirements.txt
@@ -120,9 +229,19 @@ jobs:
           cache: npm
           cache-dependency-path: frontend/package-lock.json
 
+      - name: Restore Next.js build cache
+        uses: actions/cache@v4
+        with:
+          path: frontend/.next/cache
+          key: nextjs-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}-${{ hashFiles('frontend/src/**', 'frontend/next.config.mjs') }}
+          restore-keys: |
+            nextjs-${{ runner.os }}-${{ hashFiles('frontend/package-lock.json') }}-
+            nextjs-${{ runner.os }}-
+
       - name: Install frontend dependencies
         working-directory: frontend
         run: |
+          set -euo pipefail
           echo "::group::npm ci"
           npm ci
           echo "::endgroup::"
@@ -133,44 +252,149 @@ jobs:
           NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || '/api' }}
           NODE_ENV: production
         run: |
-          echo "Building Next.js production bundle..."
+          set -euo pipefail
           npm run build
           test -d .next
-          echo "Frontend build artifacts verified."
+          test -f .next/BUILD_ID || test -d .next/standalone || test -d .next/server
+          echo "::notice title=Frontend build::Production bundle and artifacts verified"
 
-      - name: Summarize build
+      - name: Verify backend starts successfully
+        working-directory: backend
+        env:
+          SECRET_KEY: ci-build-verification-only
+          DEBUG: "False"
+          ALLOWED_HOSTS: localhost,127.0.0.1
+          DB_NAME: truetrek_lms
+          DB_USER: truetrek
+          DB_PASSWORD: unused
+          DB_HOST: localhost
+          DB_PORT: "5432"
         run: |
-          echo "Build & package stage completed successfully."
-          echo "Commit: ${{ github.sha }}"
-          echo "Ref: ${{ github.ref_name }}"
+          set -euo pipefail
+          PORT=18000
+          gunicorn \
+            --bind "127.0.0.1:${PORT}" \
+            --workers 1 \
+            --timeout 20 \
+            --access-logfile - \
+            --error-logfile - \
+            lms_be.wsgi:application &
+          GUNICORN_PID=$!
 
+          cleanup() {
+            kill "${GUNICORN_PID}" 2>/dev/null || true
+            wait "${GUNICORN_PID}" 2>/dev/null || true
+          }
+          trap cleanup EXIT
+
+          python - <<PY
+          import socket
+          import sys
+          import time
+
+          for _ in range(40):
+              sock = socket.socket()
+              try:
+                  sock.connect(("127.0.0.1", ${PORT}))
+                  sock.close()
+                  print("Gunicorn is listening on 127.0.0.1:${PORT}")
+                  sys.exit(0)
+              except OSError:
+                  time.sleep(0.25)
+              finally:
+                  sock.close()
+          print("Gunicorn failed to bind within timeout", file=sys.stderr)
+          sys.exit(1)
+          PY
+
+          echo "::notice title=Backend start::Gunicorn bind verification passed"
+
+      - name: Publish build summary
+        run: |
+          {
+            echo "### Build results"
+            echo ""
+            echo "| Item | Status |"
+            echo "| --- | --- |"
+            echo "| Frontend production build | Passed |"
+            echo "| Frontend artifacts | Verified |"
+            echo "| Backend Gunicorn start | Passed |"
+            echo "| Commit | \`${{ github.sha }}\` |"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+  # ---------------------------------------------------------------------------
+  # Stage 3 — Production Deployment
+  # - Execute only after the previous stages succeed
+  # - Connect to the production server via SSH
+  # - Pull the latest code from GitHub
+  # - Install or update only changed dependencies
+  # - Run database migrations only if required
+  # - Collect static files only if required
+  # - Restart only the required systemd services (Gunicorn, frontend, etc.)
+  # - Reload Nginx without downtime
+  # - Ensure the deployment is idempotent, reliable, and fails immediately on any error
+  # ---------------------------------------------------------------------------
   deploy:
     name: Production Deployment
     needs: build
     runs-on: ubuntu-latest
     timeout-minutes: 25
     environment: production
+    outputs:
+      deployed_sha: ${{ steps.finish.outputs.deployed_sha }}
+      started_at: ${{ steps.finish.outputs.started_at }}
+      finished_at: ${{ steps.finish.outputs.finished_at }}
+      duration_sec: ${{ steps.finish.outputs.duration_sec }}
 
     steps:
+      - name: Annotate stage scope
+        run: |
+          {
+            echo "::notice title=Stage 3 · Production Deployment::SSH deploy · git pull · deps · migrations · collectstatic · systemd restart · Nginx reload · fail-fast"
+            echo "## Stage 3 · Production Deployment"
+            echo ""
+            echo "- Execute only after the previous stages succeed"
+            echo "- Connect to the production server via SSH"
+            echo "- Pull the latest code from GitHub"
+            echo "- Install or update only changed dependencies"
+            echo "- Run database migrations only if required"
+            echo "- Collect static files only if required"
+            echo "- Restart only the required systemd services (Gunicorn, frontend, etc.)"
+            echo "- Reload Nginx without downtime"
+            echo "- Ensure the deployment is idempotent, reliable, and fails immediately on any error"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+
+      - name: Capture deployment metadata
+        id: meta
+        run: |
+          set -euo pipefail
+          started_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          started_epoch="$(date -u +%s)"
+          echo "started_at=${started_at}" >> "${GITHUB_OUTPUT}"
+          echo "started_epoch=${started_epoch}" >> "${GITHUB_OUTPUT}"
+          echo "deployed_sha=${GITHUB_SHA}" >> "${GITHUB_OUTPUT}"
+          echo "::notice title=Deploy start::${started_at} · commit ${GITHUB_SHA}"
+
       - name: Verify required secrets
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
           DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
         run: |
+          set -euo pipefail
           missing=0
           for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY; do
-            if [ -z "${!name}" ]; then
-              echo "::error::Missing required secret: $name"
+            if [[ -z "${!name}" ]]; then
+              echo "::error title=Missing secret::${name}"
               missing=1
             fi
           done
-          if [ "$missing" -ne 0 ]; then
+          if [[ "${missing}" -ne 0 ]]; then
             exit 1
           fi
-          echo "Required deploy secrets are present."
+          echo "::notice title=Secrets::Required deploy secrets are present"
 
-      - name: Deploy over SSH
+      - name: Deploy to production over SSH
         uses: appleboy/ssh-action@v1.2.0
         env:
           APP_DIR: ${{ env.APP_DIR }}
@@ -192,42 +416,185 @@ jobs:
             bash deploy/deploy.sh
             echo "[deploy] Remote deploy script finished"
 
-      - name: Post-deployment health check
+      - name: Finalize deployment metadata
+        id: finish
+        run: |
+          set -euo pipefail
+          finished_at="$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+          finished_epoch="$(date -u +%s)"
+          duration_sec="$((finished_epoch - ${{ steps.meta.outputs.started_epoch }}))"
+          echo "finished_at=${finished_at}" >> "${GITHUB_OUTPUT}"
+          echo "duration_sec=${duration_sec}" >> "${GITHUB_OUTPUT}"
+          echo "started_at=${{ steps.meta.outputs.started_at }}" >> "${GITHUB_OUTPUT}"
+          echo "deployed_sha=${{ steps.meta.outputs.deployed_sha }}" >> "${GITHUB_OUTPUT}"
+          echo "::notice title=Deploy finished::${finished_at} · ${duration_sec}s · commit ${{ steps.meta.outputs.deployed_sha }}"
+
+      - name: Publish deployment summary
+        run: |
+          {
+            echo "### Deployment results"
+            echo ""
+            echo "| Item | Value |"
+            echo "| --- | --- |"
+            echo "| Commit | \`${{ steps.finish.outputs.deployed_sha }}\` |"
+            echo "| Started (UTC) | ${{ steps.finish.outputs.started_at }} |"
+            echo "| Finished (UTC) | ${{ steps.finish.outputs.finished_at }} |"
+            echo "| Duration | ${{ steps.finish.outputs.duration_sec }}s |"
+            echo "| Status | Deployed (awaiting verification) |"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+  # ---------------------------------------------------------------------------
+  # Stage 4 — Post-Deployment Verification
+  # - Verify all required systemd services are active and healthy
+  # - Verify the Nginx configuration and status
+  # - Perform frontend health checks by requesting the production URL
+  # - Perform backend health checks by calling key API endpoints
+  # - Verify critical application routes are accessible
+  # - Confirm static assets are served correctly
+  # - Display the deployed commit SHA, deployment timestamp, and duration
+  # - Output a clear deployment summary with the status of every verification step
+  # - Fail the workflow immediately if any verification or health check fails
+  # - Provide detailed logs for troubleshooting if deployment issues occur
+  # ---------------------------------------------------------------------------
+  verify:
+    name: Post-Deployment Verification
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    environment: production
+
+    steps:
+      - name: Annotate stage scope
+        run: |
+          {
+            echo "::notice title=Stage 4 · Post-Deployment Verification::systemd · Nginx · frontend/API health · routes · static assets · SHA/timestamp/duration · summary · fail-fast"
+            echo "## Stage 4 · Post-Deployment Verification"
+            echo ""
+            echo "- Verify all required systemd services are active and healthy"
+            echo "- Verify the Nginx configuration and status"
+            echo "- Perform frontend health checks by requesting the production URL"
+            echo "- Perform backend health checks by calling key API endpoints"
+            echo "- Verify critical application routes are accessible"
+            echo "- Confirm static assets are served correctly"
+            echo "- Display the deployed commit SHA, deployment timestamp, and duration"
+            echo "- Output a clear deployment summary with the status of every verification step"
+            echo "- Fail the workflow immediately if any verification or health check fails"
+            echo "- Provide detailed logs for troubleshooting if deployment issues occur"
+          } | tee -a "${GITHUB_STEP_SUMMARY}"
+
+      - name: Verify systemd services and Nginx on server
+        uses: appleboy/ssh-action@v1.2.0
+        env:
+          APP_DIR: ${{ env.APP_DIR }}
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
+          script_stop: true
+          command_timeout: 10m
+          envs: APP_DIR
+          script: |
+            set -euo pipefail
+            echo "[verify] Checking systemd units"
+            for unit in truetrek-backend truetrek-frontend nginx; do
+              if ! sudo /bin/systemctl is-active "${unit}" >/dev/null; then
+                sudo /bin/systemctl status "${unit}" || true
+                echo "[verify] FAIL: ${unit} is not active"
+                exit 1
+              fi
+              echo "[verify] PASS: ${unit} is active"
+            done
+            echo "[verify] Checking Nginx configuration"
+            sudo /usr/sbin/nginx -t
+            echo "[verify] Live commit: $(git -C "${APP_DIR}" rev-parse --short HEAD)"
+            echo "[verify] Remote service verification passed"
+
+      - name: Run external production health checks
+        id: health
         env:
           DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
           HEALTH_CHECK_URL: ${{ secrets.HEALTH_CHECK_URL }}
+          EXPECTED_SHA: ${{ needs.deploy.outputs.deployed_sha }}
         run: |
           set -euo pipefail
           BASE_URL="${HEALTH_CHECK_URL:-http://${DEPLOY_HOST}}"
           BASE_URL="${BASE_URL%/}"
-          API_URL="${BASE_URL}/api/docs/"
-          APP_URL="${BASE_URL}/"
 
-          echo "Running external health checks against ${BASE_URL}"
+          declare -a RESULTS=()
 
           check_url() {
-            local url="$1"
-            local label="$2"
-            local attempt
-            for attempt in 1 2 3 4 5 6; do
-              echo "Attempt ${attempt}/6: ${label} -> ${url}"
-              if curl -fsS --max-time 15 -o /dev/null "${url}"; then
-                echo "${label}: healthy"
+            local label="$1"
+            local url="$2"
+            local expected_regex="${3:-^(200|301|302|304)$}"
+            local attempt code
+            for attempt in 1 2 3 4 5 6 7 8; do
+              code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 15 "${url}" || true)"
+              if [[ "${code}" =~ ${expected_regex} ]]; then
+                echo "${label}: HTTP ${code} OK (${url})"
+                echo "::notice title=${label}::HTTP ${code} · ${url}"
+                RESULTS+=("| ${label} | PASS | HTTP ${code} |")
                 return 0
               fi
+              echo "${label}: got HTTP ${code:-none}, retry ${attempt}/8"
               sleep 5
             done
-            echo "::error::${label} health check failed after retries"
+            echo "::error title=${label} failed::${url} (last HTTP ${code:-none})"
+            RESULTS+=("| ${label} | FAIL | HTTP ${code:-none} |")
             return 1
           }
 
-          check_url "${API_URL}" "API"
-          check_url "${APP_URL}" "Frontend"
-          echo "Post-deployment health checks passed."
+          failed=0
+          check_url "Frontend home" "${BASE_URL}/" || failed=1
+          check_url "API docs" "${BASE_URL}/api/docs/" || failed=1
+          check_url "API schema" "${BASE_URL}/api/schema/" || failed=1
+          check_url "Static assets" "${BASE_URL}/static/admin/css/base.css" || failed=1
 
-      - name: Deployment summary
+          {
+            echo "base_url=${BASE_URL}"
+            echo "expected_sha=${EXPECTED_SHA}"
+            printf 'table<<EOF\n'
+            printf '%s\n' "${RESULTS[@]}"
+            printf 'EOF\n'
+          } >> "${GITHUB_OUTPUT}"
+
+          if [[ "${failed}" -ne 0 ]]; then
+            exit 1
+          fi
+          echo "::notice title=External health checks::All production URLs passed"
+
+      - name: Publish verification summary
+        if: always()
+        env:
+          DEPLOYED_SHA: ${{ needs.deploy.outputs.deployed_sha }}
+          STARTED_AT: ${{ needs.deploy.outputs.started_at }}
+          FINISHED_AT: ${{ needs.deploy.outputs.finished_at }}
+          DURATION_SEC: ${{ needs.deploy.outputs.duration_sec }}
+          HEALTH_TABLE: ${{ steps.health.outputs.table }}
+          BASE_URL: ${{ steps.health.outputs.base_url }}
+          JOB_STATUS: ${{ job.status }}
         run: |
-          echo "Production deployment completed successfully."
-          echo "Commit: ${{ github.sha }}"
-          echo "Actor: ${{ github.actor }}"
-          echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          {
+            echo "### Verification results"
+            echo ""
+            echo "| Item | Value |"
+            echo "| --- | --- |"
+            echo "| Deployed commit | \`${DEPLOYED_SHA}\` |"
+            echo "| Deployment started (UTC) | ${STARTED_AT} |"
+            echo "| Deployment finished (UTC) | ${FINISHED_AT} |"
+            echo "| Deployment duration | ${DURATION_SEC}s |"
+            echo "| Production base URL | ${BASE_URL:-n/a} |"
+            echo "| Verification status | **${JOB_STATUS}** |"
+            echo ""
+            echo "### Health checks"
+            echo ""
+            echo "| Check | Result | Detail |"
+            echo "| --- | --- | --- |"
+            if [[ -n "${HEALTH_TABLE}" ]]; then
+              echo "${HEALTH_TABLE}"
+            else
+              echo "| External checks | FAIL | No results captured |"
+            fi
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+          echo "::notice title=Verification summary::commit ${DEPLOYED_SHA} · ${DURATION_SEC}s · status ${JOB_STATUS}"

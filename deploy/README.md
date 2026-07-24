@@ -24,11 +24,12 @@ GitHub Actions workflow: `.github/workflows/deploy.yml`
 
 | Stage | Job | What it does |
 |-------|-----|--------------|
-| 1 | **Code Validation** | Backend syntax + Django checks, frontend lint |
-| 2 | **Build & Package** | Verify Python deps install, build Next.js production bundle |
-| 3 | **Production Deployment** | SSH deploy via `deploy/deploy.sh`, then external health checks |
+| 1 | **Code Validation** | Structure + env templates, syntax, Django checks, ESLint |
+| 2 | **Build & Application Verification** | Next.js production build, artifact checks, Gunicorn start test |
+| 3 | **Production Deployment** | SSH deploy via `deploy/deploy.sh` |
+| 4 | **Post-Deployment Verification** | systemd/Nginx checks + external HTTP health suite |
 
-Pipeline order is enforced with `needs`. Deploy only runs after validation and build succeed.
+Pipeline order is enforced with `needs`. Each stage also emits GitHub Actions annotations and a step summary listing its responsibilities.
 
 On every push to `main` (or manual `workflow_dispatch`), the pipeline runs. Concurrent production deploys are serialized (`cancel-in-progress: false`).
 
