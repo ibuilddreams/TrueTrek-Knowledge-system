@@ -1,0 +1,32 @@
+[Unit]
+Description=TrueTrek LMS Django backend (Gunicorn)
+After=network.target postgresql.service
+Requires=postgresql.service
+
+[Service]
+Type=simple
+User=truetrek
+Group=truetrek
+WorkingDirectory=/opt/TrueTrek-Knowledge-system/backend
+EnvironmentFile=/opt/TrueTrek-Knowledge-system/backend/.env
+ExecStart=/opt/TrueTrek-Knowledge-system/backend/venv/bin/gunicorn \
+    --workers 3 \
+    --bind 127.0.0.1:8000 \
+    --access-logfile /var/log/truetrek/gunicorn-access.log \
+    --error-logfile /var/log/truetrek/gunicorn-error.log \
+    --capture-output \
+    --timeout 60 \
+    lms_be.wsgi:application
+ExecReload=/bin/kill -s HUP $MAINPID
+KillMode=mixed
+TimeoutStopSec=30
+Restart=always
+RestartSec=5
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/TrueTrek-Knowledge-system/backend /var/log/truetrek
+
+[Install]
+WantedBy=multi-user.target

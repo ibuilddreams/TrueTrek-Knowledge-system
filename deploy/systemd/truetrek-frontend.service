@@ -1,0 +1,24 @@
+[Unit]
+Description=TrueTrek LMS Next.js frontend
+After=network.target truetrek-backend.service
+Wants=truetrek-backend.service
+
+[Service]
+Type=simple
+User=truetrek
+Group=truetrek
+WorkingDirectory=/opt/TrueTrek-Knowledge-system/frontend
+Environment=NODE_ENV=production
+Environment=PORT=3000
+EnvironmentFile=-/opt/TrueTrek-Knowledge-system/frontend/.env
+ExecStart=/usr/bin/npx next start -H 127.0.0.1 -p 3000
+Restart=always
+RestartSec=5
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectSystem=full
+ProtectHome=true
+ReadWritePaths=/opt/TrueTrek-Knowledge-system/frontend
+
+[Install]
+WantedBy=multi-user.target
