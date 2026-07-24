@@ -18,27 +18,68 @@ Internet → Nginx :80
 | `nginx` | Reverse proxy |
 | `postgresql` | Database |
 
+## CI/CD pipeline
+
+GitHub Actions workflow: `.github/workflows/deploy.yml`
+
+| Stage | Job | What it does |
+|-------|-----|--------------|
+| 1 | **Code Validation** | Backend syntax + Django checks, frontend lint |
+| 2 | **Build & Package** | Verify Python deps install, build Next.js production bundle |
+| 3 | **Production Deployment** | SSH deploy via `deploy/deploy.sh`, then external health checks |
+
+Pipeline order is enforced with `needs`. Deploy only runs after validation and build succeed.
+
+On every push to `main` (or manual `workflow_dispatch`), the pipeline runs. Concurrent production deploys are serialized (`cancel-in-progress: false`).
+
 ## Manual deploy
 
 ```bash
 sudo -u truetrek bash /opt/TrueTrek-Knowledge-system/deploy/deploy.sh
 ```
 
-## GitHub Actions secrets
+The script is idempotent: safe to rerun. It fails immediately on any error, validates Nginx and build artifacts **before** restarting services, then confirms systemd + HTTP health.
 
-| Secret | Example |
-|--------|---------|
-| `DEPLOY_HOST` | `31.97.146.95` |
-| `DEPLOY_USER` | `truetrek` |
-| `DEPLOY_SSH_KEY` | contents of `/home/truetrek/.ssh/github_actions_deploy` |
+## GitHub configuration
 
-On every push to `main`, the workflow SSHs in and runs `deploy/deploy.sh`.
+### Secrets
 
-Configure secrets after authenticating `gh` on the server:
+| Secret | Required | Example |
+|--------|----------|---------|
+| `DEPLOY_HOST` | Yes | `31.97.146.95` |
+| `DEPLOY_USER` | Yes | `truetrek` |
+| `DEPLOY_SSH_KEY` | Yes | contents of `/home/truetrek/.ssh/github_actions_deploy` |
+| `DEPLOY_PORT` | No | `22` (defaults to 22) |
+| `HEALTH_CHECK_URL` | No | `http://31.97.146.95` (defaults to `http://$DEPLOY_HOST`) |
+
+### Variables (optional)
+
+| Variable | Default | Purpose |
+|----------|---------|---------|
+| `NEXT_PUBLIC_API_URL` | `/api` | Used during CI frontend build |
+
+### Environment
+
+The deploy job uses the GitHub Environment named `production`. Create it under **Settings → Environments** if it does not exist yet (optional protection rules / required reviewers).
+
+### Bootstrap secrets from the server
 
 ```bash
 gh auth login
+export DEPLOY_HOST=31.97.146.95
+export HEALTH_CHECK_URL=http://31.97.146.95
 bash /opt/TrueTrek-Knowledge-system/deploy/setup-github-secrets.sh
 ```
 
 Or set them in GitHub → Settings → Secrets and variables → Actions.
+
+## Server notes
+
+After updating `deploy/sudoers/truetrek` on the server:
+
+```bash
+sudo install -m 440 deploy/sudoers/truetrek /etc/sudoers.d/truetrek
+sudo visudo -cf /etc/sudoers.d/truetrek
+```
+
+The sudoers file allows passwordless `systemctl` restart/status, `nginx -t`, and the controlled `git-pull.sh` helper.

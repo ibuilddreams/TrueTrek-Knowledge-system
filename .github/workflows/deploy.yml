@@ -1,4 +1,4 @@
-name: Deploy to production
+name: Production CI/CD
 
 on:
   push:
@@ -7,26 +7,227 @@ on:
   workflow_dispatch:
 
 concurrency:
-  group: production-deploy
+  group: production-cicd-${{ github.ref }}
   cancel-in-progress: false
 
+permissions:
+  contents: read
+
+env:
+  PYTHON_VERSION: "3.12"
+  NODE_VERSION: "20"
+  APP_DIR: /opt/TrueTrek-Knowledge-system
+
 jobs:
-  deploy:
-    name: Deploy to Ubuntu server
+  validate:
+    name: Code Validation
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Install backend dependencies
+        working-directory: backend
+        run: |
+          echo "::group::pip install"
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          echo "::endgroup::"
+
+      - name: Validate backend Python syntax
+        working-directory: backend
+        run: |
+          echo "Compiling Python sources..."
+          python -m compileall -q -f .
+          echo "Backend syntax validation passed."
+
+      - name: Run Django system checks
+        working-directory: backend
+        env:
+          SECRET_KEY: ci-validation-only-not-for-production
+          DEBUG: "False"
+          ALLOWED_HOSTS: localhost,127.0.0.1
+          DB_NAME: truetrek_lms
+          DB_USER: truetrek
+          DB_PASSWORD: unused
+          DB_HOST: localhost
+          DB_PORT: "5432"
+        run: |
+          echo "Running Django system checks..."
+          python manage.py check
+          echo "Django system checks passed."
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: |
+          echo "::group::npm ci"
+          npm ci
+          echo "::endgroup::"
+
+      - name: Lint frontend
+        working-directory: frontend
+        run: |
+          echo "Running ESLint..."
+          npm run lint
+          echo "Frontend lint passed."
+
+  build:
+    name: Build & Package
+    needs: validate
     runs-on: ubuntu-latest
     timeout-minutes: 20
 
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Python ${{ env.PYTHON_VERSION }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+          cache: pip
+          cache-dependency-path: backend/requirements.txt
+
+      - name: Verify backend package install
+        working-directory: backend
+        run: |
+          echo "::group::pip install"
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          echo "::endgroup::"
+          python -c "import django, gunicorn; print(f'Django {django.get_version()} + Gunicorn ready')"
+
+      - name: Set up Node.js ${{ env.NODE_VERSION }}
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ env.NODE_VERSION }}
+          cache: npm
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Install frontend dependencies
+        working-directory: frontend
+        run: |
+          echo "::group::npm ci"
+          npm ci
+          echo "::endgroup::"
+
+      - name: Build frontend production bundle
+        working-directory: frontend
+        env:
+          NEXT_PUBLIC_API_URL: ${{ vars.NEXT_PUBLIC_API_URL || '/api' }}
+          NODE_ENV: production
+        run: |
+          echo "Building Next.js production bundle..."
+          npm run build
+          test -d .next
+          echo "Frontend build artifacts verified."
+
+      - name: Summarize build
+        run: |
+          echo "Build & package stage completed successfully."
+          echo "Commit: ${{ github.sha }}"
+          echo "Ref: ${{ github.ref_name }}"
+
+  deploy:
+    name: Production Deployment
+    needs: build
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    environment: production
+
+    steps:
+      - name: Verify required secrets
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          DEPLOY_USER: ${{ secrets.DEPLOY_USER }}
+          DEPLOY_SSH_KEY: ${{ secrets.DEPLOY_SSH_KEY }}
+        run: |
+          missing=0
+          for name in DEPLOY_HOST DEPLOY_USER DEPLOY_SSH_KEY; do
+            if [ -z "${!name}" ]; then
+              echo "::error::Missing required secret: $name"
+              missing=1
+            fi
+          done
+          if [ "$missing" -ne 0 ]; then
+            exit 1
+          fi
+          echo "Required deploy secrets are present."
+
       - name: Deploy over SSH
         uses: appleboy/ssh-action@v1.2.0
+        env:
+          APP_DIR: ${{ env.APP_DIR }}
+          GITHUB_SHA: ${{ github.sha }}
         with:
           host: ${{ secrets.DEPLOY_HOST }}
           username: ${{ secrets.DEPLOY_USER }}
           key: ${{ secrets.DEPLOY_SSH_KEY }}
-          port: 22
+          port: ${{ secrets.DEPLOY_PORT || 22 }}
           script_stop: true
-          command_timeout: 15m
+          command_timeout: 20m
+          envs: APP_DIR,GITHUB_SHA
           script: |
             set -euo pipefail
-            cd /opt/TrueTrek-Knowledge-system
+            echo "[deploy] Starting production deployment"
+            echo "[deploy] Target commit: ${GITHUB_SHA}"
+            echo "[deploy] App directory: ${APP_DIR}"
+            cd "${APP_DIR}"
             bash deploy/deploy.sh
+            echo "[deploy] Remote deploy script finished"
+
+      - name: Post-deployment health check
+        env:
+          DEPLOY_HOST: ${{ secrets.DEPLOY_HOST }}
+          HEALTH_CHECK_URL: ${{ secrets.HEALTH_CHECK_URL }}
+        run: |
+          set -euo pipefail
+          BASE_URL="${HEALTH_CHECK_URL:-http://${DEPLOY_HOST}}"
+          BASE_URL="${BASE_URL%/}"
+          API_URL="${BASE_URL}/api/docs/"
+          APP_URL="${BASE_URL}/"
+
+          echo "Running external health checks against ${BASE_URL}"
+
+          check_url() {
+            local url="$1"
+            local label="$2"
+            local attempt
+            for attempt in 1 2 3 4 5 6; do
+              echo "Attempt ${attempt}/6: ${label} -> ${url}"
+              if curl -fsS --max-time 15 -o /dev/null "${url}"; then
+                echo "${label}: healthy"
+                return 0
+              fi
+              sleep 5
+            done
+            echo "::error::${label} health check failed after retries"
+            return 1
+          }
+
+          check_url "${API_URL}" "API"
+          check_url "${APP_URL}" "Frontend"
+          echo "Post-deployment health checks passed."
+
+      - name: Deployment summary
+        run: |
+          echo "Production deployment completed successfully."
+          echo "Commit: ${{ github.sha }}"
+          echo "Actor: ${{ github.actor }}"
+          echo "Run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
