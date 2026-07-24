@@ -27,7 +27,7 @@ urlpatterns = [
 
     # Teachers (self-service)
     path('teacher/me/assignedcourses', TeacherAssignedCoursesListView.as_view(), name='teacher-assigned-courses-list'),
-    path('teacher/me/assignedcourses/studentsenrolled', TeacherAssignedCoursesStudentsView.as_view(), name='teacher-assigned-courses-students-list'),
+    path('teacher/me/assignedcourses/studentsenrolled/', TeacherAssignedCoursesStudentsView.as_view(), name='teacher-assigned-courses-students-list'),
     path('teacher/me/students/<int:student_id>/', TeacherEnrolledStudentDetailView.as_view(), name='teacher-enrolled-student-detail'),
 
     # Users

@@ -197,7 +197,9 @@ class TeacherDetailView(generics.RetrieveUpdateDestroyAPIView):
     permission_classes = [IsAuthenticated]
 
     def get_permissions(self):
-        if self.request.method in ("GET", "PATCH", "DELETE"):
+        if self.request.method == "GET":
+            return [(IsTeacher | IsAdmin)()]
+        if self.request.method in ("PATCH", "DELETE"):
             permission = IsAdmin()
             permission.message = "You do not have permission to perform this action. Only admin can perform this action."
             return [permission]
