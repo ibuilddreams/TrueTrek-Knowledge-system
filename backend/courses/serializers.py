@@ -165,14 +165,20 @@ class CourseWriteSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
     def to_internal_value(self, data):
+        if isinstance(data, QueryDict):
+            converted = {}
+            for key in data:
+                values = data.getlist(key)
+                converted[key] = values if key == "tags" else values[-1]
+            data = converted
+
         instructors = data.get("instructors")
         if isinstance(instructors, str):
-            if isinstance(data, QueryDict):
-                data = data.copy()
             try:
                 data["instructors"] = json.loads(instructors)
             except ValueError:
                 raise serializers.ValidationError({"instructors": "Must be a valid JSON list."})
+
         return super().to_internal_value(data)
 
     def validate_title(self, value):
