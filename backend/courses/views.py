@@ -8,12 +8,13 @@ from enrollments.models import Enrollment
 from enrollments.serializers import CourseEnrolledStudentSerializer
 from users.permissions import IsAdmin
 
-from .models import Category, Course
+from .models import Category, Course, Tag
 from .serializers import (
     CategorySerializer,
     CourseDetailSerializer,
     CourseListSerializer,
     CourseWriteSerializer,
+    TagSerializer,
     TeacherSerializer,
 )
 
@@ -80,6 +81,18 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
         category = self.get_object()
         category.delete()
         return success_response(None, message="Category deleted successfully")
+
+
+class TagListView(generics.ListAPIView):
+    queryset = Tag.objects.all()
+    serializer_class = TagSerializer
+    permission_classes = [IsAuthenticated]
+    pagination_class = None
+
+    def list(self, request, *args, **kwargs):
+        tags = self.filter_queryset(self.get_queryset())
+        serializer = self.get_serializer(tags, many=True)
+        return success_response(serializer.data, message="Tags fetched successfully")
 
 
 class CourseListCreateView(generics.ListCreateAPIView):

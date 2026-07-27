@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Eye, Trash2, UserPlus } from "lucide-react";
+import { BookPlus, Eye, Trash2, UserPlus } from "lucide-react";
 import { useAdminCourses } from "@/hooks/admin/useAdminCourses";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -18,6 +18,7 @@ import ActionMenu from "@/components/ui/ActionMenu";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import CourseDetailModal from "@/components/features/admin/CourseDetailModal";
 import EnrollStudentModal from "@/components/features/admin/EnrollStudentModal";
+import CreateCourseModal from "@/components/features/admin/CreateCourseModal";
 
 const PAGE_SIZE = 10;
 
@@ -43,6 +44,7 @@ export default function CoursesTab() {
   const [enrollCourseId, setEnrollCourseId] = useState(null);
   const [deletingCourse, setDeletingCourse] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
     loadCourses();
@@ -111,15 +113,28 @@ export default function CoursesTab() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search courses by title..." />
-        <div className="w-full sm:w-56">
-          <SearchableSelect
-            placeholder="All Statuses"
-            options={STATUS_FILTER_OPTIONS}
-            value={statusFilter}
-            onChange={setStatusFilter}
-          />
+        <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 min-w-0">
+          <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search courses by title..." />
+          <div className="w-full sm:w-56 shrink-0">
+            <SearchableSelect
+              placeholder="All Statuses"
+              options={STATUS_FILTER_OPTIONS}
+              value={statusFilter}
+              onChange={setStatusFilter}
+            />
+          </div>
         </div>
+
+        <button
+          type="button"
+          onClick={() => setIsCreateModalOpen(true)}
+          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:scale-[1.01] transition-all flex items-center gap-2 shrink-0"
+          title="Create a new course"
+          aria-label="Create a new course"
+        >
+          <BookPlus className="w-4 h-4" />
+          ADD COURSE
+        </button>
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
@@ -156,6 +171,12 @@ export default function CoursesTab() {
         title="Delete Course"
         message={`Are you sure you want to delete "${deletingCourse?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
+      />
+
+      <CreateCourseModal
+        isOpen={isCreateModalOpen}
+        onClose={() => setIsCreateModalOpen(false)}
+        onCreated={() => loadCourses({ force: true })}
       />
     </div>
   );

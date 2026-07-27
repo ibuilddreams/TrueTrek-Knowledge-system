@@ -134,11 +134,15 @@ export async function apiRequest(path, options = {}) {
     ...rest
   } = options;
 
+  const isFormData = typeof FormData !== "undefined" && body instanceof FormData;
+
   let config = {
     path: `${baseUrl}${path}`,
     method,
     body,
-    headers: { ...DEFAULT_HEADERS, ...headers },
+    headers: isFormData
+      ? { Accept: "application/json", ...headers }
+      : { ...DEFAULT_HEADERS, ...headers },
     credentials,
     skipAuth,
     baseUrl,
@@ -163,7 +167,8 @@ export async function apiRequest(path, options = {}) {
     credentials: config.credentials,
     body:
       config.body !== undefined && config.body !== null
-        ? typeof config.body === "string"
+        ? typeof config.body === "string" ||
+          (typeof FormData !== "undefined" && config.body instanceof FormData)
           ? config.body
           : JSON.stringify(config.body)
         : undefined,

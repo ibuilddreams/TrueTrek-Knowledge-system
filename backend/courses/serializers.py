@@ -1,4 +1,7 @@
+import json
+
 from django.contrib.auth import get_user_model
+from django.http import QueryDict
 from rest_framework import serializers
 
 from .models import Category, Course, CourseInstructor, Tag
@@ -78,8 +81,11 @@ class CourseDetailSerializer(serializers.ModelSerializer):
             "title",
             "slug",
             "description",
+            "thumbnail",
             "category",
             "status",
+            "difficulty",
+            "duration_minutes",
             "tags",
             "instructors",
         ]
@@ -106,8 +112,30 @@ class CourseWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ["id", "title", "description", "category", "status", "tags", "instructors"]
+        fields = [
+            "id",
+            "title",
+            "description",
+            "thumbnail",
+            "category",
+            "status",
+            "difficulty",
+            "duration_minutes",
+            "tags",
+            "instructors",
+        ]
         read_only_fields = ["id"]
+
+    def to_internal_value(self, data):
+        instructors = data.get("instructors")
+        if isinstance(instructors, str):
+            if isinstance(data, QueryDict):
+                data = data.copy()
+            try:
+                data["instructors"] = json.loads(instructors)
+            except ValueError:
+                raise serializers.ValidationError({"instructors": "Must be a valid JSON list."})
+        return super().to_internal_value(data)
 
     def validate_title(self, value):
         queryset = Course.objects.filter(title__iexact=value)
