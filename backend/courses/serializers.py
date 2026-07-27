@@ -62,7 +62,7 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ["id", "name", "slug", "description", "created_at", "updated_at", "courses"]
+        fields = ["id", "name", "slug", "created_at", "updated_at", "courses"]
         read_only_fields = ["id", "slug", "created_at", "updated_at"]
 
     def validate_name(self, value):
@@ -77,7 +77,7 @@ class CategorySerializer(serializers.ModelSerializer):
 class CourseCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ["id", "name", "slug", "description"]
+        fields = ["id", "name", "slug"]
         read_only_fields = fields
 
 
