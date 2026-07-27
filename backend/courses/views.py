@@ -83,6 +83,17 @@ class CategoryDetailView(generics.RetrieveUpdateDestroyAPIView):
         return success_response(None, message="Category deleted successfully")
 
 
+class CourseStatusChoicesView(generics.GenericAPIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        choices = [
+            {"value": value, "label": label}
+            for value, label in Course._meta.get_field("status").choices
+        ]
+        return success_response(choices, message="Course status choices fetched successfully")
+
+
 class TagListView(generics.ListAPIView):
     queryset = Tag.objects.all()
     serializer_class = TagSerializer

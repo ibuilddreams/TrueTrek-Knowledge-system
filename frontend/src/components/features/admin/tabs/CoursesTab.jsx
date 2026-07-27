@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { BookPlus, Eye, Trash2, UserPlus } from "lucide-react";
+import { BookPlus, Edit3, Eye, RefreshCw, Trash2, UserPlus } from "lucide-react";
 import { useAdminCourses } from "@/hooks/admin/useAdminCourses";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -19,6 +19,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import CourseDetailModal from "@/components/features/admin/CourseDetailModal";
 import EnrollStudentModal from "@/components/features/admin/EnrollStudentModal";
 import CreateCourseModal from "@/components/features/admin/CreateCourseModal";
+import UpdateCourseStatusModal from "@/components/features/admin/UpdateCourseStatusModal";
 
 const PAGE_SIZE = 10;
 
@@ -42,6 +43,8 @@ export default function CoursesTab() {
 
   const [viewCourseId, setViewCourseId] = useState(null);
   const [enrollCourseId, setEnrollCourseId] = useState(null);
+  const [editingCourse, setEditingCourse] = useState(null);
+  const [statusUpdatingCourse, setStatusUpdatingCourse] = useState(null);
   const [deletingCourse, setDeletingCourse] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
@@ -102,6 +105,13 @@ export default function CoursesTab() {
         <ActionMenu
           actions={[
             { key: "view", label: "View Details", icon: Eye, onSelect: () => setViewCourseId(course.id) },
+            { key: "edit", label: "Edit", icon: Edit3, onSelect: () => setEditingCourse(course) },
+            {
+              key: "update-status",
+              label: "Update Status",
+              icon: RefreshCw,
+              onSelect: () => setStatusUpdatingCourse(course),
+            },
             { key: "enroll", label: "Enroll Student", icon: UserPlus, onSelect: () => setEnrollCourseId(course.id) },
             { key: "delete", label: "Delete", icon: Trash2, tone: "danger", onSelect: () => setDeletingCourse(course) },
           ]}
@@ -174,9 +184,20 @@ export default function CoursesTab() {
       />
 
       <CreateCourseModal
-        isOpen={isCreateModalOpen}
-        onClose={() => setIsCreateModalOpen(false)}
-        onCreated={() => loadCourses({ force: true })}
+        isOpen={isCreateModalOpen || Boolean(editingCourse)}
+        course={editingCourse}
+        onClose={() => {
+          setIsCreateModalOpen(false);
+          setEditingCourse(null);
+        }}
+        onSaved={() => loadCourses({ force: true })}
+      />
+
+      <UpdateCourseStatusModal
+        isOpen={Boolean(statusUpdatingCourse)}
+        course={statusUpdatingCourse}
+        onClose={() => setStatusUpdatingCourse(null)}
+        onUpdated={() => loadCourses({ force: true })}
       />
     </div>
   );

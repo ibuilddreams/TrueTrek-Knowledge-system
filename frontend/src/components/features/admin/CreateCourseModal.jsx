@@ -1,24 +1,16 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BookPlus, Check, X } from "lucide-react";
+import { BookPlus, Check, Edit3, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import MultiSelect from "@/components/ui/MultiSelect";
-import { createCourse } from "@/services/coursesService";
+import { createCourse, getCourseById, getCourseStatusChoices, updateCourse } from "@/services/coursesService";
 import { getCategories } from "@/services/categoriesService";
 import { getTags } from "@/services/tagsService";
 import { getTeachers } from "@/services/teachersService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
-
-const STATUS_OPTIONS = [
-  { value: "DRAFT", label: "Draft" },
-  { value: "PUBLISHED", label: "Published" },
-  { value: "ARCHIVED", label: "Archived" },
-  { value: "ACTIVE", label: "Active" },
-  { value: "COMPLETED", label: "Completed" },
-];
 
 const DIFFICULTY_OPTIONS = [
   { value: "BEGINNER", label: "Beginner" },
@@ -43,9 +35,12 @@ const LABEL_CLASS =
 
 const ERROR_CLASS = "text-[10px] font-mono text-red-600 mt-1";
 
-export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
+export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) {
+  const isEditMode = Boolean(course);
+
   const [form, setForm] = useState(INITIAL_FORM);
   const [thumbnailFile, setThumbnailFile] = useState(null);
+  const [existingThumbnailUrl, setExistingThumbnailUrl] = useState(null);
   const [selectedTagIds, setSelectedTagIds] = useState([]);
   const [selectedInstructorIds, setSelectedInstructorIds] = useState([]);
   const [leadInstructorIds, setLeadInstructorIds] = useState([]);
@@ -53,7 +48,9 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
   const [teachers, setTeachers] = useState([]);
+  const [statusOptions, setStatusOptions] = useState([]);
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
+  const [isLoadingCourse, setIsLoadingCourse] = useState(false);
 
   const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -63,6 +60,7 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
 
     setForm(INITIAL_FORM);
     setThumbnailFile(null);
+    setExistingThumbnailUrl(null);
     setSelectedTagIds([]);
     setSelectedInstructorIds([]);
     setLeadInstructorIds([]);
@@ -73,15 +71,17 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
 
     (async () => {
       try {
-        const [categoriesResponse, tagsResponse, teachersResponse] = await Promise.all([
+        const [categoriesResponse, tagsResponse, teachersResponse, statusResponse] = await Promise.all([
           getCategories(),
           getTags(),
           getTeachers(),
+          getCourseStatusChoices(),
         ]);
         if (!isMounted) return;
         setCategories(categoriesResponse?.data?.results || []);
         setTags(tagsResponse?.data || []);
         setTeachers(teachersResponse?.data?.users || []);
+        setStatusOptions(statusResponse?.data || []);
       } catch (error) {
         if (isMounted) {
           toastError(getApiErrorMessage(error, "Unable to load course options."));
@@ -95,6 +95,44 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
       isMounted = false;
     };
   }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen || !course) return;
+
+    let isMounted = true;
+    setIsLoadingCourse(true);
+
+    (async () => {
+      try {
+        const response = await getCourseById(course.id);
+        const detail = response?.data;
+        if (!isMounted || !detail) return;
+
+        setForm({
+          title: detail.title || "",
+          description: detail.description || "",
+          category: detail.category?.id || "",
+          status: detail.status || "DRAFT",
+          difficulty: detail.difficulty || "BEGINNER",
+          duration_minutes: String(detail.duration_minutes ?? 0),
+        });
+        setExistingThumbnailUrl(detail.thumbnail || null);
+        setSelectedTagIds((detail.tags || []).map((tag) => tag.id));
+        setSelectedInstructorIds((detail.instructors || []).map((instructor) => instructor.id));
+        setLeadInstructorIds(
+          (detail.instructors || []).filter((instructor) => instructor.is_lead).map((instructor) => instructor.id)
+        );
+      } catch (error) {
+        if (isMounted) toastError(getApiErrorMessage(error, "Unable to load course details."));
+      } finally {
+        if (isMounted) setIsLoadingCourse(false);
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, [isOpen, course]);
 
   const handleClose = () => {
     if (isSubmitting) return;
@@ -166,9 +204,9 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
 
     setIsSubmitting(true);
     try {
-      const response = await createCourse(formData);
-      toastSuccess(response?.message || "Course created successfully.");
-      onCreated?.();
+      const response = isEditMode ? await updateCourse(course.id, formData) : await createCourse(formData);
+      toastSuccess(response?.message || `Course ${isEditMode ? "updated" : "created"} successfully.`);
+      onSaved?.();
       handleClose();
     } catch (error) {
       const apiFieldErrors = error?.data?.data;
@@ -179,19 +217,21 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
         });
         setFieldErrors(mapped);
       }
-      toastError(getApiErrorMessage(error, "Unable to create course."));
+      toastError(getApiErrorMessage(error, `Unable to ${isEditMode ? "update" : "create"} course.`));
     } finally {
       setIsSubmitting(false);
     }
   };
 
+  const isBusy = isSubmitting || isLoadingCourse;
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      icon={BookPlus}
-      title="Add Course"
-      subtitle="Create a new course."
+      icon={isEditMode ? Edit3 : BookPlus}
+      title={isEditMode ? "Edit Course" : "Add Course"}
+      subtitle={isEditMode ? "Update the course details." : "Create a new course."}
       maxWidth="max-w-2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -201,7 +241,7 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
             type="text"
             value={form.title}
             onChange={updateField("title")}
-            disabled={isSubmitting}
+            disabled={isBusy}
             placeholder="Course title"
             className={FIELD_CLASS}
             autoComplete="off"
@@ -214,7 +254,7 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
           <textarea
             value={form.description}
             onChange={updateField("description")}
-            disabled={isSubmitting}
+            disabled={isBusy}
             placeholder="Course description"
             rows={3}
             className={`${FIELD_CLASS} resize-none`}
@@ -224,11 +264,21 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
 
         <div>
           <label className={LABEL_CLASS}>Thumbnail</label>
+          {existingThumbnailUrl && !thumbnailFile && (
+            <div className="mb-2 flex items-center gap-2">
+              <img
+                src={existingThumbnailUrl}
+                alt="Current thumbnail"
+                className="w-14 h-14 object-cover rounded-lg border border-stone-200"
+              />
+              <span className="text-[10px] font-mono text-stone-400">Current thumbnail</span>
+            </div>
+          )}
           <input
             type="file"
             accept="image/*"
             onChange={(event) => setThumbnailFile(event.target.files?.[0] || null)}
-            disabled={isSubmitting}
+            disabled={isBusy}
             className={`${FIELD_CLASS} file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-stone-200 file:text-stone-700 file:text-[10px] file:font-mono file:uppercase file:tracking-wider`}
           />
           {fieldErrors.thumbnail && <p className={ERROR_CLASS}>{fieldErrors.thumbnail}</p>}
@@ -247,7 +297,7 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
                 setFieldErrors((prev) => ({ ...prev, category: null }));
               }}
               loading={isLoadingOptions}
-              disabled={isSubmitting}
+              disabled={isBusy}
               emptyLabel="No categories found."
             />
             {fieldErrors.category && <p className={ERROR_CLASS}>{fieldErrors.category}</p>}
@@ -262,7 +312,7 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
               values={selectedTagIds}
               onChange={setSelectedTagIds}
               loading={isLoadingOptions}
-              disabled={isSubmitting}
+              disabled={isBusy}
               emptyLabel="No tags found."
             />
             {fieldErrors.tags && <p className={ERROR_CLASS}>{fieldErrors.tags}</p>}
@@ -275,15 +325,17 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
             <select
               value={form.status}
               onChange={updateField("status")}
-              disabled={isSubmitting}
+              disabled={isBusy || isLoadingOptions}
               className={FIELD_CLASS}
             >
-              {STATUS_OPTIONS.map((option) => (
+              {statusOptions.length === 0 && <option value={form.status}>Loading...</option>}
+              {statusOptions.map((option) => (
                 <option key={option.value} value={option.value}>
                   {option.label}
                 </option>
               ))}
             </select>
+            {fieldErrors.status && <p className={ERROR_CLASS}>{fieldErrors.status}</p>}
           </div>
 
           <div>
@@ -291,7 +343,7 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
             <select
               value={form.difficulty}
               onChange={updateField("difficulty")}
-              disabled={isSubmitting}
+              disabled={isBusy}
               className={FIELD_CLASS}
             >
               {DIFFICULTY_OPTIONS.map((option) => (
@@ -309,7 +361,7 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
               min="0"
               value={form.duration_minutes}
               onChange={updateField("duration_minutes")}
-              disabled={isSubmitting}
+              disabled={isBusy}
               className={FIELD_CLASS}
             />
             {fieldErrors.duration_minutes && <p className={ERROR_CLASS}>{fieldErrors.duration_minutes}</p>}
@@ -325,7 +377,7 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
             values={selectedInstructorIds}
             onChange={handleInstructorsChange}
             loading={isLoadingOptions}
-            disabled={isSubmitting}
+            disabled={isBusy}
             emptyLabel="No teachers found."
           />
           {fieldErrors.instructors && <p className={ERROR_CLASS}>{fieldErrors.instructors}</p>}
@@ -348,7 +400,7 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
                         type="checkbox"
                         checked={leadInstructorIds.includes(instructorId)}
                         onChange={() => toggleLeadInstructor(instructorId)}
-                        disabled={isSubmitting}
+                        disabled={isBusy}
                       />
                       Lead Instructor
                     </label>
@@ -363,7 +415,7 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
           <button
             type="button"
             onClick={handleClose}
-            disabled={isSubmitting}
+            disabled={isBusy}
             className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <X className="w-3.5 h-3.5" />
@@ -372,18 +424,18 @@ export default function CreateCourseModal({ isOpen, onClose, onCreated }) {
 
           <button
             type="submit"
-            disabled={isSubmitting}
+            disabled={isBusy}
             className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>
                 <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Creating...
+                {isEditMode ? "Updating..." : "Creating..."}
               </>
             ) : (
               <>
                 <Check className="w-3.5 h-3.5" />
-                Create Course
+                {isEditMode ? "Update Course" : "Create Course"}
               </>
             )}
           </button>
