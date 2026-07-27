@@ -126,6 +126,55 @@ class TagListCreateView(generics.ListCreateAPIView):
         )
 
 
+class TagDetailView(generics.RetrieveUpdateDestroyAPIView):
+    # PATCH and DELETE are temporarily disabled — commented out below, not removed.
+    http_method_names = ["get", "head", "options"]
+    queryset = Tag.objects.all()
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        # if self.request.method in ("PATCH", "DELETE"):
+        #     permission = IsAdmin()
+        #     permission.message = "You do not have permission to perform this action. Only admin can perform this action."
+        #     return [permission]
+        return super().get_permissions()
+
+    def get_serializer_class(self):
+        # if self.request.method == "PATCH":
+        #     return TagWriteSerializer
+        return TagSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            tag = self.get_queryset().get(pk=kwargs["pk"])
+        except Tag.DoesNotExist:
+            return error_response(message="Tag with the given id does not exist.", status_code=404)
+
+        serializer = self.get_serializer(tag)
+        return success_response(serializer.data, message="Tag fetched successfully")
+
+    # def update(self, request, *args, **kwargs):
+    #     try:
+    #         tag = self.get_queryset().get(pk=kwargs["pk"])
+    #     except Tag.DoesNotExist:
+    #         return error_response(message="Tag with the given id does not exist.", status_code=404)
+    #
+    #     partial = kwargs.pop("partial", False)
+    #     serializer = self.get_serializer(tag, data=request.data, partial=partial)
+    #     serializer.is_valid(raise_exception=True)
+    #     tag = serializer.save()
+    #     return success_response(TagSerializer(tag).data, message="Tag updated successfully")
+
+    # def destroy(self, request, *args, **kwargs):
+    #     try:
+    #         tag = self.get_queryset().get(pk=kwargs["pk"])
+    #     except Tag.DoesNotExist:
+    #         return error_response(message="Tag with the given id does not exist.", status_code=404)
+    #
+    #     tag.delete()
+    #     return success_response(None, message="Tag deleted successfully")
+
+
 class CourseListCreateView(generics.ListCreateAPIView):
     queryset = Course.objects.select_related("category").prefetch_related("tags", "instructors__instructor")
     permission_classes = [IsAuthenticated]
