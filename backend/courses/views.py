@@ -15,6 +15,7 @@ from .serializers import (
     CourseListSerializer,
     CourseWriteSerializer,
     TagSerializer,
+    TagWriteSerializer,
     TeacherSerializer,
 )
 
@@ -94,16 +95,35 @@ class CourseStatusChoicesView(generics.GenericAPIView):
         return success_response(choices, message="Course status choices fetched successfully")
 
 
-class TagListView(generics.ListAPIView):
+class TagListCreateView(generics.ListCreateAPIView):
     queryset = Tag.objects.all()
-    serializer_class = TagSerializer
     permission_classes = [IsAuthenticated]
     pagination_class = None
+
+    def get_permissions(self):
+        if self.request.method == "POST":
+            permission = IsAdmin()
+            permission.message = "You do not have permission to perform this action. Only admin can perform this action."
+            return [permission]
+        return super().get_permissions()
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return TagWriteSerializer
+        return TagSerializer
 
     def list(self, request, *args, **kwargs):
         tags = self.filter_queryset(self.get_queryset())
         serializer = self.get_serializer(tags, many=True)
         return success_response(serializer.data, message="Tags fetched successfully")
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        tag = serializer.save()
+        return success_response(
+            TagSerializer(tag).data, message="Tag created successfully", status_code=201
+        )
 
 
 class CourseListCreateView(generics.ListCreateAPIView):
@@ -120,6 +140,28 @@ class CourseListCreateView(generics.ListCreateAPIView):
         if self.request.method == "POST":
             return CourseWriteSerializer
         return CourseListSerializer
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        params = self.request.query_params
+
+        search = params.get("search")
+        if search:
+            queryset = queryset.filter(title__icontains=search)
+
+        status_param = params.get("status")
+        if status_param:
+            queryset = queryset.filter(status=status_param)
+
+        category_param = params.get("category")
+        if category_param:
+            queryset = queryset.filter(category_id=category_param)
+
+        tags_param = params.get("tags")
+        if tags_param:
+            queryset = queryset.filter(tags__id=tags_param)
+
+        return queryset.distinct()
 
     def list(self, request, *args, **kwargs):
         courses = self.filter_queryset(self.get_queryset())

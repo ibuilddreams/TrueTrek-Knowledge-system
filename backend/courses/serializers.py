@@ -21,6 +21,21 @@ class TagSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class TagWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ["id", "name", "slug"]
+        read_only_fields = ["id", "slug"]
+
+    def validate_name(self, value):
+        queryset = Tag.objects.filter(name__iexact=value)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError("A tag with this name already exists.")
+        return value
+
+
 class CourseInstructorSerializer(serializers.ModelSerializer):
     id = serializers.IntegerField(source="instructor.id", read_only=True)
     name = serializers.CharField(source="instructor.name", read_only=True)
@@ -49,6 +64,14 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ["id", "name", "slug", "description", "created_at", "updated_at", "courses"]
         read_only_fields = ["id", "slug", "created_at", "updated_at"]
+
+    def validate_name(self, value):
+        queryset = Category.objects.filter(name__iexact=value)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError("A category with this name already exists.")
+        return value
 
 
 class CourseCategorySerializer(serializers.ModelSerializer):

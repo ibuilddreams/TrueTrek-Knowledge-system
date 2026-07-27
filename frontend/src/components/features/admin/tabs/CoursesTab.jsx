@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { BookPlus, Edit3, Eye, RefreshCw, Trash2, UserPlus } from "lucide-react";
 import { useAdminCourses } from "@/hooks/admin/useAdminCourses";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { deleteCourse } from "@/services/coursesService";
+import { createCategory, getCategories } from "@/services/categoriesService";
+import { createTag, getTags } from "@/services/tagsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { formatDate } from "@/lib/adminFormatters";
@@ -39,6 +41,10 @@ export default function CoursesTab() {
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, 300);
   const [statusFilter, setStatusFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [tagFilter, setTagFilter] = useState("");
+  const [categories, setCategories] = useState([]);
+  const [tags, setTags] = useState([]);
   const [page, setPage] = useState(1);
 
   const [viewCourseId, setViewCourseId] = useState(null);
@@ -50,24 +56,84 @@ export default function CoursesTab() {
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
 
   useEffect(() => {
-    loadCourses();
-  }, [loadCourses]);
+    let isMounted = true;
+
+    (async () => {
+      try {
+        const [categoriesResponse, tagsResponse] = await Promise.all([getCategories(), getTags()]);
+        if (!isMounted) return;
+        setCategories(categoriesResponse?.data?.results || []);
+        setTags(tagsResponse?.data || []);
+      } catch (error) {
+        if (isMounted) toastError(getApiErrorMessage(error, "Unable to load filter options."));
+      }
+    })();
+
+    return () => {
+      isMounted = false;
+    };
+  }, []);
+
+  const refreshCourses = () =>
+    loadCourses({
+      force: true,
+      search: debouncedSearch || undefined,
+      status: statusFilter || undefined,
+      category: categoryFilter || undefined,
+      tags: tagFilter || undefined,
+    });
+
+  useEffect(() => {
+    refreshCourses();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [debouncedSearch, statusFilter, categoryFilter, tagFilter]);
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, statusFilter]);
+  }, [debouncedSearch, statusFilter, categoryFilter, tagFilter]);
 
-  const filteredCourses = useMemo(() => {
-    const query = debouncedSearch.trim().toLowerCase();
-    return items.filter((course) => {
-      const matchesSearch = !query || course.title.toLowerCase().includes(query);
-      const matchesStatus = !statusFilter || course.status === statusFilter;
-      return matchesSearch && matchesStatus;
-    });
-  }, [items, debouncedSearch, statusFilter]);
+  const extractFieldError = (error, field, fallback) => {
+    const fieldErrors = error?.data?.data;
+    if (fieldErrors && Array.isArray(fieldErrors[field])) return fieldErrors[field][0];
+    return getApiErrorMessage(error, fallback);
+  };
 
-  const totalPages = Math.max(1, Math.ceil(filteredCourses.length / PAGE_SIZE));
-  const paginatedCourses = filteredCourses.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const handleCreateCategory = async (name) => {
+    try {
+      const response = await createCategory({ name });
+      const created = response?.data;
+      setCategories((prev) => [...prev, created]);
+      toastSuccess(response?.message || "Category created successfully.");
+      return { value: String(created.id), label: created.name };
+    } catch (error) {
+      throw new Error(extractFieldError(error, "name", "Unable to create category."));
+    }
+  };
+
+  const handleCreateTag = async (name) => {
+    try {
+      const response = await createTag({ name });
+      const created = response?.data;
+      setTags((prev) => [...prev, created]);
+      toastSuccess(response?.message || "Tag created successfully.");
+      return { value: String(created.id), label: created.name };
+    } catch (error) {
+      throw new Error(extractFieldError(error, "name", "Unable to create tag."));
+    }
+  };
+
+  const categoryFilterOptions = [
+    { value: "", label: "All Categories" },
+    ...categories.map((category) => ({ value: String(category.id), label: category.name })),
+  ];
+
+  const tagFilterOptions = [
+    { value: "", label: "All Tags" },
+    ...tags.map((tag) => ({ value: String(tag.id), label: tag.name })),
+  ];
+
+  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
+  const paginatedCourses = items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleDeleteConfirm = async () => {
     if (!deletingCourse) return;
@@ -76,7 +142,7 @@ export default function CoursesTab() {
       await deleteCourse(deletingCourse.id);
       toastSuccess("Course deleted successfully.");
       setDeletingCourse(null);
-      loadCourses({ force: true });
+      refreshCourses();
     } catch (error) {
       toastError(getApiErrorMessage(error, "Unable to delete course."));
     } finally {
@@ -122,15 +188,35 @@ export default function CoursesTab() {
 
   return (
     <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 min-w-0">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-3 justify-between">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 flex-1 min-w-0">
           <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search courses by title..." />
-          <div className="w-full sm:w-56 shrink-0">
+          <div className="w-full sm:w-48 shrink-0">
             <SearchableSelect
               placeholder="All Statuses"
               options={STATUS_FILTER_OPTIONS}
               value={statusFilter}
               onChange={setStatusFilter}
+            />
+          </div>
+          <div className="w-full sm:w-48 shrink-0">
+            <SearchableSelect
+              placeholder="All Categories"
+              options={categoryFilterOptions}
+              value={categoryFilter}
+              onChange={setCategoryFilter}
+              onCreate={handleCreateCategory}
+              createLabel="Add New Category"
+            />
+          </div>
+          <div className="w-full sm:w-48 shrink-0">
+            <SearchableSelect
+              placeholder="All Tags"
+              options={tagFilterOptions}
+              value={tagFilter}
+              onChange={setTagFilter}
+              onCreate={handleCreateTag}
+              createLabel="Add New Tag"
             />
           </div>
         </div>
@@ -153,14 +239,14 @@ export default function CoursesTab() {
           rows={paginatedCourses}
           isLoading={status === "loading" || status === "idle"}
           error={status === "failed" ? error : null}
-          onRetry={() => loadCourses({ force: true })}
+          onRetry={refreshCourses}
           emptyLabel="No courses found."
         />
         <Pagination
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
-          totalLabel={`${filteredCourses.length} course${filteredCourses.length === 1 ? "" : "s"}`}
+          totalLabel={`${items.length} course${items.length === 1 ? "" : "s"}`}
         />
       </div>
 
@@ -190,14 +276,14 @@ export default function CoursesTab() {
           setIsCreateModalOpen(false);
           setEditingCourse(null);
         }}
-        onSaved={() => loadCourses({ force: true })}
+        onSaved={refreshCourses}
       />
 
       <UpdateCourseStatusModal
         isOpen={Boolean(statusUpdatingCourse)}
         course={statusUpdatingCourse}
         onClose={() => setStatusUpdatingCourse(null)}
-        onUpdated={() => loadCourses({ force: true })}
+        onUpdated={refreshCourses}
       />
     </div>
   );
