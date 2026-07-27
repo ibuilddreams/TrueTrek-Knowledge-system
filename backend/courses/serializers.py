@@ -85,17 +85,25 @@ class CourseListSerializer(serializers.ModelSerializer):
     category = CourseCategorySerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     instructors = CourseInstructorSerializer(many=True, read_only=True)
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
-        fields = ["id", "title", "slug", "category", "status", "tags", "instructors", "created_at", "updated_at"]
+        fields = ["id", "title", "slug", "image", "category", "status", "tags", "instructors", "created_at", "updated_at"]
         read_only_fields = fields
+
+    def get_image(self, obj):
+        request = self.context.get("request")
+        if obj.thumbnail and request:
+            return request.build_absolute_uri(obj.thumbnail.url)
+        return None
 
 
 class CourseDetailSerializer(serializers.ModelSerializer):
     category = CourseCategorySerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     instructors = CourseInstructorSerializer(many=True, read_only=True)
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
@@ -105,6 +113,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
             "slug",
             "description",
             "thumbnail",
+            "image",
             "category",
             "status",
             "difficulty",
@@ -113,6 +122,12 @@ class CourseDetailSerializer(serializers.ModelSerializer):
             "instructors",
         ]
         read_only_fields = fields
+
+    def get_image(self, obj):
+        request = self.context.get("request")
+        if obj.thumbnail and request:
+            return request.build_absolute_uri(obj.thumbnail.url)
+        return None
 
 
 class TeacherSerializer(serializers.ModelSerializer):
