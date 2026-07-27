@@ -12,6 +12,7 @@ export default function DataTable({
   error,
   onRetry,
   emptyLabel = "No records found.",
+  onRowClick,
 }) {
   if (isLoading) {
     return <TableSkeleton columns={columns.length} />;
@@ -59,7 +60,13 @@ export default function DataTable({
         </thead>
         <tbody>
           {rows.map((row) => (
-            <tr key={row[keyField]} className="border-b border-stone-100 hover:bg-stone-50/60 transition-colors">
+            <tr
+              key={row[keyField]}
+              onClick={onRowClick ? () => onRowClick(row) : undefined}
+              className={`border-b border-stone-100 hover:bg-stone-50/60 transition-colors ${
+                onRowClick ? "cursor-pointer" : ""
+              }`}
+            >
               {columns.map((column) => (
                 <td key={column.key} className="py-3 px-3 text-xs text-stone-700 align-middle">
                   {column.render ? column.render(row) : row[column.key]}

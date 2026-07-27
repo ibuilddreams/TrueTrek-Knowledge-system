@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BookPlus, Edit3, Eye, RefreshCw, Trash2, UserPlus } from "lucide-react";
+import { BookPlus, Edit3, Eye, Layers, RefreshCw, Trash2, UserPlus } from "lucide-react";
 import { useAdminCourses } from "@/hooks/admin/useAdminCourses";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -22,6 +22,7 @@ import CourseDetailModal from "@/components/features/admin/CourseDetailModal";
 import EnrollStudentModal from "@/components/features/admin/EnrollStudentModal";
 import CreateCourseModal from "@/components/features/admin/CreateCourseModal";
 import UpdateCourseStatusModal from "@/components/features/admin/UpdateCourseStatusModal";
+import ManageModulesModal from "@/components/features/admin/ManageModulesModal";
 
 const PAGE_SIZE = 10;
 
@@ -54,6 +55,7 @@ export default function CoursesTab() {
   const [deletingCourse, setDeletingCourse] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [managingModulesCourse, setManagingModulesCourse] = useState(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -179,6 +181,12 @@ export default function CoursesTab() {
               onSelect: () => setStatusUpdatingCourse(course),
             },
             { key: "enroll", label: "Enroll Student", icon: UserPlus, onSelect: () => setEnrollCourseId(course.id) },
+            {
+              key: "modules",
+              label: "Manage Modules",
+              icon: Layers,
+              onSelect: () => setManagingModulesCourse(course),
+            },
             { key: "delete", label: "Delete", icon: Trash2, tone: "danger", onSelect: () => setDeletingCourse(course) },
           ]}
         />
@@ -241,6 +249,7 @@ export default function CoursesTab() {
           error={status === "failed" ? error : null}
           onRetry={refreshCourses}
           emptyLabel="No courses found."
+          onRowClick={(course) => setManagingModulesCourse(course)}
         />
         <Pagination
           page={page}
@@ -284,6 +293,12 @@ export default function CoursesTab() {
         course={statusUpdatingCourse}
         onClose={() => setStatusUpdatingCourse(null)}
         onUpdated={refreshCourses}
+      />
+
+      <ManageModulesModal
+        isOpen={Boolean(managingModulesCourse)}
+        onClose={() => setManagingModulesCourse(null)}
+        course={managingModulesCourse}
       />
     </div>
   );
