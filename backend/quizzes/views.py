@@ -29,7 +29,7 @@ def _admin_permission():
 
 
 class QuizListCreateView(generics.ListCreateAPIView):
-    queryset = Quiz.objects.select_related("course")
+    queryset = Quiz.objects.select_related("course", "module")
     pagination_class = Pagination
 
     def get_permissions(self):
@@ -40,6 +40,9 @@ class QuizListCreateView(generics.ListCreateAPIView):
         course_id = self.request.query_params.get("course")
         if course_id:
             queryset = queryset.filter(course_id=course_id)
+        module_id = self.request.query_params.get("module")
+        if module_id:
+            queryset = queryset.filter(module_id=module_id)
         return queryset
 
     def get_serializer_class(self):
@@ -65,7 +68,7 @@ class QuizListCreateView(generics.ListCreateAPIView):
 
 class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
     http_method_names = ["get", "head", "options"]
-    queryset = Quiz.objects.select_related("course")
+    queryset = Quiz.objects.select_related("course", "module")
     serializer_class = QuizSerializer
 
     def get_permissions(self):

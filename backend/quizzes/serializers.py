@@ -1,6 +1,7 @@
 from rest_framework import serializers
 
 from courses.models import Course
+from modules.models import Module
 
 from .models import Choice, Question, Quiz, QuizResult
 
@@ -12,14 +13,23 @@ class QuizCourseSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
 
+class QuizModuleSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Module
+        fields = ["id", "title"]
+        read_only_fields = fields
+
+
 class QuizSerializer(serializers.ModelSerializer):
     course = QuizCourseSerializer(read_only=True)
+    module = QuizModuleSerializer(read_only=True)
 
     class Meta:
         model = Quiz
         fields = [
             "id",
             "course",
+            "module",
             "title",
             "description",
             "passing_score",
@@ -31,10 +41,27 @@ class QuizSerializer(serializers.ModelSerializer):
 
 
 class QuizWriteSerializer(serializers.ModelSerializer):
+    module = serializers.PrimaryKeyRelatedField(queryset=Module.objects.all(), required=True)
+
     class Meta:
         model = Quiz
-        fields = ["id", "course", "title", "description", "passing_score", "time_limit_minutes"]
+        fields = ["id", "module", "title", "description", "passing_score", "time_limit_minutes"]
         read_only_fields = ["id"]
+
+    def create(self, validated_data):
+        validated_data["course"] = validated_data["module"].course
+        return Quiz.objects.create(**validated_data)
+
+    def update(self, instance, validated_data):
+        module = validated_data.get("module")
+        if module is not None:
+            validated_data["course"] = module.course
+
+        for attr, value in validated_data.items():
+            setattr(instance, attr, value)
+        instance.save()
+
+        return instance
 
 
 class ChoiceSerializer(serializers.ModelSerializer):

@@ -3,10 +3,14 @@ from django.db import models
 
 from common.models import BaseModel
 from courses.models import Course
+from modules.models import Module
 
 
 class Quiz(BaseModel):
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="quizzes")
+    module = models.ForeignKey(
+        Module, on_delete=models.CASCADE, related_name="quizzes", null=True, blank=True
+    )
     title = models.CharField(max_length=255)
     description = models.TextField(blank=True)
     passing_score = models.PositiveIntegerField(default=40)
