@@ -1,8 +1,9 @@
 from rest_framework import serializers
 
+from common.image import build_absolute_image_url
 from modules.models import Module
 
-from .models import Lesson, LessonResource
+from .models import Lesson, LessonAttachment, LessonResource
 
 
 class LessonModuleSerializer(serializers.ModelSerializer):
@@ -66,4 +67,38 @@ class LessonResourceWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = LessonResource
         fields = ["id", "lesson", "title", "resource_type", "url"]
+        read_only_fields = ["id"]
+
+
+class LessonAttachmentLessonSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lesson
+        fields = ["id", "title"]
+        read_only_fields = fields
+
+
+class LessonAttachmentSerializer(serializers.ModelSerializer):
+    lesson = LessonAttachmentLessonSerializer(read_only=True)
+    file = serializers.SerializerMethodField()
+
+    class Meta:
+        model = LessonAttachment
+        fields = [
+            "id",
+            "lesson",
+            "file",
+            "file_type",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+    def get_file(self, obj):
+        return build_absolute_image_url(self.context.get("request"), obj.file)
+
+
+class LessonAttachmentWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = LessonAttachment
+        fields = ["id", "lesson", "file", "file_type"]
         read_only_fields = ["id"]

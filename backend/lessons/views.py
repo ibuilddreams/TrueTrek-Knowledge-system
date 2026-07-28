@@ -1,11 +1,14 @@
 from rest_framework import generics
+from rest_framework.parsers import FormParser, MultiPartParser
 
 from common.pagination import Pagination
 from common.response import error_response, success_response
 from users.permissions import IsAdmin
 
-from .models import Lesson, LessonResource
+from .models import Lesson, LessonAttachment, LessonResource
 from .serializers import (
+    LessonAttachmentSerializer,
+    LessonAttachmentWriteSerializer,
     LessonResourceSerializer,
     LessonResourceWriteSerializer,
     LessonSerializer,
@@ -179,3 +182,92 @@ class LessonResourceDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         resource.delete()
         return success_response(None, message="Lesson resource deleted successfully")
+
+
+class LessonAttachmentListCreateView(generics.ListCreateAPIView):
+    queryset = LessonAttachment.objects.select_related("lesson")
+    pagination_class = Pagination
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_permissions(self):
+        permission = IsAdmin()
+        permission.message = "You do not have permission to perform this action. Only admin can perform this action."
+        return [permission]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        lesson_id = self.request.query_params.get("lesson")
+        if lesson_id:
+            queryset = queryset.filter(lesson_id=lesson_id)
+        return queryset
+
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return LessonAttachmentWriteSerializer
+        return LessonAttachmentSerializer
+
+    def list(self, request, *args, **kwargs):
+        attachments = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(attachments)
+        serializer = self.get_serializer(page, many=True, context={"request": request})
+        paginated_data = self.paginator.get_paginated_response(serializer.data).data
+        return success_response(paginated_data, message="Lesson attachments fetched successfully")
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        attachment = serializer.save()
+        return success_response(
+            LessonAttachmentSerializer(attachment, context={"request": request}).data,
+            message="Lesson attachment created successfully",
+            status_code=201,
+        )
+
+
+class LessonAttachmentDetailView(generics.RetrieveUpdateDestroyAPIView):
+    http_method_names = ["get", "patch", "delete", "head", "options"]
+    queryset = LessonAttachment.objects.select_related("lesson")
+    parser_classes = [MultiPartParser, FormParser]
+
+    def get_permissions(self):
+        permission = IsAdmin()
+        permission.message = "You do not have permission to perform this action. Only admin can perform this action."
+        return [permission]
+
+    def get_serializer_class(self):
+        if self.request.method == "PATCH":
+            return LessonAttachmentWriteSerializer
+        return LessonAttachmentSerializer
+
+    def retrieve(self, request, *args, **kwargs):
+        try:
+            attachment = self.get_queryset().get(pk=kwargs["pk"])
+        except LessonAttachment.DoesNotExist:
+            return error_response(message="Lesson attachment with the given id does not exist.", status_code=404)
+
+        serializer = self.get_serializer(attachment, context={"request": request})
+        return success_response(serializer.data, message="Lesson attachment fetched successfully")
+
+    def update(self, request, *args, **kwargs):
+        try:
+            attachment = self.get_queryset().get(pk=kwargs["pk"])
+        except LessonAttachment.DoesNotExist:
+            return error_response(message="Lesson attachment with the given id does not exist.", status_code=404)
+
+        partial = kwargs.pop("partial", False)
+        serializer = self.get_serializer(attachment, data=request.data, partial=partial)
+        serializer.is_valid(raise_exception=True)
+        attachment = serializer.save()
+        return success_response(
+            LessonAttachmentSerializer(attachment, context={"request": request}).data,
+            message="Lesson attachment updated successfully",
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        try:
+            attachment = self.get_queryset().get(pk=kwargs["pk"])
+        except LessonAttachment.DoesNotExist:
+            return error_response(message="Lesson attachment with the given id does not exist.", status_code=404)
+
+        attachment.delete()
+        return success_response(None, message="Lesson attachment deleted successfully")
