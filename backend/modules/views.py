@@ -2,10 +2,12 @@ from rest_framework import generics
 
 from common.pagination import Pagination
 from common.response import error_response, success_response
+from courses.models import Course
 from users.permissions import IsAdmin
 
 from .models import Module
-from .serializers import ModuleSerializer, ModuleWriteSerializer
+from .serializers import ModuleOrderSerializer, ModuleSerializer, ModuleWriteSerializer
+from .services import ModuleReorderError, reorder_module
 
 
 class ModuleListCreateView(generics.ListCreateAPIView):
@@ -90,3 +92,35 @@ class ModuleDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         module.delete()
         return success_response(None, message="Module deleted successfully")
+
+
+class ModuleOrderView(generics.GenericAPIView):
+    http_method_names = ["patch", "head", "options"]
+    serializer_class = ModuleOrderSerializer
+
+    def get_permissions(self):
+        permission = IsAdmin()
+        permission.message = "You do not have permission to perform this action. Only admin can perform this action."
+        return [permission]
+
+    def patch(self, request, *args, **kwargs):
+        course_id = kwargs["course_id"]
+        if not Course.objects.filter(pk=course_id).exists():
+            return error_response(message="Course with the given id does not exist.", status_code=404)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            modules = reorder_module(
+                course_id,
+                serializer.validated_data["module_id"],
+                serializer.validated_data["order"],
+            )
+        except ModuleReorderError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        return success_response(
+            ModuleSerializer(modules, many=True).data,
+            message="Module reordered successfully",
+        )
