@@ -105,7 +105,8 @@ export default function ActionMenu({ actions = [] }) {
                 type="button"
                 role="menuitem"
                 disabled={disabled}
-                onClick={() => {
+                onClick={(event) => {
+                  event.stopPropagation();
                   setIsOpen(false);
                   onSelect?.();
                 }}
