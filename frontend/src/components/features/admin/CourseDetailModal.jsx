@@ -42,9 +42,18 @@ export default function CourseDetailModal({ isOpen, onClose, courseId }) {
         <Loader fullScreen={false} label="Loading course..." />
       ) : course ? (
         <div className="space-y-4">
-          <div className="flex items-center justify-between gap-3">
-            <h4 className="text-base font-serif font-bold text-stone-900">{course.title}</h4>
-            <StatusBadge status={course.status} />
+          <div className="relative w-full h-40 rounded-lg border border-stone-100 overflow-hidden">
+            {course.image ? (
+              <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
+            ) : (
+              <div className="w-full h-full bg-stone-50 flex items-center justify-center">
+                <BookOpen className="w-8 h-8 text-stone-300" />
+              </div>
+            )}
+            <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 via-black/30 to-transparent p-3 flex items-center justify-between gap-3">
+              <h4 className="text-base font-serif font-bold text-white">{course.title}</h4>
+              <StatusBadge status={course.status} />
+            </div>
           </div>
           {course.description && (
             <p className="text-xs text-stone-500 font-light leading-relaxed">{course.description}</p>

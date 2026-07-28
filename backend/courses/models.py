@@ -8,7 +8,6 @@ from common.models import BaseModel, Status
 class Category(BaseModel):
     name = models.CharField(max_length=255, unique=True)
     slug = models.SlugField(max_length=255, unique=True, blank=True)
-    description = models.TextField(blank=True)
 
     class Meta:
         verbose_name_plural = "Categories"

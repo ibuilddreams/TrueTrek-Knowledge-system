@@ -77,7 +77,10 @@ export default function ActionMenu({ actions = [] }) {
       <button
         ref={buttonRef}
         type="button"
-        onClick={() => setIsOpen((prev) => !prev)}
+        onClick={(event) => {
+          event.stopPropagation();
+          setIsOpen((prev) => !prev);
+        }}
         className="w-8 h-8 flex items-center justify-center rounded-lg border border-stone-200 text-stone-500 hover:bg-stone-50 transition"
         title="Open row actions"
         aria-label="Open row actions"

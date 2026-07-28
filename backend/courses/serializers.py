@@ -1,4 +1,7 @@
+import json
+
 from django.contrib.auth import get_user_model
+from django.http import QueryDict
 from rest_framework import serializers
 
 from .models import Category, Course, CourseInstructor, Tag
@@ -16,6 +19,21 @@ class TagSerializer(serializers.ModelSerializer):
         model = Tag
         fields = ["id", "name", "slug"]
         read_only_fields = fields
+
+
+class TagWriteSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Tag
+        fields = ["id", "name", "slug"]
+        read_only_fields = ["id", "slug"]
+
+    def validate_name(self, value):
+        queryset = Tag.objects.filter(name__iexact=value)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError("A tag with this name already exists.")
+        return value
 
 
 class CourseInstructorSerializer(serializers.ModelSerializer):
@@ -44,14 +62,22 @@ class CategorySerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Category
-        fields = ["id", "name", "slug", "description", "created_at", "updated_at", "courses"]
+        fields = ["id", "name", "slug", "created_at", "updated_at", "courses"]
         read_only_fields = ["id", "slug", "created_at", "updated_at"]
+
+    def validate_name(self, value):
+        queryset = Category.objects.filter(name__iexact=value)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError("A category with this name already exists.")
+        return value
 
 
 class CourseCategorySerializer(serializers.ModelSerializer):
     class Meta:
         model = Category
-        fields = ["id", "name", "slug", "description"]
+        fields = ["id", "name", "slug"]
         read_only_fields = fields
 
 
@@ -59,17 +85,25 @@ class CourseListSerializer(serializers.ModelSerializer):
     category = CourseCategorySerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     instructors = CourseInstructorSerializer(many=True, read_only=True)
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
-        fields = ["id", "title", "slug", "category", "status", "tags", "instructors", "created_at", "updated_at"]
+        fields = ["id", "title", "slug", "image", "category", "status", "tags", "instructors", "created_at", "updated_at"]
         read_only_fields = fields
+
+    def get_image(self, obj):
+        request = self.context.get("request")
+        if obj.thumbnail and request:
+            return request.build_absolute_uri(obj.thumbnail.url)
+        return None
 
 
 class CourseDetailSerializer(serializers.ModelSerializer):
     category = CourseCategorySerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     instructors = CourseInstructorSerializer(many=True, read_only=True)
+    image = serializers.SerializerMethodField()
 
     class Meta:
         model = Course
@@ -78,12 +112,22 @@ class CourseDetailSerializer(serializers.ModelSerializer):
             "title",
             "slug",
             "description",
+            "thumbnail",
+            "image",
             "category",
             "status",
+            "difficulty",
+            "duration_minutes",
             "tags",
             "instructors",
         ]
         read_only_fields = fields
+
+    def get_image(self, obj):
+        request = self.context.get("request")
+        if obj.thumbnail and request:
+            return request.build_absolute_uri(obj.thumbnail.url)
+        return None
 
 
 class TeacherSerializer(serializers.ModelSerializer):
@@ -106,8 +150,36 @@ class CourseWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ["id", "title", "description", "category", "status", "tags", "instructors"]
+        fields = [
+            "id",
+            "title",
+            "description",
+            "thumbnail",
+            "category",
+            "status",
+            "difficulty",
+            "duration_minutes",
+            "tags",
+            "instructors",
+        ]
         read_only_fields = ["id"]
+
+    def to_internal_value(self, data):
+        if isinstance(data, QueryDict):
+            converted = {}
+            for key in data:
+                values = data.getlist(key)
+                converted[key] = values if key == "tags" else values[-1]
+            data = converted
+
+        instructors = data.get("instructors")
+        if isinstance(instructors, str):
+            try:
+                data["instructors"] = json.loads(instructors)
+            except ValueError:
+                raise serializers.ValidationError({"instructors": "Must be a valid JSON list."})
+
+        return super().to_internal_value(data)
 
     def validate_title(self, value):
         queryset = Course.objects.filter(title__iexact=value)

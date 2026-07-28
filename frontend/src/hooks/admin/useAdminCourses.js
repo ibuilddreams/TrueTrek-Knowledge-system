@@ -16,14 +16,14 @@ export function useAdminCourses() {
   const courses = useSelector(selectCourses);
 
   const loadCourses = useCallback(
-    async ({ force = false } = {}) => {
+    async ({ force = false, search, status, category, tags } = {}) => {
       if (!force && (courses.status === "loading" || courses.status === "succeeded")) {
         return;
       }
 
       dispatch(coursesFetchStart());
       try {
-        const response = await getCourses();
+        const response = await getCourses({ search, status, category, tags });
         const data = response?.data || {};
         dispatch(
           coursesFetchSucceeded({
