@@ -7,8 +7,13 @@ from modules.models import Module
 
 from .models import Lesson
 
-MAX_FILE_SIZE_MB = 50
+MAX_FILE_SIZE_MB = {
+    Lesson.ContentType.VIDEO: 200,
+    Lesson.ContentType.PDF: 50,
+    Lesson.ContentType.DOCUMENT: 50,
+}
 ALLOWED_FILE_EXTENSIONS = {
+    Lesson.ContentType.VIDEO: [".mp4", ".mov", ".webm", ".mkv", ".avi"],
     Lesson.ContentType.PDF: [".pdf"],
     Lesson.ContentType.DOCUMENT: [".doc", ".docx"],
 }
@@ -78,10 +83,11 @@ class LessonWriteSerializer(serializers.ModelSerializer):
         if not value:
             return value
 
-        if value.size > MAX_FILE_SIZE_MB * 1024 * 1024:
-            raise serializers.ValidationError(f"File size must not exceed {MAX_FILE_SIZE_MB}MB.")
-
         content_type = self.initial_data.get("content_type", getattr(self.instance, "content_type", None))
+        max_size_mb = MAX_FILE_SIZE_MB.get(content_type, min(MAX_FILE_SIZE_MB.values()))
+        if value.size > max_size_mb * 1024 * 1024:
+            raise serializers.ValidationError(f"File size must not exceed {max_size_mb}MB.")
+
         allowed_extensions = ALLOWED_FILE_EXTENSIONS.get(content_type)
         if allowed_extensions:
             extension = os.path.splitext(value.name)[1].lower()
@@ -99,11 +105,14 @@ class LessonWriteSerializer(serializers.ModelSerializer):
         duration_minutes = attrs.get("duration_minutes", getattr(self.instance, "duration_minutes", None))
 
         if content_type == Lesson.ContentType.VIDEO:
-            if not video_url:
-                raise serializers.ValidationError({"video_url": "Video URL is required for video lessons."})
-            if file:
-                raise serializers.ValidationError({"file": "File should not be provided for video lessons."})
-            attrs["file"] = None
+            if video_url and file:
+                raise serializers.ValidationError(
+                    {"video_url": "Provide either a video URL or an uploaded video file, not both."}
+                )
+            if not video_url and not file:
+                raise serializers.ValidationError(
+                    {"video_url": "A video URL or an uploaded video file is required for video lessons."}
+                )
             attrs["duration_minutes"] = None
         else:
             if not file:

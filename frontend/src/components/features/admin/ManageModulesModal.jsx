@@ -1,11 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, Edit3, Layers, ListPlus, Trash2, X } from "lucide-react";
+import { Check, Edit3, FilePlus2, Layers, ListPlus, Trash2, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import Loader from "@/components/ui/Loader";
 import EmptyState from "@/components/ui/EmptyState";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import AddLessonModal from "@/components/features/admin/AddLessonModal";
 import { createModule, deleteModule, getModules, updateModule } from "@/services/modulesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -31,6 +32,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [deletingModule, setDeletingModule] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isLessonModalOpen, setIsLessonModalOpen] = useState(false);
 
   const loadModules = async () => {
     if (!courseId) return;
@@ -51,6 +53,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
     setEditingModule(null);
     setForm(INITIAL_FORM);
     setFieldErrors({});
+    setIsLessonModalOpen(false);
     loadModules();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen, courseId]);
@@ -230,7 +233,16 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
         </form>
       ) : (
         <div className="space-y-4">
-          <div className="flex justify-end">
+          <div className="flex justify-end gap-3">
+            <button
+              type="button"
+              onClick={() => setIsLessonModalOpen(true)}
+              disabled={modules.length === 0}
+              className="px-4 py-2.5 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:scale-[1.01] transition-all flex items-center gap-2"
+            >
+              <FilePlus2 className="w-4 h-4" />
+              Add Lesson
+            </button>
             <button
               type="button"
               onClick={openCreateForm}
@@ -294,6 +306,13 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
         title="Delete Module"
         message={`Are you sure you want to delete "${deletingModule?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
+      />
+
+      <AddLessonModal
+        isOpen={isLessonModalOpen}
+        onClose={() => setIsLessonModalOpen(false)}
+        modules={modules}
+        onCreated={loadModules}
       />
     </Modal>
   );
