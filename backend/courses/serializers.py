@@ -4,6 +4,10 @@ from django.contrib.auth import get_user_model
 from django.http import QueryDict
 from rest_framework import serializers
 
+from common.image import build_absolute_image_url
+from lessons.models import Lesson
+from modules.models import Module
+
 from .models import Category, Course, CourseInstructor, Tag
 
 UserModel = get_user_model()
@@ -99,10 +103,41 @@ class CourseListSerializer(serializers.ModelSerializer):
         return None
 
 
+class CourseLessonSerializer(serializers.ModelSerializer):
+    file = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Lesson
+        fields = [
+            "id",
+            "title",
+            "description",
+            "content_type",
+            "video_url",
+            "file",
+            "duration_minutes",
+            "order",
+        ]
+        read_only_fields = fields
+
+    def get_file(self, obj):
+        return build_absolute_image_url(self.context.get("request"), obj.file)
+
+
+class CourseModuleSerializer(serializers.ModelSerializer):
+    lessons = CourseLessonSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = Module
+        fields = ["id", "title", "description", "order", "lessons"]
+        read_only_fields = fields
+
+
 class CourseDetailSerializer(serializers.ModelSerializer):
     category = CourseCategorySerializer(read_only=True)
     tags = TagSerializer(many=True, read_only=True)
     instructors = CourseInstructorSerializer(many=True, read_only=True)
+    modules = CourseModuleSerializer(many=True, read_only=True)
     image = serializers.SerializerMethodField()
 
     class Meta:
@@ -120,6 +155,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
             "duration_minutes",
             "tags",
             "instructors",
+            "modules",
         ]
         read_only_fields = fields
 
