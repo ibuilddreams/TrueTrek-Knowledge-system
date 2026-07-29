@@ -1,9 +1,10 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, FilePlus2, FileText, Link2, Upload, Video, X } from "lucide-react";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { Check, FilePlus2, FileText, Image as ImageIcon, Video, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
-import { createLesson } from "@/services/lessonsService";
+import { createLesson, updateLesson } from "@/services/lessonsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
@@ -11,25 +12,34 @@ const CONTENT_TYPES = [
   { value: "VIDEO", label: "Video" },
   { value: "PDF", label: "PDF" },
   { value: "DOCUMENT", label: "Document" },
+  { value: "IMAGE", label: "Image" },
 ];
 
 const FILE_ACCEPT = {
   VIDEO: ".mp4,.mov,.webm,.mkv,.avi",
   PDF: ".pdf",
   DOCUMENT: ".doc,.docx",
+  IMAGE: ".jpg,.jpeg,.png,.webp",
 };
 
-const VIDEO_SOURCE_MODES = [
-  { value: "LINK", label: "Paste Link", icon: Link2 },
-  { value: "UPLOAD", label: "Upload Video", icon: Upload },
-];
+const FILE_LABEL = {
+  VIDEO: "Video File",
+  PDF: "PDF File",
+  DOCUMENT: "Document File",
+  IMAGE: "Image File",
+};
+
+const FILE_ICON = {
+  PDF: FileText,
+  DOCUMENT: FileText,
+  IMAGE: ImageIcon,
+};
 
 const INITIAL_FORM = {
   module: "",
   title: "",
   description: "",
   content_type: "VIDEO",
-  video_url: "",
   duration_minutes: "",
   order: "0",
 };
@@ -74,53 +84,56 @@ function FilePreviewCard({ file, icon: Icon }) {
   );
 }
 
-function getVideoEmbedUrl(url) {
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname.replace("www.", "");
+export default function AddLessonModal({ isOpen, onClose, modules = [], defaultModuleId, lesson, onSaved }) {
+  const isEditMode = Boolean(lesson);
+  const queryClient = useQueryClient();
 
-    if (host === "youtube.com" || host === "m.youtube.com") {
-      const videoId = parsed.searchParams.get("v");
-      if (videoId) return `https://www.youtube.com/embed/${videoId}`;
-      const shortsMatch = parsed.pathname.match(/\/shorts\/([\w-]+)/);
-      if (shortsMatch) return `https://www.youtube.com/embed/${shortsMatch[1]}`;
-      return null;
-    }
-
-    if (host === "youtu.be") {
-      const videoId = parsed.pathname.replace("/", "");
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
-    }
-
-    if (host === "vimeo.com") {
-      const videoId = parsed.pathname.replace("/", "");
-      return videoId ? `https://player.vimeo.com/video/${videoId}` : null;
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
-}
-
-export default function AddLessonModal({ isOpen, onClose, modules = [], defaultModuleId, onCreated }) {
   const [form, setForm] = useState(INITIAL_FORM);
-  const [videoSourceMode, setVideoSourceMode] = useState("LINK");
   const [file, setFile] = useState(null);
+  const [existingFileUrl, setExistingFileUrl] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
-  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const createLessonMutation = useMutation({
+    mutationFn: (formData) => createLesson(formData),
+    onSuccess: (_data, formData) => {
+      const moduleId = Number(formData.get("module"));
+      queryClient.invalidateQueries({ queryKey: ["lessons", moduleId] });
+    },
+  });
+
+  const updateLessonMutation = useMutation({
+    mutationFn: ({ id, formData }) => updateLesson(id, formData),
+    onSuccess: (_data, { formData }) => {
+      const moduleId = Number(formData.get("module"));
+      queryClient.invalidateQueries({ queryKey: ["lessons", moduleId] });
+    },
+  });
+
+  const isSubmitting = createLessonMutation.isPending || updateLessonMutation.isPending;
 
   useEffect(() => {
     if (!isOpen) return;
-    setForm({
-      ...INITIAL_FORM,
-      module: defaultModuleId ? String(defaultModuleId) : String(modules[0]?.id || ""),
-    });
-    setVideoSourceMode("LINK");
+    if (lesson) {
+      setForm({
+        module: String(lesson.module?.id ?? lesson.module ?? ""),
+        title: lesson.title || "",
+        description: lesson.description || "",
+        content_type: lesson.content_type || "VIDEO",
+        duration_minutes: lesson.duration_minutes != null ? String(lesson.duration_minutes) : "",
+        order: String(lesson.order ?? 0),
+      });
+      setExistingFileUrl(lesson.file || lesson.video_url || null);
+    } else {
+      setForm({
+        ...INITIAL_FORM,
+        module: defaultModuleId ? String(defaultModuleId) : String(modules[0]?.id || ""),
+      });
+      setExistingFileUrl(null);
+    }
     setFile(null);
     setFieldErrors({});
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, defaultModuleId]);
+  }, [isOpen, defaultModuleId, lesson]);
 
   const handleClose = () => {
     if (isSubmitting) return;
@@ -137,18 +150,10 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
     setForm((prev) => ({
       ...prev,
       content_type: value,
-      video_url: "",
       duration_minutes: "",
     }));
-    setVideoSourceMode("LINK");
     setFile(null);
-    setFieldErrors({});
-  };
-
-  const handleVideoSourceModeChange = (mode) => {
-    setVideoSourceMode(mode);
-    setForm((prev) => ({ ...prev, video_url: "" }));
-    setFile(null);
+    setExistingFileUrl(null);
     setFieldErrors({});
   };
 
@@ -160,6 +165,7 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
   const validate = () => {
     const errors = {};
     const title = form.title.trim();
+    const hasExistingFile = Boolean(existingFileUrl);
 
     if (!form.module) errors.module = "Module is required.";
     if (!title) errors.title = "Title is required.";
@@ -169,14 +175,9 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
     if (!Number.isFinite(order) || order < 0) errors.order = "Order must be a positive number.";
 
     if (form.content_type === "VIDEO") {
-      if (videoSourceMode === "LINK" && !form.video_url.trim()) {
-        errors.video_url = "Video URL is required.";
-      }
-      if (videoSourceMode === "UPLOAD" && !file) {
-        errors.file = "Please select a video file to upload.";
-      }
+      if (!file && !hasExistingFile) errors.file = "Please select a video file to upload.";
     } else {
-      if (!file) errors.file = "File is required for PDF or document lessons.";
+      if (!file && !hasExistingFile) errors.file = "File is required for this lesson type.";
       const duration = Number(form.duration_minutes);
       if (!form.duration_minutes || !Number.isFinite(duration) || duration <= 0) {
         errors.duration_minutes = "Duration must be greater than zero.";
@@ -201,23 +202,19 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
     formData.append("description", form.description.trim());
     formData.append("content_type", form.content_type);
     formData.append("order", form.order);
-
-    if (form.content_type === "VIDEO") {
-      if (videoSourceMode === "LINK") {
-        formData.append("video_url", form.video_url.trim());
-      } else {
-        formData.append("file", file);
-      }
-    } else {
+    if (file) {
       formData.append("file", file);
+    }
+    if (form.content_type !== "VIDEO") {
       formData.append("duration_minutes", form.duration_minutes);
     }
 
-    setIsSubmitting(true);
     try {
-      const response = await createLesson(formData);
-      toastSuccess(response?.message || "Lesson created successfully.");
-      onCreated?.(response?.data);
+      const response = isEditMode
+        ? await updateLessonMutation.mutateAsync({ id: lesson.id, formData })
+        : await createLessonMutation.mutateAsync(formData);
+      toastSuccess(response?.message || `Lesson ${isEditMode ? "updated" : "created"} successfully.`);
+      onSaved?.(response?.data);
       onClose();
     } catch (error) {
       const apiFieldErrors = error?.data?.data;
@@ -228,24 +225,20 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
         });
         setFieldErrors(mapped);
       }
-      toastError(getApiErrorMessage(error, "Unable to create lesson."));
-    } finally {
-      setIsSubmitting(false);
+      toastError(getApiErrorMessage(error, `Unable to ${isEditMode ? "update" : "create"} lesson.`));
     }
   };
 
   const isVideo = form.content_type === "VIDEO";
-  const isDocument = form.content_type === "PDF" || form.content_type === "DOCUMENT";
-  const trimmedVideoUrl = form.video_url.trim();
-  const videoEmbedUrl = trimmedVideoUrl ? getVideoEmbedUrl(trimmedVideoUrl) : null;
+  const requiresDuration = !isVideo;
 
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={Video}
-      title="Add Lesson"
-      subtitle="Create a new lesson for this course"
+      title={isEditMode ? "Edit Lesson" : "Add Lesson"}
+      subtitle={isEditMode ? lesson?.title : "Create a new lesson for this course"}
       maxWidth="max-w-xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -307,63 +300,7 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
 
         {isVideo && (
           <div>
-            <label className={LABEL_CLASS}>Video Source</label>
-            <div className="flex gap-2">
-              {VIDEO_SOURCE_MODES.map((mode) => (
-                <button
-                  key={mode.value}
-                  type="button"
-                  onClick={() => handleVideoSourceModeChange(mode.value)}
-                  disabled={isSubmitting}
-                  className={`flex-1 px-3 py-2.5 rounded-xl text-[11px] font-semibold font-mono tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed ${
-                    videoSourceMode === mode.value
-                      ? "bg-stone-900 text-white border-stone-900"
-                      : "bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100"
-                  }`}
-                >
-                  <mode.icon className="w-3.5 h-3.5" />
-                  {mode.label}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {isVideo && videoSourceMode === "LINK" && (
-          <div>
-            <label className={LABEL_CLASS}>Video URL</label>
-            <input
-              type="url"
-              value={form.video_url}
-              onChange={updateField("video_url")}
-              disabled={isSubmitting}
-              placeholder="https://www.youtube.com/watch?v=..."
-              className={FIELD_CLASS}
-              autoComplete="off"
-            />
-            {fieldErrors.video_url && <p className={ERROR_CLASS}>{fieldErrors.video_url}</p>}
-
-            {trimmedVideoUrl && (
-              <div className="mt-3 rounded-xl overflow-hidden border border-stone-200 bg-stone-900 aspect-video">
-                {videoEmbedUrl ? (
-                  <iframe
-                    src={videoEmbedUrl}
-                    title="Video preview"
-                    className="w-full h-full"
-                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                    allowFullScreen
-                  />
-                ) : (
-                  <video src={trimmedVideoUrl} controls className="w-full h-full" />
-                )}
-              </div>
-            )}
-          </div>
-        )}
-
-        {isVideo && videoSourceMode === "UPLOAD" && (
-          <div>
-            <label className={LABEL_CLASS}>Video File</label>
+            <label className={LABEL_CLASS}>{FILE_LABEL.VIDEO}</label>
             <input
               type="file"
               accept={FILE_ACCEPT.VIDEO}
@@ -373,14 +310,24 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
             />
             {fieldErrors.file && <p className={ERROR_CLASS}>{fieldErrors.file}</p>}
 
+            {!file && existingFileUrl && (
+              <p className="text-[10px] font-mono text-stone-500 mt-2">
+                Current file:{" "}
+                <a href={existingFileUrl} target="_blank" rel="noreferrer" className="text-amber-700 underline">
+                  view
+                </a>{" "}
+                — leave empty to keep it.
+              </p>
+            )}
+
             {file && <FilePreviewCard file={file} icon={Video} />}
           </div>
         )}
 
-        {isDocument && (
+        {requiresDuration && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={LABEL_CLASS}>{form.content_type === "PDF" ? "PDF File" : "Document File"}</label>
+              <label className={LABEL_CLASS}>{FILE_LABEL[form.content_type]}</label>
               <input
                 type="file"
                 accept={FILE_ACCEPT[form.content_type]}
@@ -389,6 +336,16 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
                 className={FIELD_CLASS}
               />
               {fieldErrors.file && <p className={ERROR_CLASS}>{fieldErrors.file}</p>}
+
+              {!file && existingFileUrl && (
+                <p className="text-[10px] font-mono text-stone-500 mt-2">
+                  Current file:{" "}
+                  <a href={existingFileUrl} target="_blank" rel="noreferrer" className="text-amber-700 underline">
+                    view
+                  </a>{" "}
+                  — leave empty to keep it.
+                </p>
+              )}
             </div>
             <div>
               <label className={LABEL_CLASS}>Duration (minutes)</label>
@@ -406,7 +363,9 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
           </div>
         )}
 
-        {isDocument && file && <FilePreviewCard file={file} icon={FileText} />}
+        {requiresDuration && file && (
+          <FilePreviewCard file={file} icon={FILE_ICON[form.content_type] || FileText} />
+        )}
 
         <div className="w-32">
           <label className={LABEL_CLASS}>Order</label>
@@ -426,7 +385,7 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -434,17 +393,17 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
           <button
             type="submit"
             disabled={isSubmitting || modules.length === 0}
-            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2"
+            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>
                 <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                Creating...
+                {isEditMode ? "Saving..." : "Creating..."}
               </>
             ) : (
               <>
                 <Check className="w-3.5 h-3.5" />
-                Create Lesson
+                {isEditMode ? "Save Changes" : "Create Lesson"}
               </>
             )}
           </button>
