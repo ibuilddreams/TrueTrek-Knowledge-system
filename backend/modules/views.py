@@ -1,5 +1,7 @@
 from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
 
+from common.models import Status
 from common.pagination import Pagination
 from common.response import error_response, success_response
 from courses.models import Course
@@ -15,6 +17,8 @@ class ModuleListCreateView(generics.ListCreateAPIView):
     pagination_class = Pagination
 
     def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
         permission = IsAdmin()
         permission.message = "You do not have permission to perform this action. Only admin can perform this action."
         return [permission]
@@ -24,6 +28,11 @@ class ModuleListCreateView(generics.ListCreateAPIView):
         course_id = self.request.query_params.get("course")
         if course_id:
             queryset = queryset.filter(course_id=course_id)
+
+        user = self.request.user
+        if self.request.method == "GET" and not (user.is_authenticated and user.is_admin):
+            queryset = queryset.filter(course__status=Status.PUBLISHED)
+
         return queryset
 
     def get_serializer_class(self):
@@ -54,9 +63,20 @@ class ModuleDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Module.objects.select_related("course")
 
     def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
         permission = IsAdmin()
         permission.message = "You do not have permission to perform this action. Only admin can perform this action."
         return [permission]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        user = self.request.user
+        if self.request.method == "GET" and not (user.is_authenticated and user.is_admin):
+            queryset = queryset.filter(course__status=Status.PUBLISHED)
+
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method == "PATCH":

@@ -9,16 +9,18 @@ class Lesson(BaseModel):
         VIDEO = "VIDEO", "Video"
         PDF = "PDF", "PDF"
         DOCUMENT = "DOCUMENT", "Document"
+        IMAGE = "IMAGE","Image"
+        TEXT = "TEXT", "Text"
 
     module = models.ForeignKey(Module, on_delete=models.CASCADE, related_name="lessons")
-    title = models.CharField(max_length=255)
-    description = models.TextField(blank=True)
-    content_type = models.CharField(max_length=20, choices=ContentType.choices)
+    title = models.CharField(max_length=255,db_index=True)
+    description = models.TextField(blank=True,db_index=True)
+    content_type = models.CharField(max_length=20, choices=ContentType.choices,db_index=True)
+    content_data = models.TextField(blank=True,db_index=True)
     video_url = models.URLField(blank=True, null=True)
     file = models.FileField(upload_to="lessons/", blank=True, null=True)
     duration_minutes = models.PositiveIntegerField(blank=True, null=True)
     order = models.PositiveIntegerField(default=0)
-
     class Meta:
         ordering = ["module", "order"]
 
