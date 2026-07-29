@@ -9,8 +9,8 @@ from users.permissions import IsAdmin
 
 from .models import Lesson
 from .permissions import IsEnrolledStudentOrAdmin
-from .serializers import LessonOrderSerializer, LessonSerializer, LessonWriteSerializer
-from .services import LessonReorderError, reorder_lesson
+from .serializers import LessonOrderEntrySerializer, LessonSerializer, LessonWriteSerializer
+from .services import LessonReorderError, reorder_lessons
 
 
 class LessonListCreateView(generics.ListCreateAPIView):
@@ -121,7 +121,7 @@ class LessonDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class LessonOrderView(generics.GenericAPIView):
     http_method_names = ["patch", "head", "options"]
-    serializer_class = LessonOrderSerializer
+    serializer_class = LessonOrderEntrySerializer
 
     def get_permissions(self):
         permission = IsAdmin()
@@ -133,19 +133,15 @@ class LessonOrderView(generics.GenericAPIView):
         if not Module.objects.filter(pk=module_id).exists():
             return error_response(message="Module with the given id does not exist.", status_code=404)
 
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
 
         try:
-            lessons = reorder_lesson(
-                module_id,
-                serializer.validated_data["lesson_id"],
-                serializer.validated_data["order"],
-            )
+            lessons = reorder_lessons(module_id, serializer.validated_data)
         except LessonReorderError as exc:
             return error_response(message=str(exc), status_code=400)
 
         return success_response(
             LessonSerializer(lessons, many=True, context={"request": request}).data,
-            message="Lesson reordered successfully",
+            message="Lessons reordered successfully",
         )
