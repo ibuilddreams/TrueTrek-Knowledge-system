@@ -33,6 +33,7 @@ export default function RootLayout({ children }) {
     >
       <body
         className={`${inter.className} antialiased overflow-x-hidden bg-[#faf9f6] text-stone-900`}
+        suppressHydrationWarning
       >
         <AppProviders>{children}</AppProviders>
       </body>
