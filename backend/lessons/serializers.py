@@ -11,11 +11,13 @@ MAX_FILE_SIZE_MB = {
     Lesson.ContentType.VIDEO: 200,
     Lesson.ContentType.PDF: 50,
     Lesson.ContentType.DOCUMENT: 50,
+    Lesson.ContentType.IMAGE: 10,
 }
 ALLOWED_FILE_EXTENSIONS = {
     Lesson.ContentType.VIDEO: [".mp4", ".mov", ".webm", ".mkv", ".avi"],
     Lesson.ContentType.PDF: [".pdf"],
     Lesson.ContentType.DOCUMENT: [".doc", ".docx"],
+    Lesson.ContentType.IMAGE: [".jpg", ".jpeg", ".png", ".webp"],
 }
 
 
@@ -128,3 +130,8 @@ class LessonWriteSerializer(serializers.ModelSerializer):
             attrs["video_url"] = None
 
         return attrs
+
+
+class LessonOrderEntrySerializer(serializers.Serializer):
+    lesson_id = serializers.IntegerField()
+    order = serializers.IntegerField(min_value=1)

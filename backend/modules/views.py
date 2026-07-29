@@ -1,13 +1,15 @@
 from rest_framework import generics
+from rest_framework.permissions import IsAuthenticated
 
+from common.models import Status
 from common.pagination import Pagination
 from common.response import error_response, success_response
 from courses.models import Course
 from users.permissions import IsAdmin
 
 from .models import Module
-from .serializers import ModuleOrderSerializer, ModuleSerializer, ModuleWriteSerializer
-from .services import ModuleReorderError, reorder_module
+from .serializers import ModuleOrderEntrySerializer, ModuleSerializer, ModuleWriteSerializer
+from .services import ModuleReorderError, reorder_modules
 
 
 class ModuleListCreateView(generics.ListCreateAPIView):
@@ -15,6 +17,8 @@ class ModuleListCreateView(generics.ListCreateAPIView):
     pagination_class = Pagination
 
     def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
         permission = IsAdmin()
         permission.message = "You do not have permission to perform this action. Only admin can perform this action."
         return [permission]
@@ -24,6 +28,11 @@ class ModuleListCreateView(generics.ListCreateAPIView):
         course_id = self.request.query_params.get("course")
         if course_id:
             queryset = queryset.filter(course_id=course_id)
+
+        user = self.request.user
+        if self.request.method == "GET" and not (user.is_authenticated and user.is_admin):
+            queryset = queryset.filter(course__status=Status.PUBLISHED)
+
         return queryset
 
     def get_serializer_class(self):
@@ -54,9 +63,20 @@ class ModuleDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Module.objects.select_related("course")
 
     def get_permissions(self):
+        if self.request.method == "GET":
+            return [IsAuthenticated()]
         permission = IsAdmin()
         permission.message = "You do not have permission to perform this action. Only admin can perform this action."
         return [permission]
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+
+        user = self.request.user
+        if self.request.method == "GET" and not (user.is_authenticated and user.is_admin):
+            queryset = queryset.filter(course__status=Status.PUBLISHED)
+
+        return queryset
 
     def get_serializer_class(self):
         if self.request.method == "PATCH":
@@ -96,7 +116,7 @@ class ModuleDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class ModuleOrderView(generics.GenericAPIView):
     http_method_names = ["patch", "head", "options"]
-    serializer_class = ModuleOrderSerializer
+    serializer_class = ModuleOrderEntrySerializer
 
     def get_permissions(self):
         permission = IsAdmin()
@@ -108,19 +128,15 @@ class ModuleOrderView(generics.GenericAPIView):
         if not Course.objects.filter(pk=course_id).exists():
             return error_response(message="Course with the given id does not exist.", status_code=404)
 
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
 
         try:
-            modules = reorder_module(
-                course_id,
-                serializer.validated_data["module_id"],
-                serializer.validated_data["order"],
-            )
+            modules = reorder_modules(course_id, serializer.validated_data)
         except ModuleReorderError as exc:
             return error_response(message=str(exc), status_code=400)
 
         return success_response(
             ModuleSerializer(modules, many=True).data,
-            message="Module reordered successfully",
+            message="Modules reordered successfully",
         )

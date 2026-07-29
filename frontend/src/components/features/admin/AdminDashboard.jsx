@@ -5,10 +5,12 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   BookOpen,
   ClipboardList,
+  Folder,
   GraduationCap,
   LayoutDashboard,
   Lock,
   Shield,
+  Tag,
   Users,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,6 +28,8 @@ import CoursesTab from "@/components/features/admin/tabs/CoursesTab";
 import EnrollmentsTab from "@/components/features/admin/tabs/EnrollmentsTab";
 import StudentsTab from "@/components/features/admin/tabs/StudentsTab";
 import TeachersTab from "@/components/features/admin/tabs/TeachersTab";
+import TagsTab from "@/components/features/admin/tabs/TagsTab";
+import CategoriesTab from "@/components/features/admin/tabs/CategoriesTab";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -33,6 +37,8 @@ const TABS = [
   { id: "enrollments", label: "Enrollments", icon: ClipboardList },
   { id: "students", label: "Students", icon: GraduationCap },
   { id: "teachers", label: "Teachers", icon: Users },
+  { id: "tags", label: "Tags", icon: Tag },
+  { id: "categories", label: "Categories", icon: Folder },
 ];
 
 const TAB_COMPONENTS = {
@@ -42,6 +48,8 @@ const TAB_COMPONENTS = {
   enrollments: EnrollmentsTab,
   students: StudentsTab,
   teachers: TeachersTab,
+  tags: TagsTab,
+  categories: CategoriesTab,
 };
 
 const VALID_TABS = new Set(TABS.map((tab) => tab.id));

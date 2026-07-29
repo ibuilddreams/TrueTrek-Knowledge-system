@@ -19,3 +19,7 @@ export async function updateLesson(id, payload) {
 export async function deleteLesson(id) {
   return backendClient.delete(`/lessons/${id}/`);
 }
+
+export async function reorderLessons(moduleId, entries) {
+  return backendClient.patch(`/lessons/order/${moduleId}/`, entries);
+}
