@@ -1,13 +1,21 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BookPlus, Edit3, Eye, Layers, RefreshCw, Trash2, UserPlus } from "lucide-react";
+import {
+  BookPlus,
+  Edit3,
+  Eye,
+  Layers,
+  RefreshCw,
+  Trash2,
+  UserPlus,
+} from "lucide-react";
 import { useAdminCourses } from "@/hooks/admin/useAdminCourses";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { deleteCourse } from "@/services/coursesService";
-import { createCategory, getCategories } from "@/services/categoriesService";
-import { createTag, getTags } from "@/services/tagsService";
+import { getCategories } from "@/services/categoriesService";
+import { getTags } from "@/services/tagsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { formatDate } from "@/lib/adminFormatters";
@@ -62,12 +70,18 @@ export default function CoursesTab() {
 
     (async () => {
       try {
-        const [categoriesResponse, tagsResponse] = await Promise.all([getCategories(), getTags()]);
+        const [categoriesResponse, tagsResponse] = await Promise.all([
+          getCategories(),
+          getTags(),
+        ]);
         if (!isMounted) return;
         setCategories(categoriesResponse?.data?.results || []);
         setTags(tagsResponse?.data || []);
       } catch (error) {
-        if (isMounted) toastError(getApiErrorMessage(error, "Unable to load filter options."));
+        if (isMounted)
+          toastError(
+            getApiErrorMessage(error, "Unable to load filter options."),
+          );
       }
     })();
 
@@ -94,39 +108,12 @@ export default function CoursesTab() {
     setPage(1);
   }, [debouncedSearch, statusFilter, categoryFilter, tagFilter]);
 
-  const extractFieldError = (error, field, fallback) => {
-    const fieldErrors = error?.data?.data;
-    if (fieldErrors && Array.isArray(fieldErrors[field])) return fieldErrors[field][0];
-    return getApiErrorMessage(error, fallback);
-  };
-
-  const handleCreateCategory = async (name) => {
-    try {
-      const response = await createCategory({ name });
-      const created = response?.data;
-      setCategories((prev) => [...prev, created]);
-      toastSuccess(response?.message || "Category created successfully.");
-      return { value: String(created.id), label: created.name };
-    } catch (error) {
-      throw new Error(extractFieldError(error, "name", "Unable to create category."));
-    }
-  };
-
-  const handleCreateTag = async (name) => {
-    try {
-      const response = await createTag({ name });
-      const created = response?.data;
-      setTags((prev) => [...prev, created]);
-      toastSuccess(response?.message || "Tag created successfully.");
-      return { value: String(created.id), label: created.name };
-    } catch (error) {
-      throw new Error(extractFieldError(error, "name", "Unable to create tag."));
-    }
-  };
-
   const categoryFilterOptions = [
     { value: "", label: "All Categories" },
-    ...categories.map((category) => ({ value: String(category.id), label: category.name })),
+    ...categories.map((category) => ({
+      value: String(category.id),
+      label: category.name,
+    })),
   ];
 
   const tagFilterOptions = [
@@ -135,7 +122,10 @@ export default function CoursesTab() {
   ];
 
   const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
-  const paginatedCourses = items.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const paginatedCourses = items.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
 
   const handleDeleteConfirm = async () => {
     if (!deletingCourse) return;
@@ -156,38 +146,76 @@ export default function CoursesTab() {
     {
       key: "title",
       header: "Title",
-      render: (course) => <span className="font-semibold text-stone-800">{course.title}</span>,
+      render: (course) => (
+        <span className="font-semibold text-stone-800">{course.title}</span>
+      ),
     },
-    { key: "category", header: "Category", render: (course) => course.category?.name || "—" },
-    { key: "status", header: "Status", render: (course) => <StatusBadge status={course.status} /> },
+    {
+      key: "category",
+      header: "Category",
+      render: (course) => course.category?.name || "—",
+    },
+    {
+      key: "status",
+      header: "Status",
+      render: (course) => <StatusBadge status={course.status} />,
+    },
     {
       key: "instructors",
       header: "Instructors",
-      render: (course) => (course.instructors?.length ? course.instructors.map((i) => i.name).join(", ") : "—"),
+      render: (course) =>
+        course.instructors?.length
+          ? course.instructors.map((i) => i.name).join(", ")
+          : "—",
     },
-    { key: "created_at", header: "Created", render: (course) => formatDate(course.created_at) },
+    {
+      key: "created_at",
+      header: "Created",
+      render: (course) => formatDate(course.created_at),
+    },
     {
       key: "actions",
       header: "Actions",
       render: (course) => (
         <ActionMenu
           actions={[
-            { key: "view", label: "View Details", icon: Eye, onSelect: () => setViewCourseId(course.id) },
-            { key: "edit", label: "Edit", icon: Edit3, onSelect: () => setEditingCourse(course) },
+            {
+              key: "view",
+              label: "View Details",
+              icon: Eye,
+              onSelect: () => setViewCourseId(course.id),
+            },
+            {
+              key: "edit",
+              label: "Edit",
+              icon: Edit3,
+              onSelect: () => setEditingCourse(course),
+            },
             {
               key: "update-status",
               label: "Update Status",
               icon: RefreshCw,
               onSelect: () => setStatusUpdatingCourse(course),
             },
-            { key: "enroll", label: "Enroll Student", icon: UserPlus, onSelect: () => setEnrollCourseId(course.id) },
+            {
+              key: "enroll",
+              label: "Enroll Student",
+              icon: UserPlus,
+              onSelect: () => setEnrollCourseId(course.id),
+            },
             {
               key: "modules",
               label: "Manage Modules",
               icon: Layers,
               onSelect: () => setManagingModulesCourse(course),
             },
-            { key: "delete", label: "Delete", icon: Trash2, tone: "danger", onSelect: () => setDeletingCourse(course) },
+            {
+              key: "delete",
+              label: "Delete",
+              icon: Trash2,
+              tone: "danger",
+              onSelect: () => setDeletingCourse(course),
+            },
           ]}
         />
       ),
@@ -198,7 +226,11 @@ export default function CoursesTab() {
     <div className="space-y-5">
       <div className="flex flex-col lg:flex-row lg:items-center gap-3 justify-between">
         <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 flex-1 min-w-0">
-          <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search courses by title..." />
+          <SearchBar
+            value={searchInput}
+            onChange={setSearchInput}
+            placeholder="Search courses by title..."
+          />
           <div className="w-full sm:w-48 shrink-0">
             <SearchableSelect
               placeholder="All Statuses"
@@ -213,8 +245,6 @@ export default function CoursesTab() {
               options={categoryFilterOptions}
               value={categoryFilter}
               onChange={setCategoryFilter}
-              onCreate={handleCreateCategory}
-              createLabel="Add New Category"
             />
           </div>
           <div className="w-full sm:w-48 shrink-0">
@@ -223,8 +253,6 @@ export default function CoursesTab() {
               options={tagFilterOptions}
               value={tagFilter}
               onChange={setTagFilter}
-              onCreate={handleCreateTag}
-              createLabel="Add New Tag"
             />
           </div>
         </div>
@@ -259,7 +287,11 @@ export default function CoursesTab() {
         />
       </div>
 
-      <CourseDetailModal isOpen={Boolean(viewCourseId)} onClose={() => setViewCourseId(null)} courseId={viewCourseId} />
+      <CourseDetailModal
+        isOpen={Boolean(viewCourseId)}
+        onClose={() => setViewCourseId(null)}
+        courseId={viewCourseId}
+      />
 
       <EnrollStudentModal
         isOpen={Boolean(enrollCourseId)}
