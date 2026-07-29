@@ -8,8 +8,8 @@ from courses.models import Course
 from users.permissions import IsAdmin
 
 from .models import Module
-from .serializers import ModuleOrderSerializer, ModuleSerializer, ModuleWriteSerializer
-from .services import ModuleReorderError, reorder_module
+from .serializers import ModuleOrderEntrySerializer, ModuleSerializer, ModuleWriteSerializer
+from .services import ModuleReorderError, reorder_modules
 
 
 class ModuleListCreateView(generics.ListCreateAPIView):
@@ -116,7 +116,7 @@ class ModuleDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class ModuleOrderView(generics.GenericAPIView):
     http_method_names = ["patch", "head", "options"]
-    serializer_class = ModuleOrderSerializer
+    serializer_class = ModuleOrderEntrySerializer
 
     def get_permissions(self):
         permission = IsAdmin()
@@ -128,19 +128,15 @@ class ModuleOrderView(generics.GenericAPIView):
         if not Course.objects.filter(pk=course_id).exists():
             return error_response(message="Course with the given id does not exist.", status_code=404)
 
-        serializer = self.get_serializer(data=request.data)
+        serializer = self.get_serializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
 
         try:
-            modules = reorder_module(
-                course_id,
-                serializer.validated_data["module_id"],
-                serializer.validated_data["order"],
-            )
+            modules = reorder_modules(course_id, serializer.validated_data)
         except ModuleReorderError as exc:
             return error_response(message=str(exc), status_code=400)
 
         return success_response(
             ModuleSerializer(modules, many=True).data,
-            message="Module reordered successfully",
+            message="Modules reordered successfully",
         )

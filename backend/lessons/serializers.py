@@ -132,6 +132,6 @@ class LessonWriteSerializer(serializers.ModelSerializer):
         return attrs
 
 
-class LessonOrderSerializer(serializers.Serializer):
+class LessonOrderEntrySerializer(serializers.Serializer):
     lesson_id = serializers.IntegerField()
     order = serializers.IntegerField(min_value=1)

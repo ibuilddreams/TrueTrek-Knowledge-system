@@ -47,6 +47,6 @@ class ModuleWriteSerializer(serializers.ModelSerializer):
         read_only_fields = ["id"]
 
 
-class ModuleOrderSerializer(serializers.Serializer):
+class ModuleOrderEntrySerializer(serializers.Serializer):
     module_id = serializers.IntegerField()
     order = serializers.IntegerField(min_value=1)

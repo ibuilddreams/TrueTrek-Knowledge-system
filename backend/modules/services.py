@@ -1,5 +1,4 @@
 from django.db import transaction
-from django.db.models import F
 
 from .models import Module
 
@@ -8,30 +7,24 @@ class ModuleReorderError(Exception):
     pass
 
 
-def reorder_module(course_id, module_id, new_order):
-    modules = list(Module.objects.filter(course_id=course_id).order_by("order"))
+def reorder_modules(course_id, modules_data):
+    module_ids = [entry["module_id"] for entry in modules_data]
 
-    current_module = next((module for module in modules if module.id == module_id), None)
-    if current_module is None:
-        raise ModuleReorderError("Module does not belong to this course.")
+    if len(module_ids) != len(set(module_ids)):
+        raise ModuleReorderError("Duplicate module ids are not allowed.")
 
-    if new_order < 1:
-        raise ModuleReorderError("Order must be a positive number.")
+    orders = [entry["order"] for entry in modules_data]
+    if len(orders) != len(set(orders)):
+        raise ModuleReorderError("Duplicate order values are not allowed.")
 
-    old_order = current_module.order
+    existing_ids = set(Module.objects.filter(course_id=course_id).values_list("id", flat=True))
+    if set(module_ids) != existing_ids:
+        raise ModuleReorderError(
+            "Submitted module ids must exactly match the modules belonging to this course."
+        )
 
-    if old_order != new_order:
-        with transaction.atomic():
-            if new_order > old_order:
-                Module.objects.filter(
-                    course_id=course_id, order__gt=old_order, order__lte=new_order
-                ).update(order=F("order") - 1)
-            else:
-                Module.objects.filter(
-                    course_id=course_id, order__gte=new_order, order__lt=old_order
-                ).update(order=F("order") + 1)
-
-            current_module.order = new_order
-            current_module.save(update_fields=["order"])
+    with transaction.atomic():
+        for entry in modules_data:
+            Module.objects.filter(pk=entry["module_id"], course_id=course_id).update(order=entry["order"])
 
     return Module.objects.select_related("course").filter(course_id=course_id).order_by("order")
