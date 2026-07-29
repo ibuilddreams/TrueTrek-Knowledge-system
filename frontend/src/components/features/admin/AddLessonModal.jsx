@@ -2,7 +2,14 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, FilePlus2, FileText, Image as ImageIcon, Video, X } from "lucide-react";
+import {
+  Check,
+  FilePlus2,
+  FileText,
+  Image as ImageIcon,
+  Video,
+  X,
+} from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { createLesson, updateLesson } from "@/services/lessonsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
@@ -47,7 +54,8 @@ const INITIAL_FORM = {
 const FIELD_CLASS =
   "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60";
 
-const LABEL_CLASS = "text-[10px] font-mono text-stone-450 block uppercase tracking-wider mb-1.5 font-semibold";
+const LABEL_CLASS =
+  "text-[10px] font-mono text-stone-450 block uppercase tracking-wider mb-1.5 font-semibold";
 
 const ERROR_CLASS = "text-[10px] font-mono text-red-600 mt-1";
 
@@ -75,7 +83,9 @@ function FilePreviewCard({ file, icon: Icon }) {
         <Icon className="w-5 h-5" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-stone-800 truncate">{file.name}</p>
+        <p className="text-xs font-semibold text-stone-800 truncate">
+          {file.name}
+        </p>
         <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
           {getFileExtension(file.name)} · {formatFileSize(file.size)}
         </p>
@@ -84,7 +94,14 @@ function FilePreviewCard({ file, icon: Icon }) {
   );
 }
 
-export default function AddLessonModal({ isOpen, onClose, modules = [], defaultModuleId, lesson, onSaved }) {
+export default function AddLessonModal({
+  isOpen,
+  onClose,
+  modules = [],
+  defaultModuleId,
+  lesson,
+  onSaved,
+}) {
   const isEditMode = Boolean(lesson);
   const queryClient = useQueryClient();
 
@@ -109,7 +126,8 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
     },
   });
 
-  const isSubmitting = createLessonMutation.isPending || updateLessonMutation.isPending;
+  const isSubmitting =
+    createLessonMutation.isPending || updateLessonMutation.isPending;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -119,14 +137,19 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
         title: lesson.title || "",
         description: lesson.description || "",
         content_type: lesson.content_type || "VIDEO",
-        duration_minutes: lesson.duration_minutes != null ? String(lesson.duration_minutes) : "",
+        duration_minutes:
+          lesson.duration_minutes != null
+            ? String(lesson.duration_minutes)
+            : "",
         order: String(lesson.order ?? 0),
       });
       setExistingFileUrl(lesson.file || lesson.video_url || null);
     } else {
       setForm({
         ...INITIAL_FORM,
-        module: defaultModuleId ? String(defaultModuleId) : String(modules[0]?.id || ""),
+        module: defaultModuleId
+          ? String(defaultModuleId)
+          : String(modules[0]?.id || ""),
       });
       setExistingFileUrl(null);
     }
@@ -169,17 +192,25 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
 
     if (!form.module) errors.module = "Module is required.";
     if (!title) errors.title = "Title is required.";
-    if (title.length > 255) errors.title = "Title must be at most 255 characters.";
+    if (title.length > 255)
+      errors.title = "Title must be at most 255 characters.";
 
     const order = Number(form.order);
-    if (!Number.isFinite(order) || order < 0) errors.order = "Order must be a positive number.";
+    if (!Number.isFinite(order) || order < 0)
+      errors.order = "Order must be a positive number.";
 
     if (form.content_type === "VIDEO") {
-      if (!file && !hasExistingFile) errors.file = "Please select a video file to upload.";
+      if (!file && !hasExistingFile)
+        errors.file = "Please select a video file to upload.";
     } else {
-      if (!file && !hasExistingFile) errors.file = "File is required for this lesson type.";
+      if (!file && !hasExistingFile)
+        errors.file = "File is required for this lesson type.";
       const duration = Number(form.duration_minutes);
-      if (!form.duration_minutes || !Number.isFinite(duration) || duration <= 0) {
+      if (
+        !form.duration_minutes ||
+        !Number.isFinite(duration) ||
+        duration <= 0
+      ) {
         errors.duration_minutes = "Duration must be greater than zero.";
       }
     }
@@ -213,7 +244,10 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
       const response = isEditMode
         ? await updateLessonMutation.mutateAsync({ id: lesson.id, formData })
         : await createLessonMutation.mutateAsync(formData);
-      toastSuccess(response?.message || `Lesson ${isEditMode ? "updated" : "created"} successfully.`);
+      toastSuccess(
+        response?.message ||
+          `Lesson ${isEditMode ? "updated" : "created"} successfully.`,
+      );
       onSaved?.(response?.data);
       onClose();
     } catch (error) {
@@ -225,7 +259,12 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
         });
         setFieldErrors(mapped);
       }
-      toastError(getApiErrorMessage(error, `Unable to ${isEditMode ? "update" : "create"} lesson.`));
+      toastError(
+        getApiErrorMessage(
+          error,
+          `Unable to ${isEditMode ? "update" : "create"} lesson.`,
+        ),
+      );
     }
   };
 
@@ -238,7 +277,9 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
       onClose={handleClose}
       icon={Video}
       title={isEditMode ? "Edit Lesson" : "Add Lesson"}
-      subtitle={isEditMode ? lesson?.title : "Create a new lesson for this course"}
+      subtitle={
+        isEditMode ? lesson?.title : "Create a new lesson for this course"
+      }
       maxWidth="max-w-xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -257,7 +298,9 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
               </option>
             ))}
           </select>
-          {fieldErrors.module && <p className={ERROR_CLASS}>{fieldErrors.module}</p>}
+          {fieldErrors.module && (
+            <p className={ERROR_CLASS}>{fieldErrors.module}</p>
+          )}
         </div>
 
         <div>
@@ -271,7 +314,9 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
             className={FIELD_CLASS}
             autoComplete="off"
           />
-          {fieldErrors.title && <p className={ERROR_CLASS}>{fieldErrors.title}</p>}
+          {fieldErrors.title && (
+            <p className={ERROR_CLASS}>{fieldErrors.title}</p>
+          )}
         </div>
 
         <div>
@@ -284,12 +329,19 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
             rows={3}
             className={`${FIELD_CLASS} resize-none`}
           />
-          {fieldErrors.description && <p className={ERROR_CLASS}>{fieldErrors.description}</p>}
+          {fieldErrors.description && (
+            <p className={ERROR_CLASS}>{fieldErrors.description}</p>
+          )}
         </div>
 
         <div>
           <label className={LABEL_CLASS}>Content Type</label>
-          <select value={form.content_type} onChange={handleContentTypeChange} disabled={isSubmitting} className={FIELD_CLASS}>
+          <select
+            value={form.content_type}
+            onChange={handleContentTypeChange}
+            disabled={isSubmitting}
+            className={FIELD_CLASS}
+          >
             {CONTENT_TYPES.map((option) => (
               <option key={option.value} value={option.value}>
                 {option.label}
@@ -308,12 +360,19 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
               disabled={isSubmitting}
               className={FIELD_CLASS}
             />
-            {fieldErrors.file && <p className={ERROR_CLASS}>{fieldErrors.file}</p>}
+            {fieldErrors.file && (
+              <p className={ERROR_CLASS}>{fieldErrors.file}</p>
+            )}
 
             {!file && existingFileUrl && (
               <p className="text-[10px] font-mono text-stone-500 mt-2">
                 Current file:{" "}
-                <a href={existingFileUrl} target="_blank" rel="noreferrer" className="text-amber-700 underline">
+                <a
+                  href={existingFileUrl}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="text-amber-700 underline"
+                >
                   view
                 </a>{" "}
                 — leave empty to keep it.
@@ -327,7 +386,9 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
         {requiresDuration && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={LABEL_CLASS}>{FILE_LABEL[form.content_type]}</label>
+              <label className={LABEL_CLASS}>
+                {FILE_LABEL[form.content_type]}
+              </label>
               <input
                 type="file"
                 accept={FILE_ACCEPT[form.content_type]}
@@ -335,12 +396,19 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
                 disabled={isSubmitting}
                 className={FIELD_CLASS}
               />
-              {fieldErrors.file && <p className={ERROR_CLASS}>{fieldErrors.file}</p>}
+              {fieldErrors.file && (
+                <p className={ERROR_CLASS}>{fieldErrors.file}</p>
+              )}
 
               {!file && existingFileUrl && (
                 <p className="text-[10px] font-mono text-stone-500 mt-2">
                   Current file:{" "}
-                  <a href={existingFileUrl} target="_blank" rel="noreferrer" className="text-amber-700 underline">
+                  <a
+                    href={existingFileUrl}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-amber-700 underline"
+                  >
                     view
                   </a>{" "}
                   — leave empty to keep it.
@@ -358,13 +426,18 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
                 placeholder="e.g. 15"
                 className={FIELD_CLASS}
               />
-              {fieldErrors.duration_minutes && <p className={ERROR_CLASS}>{fieldErrors.duration_minutes}</p>}
+              {fieldErrors.duration_minutes && (
+                <p className={ERROR_CLASS}>{fieldErrors.duration_minutes}</p>
+              )}
             </div>
           </div>
         )}
 
         {requiresDuration && file && (
-          <FilePreviewCard file={file} icon={FILE_ICON[form.content_type] || FileText} />
+          <FilePreviewCard
+            file={file}
+            icon={FILE_ICON[form.content_type] || FileText}
+          />
         )}
 
         <div className="w-32">
@@ -377,7 +450,9 @@ export default function AddLessonModal({ isOpen, onClose, modules = [], defaultM
             disabled={isSubmitting}
             className={FIELD_CLASS}
           />
-          {fieldErrors.order && <p className={ERROR_CLASS}>{fieldErrors.order}</p>}
+          {fieldErrors.order && (
+            <p className={ERROR_CLASS}>{fieldErrors.order}</p>
+          )}
         </div>
 
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-stone-100">

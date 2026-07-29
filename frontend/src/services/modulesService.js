@@ -18,3 +18,7 @@ export async function updateModule(id, payload) {
 export async function deleteModule(id) {
   return backendClient.delete(`/modules/${id}/`);
 }
+
+export async function reorderModules(courseId, entries) {
+  return backendClient.patch(`/modules/order/${courseId}/`, entries);
+}

@@ -1,7 +1,23 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 import {
   Check,
   ChevronDown,
@@ -22,8 +38,14 @@ import Loader from "@/components/ui/Loader";
 import EmptyState from "@/components/ui/EmptyState";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import AddLessonModal from "@/components/features/admin/AddLessonModal";
-import { createModule, deleteModule, getModules, updateModule } from "@/services/modulesService";
-import { deleteLesson, getLessons } from "@/services/lessonsService";
+import {
+  createModule,
+  deleteModule,
+  getModules,
+  reorderModules,
+  updateModule,
+} from "@/services/modulesService";
+import { deleteLesson, getLessons, reorderLessons } from "@/services/lessonsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
@@ -48,7 +70,74 @@ function extractFieldErrors(error) {
   return null;
 }
 
+function SortableLessonItem({ lesson, moduleId, onEditLesson, onDeleteLesson }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: lesson.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const LessonIcon =
+    lesson.content_type === "VIDEO" ? Video : lesson.content_type === "IMAGE" ? ImageIcon : FileText;
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 p-2.5 rounded-lg border border-stone-200 bg-stone-50 ${
+        isDragging ? "z-10 shadow-lg opacity-90" : ""
+      }`}
+    >
+      <span
+        {...attributes}
+        {...listeners}
+        className="text-stone-300 cursor-grab shrink-0 touch-none"
+        title="Drag to reorder"
+        aria-hidden="true"
+      >
+        <GripVertical className="w-3.5 h-3.5" />
+      </span>
+      <LessonIcon className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+      <div className="min-w-0 flex-1">
+        <p className="text-xs font-semibold text-stone-800 truncate">{lesson.title}</p>
+        <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
+          {lesson.content_type} · {lesson.duration_minutes} min
+        </p>
+      </div>
+      <button
+        type="button"
+        onClick={() => onEditLesson(lesson)}
+        title="Edit lesson"
+        aria-label="Edit lesson"
+        className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition shrink-0 cursor-pointer"
+      >
+        <Edit3 className="w-3 h-3" />
+      </button>
+      <button
+        type="button"
+        onClick={() => onDeleteLesson({ id: lesson.id, title: lesson.title, moduleId })}
+        title="Delete lesson"
+        aria-label="Delete lesson"
+        className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 text-rose-600 hover:bg-rose-50 transition shrink-0 cursor-pointer"
+      >
+        <Trash2 className="w-3 h-3" />
+      </button>
+    </li>
+  );
+}
+
 function ModuleLessonsList({ moduleId, onAddLesson, onEditLesson, onDeleteLesson }) {
+  const queryClient = useQueryClient();
+  const [localLessonOrderIds, setLocalLessonOrderIds] = useState(null);
+
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
   const lessonsQuery = useQuery({
     queryKey: ["lessons", moduleId],
     queryFn: async () => {
@@ -58,58 +147,68 @@ function ModuleLessonsList({ moduleId, onAddLesson, onEditLesson, onDeleteLesson
   });
   const lessons = lessonsQuery.data || [];
 
+  const reorderLessonsMutation = useMutation({
+    mutationFn: (entries) => reorderLessons(moduleId, entries),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["lessons", moduleId] });
+    },
+    onError: (error) => {
+      toastError(getApiErrorMessage(error, "Unable to reorder lessons."));
+    },
+  });
+
+  const displayLessons = useMemo(() => {
+    if (!localLessonOrderIds) return lessons;
+    const currentIds = lessons.map((lesson) => lesson.id);
+    const sameSet =
+      localLessonOrderIds.length === currentIds.length &&
+      localLessonOrderIds.every((id) => currentIds.includes(id));
+    if (!sameSet) return lessons;
+    const lessonById = new Map(lessons.map((lesson) => [lesson.id, lesson]));
+    return localLessonOrderIds.map((id) => lessonById.get(id));
+  }, [lessons, localLessonOrderIds]);
+
+  const handleLessonDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const currentIds = displayLessons.map((lesson) => lesson.id);
+    const oldIndex = currentIds.indexOf(active.id);
+    const newIndex = currentIds.indexOf(over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newOrderIds = arrayMove(currentIds, oldIndex, newIndex);
+    setLocalLessonOrderIds(newOrderIds);
+
+    const payload = newOrderIds.map((id, index) => ({ lesson_id: id, order: index + 1 }));
+    reorderLessonsMutation.mutate(payload);
+  };
+
   if (lessonsQuery.isLoading) {
     return <Loader fullScreen={false} label="Loading lessons..." />;
   }
 
   return (
     <div className="space-y-2">
-      {lessons.length > 0 && (
-        <ul className="space-y-2">
-          {lessons.map((lesson) => {
-            const LessonIcon =
-              lesson.content_type === "VIDEO" ? Video : lesson.content_type === "IMAGE" ? ImageIcon : FileText;
-            return (
-              <li
-                key={lesson.id}
-                className="flex items-center gap-3 p-2.5 rounded-lg border border-stone-200 bg-stone-50"
-              >
-                <span
-                  className="text-stone-300 cursor-grab shrink-0"
-                  title="Drag to reorder"
-                  aria-hidden="true"
-                >
-                  <GripVertical className="w-3.5 h-3.5" />
-                </span>
-                <LessonIcon className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                <div className="min-w-0 flex-1">
-                  <p className="text-xs font-semibold text-stone-800 truncate">{lesson.title}</p>
-                  <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
-                    {lesson.content_type} · {lesson.duration_minutes} min
-                  </p>
-                </div>
-                <button
-                  type="button"
-                  onClick={() => onEditLesson(lesson)}
-                  title="Edit lesson"
-                  aria-label="Edit lesson"
-                  className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition shrink-0 cursor-pointer"
-                >
-                  <Edit3 className="w-3 h-3" />
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDeleteLesson({ id: lesson.id, title: lesson.title, moduleId })}
-                  title="Delete lesson"
-                  aria-label="Delete lesson"
-                  className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 text-rose-600 hover:bg-rose-50 transition shrink-0 cursor-pointer"
-                >
-                  <Trash2 className="w-3 h-3" />
-                </button>
-              </li>
-            );
-          })}
-        </ul>
+      {displayLessons.length > 0 && (
+        <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleLessonDragEnd}>
+          <SortableContext
+            items={displayLessons.map((lesson) => lesson.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <ul className="space-y-2">
+              {displayLessons.map((lesson) => (
+                <SortableLessonItem
+                  key={lesson.id}
+                  lesson={lesson}
+                  moduleId={moduleId}
+                  onEditLesson={onEditLesson}
+                  onDeleteLesson={onDeleteLesson}
+                />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
       )}
 
       <button
@@ -121,6 +220,102 @@ function ModuleLessonsList({ moduleId, onAddLesson, onEditLesson, onDeleteLesson
         Add lesson to this module
       </button>
     </div>
+  );
+}
+
+function SortableModuleItem({
+  module,
+  isExpanded,
+  toggleExpand,
+  openAddLesson,
+  openEditForm,
+  setDeletingModule,
+  openEditLesson,
+  setDeletingLesson,
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: module.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`rounded-2xl border border-stone-200 bg-stone-100/70 overflow-hidden ${
+        isDragging ? "z-10 shadow-lg opacity-90" : ""
+      }`}
+    >
+      <div className="flex items-center gap-3 p-4">
+        <span
+          {...attributes}
+          {...listeners}
+          className="text-stone-300 cursor-grab shrink-0 touch-none"
+          title="Drag to reorder"
+          aria-hidden="true"
+        >
+          <GripVertical className="w-4 h-4" />
+        </span>
+        <button
+          type="button"
+          onClick={() => toggleExpand(module.id)}
+          aria-label={isExpanded ? "Collapse module" : "Expand module"}
+          className="w-8 h-8 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition shrink-0 cursor-pointer"
+        >
+          {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
+        </button>
+        <div className="min-w-0 flex-1">
+          <p className="font-serif text-lg font-bold text-stone-900 truncate">{module.title}</p>
+          <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-1">
+            Order {module.order} · {module.lessons_count} lesson
+            {module.lessons_count === 1 ? "" : "s"} · {module.total_duration_minutes} min
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => openAddLesson(module.id)}
+            className="px-3.5 py-2 bg-white hover:bg-stone-50 text-stone-700 text-[11px] font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+          >
+            <Plus className="w-3.5 h-3.5" />
+            Lesson
+          </button>
+          <button
+            type="button"
+            onClick={() => openEditForm(module)}
+            title="Edit module"
+            aria-label="Edit module"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+          >
+            <Edit3 className="w-3.5 h-3.5" />
+          </button>
+          <button
+            type="button"
+            onClick={() => setDeletingModule(module)}
+            title="Delete module"
+            aria-label="Delete module"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+          >
+            <Trash2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+      </div>
+
+      {isExpanded && (
+        <div className="border-t border-stone-200 px-4 py-3">
+          <ModuleLessonsList
+            moduleId={module.id}
+            onAddLesson={openAddLesson}
+            onEditLesson={openEditLesson}
+            onDeleteLesson={setDeletingLesson}
+          />
+        </div>
+      )}
+    </li>
   );
 }
 
@@ -136,6 +331,12 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
   const [expandedModuleId, setExpandedModuleId] = useState(null);
   const [lessonModalState, setLessonModalState] = useState({ isOpen: false, moduleId: null, lesson: null });
   const [deletingLesson, setDeletingLesson] = useState(null);
+  const [localModuleOrderIds, setLocalModuleOrderIds] = useState(null);
+
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
 
   const modulesQuery = useQuery({
     queryKey: ["modules", courseId],
@@ -155,6 +356,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
     setFieldErrors({});
     setExpandedModuleId(null);
     setLessonModalState({ isOpen: false, moduleId: null, lesson: null });
+    setLocalModuleOrderIds(null);
   }, [isOpen, courseId]);
 
   const createModuleMutation = useMutation({
@@ -185,6 +387,27 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
       queryClient.invalidateQueries({ queryKey: ["modules", courseId] });
     },
   });
+
+  const reorderModulesMutation = useMutation({
+    mutationFn: (entries) => reorderModules(courseId, entries),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["modules", courseId] });
+    },
+    onError: (error) => {
+      toastError(getApiErrorMessage(error, "Unable to reorder modules."));
+    },
+  });
+
+  const displayModules = useMemo(() => {
+    if (!localModuleOrderIds) return modules;
+    const currentIds = modules.map((module) => module.id);
+    const sameSet =
+      localModuleOrderIds.length === currentIds.length &&
+      localModuleOrderIds.every((id) => currentIds.includes(id));
+    if (!sameSet) return modules;
+    const moduleById = new Map(modules.map((module) => [module.id, module]));
+    return localModuleOrderIds.map((id) => moduleById.get(id));
+  }, [modules, localModuleOrderIds]);
 
   const isSubmitting = createModuleMutation.isPending || updateModuleMutation.isPending;
 
@@ -218,6 +441,22 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
 
   const toggleExpand = (moduleId) => {
     setExpandedModuleId((prev) => (prev === moduleId ? null : moduleId));
+  };
+
+  const handleModuleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const currentIds = displayModules.map((module) => module.id);
+    const oldIndex = currentIds.indexOf(active.id);
+    const newIndex = currentIds.indexOf(over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newOrderIds = arrayMove(currentIds, oldIndex, newIndex);
+    setLocalModuleOrderIds(newOrderIds);
+
+    const payload = newOrderIds.map((id, index) => ({ module_id: id, order: index + 1 }));
+    reorderModulesMutation.mutate(payload);
   };
 
   const openAddLesson = (moduleId) => {
@@ -392,81 +631,32 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
           ) : modules.length === 0 ? (
             <EmptyState label="No modules found." />
           ) : (
-            <ul className="space-y-3">
-              {modules.map((module) => {
-                const isExpanded = expandedModuleId === module.id;
-                return (
-                  <li
-                    key={module.id}
-                    className="rounded-2xl border border-stone-200 bg-stone-100/70 overflow-hidden"
-                  >
-                    <div className="flex items-center gap-3 p-4">
-                      <span
-                        className="text-stone-300 cursor-grab shrink-0"
-                        title="Drag to reorder"
-                        aria-hidden="true"
-                      >
-                        <GripVertical className="w-4 h-4" />
-                      </span>
-                      <button
-                        type="button"
-                        onClick={() => toggleExpand(module.id)}
-                        aria-label={isExpanded ? "Collapse module" : "Expand module"}
-                        className="w-8 h-8 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition shrink-0 cursor-pointer"
-                      >
-                        {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
-                      </button>
-                      <div className="min-w-0 flex-1">
-                        <p className="font-serif text-lg font-bold text-stone-900 truncate">{module.title}</p>
-                        <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-1">
-                          Order {module.order} · {module.lessons_count} lesson
-                          {module.lessons_count === 1 ? "" : "s"} · {module.total_duration_minutes} min
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-2 shrink-0">
-                        <button
-                          type="button"
-                          onClick={() => openAddLesson(module.id)}
-                          className="px-3.5 py-2 bg-white hover:bg-stone-50 text-stone-700 text-[11px] font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
-                        >
-                          <Plus className="w-3.5 h-3.5" />
-                          Lesson
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => openEditForm(module)}
-                          title="Edit module"
-                          aria-label="Edit module"
-                          className="w-8 h-8 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
-                        >
-                          <Edit3 className="w-3.5 h-3.5" />
-                        </button>
-                        <button
-                          type="button"
-                          onClick={() => setDeletingModule(module)}
-                          title="Delete module"
-                          aria-label="Delete module"
-                          className="w-8 h-8 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-rose-600 hover:bg-rose-50 transition cursor-pointer"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      </div>
-                    </div>
-
-                    {isExpanded && (
-                      <div className="border-t border-stone-200 px-4 py-3">
-                        <ModuleLessonsList
-                          moduleId={module.id}
-                          onAddLesson={openAddLesson}
-                          onEditLesson={openEditLesson}
-                          onDeleteLesson={setDeletingLesson}
-                        />
-                      </div>
-                    )}
-                  </li>
-                );
-              })}
-            </ul>
+            <DndContext
+              sensors={dndSensors}
+              collisionDetection={closestCenter}
+              onDragEnd={handleModuleDragEnd}
+            >
+              <SortableContext
+                items={displayModules.map((module) => module.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul className="space-y-3">
+                  {displayModules.map((module) => (
+                    <SortableModuleItem
+                      key={module.id}
+                      module={module}
+                      isExpanded={expandedModuleId === module.id}
+                      toggleExpand={toggleExpand}
+                      openAddLesson={openAddLesson}
+                      openEditForm={openEditForm}
+                      setDeletingModule={setDeletingModule}
+                      openEditLesson={openEditLesson}
+                      setDeletingLesson={setDeletingLesson}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+            </DndContext>
           )}
         </div>
       )}
