@@ -1,7 +1,26 @@
 "use client";
 
+import { useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import IconBadge from "@/components/ui/IconBadge";
+
+let openModalCount = 0;
+let previousBodyOverflow = "";
+
+function lockBodyScroll() {
+  if (openModalCount === 0) {
+    previousBodyOverflow = document.body.style.overflow;
+    document.body.style.overflow = "hidden";
+  }
+  openModalCount += 1;
+}
+
+function unlockBodyScroll() {
+  openModalCount = Math.max(0, openModalCount - 1);
+  if (openModalCount === 0) {
+    document.body.style.overflow = previousBodyOverflow;
+  }
+}
 
 export default function Modal({
   isOpen,
@@ -12,6 +31,12 @@ export default function Modal({
   children,
   maxWidth = "max-w-lg",
 }) {
+  useEffect(() => {
+    if (!isOpen) return;
+    lockBodyScroll();
+    return () => unlockBodyScroll();
+  }, [isOpen]);
+
   return (
     <AnimatePresence>
       {isOpen && (

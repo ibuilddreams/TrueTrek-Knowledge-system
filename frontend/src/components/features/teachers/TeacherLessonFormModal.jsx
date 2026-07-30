@@ -45,8 +45,8 @@ const FILE_ICON = {
 };
 
 const VIDEO_SOURCE_MODES = [
-  { value: "LINK", label: "Paste Link", icon: Link2 },
   { value: "UPLOAD", label: "Upload Video", icon: Upload },
+  { value: "LINK", label: "Paste Link", icon: Link2 },
 ];
 
 const INITIAL_FORM = {
@@ -153,7 +153,7 @@ export default function TeacherLessonFormModal({
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState(INITIAL_FORM);
-  const [videoSourceMode, setVideoSourceMode] = useState("LINK");
+  const [videoSourceMode, setVideoSourceMode] = useState("UPLOAD");
   const [file, setFile] = useState(null);
   const [existingFileUrl, setExistingFileUrl] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -195,7 +195,7 @@ export default function TeacherLessonFormModal({
         ...INITIAL_FORM,
         module: defaultModuleId ? String(defaultModuleId) : String(modules[0]?.id || ""),
       });
-      setVideoSourceMode("LINK");
+      setVideoSourceMode("UPLOAD");
       setExistingFileUrl(null);
     }
     setFile(null);
@@ -215,7 +215,7 @@ export default function TeacherLessonFormModal({
   const handleContentTypeChange = (event) => {
     const value = event.target.value;
     setForm((prev) => ({ ...prev, content_type: value, video_url: "", duration_minutes: "" }));
-    setVideoSourceMode("LINK");
+    setVideoSourceMode("UPLOAD");
     setFile(null);
     setExistingFileUrl(null);
     setFieldErrors({});
