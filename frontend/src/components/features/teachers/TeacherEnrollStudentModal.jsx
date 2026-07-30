@@ -55,9 +55,10 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
           className="fixed inset-0 bg-stone-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
         >
           <motion.form
-            initial={{ scale: 0.95, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0.95, opacity: 0 }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
             onSubmit={handleSubmit}
             className="bg-white border border-stone-250 w-full max-w-lg rounded-2xl shadow-2xl p-6 sm:p-8 space-y-5"
           >

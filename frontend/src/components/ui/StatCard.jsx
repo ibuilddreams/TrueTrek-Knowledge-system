@@ -35,7 +35,7 @@ export default function StatCard({
 
   return (
     <div
-      className={`group relative bg-white border border-stone-200/90 p-5 sm:p-6 rounded-2xl shadow-sm overflow-hidden transition-all duration-300 hover:-translate-y-0.5 hover:shadow-lg ${tone.glow}`}
+      className={`group relative bg-white border border-stone-200/90 p-5 sm:p-6 rounded-2xl shadow-sm overflow-hidden transition-shadow duration-200 hover:shadow-md ${tone.glow}`}
     >
       <div
         className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${tone.bar} opacity-80`}
@@ -57,7 +57,7 @@ export default function StatCard({
         </div>
         {Icon && (
           <div
-            className={`w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0 transition-transform duration-300 group-hover:scale-105 ${tone.icon}`}
+            className={`w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0 ${tone.icon}`}
           >
             <Icon className="w-5 h-5" />
           </div>

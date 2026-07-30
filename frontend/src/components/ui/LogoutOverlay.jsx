@@ -27,18 +27,18 @@ export default function LogoutOverlay({ stage }) {
           {stage === "success" ? (
             <motion.div
               key="success"
-              initial={{ opacity: 0, scale: 0.6 }}
-              animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.35, ease: "easeOut" }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.2, ease: "easeOut" }}
             >
               <CheckCircle2 className="w-10 h-10 text-emerald-600" />
             </motion.div>
           ) : (
             <motion.div
               key="loading"
-              initial={{ opacity: 0, scale: 0.6 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.6 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
               transition={{ duration: 0.2, ease: "easeOut" }}
               className="w-10 h-10 border-4 border-amber-600 border-t-transparent rounded-full animate-spin"
             />
@@ -46,9 +46,9 @@ export default function LogoutOverlay({ stage }) {
         </AnimatePresence>
         <motion.p
           key={stage}
-          initial={{ opacity: 0, y: 4 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25 }}
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.2 }}
           className={
             "text-xs font-mono uppercase tracking-widest " +
             (isVault ? "text-stone-400" : "text-stone-600")

@@ -409,10 +409,10 @@ export default function EnrollmentScoresTab({ students, setStudents, onEditStude
             onClick={() => setQuickViewStudent(null)}
           >
             <motion.div
-              initial={{ scale: 0.95, y: 15 }}
-              animate={{ scale: 1, y: 0 }}
-              exit={{ scale: 0.95, y: 15 }}
-              transition={{ type: "spring", duration: 0.4 }}
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15, ease: "easeOut" }}
               className="bg-white border border-stone-250 w-full max-w-md rounded-2xl shadow-2xl p-6 relative overflow-hidden space-y-4 text-left"
               onClick={(e) => e.stopPropagation()}
             >
