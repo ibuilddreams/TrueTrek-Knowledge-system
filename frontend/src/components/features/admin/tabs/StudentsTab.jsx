@@ -1,11 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Edit3, Eye, UserCheck, UserPlus, UserX } from "lucide-react";
+import { Edit3, Eye, Upload, UserCheck, UserPlus, UserX } from "lucide-react";
 import { useAdminStudents } from "@/hooks/admin/useAdminStudents";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { deleteStudent, updateStudent } from "@/services/studentsService";
+import {
+  bulkImportStudents,
+  deleteStudent,
+  downloadStudentImportSample,
+  updateStudent,
+} from "@/services/studentsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatDate } from "@/lib/adminFormatters";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -19,6 +24,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import StudentProfileModal from "@/components/features/admin/StudentProfileModal";
 import CreateStudentModal from "@/components/features/admin/CreateStudentModal";
 import EditStudentModal from "@/components/features/admin/EditStudentModal";
+import BulkImportModal from "@/components/features/admin/BulkImportModal";
 
 const PAGE_SIZE = 10;
 
@@ -45,6 +51,7 @@ export default function StudentsTab() {
   const [activatingStudent, setActivatingStudent] = useState(null);
   const [isActivating, setIsActivating] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
 
   useEffect(() => {
     loadStudents();
@@ -168,16 +175,28 @@ export default function StudentsTab() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsCreateModalOpen(true)}
-          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:scale-[1.01] transition-all flex items-center gap-2 shrink-0"
-          title="Create a new student account"
-          aria-label="Create a new student account"
-        >
-          <UserPlus className="w-4 h-4" />
-          ADD STUDENT
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsBulkImportOpen(true)}
+            className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-2"
+            title="Bulk import students from CSV or XLSX"
+            aria-label="Bulk import students from CSV or XLSX"
+          >
+            <Upload className="w-4 h-4" />
+            BULK IMPORT
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:scale-[1.01] transition-all flex items-center gap-2"
+            title="Create a new student account"
+            aria-label="Create a new student account"
+          >
+            <UserPlus className="w-4 h-4" />
+            ADD STUDENT
+          </button>
+        </div>
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
@@ -228,6 +247,15 @@ export default function StudentsTab() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCreated={() => loadStudents({ force: true })}
+      />
+
+      <BulkImportModal
+        isOpen={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        type="students"
+        onImport={bulkImportStudents}
+        onDownloadSample={downloadStudentImportSample}
+        onImported={() => loadStudents({ force: true })}
       />
 
       <EditStudentModal

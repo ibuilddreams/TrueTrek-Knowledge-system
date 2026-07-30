@@ -4,6 +4,8 @@ from .views import (
     AdminCourseEnrollmentListView,
     AdminEnrollmentDetailView,
     AdminEnrollmentListView,
+    EnrollmentBulkImportSampleView,
+    EnrollmentBulkImportView,
     EnrollmentListCreateView,
     TeacherEnrollmentListView,
 )
@@ -11,6 +13,12 @@ from .views import (
 urlpatterns = [
     path("student/", EnrollmentListCreateView.as_view(), name="enrollment-student-list-create"),
     path("admin/", AdminEnrollmentListView.as_view(), name="enrollment-admin-list"),
+    path("admin/bulk-import/", EnrollmentBulkImportView.as_view(), name="enrollment-bulk-import"),
+    path(
+        "admin/bulk-import/sample/",
+        EnrollmentBulkImportSampleView.as_view(),
+        name="enrollment-bulk-import-sample",
+    ),
     path("<int:pk>/admin/", AdminEnrollmentDetailView.as_view(), name="enrollment-admin-detail"),
     path("teacher/", TeacherEnrollmentListView.as_view(), name="enrollment-teacher-list"),
     path(

@@ -2,6 +2,8 @@ from django.urls import path
 
 from .views import (
     ProfileView,
+    StudentBulkImportSampleView,
+    StudentBulkImportView,
     StudentDetailView,
     StudentListCreateView,
     TeacherAssignedCoursesListView,
@@ -17,6 +19,12 @@ from enrollments.views import (AdminStudentEnrollmentListView)
 urlpatterns = [
     # Students
     path("student/admin/", StudentListCreateView.as_view(), name="student-list-create"),
+    path("student/admin/bulk-import/", StudentBulkImportView.as_view(), name="student-bulk-import"),
+    path(
+        "student/admin/bulk-import/sample/",
+        StudentBulkImportSampleView.as_view(),
+        name="student-bulk-import-sample",
+    ),
     path("student/<int:pk>/admin/", StudentDetailView.as_view(), name="student-detail"),
     path('student/<int:student_id>/courses/admin/', AdminStudentEnrollmentListView.as_view(), name='enrollment-student-admin-list',),
 
