@@ -6,6 +6,7 @@ from .views import (
     StudentListCreateView,
     TeacherAssignedCoursesListView,
     TeacherAssignedCoursesStudentsView,
+    TeacherCourseStudentsDetailView,
     TeacherDetailView,
     TeacherEnrolledStudentDetailView,
     TeacherListCreateView,
@@ -28,6 +29,7 @@ urlpatterns = [
     # Teachers (self-service)
     path('teacher/me/assignedcourses', TeacherAssignedCoursesListView.as_view(), name='teacher-assigned-courses-list'),
     path('teacher/me/assignedcourses/studentsenrolled/', TeacherAssignedCoursesStudentsView.as_view(), name='teacher-assigned-courses-students-list'),
+    path('teacher/me/assignedcourses/<int:course_id>/studentdetail', TeacherCourseStudentsDetailView.as_view(), name='teacher-course-students-detail'),
     path('teacher/me/students/<int:student_id>/', TeacherEnrolledStudentDetailView.as_view(), name='teacher-enrolled-student-detail'),
 
     # Users

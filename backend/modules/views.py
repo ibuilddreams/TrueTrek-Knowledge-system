@@ -1,3 +1,4 @@
+from django.db.models import Q
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
@@ -8,6 +9,7 @@ from courses.models import Course
 from users.permissions import IsAdmin
 
 from .models import Module
+from .permissions import IsCourseInstructorOrAdmin
 from .serializers import ModuleOrderEntrySerializer, ModuleSerializer, ModuleWriteSerializer
 from .services import ModuleReorderError, reorder_modules
 
@@ -19,9 +21,7 @@ class ModuleListCreateView(generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == "GET":
             return [IsAuthenticated()]
-        permission = IsAdmin()
-        permission.message = "You do not have permission to perform this action. Only admin can perform this action."
-        return [permission]
+        return [IsCourseInstructorOrAdmin()]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -31,7 +31,12 @@ class ModuleListCreateView(generics.ListCreateAPIView):
 
         user = self.request.user
         if self.request.method == "GET" and not (user.is_authenticated and user.is_admin):
-            queryset = queryset.filter(course__status=Status.PUBLISHED)
+            if user.is_authenticated and user.is_teacher:
+                queryset = queryset.filter(
+                    Q(course__status=Status.PUBLISHED) | Q(course__instructors__instructor=user)
+                ).distinct()
+            else:
+                queryset = queryset.filter(course__status=Status.PUBLISHED)
 
         return queryset
 
@@ -65,16 +70,19 @@ class ModuleDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_permissions(self):
         if self.request.method == "GET":
             return [IsAuthenticated()]
-        permission = IsAdmin()
-        permission.message = "You do not have permission to perform this action. Only admin can perform this action."
-        return [permission]
+        return [IsCourseInstructorOrAdmin()]
 
     def get_queryset(self):
         queryset = super().get_queryset()
 
         user = self.request.user
         if self.request.method == "GET" and not (user.is_authenticated and user.is_admin):
-            queryset = queryset.filter(course__status=Status.PUBLISHED)
+            if user.is_authenticated and user.is_teacher:
+                queryset = queryset.filter(
+                    Q(course__status=Status.PUBLISHED) | Q(course__instructors__instructor=user)
+                ).distinct()
+            else:
+                queryset = queryset.filter(course__status=Status.PUBLISHED)
 
         return queryset
 
@@ -98,6 +106,8 @@ class ModuleDetailView(generics.RetrieveUpdateDestroyAPIView):
         except Module.DoesNotExist:
             return error_response(message="Module with the given id does not exist.", status_code=404)
 
+        self.check_object_permissions(request, module)
+
         partial = kwargs.pop("partial", False)
         serializer = self.get_serializer(module, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
@@ -109,6 +119,8 @@ class ModuleDetailView(generics.RetrieveUpdateDestroyAPIView):
             module = self.get_queryset().get(pk=kwargs["pk"])
         except Module.DoesNotExist:
             return error_response(message="Module with the given id does not exist.", status_code=404)
+
+        self.check_object_permissions(request, module)
 
         module.delete()
         return success_response(None, message="Module deleted successfully")

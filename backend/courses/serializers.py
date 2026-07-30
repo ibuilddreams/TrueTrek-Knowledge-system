@@ -234,6 +234,11 @@ class CourseWriteSerializer(serializers.ModelSerializer):
         for entry in instructors:
             CourseInstructor.objects.create(course=course, **entry)
 
+        request = self.context.get("request")
+        if request and request.user.is_authenticated and request.user.is_teacher:
+            if not CourseInstructor.objects.filter(course=course, instructor=request.user).exists():
+                CourseInstructor.objects.create(course=course, instructor=request.user, is_lead=True)
+
         return course
 
     def update(self, instance, validated_data):

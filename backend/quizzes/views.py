@@ -7,6 +7,7 @@ from enrollments.models import Enrollment
 from users.permissions import IsAdmin, IsStudent
 
 from .models import Choice, Question, Quiz, QuizAttempt, QuizResult
+from .permissions import IsCourseInstructorOrAdmin
 from .serializers import (
     ChoiceSerializer,
     ChoiceWriteSerializer,
@@ -33,6 +34,8 @@ class QuizListCreateView(generics.ListCreateAPIView):
     pagination_class = Pagination
 
     def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsCourseInstructorOrAdmin()]
         return [_admin_permission()]
 
     def get_queryset(self):
@@ -86,6 +89,8 @@ class QuizDetailView(generics.RetrieveUpdateDestroyAPIView):
 
 class QuestionListCreateView(generics.ListCreateAPIView):
     def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsCourseInstructorOrAdmin()]
         return [_admin_permission()]
 
     def get_queryset(self):
@@ -122,9 +127,11 @@ class QuestionListCreateView(generics.ListCreateAPIView):
 
 class QuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
     http_method_names = ["get", "patch", "delete", "head", "options"]
-    queryset = Question.objects.prefetch_related("choices")
+    queryset = Question.objects.select_related("quiz__course").prefetch_related("choices")
 
     def get_permissions(self):
+        if self.request.method in ("PATCH", "DELETE"):
+            return [IsCourseInstructorOrAdmin()]
         return [_admin_permission()]
 
     def get_serializer_class(self):
@@ -147,6 +154,8 @@ class QuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
         except Question.DoesNotExist:
             return error_response(message="Question with the given id does not exist.", status_code=404)
 
+        self.check_object_permissions(request, question)
+
         partial = kwargs.pop("partial", False)
         serializer = self.get_serializer(question, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
@@ -159,12 +168,16 @@ class QuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
         except Question.DoesNotExist:
             return error_response(message="Question with the given id does not exist.", status_code=404)
 
+        self.check_object_permissions(request, question)
+
         question.delete()
         return success_response(None, message="Question deleted successfully")
 
 
 class ChoiceListCreateView(generics.ListCreateAPIView):
     def get_permissions(self):
+        if self.request.method == "POST":
+            return [IsCourseInstructorOrAdmin()]
         return [_admin_permission()]
 
     def get_queryset(self):
@@ -203,9 +216,11 @@ class ChoiceListCreateView(generics.ListCreateAPIView):
 
 class ChoiceDetailView(generics.RetrieveUpdateDestroyAPIView):
     http_method_names = ["get", "patch", "delete", "head", "options"]
-    queryset = Choice.objects.all()
+    queryset = Choice.objects.select_related("question__quiz__course")
 
     def get_permissions(self):
+        if self.request.method in ("PATCH", "DELETE"):
+            return [IsCourseInstructorOrAdmin()]
         return [_admin_permission()]
 
     def get_serializer_class(self):
@@ -228,6 +243,8 @@ class ChoiceDetailView(generics.RetrieveUpdateDestroyAPIView):
         except Choice.DoesNotExist:
             return error_response(message="Choice with the given id does not exist.", status_code=404)
 
+        self.check_object_permissions(request, choice)
+
         partial = kwargs.pop("partial", False)
         serializer = self.get_serializer(choice, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
@@ -239,6 +256,8 @@ class ChoiceDetailView(generics.RetrieveUpdateDestroyAPIView):
             choice = self.get_queryset().get(pk=kwargs["pk"])
         except Choice.DoesNotExist:
             return error_response(message="Choice with the given id does not exist.", status_code=404)
+
+        self.check_object_permissions(request, choice)
 
         choice.delete()
         return success_response(None, message="Choice deleted successfully")

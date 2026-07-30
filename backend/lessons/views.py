@@ -8,7 +8,7 @@ from modules.models import Module
 from users.permissions import IsAdmin
 
 from .models import Lesson
-from .permissions import IsEnrolledStudentOrAdmin
+from .permissions import IsCourseInstructorOrAdmin, IsEnrolledStudentOrAdmin
 from .serializers import LessonOrderEntrySerializer, LessonSerializer, LessonWriteSerializer
 from .services import LessonReorderError, reorder_lessons
 
@@ -21,9 +21,7 @@ class LessonListCreateView(generics.ListCreateAPIView):
     def get_permissions(self):
         if self.request.method == "GET":
             return [IsEnrolledStudentOrAdmin()]
-        permission = IsAdmin()
-        permission.message = "You do not have permission to perform this action. Only admin can perform this action."
-        return [permission]
+        return [IsCourseInstructorOrAdmin()]
 
     def get_queryset(self):
         queryset = super().get_queryset()
@@ -35,11 +33,14 @@ class LessonListCreateView(generics.ListCreateAPIView):
             queryset = queryset.filter(module__course_id=course_id)
 
         user = self.request.user
-        if self.request.method == "GET" and user.is_authenticated and user.is_student:
-            enrolled_course_ids = Enrollment.objects.filter(
-                student=user, status=Enrollment.EnrollmentStatus.ACTIVE
-            ).values_list("course_id", flat=True)
-            queryset = queryset.filter(module__course_id__in=enrolled_course_ids)
+        if self.request.method == "GET" and user.is_authenticated:
+            if user.is_student:
+                enrolled_course_ids = Enrollment.objects.filter(
+                    student=user, status=Enrollment.EnrollmentStatus.ACTIVE
+                ).values_list("course_id", flat=True)
+                queryset = queryset.filter(module__course_id__in=enrolled_course_ids)
+            elif user.is_teacher:
+                queryset = queryset.filter(module__course__instructors__instructor=user)
 
         return queryset
 
@@ -74,9 +75,7 @@ class LessonDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_permissions(self):
         if self.request.method == "GET":
             return [IsEnrolledStudentOrAdmin()]
-        permission = IsAdmin()
-        permission.message = "You do not have permission to perform this action. Only admin can perform this action."
-        return [permission]
+        return [IsCourseInstructorOrAdmin()]
 
     def get_serializer_class(self):
         if self.request.method == "PATCH":
@@ -100,6 +99,8 @@ class LessonDetailView(generics.RetrieveUpdateDestroyAPIView):
         except Lesson.DoesNotExist:
             return error_response(message="Lesson with the given id does not exist.", status_code=404)
 
+        self.check_object_permissions(request, lesson)
+
         partial = kwargs.pop("partial", False)
         serializer = self.get_serializer(lesson, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
@@ -114,6 +115,8 @@ class LessonDetailView(generics.RetrieveUpdateDestroyAPIView):
             lesson = self.get_queryset().get(pk=kwargs["pk"])
         except Lesson.DoesNotExist:
             return error_response(message="Lesson with the given id does not exist.", status_code=404)
+
+        self.check_object_permissions(request, lesson)
 
         lesson.delete()
         return success_response(None, message="Lesson deleted successfully")
