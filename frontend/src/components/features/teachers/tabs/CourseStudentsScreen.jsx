@@ -51,8 +51,6 @@ const DUMMY_NAME_POOL = [
   "Isla Thompson",
 ];
 
-// Deterministic 0..1 pseudo-random value — avoids Math.random()/Date.now() so
-// server and client render the same dummy numbers (no hydration mismatch).
 function seededFraction(seed) {
   const value = Math.sin(seed) * 10000;
   return value - Math.floor(value);
@@ -67,8 +65,6 @@ function initialsFor(name) {
     .toUpperCase();
 }
 
-// Placeholder roster generator — used until the real per-course students
-// endpoint is confirmed by the backend. Sized to the course's real student count.
 function buildDummyStudents(courseId, totalStudents) {
   const count = totalStudents > 0 ? totalStudents : 6;
   const numericSeed = Number(courseId) || 1;
@@ -99,6 +95,21 @@ function buildDummyStudents(courseId, totalStudents) {
   });
 }
 
+function mapApiStudent(student, index) {
+  return {
+    id: student.student_id,
+    name: student.name,
+    email: student.email || null,
+    enrolledAt: student.enrolled_at,
+    progress: Math.round(student.progress?.completion_percentage ?? 0),
+    lessons: student.progress?.lessons_completed ?? 0,
+    assigns: student.assignments?.submitted ?? 0,
+    quizAvg: Math.round(student.quiz_performance?.average_percentage ?? 0),
+    status: student.status,
+    avatarColor: AVATAR_COLORS[index % AVATAR_COLORS.length],
+  };
+}
+
 function formatEnrolledDate(value) {
   if (!value) return "—";
   return new Date(value).toLocaleDateString("en-US", {
@@ -119,7 +130,8 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
     queryKey: ["teacherCourseStudents", courseId],
     queryFn: async () => {
       const response = await getTeacherCourseStudents(courseId);
-      return response?.data?.students || response?.data || [];
+      const rawStudents = response?.data?.students || [];
+      return rawStudents.map(mapApiStudent);
     },
     enabled: Boolean(courseId),
     retry: false,
@@ -138,10 +150,11 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
       if (
         query &&
         !student.name.toLowerCase().includes(query) &&
-        !student.email.toLowerCase().includes(query)
+        !student.email?.toLowerCase().includes(query)
       )
         return false;
-      if (statusFilter && student.status !== statusFilter) return false;
+      if (statusFilter === "ACTIVE" && student.status !== "ACTIVE") return false;
+      if (statusFilter === "INACTIVE" && student.status === "ACTIVE") return false;
       return true;
     });
 
@@ -184,7 +197,9 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
           </div>
           <div className="min-w-0">
             <p className="text-xs font-semibold text-stone-800 truncate">{student.name}</p>
-            <p className="text-[10px] font-mono text-stone-400 truncate">{student.email}</p>
+            {student.email && (
+              <p className="text-[10px] font-mono text-stone-400 truncate">{student.email}</p>
+            )}
           </div>
         </div>
       ),
