@@ -109,7 +109,7 @@ export default function TeacherCourseCard({
           <button
             type="button"
             onClick={onViewCourse}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-[11px] font-semibold font-mono rounded-xl tracking-wider shadow-md hover:scale-[1.01] transition-all cursor-pointer"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-[11px] font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer"
             title="View course details"
             aria-label="View course details"
           >

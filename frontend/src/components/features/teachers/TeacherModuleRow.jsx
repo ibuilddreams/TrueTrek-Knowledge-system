@@ -37,6 +37,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import TeacherComingSoonModal from "@/components/features/teachers/TeacherComingSoonModal";
 import { getLessons, reorderLessons } from "@/services/lessonsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
+import { formatDate } from "@/lib/adminFormatters";
 import { toastError } from "@/lib/toast";
 
 const LESSON_ICONS = {
@@ -53,12 +54,7 @@ const TABS = [
 ];
 
 function formatLessonDate(value) {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return formatDate(value);
 }
 
 function SortableTeacherLessonItem({ lesson, moduleId, onEditLesson, onDeleteLesson }) {
@@ -258,7 +254,7 @@ export default function TeacherModuleRow({
         </span>
 
         <div className="w-8 h-8 rounded-full bg-stone-900 text-white flex items-center justify-center shrink-0 text-xs font-bold">
-          {(module.order ?? 0) + 1}
+          {module.order ?? 1}
         </div>
 
         <button

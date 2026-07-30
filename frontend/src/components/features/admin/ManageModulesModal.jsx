@@ -65,6 +65,7 @@ import {
   reorderAssignments,
 } from "@/services/assignmentsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
+import { formatDate, formatDateTime } from "@/lib/adminFormatters";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 const INITIAL_FORM = { title: "", description: "", order: "1" };
@@ -83,23 +84,11 @@ const TABS = [
 ];
 
 function formatLessonDate(value) {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return formatDate(value);
 }
 
 function formatDueDate(value) {
-  if (!value) return "—";
-  return new Date(value).toLocaleString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "numeric",
-    minute: "2-digit",
-  });
+  return formatDateTime(value) || "—";
 }
 
 function isPastDue(value) {
@@ -988,6 +977,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
               disabled={isSubmitting}
               className={FIELD_CLASS}
             />
+            <p className="mt-1.5 text-[10px] font-mono text-stone-400">1 = first position</p>
             {fieldErrors.order && <p className={ERROR_CLASS}>{fieldErrors.order}</p>}
           </div>
 
@@ -1041,7 +1031,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
             <button
               type="button"
               onClick={openCreateForm}
-              className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:scale-[1.01] transition-all flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
             >
               <ListPlus className="w-4 h-4" />
               Add Module

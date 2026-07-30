@@ -172,6 +172,7 @@ export default function TeacherModuleFormModal({
             disabled={isSubmitting}
             className={FIELD_CLASS}
           />
+          <p className="mt-1.5 text-[10px] font-mono text-stone-400">1 = first position</p>
           {fieldErrors.order && <p className={ERROR_CLASS}>{fieldErrors.order}</p>}
         </div>
 

@@ -14,6 +14,7 @@ import {
   uploadAssignmentAttachment,
 } from "@/services/assignmentsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
+import { formatDate } from "@/lib/adminFormatters";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 const FILE_TYPE_ICONS = {
@@ -24,12 +25,7 @@ const FILE_TYPE_ICONS = {
 };
 
 function formatUploadedDate(value) {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return formatDate(value);
 }
 
 function AttachmentRow({ attachment, onReplace, onDelete, isReplacing, isDeleting }) {

@@ -11,6 +11,7 @@ import SearchableSelect from "@/components/ui/SearchableSelect";
 import DataTable from "@/components/ui/DataTable";
 import Pagination from "@/components/ui/Pagination";
 import StatusBadge from "@/components/ui/StatusBadge";
+import { formatDate } from "@/lib/adminFormatters";
 
 const PAGE_SIZE = 6;
 
@@ -111,12 +112,7 @@ function mapApiStudent(student, index) {
 }
 
 function formatEnrolledDate(value) {
-  if (!value) return "—";
-  return new Date(value).toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
+  return formatDate(value);
 }
 
 export default function CourseStudentsScreen({ courseId, course, onBack }) {

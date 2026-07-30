@@ -21,6 +21,7 @@ import Loader from "@/components/ui/Loader";
 import EmptyState from "@/components/ui/EmptyState";
 import { getCourseById } from "@/services/coursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
+import { formatDate } from "@/lib/adminFormatters";
 import { toastError } from "@/lib/toast";
 
 const CONTENT_TYPE_ICONS = {
@@ -72,11 +73,7 @@ function AssignmentRow({ assignment }) {
         <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono uppercase text-stone-400 tracking-wider">
           <span className="flex items-center gap-1">
             <Calendar className="w-2.5 h-2.5" />
-            {new Date(assignment.due_date).toLocaleDateString("en-US", {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-            })}
+            {formatDate(assignment.due_date)}
           </span>
           <span className="text-stone-200">·</span>
           <span className="flex items-center gap-1">
@@ -148,7 +145,7 @@ function ModuleAccordion({ module, defaultOpen }) {
       >
         <div className="flex items-center gap-2.5 min-w-0">
           <span className="shrink-0 w-6 h-6 rounded-lg bg-amber-600/10 text-amber-700 text-[10px] font-mono font-bold flex items-center justify-center">
-            {module.order + 1}
+            {module.order ?? 1}
           </span>
           <div className="min-w-0 text-left">
             <p className="text-xs font-semibold text-stone-800 truncate">{module.title}</p>

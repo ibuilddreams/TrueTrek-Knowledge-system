@@ -52,10 +52,10 @@ export default function Modal({
           onClick={canClose ? onClose : undefined}
         >
           <motion.div
-            initial={{ opacity: 0, y: 16, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.97 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
+            initial={{ opacity: 0, y: 12 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: 12 }}
+            transition={{ duration: 0.18, ease: "easeOut" }}
             className={`scrollbar-hide bg-white border border-stone-200 rounded-2xl shadow-2xl w-full ${maxWidth} my-auto max-h-[90vh] overflow-y-auto relative`}
             onClick={(event) => event.stopPropagation()}
           >
@@ -65,7 +65,7 @@ export default function Modal({
               <button
                 type="button"
                 onClick={onClose}
-                className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition"
+                className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition cursor-pointer"
                 title="Close"
                 aria-label="Close"
               >
