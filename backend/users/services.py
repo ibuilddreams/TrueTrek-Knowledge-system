@@ -35,6 +35,15 @@ STUDENT_IMPORT_HEADERS = [
     "Gender",
 ]
 
+TEACHER_IMPORT_HEADERS = [
+    "First Name",
+    "Last Name",
+    "Email",
+    "Password",
+    "Phone",
+    "Gender",
+]
+
 STUDENT_SAMPLE_ROWS = [
     {
         "First Name": "John",
@@ -50,6 +59,25 @@ STUDENT_SAMPLE_ROWS = [
         "Email": "jane@example.com",
         "Password": "Password123",
         "Phone": "+1234567891",
+        "Gender": "Female",
+    },
+]
+
+TEACHER_SAMPLE_ROWS = [
+    {
+        "First Name": "Alex",
+        "Last Name": "Morgan",
+        "Email": "alex.morgan@example.com",
+        "Password": "Password123",
+        "Phone": "+1234567800",
+        "Gender": "Male",
+    },
+    {
+        "First Name": "Sam",
+        "Last Name": "Lee",
+        "Email": "sam.lee@example.com",
+        "Password": "Password123",
+        "Phone": "+1234567801",
         "Gender": "Female",
     },
 ]
@@ -159,7 +187,7 @@ def _normalize_gender(value):
 
 def _unique_username_from_email(email):
     local_part = email.split("@", 1)[0].strip().lower()
-    base = "".join(char if char.isalnum() or char in "._-" else "_" for char in local_part) or "student"
+    base = "".join(char if char.isalnum() or char in "._-" else "_" for char in local_part) or "user"
     base = base[:120]
     candidate = base
     suffix = 1
@@ -170,7 +198,7 @@ def _unique_username_from_email(email):
     return candidate
 
 
-def _create_imported_student(row_data):
+def _create_imported_user(row_data, role):
     first_name = row_data.get("First Name", "").strip()
     last_name = row_data.get("Last Name", "").strip()
     email = UserModel.objects.normalize_email(row_data.get("Email", "").strip())
@@ -200,32 +228,40 @@ def _create_imported_student(row_data):
     username = _unique_username_from_email(email)
 
     with transaction.atomic():
-        student = UserModel.objects.create_user(
+        user = UserModel.objects.create_user(
             email=email,
             password=password,
             username=username,
             first_name=first_name,
             last_name=last_name,
             gender=gender,
-            role=UserModel.Roles.STUDENT,
+            role=role,
         )
         if phone:
             UserProfile.objects.update_or_create(
-                user=student,
+                user=user,
                 defaults={"phone_number": phone},
             )
 
     return {
-        "id": student.id,
-        "username": student.username,
-        "first_name": student.first_name,
-        "last_name": student.last_name,
-        "full_name": student.name,
-        "email": student.email,
-        "gender": student.gender,
+        "id": user.id,
+        "username": user.username,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "full_name": user.name,
+        "email": user.email,
+        "gender": user.gender,
         "phone": phone,
-        "role": student.role,
+        "role": user.role,
     }
+
+
+def _create_imported_student(row_data):
+    return _create_imported_user(row_data, UserModel.Roles.STUDENT)
+
+
+def _create_imported_teacher(row_data):
+    return _create_imported_user(row_data, UserModel.Roles.TEACHER)
 
 
 def bulk_import_students(uploaded_file):
@@ -273,6 +309,56 @@ def get_student_import_sample(file_format):
         return (
             build_sample_csv(STUDENT_IMPORT_HEADERS, STUDENT_SAMPLE_ROWS),
             "student_import_sample.csv",
+            "text/csv",
+        )
+    raise ImportFileError("Sample format must be csv or xlsx.")
+
+
+def bulk_import_teachers(uploaded_file):
+    rows = parse_tabular_file(uploaded_file, TEACHER_IMPORT_HEADERS)
+
+    created = []
+    errors = []
+
+    for entry in rows:
+        row_number = entry["row_number"]
+        row_data = entry["data"]
+        try:
+            created.append(_create_imported_teacher(row_data))
+        except Exception as exc:
+            errors.append(
+                {
+                    "row": row_number,
+                    "error": str(exc),
+                    "data": {
+                        "email": row_data.get("Email", ""),
+                        "first_name": row_data.get("First Name", ""),
+                        "last_name": row_data.get("Last Name", ""),
+                    },
+                }
+            )
+
+    return {
+        "total_rows": len(rows),
+        "success_count": len(created),
+        "failed_count": len(errors),
+        "created": created,
+        "errors": errors,
+    }
+
+
+def get_teacher_import_sample(file_format):
+    format_key = (file_format or "csv").lower()
+    if format_key == "xlsx":
+        return (
+            build_sample_workbook(TEACHER_IMPORT_HEADERS, TEACHER_SAMPLE_ROWS),
+            "teacher_import_sample.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        )
+    if format_key == "csv":
+        return (
+            build_sample_csv(TEACHER_IMPORT_HEADERS, TEACHER_SAMPLE_ROWS),
+            "teacher_import_sample.csv",
             "text/csv",
         )
     raise ImportFileError("Sample format must be csv or xlsx.")

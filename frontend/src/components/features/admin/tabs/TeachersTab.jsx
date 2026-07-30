@@ -1,11 +1,16 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Edit3, Eye, UserCheck, UserPlus, UserX } from "lucide-react";
+import { Edit3, Eye, Upload, UserCheck, UserPlus, UserX } from "lucide-react";
 import { useAdminTeachers } from "@/hooks/admin/useAdminTeachers";
 import { useAdminCourses } from "@/hooks/admin/useAdminCourses";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { deleteTeacher, updateTeacher } from "@/services/teachersService";
+import {
+  bulkImportTeachers,
+  deleteTeacher,
+  downloadTeacherImportSample,
+  updateTeacher,
+} from "@/services/teachersService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatDate } from "@/lib/adminFormatters";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -19,6 +24,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import TeacherProfileModal from "@/components/features/admin/TeacherProfileModal";
 import CreateTeacherModal from "@/components/features/admin/CreateTeacherModal";
 import EditTeacherModal from "@/components/features/admin/EditTeacherModal";
+import BulkImportModal from "@/components/features/admin/BulkImportModal";
 
 const PAGE_SIZE = 10;
 
@@ -45,6 +51,7 @@ export default function TeachersTab() {
   const [activatingTeacher, setActivatingTeacher] = useState(null);
   const [isActivating, setIsActivating] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
 
   useEffect(() => {
     loadTeachers();
@@ -170,16 +177,28 @@ export default function TeachersTab() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsCreateModalOpen(true)}
-          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:scale-[1.01] transition-all flex items-center gap-2 shrink-0"
-          title="Create a new teacher account"
-          aria-label="Create a new teacher account"
-        >
-          <UserPlus className="w-4 h-4" />
-          ADD TEACHER
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsBulkImportOpen(true)}
+            className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-2"
+            title="Bulk import teachers from CSV or XLSX"
+            aria-label="Bulk import teachers from CSV or XLSX"
+          >
+            <Upload className="w-4 h-4" />
+            BULK IMPORT
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:scale-[1.01] transition-all flex items-center gap-2"
+            title="Create a new teacher account"
+            aria-label="Create a new teacher account"
+          >
+            <UserPlus className="w-4 h-4" />
+            ADD TEACHER
+          </button>
+        </div>
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
@@ -230,6 +249,15 @@ export default function TeachersTab() {
         isOpen={isCreateModalOpen}
         onClose={() => setIsCreateModalOpen(false)}
         onCreated={() => loadTeachers({ force: true })}
+      />
+
+      <BulkImportModal
+        isOpen={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        type="teachers"
+        onImport={bulkImportTeachers}
+        onDownloadSample={downloadTeacherImportSample}
+        onImported={() => loadTeachers({ force: true })}
       />
 
       <EditTeacherModal

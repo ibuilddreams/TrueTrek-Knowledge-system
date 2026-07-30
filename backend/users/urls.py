@@ -8,6 +8,8 @@ from .views import (
     StudentListCreateView,
     TeacherAssignedCoursesListView,
     TeacherAssignedCoursesStudentsView,
+    TeacherBulkImportSampleView,
+    TeacherBulkImportView,
     TeacherCourseStudentsDetailView,
     TeacherDetailView,
     TeacherEnrolledStudentDetailView,
@@ -30,6 +32,12 @@ urlpatterns = [
 
     # Teachers
     path("teacher/admin/", TeacherListCreateView.as_view(), name="teacher-list-create"),
+    path("teacher/admin/bulk-import/", TeacherBulkImportView.as_view(), name="teacher-bulk-import"),
+    path(
+        "teacher/admin/bulk-import/sample/",
+        TeacherBulkImportSampleView.as_view(),
+        name="teacher-bulk-import-sample",
+    ),
     path("teacher/<int:pk>/admin/", TeacherDetailView.as_view(), name="teacher-detail"),
     path('teacher/<int:teacher_id>/assignedcourses', AdminTeacherAssignedCoursesView.as_view(), name='teacher-assigned-courses-admin-list',),
     path('teacher/<int:teacher_id>/assignedcourses/studentsenrolled', AdminTeacherAssignedCoursesWithStudentsView.as_view(), name='teacher-assigned-courses-students-admin-list',),

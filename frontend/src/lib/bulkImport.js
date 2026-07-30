@@ -154,26 +154,26 @@ function parseCsvLine(line, delimiter = ",") {
 
 export function buildErrorReportCsv(errors, type) {
   const headers =
-    type === "students"
-      ? ["Row", "Email", "First Name", "Last Name", "Error"]
-      : ["Row", "Student Email", "Course Code", "Error"];
+    type === "enrollments"
+      ? ["Row", "Student Email", "Course Code", "Error"]
+      : ["Row", "Email", "First Name", "Last Name", "Error"];
 
   const lines = [headers.join(",")];
   (errors || []).forEach((entry) => {
     const data = entry.data || {};
     const cells =
-      type === "students"
+      type === "enrollments"
         ? [
             entry.row,
-            data.email || "",
-            data.first_name || "",
-            data.last_name || "",
+            data.student_email || "",
+            data.course_code || "",
             entry.error || "",
           ]
         : [
             entry.row,
-            data.student_email || "",
-            data.course_code || "",
+            data.email || "",
+            data.first_name || "",
+            data.last_name || "",
             entry.error || "",
           ];
     lines.push(cells.map(escapeCsvCell).join(","));
@@ -205,6 +205,20 @@ export const BULK_IMPORT_CONFIG = {
   students: {
     title: "Bulk Import Students",
     subtitle: "Upload a CSV or XLSX file to create multiple student accounts.",
+    requiredHeaders: STUDENT_HEADERS,
+    optionalHeaders: [],
+    requireOneOf: [],
+    instructions: [
+      "Download the sample template and keep the header row unchanged.",
+      "Required columns: First Name, Last Name, Email, Password, Phone, Gender.",
+      "Gender must be Male, Female, or Other.",
+      "Phone is optional. Username is auto-generated from email.",
+      "Valid rows will be imported even if some rows fail.",
+    ],
+  },
+  teachers: {
+    title: "Bulk Import Teachers",
+    subtitle: "Upload a CSV or XLSX file to create multiple teacher accounts.",
     requiredHeaders: STUDENT_HEADERS,
     optionalHeaders: [],
     requireOneOf: [],
