@@ -6,7 +6,7 @@ from common.models import Status
 from common.pagination import Pagination
 from common.response import error_response, success_response
 from courses.models import Course
-from users.permissions import IsAdmin
+from courses.services import is_course_instructor
 
 from .models import Module
 from .permissions import IsCourseInstructorOrAdmin
@@ -131,14 +131,20 @@ class ModuleOrderView(generics.GenericAPIView):
     serializer_class = ModuleOrderEntrySerializer
 
     def get_permissions(self):
-        permission = IsAdmin()
-        permission.message = "You do not have permission to perform this action. Only admin can perform this action."
-        return [permission]
+        return [IsCourseInstructorOrAdmin()]
 
     def patch(self, request, *args, **kwargs):
         course_id = kwargs["course_id"]
-        if not Course.objects.filter(pk=course_id).exists():
+        try:
+            course = Course.objects.get(pk=course_id)
+        except Course.DoesNotExist:
             return error_response(message="Course with the given id does not exist.", status_code=404)
+
+        if not (request.user.is_admin or is_course_instructor(request.user, course)):
+            return error_response(
+                message="You do not have permission to perform this action.",
+                status_code=403,
+            )
 
         serializer = self.get_serializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)

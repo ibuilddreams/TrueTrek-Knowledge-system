@@ -120,9 +120,7 @@ function FilePreviewCard({ file, icon: Icon }) {
         <Icon className="w-5 h-5" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-stone-800 truncate">
-          {file.name}
-        </p>
+        <p className="text-xs font-semibold text-stone-800 truncate">{file.name}</p>
         <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
           {getFileExtension(file.name)} · {formatFileSize(file.size)}
         </p>
@@ -131,7 +129,19 @@ function FilePreviewCard({ file, icon: Icon }) {
   );
 }
 
-export default function AddLessonModal({
+function extractFieldErrors(error) {
+  const apiFieldErrors = error?.data?.data;
+  if (apiFieldErrors && typeof apiFieldErrors === "object") {
+    const mapped = {};
+    Object.entries(apiFieldErrors).forEach(([key, value]) => {
+      mapped[key] = Array.isArray(value) ? value[0] : String(value);
+    });
+    return mapped;
+  }
+  return null;
+}
+
+export default function TeacherLessonFormModal({
   isOpen,
   onClose,
   modules = [],
@@ -164,8 +174,7 @@ export default function AddLessonModal({
     },
   });
 
-  const isSubmitting =
-    createLessonMutation.isPending || updateLessonMutation.isPending;
+  const isSubmitting = createLessonMutation.isPending || updateLessonMutation.isPending;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -176,10 +185,7 @@ export default function AddLessonModal({
         description: lesson.description || "",
         content_type: lesson.content_type || "VIDEO",
         video_url: lesson.video_url || "",
-        duration_minutes:
-          lesson.duration_minutes != null
-            ? String(lesson.duration_minutes)
-            : "",
+        duration_minutes: lesson.duration_minutes != null ? String(lesson.duration_minutes) : "",
         order: String(lesson.order ?? 0),
       });
       setVideoSourceMode(lesson.video_url ? "LINK" : "UPLOAD");
@@ -187,9 +193,7 @@ export default function AddLessonModal({
     } else {
       setForm({
         ...INITIAL_FORM,
-        module: defaultModuleId
-          ? String(defaultModuleId)
-          : String(modules[0]?.id || ""),
+        module: defaultModuleId ? String(defaultModuleId) : String(modules[0]?.id || ""),
       });
       setVideoSourceMode("LINK");
       setExistingFileUrl(null);
@@ -210,12 +214,7 @@ export default function AddLessonModal({
 
   const handleContentTypeChange = (event) => {
     const value = event.target.value;
-    setForm((prev) => ({
-      ...prev,
-      content_type: value,
-      video_url: "",
-      duration_minutes: "",
-    }));
+    setForm((prev) => ({ ...prev, content_type: value, video_url: "", duration_minutes: "" }));
     setVideoSourceMode("LINK");
     setFile(null);
     setExistingFileUrl(null);
@@ -242,12 +241,10 @@ export default function AddLessonModal({
 
     if (!form.module) errors.module = "Module is required.";
     if (!title) errors.title = "Title is required.";
-    if (title.length > 255)
-      errors.title = "Title must be at most 255 characters.";
+    if (title.length > 255) errors.title = "Title must be at most 255 characters.";
 
     const order = Number(form.order);
-    if (!Number.isFinite(order) || order < 0)
-      errors.order = "Order must be a positive number.";
+    if (!Number.isFinite(order) || order < 0) errors.order = "Order must be a positive number.";
 
     if (form.content_type === "VIDEO") {
       if (videoSourceMode === "LINK") {
@@ -256,14 +253,9 @@ export default function AddLessonModal({
         errors.file = "Please select a video file to upload.";
       }
     } else {
-      if (!file && !hasExistingFile)
-        errors.file = "File is required for this lesson type.";
+      if (!file && !hasExistingFile) errors.file = "File is required for this lesson type.";
       const duration = Number(form.duration_minutes);
-      if (
-        !form.duration_minutes ||
-        !Number.isFinite(duration) ||
-        duration <= 0
-      ) {
+      if (!form.duration_minutes || !Number.isFinite(duration) || duration <= 0) {
         errors.duration_minutes = "Duration must be greater than zero.";
       }
     }
@@ -304,27 +296,13 @@ export default function AddLessonModal({
       const response = isEditMode
         ? await updateLessonMutation.mutateAsync({ id: lesson.id, formData })
         : await createLessonMutation.mutateAsync(formData);
-      toastSuccess(
-        response?.message ||
-          `Lesson ${isEditMode ? "updated" : "created"} successfully.`,
-      );
+      toastSuccess(response?.message || `Lesson ${isEditMode ? "updated" : "created"} successfully.`);
       onSaved?.(response?.data);
       onClose();
     } catch (error) {
-      const apiFieldErrors = error?.data?.data;
-      if (apiFieldErrors && typeof apiFieldErrors === "object") {
-        const mapped = {};
-        Object.entries(apiFieldErrors).forEach(([key, value]) => {
-          mapped[key] = Array.isArray(value) ? value[0] : String(value);
-        });
-        setFieldErrors(mapped);
-      }
-      toastError(
-        getApiErrorMessage(
-          error,
-          `Unable to ${isEditMode ? "update" : "create"} lesson.`,
-        ),
-      );
+      const mapped = extractFieldErrors(error);
+      if (mapped) setFieldErrors(mapped);
+      toastError(getApiErrorMessage(error, `Unable to ${isEditMode ? "update" : "create"} lesson.`));
     }
   };
 
@@ -339,9 +317,7 @@ export default function AddLessonModal({
       onClose={handleClose}
       icon={Video}
       title={isEditMode ? "Edit Lesson" : "Add Lesson"}
-      subtitle={
-        isEditMode ? lesson?.title : "Create a new lesson for this course"
-      }
+      subtitle={isEditMode ? lesson?.title : "Create a new lesson for this module"}
       maxWidth="max-w-xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -360,9 +336,7 @@ export default function AddLessonModal({
               </option>
             ))}
           </select>
-          {fieldErrors.module && (
-            <p className={ERROR_CLASS}>{fieldErrors.module}</p>
-          )}
+          {fieldErrors.module && <p className={ERROR_CLASS}>{fieldErrors.module}</p>}
         </div>
 
         <div>
@@ -376,9 +350,7 @@ export default function AddLessonModal({
             className={FIELD_CLASS}
             autoComplete="off"
           />
-          {fieldErrors.title && (
-            <p className={ERROR_CLASS}>{fieldErrors.title}</p>
-          )}
+          {fieldErrors.title && <p className={ERROR_CLASS}>{fieldErrors.title}</p>}
         </div>
 
         <div>
@@ -391,9 +363,7 @@ export default function AddLessonModal({
             rows={3}
             className={`${FIELD_CLASS} resize-none`}
           />
-          {fieldErrors.description && (
-            <p className={ERROR_CLASS}>{fieldErrors.description}</p>
-          )}
+          {fieldErrors.description && <p className={ERROR_CLASS}>{fieldErrors.description}</p>}
         </div>
 
         <div>
@@ -448,9 +418,7 @@ export default function AddLessonModal({
               className={FIELD_CLASS}
               autoComplete="off"
             />
-            {fieldErrors.video_url && (
-              <p className={ERROR_CLASS}>{fieldErrors.video_url}</p>
-            )}
+            {fieldErrors.video_url && <p className={ERROR_CLASS}>{fieldErrors.video_url}</p>}
 
             {trimmedVideoUrl && (
               <div className="mt-3 rounded-xl overflow-hidden border border-stone-200 bg-stone-900 aspect-video">
@@ -480,19 +448,12 @@ export default function AddLessonModal({
               disabled={isSubmitting}
               className={FIELD_CLASS}
             />
-            {fieldErrors.file && (
-              <p className={ERROR_CLASS}>{fieldErrors.file}</p>
-            )}
+            {fieldErrors.file && <p className={ERROR_CLASS}>{fieldErrors.file}</p>}
 
             {!file && existingFileUrl && (
               <p className="text-[10px] font-mono text-stone-500 mt-2">
                 Current file:{" "}
-                <a
-                  href={existingFileUrl}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="text-amber-700 underline"
-                >
+                <a href={existingFileUrl} target="_blank" rel="noreferrer" className="text-amber-700 underline">
                   view
                 </a>{" "}
                 — leave empty to keep it.
@@ -506,9 +467,7 @@ export default function AddLessonModal({
         {requiresDuration && (
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className={LABEL_CLASS}>
-                {FILE_LABEL[form.content_type]}
-              </label>
+              <label className={LABEL_CLASS}>{FILE_LABEL[form.content_type]}</label>
               <input
                 type="file"
                 accept={FILE_ACCEPT[form.content_type]}
@@ -516,19 +475,12 @@ export default function AddLessonModal({
                 disabled={isSubmitting}
                 className={FIELD_CLASS}
               />
-              {fieldErrors.file && (
-                <p className={ERROR_CLASS}>{fieldErrors.file}</p>
-              )}
+              {fieldErrors.file && <p className={ERROR_CLASS}>{fieldErrors.file}</p>}
 
               {!file && existingFileUrl && (
                 <p className="text-[10px] font-mono text-stone-500 mt-2">
                   Current file:{" "}
-                  <a
-                    href={existingFileUrl}
-                    target="_blank"
-                    rel="noreferrer"
-                    className="text-amber-700 underline"
-                  >
+                  <a href={existingFileUrl} target="_blank" rel="noreferrer" className="text-amber-700 underline">
                     view
                   </a>{" "}
                   — leave empty to keep it.
@@ -546,19 +498,12 @@ export default function AddLessonModal({
                 placeholder="e.g. 15"
                 className={FIELD_CLASS}
               />
-              {fieldErrors.duration_minutes && (
-                <p className={ERROR_CLASS}>{fieldErrors.duration_minutes}</p>
-              )}
+              {fieldErrors.duration_minutes && <p className={ERROR_CLASS}>{fieldErrors.duration_minutes}</p>}
             </div>
           </div>
         )}
 
-        {requiresDuration && file && (
-          <FilePreviewCard
-            file={file}
-            icon={FILE_ICON[form.content_type] || FileText}
-          />
-        )}
+        {requiresDuration && file && <FilePreviewCard file={file} icon={FILE_ICON[form.content_type] || FileText} />}
 
         <div className="w-32">
           <label className={LABEL_CLASS}>Order</label>
@@ -570,9 +515,7 @@ export default function AddLessonModal({
             disabled={isSubmitting}
             className={FIELD_CLASS}
           />
-          {fieldErrors.order && (
-            <p className={ERROR_CLASS}>{fieldErrors.order}</p>
-          )}
+          {fieldErrors.order && <p className={ERROR_CLASS}>{fieldErrors.order}</p>}
         </div>
 
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-stone-100">

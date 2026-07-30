@@ -3,9 +3,9 @@ from rest_framework.parsers import FormParser, MultiPartParser
 
 from common.pagination import Pagination
 from common.response import error_response, success_response
+from courses.services import is_course_instructor
 from enrollments.models import Enrollment
 from modules.models import Module
-from users.permissions import IsAdmin
 
 from .models import Lesson
 from .permissions import IsCourseInstructorOrAdmin, IsEnrolledStudentOrAdmin
@@ -127,14 +127,20 @@ class LessonOrderView(generics.GenericAPIView):
     serializer_class = LessonOrderEntrySerializer
 
     def get_permissions(self):
-        permission = IsAdmin()
-        permission.message = "You do not have permission to perform this action. Only admin can perform this action."
-        return [permission]
+        return [IsCourseInstructorOrAdmin()]
 
     def patch(self, request, *args, **kwargs):
         module_id = kwargs["module_id"]
-        if not Module.objects.filter(pk=module_id).exists():
+        try:
+            module = Module.objects.select_related("course").get(pk=module_id)
+        except Module.DoesNotExist:
             return error_response(message="Module with the given id does not exist.", status_code=404)
+
+        if not (request.user.is_admin or is_course_instructor(request.user, module.course)):
+            return error_response(
+                message="You do not have permission to perform this action.",
+                status_code=403,
+            )
 
         serializer = self.get_serializer(data=request.data, many=True)
         serializer.is_valid(raise_exception=True)
