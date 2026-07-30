@@ -4,9 +4,11 @@ from django.contrib.auth import get_user_model
 from django.http import QueryDict
 from rest_framework import serializers
 
+from assignments.models import Assignment
 from common.image import build_absolute_image_url
 from lessons.models import Lesson
 from modules.models import Module
+from quizzes.models import Quiz
 
 from .models import Category, Course, CourseInstructor, Tag
 
@@ -124,12 +126,45 @@ class CourseLessonSerializer(serializers.ModelSerializer):
         return build_absolute_image_url(self.context.get("request"), obj.file)
 
 
+class CourseAssignmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Assignment
+        fields = [
+            "id",
+            "title",
+            "description",
+            "due_date",
+            "total_marks",
+            "status",
+            "allow_resubmission",
+            "order",
+        ]
+        read_only_fields = fields
+
+
+class CourseQuizSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quiz
+        fields = [
+            "id",
+            "title",
+            "description",
+            "passing_score",
+            "time_limit_minutes",
+            "status",
+            "order",
+        ]
+        read_only_fields = fields
+
+
 class CourseModuleSerializer(serializers.ModelSerializer):
     lessons = CourseLessonSerializer(many=True, read_only=True)
+    assignments = CourseAssignmentSerializer(many=True, read_only=True)
+    quizzes = CourseQuizSerializer(many=True, read_only=True)
 
     class Meta:
         model = Module
-        fields = ["id", "title", "description", "order", "lessons"]
+        fields = ["id", "title", "description", "order", "lessons", "assignments", "quizzes"]
         read_only_fields = fields
 
 

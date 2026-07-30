@@ -1,7 +1,20 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { BookOpen, ChevronDown, Clock, ExternalLink, FileText, Layers, Video } from "lucide-react";
+import {
+  Award,
+  BookOpen,
+  Calendar,
+  ChevronDown,
+  ClipboardCheck,
+  Clock,
+  ExternalLink,
+  FileText,
+  HelpCircle,
+  Layers,
+  PlayCircle,
+  Video,
+} from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import StatusBadge from "@/components/ui/StatusBadge";
 import Loader from "@/components/ui/Loader";
@@ -45,9 +58,86 @@ function LessonRow({ lesson }) {
   );
 }
 
+function AssignmentRow({ assignment }) {
+  return (
+    <li className="flex items-center gap-3 p-3">
+      <div className="w-8 h-8 rounded-lg bg-stone-50 border border-stone-100 text-stone-500 flex items-center justify-center shrink-0">
+        <ClipboardCheck className="w-3.5 h-3.5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="text-xs font-semibold text-stone-800 truncate">{assignment.title}</p>
+          <StatusBadge status={assignment.status} />
+        </div>
+        <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono uppercase text-stone-400 tracking-wider">
+          <span className="flex items-center gap-1">
+            <Calendar className="w-2.5 h-2.5" />
+            {new Date(assignment.due_date).toLocaleDateString("en-US", {
+              year: "numeric",
+              month: "short",
+              day: "numeric",
+            })}
+          </span>
+          <span className="text-stone-200">·</span>
+          <span className="flex items-center gap-1">
+            <Award className="w-2.5 h-2.5" />
+            {assignment.total_marks} marks
+          </span>
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function QuizRow({ quiz }) {
+  return (
+    <li className="flex items-center gap-3 p-3">
+      <div className="w-8 h-8 rounded-lg bg-stone-50 border border-stone-100 text-stone-500 flex items-center justify-center shrink-0">
+        <HelpCircle className="w-3.5 h-3.5" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="text-xs font-semibold text-stone-800 truncate">{quiz.title}</p>
+          <StatusBadge status={quiz.status} />
+        </div>
+        <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono uppercase text-stone-400 tracking-wider">
+          <span>Pass {quiz.passing_score}%</span>
+          {quiz.time_limit_minutes ? (
+            <>
+              <span className="text-stone-200">·</span>
+              <span className="flex items-center gap-1">
+                <Clock className="w-2.5 h-2.5" />
+                {quiz.time_limit_minutes}m
+              </span>
+            </>
+          ) : null}
+        </div>
+      </div>
+    </li>
+  );
+}
+
+function ModuleContentSection({ title, icon: Icon, items, renderItem, emptyLabel }) {
+  return (
+    <div className="border-t border-stone-100">
+      <p className="flex items-center gap-1.5 text-[10px] font-mono uppercase text-stone-400 tracking-wider px-3 pt-3">
+        <Icon className="w-3 h-3" />
+        {title} · {items.length}
+      </p>
+      {items.length ? (
+        <ul className="divide-y divide-stone-100">{items.map(renderItem)}</ul>
+      ) : (
+        <p className="text-[11px] text-stone-400 font-light px-3 py-3">{emptyLabel}</p>
+      )}
+    </div>
+  );
+}
+
 function ModuleAccordion({ module, defaultOpen }) {
   const [isOpen, setIsOpen] = useState(defaultOpen);
   const lessons = module.lessons || [];
+  const assignments = module.assignments || [];
+  const quizzes = module.quizzes || [];
 
   return (
     <div className="rounded-xl border border-stone-100 overflow-hidden">
@@ -63,7 +153,9 @@ function ModuleAccordion({ module, defaultOpen }) {
           <div className="min-w-0 text-left">
             <p className="text-xs font-semibold text-stone-800 truncate">{module.title}</p>
             <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
-              {lessons.length} {lessons.length === 1 ? "Lesson" : "Lessons"}
+              {lessons.length} {lessons.length === 1 ? "Lesson" : "Lessons"} · {assignments.length}{" "}
+              {assignments.length === 1 ? "Assignment" : "Assignments"} · {quizzes.length}{" "}
+              {quizzes.length === 1 ? "Quiz" : "Quizzes"}
             </p>
           </div>
         </div>
@@ -73,19 +165,34 @@ function ModuleAccordion({ module, defaultOpen }) {
       </button>
 
       {isOpen && (
-        <div className="border-t border-stone-100">
+        <div>
           {module.description && (
             <p className="text-xs text-stone-500 font-light leading-relaxed px-3 pt-3">{module.description}</p>
           )}
-          {lessons.length ? (
-            <ul className="divide-y divide-stone-100">
-              {lessons.map((lesson) => (
-                <LessonRow key={lesson.id} lesson={lesson} />
-              ))}
-            </ul>
-          ) : (
-            <p className="text-[11px] text-stone-400 font-light px-3 py-3">No lessons in this module yet.</p>
-          )}
+
+          <ModuleContentSection
+            title="Lessons"
+            icon={PlayCircle}
+            items={lessons}
+            renderItem={(lesson) => <LessonRow key={lesson.id} lesson={lesson} />}
+            emptyLabel="No lessons in this module yet."
+          />
+
+          <ModuleContentSection
+            title="Assignments"
+            icon={ClipboardCheck}
+            items={assignments}
+            renderItem={(assignment) => <AssignmentRow key={assignment.id} assignment={assignment} />}
+            emptyLabel="No assignments in this module yet."
+          />
+
+          <ModuleContentSection
+            title="Quizzes"
+            icon={HelpCircle}
+            items={quizzes}
+            renderItem={(quiz) => <QuizRow key={quiz.id} quiz={quiz} />}
+            emptyLabel="No quizzes in this module yet."
+          />
         </div>
       )}
     </div>
@@ -172,7 +279,7 @@ export default function CourseDetailModal({ isOpen, onClose, courseId }) {
             )}
           </div>
           <div>
-            <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mb-2">Modules &amp; Lessons</p>
+            <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mb-2">Modules &amp; Content</p>
             {course.modules?.length ? (
               <div className="space-y-2">
                 {course.modules.map((module, index) => (
