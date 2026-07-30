@@ -14,22 +14,39 @@ from .models import Enrollment
 
 UserModel = get_user_model()
 
-ENROLLMENT_IMPORT_HEADERS = ["Student Email", "Course Code"]
+ENROLLMENT_IMPORT_HEADERS = ["Student Email"]
+ENROLLMENT_COURSE_HEADERS = ["Course Code", "Course Title"]
 
 ENROLLMENT_SAMPLE_ROWS = [
-    {"Student Email": "john@example.com", "Course Code": "cs101"},
-    {"Student Email": "jane@example.com", "Course Code": "math201"},
+    {"Student Email": "john@example.com", "Course Code": "CS101"},
+    {"Student Email": "jane@example.com", "Course Code": "MATH201"},
 ]
+
+
+def _resolve_course(row_data):
+    course_code = row_data.get("Course Code", "").strip().upper()
+    course_title = row_data.get("Course Title", "").strip()
+
+    if course_code:
+        course = Course.objects.filter(code__iexact=course_code).first()
+        if course is None:
+            raise ValueError(f"No course found with code '{course_code}'.")
+        return course
+
+    if course_title:
+        course = Course.objects.filter(title__iexact=course_title).first()
+        if course is None:
+            raise ValueError(f"No course found with title '{course_title}'.")
+        return course
+
+    raise ValueError("Course Code or Course Title is required.")
 
 
 def _create_imported_enrollment(row_data):
     email = UserModel.objects.normalize_email(row_data.get("Student Email", "").strip())
-    course_code = row_data.get("Course Code", "").strip()
 
     if not email:
         raise ValueError("Student Email is required.")
-    if not course_code:
-        raise ValueError("Course Code is required.")
 
     student = UserModel.objects.filter(
         email__iexact=email, role=UserModel.Roles.STUDENT
@@ -40,9 +57,7 @@ def _create_imported_enrollment(row_data):
     if student.account_status != UserModel.AccountStatus.ACTIVE:
         raise ValueError("This student's account is not active.")
 
-    course = Course.objects.filter(slug__iexact=course_code).first()
-    if course is None:
-        raise ValueError(f"No course found with code '{course_code}'.")
+    course = _resolve_course(row_data)
 
     if course.status != Status.PUBLISHED:
         raise ValueError("Enrollment is only allowed for published courses.")
@@ -59,16 +74,18 @@ def _create_imported_enrollment(row_data):
         "student_name": student.name,
         "course_id": course.id,
         "course_title": course.title,
-        "course_code": course.slug,
+        "course_code": course.code,
         "status": enrollment.status,
     }
 
 
 def bulk_import_enrollments(uploaded_file):
-    try:
-        rows = parse_tabular_file(uploaded_file, ENROLLMENT_IMPORT_HEADERS)
-    except ImportFileError as exc:
-        raise ImportFileError(str(exc)) from exc
+    rows = parse_tabular_file(
+        uploaded_file,
+        ENROLLMENT_IMPORT_HEADERS,
+        optional_headers=ENROLLMENT_COURSE_HEADERS,
+        require_one_of=ENROLLMENT_COURSE_HEADERS,
+    )
 
     created = []
     errors = []
@@ -85,7 +102,8 @@ def bulk_import_enrollments(uploaded_file):
                     "error": str(exc),
                     "data": {
                         "student_email": row_data.get("Student Email", ""),
-                        "course_code": row_data.get("Course Code", ""),
+                        "course_code": row_data.get("Course Code", "")
+                        or row_data.get("Course Title", ""),
                     },
                 }
             )
@@ -101,15 +119,16 @@ def bulk_import_enrollments(uploaded_file):
 
 def get_enrollment_import_sample(file_format):
     format_key = (file_format or "csv").lower()
+    headers = ["Student Email", "Course Code"]
     if format_key == "xlsx":
         return (
-            build_sample_workbook(ENROLLMENT_IMPORT_HEADERS, ENROLLMENT_SAMPLE_ROWS),
+            build_sample_workbook(headers, ENROLLMENT_SAMPLE_ROWS),
             "enrollment_import_sample.xlsx",
             "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
         )
     if format_key == "csv":
         return (
-            build_sample_csv(ENROLLMENT_IMPORT_HEADERS, ENROLLMENT_SAMPLE_ROWS),
+            build_sample_csv(headers, ENROLLMENT_SAMPLE_ROWS),
             "enrollment_import_sample.csv",
             "text/csv",
         )

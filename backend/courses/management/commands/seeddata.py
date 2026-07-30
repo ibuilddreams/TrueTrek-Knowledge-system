@@ -89,11 +89,15 @@ class Command(BaseCommand):
             course, _ = Course.objects.get_or_create(
                 title=f"Course {i}",
                 defaults={
+                    "code": f"COURSE{i}",
                     "description": f"Demo course {i}",
                     "category": category,
                     "status": Status.PUBLISHED,
                 },
             )
+            if not course.code:
+                course.code = f"COURSE{i}"
+                course.save(update_fields=["code"])
             teacher = teachers[(i - 1) % len(teachers)]
             CourseInstructor.objects.update_or_create(
                 course=course,

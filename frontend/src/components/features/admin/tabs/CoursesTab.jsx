@@ -144,6 +144,13 @@ export default function CoursesTab() {
 
   const columns = [
     {
+      key: "code",
+      header: "Code",
+      render: (course) => (
+        <span className="font-mono text-stone-600">{course.code || "—"}</span>
+      ),
+    },
+    {
       key: "title",
       header: "Title",
       render: (course) => (

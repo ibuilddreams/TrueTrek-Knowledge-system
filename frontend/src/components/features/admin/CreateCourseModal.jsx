@@ -20,6 +20,7 @@ const DIFFICULTY_OPTIONS = [
 
 const INITIAL_FORM = {
   title: "",
+  code: "",
   description: "",
   category: "",
   status: "DRAFT",
@@ -110,6 +111,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
 
         setForm({
           title: detail.title || "",
+          code: detail.code || "",
           description: detail.description || "",
           category: detail.category?.id || "",
           status: detail.status || "DRAFT",
@@ -166,11 +168,14 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
     event.preventDefault();
 
     const title = form.title.trim();
+    const code = form.code.trim().toUpperCase();
     const durationMinutes = Number(form.duration_minutes);
 
     const errors = {};
     if (!title) errors.title = "Title is required.";
     if (title.length > 255) errors.title = "Title must be at most 255 characters.";
+    if (!code) errors.code = "Course code is required.";
+    if (code.length > 50) errors.code = "Course code must be at most 50 characters.";
     if (!form.category) errors.category = "Category is required.";
     if (!Number.isFinite(durationMinutes) || durationMinutes < 0) {
       errors.duration_minutes = "Duration must be a positive number.";
@@ -183,6 +188,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
 
     const formData = new FormData();
     formData.append("title", title);
+    formData.append("code", code);
     if (form.description.trim()) formData.append("description", form.description.trim());
     if (thumbnailFile) formData.append("thumbnail", thumbnailFile);
     formData.append("category", form.category);
@@ -247,6 +253,20 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
             autoComplete="off"
           />
           {fieldErrors.title && <p className={ERROR_CLASS}>{fieldErrors.title}</p>}
+        </div>
+
+        <div>
+          <label className={LABEL_CLASS}>Course Code</label>
+          <input
+            type="text"
+            value={form.code}
+            onChange={updateField("code")}
+            disabled={isBusy}
+            placeholder="CS101"
+            className={FIELD_CLASS}
+            autoComplete="off"
+          />
+          {fieldErrors.code && <p className={ERROR_CLASS}>{fieldErrors.code}</p>}
         </div>
 
         <div>

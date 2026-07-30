@@ -1,5 +1,6 @@
 import csv
 import io
+import re
 
 from openpyxl import Workbook, load_workbook
 
@@ -34,7 +35,42 @@ def validate_upload_file(uploaded_file):
 
 
 def _normalize_header(value):
-    return " ".join(str(value or "").strip().split())
+    text = str(value or "").replace("\ufeff", "").replace("\xa0", " ").strip()
+    text = re.sub(r"\s+", " ", text)
+    return text
+
+
+def _header_key(value):
+    return re.sub(r"[^a-z0-9]+", "", _normalize_header(value).lower())
+
+
+HEADER_ALIASES = {
+    "firstname": "First Name",
+    "lastname": "Last Name",
+    "email": "Email",
+    "password": "Password",
+    "phone": "Phone",
+    "phonenumber": "Phone",
+    "gender": "Gender",
+    "studentemail": "Student Email",
+    "coursecode": "Course Code",
+    "code": "Course Code",
+    "coursetitle": "Course Title",
+    "title": "Course Title",
+}
+
+
+def _canonicalize_header(value, required_headers, optional_headers=None):
+    normalized = _normalize_header(value)
+    known_headers = list(required_headers) + list(optional_headers or [])
+    known_by_key = {_header_key(header): header for header in known_headers}
+
+    key = _header_key(normalized)
+    if key in known_by_key:
+        return known_by_key[key]
+    if key in HEADER_ALIASES and HEADER_ALIASES[key] in known_by_key.values():
+        return HEADER_ALIASES[key]
+    return normalized
 
 
 def _row_to_dict(headers, values):
@@ -47,14 +83,16 @@ def _row_to_dict(headers, values):
     return row
 
 
-def parse_tabular_file(uploaded_file, required_headers):
+def parse_tabular_file(uploaded_file, required_headers, optional_headers=None, require_one_of=None):
     extension = validate_upload_file(uploaded_file)
     required = [_normalize_header(header) for header in required_headers]
+    optional = [_normalize_header(header) for header in (optional_headers or [])]
+    one_of = [_normalize_header(header) for header in (require_one_of or [])]
 
     if extension == ".csv":
-        rows = _parse_csv(uploaded_file, required)
+        rows = _parse_csv(uploaded_file, required, optional, one_of)
     else:
-        rows = _parse_xlsx(uploaded_file, required)
+        rows = _parse_xlsx(uploaded_file, required, optional, one_of)
 
     if not rows:
         raise ImportFileError("The file has no data rows.")
@@ -62,7 +100,7 @@ def parse_tabular_file(uploaded_file, required_headers):
     return rows
 
 
-def _parse_csv(uploaded_file, required_headers):
+def _parse_csv(uploaded_file, required_headers, optional_headers=None, require_one_of=None):
     uploaded_file.seek(0)
     raw = uploaded_file.read()
     if isinstance(raw, bytes):
@@ -70,14 +108,23 @@ def _parse_csv(uploaded_file, required_headers):
     else:
         text = str(raw)
 
-    reader = csv.reader(io.StringIO(text))
+    sample = text[:4096]
+    try:
+        dialect = csv.Sniffer().sniff(sample, delimiters=",;\t")
+    except csv.Error:
+        dialect = csv.excel
+
+    reader = csv.reader(io.StringIO(text), dialect)
     try:
         header_row = next(reader)
     except StopIteration as exc:
         raise ImportFileError("The file is empty.") from exc
 
-    headers = [_normalize_header(cell) for cell in header_row]
-    _validate_headers(headers, required_headers)
+    headers = [
+        _canonicalize_header(cell, required_headers, optional_headers)
+        for cell in header_row
+    ]
+    _validate_headers(headers, required_headers, require_one_of)
 
     rows = []
     for index, values in enumerate(reader, start=2):
@@ -87,7 +134,7 @@ def _parse_csv(uploaded_file, required_headers):
     return rows
 
 
-def _parse_xlsx(uploaded_file, required_headers):
+def _parse_xlsx(uploaded_file, required_headers, optional_headers=None, require_one_of=None):
     uploaded_file.seek(0)
     workbook = load_workbook(uploaded_file, read_only=True, data_only=True)
     sheet = workbook.active
@@ -98,8 +145,11 @@ def _parse_xlsx(uploaded_file, required_headers):
     except StopIteration as exc:
         raise ImportFileError("The file is empty.") from exc
 
-    headers = [_normalize_header(cell) for cell in header_row]
-    _validate_headers(headers, required_headers)
+    headers = [
+        _canonicalize_header(cell, required_headers, optional_headers)
+        for cell in header_row
+    ]
+    _validate_headers(headers, required_headers, require_one_of)
 
     rows = []
     for index, values in enumerate(iterator, start=2):
@@ -110,13 +160,21 @@ def _parse_xlsx(uploaded_file, required_headers):
     return rows
 
 
-def _validate_headers(headers, required_headers):
-    missing = [header for header in required_headers if header not in headers]
+def _validate_headers(headers, required_headers, require_one_of=None):
+    present = {_header_key(header) for header in headers}
+    missing = [header for header in required_headers if _header_key(header) not in present]
     if missing:
         raise ImportFileError(
             f"Missing required column(s): {', '.join(missing)}. "
             f"Expected headers: {', '.join(required_headers)}."
         )
+
+    if require_one_of:
+        if not any(_header_key(header) in present for header in require_one_of):
+            raise ImportFileError(
+                "Missing course column. Provide either "
+                f"{' or '.join(require_one_of)}."
+            )
 
 
 def build_sample_workbook(headers, sample_rows):

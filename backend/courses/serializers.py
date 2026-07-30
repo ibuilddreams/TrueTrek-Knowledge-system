@@ -59,7 +59,7 @@ class CategoryCourseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ["id", "title", "slug", "status", "tags", "instructors"]
+        fields = ["id", "title", "slug", "code", "status", "tags", "instructors"]
         read_only_fields = fields
 
 
@@ -95,7 +95,7 @@ class CourseListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ["id", "title", "slug", "image", "category", "status", "tags", "instructors", "created_at", "updated_at"]
+        fields = ["id", "title", "slug", "code", "image", "category", "status", "tags", "instructors", "created_at", "updated_at"]
         read_only_fields = fields
 
     def get_image(self, obj):
@@ -181,6 +181,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "slug",
+            "code",
             "description",
             "thumbnail",
             "image",
@@ -224,6 +225,7 @@ class CourseWriteSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
+            "code",
             "description",
             "thumbnail",
             "category",
@@ -259,6 +261,19 @@ class CourseWriteSerializer(serializers.ModelSerializer):
         if queryset.exists():
             raise serializers.ValidationError("A course with this title already exists.")
         return value
+
+    def validate_code(self, value):
+        code = str(value or "").strip().upper()
+        if not code:
+            raise serializers.ValidationError("Course code is required.")
+        if len(code) > 50:
+            raise serializers.ValidationError("Course code must be at most 50 characters.")
+        queryset = Course.objects.filter(code__iexact=code)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError("A course with this code already exists.")
+        return code
 
     def create(self, validated_data):
         tags = validated_data.pop("tags", [])

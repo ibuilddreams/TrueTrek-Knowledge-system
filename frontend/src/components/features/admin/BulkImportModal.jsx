@@ -64,7 +64,11 @@ export default function BulkImportModal({
 
     const validation = await validateImportFileHeaders(
       nextFile,
-      config.requiredHeaders
+      config.requiredHeaders,
+      {
+        optionalHeaders: config.optionalHeaders || [],
+        requireOneOf: config.requireOneOf || [],
+      }
     );
     if (!validation.ok) {
       setValidationError(validation.error);
@@ -90,7 +94,11 @@ export default function BulkImportModal({
 
     const validation = await validateImportFileHeaders(
       file,
-      config.requiredHeaders
+      config.requiredHeaders,
+      {
+        optionalHeaders: config.optionalHeaders || [],
+        requireOneOf: config.requireOneOf || [],
+      }
     );
     if (!validation.ok) {
       setValidationError(validation.error);
