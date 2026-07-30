@@ -18,7 +18,6 @@ export async function getTeacherEnrolledStudentDetail(studentId) {
   return backendClient.get(`/teacher/me/students/${studentId}/`);
 }
 
-// Placeholder endpoint — swap the path once the backend confirms the real one.
 export async function getTeacherCourseStudents(courseId) {
-  return backendClient.get(`/teacher/me/courses/${courseId}/students`);
+  return backendClient.get(`/teacher/me/assignedcourses/${courseId}/studentdetail`);
 }

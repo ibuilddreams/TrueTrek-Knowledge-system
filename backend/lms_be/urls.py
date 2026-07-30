@@ -18,6 +18,7 @@ urlpatterns = [
     path('api/modules/', include('modules.urls')),
     path('api/lessons/', include('lessons.urls')),
     path('api/quizzes/', include('quizzes.urls')),
+    path('api/assignments/', include('assignments.urls')),
     path('api/enrollments/', include('enrollments.urls')),
     path('api/progress/', include('progress.urls')),
     path('api/dashboard/', include('dashboard.urls')),

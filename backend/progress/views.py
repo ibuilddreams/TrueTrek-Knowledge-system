@@ -1,5 +1,6 @@
 from rest_framework import generics
 
+from common.models import Status
 from common.pagination import Pagination
 from common.response import error_response, success_response
 from enrollments.models import Enrollment
@@ -88,7 +89,7 @@ class ModuleProgressDetailView(generics.GenericAPIView):
             student=request.user, lesson__module=module, is_completed=True
         ).count()
 
-        total_quizzes = Quiz.objects.filter(module=module).count()
+        total_quizzes = Quiz.objects.filter(module=module, status=Status.PUBLISHED).count()
         completed_quizzes = (
             QuizResult.objects.filter(attempt__student=request.user, attempt__quiz__module=module)
             .values("attempt__quiz")

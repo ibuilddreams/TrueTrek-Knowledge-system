@@ -41,7 +41,7 @@ export default function Navbar() {
         title="Return to TrueTrek Learning home orientation page"
         aria-label="Return to TrueTrek Learning home orientation page"
       >
-        <div className="w-10 h-10 bg-gradient-to-br from-amber-600 to-amber-800 rounded-lg flex items-center justify-center text-white font-serif font-extrabold text-xl shadow-md group-hover:scale-[1.03] transition duration-250">
+        <div className="w-10 h-10 bg-gradient-to-br from-amber-600 to-amber-800 rounded-lg flex items-center justify-center text-white font-serif font-extrabold text-xl shadow-md">
           TTL
         </div>
         <h1
@@ -102,7 +102,7 @@ export default function Navbar() {
           href={ROUTES.LOGIN}
           className={`font-mono text-xs uppercase tracking-wider px-6 py-2.5 rounded-full font-bold transition duration-250 shadow-sm flex items-center gap-2 select-none ${
             isVault
-              ? "bg-amber-600 hover:bg-amber-500 text-stone-950 hover:scale-[1.02]"
+              ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
               : "bg-stone-900 hover:bg-stone-800 text-stone-100"
           }`}
           title="Access the secure Student Portal simulator with interactive drills"

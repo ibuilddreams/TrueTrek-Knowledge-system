@@ -15,6 +15,7 @@ import Pagination from "@/components/ui/Pagination";
 import EmptyState from "@/components/ui/EmptyState";
 import TeacherCourseCard from "@/components/features/teachers/TeacherCourseCard";
 import CourseStudentsScreen from "./CourseStudentsScreen";
+import CourseContentScreen from "./CourseContentScreen";
 
 const PAGE_SIZE = 10;
 
@@ -30,6 +31,7 @@ export default function MyCoursesTab() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeCourseId = searchParams.get("courseId");
+  const activeView = searchParams.get("view") === "content" ? "content" : "students";
 
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, 300);
@@ -89,6 +91,17 @@ export default function MyCoursesTab() {
     (course) => {
       const params = new URLSearchParams(searchParams.toString());
       params.set("courseId", String(course.id));
+      params.set("view", "students");
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
+  const handleViewCourse = useCallback(
+    (course) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("courseId", String(course.id));
+      params.set("view", "content");
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
     [pathname, router, searchParams],
@@ -97,6 +110,7 @@ export default function MyCoursesTab() {
   const handleBackToCourses = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("courseId");
+    params.delete("view");
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }, [pathname, router, searchParams]);
@@ -120,8 +134,6 @@ export default function MyCoursesTab() {
     [tags],
   );
 
-  // The backend endpoint doesn't honor these query params yet, so filter client-side too;
-  // once it does, this becomes a harmless no-op pass over an already-filtered list.
   const filteredCourses = useMemo(() => {
     const query = debouncedSearch.trim().toLowerCase();
     return courses.filter((course) => {
@@ -157,6 +169,16 @@ export default function MyCoursesTab() {
     const activeCourse = courses.find(
       (course) => String(course.id) === activeCourseId,
     );
+
+    if (activeView === "content") {
+      return (
+        <CourseContentScreen
+          courseId={activeCourseId}
+          course={activeCourse}
+          onBack={handleBackToCourses}
+        />
+      );
+    }
 
     return (
       <CourseStudentsScreen
@@ -204,7 +226,7 @@ export default function MyCoursesTab() {
 
         <button
           type="button"
-          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:scale-[1.01] transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0 cursor-pointer"
           title="Add a new course"
           aria-label="Add a new course"
         >
@@ -263,6 +285,7 @@ export default function MyCoursesTab() {
             <TeacherCourseCard
               key={course.id}
               course={course}
+              onViewCourse={() => handleViewCourse(course)}
               onViewStudents={() => handleViewStudents(course)}
             />
           ))}

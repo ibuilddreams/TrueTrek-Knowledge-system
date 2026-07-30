@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Check, UserPlus, X } from "lucide-react";
+import { Check, Eye, EyeOff, UserPlus, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { createTeacher } from "@/services/teachersService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
@@ -25,16 +25,19 @@ const LABEL_CLASS =
 export default function CreateTeacherModal({ isOpen, onClose, onCreated }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   useEffect(() => {
     if (isOpen) {
       setForm(INITIAL_FORM);
+      setShowPassword(false);
     }
   }, [isOpen]);
 
   const handleClose = () => {
     if (isSubmitting) return;
     setForm(INITIAL_FORM);
+    setShowPassword(false);
     onClose();
   };
 
@@ -142,15 +145,31 @@ export default function CreateTeacherModal({ isOpen, onClose, onCreated }) {
 
         <div>
           <label className={LABEL_CLASS}>Password</label>
-          <input
-            type="password"
-            value={form.password}
-            onChange={updateField("password")}
-            disabled={isSubmitting}
-            placeholder="Create a password"
-            className={FIELD_CLASS}
-            autoComplete="new-password"
-          />
+          <div className="relative">
+            <input
+              type={showPassword ? "text" : "password"}
+              value={form.password}
+              onChange={updateField("password")}
+              disabled={isSubmitting}
+              placeholder="Create a password"
+              className={`${FIELD_CLASS} pr-11`}
+              autoComplete="new-password"
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword((prev) => !prev)}
+              disabled={isSubmitting}
+              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-400 hover:text-stone-600 transition disabled:opacity-60"
+              title={showPassword ? "Hide password" : "Show password"}
+              aria-label={showPassword ? "Hide password" : "Show password"}
+            >
+              {showPassword ? (
+                <EyeOff className="w-4 h-4" />
+              ) : (
+                <Eye className="w-4 h-4" />
+              )}
+            </button>
+          </div>
         </div>
 
         <div>

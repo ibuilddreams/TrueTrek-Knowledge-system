@@ -1,7 +1,10 @@
 from django.contrib.auth import get_user_model
+from django.http import FileResponse
 from rest_framework import generics
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
+from common.import_files import ImportFileError
 from common.pagination import Pagination
 from common.response import error_response, success_response
 from rest_framework.permissions import AllowAny, IsAuthenticated
@@ -25,9 +28,13 @@ from courses.models import Course
 from courses.services import get_course_students_detail, is_course_instructor
 
 from .services import (
+    bulk_import_students,
+    bulk_import_teachers,
+    get_student_import_sample,
     get_teacher_assigned_courses,
     get_teacher_assigned_courses_with_students,
     get_teacher_enrolled_student_detail,
+    get_teacher_import_sample,
     send_password_reset_email,
 )
 
@@ -142,6 +149,39 @@ class StudentDetailView(generics.RetrieveUpdateDestroyAPIView):
         return success_response(None, message="Student deactivated successfully")
 
 
+class StudentBulkImportView(generics.GenericAPIView):
+    permission_classes = [IsAdmin]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, *args, **kwargs):
+        uploaded_file = request.FILES.get("file")
+        try:
+            result = bulk_import_students(uploaded_file)
+        except ImportFileError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        message = (
+            f"Import completed: {result['success_count']} succeeded, "
+            f"{result['failed_count']} failed."
+        )
+        return success_response(result, message=message)
+
+
+class StudentBulkImportSampleView(generics.GenericAPIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request, *args, **kwargs):
+        file_format = request.query_params.get("file_format", "csv")
+        try:
+            buffer, filename, content_type = get_student_import_sample(file_format)
+        except ImportFileError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        response = FileResponse(buffer, as_attachment=True, filename=filename)
+        response["Content-Type"] = content_type
+        return response
+
+
 class TeacherListCreateView(generics.ListCreateAPIView):
     """Lists all users with the TEACHER role, and creates new ones."""
 
@@ -232,6 +272,39 @@ class TeacherDetailView(generics.RetrieveUpdateDestroyAPIView):
         teacher.is_active = False
         teacher.save(update_fields=["account_status", "is_active"])
         return success_response(None, message="Teacher deactivated successfully")
+
+
+class TeacherBulkImportView(generics.GenericAPIView):
+    permission_classes = [IsAdmin]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, *args, **kwargs):
+        uploaded_file = request.FILES.get("file")
+        try:
+            result = bulk_import_teachers(uploaded_file)
+        except ImportFileError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        message = (
+            f"Import completed: {result['success_count']} succeeded, "
+            f"{result['failed_count']} failed."
+        )
+        return success_response(result, message=message)
+
+
+class TeacherBulkImportSampleView(generics.GenericAPIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request, *args, **kwargs):
+        file_format = request.query_params.get("file_format", "csv")
+        try:
+            buffer, filename, content_type = get_teacher_import_sample(file_format)
+        except ImportFileError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        response = FileResponse(buffer, as_attachment=True, filename=filename)
+        response["Content-Type"] = content_type
+        return response
 
 
 class ProfileView(generics.RetrieveUpdateAPIView):

@@ -1,10 +1,14 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Edit3, Eye, UserPlus } from "lucide-react";
+import { Edit3, Eye, Upload, UserPlus } from "lucide-react";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { formatDateTime } from "@/lib/adminFormatters";
+import {
+  bulkImportEnrollments,
+  downloadEnrollmentImportSample,
+} from "@/services/enrollmentsService";
 import SearchBar from "@/components/ui/SearchBar";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import DataTable from "@/components/ui/DataTable";
@@ -14,6 +18,7 @@ import ActionMenu from "@/components/ui/ActionMenu";
 import EnrollmentDetailModal from "@/components/features/admin/EnrollmentDetailModal";
 import EnrollmentStatusModal from "@/components/features/admin/EnrollmentStatusModal";
 import EnrollStudentModal from "@/components/features/admin/EnrollStudentModal";
+import BulkImportModal from "@/components/features/admin/BulkImportModal";
 
 const PAGE_SIZE = 10;
 
@@ -36,6 +41,7 @@ export default function EnrollmentsTab() {
   const [viewEnrollment, setViewEnrollment] = useState(null);
   const [editEnrollment, setEditEnrollment] = useState(null);
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
+  const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
 
   useEffect(() => {
     loadEnrollments();
@@ -103,16 +109,28 @@ export default function EnrollmentsTab() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsEnrollModalOpen(true)}
-          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:scale-[1.01] transition-all flex items-center gap-2 shrink-0"
-          title="Enroll a student into a course"
-          aria-label="Enroll a student into a course"
-        >
-          <UserPlus className="w-4 h-4" />
-          ENROLL STUDENT
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsBulkImportOpen(true)}
+            className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-2"
+            title="Bulk enroll students from CSV or XLSX"
+            aria-label="Bulk enroll students from CSV or XLSX"
+          >
+            <Upload className="w-4 h-4" />
+            BULK ENROLLMENT
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsEnrollModalOpen(true)}
+            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+            title="Enroll a student into a course"
+            aria-label="Enroll a student into a course"
+          >
+            <UserPlus className="w-4 h-4" />
+            ENROLL STUDENT
+          </button>
+        </div>
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
@@ -149,6 +167,15 @@ export default function EnrollmentsTab() {
         isOpen={isEnrollModalOpen}
         onClose={() => setIsEnrollModalOpen(false)}
         onEnrolled={() => loadEnrollments({ force: true })}
+      />
+
+      <BulkImportModal
+        isOpen={isBulkImportOpen}
+        onClose={() => setIsBulkImportOpen(false)}
+        type="enrollments"
+        onImport={bulkImportEnrollments}
+        onDownloadSample={downloadEnrollmentImportSample}
+        onImported={() => loadEnrollments({ force: true })}
       />
     </div>
   );

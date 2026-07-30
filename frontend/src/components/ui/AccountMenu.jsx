@@ -194,11 +194,11 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
           <motion.div
             role="menu"
             aria-labelledby="account-menu-trigger"
-            initial={{ y: -4, scale: 0.98 }}
-            animate={{ y: 0, scale: 1 }}
-            exit={{ y: -4, scale: 0.98 }}
+            initial={{ opacity: 0, y: -4 }}
+            animate={{ opacity: 1, y: 0 }}
+            exit={{ opacity: 0, y: -4 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute right-0 top-full mt-2 w-52 max-w-[calc(100vw-2rem)] bg-white border border-stone-200 rounded-xl shadow-xl py-1.5 z-[100] origin-top-right"
+            className="absolute right-0 top-full mt-2 w-52 max-w-[calc(100vw-2rem)] bg-white border border-stone-200 rounded-xl shadow-xl py-1.5 z-[100]"
           >
             <div className="px-3.5 py-2 border-b border-stone-100 mb-1">
               <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-semibold">

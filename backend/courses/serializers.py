@@ -4,9 +4,11 @@ from django.contrib.auth import get_user_model
 from django.http import QueryDict
 from rest_framework import serializers
 
+from assignments.models import Assignment
 from common.image import build_absolute_image_url
 from lessons.models import Lesson
 from modules.models import Module
+from quizzes.models import Quiz
 
 from .models import Category, Course, CourseInstructor, Tag
 
@@ -57,7 +59,7 @@ class CategoryCourseSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ["id", "title", "slug", "status", "tags", "instructors"]
+        fields = ["id", "title", "slug", "code", "status", "tags", "instructors"]
         read_only_fields = fields
 
 
@@ -93,7 +95,7 @@ class CourseListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ["id", "title", "slug", "image", "category", "status", "tags", "instructors", "created_at", "updated_at"]
+        fields = ["id", "title", "slug", "code", "image", "category", "status", "tags", "instructors", "created_at", "updated_at"]
         read_only_fields = fields
 
     def get_image(self, obj):
@@ -124,12 +126,45 @@ class CourseLessonSerializer(serializers.ModelSerializer):
         return build_absolute_image_url(self.context.get("request"), obj.file)
 
 
+class CourseAssignmentSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Assignment
+        fields = [
+            "id",
+            "title",
+            "description",
+            "due_date",
+            "total_marks",
+            "status",
+            "allow_resubmission",
+            "order",
+        ]
+        read_only_fields = fields
+
+
+class CourseQuizSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Quiz
+        fields = [
+            "id",
+            "title",
+            "description",
+            "passing_score",
+            "time_limit_minutes",
+            "status",
+            "order",
+        ]
+        read_only_fields = fields
+
+
 class CourseModuleSerializer(serializers.ModelSerializer):
     lessons = CourseLessonSerializer(many=True, read_only=True)
+    assignments = CourseAssignmentSerializer(many=True, read_only=True)
+    quizzes = CourseQuizSerializer(many=True, read_only=True)
 
     class Meta:
         model = Module
-        fields = ["id", "title", "description", "order", "lessons"]
+        fields = ["id", "title", "description", "order", "lessons", "assignments", "quizzes"]
         read_only_fields = fields
 
 
@@ -146,6 +181,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
             "id",
             "title",
             "slug",
+            "code",
             "description",
             "thumbnail",
             "image",
@@ -189,6 +225,7 @@ class CourseWriteSerializer(serializers.ModelSerializer):
         fields = [
             "id",
             "title",
+            "code",
             "description",
             "thumbnail",
             "category",
@@ -224,6 +261,19 @@ class CourseWriteSerializer(serializers.ModelSerializer):
         if queryset.exists():
             raise serializers.ValidationError("A course with this title already exists.")
         return value
+
+    def validate_code(self, value):
+        code = str(value or "").strip().upper()
+        if not code:
+            raise serializers.ValidationError("Course code is required.")
+        if len(code) > 50:
+            raise serializers.ValidationError("Course code must be at most 50 characters.")
+        queryset = Course.objects.filter(code__iexact=code)
+        if self.instance:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError("A course with this code already exists.")
+        return code
 
     def create(self, validated_data):
         tags = validated_data.pop("tags", [])

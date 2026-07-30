@@ -7,6 +7,8 @@ import {
   FilePlus2,
   FileText,
   Image as ImageIcon,
+  Link2,
+  Upload,
   Video,
   X,
 } from "lucide-react";
@@ -42,13 +44,19 @@ const FILE_ICON = {
   IMAGE: ImageIcon,
 };
 
+const VIDEO_SOURCE_MODES = [
+  { value: "UPLOAD", label: "Upload Video", icon: Upload },
+  { value: "LINK", label: "Paste Link", icon: Link2 },
+];
+
 const INITIAL_FORM = {
   module: "",
   title: "",
   description: "",
   content_type: "VIDEO",
+  video_url: "",
   duration_minutes: "",
-  order: "0",
+  order: "1",
 };
 
 const FIELD_CLASS =
@@ -74,6 +82,35 @@ function formatFileSize(bytes) {
 function getFileExtension(name) {
   const parts = name.split(".");
   return parts.length > 1 ? parts.pop().toUpperCase() : "FILE";
+}
+
+function getVideoEmbedUrl(url) {
+  try {
+    const parsed = new URL(url);
+    const host = parsed.hostname.replace("www.", "");
+
+    if (host === "youtube.com" || host === "m.youtube.com") {
+      const videoId = parsed.searchParams.get("v");
+      if (videoId) return `https://www.youtube.com/embed/${videoId}`;
+      const shortsMatch = parsed.pathname.match(/\/shorts\/([\w-]+)/);
+      if (shortsMatch) return `https://www.youtube.com/embed/${shortsMatch[1]}`;
+      return null;
+    }
+
+    if (host === "youtu.be") {
+      const videoId = parsed.pathname.replace("/", "");
+      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
+    }
+
+    if (host === "vimeo.com") {
+      const videoId = parsed.pathname.replace("/", "");
+      return videoId ? `https://player.vimeo.com/video/${videoId}` : null;
+    }
+
+    return null;
+  } catch {
+    return null;
+  }
 }
 
 function FilePreviewCard({ file, icon: Icon }) {
@@ -106,6 +143,7 @@ export default function AddLessonModal({
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState(INITIAL_FORM);
+  const [videoSourceMode, setVideoSourceMode] = useState("UPLOAD");
   const [file, setFile] = useState(null);
   const [existingFileUrl, setExistingFileUrl] = useState(null);
   const [fieldErrors, setFieldErrors] = useState({});
@@ -137,26 +175,29 @@ export default function AddLessonModal({
         title: lesson.title || "",
         description: lesson.description || "",
         content_type: lesson.content_type || "VIDEO",
+        video_url: lesson.video_url || "",
         duration_minutes:
           lesson.duration_minutes != null
             ? String(lesson.duration_minutes)
             : "",
-        order: String(lesson.order ?? 0),
+        order: String(lesson.order ?? 1),
       });
-      setExistingFileUrl(lesson.file || lesson.video_url || null);
+      setVideoSourceMode(lesson.video_url ? "LINK" : "UPLOAD");
+      setExistingFileUrl(lesson.file || null);
     } else {
       setForm({
         ...INITIAL_FORM,
         module: defaultModuleId
           ? String(defaultModuleId)
           : String(modules[0]?.id || ""),
+        order: "1",
       });
+      setVideoSourceMode("UPLOAD");
       setExistingFileUrl(null);
     }
     setFile(null);
     setFieldErrors({});
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen, defaultModuleId, lesson]);
+  }, [isOpen, defaultModuleId, lesson, modules]);
 
   const handleClose = () => {
     if (isSubmitting) return;
@@ -173,8 +214,18 @@ export default function AddLessonModal({
     setForm((prev) => ({
       ...prev,
       content_type: value,
+      video_url: "",
       duration_minutes: "",
     }));
+    setVideoSourceMode("UPLOAD");
+    setFile(null);
+    setExistingFileUrl(null);
+    setFieldErrors({});
+  };
+
+  const handleVideoSourceModeChange = (mode) => {
+    setVideoSourceMode(mode);
+    setForm((prev) => ({ ...prev, video_url: "" }));
     setFile(null);
     setExistingFileUrl(null);
     setFieldErrors({});
@@ -196,12 +247,16 @@ export default function AddLessonModal({
       errors.title = "Title must be at most 255 characters.";
 
     const order = Number(form.order);
-    if (!Number.isFinite(order) || order < 0)
-      errors.order = "Order must be a positive number.";
+    if (!Number.isFinite(order) || order < 1 || !Number.isInteger(order)) {
+      errors.order = "Order must be 1, 2, 3... only.";
+    }
 
     if (form.content_type === "VIDEO") {
-      if (!file && !hasExistingFile)
+      if (videoSourceMode === "LINK") {
+        if (!form.video_url.trim()) errors.video_url = "Video URL is required.";
+      } else if (!file && !hasExistingFile) {
         errors.file = "Please select a video file to upload.";
+      }
     } else {
       if (!file && !hasExistingFile)
         errors.file = "File is required for this lesson type.";
@@ -233,10 +288,17 @@ export default function AddLessonModal({
     formData.append("description", form.description.trim());
     formData.append("content_type", form.content_type);
     formData.append("order", form.order);
-    if (file) {
-      formData.append("file", file);
-    }
-    if (form.content_type !== "VIDEO") {
+
+    if (form.content_type === "VIDEO") {
+      if (videoSourceMode === "LINK") {
+        formData.append("video_url", form.video_url.trim());
+      } else if (file) {
+        formData.append("file", file);
+      }
+    } else {
+      if (file) {
+        formData.append("file", file);
+      }
       formData.append("duration_minutes", form.duration_minutes);
     }
 
@@ -270,6 +332,8 @@ export default function AddLessonModal({
 
   const isVideo = form.content_type === "VIDEO";
   const requiresDuration = !isVideo;
+  const trimmedVideoUrl = form.video_url.trim();
+  const videoEmbedUrl = trimmedVideoUrl ? getVideoEmbedUrl(trimmedVideoUrl) : null;
 
   return (
     <Modal
@@ -351,6 +415,64 @@ export default function AddLessonModal({
         </div>
 
         {isVideo && (
+          <div>
+            <label className={LABEL_CLASS}>Video Source</label>
+            <div className="flex gap-2">
+              {VIDEO_SOURCE_MODES.map((mode) => (
+                <button
+                  key={mode.value}
+                  type="button"
+                  onClick={() => handleVideoSourceModeChange(mode.value)}
+                  disabled={isSubmitting}
+                  className={`flex-1 px-3 py-2.5 rounded-xl text-[11px] font-semibold font-mono tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
+                    videoSourceMode === mode.value
+                      ? "bg-stone-900 text-white border-stone-900"
+                      : "bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100"
+                  }`}
+                >
+                  <mode.icon className="w-3.5 h-3.5" />
+                  {mode.label}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {isVideo && videoSourceMode === "LINK" && (
+          <div>
+            <label className={LABEL_CLASS}>Video URL</label>
+            <input
+              type="url"
+              value={form.video_url}
+              onChange={updateField("video_url")}
+              disabled={isSubmitting}
+              placeholder="https://www.youtube.com/watch?v=..."
+              className={FIELD_CLASS}
+              autoComplete="off"
+            />
+            {fieldErrors.video_url && (
+              <p className={ERROR_CLASS}>{fieldErrors.video_url}</p>
+            )}
+
+            {trimmedVideoUrl && (
+              <div className="mt-3 rounded-xl overflow-hidden border border-stone-200 bg-stone-900 aspect-video">
+                {videoEmbedUrl ? (
+                  <iframe
+                    src={videoEmbedUrl}
+                    title="Video preview"
+                    className="w-full h-full"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                  />
+                ) : (
+                  <video src={trimmedVideoUrl} controls className="w-full h-full" />
+                )}
+              </div>
+            )}
+          </div>
+        )}
+
+        {isVideo && videoSourceMode === "UPLOAD" && (
           <div>
             <label className={LABEL_CLASS}>{FILE_LABEL.VIDEO}</label>
             <input
@@ -444,12 +566,19 @@ export default function AddLessonModal({
           <label className={LABEL_CLASS}>Order</label>
           <input
             type="number"
-            min="0"
+            min="1"
+            step="1"
             value={form.order}
             onChange={updateField("order")}
+            onKeyDown={(event) => {
+              if (event.key === "-" || event.key === "e" || event.key === "E" || event.key === "+") {
+                event.preventDefault();
+              }
+            }}
             disabled={isSubmitting}
             className={FIELD_CLASS}
           />
+          <p className="mt-1.5 text-[10px] font-mono text-stone-400">1 = first position</p>
           {fieldErrors.order && (
             <p className={ERROR_CLASS}>{fieldErrors.order}</p>
           )}

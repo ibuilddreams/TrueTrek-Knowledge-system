@@ -89,6 +89,7 @@ export default function LoginForm() {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            showPasswordToggle
           />
           <div className="flex justify-end">
             <Link
