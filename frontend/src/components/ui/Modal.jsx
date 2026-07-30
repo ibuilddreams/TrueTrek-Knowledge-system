@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect } from "react";
+import { X } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import IconBadge from "@/components/ui/IconBadge";
 
@@ -37,6 +38,8 @@ export default function Modal({
     return () => unlockBodyScroll();
   }, [isOpen]);
 
+  const canClose = typeof onClose === "function";
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -46,7 +49,7 @@ export default function Modal({
           exit={{ opacity: 0 }}
           transition={{ duration: 0.18 }}
           className="fixed inset-0 z-[100] bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto"
-          onClick={onClose}
+          onClick={canClose ? onClose : undefined}
         >
           <motion.div
             initial={{ opacity: 0, y: 16, scale: 0.97 }}
@@ -58,9 +61,21 @@ export default function Modal({
           >
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-600 to-amber-800" />
 
+            {canClose && (
+              <button
+                type="button"
+                onClick={onClose}
+                className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition"
+                title="Close"
+                aria-label="Close"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            )}
+
             <div className="p-5 sm:p-7">
               {(icon || title) && (
-                <div className="flex items-center gap-3 mb-5">
+                <div className={`flex items-center gap-3 mb-5 ${canClose ? "pr-8" : ""}`}>
                   {icon && (
                     <IconBadge
                       icon={icon}

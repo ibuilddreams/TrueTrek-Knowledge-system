@@ -65,8 +65,19 @@ export default function AvatarCropModal({ isOpen, imageSrc, onCancel, onSave }) 
           >
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-600 to-amber-800" />
 
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={isSaving}
+              className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition disabled:opacity-60"
+              title="Close"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
             <div className="p-5 sm:p-7">
-              <div className="flex items-center gap-3 mb-5">
+              <div className="flex items-center gap-3 mb-5 pr-8">
                 <IconBadge
                   icon={ImagePlus}
                   size="w-10 h-10"
