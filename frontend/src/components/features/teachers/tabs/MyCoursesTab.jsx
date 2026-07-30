@@ -1,89 +1,245 @@
 "use client";
 
-import { useEffect, useState } from 'react';
-import { Users, Eye, AlertCircle, RefreshCw, BookMarked, ChevronDown, Layers } from 'lucide-react';
-import { motion, AnimatePresence } from 'motion/react';
-import { useTeacherCourses } from '@/hooks/useTeacherCourses';
-import { useTeacherStudentDetail } from '@/hooks/useTeacherStudentDetail';
-import CloseButton from '@/components/ui/CloseButton';
-import EmptyState from '@/components/ui/EmptyState';
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
+import { AlertCircle, BookMarked, BookPlus, RefreshCw } from "lucide-react";
+import { getTeacherAssignedCourses } from "@/services/teacherCoursesService";
+import { getCategories } from "@/services/categoriesService";
+import { getTags } from "@/services/tagsService";
+import { getApiErrorMessage } from "@/lib/apiErrors";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import SearchBar from "@/components/ui/SearchBar";
+import SearchableSelect from "@/components/ui/SearchableSelect";
+import Pagination from "@/components/ui/Pagination";
+import EmptyState from "@/components/ui/EmptyState";
+import TeacherCourseCard from "@/components/features/teachers/TeacherCourseCard";
+import CourseStudentsScreen from "./CourseStudentsScreen";
 
-const COURSE_STATUS_STYLES = {
-  PUBLISHED: 'bg-emerald-50 text-emerald-700 border-emerald-200 ring-1 ring-emerald-100',
-  DRAFT: 'bg-amber-50 text-amber-700 border-amber-200 ring-1 ring-amber-100',
-  ARCHIVED: 'bg-stone-100 text-stone-500 border-stone-200 ring-1 ring-stone-100',
-};
+const PAGE_SIZE = 10;
 
-const COURSE_STATUS_DOT_STYLES = {
-  PUBLISHED: 'bg-emerald-500',
-  DRAFT: 'bg-amber-500',
-  ARCHIVED: 'bg-stone-400',
-};
-
-const ENROLLMENT_STATUS_STYLES = {
-  ACTIVE: 'bg-emerald-50 text-emerald-700 border-emerald-200',
-  COMPLETED: 'bg-sky-50 text-sky-700 border-sky-200',
-  SUSPENDED: 'bg-rose-50 text-rose-700 border-rose-200',
-  CANCELLED: 'bg-stone-100 text-stone-500 border-stone-200',
-};
+const STATUS_FILTER_OPTIONS = [
+  { value: "", label: "All Statuses" },
+  { value: "DRAFT", label: "Draft" },
+  { value: "PUBLISHED", label: "Published" },
+  { value: "ARCHIVED", label: "Archived" },
+];
 
 export default function MyCoursesTab() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const activeCourseId = searchParams.get("courseId");
+
+  const [searchInput, setSearchInput] = useState("");
+  const debouncedSearch = useDebouncedValue(searchInput, 300);
+  const [statusFilter, setStatusFilter] = useState("");
+  const [categoryFilter, setCategoryFilter] = useState("");
+  const [tagFilter, setTagFilter] = useState("");
+  const [page, setPage] = useState(1);
+
   const {
-    stats: assignedCoursesStats,
-    withStudents: assignedCoursesWithStudents,
-    status: teacherCoursesStatus,
-    error: teacherCoursesError,
-    loadCourses,
-  } = useTeacherCourses();
+    data: courses = [],
+    isLoading: isCoursesLoading,
+    isError: isCoursesError,
+    error: coursesError,
+    refetch: refetchCourses,
+  } = useQuery({
+    queryKey: [
+      "teacherAssignedCourses",
+      {
+        search: debouncedSearch,
+        status: statusFilter,
+        category: categoryFilter,
+        tags: tagFilter,
+      },
+    ],
+    queryFn: async () => {
+      const response = await getTeacherAssignedCourses({
+        search: debouncedSearch || undefined,
+        status: statusFilter || undefined,
+        category: categoryFilter || undefined,
+        tags: tagFilter || undefined,
+      });
+      return response?.data?.courses || [];
+    },
+  });
+
+  const { data: categories = [] } = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const response = await getCategories({ pageSize: 100 });
+      return response?.data?.results || [];
+    },
+  });
+
+  const { data: tags = [] } = useQuery({
+    queryKey: ["tags"],
+    queryFn: async () => {
+      const response = await getTags();
+      return response?.data || [];
+    },
+  });
 
   useEffect(() => {
-    loadCourses();
-  }, [loadCourses]);
+    setPage(1);
+  }, [debouncedSearch, statusFilter, categoryFilter, tagFilter]);
 
-  const {
-    data: studentDetailData,
-    status: studentDetailStatus,
-    error: studentDetailError,
-    loadStudentDetail,
-    clearStudentDetail,
-  } = useTeacherStudentDetail();
+  const handleViewStudents = useCallback(
+    (course) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("courseId", String(course.id));
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
 
-  const [viewingEnrolledStudentId, setViewingEnrolledStudentId] = useState(null);
-  const [expandedCourseId, setExpandedCourseId] = useState(null);
+  const handleBackToCourses = useCallback(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("courseId");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [pathname, router, searchParams]);
 
-  const handleViewEnrolledStudent = (studentId) => {
-    setViewingEnrolledStudentId(studentId);
-    loadStudentDetail(studentId);
-  };
+  const categoryFilterOptions = useMemo(
+    () => [
+      { value: "", label: "All Categories" },
+      ...categories.map((category) => ({
+        value: String(category.id),
+        label: category.name,
+      })),
+    ],
+    [categories],
+  );
 
-  const handleCloseEnrolledStudent = () => {
-    setViewingEnrolledStudentId(null);
-    clearStudentDetail();
-  };
+  const tagFilterOptions = useMemo(
+    () => [
+      { value: "", label: "All Tags" },
+      ...tags.map((tag) => ({ value: String(tag.id), label: tag.name })),
+    ],
+    [tags],
+  );
+
+  // The backend endpoint doesn't honor these query params yet, so filter client-side too;
+  // once it does, this becomes a harmless no-op pass over an already-filtered list.
+  const filteredCourses = useMemo(() => {
+    const query = debouncedSearch.trim().toLowerCase();
+    return courses.filter((course) => {
+      if (query && !course.title?.toLowerCase().includes(query)) return false;
+      if (statusFilter && course.status !== statusFilter) return false;
+      if (categoryFilter && String(course.category?.id) !== categoryFilter)
+        return false;
+      if (
+        tagFilter &&
+        !course.tags?.some((tag) => String(tag.id) === tagFilter)
+      )
+        return false;
+      return true;
+    });
+  }, [courses, debouncedSearch, statusFilter, categoryFilter, tagFilter]);
+
+  const totalPages = Math.max(1, Math.ceil(filteredCourses.length / PAGE_SIZE));
+  const paginatedCourses = filteredCourses.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
+
+  if (activeCourseId) {
+    if (isCoursesLoading) {
+      return (
+        <div className="space-y-5" aria-busy="true" aria-label="Loading course">
+          <div className="h-24 rounded-2xl bg-stone-100 animate-pulse" />
+          <div className="h-96 rounded-2xl bg-stone-100 animate-pulse" />
+        </div>
+      );
+    }
+
+    const activeCourse = courses.find(
+      (course) => String(course.id) === activeCourseId,
+    );
+
+    return (
+      <CourseStudentsScreen
+        courseId={activeCourseId}
+        course={activeCourse}
+        onBack={handleBackToCourses}
+      />
+    );
+  }
 
   return (
-    <div className="space-y-6">
-      {(teacherCoursesStatus === 'loading' || teacherCoursesStatus === 'idle') && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6" aria-busy="true" aria-label="Loading assigned courses">
-          {Array.from({ length: 4 }).map((_, i) => (
-            <div key={i} className="h-40 rounded-2xl bg-stone-100 animate-pulse" />
+    <div className="space-y-5">
+      <div className="flex flex-col lg:flex-row lg:items-center gap-3 justify-between">
+        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 flex-1 min-w-0">
+          <SearchBar
+            value={searchInput}
+            onChange={setSearchInput}
+            placeholder="Search courses by title..."
+          />
+          <div className="w-full sm:w-48 shrink-0">
+            <SearchableSelect
+              placeholder="All Statuses"
+              options={STATUS_FILTER_OPTIONS}
+              value={statusFilter}
+              onChange={setStatusFilter}
+            />
+          </div>
+          <div className="w-full sm:w-48 shrink-0">
+            <SearchableSelect
+              placeholder="All Categories"
+              options={categoryFilterOptions}
+              value={categoryFilter}
+              onChange={setCategoryFilter}
+            />
+          </div>
+          <div className="w-full sm:w-48 shrink-0">
+            <SearchableSelect
+              placeholder="All Tags"
+              options={tagFilterOptions}
+              value={tagFilter}
+              onChange={setTagFilter}
+            />
+          </div>
+        </div>
+
+        <button
+          type="button"
+          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:scale-[1.01] transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+          title="Add a new course"
+          aria-label="Add a new course"
+        >
+          <BookPlus className="w-4 h-4" />
+          ADD COURSE
+        </button>
+      </div>
+
+      {isCoursesLoading && (
+        <div
+          className="grid grid-cols-1 lg:grid-cols-2 gap-5"
+          aria-busy="true"
+          aria-label="Loading assigned courses"
+        >
+          {Array.from({ length: 4 }).map((_, index) => (
+            <div key={index} className="h-64 rounded-2xl bg-stone-100 animate-pulse" />
           ))}
         </div>
       )}
 
-      {teacherCoursesStatus === 'failed' && (
-        <div className="bg-white border border-stone-200 rounded-2xl shadow-xl p-8 text-center max-w-lg mx-auto">
+      {!isCoursesLoading && isCoursesError && (
+        <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-8 text-center max-w-lg mx-auto">
           <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-6 h-6" />
           </div>
           <h2 className="text-xl font-serif font-bold text-stone-900 mb-2">
             Failed to Load Your Courses
           </h2>
-          <p className="text-xs text-stone-500 font-light mb-6">{teacherCoursesError}</p>
+          <p className="text-xs text-stone-500 font-light mb-6">
+            {getApiErrorMessage(coursesError, "Unable to load your assigned courses.")}
+          </p>
           <button
             type="button"
-            onClick={() => loadCourses({ force: true })}
-            className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl shadow-md transition"
+            onClick={() => refetchCourses()}
+            className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl shadow-md transition cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -91,230 +247,34 @@ export default function MyCoursesTab() {
         </div>
       )}
 
-      {teacherCoursesStatus === 'succeeded' && !(assignedCoursesStats?.total_courses > 0) && (
+      {!isCoursesLoading && !isCoursesError && paginatedCourses.length === 0 && (
         <div className="bg-white border border-stone-200 rounded-2xl shadow-sm">
           <EmptyState
             icon={BookMarked}
-            label="No assigned courses yet"
-            description="Courses you've been assigned to teach will appear here along with their enrolled students."
+            label="No assigned courses found."
+            description="Courses you've been assigned to teach will appear here."
           />
         </div>
       )}
 
-      {teacherCoursesStatus === 'succeeded' && assignedCoursesStats?.total_courses > 0 && (
-        <div className="grid grid-cols-1 xl:grid-cols-2 gap-5">
-          {assignedCoursesStats.courses.map((course) => {
-            const courseWithStudents = assignedCoursesWithStudents?.courses?.find(
-              (entry) => entry.id === course.id
-            );
-            const roster = courseWithStudents?.students || [];
-            const isExpanded = expandedCourseId === course.id;
-            const statusStyle = COURSE_STATUS_STYLES[course.status] || COURSE_STATUS_STYLES.DRAFT;
-
-            const enrollmentStatusStyle = (status) =>
-              ENROLLMENT_STATUS_STYLES[status] || ENROLLMENT_STATUS_STYLES.CANCELLED;
-
-            return (
-              <div
-                key={course.id}
-                className="group relative self-start w-full bg-white border border-stone-200/90 rounded-2xl shadow-[0_1px_2px_rgba(28,25,23,0.04),0_8px_24px_-12px_rgba(28,25,23,0.08)] overflow-hidden transition-all duration-300 hover:shadow-[0_4px_10px_rgba(28,25,23,0.06),0_16px_32px_-14px_rgba(180,83,9,0.18)] hover:border-amber-200/80"
-              >
-                <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 to-amber-800 opacity-80" />
-
-                <div className="p-6 sm:p-7 pb-4 sm:pb-5 flex items-start gap-4">
-                  <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-50 to-amber-100/60 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0 shadow-xs transition-transform duration-300 group-hover:scale-105">
-                    <Layers className="w-5 h-5" />
-                  </div>
-
-                  <div className="min-w-0 flex-1">
-                    <div className="flex items-start justify-between gap-3">
-                      <div className="min-w-0">
-                        <h3 className="font-serif font-bold text-base text-stone-900 leading-snug truncate">{course.title}</h3>
-                        <p className="text-xs text-stone-400 font-light mt-1 truncate">
-                          {course.category?.name || 'Uncategorized'}
-                        </p>
-                      </div>
-                      <span className={`shrink-0 inline-flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-full border ${statusStyle}`}>
-                        <span className={`w-1.5 h-1.5 rounded-full ${COURSE_STATUS_DOT_STYLES[course.status] || COURSE_STATUS_DOT_STYLES.ARCHIVED}`} />
-                        {course.status}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="px-6 sm:px-7 pb-6 sm:pb-7">
-                  <div className="flex items-center justify-between gap-3 rounded-xl bg-stone-50/80 border border-stone-100 px-4 py-3">
-                    <div className="flex items-center gap-2 text-stone-600">
-                      <div className="w-7 h-7 rounded-lg bg-white border border-stone-200 flex items-center justify-center shrink-0">
-                        <Users className="w-3.5 h-3.5 text-stone-400" />
-                      </div>
-                      <span className="text-sm font-serif font-bold text-stone-900">{course.total_students}</span>
-                      <span className="text-[10px] font-mono uppercase tracking-widest text-stone-400">
-                        {course.total_students === 1 ? 'Student' : 'Students'}
-                      </span>
-                    </div>
-
-                    <button
-                      type="button"
-                      onClick={() => setExpandedCourseId(isExpanded ? null : course.id)}
-                      className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-amber-50 border border-stone-200 hover:border-amber-200 text-stone-700 hover:text-amber-800 text-[11px] font-mono font-semibold uppercase tracking-wider rounded-lg shadow-xs transition-colors"
-                      title={isExpanded ? 'Hide enrolled students' : 'View enrolled students'}
-                      aria-label={isExpanded ? 'Hide enrolled students' : 'View enrolled students'}
-                    >
-                      {isExpanded ? 'Hide' : 'View'} Students
-                      <ChevronDown className={`w-3.5 h-3.5 transition-transform duration-200 ${isExpanded ? 'rotate-180' : ''}`} />
-                    </button>
-                  </div>
-                </div>
-
-                {isExpanded && (
-                  <div className="border-t border-stone-100 bg-stone-50/50 px-5 sm:px-7 py-4">
-                    {roster.length === 0 ? (
-                      <EmptyState
-                        icon={Users}
-                        label="No students enrolled yet"
-                        description="Once students enroll in this course, they'll show up here."
-                        compact
-                      />
-                    ) : (
-                      <ul className="divide-y divide-stone-100/80">
-                        {roster.map((enrollment) => (
-                          <li
-                            key={enrollment.id}
-                            className="flex items-center justify-between gap-3 py-2.5 px-2.5 -mx-2.5 rounded-xl transition-colors hover:bg-white hover:shadow-xs"
-                          >
-                            <div className="flex items-center gap-3 min-w-0">
-                              <div className="w-9 h-9 rounded-full bg-gradient-to-br from-white to-stone-50 border border-stone-200 flex items-center justify-center font-bold text-stone-600 text-[10px] shadow-xs shrink-0">
-                                {enrollment.student.name
-                                  ?.split(' ')
-                                  .map((part) => part[0])
-                                  .join('')
-                                  .slice(0, 2)
-                                  .toUpperCase() || 'ST'}
-                              </div>
-                              <div className="min-w-0">
-                                <p className="text-xs font-semibold text-stone-800 truncate">
-                                  {enrollment.student.name}
-                                </p>
-                                <p className="text-[10px] font-mono text-stone-400 mt-0.5 truncate">
-                                  {enrollment.student.email}
-                                </p>
-                              </div>
-                            </div>
-                            <div className="flex items-center gap-2.5 shrink-0">
-                              <span className={`text-[9px] font-mono font-semibold uppercase tracking-wide px-2.5 py-1 rounded-full border ${enrollmentStatusStyle(enrollment.status)}`}>
-                                {enrollment.status}
-                              </span>
-                              <button
-                                type="button"
-                                onClick={() => handleViewEnrolledStudent(enrollment.student.id)}
-                                className="p-1.5 text-stone-500 hover:text-amber-700 hover:bg-amber-100/60 rounded-lg transition-colors"
-                                title="View student's enrollment details"
-                                aria-label="View student's enrollment details"
-                              >
-                                <Eye className="w-4 h-4" />
-                              </button>
-                            </div>
-                          </li>
-                        ))}
-                      </ul>
-                    )}
-                  </div>
-                )}
-              </div>
-            );
-          })}
+      {!isCoursesLoading && !isCoursesError && paginatedCourses.length > 0 && (
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+          {paginatedCourses.map((course) => (
+            <TeacherCourseCard
+              key={course.id}
+              course={course}
+              onViewStudents={() => handleViewStudents(course)}
+            />
+          ))}
         </div>
       )}
 
-      <AnimatePresence>
-        {viewingEnrolledStudentId && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-stone-950/40 backdrop-blur-sm z-50 flex justify-end"
-          >
-            <motion.div
-              initial={{ x: '100%' }}
-              animate={{ x: 0 }}
-              exit={{ x: '100%' }}
-              transition={{ type: 'spring', damping: 25, stiffness: 180 }}
-              className="w-full max-w-lg bg-white h-screen shadow-2xl p-6 sm:p-8 overflow-y-auto"
-            >
-              <div className="flex items-center justify-between pb-4 border-b border-stone-200 mb-6">
-                <h3 className="font-serif font-black text-xl text-stone-900">Enrolled Student</h3>
-                <CloseButton
-                  onClick={handleCloseEnrolledStudent}
-                  className="p-1.5 border border-stone-200 rounded-full text-stone-500 hover:text-stone-900 hover:bg-stone-50 transition"
-                  iconClassName="w-4.5 h-4.5"
-                />
-              </div>
-
-              {(studentDetailStatus === 'loading' || studentDetailStatus === 'idle') && (
-                <div className="space-y-3">
-                  <div className="h-4 bg-stone-100 rounded w-3/4 animate-pulse" />
-                  <div className="h-4 bg-stone-100 rounded w-1/2 animate-pulse" />
-                  <div className="h-24 bg-stone-100 rounded animate-pulse" />
-                </div>
-              )}
-
-              {studentDetailStatus === 'failed' && (
-                <div className="text-center py-8">
-                  <p className="text-xs text-rose-600 font-medium mb-4">{studentDetailError}</p>
-                  <button
-                    type="button"
-                    onClick={() => loadStudentDetail(viewingEnrolledStudentId)}
-                    className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition"
-                  >
-                    <RefreshCw className="w-3.5 h-3.5" />
-                    Retry
-                  </button>
-                </div>
-              )}
-
-              {studentDetailStatus === 'succeeded' && studentDetailData && (
-                <div className="space-y-6">
-                  <div>
-                    <p className="font-serif font-bold text-lg text-stone-900">
-                      {studentDetailData.student.full_name}
-                    </p>
-                    <p className="text-xs font-mono text-stone-400 mt-0.5">{studentDetailData.student.email}</p>
-                  </div>
-
-                  <div>
-                    <h4 className="text-xs font-mono uppercase tracking-wider text-stone-400 font-bold mb-3">
-                      Enrolled Courses ({studentDetailData.total_courses})
-                    </h4>
-                    <ul className="space-y-3">
-                      {studentDetailData.courses.map((entry, index) => (
-                        <li key={entry.course.id || index} className="p-4 rounded-xl border border-stone-100 bg-stone-50/50">
-                          <div className="flex items-center justify-between gap-3 mb-2">
-                            <span className="text-xs font-semibold text-stone-800 truncate">{entry.course.title}</span>
-                            <span className="text-[10px] font-mono font-bold text-amber-800 shrink-0">
-                              {Math.round(Number(entry.completion_percentage))}%
-                            </span>
-                          </div>
-                          <div className="h-1.5 rounded-full bg-stone-200 overflow-hidden mb-2">
-                            <div
-                              className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-800"
-                              style={{ width: `${Math.min(Math.max(Number(entry.completion_percentage), 0), 100)}%` }}
-                            />
-                          </div>
-                          <div className="flex items-center justify-between text-[10px] font-mono text-stone-400">
-                            <span>{entry.status}</span>
-                            <span>{entry.is_completed ? 'Completed' : 'In Progress'}</span>
-                          </div>
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                </div>
-              )}
-            </motion.div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+      <Pagination
+        page={page}
+        totalPages={totalPages}
+        onPageChange={setPage}
+        totalLabel={`${filteredCourses.length} course${filteredCourses.length === 1 ? "" : "s"}`}
+      />
     </div>
   );
 }
