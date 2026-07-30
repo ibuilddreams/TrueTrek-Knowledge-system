@@ -6,7 +6,7 @@ from common.pagination import Pagination
 from common.response import error_response, success_response
 from enrollments.models import Enrollment
 from enrollments.serializers import CourseEnrolledStudentSerializer
-from users.permissions import IsAdmin
+from users.permissions import IsAdmin, IsTeacher
 
 from .models import Category, Course, Tag
 from .serializers import (
@@ -181,7 +181,7 @@ class CourseListCreateView(generics.ListCreateAPIView):
 
     def get_permissions(self):
         if self.request.method == "POST":
-            return [IsAdmin()]
+            return [(IsAdmin | IsTeacher)()]
         return super().get_permissions()
 
     def get_serializer_class(self):
