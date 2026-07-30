@@ -51,6 +51,8 @@ class ModuleSerializer(serializers.ModelSerializer):
 
 
 class ModuleWriteSerializer(serializers.ModelSerializer):
+    order = serializers.IntegerField(min_value=1)
+
     class Meta:
         model = Module
         fields = ["id", "course", "title", "description", "order"]

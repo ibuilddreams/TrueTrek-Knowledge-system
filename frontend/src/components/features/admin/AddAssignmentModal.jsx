@@ -18,7 +18,7 @@ const INITIAL_FORM = {
   status: "DRAFT",
   grading_mode: "MANUAL",
   allow_resubmission: false,
-  order: "0",
+  order: "1",
 };
 
 const STATUS_OPTIONS = [
@@ -119,12 +119,13 @@ export default function AddAssignmentModal({
         status: assignment.status || "DRAFT",
         grading_mode: assignment.grading_mode || "MANUAL",
         allow_resubmission: Boolean(assignment.allow_resubmission),
-        order: String(assignment.order ?? 0),
+        order: String(assignment.order ?? 1),
       });
     } else {
       setForm({
         ...INITIAL_FORM,
         module: defaultModuleId ? String(defaultModuleId) : String(modules[0]?.id || ""),
+        order: "1",
       });
     }
     setFieldErrors({});
@@ -156,7 +157,9 @@ export default function AddAssignmentModal({
     }
 
     const order = Number(form.order);
-    if (!Number.isFinite(order) || order < 0) errors.order = "Order must be a positive number.";
+    if (!Number.isFinite(order) || order < 1 || !Number.isInteger(order)) {
+      errors.order = "Order must be 1, 2, 3... only.";
+    }
 
     return errors;
   };
@@ -302,9 +305,15 @@ export default function AddAssignmentModal({
             <label className={LABEL_CLASS}>Order</label>
             <input
               type="number"
-              min="0"
+              min="1"
+              step="1"
               value={form.order}
               onChange={updateField("order")}
+              onKeyDown={(event) => {
+                if (event.key === "-" || event.key === "e" || event.key === "E" || event.key === "+") {
+                  event.preventDefault();
+                }
+              }}
               disabled={isSubmitting}
               className={FIELD_CLASS}
             />

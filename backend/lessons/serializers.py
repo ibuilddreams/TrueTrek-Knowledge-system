@@ -56,6 +56,8 @@ class LessonSerializer(serializers.ModelSerializer):
 
 
 class LessonWriteSerializer(serializers.ModelSerializer):
+    order = serializers.IntegerField(min_value=1)
+
     class Meta:
         model = Lesson
         fields = [

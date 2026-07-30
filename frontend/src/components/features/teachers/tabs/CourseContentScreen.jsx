@@ -317,7 +317,7 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         onClose={closeModuleForm}
         courseId={numericCourseId}
         editingModule={editingModule}
-        nextOrder={modules.length}
+        nextOrder={modules.length + 1}
       />
 
       <ConfirmDialog

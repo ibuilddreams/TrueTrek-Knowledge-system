@@ -8,7 +8,7 @@ import { createModule, updateModule } from "@/services/modulesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
-const INITIAL_FORM = { title: "", description: "", order: "0" };
+const INITIAL_FORM = { title: "", description: "", order: "1" };
 
 const FIELD_CLASS =
   "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60";
@@ -35,7 +35,7 @@ export default function TeacherModuleFormModal({
   onClose,
   courseId,
   editingModule,
-  nextOrder = 0,
+  nextOrder = 1,
   onSaved,
 }) {
   const isEditMode = Boolean(editingModule);
@@ -62,10 +62,10 @@ export default function TeacherModuleFormModal({
       setForm({
         title: editingModule.title || "",
         description: editingModule.description || "",
-        order: String(editingModule.order ?? 0),
+        order: String(editingModule.order ?? 1),
       });
     } else {
-      setForm({ ...INITIAL_FORM, order: String(nextOrder) });
+      setForm({ ...INITIAL_FORM, order: String(Math.max(1, nextOrder)) });
     }
     setFieldErrors({});
   }, [isOpen, editingModule, nextOrder]);
@@ -89,7 +89,9 @@ export default function TeacherModuleFormModal({
     const errors = {};
     if (!title) errors.title = "Title is required.";
     if (title.length > 255) errors.title = "Title must be at most 255 characters.";
-    if (!Number.isFinite(order) || order < 0) errors.order = "Order must be a positive number.";
+    if (!Number.isFinite(order) || order < 1 || !Number.isInteger(order)) {
+      errors.order = "Order must be 1, 2, 3... only.";
+    }
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -158,9 +160,15 @@ export default function TeacherModuleFormModal({
           <label className={LABEL_CLASS}>Order</label>
           <input
             type="number"
-            min="0"
+            min="1"
+            step="1"
             value={form.order}
             onChange={updateField("order")}
+            onKeyDown={(event) => {
+              if (event.key === "-" || event.key === "e" || event.key === "E" || event.key === "+") {
+                event.preventDefault();
+              }
+            }}
             disabled={isSubmitting}
             className={FIELD_CLASS}
           />

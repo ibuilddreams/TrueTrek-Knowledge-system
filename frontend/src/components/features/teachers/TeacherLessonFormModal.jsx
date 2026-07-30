@@ -56,7 +56,7 @@ const INITIAL_FORM = {
   content_type: "VIDEO",
   video_url: "",
   duration_minutes: "",
-  order: "0",
+  order: "1",
 };
 
 const FIELD_CLASS =
@@ -186,7 +186,7 @@ export default function TeacherLessonFormModal({
         content_type: lesson.content_type || "VIDEO",
         video_url: lesson.video_url || "",
         duration_minutes: lesson.duration_minutes != null ? String(lesson.duration_minutes) : "",
-        order: String(lesson.order ?? 0),
+        order: String(lesson.order ?? 1),
       });
       setVideoSourceMode(lesson.video_url ? "LINK" : "UPLOAD");
       setExistingFileUrl(lesson.file || null);
@@ -194,6 +194,7 @@ export default function TeacherLessonFormModal({
       setForm({
         ...INITIAL_FORM,
         module: defaultModuleId ? String(defaultModuleId) : String(modules[0]?.id || ""),
+        order: "1",
       });
       setVideoSourceMode("UPLOAD");
       setExistingFileUrl(null);
@@ -244,7 +245,9 @@ export default function TeacherLessonFormModal({
     if (title.length > 255) errors.title = "Title must be at most 255 characters.";
 
     const order = Number(form.order);
-    if (!Number.isFinite(order) || order < 0) errors.order = "Order must be a positive number.";
+    if (!Number.isFinite(order) || order < 1 || !Number.isInteger(order)) {
+      errors.order = "Order must be 1, 2, 3... only.";
+    }
 
     if (form.content_type === "VIDEO") {
       if (videoSourceMode === "LINK") {
@@ -509,9 +512,15 @@ export default function TeacherLessonFormModal({
           <label className={LABEL_CLASS}>Order</label>
           <input
             type="number"
-            min="0"
+            min="1"
+            step="1"
             value={form.order}
             onChange={updateField("order")}
+            onKeyDown={(event) => {
+              if (event.key === "-" || event.key === "e" || event.key === "E" || event.key === "+") {
+                event.preventDefault();
+              }
+            }}
             disabled={isSubmitting}
             className={FIELD_CLASS}
           />

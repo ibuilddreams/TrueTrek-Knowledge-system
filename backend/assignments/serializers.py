@@ -74,6 +74,7 @@ class AssignmentWriteSerializer(serializers.ModelSerializer):
         queryset=Module.objects.all(), required=False, allow_null=True
     )
     course = serializers.PrimaryKeyRelatedField(queryset=Course.objects.all(), required=False)
+    order = serializers.IntegerField(min_value=1, required=False)
 
     class Meta:
         model = Assignment
