@@ -23,7 +23,6 @@ import {
   ChevronUp,
   ClipboardCheck,
   Edit3,
-  Eye,
   FileText,
   GripVertical,
   HelpCircle,
@@ -103,14 +102,6 @@ function SortableTeacherLessonItem({ lesson, moduleId, onEditLesson, onDeleteLes
         </p>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">
-        <button
-          type="button"
-          title="View lesson"
-          aria-label="View lesson"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
-        >
-          <Eye className="w-3.5 h-3.5" />
-        </button>
         <button
           type="button"
           onClick={() => onEditLesson(lesson)}
@@ -313,8 +304,6 @@ export default function TeacherModuleRow({
 
       {isExpanded && (
         <div className="border-t border-stone-200 bg-stone-50/60 px-4 py-4 space-y-4">
-          {module.description && <p className="text-xs text-stone-500 font-light">{module.description}</p>}
-
           <div className="inline-flex items-center gap-1 rounded-xl border border-stone-200 bg-white p-1">
             {TABS.map((tab) => (
               <button

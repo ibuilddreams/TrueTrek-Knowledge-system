@@ -1,9 +1,11 @@
+from django.db.models import Sum
 from rest_framework import serializers
 
+from common.ordering import get_next_order
 from courses.models import Course
 from modules.models import Module
 
-from .models import Choice, Question, Quiz, QuizResult
+from .models import Choice, Question, Quiz, QuizAnswer, QuizResult
 
 
 class QuizCourseSerializer(serializers.ModelSerializer):
@@ -23,6 +25,7 @@ class QuizModuleSerializer(serializers.ModelSerializer):
 class QuizSerializer(serializers.ModelSerializer):
     course = QuizCourseSerializer(read_only=True)
     module = QuizModuleSerializer(read_only=True)
+    total_marks = serializers.SerializerMethodField()
 
     class Meta:
         model = Quiz
@@ -34,29 +37,77 @@ class QuizSerializer(serializers.ModelSerializer):
             "description",
             "passing_score",
             "time_limit_minutes",
+            "status",
+            "attempts_allowed",
+            "available_from",
+            "available_until",
+            "order",
+            "total_marks",
             "created_at",
             "updated_at",
         ]
         read_only_fields = fields
 
+    def get_total_marks(self, obj):
+        return obj.questions.aggregate(total=Sum("marks"))["total"] or 0
+
 
 class QuizWriteSerializer(serializers.ModelSerializer):
-    module = serializers.PrimaryKeyRelatedField(queryset=Module.objects.all(), required=True)
+    module = serializers.PrimaryKeyRelatedField(
+        queryset=Module.objects.all(), required=False, allow_null=True
+    )
+    course = serializers.PrimaryKeyRelatedField(queryset=Course.objects.all(), required=False)
 
     class Meta:
         model = Quiz
-        fields = ["id", "module", "title", "description", "passing_score", "time_limit_minutes"]
-        read_only_fields = ["id"]
+        fields = [
+            "id",
+            "course",
+            "module",
+            "title",
+            "description",
+            "passing_score",
+            "time_limit_minutes",
+            "status",
+            "attempts_allowed",
+            "available_from",
+            "available_until",
+            "order",
+        ]
+        read_only_fields = ["id", "status"]
+        # The model's conditional UniqueConstraint on (module, order) would otherwise make
+        # DRF auto-generate a UniqueTogetherValidator that force-requires `module` on every
+        # create, even though it's intentionally optional. The DB constraint plus
+        # get_next_order()/reorder_quizzes() already guard against collisions.
+        validators = []
+
+    def validate(self, attrs):
+        module = attrs.get("module", getattr(self.instance, "module", None))
+        course = attrs.get("course", getattr(self.instance, "course", None))
+
+        if module is not None:
+            attrs["course"] = module.course
+        elif not course:
+            raise serializers.ValidationError(
+                {"course": "Either a course or a module must be provided."}
+            )
+
+        available_from = attrs.get("available_from", getattr(self.instance, "available_from", None))
+        available_until = attrs.get("available_until", getattr(self.instance, "available_until", None))
+        if available_from and available_until and available_until <= available_from:
+            raise serializers.ValidationError(
+                {"available_until": "Available until must be after available from."}
+            )
+
+        return attrs
 
     def create(self, validated_data):
-        validated_data["course"] = validated_data["module"].course
+        module = validated_data.get("module")
+        if module is not None and not validated_data.get("order"):
+            validated_data["order"] = get_next_order(Quiz.objects.filter(module=module))
         return Quiz.objects.create(**validated_data)
 
     def update(self, instance, validated_data):
-        module = validated_data.get("module")
-        if module is not None:
-            validated_data["course"] = module.course
-
         for attr, value in validated_data.items():
             setattr(instance, attr, value)
         instance.save()
@@ -88,7 +139,17 @@ class QuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ["id", "quiz", "text", "question_type", "order", "choices", "created_at", "updated_at"]
+        fields = [
+            "id",
+            "quiz",
+            "text",
+            "question_type",
+            "marks",
+            "order",
+            "choices",
+            "created_at",
+            "updated_at",
+        ]
         read_only_fields = fields
 
 
@@ -97,7 +158,7 @@ class QuestionWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ["id", "text", "question_type", "order", "choices"]
+        fields = ["id", "text", "question_type", "marks", "order", "choices"]
         read_only_fields = ["id"]
 
     def create(self, validated_data):
@@ -134,7 +195,7 @@ class StudentQuestionSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ["id", "text", "question_type", "order", "choices"]
+        fields = ["id", "text", "question_type", "marks", "order", "choices"]
         read_only_fields = fields
 
 
@@ -143,7 +204,17 @@ class QuizAvailableSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Quiz
-        fields = ["id", "title", "description", "passing_score", "time_limit_minutes", "question_count"]
+        fields = [
+            "id",
+            "title",
+            "description",
+            "passing_score",
+            "time_limit_minutes",
+            "attempts_allowed",
+            "available_from",
+            "available_until",
+            "question_count",
+        ]
         read_only_fields = fields
 
 
@@ -160,11 +231,38 @@ class QuizSubmitSerializer(serializers.Serializer):
 class QuizResultSerializer(serializers.ModelSerializer):
     quiz = serializers.SerializerMethodField()
     attempt_number = serializers.IntegerField(source="attempt.attempt_number", read_only=True)
+    attempt_status = serializers.CharField(source="attempt.status", read_only=True)
 
     class Meta:
         model = QuizResult
-        fields = ["id", "quiz", "attempt_number", "score", "percentage", "is_passed"]
+        fields = ["id", "quiz", "attempt_number", "attempt_status", "score", "percentage", "is_passed"]
         read_only_fields = fields
 
     def get_quiz(self, instance):
         return {"id": instance.attempt.quiz_id, "title": instance.attempt.quiz.title}
+
+
+class QuizOrderEntrySerializer(serializers.Serializer):
+    quiz_id = serializers.IntegerField()
+    order = serializers.IntegerField(min_value=1)
+
+
+class QuizPendingAnswerSerializer(serializers.ModelSerializer):
+    student = serializers.SerializerMethodField()
+    question = serializers.SerializerMethodField()
+
+    class Meta:
+        model = QuizAnswer
+        fields = ["id", "attempt", "question", "student", "text_answer", "grading_status"]
+        read_only_fields = fields
+
+    def get_student(self, obj):
+        return {"id": obj.attempt.student_id, "name": obj.attempt.student.name}
+
+    def get_question(self, obj):
+        return {"id": obj.question_id, "text": obj.question.text, "marks": obj.question.marks}
+
+
+class QuizAnswerGradeSerializer(serializers.Serializer):
+    marks_awarded = serializers.DecimalField(max_digits=6, decimal_places=2, min_value=0)
+    feedback = serializers.CharField(required=False, allow_blank=True, default="")

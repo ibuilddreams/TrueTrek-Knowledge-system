@@ -17,6 +17,8 @@ class ModuleSerializer(serializers.ModelSerializer):
     course = ModuleCourseSerializer(read_only=True)
     lessons_count = serializers.SerializerMethodField()
     total_duration_minutes = serializers.SerializerMethodField()
+    assignments_count = serializers.SerializerMethodField()
+    quizzes_count = serializers.SerializerMethodField()
 
     class Meta:
         model = Module
@@ -28,6 +30,8 @@ class ModuleSerializer(serializers.ModelSerializer):
             "order",
             "lessons_count",
             "total_duration_minutes",
+            "assignments_count",
+            "quizzes_count",
             "created_at",
             "updated_at",
         ]
@@ -38,6 +42,12 @@ class ModuleSerializer(serializers.ModelSerializer):
 
     def get_total_duration_minutes(self, obj):
         return obj.lessons.aggregate(total=Sum("duration_minutes"))["total"] or 0
+
+    def get_assignments_count(self, obj):
+        return obj.assignments.count()
+
+    def get_quizzes_count(self, obj):
+        return obj.quizzes.count()
 
 
 class ModuleWriteSerializer(serializers.ModelSerializer):
