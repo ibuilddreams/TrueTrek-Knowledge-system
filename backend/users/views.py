@@ -21,6 +21,9 @@ from .serializers import (
     TeacherSerializer,
     TeacherUpdateSerializer,
 )
+from courses.models import Course
+from courses.services import get_course_students_detail, is_course_instructor
+
 from .services import (
     get_teacher_assigned_courses,
     get_teacher_assigned_courses_with_students,
@@ -281,6 +284,27 @@ class TeacherAssignedCoursesStudentsView(generics.GenericAPIView):
         return success_response(
             data, message="Assigned courses with enrolled students fetched successfully"
         )
+
+
+class TeacherCourseStudentsDetailView(generics.GenericAPIView):
+    permission_classes = [IsTeacher]
+
+    def get(self, request, course_id):
+        try:
+            course = Course.objects.get(pk=course_id)
+        except Course.DoesNotExist:
+            return error_response(message="Course with the given id does not exist.", status_code=404)
+
+        if not is_course_instructor(request.user, course):
+            return error_response(message="You are not assigned to this course.", status_code=403)
+
+        students_data = get_course_students_detail(course)
+        data = {
+            "course_id": course.id,
+            "total_students": len(students_data),
+            "students": students_data,
+        }
+        return success_response(data, message="Students' details fetched successfully")
 
 
 class TeacherEnrolledStudentDetailView(generics.GenericAPIView):
