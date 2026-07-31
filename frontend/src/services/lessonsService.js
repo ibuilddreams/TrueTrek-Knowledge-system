@@ -23,3 +23,7 @@ export async function deleteLesson(id) {
 export async function reorderLessons(moduleId, entries) {
   return backendClient.patch(`/lessons/order/${moduleId}/`, entries);
 }
+
+export async function completeLesson(lessonId) {
+  return backendClient.post(`/lessons/${lessonId}/complete/`);
+}

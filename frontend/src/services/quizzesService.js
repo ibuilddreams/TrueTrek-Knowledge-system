@@ -95,3 +95,15 @@ export async function getQuizAttemptDetail(attemptId) {
 export async function gradeQuizAnswer(answerId, payload) {
   return backendClient.post(`/quizzes/answers/${answerId}/grade/`, payload);
 }
+
+export async function startQuizAttempt(quizId) {
+  return backendClient.post(`/quizzes/${quizId}/attempts/`);
+}
+
+export async function submitQuizAttempt(attemptId, payload) {
+  return backendClient.post(`/quizzes/attempts/${attemptId}/submit/`, payload);
+}
+
+export async function getQuizAttemptResult(attemptId) {
+  return backendClient.get(`/quizzes/attempts/${attemptId}/result/`);
+}
