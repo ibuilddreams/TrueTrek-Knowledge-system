@@ -20,6 +20,7 @@ import {
 import PortalHeader from "./PortalHeader";
 import PortalToast from "./PortalToast";
 import DashboardTab from "./tabs/DashboardTab";
+import CoursesTab from "./tabs/CoursesTab";
 import DrillTab from "./tabs/DrillTab";
 import WarRoomTab from "./tabs/WarRoomTab";
 import AchievementsTab from "./tabs/AchievementsTab";
@@ -196,6 +197,7 @@ function StudentPortalContent() {
             aggregateScore={aggregateScore}
           />
         )}
+        {activeTab === "courses" && <CoursesTab />}
         {activeTab === "drill" && (
           <DrillTab
             drillCompletedList={drillCompletedList}

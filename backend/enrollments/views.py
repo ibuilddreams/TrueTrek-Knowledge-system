@@ -11,6 +11,8 @@ from courses.models import Course
 from courses.serializers import CourseListSerializer
 from users.permissions import IsAdmin, IsStudent, IsTeacher
 
+from progress.models import CourseProgress
+
 from .models import Enrollment, EnrollmentHistory
 from .serializers import (
     AdminEnrollmentWriteSerializer,
@@ -48,6 +50,22 @@ class EnrollmentListCreateView(generics.ListCreateAPIView):
         # if self.request.method == "POST":
         #     return EnrollmentWriteSerializer
         return EnrollmentListSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        course_ids = list(
+            Enrollment.objects.filter(student=self.request.user).values_list(
+                "course_id", flat=True
+            )
+        )
+        progress_map = {
+            progress.course_id: progress
+            for progress in CourseProgress.objects.filter(
+                student=self.request.user, course_id__in=course_ids
+            )
+        }
+        context["progress_map"] = progress_map
+        return context
 
     def list(self, request, *args, **kwargs):
         enrollments = self.filter_queryset(self.get_queryset())

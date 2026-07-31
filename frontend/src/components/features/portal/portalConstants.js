@@ -1,4 +1,4 @@
-import { BookOpen, Brain, Scale, Award } from "lucide-react";
+import { BookOpen, BookMarked, Brain, Scale, Award } from "lucide-react";
 
 export const PORTAL_TABS = [
   {
@@ -6,6 +6,12 @@ export const PORTAL_TABS = [
     label: "Dashboard",
     icon: BookOpen,
     title: "Incubator dashboard and NIL projections",
+  },
+  {
+    id: "courses",
+    label: "My Courses",
+    icon: BookMarked,
+    title: "Enrolled courses and learning progress",
   },
   {
     id: "drill",
