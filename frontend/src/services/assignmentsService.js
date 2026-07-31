@@ -51,3 +51,20 @@ export async function deleteAssignmentAttachment(id) {
 export async function reorderAssignmentAttachments(assignmentId, entries) {
   return backendClient.patch(`/assignments/${assignmentId}/attachments/order/`, entries);
 }
+
+export async function getAssignmentCourseProgress(
+  courseId,
+  { assignment, student, status, page, pageSize = 10 } = {},
+) {
+  const params = new URLSearchParams();
+  params.set("page_size", pageSize);
+  if (page) params.set("page", page);
+  if (assignment) params.set("assignment", assignment);
+  if (student) params.set("student", student);
+  if (status) params.set("status", status);
+  return backendClient.get(`/assignments/course/${courseId}/progress/?${params.toString()}`);
+}
+
+export async function gradeAssignmentSubmission(submissionId, payload) {
+  return backendClient.post(`/assignments/submissions/${submissionId}/grade/`, payload);
+}

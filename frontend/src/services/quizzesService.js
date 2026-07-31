@@ -70,3 +70,28 @@ export async function updateChoice(id, payload) {
 export async function deleteChoice(id) {
   return backendClient.delete(`/quizzes/choices/${id}/`);
 }
+
+export async function getQuizCourseProgress(
+  courseId,
+  { quiz, student, status, page, pageSize = 10 } = {},
+) {
+  const params = new URLSearchParams();
+  params.set("page_size", pageSize);
+  if (page) params.set("page", page);
+  if (quiz) params.set("quiz", quiz);
+  if (student) params.set("student", student);
+  if (status) params.set("status", status);
+  return backendClient.get(`/quizzes/course/${courseId}/progress/?${params.toString()}`);
+}
+
+export async function getQuizStudentAttempts(quizId, studentId) {
+  return backendClient.get(`/quizzes/${quizId}/students/${studentId}/attempts/`);
+}
+
+export async function getQuizAttemptDetail(attemptId) {
+  return backendClient.get(`/quizzes/attempts/${attemptId}/detail/`);
+}
+
+export async function gradeQuizAnswer(answerId, payload) {
+  return backendClient.post(`/quizzes/answers/${answerId}/grade/`, payload);
+}
