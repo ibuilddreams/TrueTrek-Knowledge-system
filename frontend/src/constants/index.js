@@ -1,4 +1,9 @@
-export { ROUTES, ROUTE_KEYS, getSectionFromPathname } from "./routes";
+export {
+  ROUTES,
+  ROUTE_KEYS,
+  getSectionFromPathname,
+  getPortalRouteForRole,
+} from "./routes";
 export {
   NAV_LINKS,
   FOOTER_LINKS,

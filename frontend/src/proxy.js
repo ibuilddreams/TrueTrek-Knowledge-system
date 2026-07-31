@@ -1,7 +1,11 @@
 import { NextResponse } from "next/server";
 import { AUTH_COOKIE, AUTH_ROLES } from "@/constants/auth";
 
-const PROTECTED_PREFIXES = ["/dashboard"];
+const PROTECTED_PREFIXES = [
+  "/adminportal",
+  "/teacherportal",
+  "/dashboard",
+];
 
 export function proxy(request) {
   const { pathname } = request.nextUrl;
@@ -35,5 +39,12 @@ export function proxy(request) {
 }
 
 export const config = {
-  matcher: ["/dashboard/:path*", "/portal/:path*", "/login"],
+  matcher: [
+    "/adminportal/:path*",
+    "/teacherportal/:path*",
+    "/studentportal/:path*",
+    "/dashboard/:path*",
+    "/portal/:path*",
+    "/login",
+  ],
 };
