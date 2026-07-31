@@ -71,3 +71,28 @@ class StudentEnrollmentListViewTests(APITestCase):
         response = self.client.post(self.url, {"course": self.other_course.id})
 
         self.assertEqual(response.status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+    def test_enrolled_course_detail_returns_course_for_student(self):
+        self.client.force_authenticate(user=self.student)
+        url = reverse(
+            "enrollment-student-course-detail", kwargs={"course_id": self.course.id}
+        )
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data["data"]
+        self.assertEqual(data["course"]["id"], self.course.id)
+        self.assertEqual(data["enrollment"]["status"], Enrollment.EnrollmentStatus.ACTIVE)
+        self.assertEqual(data["stats"]["completion_percentage"], 42.5)
+
+    def test_enrolled_course_detail_returns_404_for_other_course(self):
+        self.client.force_authenticate(user=self.student)
+        url = reverse(
+            "enrollment-student-course-detail",
+            kwargs={"course_id": self.other_course.id},
+        )
+
+        response = self.client.get(url)
+
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)

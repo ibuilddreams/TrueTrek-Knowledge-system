@@ -12,6 +12,7 @@ import SearchableSelect from "@/components/ui/SearchableSelect";
 import Pagination from "@/components/ui/Pagination";
 import EmptyState from "@/components/ui/EmptyState";
 import StudentCourseCard from "../StudentCourseCard";
+import StudentCourseDetailDrawer from "../StudentCourseDetailDrawer";
 
 const PAGE_SIZE = 6;
 
@@ -28,6 +29,7 @@ export default function CoursesTab() {
   const debouncedSearch = useDebouncedValue(searchInput, 300);
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [selectedEnrollment, setSelectedEnrollment] = useState(null);
 
   const {
     data: enrollments = [],
@@ -214,13 +216,21 @@ export default function CoursesTab() {
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.25, delay: index * 0.04 }}
               >
-                <StudentCourseCard enrollment={enrollment} />
+                <StudentCourseCard
+                  enrollment={enrollment}
+                  onClick={() => setSelectedEnrollment(enrollment)}
+                />
               </motion.div>
             ))}
           </motion.div>
           <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </>
       )}
+
+      <StudentCourseDetailDrawer
+        enrollment={selectedEnrollment}
+        onClose={() => setSelectedEnrollment(null)}
+      />
     </div>
   );
 }

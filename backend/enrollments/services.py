@@ -9,6 +9,10 @@ from common.import_files import (
 )
 from common.models import Status
 from courses.models import Course
+from courses.serializers import CourseDetailSerializer
+from lessons.models import Lesson
+from progress.models import CourseProgress, LessonProgress, ModuleProgress
+from quizzes.models import Quiz
 
 from .models import Enrollment
 
@@ -133,3 +137,126 @@ def get_enrollment_import_sample(file_format):
             "text/csv",
         )
     raise ImportFileError("Sample format must be csv or xlsx.")
+
+
+def get_student_enrolled_course_detail(student, course_id, request=None):
+    enrollment = (
+        Enrollment.objects.filter(student=student, course_id=course_id)
+        .select_related("course", "course__category")
+        .prefetch_related(
+            "course__tags",
+            "course__instructors__instructor",
+            "course__modules__lessons",
+            "course__modules__assignments",
+            "course__modules__quizzes",
+        )
+        .first()
+    )
+    if enrollment is None:
+        return None
+
+    course = enrollment.course
+    course_progress = CourseProgress.objects.filter(
+        student=student, course_id=course_id
+    ).first()
+
+    modules = list(course.modules.all())
+    module_ids = [module.id for module in modules]
+    lesson_ids = list(
+        Lesson.objects.filter(module_id__in=module_ids).values_list("id", flat=True)
+    )
+
+    module_progress_map = {
+        row.module_id: row
+        for row in ModuleProgress.objects.filter(student=student, module_id__in=module_ids)
+    }
+    completed_lesson_ids = set(
+        LessonProgress.objects.filter(
+            student=student, lesson_id__in=lesson_ids, is_completed=True
+        ).values_list("lesson_id", flat=True)
+    )
+
+    modules_data = []
+    for module in modules:
+        lessons = list(module.lessons.all())
+        quizzes = list(module.quizzes.all())
+        assignments = list(module.assignments.all())
+        completed_lessons = sum(1 for lesson in lessons if lesson.id in completed_lesson_ids)
+        module_progress = module_progress_map.get(module.id)
+        modules_data.append(
+            {
+                "id": module.id,
+                "title": module.title,
+                "description": module.description,
+                "order": module.order,
+                "completion_percentage": (
+                    round(float(module_progress.completion_percentage), 2)
+                    if module_progress
+                    else 0
+                ),
+                "is_completed": bool(module_progress.is_completed) if module_progress else False,
+                "lessons": [
+                    {
+                        "id": lesson.id,
+                        "title": lesson.title,
+                        "content_type": lesson.content_type,
+                        "duration_minutes": lesson.duration_minutes,
+                        "order": lesson.order,
+                        "is_completed": lesson.id in completed_lesson_ids,
+                    }
+                    for lesson in lessons
+                ],
+                "quizzes": [
+                    {
+                        "id": quiz.id,
+                        "title": quiz.title,
+                        "status": quiz.status,
+                        "order": quiz.order,
+                    }
+                    for quiz in quizzes
+                ],
+                "assignments": [
+                    {
+                        "id": assignment.id,
+                        "title": assignment.title,
+                        "status": assignment.status,
+                        "due_date": assignment.due_date,
+                        "order": assignment.order,
+                    }
+                    for assignment in assignments
+                ],
+                "stats": {
+                    "total_lessons": len(lessons),
+                    "completed_lessons": completed_lessons,
+                    "total_quizzes": len(quizzes),
+                    "total_assignments": len(assignments),
+                },
+            }
+        )
+
+    total_lessons = len(lesson_ids)
+    completed_lessons = len(completed_lesson_ids)
+    total_quizzes = Quiz.objects.filter(course_id=course_id).count()
+    completion_percentage = (
+        round(float(course_progress.completion_percentage), 2) if course_progress else 0
+    )
+
+    return {
+        "enrollment": {
+            "id": enrollment.id,
+            "status": enrollment.status,
+            "enrolled_at": enrollment.enrolled_at,
+            "completion_percentage": completion_percentage,
+            "is_completed": bool(course_progress.is_completed) if course_progress else False,
+        },
+        "course": CourseDetailSerializer(course, context={"request": request}).data,
+        "modules": modules_data,
+        "stats": {
+            "total_modules": len(modules),
+            "completed_modules": sum(1 for module in modules_data if module["is_completed"]),
+            "total_lessons": total_lessons,
+            "completed_lessons": completed_lessons,
+            "total_quizzes": total_quizzes,
+            "completion_percentage": completion_percentage,
+        },
+    }

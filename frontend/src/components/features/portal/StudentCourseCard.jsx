@@ -53,7 +53,7 @@ function ProgressRing({ value }) {
   );
 }
 
-export default function StudentCourseCard({ enrollment }) {
+export default function StudentCourseCard({ enrollment, onClick }) {
   const course = enrollment.course || {};
   const progress = Math.round(enrollment.completion_percentage || 0);
   const instructors = course.instructors || [];
@@ -65,7 +65,24 @@ export default function StudentCourseCard({ enrollment }) {
   const statusLabel = enrollment.status || "ACTIVE";
 
   return (
-    <article className="group relative flex flex-col h-full rounded-2xl border border-stone-200/80 bg-white/90 p-5 sm:p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-200/70 hover:shadow-[0_12px_32px_-20px_rgba(120,53,15,0.28)]">
+    <article
+      role={onClick ? "button" : undefined}
+      tabIndex={onClick ? 0 : undefined}
+      onClick={onClick}
+      onKeyDown={
+        onClick
+          ? (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onClick();
+              }
+            }
+          : undefined
+      }
+      className={`group relative flex flex-col h-full rounded-2xl border border-stone-200/80 bg-white/90 p-5 sm:p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-200/70 hover:shadow-[0_12px_32px_-20px_rgba(120,53,15,0.28)] ${
+        onClick ? "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 focus-visible:ring-offset-2" : ""
+      }`}
+    >
       <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
       <div className="flex items-start justify-between gap-3 mb-5">

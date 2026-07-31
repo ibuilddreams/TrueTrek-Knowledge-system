@@ -23,9 +23,26 @@ from .serializers import (
     EnrollmentStudentSerializer,
     EnrollmentWriteSerializer,
 )
-from .services import bulk_import_enrollments, get_enrollment_import_sample
+from .services import (
+    bulk_import_enrollments,
+    get_enrollment_import_sample,
+    get_student_enrolled_course_detail,
+)
 
 UserModel = get_user_model()
+
+
+class StudentEnrolledCourseDetailView(generics.GenericAPIView):
+    permission_classes = [IsStudent]
+
+    def get(self, request, course_id):
+        data = get_student_enrolled_course_detail(request.user, course_id, request=request)
+        if data is None:
+            return error_response(
+                message="You are not enrolled in this course.",
+                status_code=404,
+            )
+        return success_response(data, message="Enrolled course details fetched successfully")
 
 
 class EnrollmentListCreateView(generics.ListCreateAPIView):
