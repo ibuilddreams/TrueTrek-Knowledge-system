@@ -71,6 +71,9 @@ export default function CoursesTab() {
   }, [enrollments]);
 
   const activeCount = enrollments.filter((item) => item.status === "ACTIVE").length;
+  const completedCount = enrollments.filter(
+    (item) => item.status === "COMPLETED" || item.is_completed
+  ).length;
 
   const totalPages = Math.max(1, Math.ceil(filteredEnrollments.length / PAGE_SIZE));
   const paginatedEnrollments = filteredEnrollments.slice(
@@ -123,47 +126,94 @@ export default function CoursesTab() {
   }
 
   return (
-    <div className="space-y-8">
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-5">
-        <div className="max-w-xl">
-          <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-amber-700/80 mb-2">
-            Learning Library
-          </p>
-          <h2 className="text-2xl font-serif font-bold text-stone-900 tracking-tight">
-            Your enrolled courses
-          </h2>
-          <p className="text-sm text-stone-500 font-light mt-1.5 leading-relaxed">
-            Track progress across every course assigned to you — calm, clear, and ready when you are.
-          </p>
-        </div>
+    <div className="space-y-7">
+      <motion.section
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.4, ease: "easeOut" }}
+        className="relative overflow-hidden rounded-[1.75rem] border border-stone-200/90 bg-white shadow-[0_18px_50px_-36px_rgba(28,25,23,0.45)]"
+      >
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(245,158,11,0.12),_transparent_50%),radial-gradient(ellipse_at_bottom_left,_rgba(168,162,158,0.16),_transparent_45%)]" />
+        <div className="pointer-events-none absolute -right-10 top-0 h-full w-1/3 bg-gradient-to-l from-amber-50/80 to-transparent" />
 
-        <div className="flex flex-wrap items-center gap-3">
-          <div className="rounded-xl border border-stone-200/80 bg-white px-3.5 py-2.5 min-w-[96px]">
-            <p className="text-[9px] font-mono uppercase tracking-wider text-stone-400">
-              Courses
-            </p>
-            <p className="text-lg font-serif font-bold text-stone-900 leading-none mt-1">
-              {enrollments.length}
-            </p>
+        <div className="relative z-10 p-6 sm:p-8">
+          <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-8">
+            <div className="max-w-xl min-w-0">
+              <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-700/80 mb-3">
+                Learning Library
+              </p>
+              <h2 className="text-3xl sm:text-[2.15rem] font-serif font-bold text-stone-900 tracking-tight leading-[1.1]">
+                Your enrolled courses
+              </h2>
+              <p className="text-sm text-stone-500 font-light mt-3 leading-relaxed max-w-md">
+                Track progress across every course assigned to you — calm, clear, and ready when you are.
+              </p>
+            </div>
+
+            <div className="w-full xl:w-auto xl:min-w-[320px]">
+              <div className="flex items-end justify-between gap-4 mb-3">
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-stone-400 mb-1">
+                    Avg progress
+                  </p>
+                  <p className="text-3xl font-serif font-bold text-amber-800 leading-none">
+                    {averageProgress}
+                    <span className="text-base text-amber-700/60 ml-0.5">%</span>
+                  </p>
+                </div>
+                <p className="text-[11px] text-stone-400 font-light pb-1">
+                  Across {enrollments.length} course
+                  {enrollments.length === 1 ? "" : "s"}
+                </p>
+              </div>
+              <div className="h-2.5 w-full rounded-full bg-stone-100 overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-400"
+                  initial={{ width: 0 }}
+                  animate={{ width: `${averageProgress}%` }}
+                  transition={{ duration: 0.8, ease: "easeOut" }}
+                />
+              </div>
+            </div>
           </div>
-          <div className="rounded-xl border border-stone-200/80 bg-white px-3.5 py-2.5 min-w-[96px]">
-            <p className="text-[9px] font-mono uppercase tracking-wider text-stone-400">
-              Active
-            </p>
-            <p className="text-lg font-serif font-bold text-stone-900 leading-none mt-1">
-              {activeCount}
-            </p>
-          </div>
-          <div className="rounded-xl border border-stone-200/80 bg-white px-3.5 py-2.5 min-w-[96px]">
-            <p className="text-[9px] font-mono uppercase tracking-wider text-stone-400">
-              Avg Progress
-            </p>
-            <p className="text-lg font-serif font-bold text-amber-800 leading-none mt-1">
-              {averageProgress}%
-            </p>
+
+          <div className="mt-8 pt-6 border-t border-stone-200/70 grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-0 sm:divide-x sm:divide-stone-200/80">
+            <div className="sm:pr-6">
+              <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-stone-400">
+                Courses
+              </p>
+              <p className="text-2xl font-serif font-bold text-stone-900 mt-1.5 leading-none">
+                {enrollments.length}
+              </p>
+              <p className="text-[11px] text-stone-400 mt-1.5 font-light">
+                Total enrollments
+              </p>
+            </div>
+            <div className="sm:px-6">
+              <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-stone-400">
+                Active
+              </p>
+              <p className="text-2xl font-serif font-bold text-stone-900 mt-1.5 leading-none">
+                {activeCount}
+              </p>
+              <p className="text-[11px] text-stone-400 mt-1.5 font-light">
+                Currently in progress
+              </p>
+            </div>
+            <div className="sm:pl-6">
+              <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-stone-400">
+                Completed
+              </p>
+              <p className="text-2xl font-serif font-bold text-stone-900 mt-1.5 leading-none">
+                {completedCount}
+              </p>
+              <p className="text-[11px] text-stone-400 mt-1.5 font-light">
+                Finished learning paths
+              </p>
+            </div>
           </div>
         </div>
-      </div>
+      </motion.section>
 
       <div className="rounded-2xl border border-stone-200/80 bg-white/90 shadow-[0_8px_30px_-24px_rgba(28,25,23,0.35)] overflow-hidden">
         <div className="flex flex-col gap-4 p-4 sm:p-5">
