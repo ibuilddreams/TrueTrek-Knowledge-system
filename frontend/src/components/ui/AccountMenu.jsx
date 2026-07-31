@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
 import { User, ChevronDown, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -8,6 +9,8 @@ import { useLogoutFlow } from "@/hooks/useLogoutFlow";
 import { getProfile } from "@/services/profileService";
 
 const FALLBACK_LABEL = "My Account";
+const MENU_WIDTH = 208;
+const NAVBAR_HEIGHT = 80;
 
 function getFirstName(name) {
   const firstWord = name?.trim().split(/\s+/)[0];
@@ -19,6 +22,17 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
   const { user } = useAuth();
   const { isSigningOut, signOut } = useLogoutFlow();
   const [backendProfile, setBackendProfile] = useState(null);
+  const [isOpen, setIsOpen] = useState(false);
+  const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
+  const [mounted, setMounted] = useState(false);
+  const containerRef = useRef(null);
+  const triggerRef = useRef(null);
+  const menuRef = useRef(null);
+  const itemRefs = useRef([]);
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
 
   useEffect(() => {
     let isMounted = true;
@@ -45,16 +59,42 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
     rawRoleLabel.trim().toLowerCase() !== displayLabel.trim().toLowerCase()
       ? rawRoleLabel
       : undefined;
-  const [isOpen, setIsOpen] = useState(false);
-  const containerRef = useRef(null);
-  const triggerRef = useRef(null);
-  const itemRefs = useRef([]);
+
+  const updateMenuPosition = () => {
+    const trigger = triggerRef.current;
+    if (!trigger) return;
+
+    const rect = trigger.getBoundingClientRect();
+    if (rect.bottom <= NAVBAR_HEIGHT || rect.top >= window.innerHeight) {
+      setIsOpen(false);
+      return;
+    }
+
+    const viewportWidth = window.innerWidth;
+    const gap = 8;
+    const left = Math.min(
+      Math.max(16, rect.right - MENU_WIDTH),
+      viewportWidth - MENU_WIDTH - 16
+    );
+
+    setMenuPosition({
+      top: Math.max(rect.bottom + gap, NAVBAR_HEIGHT + gap),
+      left,
+    });
+  };
+
+  useLayoutEffect(() => {
+    if (!isOpen) return;
+    updateMenuPosition();
+  }, [isOpen]);
 
   useEffect(() => {
     if (!isOpen) return;
 
     const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
+      const inTrigger = containerRef.current?.contains(event.target);
+      const inMenu = menuRef.current?.contains(event.target);
+      if (!inTrigger && !inMenu) {
         setIsOpen(false);
       }
     };
@@ -66,11 +106,20 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
       }
     };
 
+    const handleScroll = () => {
+      setIsOpen(false);
+    };
+
     document.addEventListener("mousedown", handleClickOutside);
     document.addEventListener("keydown", handleEscape);
+    window.addEventListener("resize", handleScroll);
+    window.addEventListener("scroll", handleScroll, true);
+
     return () => {
       document.removeEventListener("mousedown", handleClickOutside);
       document.removeEventListener("keydown", handleEscape);
+      window.removeEventListener("resize", handleScroll);
+      window.removeEventListener("scroll", handleScroll, true);
     };
   }, [isOpen]);
 
@@ -131,8 +180,79 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
     },
   ];
 
+  const menuContent = (
+    <AnimatePresence>
+      {isOpen && (
+        <motion.div
+          ref={menuRef}
+          role="menu"
+          aria-labelledby="account-menu-trigger"
+          initial={{ opacity: 0, y: -4 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -4 }}
+          transition={{ duration: 0.15, ease: "easeOut" }}
+          style={{
+            position: "fixed",
+            top: menuPosition.top,
+            left: menuPosition.left,
+            width: MENU_WIDTH,
+          }}
+          className="max-w-[calc(100vw-2rem)] bg-white border border-stone-200 rounded-xl shadow-2xl py-1.5 z-40"
+        >
+          <div className="px-3.5 py-2 border-b border-stone-100 mb-1">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-semibold">
+              Account
+            </p>
+            <p className="text-xs font-semibold text-stone-800 truncate mt-0.5">
+              {displayLabel}
+            </p>
+          </div>
+          {menuItems.map(
+            (
+              { key, label: itemLabel, icon: Icon, onSelect, disabled, danger },
+              index
+            ) => (
+              <button
+                key={key}
+                ref={(el) => {
+                  itemRefs.current[index] = el;
+                }}
+                type="button"
+                role="menuitem"
+                disabled={disabled}
+                onClick={() => {
+                  closeMenu();
+                  onSelect?.();
+                }}
+                onKeyDown={(event) =>
+                  handleItemKeyDown(event, index, menuItems.length)
+                }
+                className={
+                  "w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold font-mono focus:outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-transparent " +
+                  (danger
+                    ? "text-rose-700 hover:bg-rose-50 focus:bg-rose-50"
+                    : "text-stone-700 hover:bg-stone-50 focus:bg-stone-50")
+                }
+              >
+                <Icon
+                  className={`w-4 h-4 ${
+                    danger ? "text-rose-500" : "text-stone-400"
+                  }`}
+                />
+                {itemLabel}
+              </button>
+            )
+          )}
+        </motion.div>
+      )}
+    </AnimatePresence>
+  );
+
   return (
-    <div ref={containerRef} className="relative inline-block text-left">
+    <div
+      ref={containerRef}
+      className={`relative inline-block text-left ${isOpen ? "z-40" : "z-20"}`}
+    >
       <button
         id="account-menu-trigger"
         ref={triggerRef}
@@ -174,14 +294,18 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
             {displayLabel}
           </span>
           {roleLabel && (
-            <span className={`text-[10px] font-normal tracking-normal normal-case truncate max-w-36 ${
-              isDark ? "text-stone-500" : "text-stone-400"
-            }`}>
+            <span
+              className={`text-[10px] font-normal tracking-normal normal-case truncate max-w-36 ${
+                isDark ? "text-stone-500" : "text-stone-400"
+              }`}
+            >
               {roleLabel}
             </span>
           )}
         </span>
-        <span className={`w-px h-6 shrink-0 ${isDark ? "bg-stone-700" : "bg-stone-200"}`} />
+        <span
+          className={`w-px h-6 shrink-0 ${isDark ? "bg-stone-700" : "bg-stone-200"}`}
+        />
         <ChevronDown
           className={`w-3.5 h-3.5 text-stone-400 transition-transform duration-200 shrink-0 ${
             isOpen ? "rotate-180" : ""
@@ -189,62 +313,7 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
         />
       </button>
 
-      <AnimatePresence>
-        {isOpen && (
-          <motion.div
-            role="menu"
-            aria-labelledby="account-menu-trigger"
-            initial={{ opacity: 0, y: -4 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -4 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="absolute right-0 top-full mt-2 w-52 max-w-[calc(100vw-2rem)] bg-white border border-stone-200 rounded-xl shadow-xl py-1.5 z-[100]"
-          >
-            <div className="px-3.5 py-2 border-b border-stone-100 mb-1">
-              <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-semibold">
-                Account
-              </p>
-              <p className="text-xs font-semibold text-stone-800 truncate mt-0.5">
-                {displayLabel}
-              </p>
-            </div>
-            {menuItems.map(
-              (
-                { key, label: itemLabel, icon: Icon, onSelect, disabled, danger },
-                index
-              ) => (
-                <button
-                  key={key}
-                  ref={(el) => (itemRefs.current[index] = el)}
-                  type="button"
-                  role="menuitem"
-                  disabled={disabled}
-                  onClick={() => {
-                    closeMenu();
-                    onSelect?.();
-                  }}
-                  onKeyDown={(event) =>
-                    handleItemKeyDown(event, index, menuItems.length)
-                  }
-                  className={
-                    "w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold font-mono focus:outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-transparent " +
-                    (danger
-                      ? "text-rose-700 hover:bg-rose-50 focus:bg-rose-50"
-                      : "text-stone-700 hover:bg-stone-50 focus:bg-stone-50")
-                  }
-                >
-                  <Icon
-                    className={`w-4 h-4 ${
-                      danger ? "text-rose-500" : "text-stone-400"
-                    }`}
-                  />
-                  {itemLabel}
-                </button>
-              )
-            )}
-          </motion.div>
-        )}
-      </AnimatePresence>
+      {mounted ? createPortal(menuContent, document.body) : null}
     </div>
   );
 }
