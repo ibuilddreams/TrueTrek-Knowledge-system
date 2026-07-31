@@ -2,6 +2,7 @@ from rest_framework.permissions import BasePermission
 
 from courses.models import Course
 from courses.services import is_course_instructor
+from modules.models import Module
 
 from .models import Choice, Question, Quiz
 
@@ -43,11 +44,17 @@ class IsCourseInstructorOrAdmin(BasePermission):
             return question.quiz.course
 
         course_id = request.data.get("course")
-        if not course_id:
+        module_id = request.data.get("module")
+        if not course_id and not module_id:
             return None
+        if course_id:
+            try:
+                return Course.objects.get(pk=course_id)
+            except Course.DoesNotExist:
+                return None
         try:
-            return Course.objects.get(pk=course_id)
-        except Course.DoesNotExist:
+            return Module.objects.select_related("course").get(pk=module_id).course
+        except Module.DoesNotExist:
             return None
 
     def has_object_permission(self, request, view, obj):

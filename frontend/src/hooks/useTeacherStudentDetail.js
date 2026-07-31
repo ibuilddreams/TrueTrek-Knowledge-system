@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getTeacherEnrolledStudentDetail } from "@/services/teacherCoursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
@@ -15,11 +15,17 @@ import {
 export function useTeacherStudentDetail() {
   const dispatch = useDispatch();
   const studentDetail = useSelector(selectTeacherStudentDetail);
+  const detailRef = useRef(studentDetail);
+  detailRef.current = studentDetail;
 
   const loadStudentDetail = useCallback(
     async (studentId) => {
       if (!studentId) return;
-      if (studentDetail.studentId === studentId && studentDetail.status === "succeeded") {
+      const current = detailRef.current;
+      if (
+        current.studentId === studentId &&
+        (current.status === "loading" || current.status === "succeeded")
+      ) {
         return;
       }
 
@@ -35,7 +41,7 @@ export function useTeacherStudentDetail() {
         );
       }
     },
-    [dispatch, studentDetail.studentId, studentDetail.status]
+    [dispatch]
   );
 
   const clearStudentDetail = useCallback(() => {

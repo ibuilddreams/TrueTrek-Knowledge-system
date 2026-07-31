@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import {
   getAdminDashboardActivityProgress,
@@ -17,10 +17,12 @@ import {
 export function useAdminOverview() {
   const dispatch = useDispatch();
   const overview = useSelector(selectAdminOverview);
+  const statusRef = useRef(overview.status);
+  statusRef.current = overview.status;
 
   const loadOverview = useCallback(
     async ({ force = false } = {}) => {
-      if (!force && (overview.status === "loading" || overview.status === "succeeded")) {
+      if (!force && statusRef.current !== "idle") {
         return;
       }
 
@@ -44,7 +46,7 @@ export function useAdminOverview() {
         dispatch(overviewFetchFailed(error?.message || "Unable to load dashboard data."));
       }
     },
-    [dispatch, overview.status]
+    [dispatch]
   );
 
   return { ...overview, loadOverview };

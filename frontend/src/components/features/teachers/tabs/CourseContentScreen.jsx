@@ -30,6 +30,7 @@ import {
 import { deleteModule, getModules, reorderModules } from "@/services/modulesService";
 import { deleteLesson } from "@/services/lessonsService";
 import { deleteAssignment } from "@/services/assignmentsService";
+import { deleteQuiz } from "@/services/quizzesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 import EmptyState from "@/components/ui/EmptyState";
@@ -39,6 +40,7 @@ import TeacherModuleRow from "@/components/features/teachers/TeacherModuleRow";
 import TeacherModuleFormModal from "@/components/features/teachers/TeacherModuleFormModal";
 import TeacherLessonFormModal from "@/components/features/teachers/TeacherLessonFormModal";
 import TeacherAssignmentFormModal from "@/components/features/teachers/TeacherAssignmentFormModal";
+import TeacherQuizFormModal from "@/components/features/teachers/TeacherQuizFormModal";
 
 export default function CourseContentScreen({ courseId, course, onBack }) {
   const numericCourseId = Number(courseId);
@@ -56,6 +58,8 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
     assignment: null,
   });
   const [deletingAssignment, setDeletingAssignment] = useState(null);
+  const [quizModalState, setQuizModalState] = useState({ isOpen: false, moduleId: null, quiz: null });
+  const [deletingQuiz, setDeletingQuiz] = useState(null);
   const [localModuleOrderIds, setLocalModuleOrderIds] = useState(null);
 
   const dndSensors = useSensors(
@@ -94,6 +98,14 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
     },
   });
 
+  const deleteQuizMutation = useMutation({
+    mutationFn: (quiz) => deleteQuiz(quiz.id),
+    onSuccess: (_data, quiz) => {
+      queryClient.invalidateQueries({ queryKey: ["quizzes", quiz.moduleId] });
+      queryClient.invalidateQueries({ queryKey: ["modules", numericCourseId] });
+    },
+  });
+
   const reorderModulesMutation = useMutation({
     mutationFn: (entries) => reorderModules(numericCourseId, entries),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["modules", numericCourseId] }),
@@ -120,6 +132,11 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
 
   const totalAssignments = useMemo(
     () => modules.reduce((sum, module) => sum + (module.assignments_count || 0), 0),
+    [modules],
+  );
+
+  const totalQuizzes = useMemo(
+    () => modules.reduce((sum, module) => sum + (module.quizzes_count || 0), 0),
     [modules],
   );
 
@@ -196,6 +213,18 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
     setAssignmentModalState({ isOpen: false, moduleId: null, assignment: null });
   };
 
+  const openAddQuiz = (moduleId) => {
+    setQuizModalState({ isOpen: true, moduleId, quiz: null });
+  };
+
+  const openEditQuiz = (quiz) => {
+    setQuizModalState({ isOpen: true, moduleId: null, quiz });
+  };
+
+  const closeQuizModal = () => {
+    setQuizModalState({ isOpen: false, moduleId: null, quiz: null });
+  };
+
   const handleDeleteModuleConfirm = async () => {
     if (!deletingModule) return;
     try {
@@ -229,11 +258,22 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
     }
   };
 
+  const handleDeleteQuizConfirm = async () => {
+    if (!deletingQuiz) return;
+    try {
+      await deleteQuizMutation.mutateAsync(deletingQuiz);
+      toastSuccess("Quiz deleted successfully.");
+      setDeletingQuiz(null);
+    } catch (error) {
+      toastError(getApiErrorMessage(error, "Unable to delete quiz."));
+    }
+  };
+
   const stats = [
     { key: "modules", label: "Modules", icon: Layers, value: modules.length },
     { key: "lessons", label: "Lessons", icon: PlayCircle, value: totalLessons },
     { key: "assignments", label: "Assignments", icon: ClipboardCheck, value: totalAssignments },
-    { key: "quizzes", label: "Quizzes", icon: HelpCircle, value: 0 },
+    { key: "quizzes", label: "Quizzes", icon: HelpCircle, value: totalQuizzes },
   ];
 
   return (
@@ -351,6 +391,9 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
                     onAddAssignment={openAddAssignment}
                     onEditAssignment={openEditAssignment}
                     onDeleteAssignment={setDeletingAssignment}
+                    onAddQuiz={openAddQuiz}
+                    onEditQuiz={openEditQuiz}
+                    onDeleteQuiz={setDeletingQuiz}
                   />
                 ))}
               </ul>
@@ -397,6 +440,16 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         confirmLabel="Delete"
       />
 
+      <ConfirmDialog
+        isOpen={Boolean(deletingQuiz)}
+        onClose={() => setDeletingQuiz(null)}
+        onConfirm={handleDeleteQuizConfirm}
+        isConfirming={deleteQuizMutation.isPending}
+        title="Delete Quiz"
+        message={`Are you sure you want to delete "${deletingQuiz?.title}"? This cannot be undone.`}
+        confirmLabel="Delete"
+      />
+
       <TeacherLessonFormModal
         isOpen={lessonModalState.isOpen}
         onClose={closeLessonModal}
@@ -414,6 +467,17 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         modules={modules}
         defaultModuleId={assignmentModalState.moduleId}
         assignment={assignmentModalState.assignment}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ["modules", numericCourseId] });
+        }}
+      />
+
+      <TeacherQuizFormModal
+        isOpen={quizModalState.isOpen}
+        onClose={closeQuizModal}
+        modules={modules}
+        defaultModuleId={quizModalState.moduleId}
+        quiz={quizModalState.quiz}
         onSaved={() => {
           queryClient.invalidateQueries({ queryKey: ["modules", numericCourseId] });
         }}

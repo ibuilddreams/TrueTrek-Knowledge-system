@@ -28,6 +28,7 @@ import {
   GripVertical,
   HelpCircle,
   Image as ImageIcon,
+  ListChecks,
   Paperclip,
   PlayCircle,
   Plus,
@@ -35,13 +36,14 @@ import {
   Trash2,
   Video,
 } from "lucide-react";
-import Loader from "@/components/ui/Loader";
+import ContentRowSkeleton from "@/components/ui/ContentRowSkeleton";
 import EmptyState from "@/components/ui/EmptyState";
 import StatusBadge from "@/components/ui/StatusBadge";
-import TeacherComingSoonModal from "@/components/features/teachers/TeacherComingSoonModal";
 import TeacherAssignmentAttachmentsModal from "@/components/features/teachers/TeacherAssignmentAttachmentsModal";
+import TeacherQuizQuestionsModal from "@/components/features/teachers/TeacherQuizQuestionsModal";
 import { getLessons, reorderLessons } from "@/services/lessonsService";
 import { getAssignments, publishAssignment, reorderAssignments } from "@/services/assignmentsService";
+import { getQuizzes, publishQuiz, reorderQuizzes } from "@/services/quizzesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatDate, formatDateTime } from "@/lib/adminFormatters";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -192,7 +194,7 @@ function TeacherLessonsPanel({ moduleId, onAddLesson, onEditLesson, onDeleteLess
   };
 
   if (lessonsQuery.isLoading) {
-    return <Loader fullScreen={false} label="Loading lessons..." />;
+    return <ContentRowSkeleton count={3} />;
   }
 
   return (
@@ -397,7 +399,7 @@ function TeacherAssignmentsPanel({ moduleId, onAddAssignment, onEditAssignment, 
   };
 
   if (assignmentsQuery.isLoading) {
-    return <Loader fullScreen={false} label="Loading assignments..." />;
+    return <ContentRowSkeleton count={3} />;
   }
 
   return (
@@ -456,6 +458,221 @@ function TeacherAssignmentsPanel({ moduleId, onAddAssignment, onEditAssignment, 
   );
 }
 
+function SortableTeacherQuizItem({
+  quiz,
+  moduleId,
+  onEditQuiz,
+  onDeleteQuiz,
+  onPublishQuiz,
+  isPublishing,
+  onManageQuestions,
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: quiz.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-white ${
+        isDragging ? "z-10 shadow-lg opacity-90" : ""
+      }`}
+    >
+      <span
+        {...attributes}
+        {...listeners}
+        className="text-stone-300 cursor-grab shrink-0 touch-none"
+        title="Drag to reorder"
+        aria-hidden="true"
+      >
+        <GripVertical className="w-4 h-4" />
+      </span>
+      <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+        <HelpCircle className="w-4 h-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="text-xs font-semibold text-stone-800 truncate">{quiz.title}</p>
+          <StatusBadge status={quiz.status} />
+        </div>
+        <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5 flex items-center gap-1 flex-wrap">
+          <span>{quiz.total_marks} marks</span>
+          <span className="text-stone-200">·</span>
+          <span>{quiz.passing_score}% to pass</span>
+          <span className="text-stone-200">·</span>
+          <span>{quiz.attempts_allowed} attempt{quiz.attempts_allowed === 1 ? "" : "s"}</span>
+        </p>
+      </div>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <button
+          type="button"
+          onClick={() => onManageQuestions(quiz)}
+          title="Manage questions"
+          aria-label="Manage questions"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+        >
+          <ListChecks className="w-3.5 h-3.5" />
+        </button>
+        {quiz.status === "DRAFT" && (
+          <button
+            type="button"
+            onClick={() => onPublishQuiz(quiz)}
+            disabled={isPublishing}
+            title="Publish quiz"
+            aria-label="Publish quiz"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-emerald-600 hover:bg-emerald-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <Send className="w-3.5 h-3.5" />
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => onEditQuiz(quiz)}
+          title="Edit quiz"
+          aria-label="Edit quiz"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+        >
+          <Edit3 className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onDeleteQuiz({ id: quiz.id, title: quiz.title, moduleId })}
+          title="Delete quiz"
+          aria-label="Delete quiz"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </li>
+  );
+}
+
+function TeacherQuizzesPanel({ moduleId, onAddQuiz, onEditQuiz, onDeleteQuiz }) {
+  const queryClient = useQueryClient();
+  const [localQuizOrderIds, setLocalQuizOrderIds] = useState(null);
+  const [questionsModalQuiz, setQuestionsModalQuiz] = useState(null);
+
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
+
+  const quizzesQuery = useQuery({
+    queryKey: ["quizzes", moduleId],
+    queryFn: async () => {
+      const response = await getQuizzes({ moduleId });
+      return response?.data?.results || [];
+    },
+  });
+  const quizzes = quizzesQuery.data || [];
+
+  const reorderQuizzesMutation = useMutation({
+    mutationFn: (entries) => reorderQuizzes(moduleId, entries),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["quizzes", moduleId] });
+    },
+    onError: (error) => {
+      toastError(getApiErrorMessage(error, "Unable to reorder quizzes."));
+    },
+  });
+
+  const publishQuizMutation = useMutation({
+    mutationFn: (quiz) => publishQuiz(quiz.id),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ["quizzes", moduleId] });
+      toastSuccess(response?.message || "Quiz published successfully.");
+    },
+    onError: (error) => {
+      toastError(getApiErrorMessage(error, "Unable to publish quiz."));
+    },
+  });
+
+  const displayQuizzes = useMemo(() => {
+    if (!localQuizOrderIds) return quizzes;
+    const currentIds = quizzes.map((quiz) => quiz.id);
+    const sameSet =
+      localQuizOrderIds.length === currentIds.length &&
+      localQuizOrderIds.every((id) => currentIds.includes(id));
+    if (!sameSet) return quizzes;
+    const quizById = new Map(quizzes.map((quiz) => [quiz.id, quiz]));
+    return localQuizOrderIds.map((id) => quizById.get(id));
+  }, [quizzes, localQuizOrderIds]);
+
+  const handleQuizDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const currentIds = displayQuizzes.map((quiz) => quiz.id);
+    const oldIndex = currentIds.indexOf(active.id);
+    const newIndex = currentIds.indexOf(over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newOrderIds = arrayMove(currentIds, oldIndex, newIndex);
+    setLocalQuizOrderIds(newOrderIds);
+
+    const payload = newOrderIds.map((id, index) => ({ quiz_id: id, order: index + 1 }));
+    reorderQuizzesMutation.mutate(payload);
+  };
+
+  if (quizzesQuery.isLoading) {
+    return <ContentRowSkeleton count={3} />;
+  }
+
+  return (
+    <div className="space-y-2">
+      {displayQuizzes.length === 0 ? (
+        <EmptyState
+          icon={HelpCircle}
+          label="No quizzes in this module yet."
+          description="Create a quiz to assess what students have learned."
+          compact
+        />
+      ) : (
+        <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleQuizDragEnd}>
+          <SortableContext items={displayQuizzes.map((quiz) => quiz.id)} strategy={verticalListSortingStrategy}>
+            <ul className="space-y-2">
+              {displayQuizzes.map((quiz) => (
+                <SortableTeacherQuizItem
+                  key={quiz.id}
+                  quiz={quiz}
+                  moduleId={moduleId}
+                  onEditQuiz={onEditQuiz}
+                  onDeleteQuiz={onDeleteQuiz}
+                  onPublishQuiz={publishQuizMutation.mutate}
+                  isPublishing={publishQuizMutation.isPending}
+                  onManageQuestions={setQuestionsModalQuiz}
+                />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
+      )}
+
+      <button
+        type="button"
+        onClick={() => onAddQuiz(moduleId)}
+        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
+      >
+        <Plus className="w-3.5 h-3.5" />
+        Add Quiz
+      </button>
+
+      <TeacherQuizQuestionsModal
+        isOpen={Boolean(questionsModalQuiz)}
+        onClose={() => setQuestionsModalQuiz(null)}
+        quiz={questionsModalQuiz}
+      />
+    </div>
+  );
+}
+
 export default function TeacherModuleRow({
   module,
   isExpanded,
@@ -468,9 +685,11 @@ export default function TeacherModuleRow({
   onAddAssignment,
   onEditAssignment,
   onDeleteAssignment,
+  onAddQuiz,
+  onEditQuiz,
+  onDeleteQuiz,
 }) {
   const [activeTab, setActiveTab] = useState("lessons");
-  const [comingSoonTarget, setComingSoonTarget] = useState(null);
 
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: module.id,
@@ -590,32 +809,15 @@ export default function TeacherModuleRow({
           )}
 
           {activeTab === "quizzes" && (
-            <div className="space-y-2">
-              <EmptyState
-                icon={HelpCircle}
-                label="Quiz management isn't shown here yet."
-                description="Quizzes aren't wired into module content management yet."
-                compact
-              />
-              <button
-                type="button"
-                onClick={() => setComingSoonTarget("quiz")}
-                className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
-              >
-                <Plus className="w-3.5 h-3.5" />
-                Add Quiz
-              </button>
-            </div>
+            <TeacherQuizzesPanel
+              moduleId={module.id}
+              onAddQuiz={onAddQuiz}
+              onEditQuiz={onEditQuiz}
+              onDeleteQuiz={onDeleteQuiz}
+            />
           )}
         </div>
       )}
-
-      <TeacherComingSoonModal
-        isOpen={comingSoonTarget === "quiz"}
-        onClose={() => setComingSoonTarget(null)}
-        title="Quiz form coming soon"
-        description="Quiz creation isn't built yet — this will let you add a quiz to this module."
-      />
     </li>
   );
 }
