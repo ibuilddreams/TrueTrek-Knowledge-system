@@ -29,6 +29,7 @@ import {
 } from "lucide-react";
 import { deleteModule, getModules, reorderModules } from "@/services/modulesService";
 import { deleteLesson } from "@/services/lessonsService";
+import { deleteAssignment } from "@/services/assignmentsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 import EmptyState from "@/components/ui/EmptyState";
@@ -37,6 +38,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import TeacherModuleRow from "@/components/features/teachers/TeacherModuleRow";
 import TeacherModuleFormModal from "@/components/features/teachers/TeacherModuleFormModal";
 import TeacherLessonFormModal from "@/components/features/teachers/TeacherLessonFormModal";
+import TeacherAssignmentFormModal from "@/components/features/teachers/TeacherAssignmentFormModal";
 
 export default function CourseContentScreen({ courseId, course, onBack }) {
   const numericCourseId = Number(courseId);
@@ -48,6 +50,12 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
   const [expandedModuleIds, setExpandedModuleIds] = useState(new Set());
   const [lessonModalState, setLessonModalState] = useState({ isOpen: false, moduleId: null, lesson: null });
   const [deletingLesson, setDeletingLesson] = useState(null);
+  const [assignmentModalState, setAssignmentModalState] = useState({
+    isOpen: false,
+    moduleId: null,
+    assignment: null,
+  });
+  const [deletingAssignment, setDeletingAssignment] = useState(null);
   const [localModuleOrderIds, setLocalModuleOrderIds] = useState(null);
 
   const dndSensors = useSensors(
@@ -78,6 +86,14 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
     },
   });
 
+  const deleteAssignmentMutation = useMutation({
+    mutationFn: (assignment) => deleteAssignment(assignment.id),
+    onSuccess: (_data, assignment) => {
+      queryClient.invalidateQueries({ queryKey: ["assignments", assignment.moduleId] });
+      queryClient.invalidateQueries({ queryKey: ["modules", numericCourseId] });
+    },
+  });
+
   const reorderModulesMutation = useMutation({
     mutationFn: (entries) => reorderModules(numericCourseId, entries),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["modules", numericCourseId] }),
@@ -99,6 +115,11 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
 
   const totalLessons = useMemo(
     () => modules.reduce((sum, module) => sum + (module.lessons_count || 0), 0),
+    [modules],
+  );
+
+  const totalAssignments = useMemo(
+    () => modules.reduce((sum, module) => sum + (module.assignments_count || 0), 0),
     [modules],
   );
 
@@ -163,6 +184,18 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
     setLessonModalState({ isOpen: false, moduleId: null, lesson: null });
   };
 
+  const openAddAssignment = (moduleId) => {
+    setAssignmentModalState({ isOpen: true, moduleId, assignment: null });
+  };
+
+  const openEditAssignment = (assignment) => {
+    setAssignmentModalState({ isOpen: true, moduleId: null, assignment });
+  };
+
+  const closeAssignmentModal = () => {
+    setAssignmentModalState({ isOpen: false, moduleId: null, assignment: null });
+  };
+
   const handleDeleteModuleConfirm = async () => {
     if (!deletingModule) return;
     try {
@@ -185,10 +218,21 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
     }
   };
 
+  const handleDeleteAssignmentConfirm = async () => {
+    if (!deletingAssignment) return;
+    try {
+      await deleteAssignmentMutation.mutateAsync(deletingAssignment);
+      toastSuccess("Assignment deleted successfully.");
+      setDeletingAssignment(null);
+    } catch (error) {
+      toastError(getApiErrorMessage(error, "Unable to delete assignment."));
+    }
+  };
+
   const stats = [
     { key: "modules", label: "Modules", icon: Layers, value: modules.length },
     { key: "lessons", label: "Lessons", icon: PlayCircle, value: totalLessons },
-    { key: "assignments", label: "Assignments", icon: ClipboardCheck, value: 0 },
+    { key: "assignments", label: "Assignments", icon: ClipboardCheck, value: totalAssignments },
     { key: "quizzes", label: "Quizzes", icon: HelpCircle, value: 0 },
   ];
 
@@ -304,6 +348,9 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
                     onDeleteModule={setDeletingModule}
                     onEditLesson={openEditLesson}
                     onDeleteLesson={setDeletingLesson}
+                    onAddAssignment={openAddAssignment}
+                    onEditAssignment={openEditAssignment}
+                    onDeleteAssignment={setDeletingAssignment}
                   />
                 ))}
               </ul>
@@ -340,12 +387,33 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         confirmLabel="Delete"
       />
 
+      <ConfirmDialog
+        isOpen={Boolean(deletingAssignment)}
+        onClose={() => setDeletingAssignment(null)}
+        onConfirm={handleDeleteAssignmentConfirm}
+        isConfirming={deleteAssignmentMutation.isPending}
+        title="Delete Assignment"
+        message={`Are you sure you want to delete "${deletingAssignment?.title}"? This cannot be undone.`}
+        confirmLabel="Delete"
+      />
+
       <TeacherLessonFormModal
         isOpen={lessonModalState.isOpen}
         onClose={closeLessonModal}
         modules={modules}
         defaultModuleId={lessonModalState.moduleId}
         lesson={lessonModalState.lesson}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ["modules", numericCourseId] });
+        }}
+      />
+
+      <TeacherAssignmentFormModal
+        isOpen={assignmentModalState.isOpen}
+        onClose={closeAssignmentModal}
+        modules={modules}
+        defaultModuleId={assignmentModalState.moduleId}
+        assignment={assignmentModalState.assignment}
         onSaved={() => {
           queryClient.invalidateQueries({ queryKey: ["modules", numericCourseId] });
         }}

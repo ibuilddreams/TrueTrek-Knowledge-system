@@ -113,6 +113,16 @@ class AssignmentWriteSerializer(serializers.ModelSerializer):
                 {"course": "Either a course or a module must be provided."}
             )
 
+        order = attrs.get("order")
+        if module is not None and order is not None:
+            conflict = Assignment.objects.filter(module=module, order=order)
+            if self.instance is not None:
+                conflict = conflict.exclude(pk=self.instance.pk)
+            if conflict.exists():
+                raise serializers.ValidationError(
+                    {"order": "An assignment with this order already exists in this module."}
+                )
+
         current_status = getattr(self.instance, "status", Status.DRAFT)
         new_status = attrs.get("status", current_status)
         if new_status == Status.PUBLISHED and current_status != Status.PUBLISHED:

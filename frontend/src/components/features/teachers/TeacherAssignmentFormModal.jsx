@@ -4,7 +4,7 @@ import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, ClipboardCheck, FileText, Paperclip, Trash2, Upload, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
-import AssignmentAttachmentsModal from "@/components/features/admin/AssignmentAttachmentsModal";
+import TeacherAssignmentAttachmentsModal from "@/components/features/teachers/TeacherAssignmentAttachmentsModal";
 import {
   createAssignment,
   updateAssignment,
@@ -35,7 +35,7 @@ const GRADING_MODE_OPTIONS = [
   {
     value: "MANUAL",
     label: "Manual Review",
-    description: "A teacher grades each submission by hand.",
+    description: "You grade each submission by hand.",
   },
   {
     value: "AUTO",
@@ -87,7 +87,7 @@ function extractFieldErrors(error) {
   return null;
 }
 
-export default function AddAssignmentModal({
+export default function TeacherAssignmentFormModal({
   isOpen,
   onClose,
   modules = [],
@@ -521,7 +521,7 @@ export default function AddAssignmentModal({
       </form>
 
       {isEditMode && (
-        <AssignmentAttachmentsModal
+        <TeacherAssignmentAttachmentsModal
           isOpen={isAttachmentsModalOpen}
           onClose={() => setIsAttachmentsModalOpen(false)}
           assignment={assignment}
