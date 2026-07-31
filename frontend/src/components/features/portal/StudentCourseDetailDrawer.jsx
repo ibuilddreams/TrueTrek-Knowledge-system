@@ -1,11 +1,14 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
   BookOpen,
   Calendar,
   CheckCircle2,
+  ChevronDown,
+  ChevronUp,
   Circle,
   ClipboardList,
   HelpCircle,
@@ -54,8 +57,138 @@ function StatChip({ label, value }) {
   );
 }
 
+function ModuleAccordionItem({ module, isExpanded, onToggle }) {
+  const hasDetails =
+    (module.lessons || []).length > 0 || (module.assignments || []).length > 0;
+
+  return (
+    <div className="rounded-2xl border border-stone-200 bg-white overflow-hidden">
+      <button
+        type="button"
+        onClick={onToggle}
+        aria-expanded={isExpanded}
+        className="w-full text-left p-4 space-y-3 hover:bg-stone-50/70 transition-colors"
+      >
+        <div className="flex items-start justify-between gap-3">
+          <div className="min-w-0">
+            <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
+              Module {module.order + 1}
+            </p>
+            <h5 className="font-serif font-bold text-stone-900 mt-0.5 truncate">
+              {module.title}
+            </h5>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <span
+              className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${
+                module.is_completed
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                  : "bg-stone-50 text-stone-500 border-stone-200"
+              }`}
+            >
+              {Math.round(module.completion_percentage || 0)}%
+            </span>
+            {hasDetails ? (
+              isExpanded ? (
+                <ChevronUp className="w-4 h-4 text-stone-500" />
+              ) : (
+                <ChevronDown className="w-4 h-4 text-stone-500" />
+              )
+            ) : null}
+          </div>
+        </div>
+
+        {module.description ? (
+          <p className="text-[11px] text-stone-500 font-light leading-relaxed line-clamp-2">
+            {module.description}
+          </p>
+        ) : null}
+
+        <div className="flex flex-wrap gap-2 text-[10px] font-mono uppercase tracking-wider text-stone-400">
+          <span className="inline-flex items-center gap-1">
+            <BookOpen className="w-3 h-3" />
+            {module.stats?.completed_lessons || 0}/
+            {module.stats?.total_lessons || 0} lessons
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <HelpCircle className="w-3 h-3" />
+            {module.stats?.total_quizzes || 0} quizzes
+          </span>
+          <span className="inline-flex items-center gap-1">
+            <ClipboardList className="w-3 h-3" />
+            {module.stats?.total_assignments || 0} assigns
+          </span>
+        </div>
+      </button>
+
+      <AnimatePresence initial={false}>
+        {isExpanded && hasDetails && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: "auto", opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.22, ease: "easeOut" }}
+            className="overflow-hidden"
+          >
+            <div className="px-4 pb-4 space-y-3">
+              {(module.lessons || []).length > 0 && (
+                <div className="space-y-1.5 pt-1 border-t border-stone-100">
+                  {module.lessons.map((lesson) => (
+                    <div
+                      key={lesson.id}
+                      className="flex items-center gap-2.5 text-[12px] text-stone-700 py-1"
+                    >
+                      {lesson.is_completed ? (
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
+                      ) : (
+                        <Circle className="w-3.5 h-3.5 text-stone-300 shrink-0" />
+                      )}
+                      <span className="truncate flex-1">{lesson.title}</span>
+                      {lesson.duration_minutes ? (
+                        <span className="text-[10px] font-mono text-stone-400 shrink-0">
+                          {lesson.duration_minutes}m
+                        </span>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {(module.assignments || []).length > 0 && (
+                <div className="space-y-1.5 pt-1 border-t border-stone-100">
+                  {module.assignments.map((assignment) => (
+                    <div
+                      key={assignment.id}
+                      className="flex items-center justify-between gap-2 text-[12px] text-stone-600"
+                    >
+                      <span className="inline-flex items-center gap-2 min-w-0">
+                        <ClipboardList className="w-3.5 h-3.5 text-amber-600 shrink-0" />
+                        <span className="truncate">{assignment.title}</span>
+                      </span>
+                      {assignment.due_date ? (
+                        <span className="text-[10px] font-mono text-stone-400 shrink-0">
+                          Due {formatDateTime(assignment.due_date)}
+                        </span>
+                      ) : null}
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function StudentCourseDetailDrawer({ enrollment, onClose }) {
   const courseId = enrollment?.course?.id;
+  const [expandedModuleIds, setExpandedModuleIds] = useState(() => new Set());
+
+  useEffect(() => {
+    setExpandedModuleIds(new Set());
+  }, [courseId]);
 
   const {
     data,
@@ -221,100 +354,22 @@ export default function StudentCourseDetailDrawer({ enrollment, onClose }) {
                     ) : (
                       <div className="space-y-3">
                         {modules.map((module) => (
-                          <div
+                          <ModuleAccordionItem
                             key={module.id}
-                            className="rounded-2xl border border-stone-200 bg-white p-4 space-y-3"
-                          >
-                            <div className="flex items-start justify-between gap-3">
-                              <div className="min-w-0">
-                                <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
-                                  Module {module.order + 1}
-                                </p>
-                                <h5 className="font-serif font-bold text-stone-900 mt-0.5 truncate">
-                                  {module.title}
-                                </h5>
-                              </div>
-                              <span
-                                className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border shrink-0 ${
-                                  module.is_completed
-                                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                                    : "bg-stone-50 text-stone-500 border-stone-200"
-                                }`}
-                              >
-                                {Math.round(module.completion_percentage || 0)}%
-                              </span>
-                            </div>
-
-                            {module.description ? (
-                              <p className="text-[11px] text-stone-500 font-light leading-relaxed line-clamp-2">
-                                {module.description}
-                              </p>
-                            ) : null}
-
-                            <div className="flex flex-wrap gap-2 text-[10px] font-mono uppercase tracking-wider text-stone-400">
-                              <span className="inline-flex items-center gap-1">
-                                <BookOpen className="w-3 h-3" />
-                                {module.stats?.completed_lessons || 0}/
-                                {module.stats?.total_lessons || 0} lessons
-                              </span>
-                              <span className="inline-flex items-center gap-1">
-                                <HelpCircle className="w-3 h-3" />
-                                {module.stats?.total_quizzes || 0} quizzes
-                              </span>
-                              <span className="inline-flex items-center gap-1">
-                                <ClipboardList className="w-3 h-3" />
-                                {module.stats?.total_assignments || 0} assigns
-                              </span>
-                            </div>
-
-                            {(module.lessons || []).length > 0 && (
-                              <div className="space-y-1.5 pt-1 border-t border-stone-100">
-                                {module.lessons.map((lesson) => (
-                                  <div
-                                    key={lesson.id}
-                                    className="flex items-center gap-2.5 text-[12px] text-stone-700 py-1"
-                                  >
-                                    {lesson.is_completed ? (
-                                      <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-                                    ) : (
-                                      <Circle className="w-3.5 h-3.5 text-stone-300 shrink-0" />
-                                    )}
-                                    <span className="truncate flex-1">
-                                      {lesson.title}
-                                    </span>
-                                    {lesson.duration_minutes ? (
-                                      <span className="text-[10px] font-mono text-stone-400 shrink-0">
-                                        {lesson.duration_minutes}m
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-
-                            {(module.assignments || []).length > 0 && (
-                              <div className="space-y-1.5 pt-1 border-t border-stone-100">
-                                {module.assignments.map((assignment) => (
-                                  <div
-                                    key={assignment.id}
-                                    className="flex items-center justify-between gap-2 text-[12px] text-stone-600"
-                                  >
-                                    <span className="inline-flex items-center gap-2 min-w-0">
-                                      <ClipboardList className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-                                      <span className="truncate">
-                                        {assignment.title}
-                                      </span>
-                                    </span>
-                                    {assignment.due_date ? (
-                                      <span className="text-[10px] font-mono text-stone-400 shrink-0">
-                                        Due {formatDateTime(assignment.due_date)}
-                                      </span>
-                                    ) : null}
-                                  </div>
-                                ))}
-                              </div>
-                            )}
-                          </div>
+                            module={module}
+                            isExpanded={expandedModuleIds.has(module.id)}
+                            onToggle={() => {
+                              setExpandedModuleIds((prev) => {
+                                const next = new Set(prev);
+                                if (next.has(module.id)) {
+                                  next.delete(module.id);
+                                } else {
+                                  next.add(module.id);
+                                }
+                                return next;
+                              });
+                            }}
+                          />
                         ))}
                       </div>
                     )}
