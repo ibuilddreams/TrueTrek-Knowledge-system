@@ -1,11 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, ClipboardCheck, Paperclip, X } from "lucide-react";
+import { Check, ClipboardCheck, FileText, Paperclip, Trash2, Upload, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import AssignmentAttachmentsModal from "@/components/features/admin/AssignmentAttachmentsModal";
-import { createAssignment, updateAssignment } from "@/services/assignmentsService";
+import {
+  createAssignment,
+  updateAssignment,
+  uploadAssignmentAttachment,
+} from "@/services/assignmentsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
@@ -64,6 +68,13 @@ function toIsoString(datetimeLocalValue) {
   return Number.isNaN(date.getTime()) ? "" : date.toISOString();
 }
 
+function formatFileSize(bytes) {
+  if (!Number.isFinite(bytes)) return "";
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(1)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
 function extractFieldErrors(error) {
   const apiFieldErrors = error?.data?.data;
   if (apiFieldErrors && typeof apiFieldErrors === "object") {
@@ -90,6 +101,8 @@ export default function AddAssignmentModal({
   const [form, setForm] = useState(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
   const [isAttachmentsModalOpen, setIsAttachmentsModalOpen] = useState(false);
+  const [pendingAttachments, setPendingAttachments] = useState([]);
+  const pendingAttachmentInputRef = useRef(null);
 
   const createAssignmentMutation = useMutation({
     mutationFn: (payload) => createAssignment(payload),
@@ -122,13 +135,16 @@ export default function AddAssignmentModal({
         order: String(assignment.order ?? 1),
       });
     } else {
+      const initialModuleId = defaultModuleId ? String(defaultModuleId) : String(modules[0]?.id || "");
+      const initialModule = modules.find((module) => String(module.id) === initialModuleId);
       setForm({
         ...INITIAL_FORM,
-        module: defaultModuleId ? String(defaultModuleId) : String(modules[0]?.id || ""),
-        order: "1",
+        module: initialModuleId,
+        order: String((initialModule?.assignments_count ?? 0) + 1),
       });
     }
     setFieldErrors({});
+    setPendingAttachments([]);
   }, [isOpen, defaultModuleId, assignment, modules]);
 
   const handleClose = () => {
@@ -136,10 +152,32 @@ export default function AddAssignmentModal({
     onClose();
   };
 
+  const handlePendingAttachmentChange = (event) => {
+    const files = Array.from(event.target.files || []);
+    if (files.length) {
+      setPendingAttachments((prev) => [...prev, ...files]);
+    }
+    event.target.value = "";
+  };
+
+  const removePendingAttachment = (index) => {
+    setPendingAttachments((prev) => prev.filter((_, i) => i !== index));
+  };
+
   const updateField = (field) => (event) => {
     const value = event.target.type === "checkbox" ? event.target.checked : event.target.value;
     setForm((prev) => ({ ...prev, [field]: value }));
     setFieldErrors((prev) => ({ ...prev, [field]: null }));
+  };
+
+  const handleModuleChange = (event) => {
+    const value = event.target.value;
+    setForm((prev) => {
+      if (isEditMode) return { ...prev, module: value };
+      const selectedModule = modules.find((module) => String(module.id) === value);
+      return { ...prev, module: value, order: String((selectedModule?.assignments_count ?? 0) + 1) };
+    });
+    setFieldErrors((prev) => ({ ...prev, module: null }));
   };
 
   const validate = () => {
@@ -189,6 +227,22 @@ export default function AddAssignmentModal({
       const response = isEditMode
         ? await updateAssignmentMutation.mutateAsync({ id: assignment.id, payload })
         : await createAssignmentMutation.mutateAsync(payload);
+
+      const newAssignmentId = response?.data?.id;
+      if (!isEditMode && newAssignmentId && pendingAttachments.length > 0) {
+        const results = await Promise.allSettled(
+          pendingAttachments.map((file) => uploadAssignmentAttachment(newAssignmentId, file))
+        );
+        const failedCount = results.filter((result) => result.status === "rejected").length;
+        if (failedCount > 0) {
+          toastError(
+            `Assignment created, but ${failedCount} of ${pendingAttachments.length} attachment(s) failed to upload.`
+          );
+        }
+        queryClient.invalidateQueries({ queryKey: ["assignments", payload.module] });
+        queryClient.invalidateQueries({ queryKey: ["assignment-attachments", newAssignmentId] });
+      }
+
       toastSuccess(
         response?.message || `Assignment ${isEditMode ? "updated" : "created"} successfully.`
       );
@@ -217,7 +271,7 @@ export default function AddAssignmentModal({
           <label className={LABEL_CLASS}>Module</label>
           <select
             value={form.module}
-            onChange={updateField("module")}
+            onChange={handleModuleChange}
             disabled={isSubmitting}
             className={FIELD_CLASS}
           >
@@ -375,9 +429,58 @@ export default function AddAssignmentModal({
               Manage Attachments
             </button>
           ) : (
-            <p className="text-[10px] font-mono text-stone-400 tracking-wider p-3 rounded-xl border border-dashed border-stone-200">
-              Save the assignment first to attach reference files.
-            </p>
+            <div className="space-y-2">
+              {pendingAttachments.length > 0 && (
+                <ul className="space-y-2">
+                  {pendingAttachments.map((file, index) => (
+                    <li
+                      key={`${file.name}-${file.lastModified}-${index}`}
+                      className="flex items-center gap-3 p-2.5 rounded-xl border border-stone-200 bg-white"
+                    >
+                      <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                        <FileText className="w-3.5 h-3.5" />
+                      </div>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-xs font-semibold text-stone-800 truncate">{file.name}</p>
+                        <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
+                          {formatFileSize(file.size)}
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removePendingAttachment(index)}
+                        disabled={isSubmitting}
+                        title="Remove attachment"
+                        aria-label="Remove attachment"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 text-rose-600 hover:bg-rose-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" />
+                      </button>
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <input
+                ref={pendingAttachmentInputRef}
+                type="file"
+                multiple
+                className="hidden"
+                onChange={handlePendingAttachmentChange}
+              />
+              <button
+                type="button"
+                onClick={() => pendingAttachmentInputRef.current?.click()}
+                disabled={isSubmitting}
+                className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                Add Attachment
+              </button>
+              <p className="text-[10px] font-mono text-stone-400 tracking-wider">
+                Files upload once the assignment is created · PDF, DOC/DOCX, PPT/PPTX, ZIP, JPG/PNG/WEBP · up to
+                50MB
+              </p>
+            </div>
           )}
         </div>
 

@@ -10,6 +10,7 @@ import {
   Users,
   BookOpenCheck,
   FileText,
+  LineChart,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTeacherEnrolledStudents } from "@/hooks/useTeacherEnrolledStudents";
@@ -22,6 +23,7 @@ import TabTransition from "@/components/ui/TabTransition";
 import DashboardTab from "./tabs/DashboardTab";
 import MyCoursesTab from "./tabs/MyCoursesTab";
 import EnrollmentScoresTab from "./tabs/EnrollmentScoresTab";
+import ProgressTab from "./tabs/ProgressTab";
 import InstructionalManualsTab from "./tabs/InstructionalManualsTab";
 import CurriculumDocumentsTab from "./tabs/CurriculumDocumentsTab";
 
@@ -44,6 +46,12 @@ const TEACHER_TABS = [
     icon: Users,
     title:
       "Switch tab to Scholar-Athlete Enrollment Slots and Compliance Scores",
+  },
+  {
+    id: "progress",
+    label: "Progress",
+    icon: LineChart,
+    title: "Switch tab to Student Progress — lessons, assignments, and quizzes",
   },
   {
     id: "manuals",
@@ -197,6 +205,7 @@ function TeacherPortalContent() {
         {activeTab === "dashboard" && <DashboardTab students={students} />}
         {activeTab === "courses" && <MyCoursesTab />}
         {activeTab === "students" && <EnrollmentScoresTab />}
+        {activeTab === "progress" && <ProgressTab />}
         {activeTab === "manuals" && <InstructionalManualsTab />}
         {activeTab === "documents" && <CurriculumDocumentsTab />}
       </TabTransition>

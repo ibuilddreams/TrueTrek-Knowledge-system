@@ -6,6 +6,7 @@ from rest_framework.permissions import IsAuthenticated
 from common.models import Status
 from common.pagination import Pagination
 from common.response import error_response, success_response
+from courses.models import Course
 from courses.services import is_course_instructor
 from enrollments.models import Enrollment
 from modules.models import Module
@@ -14,16 +15,19 @@ from users.permissions import IsStudent
 from .models import Assignment, AssignmentAttachment, AssignmentSubmission
 from .permissions import IsCourseInstructorOrAdmin, IsEnrolledStudentOrAdmin
 from .serializers import (
+    AssignmentAttachmentOrderEntrySerializer,
     AssignmentAttachmentSerializer,
     AssignmentAttachmentWriteSerializer,
     AssignmentGradeSerializer,
     AssignmentOrderEntrySerializer,
     AssignmentSerializer,
+    AssignmentSubmissionFileSerializer,
     AssignmentSubmissionSerializer,
     AssignmentSubmitSerializer,
     AssignmentWriteSerializer,
 )
 from .services import (
+    AssignmentAttachmentReorderError,
     AssignmentGradingError,
     AssignmentPublishError,
     AssignmentReorderError,
@@ -31,6 +35,7 @@ from .services import (
     get_student_assignments,
     grade_submission,
     publish_assignment,
+    reorder_assignment_attachments,
     reorder_assignments,
     submit_assignment,
 )
@@ -349,6 +354,42 @@ class AssignmentAttachmentDetailView(generics.RetrieveUpdateDestroyAPIView):
         return success_response(None, message="Attachment deleted successfully")
 
 
+class AssignmentAttachmentOrderView(generics.GenericAPIView):
+    http_method_names = ["patch", "head", "options"]
+    serializer_class = AssignmentAttachmentOrderEntrySerializer
+
+    def get_permissions(self):
+        return [IsCourseInstructorOrAdmin()]
+
+    def patch(self, request, *args, **kwargs):
+        assignment_id = kwargs["assignment_id"]
+        try:
+            assignment = Assignment.objects.select_related("course").get(pk=assignment_id)
+        except Assignment.DoesNotExist:
+            return error_response(
+                message="Assignment with the given id does not exist.", status_code=404
+            )
+
+        if not (request.user.is_admin or is_course_instructor(request.user, assignment.course)):
+            return error_response(
+                message="You do not have permission to perform this action.",
+                status_code=403,
+            )
+
+        serializer = self.get_serializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            attachments = reorder_assignment_attachments(assignment_id, serializer.validated_data)
+        except AssignmentAttachmentReorderError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        return success_response(
+            AssignmentAttachmentSerializer(attachments, many=True, context={"request": request}).data,
+            message="Attachments reordered successfully",
+        )
+
+
 class AssignmentSubmissionListView(generics.ListAPIView):
     serializer_class = AssignmentSubmissionSerializer
     pagination_class = Pagination
@@ -488,3 +529,102 @@ class AssignmentGradeSubmissionView(generics.GenericAPIView):
             AssignmentSubmissionSerializer(submission, context={"request": request}).data,
             message="Submission graded successfully",
         )
+
+
+class AssignmentCourseProgressListView(generics.GenericAPIView):
+    """Teacher/admin-facing submission-grading dashboard for one course."""
+
+    permission_classes = [IsAuthenticated]
+    pagination_class = Pagination
+
+    def get(self, request, course_id):
+        try:
+            course = Course.objects.get(pk=course_id)
+        except Course.DoesNotExist:
+            return error_response(message="Course with the given id does not exist.", status_code=404)
+
+        if not (request.user.is_admin or is_course_instructor(request.user, course)):
+            return error_response(
+                message="You do not have permission to perform this action.", status_code=403
+            )
+
+        assignments = Assignment.objects.filter(course=course, status=Status.PUBLISHED)
+        assignment_id = request.query_params.get("assignment")
+        if assignment_id:
+            assignments = assignments.filter(id=assignment_id)
+        assignments = list(assignments.order_by("module", "order"))
+        assignment_ids = [assignment.id for assignment in assignments]
+
+        enrollments = Enrollment.objects.filter(
+            course=course, status=Enrollment.EnrollmentStatus.ACTIVE
+        ).select_related("student")
+        student_id = request.query_params.get("student")
+        if student_id:
+            enrollments = enrollments.filter(student_id=student_id)
+        enrollments = list(enrollments)
+        student_ids = [enrollment.student_id for enrollment in enrollments]
+
+        submissions = (
+            AssignmentSubmission.objects.filter(
+                assignment_id__in=assignment_ids, student_id__in=student_ids
+            )
+            .exclude(status=AssignmentSubmission.SubmissionStatus.DRAFT)
+            .select_related("student")
+            .prefetch_related("files")
+        )
+        submission_map = {(s.assignment_id, s.student_id): s for s in submissions}
+
+        all_rows = []
+        for assignment in assignments:
+            for enrollment in enrollments:
+                submission = submission_map.get((assignment.id, enrollment.student_id))
+                all_rows.append(
+                    {
+                        "assignment": {
+                            "id": assignment.id,
+                            "title": assignment.title,
+                            "total_marks": assignment.total_marks,
+                            "due_date": assignment.due_date,
+                        },
+                        "student": {
+                            "id": enrollment.student_id,
+                            "name": enrollment.student.name,
+                            "email": enrollment.student.email,
+                        },
+                        "status": submission.status if submission else "PENDING",
+                        "submission_id": submission.id if submission else None,
+                        "submission_text": submission.submission_text if submission else "",
+                        "submitted_at": submission.submitted_at if submission else None,
+                        "marks": submission.marks if submission else None,
+                        "feedback": submission.feedback if submission else "",
+                        "graded_at": submission.graded_at if submission else None,
+                        "files": (
+                            AssignmentSubmissionFileSerializer(
+                                submission.files.all(), many=True, context={"request": request}
+                            ).data
+                            if submission
+                            else []
+                        ),
+                    }
+                )
+
+        total_submissions = sum(1 for row in all_rows if row["submission_id"] is not None)
+        graded = sum(1 for row in all_rows if row["marks"] is not None)
+        stats = {
+            "total_assignments": len(assignments),
+            "total_submissions": total_submissions,
+            "pending_reviews": total_submissions - graded,
+            "graded": graded,
+        }
+
+        status_filter = request.query_params.get("status")
+        rows = (
+            [row for row in all_rows if row["status"] == status_filter]
+            if status_filter
+            else all_rows
+        )
+
+        page = self.paginate_queryset(rows)
+        paginated_data = self.paginator.get_paginated_response(page).data
+        data = {"stats": stats, **paginated_data}
+        return success_response(data, message="Assignment progress fetched successfully")

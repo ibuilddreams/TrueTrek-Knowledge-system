@@ -118,7 +118,13 @@ def send_password_reset_email(email):
 def get_teacher_assigned_courses(teacher):
     return (
         Course.objects.filter(instructors__instructor=teacher)
-        .annotate(total_students=Count("enrollments", distinct=True))
+        .annotate(
+            total_students=Count("enrollments", distinct=True),
+            modules_count=Count("modules", distinct=True),
+            lessons_count=Count("modules__lessons", distinct=True),
+            assignments_count=Count("assignments", distinct=True),
+            quizzes_count=Count("quizzes", distinct=True),
+        )
         .select_related("category")
         .prefetch_related("tags", "instructors__instructor")
     )

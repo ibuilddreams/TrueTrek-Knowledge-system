@@ -36,7 +36,7 @@ class AssignmentAttachmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AssignmentAttachment
-        fields = ["id", "file", "original_name", "file_type", "created_at"]
+        fields = ["id", "file", "original_name", "file_type", "order", "created_at"]
         read_only_fields = fields
 
     def get_file(self, obj):
@@ -113,6 +113,16 @@ class AssignmentWriteSerializer(serializers.ModelSerializer):
                 {"course": "Either a course or a module must be provided."}
             )
 
+        order = attrs.get("order")
+        if module is not None and order is not None:
+            conflict = Assignment.objects.filter(module=module, order=order)
+            if self.instance is not None:
+                conflict = conflict.exclude(pk=self.instance.pk)
+            if conflict.exists():
+                raise serializers.ValidationError(
+                    {"order": "An assignment with this order already exists in this module."}
+                )
+
         current_status = getattr(self.instance, "status", Status.DRAFT)
         new_status = attrs.get("status", current_status)
         if new_status == Status.PUBLISHED and current_status != Status.PUBLISHED:
@@ -155,11 +165,13 @@ class AssignmentAttachmentWriteSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         file = validated_data["file"]
         file_type = validate_assignment_file(file)
+        assignment = validated_data["assignment"]
         return AssignmentAttachment.objects.create(
-            assignment=validated_data["assignment"],
+            assignment=assignment,
             file=file,
             original_name=os.path.basename(file.name),
             file_type=file_type,
+            order=get_next_order(AssignmentAttachment.objects.filter(assignment=assignment)),
             uploaded_by=validated_data.get("uploaded_by"),
         )
 
@@ -176,6 +188,11 @@ class AssignmentAttachmentWriteSerializer(serializers.ModelSerializer):
 
 class AssignmentOrderEntrySerializer(serializers.Serializer):
     assignment_id = serializers.IntegerField()
+    order = serializers.IntegerField(min_value=1)
+
+
+class AssignmentAttachmentOrderEntrySerializer(serializers.Serializer):
+    attachment_id = serializers.IntegerField()
     order = serializers.IntegerField(min_value=1)
 
 

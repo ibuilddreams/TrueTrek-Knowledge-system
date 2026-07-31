@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getTeachers } from "@/services/teachersService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
@@ -14,10 +14,12 @@ import {
 export function useAdminTeachers() {
   const dispatch = useDispatch();
   const teachers = useSelector(selectTeachers);
+  const statusRef = useRef(teachers.status);
+  statusRef.current = teachers.status;
 
   const loadTeachers = useCallback(
     async ({ force = false } = {}) => {
-      if (!force && (teachers.status === "loading" || teachers.status === "succeeded")) {
+      if (!force && statusRef.current !== "idle") {
         return;
       }
 
@@ -36,7 +38,7 @@ export function useAdminTeachers() {
         dispatch(teachersFetchFailed(getApiErrorMessage(error, "Unable to load teachers.")));
       }
     },
-    [dispatch, teachers.status]
+    [dispatch]
   );
 
   return { ...teachers, loadTeachers };

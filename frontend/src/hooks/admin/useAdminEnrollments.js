@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getEnrollments } from "@/services/enrollmentsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
@@ -14,10 +14,12 @@ import {
 export function useAdminEnrollments() {
   const dispatch = useDispatch();
   const enrollments = useSelector(selectEnrollments);
+  const statusRef = useRef(enrollments.status);
+  statusRef.current = enrollments.status;
 
   const loadEnrollments = useCallback(
     async ({ force = false } = {}) => {
-      if (!force && (enrollments.status === "loading" || enrollments.status === "succeeded")) {
+      if (!force && statusRef.current !== "idle") {
         return;
       }
 
@@ -36,7 +38,7 @@ export function useAdminEnrollments() {
         dispatch(enrollmentsFetchFailed(getApiErrorMessage(error, "Unable to load enrollments.")));
       }
     },
-    [dispatch, enrollments.status]
+    [dispatch]
   );
 
   return { ...enrollments, loadEnrollments };

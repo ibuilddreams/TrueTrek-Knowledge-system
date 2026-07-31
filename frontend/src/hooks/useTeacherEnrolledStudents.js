@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getTeacherEnrolledStudents } from "@/services/teacherCoursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
@@ -14,10 +14,12 @@ import {
 export function useTeacherEnrolledStudents() {
   const dispatch = useDispatch();
   const roster = useSelector(selectTeacherEnrolledStudents);
+  const statusRef = useRef(roster.status);
+  statusRef.current = roster.status;
 
   const loadEnrolledStudents = useCallback(
     async ({ force = false } = {}) => {
-      if (!force && (roster.status === "loading" || roster.status === "succeeded")) {
+      if (!force && statusRef.current !== "idle") {
         return;
       }
 
@@ -38,7 +40,7 @@ export function useTeacherEnrolledStudents() {
         );
       }
     },
-    [dispatch, roster.status]
+    [dispatch]
   );
 
   return { ...roster, loadEnrolledStudents };

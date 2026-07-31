@@ -6,6 +6,8 @@ from common.response import error_response, success_response
 from courses.services import is_course_instructor
 from enrollments.models import Enrollment
 from modules.models import Module
+from progress.services import mark_lesson_complete
+from users.permissions import IsStudent
 
 from .models import Lesson
 from .permissions import IsCourseInstructorOrAdmin, IsEnrolledStudentOrAdmin
@@ -154,3 +156,30 @@ class LessonOrderView(generics.GenericAPIView):
             LessonSerializer(lessons, many=True, context={"request": request}).data,
             message="Lessons reordered successfully",
         )
+
+
+class LessonCompleteView(generics.GenericAPIView):
+    http_method_names = ["post", "head", "options"]
+    permission_classes = [IsStudent]
+
+    def post(self, request, pk):
+        try:
+            lesson = Lesson.objects.select_related("module", "module__course").get(pk=pk)
+        except Lesson.DoesNotExist:
+            return error_response(message="Lesson with the given id does not exist.", status_code=404)
+
+        if not Enrollment.objects.filter(
+            student=request.user,
+            course_id=lesson.module.course_id,
+            status=Enrollment.EnrollmentStatus.ACTIVE,
+        ).exists():
+            return error_response(message="You are not enrolled in this course.", status_code=403)
+
+        lesson_progress = mark_lesson_complete(request.user, lesson)
+
+        data = {
+            "lesson_id": lesson.id,
+            "is_completed": lesson_progress.is_completed,
+            "completed_at": lesson_progress.completed_at,
+        }
+        return success_response(data, message="Lesson marked as completed")

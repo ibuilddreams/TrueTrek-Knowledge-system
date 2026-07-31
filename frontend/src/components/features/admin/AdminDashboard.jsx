@@ -8,6 +8,7 @@ import {
   Folder,
   GraduationCap,
   LayoutDashboard,
+  LineChart,
   Lock,
   Shield,
   Tag,
@@ -28,6 +29,7 @@ import CoursesTab from "@/components/features/admin/tabs/CoursesTab";
 import EnrollmentsTab from "@/components/features/admin/tabs/EnrollmentsTab";
 import StudentsTab from "@/components/features/admin/tabs/StudentsTab";
 import TeachersTab from "@/components/features/admin/tabs/TeachersTab";
+import ProgressTab from "@/components/features/admin/tabs/ProgressTab";
 import TagsTab from "@/components/features/admin/tabs/TagsTab";
 import CategoriesTab from "@/components/features/admin/tabs/CategoriesTab";
 
@@ -37,6 +39,7 @@ const TABS = [
   { id: "enrollments", label: "Enrollments", icon: ClipboardList },
   { id: "students", label: "Students", icon: GraduationCap },
   { id: "teachers", label: "Teachers", icon: Users },
+  { id: "progress", label: "Progress", icon: LineChart },
   { id: "tags", label: "Tags", icon: Tag },
   { id: "categories", label: "Categories", icon: Folder },
 ];
@@ -48,6 +51,7 @@ const TAB_COMPONENTS = {
   enrollments: EnrollmentsTab,
   students: StudentsTab,
   teachers: TeachersTab,
+  progress: ProgressTab,
   tags: TagsTab,
   categories: CategoriesTab,
 };
