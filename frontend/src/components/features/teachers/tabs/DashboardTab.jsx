@@ -118,12 +118,12 @@ ${aiPrompt}
 
     try {
       const data = await requestAdvisorAdvice({
-          scenario: promptText,
-          advisorName: "Dean of Faculty & Curricula",
-          systemPrompt: `You are the Lead Dean of academic operations and student risk analysis at TrueTrek Learning.
+        scenario: promptText,
+        advisorName: "Dean of Faculty & Curricula",
+        systemPrompt: `You are the Lead Dean of academic operations and student risk analysis at TrueTrek Learning.
 Analyze the students scores, cohort strengths, compliance risks, and which manuals or guidelines the teacher needs to deploy.
 Frame your advice beautifully in highly structural Markdown. Format with bullet points, strategic takeaway highlights, and recommendations for specific students who may be failing or excelling.`
-        });
+      });
       if (data.advice) {
         setAiReport(data.advice);
       } else {
@@ -187,211 +187,211 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
 
       {dashboardStatus === 'succeeded' && !isDashboardEmpty && (
         <>
-      {/* Live Student Portal Performance Feedback */}
-      <div id="live-compliance-feedback-panel" className="bg-gradient-to-r from-amber-500/10 via-amber-600/5 to-transparent border border-amber-500/20 rounded-2xl p-6 relative overflow-hidden">
-        <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 bg-[radial-gradient(circle_at_right,_var(--tw-gradient-stops))] from-amber-500 to-transparent pointer-events-none" />
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
-          <div className="flex-1">
-            <div className="flex items-center gap-2 mb-1.5">
-              <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-              <span className="text-[10px] font-mono uppercase tracking-widest text-stone-500 font-bold">Real-time Portal Synchronization Active</span>
-            </div>
-            <h4 className="text-xl font-serif text-stone-900 font-bold">Scholar-Athlete Current Compliance Index</h4>
-            <p className="text-xs text-stone-600 mt-1 max-w-xl leading-relaxed font-sans">
-              Live average course completion across every cohort you teach, refreshed straight from the faculty dashboard API.
-            </p>
-          </div>
+          {/* Live Student Portal Performance Feedback */}
+          {/*<div id="live-compliance-feedback-panel" className="bg-gradient-to-r from-amber-500/10 via-amber-600/5 to-transparent border border-amber-500/20 rounded-2xl p-6 relative overflow-hidden">
+            <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 bg-[radial-gradient(circle_at_right,_var(--tw-gradient-stops))] from-amber-500 to-transparent pointer-events-none" />
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
+              <div className="flex-1">
+                <div className="flex items-center gap-2 mb-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
+                  <span className="text-[10px] font-mono uppercase tracking-widest text-stone-500 font-bold">Real-time Portal Synchronization Active</span>
+                </div>
+                <h4 className="text-xl font-serif text-stone-900 font-bold">Scholar-Athlete Current Compliance Index</h4>
+                <p className="text-xs text-stone-600 mt-1 max-w-xl leading-relaxed font-sans">
+                  Live average course completion across every cohort you teach, refreshed straight from the faculty dashboard API.
+                </p>
+              </div>
 
-          <div className="flex flex-col sm:flex-row gap-4 shrink-0 w-full md:w-auto">
-            <div className="sm:w-72 w-full bg-white border border-stone-200/80 p-4 rounded-xl shadow-xs flex flex-col justify-between">
-              <div>
-                <div className="flex items-center justify-between mb-2">
-                  <span className="text-[10px] font-mono text-stone-500 font-bold uppercase">Aggregate Portal Score</span>
-                  <span className="text-sm font-mono font-bold text-amber-850">{complianceIndex}%</span>
+              <div className="flex flex-col sm:flex-row gap-4 shrink-0 w-full md:w-auto">
+                <div className="sm:w-72 w-full bg-white border border-stone-200/80 p-4 rounded-xl shadow-xs flex flex-col justify-between">
+                  <div>
+                    <div className="flex items-center justify-between mb-2">
+                      <span className="text-[10px] font-mono text-stone-500 font-bold uppercase">Aggregate Portal Score</span>
+                      <span className="text-sm font-mono font-bold text-amber-850">{complianceIndex}%</span>
+                    </div>
+
+                    <div className="w-full bg-stone-100 rounded-full h-3.5 overflow-hidden mb-2 relative">
+                      <motion.div
+                        className="bg-gradient-to-r from-amber-500 to-amber-700 h-full rounded-full"
+                        initial={{ width: 0 }}
+                        animate={{ width: `${complianceIndex}%` }}
+                        transition={{ duration: 0.8, ease: "easeOut" }}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="flex justify-between items-center text-[9px] font-mono text-stone-400 mt-2">
+                    <span>MIN: 0%</span>
+                    <span className="text-amber-700 font-bold">STABILITY: EXCELLENT</span>
+                    <span>MAX: 100%</span>
+                  </div>
                 </div>
 
-                <div className="w-full bg-stone-100 rounded-full h-3.5 overflow-hidden mb-2 relative">
-                  <motion.div
-                    className="bg-gradient-to-r from-amber-500 to-amber-700 h-full rounded-full"
-                    initial={{ width: 0 }}
-                    animate={{ width: `${complianceIndex}%` }}
-                    transition={{ duration: 0.8, ease: "easeOut" }}
-                  />
+                <div className="sm:w-72 w-full bg-white border border-stone-200/80 p-4 rounded-xl shadow-xs flex flex-col justify-between">
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[10px] font-mono text-stone-500 font-bold uppercase">7-Day Compliance Trend</span>
+                    <span className="text-[9px] font-mono font-bold text-emerald-600 flex items-center gap-0.5">
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                      LIVE
+                    </span>
+                  </div>
+
+                  <div className="h-16 w-full text-[8px] font-mono mt-1">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <AreaChart data={liveTrendData} margin={{ top: 2, right: 2, left: -28, bottom: -5 }}>
+                        <defs>
+                          <linearGradient id="trendScoreColor" x1="0" y1="0" x2="0" y2="1">
+                            <stop offset="5%" stopColor="#d97706" stopOpacity={0.25} />
+                            <stop offset="95%" stopColor="#d97706" stopOpacity={0} />
+                          </linearGradient>
+                        </defs>
+                        <XAxis dataKey="date" stroke="#a8a29e" tickLine={false} axisLine={false} />
+                        <YAxis allowDecimals={false} stroke="#a8a29e" tickLine={false} axisLine={false} />
+                        <Tooltip
+                          contentStyle={{ backgroundColor: '#1c1917', border: '1px solid #44403c', borderRadius: '8px', padding: '4px' }}
+                          labelStyle={{ color: '#fff', fontSize: '8px', fontStyle: 'normal' }}
+                          itemStyle={{ color: '#f59e0b', fontSize: '8px', padding: '0' }}
+                        />
+                        <Area type="monotone" dataKey="Activity" stroke="#d97706" fillOpacity={1} fill="url(#trendScoreColor)" strokeWidth={2} name="Activity" />
+                      </AreaChart>
+                    </ResponsiveContainer>
+                  </div>
                 </div>
               </div>
-
-              <div className="flex justify-between items-center text-[9px] font-mono text-stone-400 mt-2">
-                <span>MIN: 0%</span>
-                <span className="text-amber-700 font-bold">STABILITY: EXCELLENT</span>
-                <span>MAX: 100%</span>
-              </div>
-            </div>
-
-            <div className="sm:w-72 w-full bg-white border border-stone-200/80 p-4 rounded-xl shadow-xs flex flex-col justify-between">
-              <div className="flex items-center justify-between mb-1">
-                <span className="text-[10px] font-mono text-stone-500 font-bold uppercase">7-Day Compliance Trend</span>
-                <span className="text-[9px] font-mono font-bold text-emerald-600 flex items-center gap-0.5">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                  LIVE
-                </span>
-              </div>
-
-              <div className="h-16 w-full text-[8px] font-mono mt-1">
-                <ResponsiveContainer width="100%" height="100%">
-                  <AreaChart data={liveTrendData} margin={{ top: 2, right: 2, left: -28, bottom: -5 }}>
-                    <defs>
-                      <linearGradient id="trendScoreColor" x1="0" y1="0" x2="0" y2="1">
-                        <stop offset="5%" stopColor="#d97706" stopOpacity={0.25}/>
-                        <stop offset="95%" stopColor="#d97706" stopOpacity={0}/>
-                      </linearGradient>
-                    </defs>
-                    <XAxis dataKey="date" stroke="#a8a29e" tickLine={false} axisLine={false} />
-                    <YAxis allowDecimals={false} stroke="#a8a29e" tickLine={false} axisLine={false} />
-                    <Tooltip
-                      contentStyle={{ backgroundColor: '#1c1917', border: '1px solid #44403c', borderRadius: '8px', padding: '4px' }}
-                      labelStyle={{ color: '#fff', fontSize: '8px', fontStyle: 'normal' }}
-                      itemStyle={{ color: '#f59e0b', fontSize: '8px', padding: '0' }}
-                    />
-                    <Area type="monotone" dataKey="Activity" stroke="#d97706" fillOpacity={1} fill="url(#trendScoreColor)" strokeWidth={2} name="Activity" />
-                  </AreaChart>
-                </ResponsiveContainer>
-              </div>
-            </div>
           </div>
-        </div>
-      </div>
+          </div> */}
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
 
-        <StatCard
-          label="Total Enrolled"
-          value={liveTotalEnrolled}
-          icon={Users}
-          footer={
-            <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1 mt-1 font-mono">
-              <span>● Active Slots Filled</span>
-            </p>
-          }
-        />
+            <StatCard
+              label="Total Enrolled"
+              value={liveTotalEnrolled}
+              icon={Users}
+              footer={
+                <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1 mt-1 font-mono">
+                  <span>● Active Slots Filled</span>
+                </p>
+              }
+            />
 
-        <StatCard
-          label="Class Avg Score"
-          value={`${liveClassAverageScore}%`}
-          icon={Award}
-          footer={
-            <p className="text-[11px] text-stone-400 font-medium mt-1 font-mono">
-              Average completion across taught courses
-            </p>
-          }
-        />
+            <StatCard
+              label="Class Avg Score"
+              value={`${liveClassAverageScore}%`}
+              icon={Award}
+              footer={
+                <p className="text-[11px] text-stone-400 font-medium mt-1 font-mono">
+                  Average completion across taught courses
+                </p>
+              }
+            />
 
-        <StatCard
-          label="Avg Program Progress"
-          value={`${liveAverageProgress}%`}
-          icon={Activity}
-          footer={
-            <div className="w-24 bg-stone-100 h-1.5 rounded-full mt-2.5 overflow-hidden">
-              <div className="bg-amber-600 h-full" style={{ width: `${liveAverageProgress}%` }} />
-            </div>
-          }
-        />
+            <StatCard
+              label="Avg Program Progress"
+              value={`${liveAverageProgress}%`}
+              icon={Activity}
+              footer={
+                <div className="w-24 bg-stone-100 h-1.5 rounded-full mt-2.5 overflow-hidden">
+                  <div className="bg-amber-600 h-full" style={{ width: `${liveAverageProgress}%` }} />
+                </div>
+              }
+            />
 
-        <StatCard
-          label="Active Streaks (7d)"
-          value={activeStreakDays}
-          icon={Clock}
-          footer={
-            <p className="text-[11px] text-stone-400 mt-1 font-mono">
-              Days with recorded activity this week
-            </p>
-          }
-        />
+            <StatCard
+              label="Active Streaks (7d)"
+              value={activeStreakDays}
+              icon={Clock}
+              footer={
+                <p className="text-[11px] text-stone-400 mt-1 font-mono">
+                  Days with recorded activity this week
+                </p>
+              }
+            />
 
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-
-        <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-sm">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-stone-100">
-            <div>
-              <h3 className="font-serif font-bold text-base text-stone-900">Enrolled Students by Course</h3>
-              <p className="text-xs text-stone-400 font-light mt-0.5">Active registration load across your taught courses</p>
-            </div>
-            <span className="text-[10px] font-mono uppercase px-2.5 py-1 bg-stone-50 border border-stone-200 text-stone-500 rounded-lg">{liveCoursesTaught} Courses</span>
           </div>
 
-          <div className="h-72 w-full text-xs font-mono">
-            {liveStudentsPerCourse.length === 0 ? (
-              <EmptyState
-                icon={BookMarked}
-                label="No enrollment data yet"
-                description="Student counts per course will appear once enrollments come in."
-                compact
-              />
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={liveStudentsPerCourse} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
-                  <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
-                  <XAxis dataKey="name" stroke="#78716c" />
-                  <YAxis allowDecimals={false} stroke="#78716c" />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#1c1917', border: '1px solid #44403c', borderRadius: '12px' }}
-                    labelStyle={{ color: '#fff', fontFamily: 'serif', fontWeight: 'bold' }}
-                    itemStyle={{ fontFamily: 'monospace', color: '#f59e0b' }}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+
+            <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-sm">
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-stone-100">
+                <div>
+                  <h3 className="font-serif font-bold text-base text-stone-900">Enrolled Students by Course</h3>
+                  <p className="text-xs text-stone-400 font-light mt-0.5">Active registration load across your taught courses</p>
+                </div>
+                <span className="text-[10px] font-mono uppercase px-2.5 py-1 bg-stone-50 border border-stone-200 text-stone-500 rounded-lg">{liveCoursesTaught} Courses</span>
+              </div>
+
+              <div className="h-72 w-full text-xs font-mono">
+                {liveStudentsPerCourse.length === 0 ? (
+                  <EmptyState
+                    icon={BookMarked}
+                    label="No enrollment data yet"
+                    description="Student counts per course will appear once enrollments come in."
+                    compact
                   />
-                  <Bar dataKey="Enrollments" fill="#d97706" radius={[4, 4, 0, 0]}>
-                    {liveStudentsPerCourse.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#b45309' : '#d97706'} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
-
-        <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-sm">
-          <div className="flex items-center justify-between mb-6 pb-4 border-b border-stone-100">
-            <div>
-              <h3 className="font-serif font-bold text-base text-stone-900">Average Completion by Course</h3>
-              <p className="text-xs text-stone-400 font-light mt-0.5">Course progress velocity across enrolled students</p>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <BarChart data={liveStudentsPerCourse} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
+                      <XAxis dataKey="name" stroke="#78716c" />
+                      <YAxis allowDecimals={false} stroke="#78716c" />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#1c1917', border: '1px solid #44403c', borderRadius: '12px' }}
+                        labelStyle={{ color: '#fff', fontFamily: 'serif', fontWeight: 'bold' }}
+                        itemStyle={{ fontFamily: 'monospace', color: '#f59e0b' }}
+                      />
+                      <Bar dataKey="Enrollments" fill="#d97706" radius={[4, 4, 0, 0]}>
+                        {liveStudentsPerCourse.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#b45309' : '#d97706'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
             </div>
-            <span className="text-[10px] font-mono uppercase px-2.5 py-1 bg-stone-50 border border-stone-200 text-stone-500 rounded-lg">{liveTotalLessons} Lessons</span>
-          </div>
 
-          <div className="h-72 w-full text-xs font-mono">
-            {liveCompletionByCourse.length === 0 ? (
-              <EmptyState
-                icon={TrendingUp}
-                label="No progress data yet"
-                description="Course completion averages will populate as learners engage."
-                compact
-              />
-            ) : (
-              <ResponsiveContainer width="100%" height="100%">
-                <AreaChart data={liveCompletionByCourse} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
-                  <defs>
-                    <linearGradient id="scoreColor" x1="0" y1="0" x2="0" y2="1">
-                      <stop offset="5%" stopColor="#b45309" stopOpacity={0.2}/>
-                      <stop offset="95%" stopColor="#b45309" stopOpacity={0}/>
-                    </linearGradient>
-                  </defs>
-                  <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" />
-                  <XAxis dataKey="name" stroke="#78716c" />
-                  <YAxis stroke="#78716c" />
-                  <Tooltip
-                    contentStyle={{ backgroundColor: '#1c1917', border: '1px solid #44403c', borderRadius: '12px' }}
-                    labelStyle={{ color: '#fff', fontFamily: 'serif', fontWeight: 'bold' }}
-                    itemStyle={{ fontFamily: 'monospace' }}
+            <div className="bg-white border border-stone-200 p-6 rounded-2xl shadow-sm">
+              <div className="flex items-center justify-between mb-6 pb-4 border-b border-stone-100">
+                <div>
+                  <h3 className="font-serif font-bold text-base text-stone-900">Average Completion by Course</h3>
+                  <p className="text-xs text-stone-400 font-light mt-0.5">Course progress velocity across enrolled students</p>
+                </div>
+                <span className="text-[10px] font-mono uppercase px-2.5 py-1 bg-stone-50 border border-stone-200 text-stone-500 rounded-lg">{liveTotalLessons} Lessons</span>
+              </div>
+
+              <div className="h-72 w-full text-xs font-mono">
+                {liveCompletionByCourse.length === 0 ? (
+                  <EmptyState
+                    icon={TrendingUp}
+                    label="No progress data yet"
+                    description="Course completion averages will populate as learners engage."
+                    compact
                   />
-                  <Area type="monotone" dataKey="Completion" stroke="#b45309" fillOpacity={1} fill="url(#scoreColor)" strokeWidth={2} name="Completion %" />
-                </AreaChart>
-              </ResponsiveContainer>
-            )}
-          </div>
-        </div>
+                ) : (
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart data={liveCompletionByCourse} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                      <defs>
+                        <linearGradient id="scoreColor" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#b45309" stopOpacity={0.2} />
+                          <stop offset="95%" stopColor="#b45309" stopOpacity={0} />
+                        </linearGradient>
+                      </defs>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" />
+                      <XAxis dataKey="name" stroke="#78716c" />
+                      <YAxis stroke="#78716c" />
+                      <Tooltip
+                        contentStyle={{ backgroundColor: '#1c1917', border: '1px solid #44403c', borderRadius: '12px' }}
+                        labelStyle={{ color: '#fff', fontFamily: 'serif', fontWeight: 'bold' }}
+                        itemStyle={{ fontFamily: 'monospace' }}
+                      />
+                      <Area type="monotone" dataKey="Completion" stroke="#b45309" fillOpacity={1} fill="url(#scoreColor)" strokeWidth={2} name="Completion %" />
+                    </AreaChart>
+                  </ResponsiveContainer>
+                )}
+              </div>
+            </div>
 
-      </div>
+          </div>
         </>
       )}
 
