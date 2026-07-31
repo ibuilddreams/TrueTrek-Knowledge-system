@@ -3,7 +3,6 @@
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
-  Award,
   BookMarked,
   BookOpen,
   CheckCircle2,
@@ -20,12 +19,112 @@ import {
   XAxis,
   YAxis,
   Tooltip,
+  Cell,
 } from "recharts";
 import { getStudentDashboardStats } from "@/services/studentDashboardService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
-import StatCard from "@/components/ui/StatCard";
 import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
+
+function ProgressRing({ value, size = 128, stroke = 10 }) {
+  const radius = (size - stroke) / 2;
+  const circumference = 2 * Math.PI * radius;
+  const offset = circumference - (Math.min(100, Math.max(0, value)) / 100) * circumference;
+
+  return (
+    <div className="relative" style={{ width: size, height: size }}>
+      <svg width={size} height={size} className="-rotate-90">
+        <circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="rgba(255,255,255,0.12)"
+          strokeWidth={stroke}
+        />
+        <motion.circle
+          cx={size / 2}
+          cy={size / 2}
+          r={radius}
+          fill="none"
+          stroke="#f59e0b"
+          strokeWidth={stroke}
+          strokeLinecap="round"
+          strokeDasharray={circumference}
+          initial={{ strokeDashoffset: circumference }}
+          animate={{ strokeDashoffset: offset }}
+          transition={{ duration: 1, ease: "easeOut" }}
+        />
+      </svg>
+      <div className="absolute inset-0 flex flex-col items-center justify-center">
+        <span className="text-3xl font-serif font-bold text-white leading-none">
+          {value}%
+        </span>
+        <span className="text-[9px] font-mono uppercase tracking-[0.16em] text-stone-400 mt-1.5">
+          Progress
+        </span>
+      </div>
+    </div>
+  );
+}
+
+function CourseStat({ label, value, icon: Icon, delay = 0 }) {
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.35, delay }}
+      className="flex items-center gap-3.5 min-w-0"
+    >
+      <div className="w-10 h-10 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-600 flex items-center justify-center shrink-0">
+        <Icon className="w-4 h-4" />
+      </div>
+      <div className="min-w-0">
+        <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-stone-400 truncate">
+          {label}
+        </p>
+        <p className="text-2xl font-serif font-bold text-stone-900 leading-none mt-1">
+          {value}
+        </p>
+      </div>
+    </motion.div>
+  );
+}
+
+function ActionMetric({ label, value, icon: Icon, tone = "stone", delay = 0 }) {
+  const tones = {
+    stone: "bg-stone-50 border-stone-200/80 text-stone-600",
+    amber: "bg-amber-50/80 border-amber-100 text-amber-800",
+    rose: "bg-rose-50/70 border-rose-100 text-rose-700",
+    emerald: "bg-emerald-50/70 border-emerald-100 text-emerald-700",
+  };
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 12 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.4, delay }}
+      className="group relative rounded-2xl border border-stone-200/80 bg-white/90 p-5 overflow-hidden transition-shadow hover:shadow-[0_14px_40px_-28px_rgba(28,25,23,0.45)]"
+    >
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-stone-400">
+            {label}
+          </p>
+          <p className="text-3xl font-serif font-bold text-stone-900 mt-2 tracking-tight">
+            {value}
+          </p>
+        </div>
+        <div
+          className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${tones[tone]}`}
+        >
+          <Icon className="w-4 h-4" />
+        </div>
+      </div>
+    </motion.div>
+  );
+}
 
 export default function DashboardTab() {
   const {
@@ -89,9 +188,7 @@ export default function DashboardTab() {
   const certificates = stats.certificates || 0;
   const averageGrade = Math.round(stats.average_grade || 0);
 
-  const isEmpty = enrolledCourses === 0;
-
-  if (isEmpty) {
+  if (enrolledCourses === 0) {
     return (
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm">
         <EmptyState
@@ -103,108 +200,141 @@ export default function DashboardTab() {
     );
   }
 
-  return (
-    <div className="space-y-8">
-      <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-5">
-        <div className="max-w-xl">
-          <p className="text-[10px] font-mono uppercase tracking-[0.18em] text-amber-700/80 mb-2">
-            Learning Overview
-          </p>
-          <h2 className="text-2xl font-serif font-bold text-stone-900 tracking-tight">
-            Your student dashboard
-          </h2>
-          <p className="text-sm text-stone-500 font-light mt-1.5 leading-relaxed">
-            A clear snapshot of enrollments, progress, assignments, and grades across your courses.
-          </p>
-        </div>
+  const barColors = ["#b45309", "#d97706", "#f59e0b", "#78716c", "#a8a29e"];
 
-        <div className="rounded-2xl border border-stone-200/80 bg-white px-4 py-3 min-w-[160px]">
-          <p className="text-[9px] font-mono uppercase tracking-wider text-stone-400">
-            Overall progress
-          </p>
-          <div className="flex items-end gap-2 mt-1">
-            <p className="text-2xl font-serif font-bold text-amber-800 leading-none">
-              {overallProgress}%
-            </p>
+  return (
+    <div className="space-y-7">
+      <motion.section
+        initial={{ opacity: 0, y: 12 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.45, ease: "easeOut" }}
+        className="relative overflow-hidden rounded-[1.75rem] border border-stone-800 bg-stone-950 text-white shadow-[0_24px_60px_-36px_rgba(28,25,23,0.85)]"
+      >
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(245,158,11,0.22),_transparent_55%),radial-gradient(ellipse_at_bottom_left,_rgba(120,113,108,0.35),_transparent_50%)]" />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.07] bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-[size:28px_28px]" />
+
+        <div className="relative z-10 p-6 sm:p-8 lg:p-10">
+          <div className="flex flex-col lg:flex-row lg:items-center gap-8 lg:gap-12">
+            <div className="flex-1 min-w-0">
+              <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-400/90 mb-3">
+                Learning pulse
+              </p>
+              <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-white leading-[1.1]">
+                Your student
+                <span className="block text-stone-300 font-light">dashboard</span>
+              </h2>
+              <p className="text-sm text-stone-400 font-light mt-3 max-w-md leading-relaxed">
+                Track enrollments, momentum, and grades in one calm view — built around how you learn.
+              </p>
+
+              <div className="mt-7 flex flex-wrap gap-8">
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                    Average grade
+                  </p>
+                  <p className="text-3xl font-serif font-bold text-amber-400 leading-none">
+                    {averageGrade}
+                    <span className="text-lg text-amber-500/70 ml-0.5">%</span>
+                  </p>
+                </div>
+                <div className="w-px bg-stone-700/80 self-stretch hidden sm:block" />
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                    Certificates
+                  </p>
+                  <p className="text-3xl font-serif font-bold text-white leading-none">
+                    {certificates}
+                  </p>
+                </div>
+                <div className="w-px bg-stone-700/80 self-stretch hidden sm:block" />
+                <div>
+                  <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                    Active now
+                  </p>
+                  <p className="text-3xl font-serif font-bold text-white leading-none">
+                    {activeCourses}
+                  </p>
+                </div>
+              </div>
+            </div>
+
+            <div className="flex items-center justify-center lg:justify-end shrink-0">
+              <div className="rounded-full p-3 bg-white/5 border border-white/10 backdrop-blur-sm">
+                <ProgressRing value={overallProgress} />
+              </div>
+            </div>
           </div>
-          <div className="w-full bg-stone-100 h-1.5 rounded-full overflow-hidden mt-2.5">
-            <motion.div
-              className="h-full rounded-full bg-amber-600"
-              initial={{ width: 0 }}
-              animate={{ width: `${overallProgress}%` }}
-              transition={{ duration: 0.7, ease: "easeOut" }}
+        </div>
+      </motion.section>
+
+      <section className="rounded-2xl border border-stone-200/80 bg-white/90 px-5 sm:px-7 py-5 sm:py-6 shadow-[0_10px_36px_-28px_rgba(28,25,23,0.35)]">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4 divide-y sm:divide-y-0 sm:divide-x divide-stone-100">
+          <div className="sm:pr-4 pt-0">
+            <CourseStat
+              label="Enrolled Courses"
+              value={enrolledCourses}
+              icon={BookMarked}
+              delay={0.05}
+            />
+          </div>
+          <div className="sm:px-4 pt-6 sm:pt-0">
+            <CourseStat
+              label="Active Courses"
+              value={activeCourses}
+              icon={BookOpen}
+              delay={0.1}
+            />
+          </div>
+          <div className="sm:pl-4 pt-6 sm:pt-0">
+            <CourseStat
+              label="Completed Courses"
+              value={completedCourses}
+              icon={CheckCircle2}
+              delay={0.15}
             />
           </div>
         </div>
-      </div>
+      </section>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 sm:gap-5">
-        <StatCard
-          label="Enrolled Courses"
-          value={enrolledCourses}
-          icon={BookMarked}
-          accent="amber"
-          hint="Total courses assigned to you"
-        />
-        <StatCard
-          label="Active Courses"
-          value={activeCourses}
-          icon={BookOpen}
-          accent="stone"
-          hint="Currently in progress"
-        />
-        <StatCard
-          label="Completed Courses"
-          value={completedCourses}
-          icon={CheckCircle2}
-          accent="emerald"
-          hint="Finished learning paths"
-        />
-        <StatCard
-          label="Overall Progress"
-          value={`${overallProgress}%`}
-          icon={TrendingUp}
-          accent="amber"
-          hint="Average across all courses"
-        />
-        <StatCard
+      <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <ActionMetric
           label="Pending Assignments"
           value={pendingAssignments}
           icon={ClipboardList}
-          accent="rose"
-          hint="Still waiting on your work"
+          tone="rose"
+          delay={0.08}
         />
-        <StatCard
+        <ActionMetric
           label="Upcoming Quizzes"
           value={upcomingQuizzes}
           icon={CircleHelp}
-          accent="stone"
-          hint="Available quizzes to take"
+          tone="stone"
+          delay={0.12}
         />
-        <StatCard
-          label="Certificates"
-          value={certificates}
-          icon={Award}
-          accent="emerald"
-          hint="Earned from completed courses"
-        />
-        <StatCard
+        <ActionMetric
           label="Average Grade"
           value={`${averageGrade}%`}
           icon={TrendingUp}
-          accent="amber"
-          hint="Across graded quiz attempts"
+          tone="amber"
+          delay={0.16}
         />
-      </div>
+      </section>
 
-      <div className="bg-white border border-stone-200 rounded-2xl p-5 sm:p-6 shadow-sm">
-        <div className="mb-5">
-          <p className="text-[10px] font-mono uppercase tracking-[0.16em] text-amber-700/80 mb-1">
-            Course progress
+      <section className="relative overflow-hidden rounded-2xl border border-stone-200/80 bg-white p-5 sm:p-7 shadow-[0_10px_36px_-28px_rgba(28,25,23,0.3)]">
+        <div className="pointer-events-none absolute -right-16 -top-20 w-56 h-56 rounded-full bg-amber-400/10 blur-3xl" />
+        <div className="relative mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
+          <div>
+            <p className="text-[10px] font-mono uppercase tracking-[0.16em] text-amber-700/80 mb-1">
+              Course progress
+            </p>
+            <h3 className="text-xl font-serif font-bold text-stone-900">
+              Progress by enrolled course
+            </h3>
+          </div>
+          <p className="text-xs text-stone-400 font-light">
+            {progressByCourse.length} course
+            {progressByCourse.length === 1 ? "" : "s"} tracked
           </p>
-          <h3 className="text-lg font-serif font-bold text-stone-900">
-            Progress by enrolled course
-          </h3>
         </div>
 
         {progressByCourse.length === 0 ? (
@@ -215,7 +345,7 @@ export default function DashboardTab() {
             compact
           />
         ) : (
-          <div className="h-72 w-full">
+          <div className="h-72 w-full relative">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={progressByCourse}
@@ -240,6 +370,7 @@ export default function DashboardTab() {
                 />
                 <Tooltip
                   formatter={(value) => [`${value}%`, "Progress"]}
+                  cursor={{ fill: "rgba(120,113,108,0.06)" }}
                   contentStyle={{
                     backgroundColor: "#1c1917",
                     borderRadius: "12px",
@@ -248,12 +379,19 @@ export default function DashboardTab() {
                     fontSize: "11px",
                   }}
                 />
-                <Bar dataKey="Progress" fill="#d97706" radius={[6, 6, 0, 0]} maxBarSize={48} />
+                <Bar dataKey="Progress" radius={[8, 8, 0, 0]} maxBarSize={44}>
+                  {progressByCourse.map((_, index) => (
+                    <Cell
+                      key={`bar-${index}`}
+                      fill={barColors[index % barColors.length]}
+                    />
+                  ))}
+                </Bar>
               </BarChart>
             </ResponsiveContainer>
           </div>
         )}
-      </div>
+      </section>
     </div>
   );
 }
