@@ -2,13 +2,11 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, BookMarked, RefreshCw } from "lucide-react";
+import { AlertCircle, BookMarked, RefreshCw, Search, X } from "lucide-react";
 import { motion } from "motion/react";
 import { getStudentEnrollments } from "@/services/studentCoursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import SearchBar from "@/components/ui/SearchBar";
-import SearchableSelect from "@/components/ui/SearchableSelect";
 import Pagination from "@/components/ui/Pagination";
 import EmptyState from "@/components/ui/EmptyState";
 import StudentCourseCard from "../StudentCourseCard";
@@ -17,7 +15,7 @@ import StudentCourseDetailDrawer from "../StudentCourseDetailDrawer";
 const PAGE_SIZE = 6;
 
 const STATUS_FILTER_OPTIONS = [
-  { value: "", label: "All Statuses" },
+  { value: "", label: "All" },
   { value: "ACTIVE", label: "Active" },
   { value: "COMPLETED", label: "Completed" },
   { value: "SUSPENDED", label: "Suspended" },
@@ -171,25 +169,63 @@ export default function CoursesTab() {
         </div>
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="flex-grow sm:max-w-md">
-          <SearchBar
-            value={searchInput}
-            onChange={setSearchInput}
-            placeholder="Search by title, code, or category..."
-          />
+      <div className="rounded-2xl border border-stone-200/80 bg-white/90 shadow-[0_8px_30px_-24px_rgba(28,25,23,0.35)] overflow-hidden">
+        <div className="flex flex-col gap-4 p-4 sm:p-5">
+          <div className="relative">
+            <Search className="pointer-events-none absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-stone-400" />
+            <input
+              type="text"
+              value={searchInput}
+              onChange={(event) => setSearchInput(event.target.value)}
+              placeholder="Search by title, code, or category..."
+              className="w-full pl-10 pr-10 py-3 bg-stone-50/90 border border-stone-200/90 focus:border-amber-500/70 focus:bg-white focus:ring-4 focus:ring-amber-500/10 focus:outline-none rounded-xl text-sm text-stone-800 placeholder:text-stone-400 transition"
+            />
+            {searchInput ? (
+              <button
+                type="button"
+                onClick={() => setSearchInput("")}
+                className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition"
+                aria-label="Clear search"
+              >
+                <X className="w-3.5 h-3.5" />
+              </button>
+            ) : null}
+          </div>
+
+          <div className="flex flex-col sm:flex-row sm:items-center gap-2.5 sm:gap-4 pt-1 border-t border-stone-100">
+            <div className="flex flex-wrap items-center gap-1.5 flex-1 min-w-0">
+              {STATUS_FILTER_OPTIONS.map((option) => {
+                const isActive = statusFilter === option.value;
+                return (
+                  <button
+                    key={option.value || "all"}
+                    type="button"
+                    onClick={() => setStatusFilter(option.value)}
+                    className={`px-3 py-1.5 rounded-lg text-[11px] font-mono uppercase tracking-wider transition border ${
+                      isActive
+                        ? "bg-stone-900 text-white border-stone-900 shadow-sm"
+                        : "bg-white text-stone-500 border-stone-200 hover:border-amber-300 hover:text-amber-800"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                );
+              })}
+            </div>
+            <p className="text-xs text-stone-500 sm:text-right shrink-0">
+              <span className="font-serif font-bold text-stone-900">
+                {filteredEnrollments.length}
+              </span>
+              {filteredEnrollments.length === 1 ? " course" : " courses"}
+              {filteredEnrollments.length !== enrollments.length ? (
+                <span className="text-stone-400">
+                  {" "}
+                  · {enrollments.length} total
+                </span>
+              ) : null}
+            </p>
+          </div>
         </div>
-        <div className="w-full sm:w-[180px]">
-          <SearchableSelect
-            value={statusFilter}
-            onChange={setStatusFilter}
-            options={STATUS_FILTER_OPTIONS}
-            placeholder="Status"
-          />
-        </div>
-        <p className="text-[11px] font-mono text-stone-400 sm:ml-auto">
-          Showing {filteredEnrollments.length} of {enrollments.length}
-        </p>
       </div>
 
       {filteredEnrollments.length === 0 ? (
