@@ -4,7 +4,7 @@ import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { Check, CheckCircle2, Circle, HelpCircle, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
-import { createQuestion, updateQuestion } from "@/services/quizzesService";
+import { createChoice, createQuestion, updateChoice, updateQuestion } from "@/services/quizzesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
@@ -17,7 +17,6 @@ const QUESTION_TYPE_OPTIONS = [
 ];
 
 const MCQ_CHOICE_COUNT = 4;
-const CHOICE_LETTERS = ["A", "B", "C", "D"];
 
 const FIELD_CLASS =
   "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60";
@@ -25,6 +24,10 @@ const FIELD_CLASS =
 const LABEL_CLASS = "text-[10px] font-mono text-stone-450 block uppercase tracking-wider mb-1.5 font-semibold";
 
 const ERROR_CLASS = "text-[10px] font-mono text-red-600 mt-1";
+
+function choiceLetter(index) {
+  return String.fromCharCode(65 + index);
+}
 
 function createChoicesForType(type) {
   if (type === "MCQ") {
@@ -36,6 +39,33 @@ function createChoicesForType(type) {
       { text: "False", is_correct: false },
     ];
   }
+  return [];
+}
+
+function choicesFromQuestion(question) {
+  const existing = (question.choices || []).map((choice) => ({
+    id: choice.id,
+    text: choice.text,
+    is_correct: choice.is_correct,
+  }));
+
+  if (question.question_type === "MCQ") {
+    const padded = [...existing];
+    while (padded.length < MCQ_CHOICE_COUNT) {
+      padded.push({ text: "", is_correct: false });
+    }
+    return padded;
+  }
+
+  if (question.question_type === "TRUE_FALSE") {
+    return existing.length > 0
+      ? existing
+      : [
+          { text: "True", is_correct: false },
+          { text: "False", is_correct: false },
+        ];
+  }
+
   return [];
 }
 
@@ -58,6 +88,7 @@ export default function TeacherQuestionFormModal({ isOpen, onClose, quizId, ques
   const [form, setForm] = useState(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
   const [pendingChoices, setPendingChoices] = useState([]);
+  const [isSyncingChoices, setIsSyncingChoices] = useState(false);
 
   const createMutation = useMutation({
     mutationFn: (payload) => createQuestion(quizId, payload),
@@ -69,7 +100,7 @@ export default function TeacherQuestionFormModal({ isOpen, onClose, quizId, ques
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["questions", quizId] }),
   });
 
-  const isSubmitting = createMutation.isPending || updateMutation.isPending;
+  const isSubmitting = createMutation.isPending || updateMutation.isPending || isSyncingChoices;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -80,7 +111,7 @@ export default function TeacherQuestionFormModal({ isOpen, onClose, quizId, ques
         marks: String(question.marks ?? 1),
         order: String(question.order ?? 1),
       });
-      setPendingChoices([]);
+      setPendingChoices(choicesFromQuestion(question));
     } else {
       setForm({ ...INITIAL_FORM, order: String(nextOrder) });
       setPendingChoices(createChoicesForType(INITIAL_FORM.question_type));
@@ -132,11 +163,11 @@ export default function TeacherQuestionFormModal({ isOpen, onClose, quizId, ques
       errors.order = "Order must be 1, 2, 3... only.";
     }
 
-    if (!isEditMode && form.question_type !== "SHORT_ANSWER") {
+    if (form.question_type !== "SHORT_ANSWER") {
       if (form.question_type === "MCQ" && pendingChoices.some((choice) => !choice.text.trim())) {
         errors.choices = "Enter text for all four answer choices.";
       } else if (!pendingChoices.some((choice) => choice.is_correct)) {
-        errors.choices = "Select the correct answer before creating this question.";
+        errors.choices = "Select the correct answer.";
       }
     }
 
@@ -171,6 +202,24 @@ export default function TeacherQuestionFormModal({ isOpen, onClose, quizId, ques
         ? await updateMutation.mutateAsync({ id: question.id, payload })
         : await createMutation.mutateAsync(payload);
 
+      if (isEditMode && form.question_type !== "SHORT_ANSWER") {
+        setIsSyncingChoices(true);
+        try {
+          await Promise.all(
+            pendingChoices.map((choice) => {
+              const text = choice.text.trim();
+              return choice.id
+                ? updateChoice(choice.id, { text, is_correct: choice.is_correct })
+                : createChoice(question.id, { text, is_correct: choice.is_correct });
+            }),
+          );
+          queryClient.invalidateQueries({ queryKey: ["choices", question.id] });
+          queryClient.invalidateQueries({ queryKey: ["questions", quizId] });
+        } finally {
+          setIsSyncingChoices(false);
+        }
+      }
+
       toastSuccess(response?.message || `Question ${isEditMode ? "updated" : "created"} successfully.`);
       onClose();
     } catch (error) {
@@ -180,7 +229,7 @@ export default function TeacherQuestionFormModal({ isOpen, onClose, quizId, ques
     }
   };
 
-  const showChoiceBuilder = !isEditMode && form.question_type !== "SHORT_ANSWER";
+  const showChoiceBuilder = form.question_type !== "SHORT_ANSWER";
   const isMcq = form.question_type === "MCQ";
 
   return (
@@ -256,7 +305,7 @@ export default function TeacherQuestionFormModal({ isOpen, onClose, quizId, ques
 
         {isEditMode && (
           <p className="text-[10px] font-mono text-stone-400 tracking-wider">
-            Question type can&apos;t change after creation. Manage choices from the questions list.
+            Question type can&apos;t change after creation.
           </p>
         )}
 
@@ -266,7 +315,7 @@ export default function TeacherQuestionFormModal({ isOpen, onClose, quizId, ques
             <ul className="space-y-2">
               {pendingChoices.map((choice, index) => (
                 <li
-                  key={index}
+                  key={choice.id ?? index}
                   className="flex items-center gap-2 p-2.5 rounded-xl border border-stone-200 bg-white"
                 >
                   <button
@@ -283,7 +332,7 @@ export default function TeacherQuestionFormModal({ isOpen, onClose, quizId, ques
                   </button>
                   {isMcq && (
                     <span className="w-5 shrink-0 text-xs font-bold font-mono text-stone-400">
-                      {CHOICE_LETTERS[index]}.
+                      {choiceLetter(index)}.
                     </span>
                   )}
                   {isMcq ? (
@@ -292,7 +341,7 @@ export default function TeacherQuestionFormModal({ isOpen, onClose, quizId, ques
                       value={choice.text}
                       onChange={(event) => updatePendingChoiceText(index, event.target.value)}
                       disabled={isSubmitting}
-                      placeholder={`Choice ${CHOICE_LETTERS[index]}`}
+                      placeholder={`Choice ${choiceLetter(index)}`}
                       className={FIELD_CLASS}
                     />
                   ) : (

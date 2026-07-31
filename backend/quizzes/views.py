@@ -15,6 +15,7 @@ from .permissions import IsCourseInstructorOrAdmin
 from .serializers import (
     ChoiceSerializer,
     ChoiceWriteSerializer,
+    QuestionOrderEntrySerializer,
     QuestionSerializer,
     QuestionWriteSerializer,
     QuizAnswerGradeSerializer,
@@ -29,6 +30,7 @@ from .serializers import (
 )
 from .services import (
     InvalidAnswerError,
+    QuestionReorderError,
     QuizAttemptError,
     QuizGradingError,
     QuizPublishError,
@@ -38,6 +40,7 @@ from .services import (
     get_student_quizzes,
     grade_quiz_answer,
     publish_quiz,
+    reorder_questions,
     reorder_quizzes,
     start_quiz_attempt,
     submit_quiz_attempt,
@@ -286,6 +289,40 @@ class QuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         question.delete()
         return success_response(None, message="Question deleted successfully")
+
+
+class QuestionOrderView(generics.GenericAPIView):
+    http_method_names = ["patch", "head", "options"]
+    serializer_class = QuestionOrderEntrySerializer
+
+    def get_permissions(self):
+        return [IsCourseInstructorOrAdmin()]
+
+    def patch(self, request, *args, **kwargs):
+        quiz_id = kwargs["quiz_id"]
+        try:
+            quiz = Quiz.objects.select_related("course").get(pk=quiz_id)
+        except Quiz.DoesNotExist:
+            return error_response(message="Quiz with the given id does not exist.", status_code=404)
+
+        if not (request.user.is_admin or is_course_instructor(request.user, quiz.course)):
+            return error_response(
+                message="You do not have permission to perform this action.",
+                status_code=403,
+            )
+
+        serializer = self.get_serializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            questions = reorder_questions(quiz_id, serializer.validated_data)
+        except QuestionReorderError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        return success_response(
+            QuestionSerializer(questions, many=True).data,
+            message="Questions reordered successfully",
+        )
 
 
 class ChoiceListCreateView(generics.ListCreateAPIView):

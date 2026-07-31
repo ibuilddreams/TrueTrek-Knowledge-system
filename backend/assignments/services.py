@@ -4,7 +4,7 @@ from django.utils import timezone
 from common.models import Status
 from enrollments.models import Enrollment
 
-from .models import Assignment, AssignmentSubmission, AssignmentSubmissionFile
+from .models import Assignment, AssignmentAttachment, AssignmentSubmission, AssignmentSubmissionFile
 
 
 class AssignmentPublishError(Exception):
@@ -20,6 +20,10 @@ class AssignmentGradingError(Exception):
 
 
 class AssignmentReorderError(Exception):
+    pass
+
+
+class AssignmentAttachmentReorderError(Exception):
     pass
 
 
@@ -202,3 +206,33 @@ def reorder_assignments(module_id, assignments_data):
         .filter(module_id=module_id)
         .order_by("order")
     )
+
+
+def reorder_assignment_attachments(assignment_id, attachments_data):
+    attachment_ids = [entry["attachment_id"] for entry in attachments_data]
+
+    if len(attachment_ids) != len(set(attachment_ids)):
+        raise AssignmentAttachmentReorderError("Duplicate attachment ids are not allowed.")
+
+    orders = [entry["order"] for entry in attachments_data]
+    if len(orders) != len(set(orders)):
+        raise AssignmentAttachmentReorderError("Duplicate order values are not allowed.")
+
+    existing_ids = set(
+        AssignmentAttachment.objects.filter(assignment_id=assignment_id).values_list("id", flat=True)
+    )
+    if set(attachment_ids) != existing_ids:
+        raise AssignmentAttachmentReorderError(
+            "Submitted attachment ids must exactly match the attachments belonging to this assignment."
+        )
+
+    # AssignmentAttachment.order has no DB uniqueness constraint (unlike Assignment/Quiz
+    # order), so final values can be written directly in one pass without a temp-offset
+    # staging step.
+    with transaction.atomic():
+        for entry in attachments_data:
+            AssignmentAttachment.objects.filter(
+                pk=entry["attachment_id"], assignment_id=assignment_id
+            ).update(order=entry["order"])
+
+    return AssignmentAttachment.objects.filter(assignment_id=assignment_id).order_by("order")

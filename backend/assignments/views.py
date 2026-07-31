@@ -14,6 +14,7 @@ from users.permissions import IsStudent
 from .models import Assignment, AssignmentAttachment, AssignmentSubmission
 from .permissions import IsCourseInstructorOrAdmin, IsEnrolledStudentOrAdmin
 from .serializers import (
+    AssignmentAttachmentOrderEntrySerializer,
     AssignmentAttachmentSerializer,
     AssignmentAttachmentWriteSerializer,
     AssignmentGradeSerializer,
@@ -24,6 +25,7 @@ from .serializers import (
     AssignmentWriteSerializer,
 )
 from .services import (
+    AssignmentAttachmentReorderError,
     AssignmentGradingError,
     AssignmentPublishError,
     AssignmentReorderError,
@@ -31,6 +33,7 @@ from .services import (
     get_student_assignments,
     grade_submission,
     publish_assignment,
+    reorder_assignment_attachments,
     reorder_assignments,
     submit_assignment,
 )
@@ -347,6 +350,42 @@ class AssignmentAttachmentDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         attachment.delete()
         return success_response(None, message="Attachment deleted successfully")
+
+
+class AssignmentAttachmentOrderView(generics.GenericAPIView):
+    http_method_names = ["patch", "head", "options"]
+    serializer_class = AssignmentAttachmentOrderEntrySerializer
+
+    def get_permissions(self):
+        return [IsCourseInstructorOrAdmin()]
+
+    def patch(self, request, *args, **kwargs):
+        assignment_id = kwargs["assignment_id"]
+        try:
+            assignment = Assignment.objects.select_related("course").get(pk=assignment_id)
+        except Assignment.DoesNotExist:
+            return error_response(
+                message="Assignment with the given id does not exist.", status_code=404
+            )
+
+        if not (request.user.is_admin or is_course_instructor(request.user, assignment.course)):
+            return error_response(
+                message="You do not have permission to perform this action.",
+                status_code=403,
+            )
+
+        serializer = self.get_serializer(data=request.data, many=True)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            attachments = reorder_assignment_attachments(assignment_id, serializer.validated_data)
+        except AssignmentAttachmentReorderError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        return success_response(
+            AssignmentAttachmentSerializer(attachments, many=True, context={"request": request}).data,
+            message="Attachments reordered successfully",
+        )
 
 
 class AssignmentSubmissionListView(generics.ListAPIView):

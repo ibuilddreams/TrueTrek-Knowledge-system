@@ -1,8 +1,34 @@
 "use client";
 
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Archive, File, FileText, Image as ImageIcon, Paperclip, Pencil, Trash2, Upload } from "lucide-react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import {
+  Archive,
+  File,
+  FileText,
+  GripVertical,
+  Image as ImageIcon,
+  Paperclip,
+  Pencil,
+  Trash2,
+  Upload,
+} from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import Loader from "@/components/ui/Loader";
 import EmptyState from "@/components/ui/EmptyState";
@@ -10,6 +36,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import {
   deleteAssignmentAttachment,
   getAssignmentAttachments,
+  reorderAssignmentAttachments,
   updateAssignmentAttachment,
   uploadAssignmentAttachment,
 } from "@/services/assignmentsService";
@@ -28,12 +55,36 @@ function formatUploadedDate(value) {
   return formatDate(value);
 }
 
-function TeacherAttachmentRow({ attachment, onReplace, onDelete, isReplacing, isDeleting }) {
+function SortableTeacherAttachmentRow({ attachment, onReplace, onDelete, isReplacing, isDeleting }) {
   const replaceInputRef = useRef(null);
   const Icon = FILE_TYPE_ICONS[attachment.file_type] || File;
 
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: attachment.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   return (
-    <li className="flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-white">
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-white ${
+        isDragging ? "z-10 shadow-lg opacity-90" : ""
+      }`}
+    >
+      <span
+        {...attributes}
+        {...listeners}
+        className="text-stone-300 cursor-grab shrink-0 touch-none"
+        title="Drag to reorder"
+        aria-hidden="true"
+      >
+        <GripVertical className="w-4 h-4" />
+      </span>
       <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
         <Icon className="w-4 h-4" />
       </div>
@@ -90,8 +141,14 @@ export default function TeacherAssignmentAttachmentsModal({ isOpen, onClose, ass
   const queryClient = useQueryClient();
   const uploadInputRef = useRef(null);
   const [deletingAttachment, setDeletingAttachment] = useState(null);
+  const [localOrderIds, setLocalOrderIds] = useState(null);
 
   const assignmentId = assignment?.id;
+
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const attachmentsQuery = useQuery({
     queryKey: ["assignment-attachments", assignmentId],
@@ -144,6 +201,43 @@ export default function TeacherAssignmentAttachmentsModal({ isOpen, onClose, ass
     },
   });
 
+  const reorderMutation = useMutation({
+    mutationFn: (entries) => reorderAssignmentAttachments(assignmentId, entries),
+    onSuccess: () => {
+      invalidateAttachments();
+    },
+    onError: (error) => {
+      toastError(getApiErrorMessage(error, "Unable to reorder attachments."));
+    },
+  });
+
+  const displayAttachments = useMemo(() => {
+    if (!localOrderIds) return attachments;
+    const currentIds = attachments.map((attachment) => attachment.id);
+    const sameSet =
+      localOrderIds.length === currentIds.length &&
+      localOrderIds.every((id) => currentIds.includes(id));
+    if (!sameSet) return attachments;
+    const attachmentById = new Map(attachments.map((attachment) => [attachment.id, attachment]));
+    return localOrderIds.map((id) => attachmentById.get(id));
+  }, [attachments, localOrderIds]);
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const currentIds = displayAttachments.map((attachment) => attachment.id);
+    const oldIndex = currentIds.indexOf(active.id);
+    const newIndex = currentIds.indexOf(over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newOrderIds = arrayMove(currentIds, oldIndex, newIndex);
+    setLocalOrderIds(newOrderIds);
+
+    const payload = newOrderIds.map((id, index) => ({ attachment_id: id, order: index + 1 }));
+    reorderMutation.mutate(payload);
+  };
+
   const handleUploadClick = () => uploadInputRef.current?.click();
 
   const handleUploadChange = (event) => {
@@ -174,7 +268,7 @@ export default function TeacherAssignmentAttachmentsModal({ isOpen, onClose, ass
         <div className="space-y-3">
           {attachmentsQuery.isLoading ? (
             <Loader fullScreen={false} label="Loading attachments..." />
-          ) : attachments.length === 0 ? (
+          ) : displayAttachments.length === 0 ? (
             <EmptyState
               icon={Paperclip}
               label="No attachments yet."
@@ -182,18 +276,25 @@ export default function TeacherAssignmentAttachmentsModal({ isOpen, onClose, ass
               compact
             />
           ) : (
-            <ul className="space-y-2">
-              {attachments.map((attachment) => (
-                <TeacherAttachmentRow
-                  key={attachment.id}
-                  attachment={attachment}
-                  onReplace={handleReplace}
-                  onDelete={setDeletingAttachment}
-                  isReplacing={replaceMutation.isPending}
-                  isDeleting={deleteMutation.isPending}
-                />
-              ))}
-            </ul>
+            <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext
+                items={displayAttachments.map((attachment) => attachment.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul className="space-y-2">
+                  {displayAttachments.map((attachment) => (
+                    <SortableTeacherAttachmentRow
+                      key={attachment.id}
+                      attachment={attachment}
+                      onReplace={handleReplace}
+                      onDelete={setDeletingAttachment}
+                      isReplacing={replaceMutation.isPending}
+                      isDeleting={deleteMutation.isPending}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+            </DndContext>
           )}
 
           <input ref={uploadInputRef} type="file" multiple className="hidden" onChange={handleUploadChange} />

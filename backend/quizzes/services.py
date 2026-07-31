@@ -30,6 +30,10 @@ class QuizReorderError(Exception):
     pass
 
 
+class QuestionReorderError(Exception):
+    pass
+
+
 def get_student_quizzes(student):
     course_ids = list(
         Enrollment.objects.filter(student=student).values_list("course_id", flat=True)
@@ -375,4 +379,33 @@ def reorder_quizzes(module_id, quizzes_data):
 
     return (
         Quiz.objects.select_related("course", "module").filter(module_id=module_id).order_by("order")
+    )
+
+
+def reorder_questions(quiz_id, questions_data):
+    question_ids = [entry["question_id"] for entry in questions_data]
+
+    if len(question_ids) != len(set(question_ids)):
+        raise QuestionReorderError("Duplicate question ids are not allowed.")
+
+    orders = [entry["order"] for entry in questions_data]
+    if len(orders) != len(set(orders)):
+        raise QuestionReorderError("Duplicate order values are not allowed.")
+
+    existing_ids = set(Question.objects.filter(quiz_id=quiz_id).values_list("id", flat=True))
+    if set(question_ids) != existing_ids:
+        raise QuestionReorderError(
+            "Submitted question ids must exactly match the questions belonging to this quiz."
+        )
+
+    # Question.order has no DB uniqueness constraint (unlike Quiz/Assignment order), so
+    # final values can be written directly in one pass without a temp-offset staging step.
+    with transaction.atomic():
+        for entry in questions_data:
+            Question.objects.filter(pk=entry["question_id"], quiz_id=quiz_id).update(
+                order=entry["order"]
+            )
+
+    return (
+        Question.objects.filter(quiz_id=quiz_id).prefetch_related("choices").order_by("order")
     )

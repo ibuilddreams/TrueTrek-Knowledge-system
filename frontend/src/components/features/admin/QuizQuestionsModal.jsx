@@ -1,15 +1,31 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit3, HelpCircle, ListChecks, Plus, Trash2 } from "lucide-react";
+import {
+  DndContext,
+  KeyboardSensor,
+  PointerSensor,
+  closestCenter,
+  useSensor,
+  useSensors,
+} from "@dnd-kit/core";
+import {
+  SortableContext,
+  arrayMove,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
+import { Edit3, GripVertical, HelpCircle, ListChecks, Plus, Trash2 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import Loader from "@/components/ui/Loader";
 import EmptyState from "@/components/ui/EmptyState";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import QuestionFormModal from "@/components/features/admin/QuestionFormModal";
 import QuestionChoicesModal from "@/components/features/admin/QuestionChoicesModal";
-import { deleteQuestion, getQuestions } from "@/services/quizzesService";
+import { deleteQuestion, getQuestions, reorderQuestions } from "@/services/quizzesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
@@ -19,10 +35,34 @@ const QUESTION_TYPE_LABELS = {
   SHORT_ANSWER: "Short Answer",
 };
 
-function QuestionRow({ question, onEdit, onDelete, onManageChoices }) {
+function SortableQuestionRow({ question, onEdit, onDelete, onManageChoices }) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: question.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
   return (
-    <li className="p-3 rounded-xl border border-stone-200 bg-white">
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`p-3 rounded-xl border border-stone-200 bg-white ${
+        isDragging ? "z-10 shadow-lg opacity-90" : ""
+      }`}
+    >
       <div className="flex items-start gap-3">
+        <span
+          {...attributes}
+          {...listeners}
+          className="text-stone-300 cursor-grab shrink-0 touch-none mt-1.5"
+          title="Drag to reorder"
+          aria-hidden="true"
+        >
+          <GripVertical className="w-4 h-4" />
+        </span>
         <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0 text-xs font-bold font-mono">
           {question.order ?? "—"}
         </div>
@@ -84,6 +124,12 @@ export default function QuizQuestionsModal({ isOpen, onClose, quiz }) {
   const [editingQuestion, setEditingQuestion] = useState(null);
   const [deletingQuestion, setDeletingQuestion] = useState(null);
   const [choicesQuestion, setChoicesQuestion] = useState(null);
+  const [localOrderIds, setLocalOrderIds] = useState(null);
+
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates }),
+  );
 
   const questionsQuery = useQuery({
     queryKey: ["questions", quizId],
@@ -106,6 +152,43 @@ export default function QuizQuestionsModal({ isOpen, onClose, quiz }) {
       toastError(getApiErrorMessage(error, "Unable to delete question."));
     },
   });
+
+  const reorderMutation = useMutation({
+    mutationFn: (entries) => reorderQuestions(quizId, entries),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["questions", quizId] });
+    },
+    onError: (error) => {
+      toastError(getApiErrorMessage(error, "Unable to reorder questions."));
+    },
+  });
+
+  const displayQuestions = useMemo(() => {
+    if (!localOrderIds) return questions;
+    const currentIds = questions.map((question) => question.id);
+    const sameSet =
+      localOrderIds.length === currentIds.length &&
+      localOrderIds.every((id) => currentIds.includes(id));
+    if (!sameSet) return questions;
+    const questionById = new Map(questions.map((question) => [question.id, question]));
+    return localOrderIds.map((id) => questionById.get(id));
+  }, [questions, localOrderIds]);
+
+  const handleDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const currentIds = displayQuestions.map((question) => question.id);
+    const oldIndex = currentIds.indexOf(active.id);
+    const newIndex = currentIds.indexOf(over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newOrderIds = arrayMove(currentIds, oldIndex, newIndex);
+    setLocalOrderIds(newOrderIds);
+
+    const payload = newOrderIds.map((id, index) => ({ question_id: id, order: index + 1 }));
+    reorderMutation.mutate(payload);
+  };
 
   const openAddQuestion = () => {
     setEditingQuestion(null);
@@ -135,7 +218,7 @@ export default function QuizQuestionsModal({ isOpen, onClose, quiz }) {
         <div className="space-y-3">
           {questionsQuery.isLoading ? (
             <Loader fullScreen={false} label="Loading questions..." />
-          ) : questions.length === 0 ? (
+          ) : displayQuestions.length === 0 ? (
             <EmptyState
               icon={HelpCircle}
               label="No questions yet."
@@ -143,17 +226,24 @@ export default function QuizQuestionsModal({ isOpen, onClose, quiz }) {
               compact
             />
           ) : (
-            <ul className="space-y-2">
-              {questions.map((question) => (
-                <QuestionRow
-                  key={question.id}
-                  question={question}
-                  onEdit={openEditQuestion}
-                  onDelete={setDeletingQuestion}
-                  onManageChoices={setChoicesQuestion}
-                />
-              ))}
-            </ul>
+            <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
+              <SortableContext
+                items={displayQuestions.map((question) => question.id)}
+                strategy={verticalListSortingStrategy}
+              >
+                <ul className="space-y-2">
+                  {displayQuestions.map((question) => (
+                    <SortableQuestionRow
+                      key={question.id}
+                      question={question}
+                      onEdit={openEditQuestion}
+                      onDelete={setDeletingQuestion}
+                      onManageChoices={setChoicesQuestion}
+                    />
+                  ))}
+                </ul>
+              </SortableContext>
+            </DndContext>
           )}
 
           <button
@@ -188,7 +278,7 @@ export default function QuizQuestionsModal({ isOpen, onClose, quiz }) {
         onConfirm={() => deleteMutation.mutate(deletingQuestion.id)}
         isConfirming={deleteMutation.isPending}
         title="Delete Question"
-        message={`Are you sure you want to delete this question? This cannot be undone.`}
+        message="Are you sure you want to delete this question? This cannot be undone."
         confirmLabel="Delete"
       />
     </>

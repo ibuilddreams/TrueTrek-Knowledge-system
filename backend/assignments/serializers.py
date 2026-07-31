@@ -36,7 +36,7 @@ class AssignmentAttachmentSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = AssignmentAttachment
-        fields = ["id", "file", "original_name", "file_type", "created_at"]
+        fields = ["id", "file", "original_name", "file_type", "order", "created_at"]
         read_only_fields = fields
 
     def get_file(self, obj):
@@ -165,11 +165,13 @@ class AssignmentAttachmentWriteSerializer(serializers.ModelSerializer):
     def create(self, validated_data):
         file = validated_data["file"]
         file_type = validate_assignment_file(file)
+        assignment = validated_data["assignment"]
         return AssignmentAttachment.objects.create(
-            assignment=validated_data["assignment"],
+            assignment=assignment,
             file=file,
             original_name=os.path.basename(file.name),
             file_type=file_type,
+            order=get_next_order(AssignmentAttachment.objects.filter(assignment=assignment)),
             uploaded_by=validated_data.get("uploaded_by"),
         )
 
@@ -186,6 +188,11 @@ class AssignmentAttachmentWriteSerializer(serializers.ModelSerializer):
 
 class AssignmentOrderEntrySerializer(serializers.Serializer):
     assignment_id = serializers.IntegerField()
+    order = serializers.IntegerField(min_value=1)
+
+
+class AssignmentAttachmentOrderEntrySerializer(serializers.Serializer):
+    attachment_id = serializers.IntegerField()
     order = serializers.IntegerField(min_value=1)
 
 

@@ -3,6 +3,7 @@ from django.urls import path
 from .views import (
     AssignmentAttachmentDetailView,
     AssignmentAttachmentListCreateView,
+    AssignmentAttachmentOrderView,
     AssignmentDetailView,
     AssignmentGradeSubmissionView,
     AssignmentListCreateView,
@@ -28,6 +29,11 @@ urlpatterns = [
         "attachments/<int:pk>/",
         AssignmentAttachmentDetailView.as_view(),
         name="assignment-attachment-detail",
+    ),
+    path(
+        "<int:assignment_id>/attachments/order/",
+        AssignmentAttachmentOrderView.as_view(),
+        name="assignment-attachment-order",
     ),
     path(
         "<int:assignment_id>/submissions/",

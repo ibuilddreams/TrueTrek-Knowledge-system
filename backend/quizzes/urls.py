@@ -6,6 +6,7 @@ from .views import (
     ChoiceListCreateView,
     QuestionDetailView,
     QuestionListCreateView,
+    QuestionOrderView,
     QuizAnswerGradeView,
     QuizAttemptResultView,
     QuizDetailView,
@@ -27,6 +28,7 @@ urlpatterns = [
     path("<int:pk>/", QuizDetailView.as_view(), name="quiz-detail"),
     path("<int:pk>/publish/", QuizPublishView.as_view(), name="quiz-publish"),
     path("<int:quiz_id>/questions/", QuestionListCreateView.as_view(), name="quiz-question-list-create"),
+    path("<int:quiz_id>/questions/order/", QuestionOrderView.as_view(), name="question-order"),
     path("<int:quiz_id>/attempts/", StartQuizAttemptView.as_view(), name="quiz-attempt-start"),
     path(
         "<int:quiz_id>/pending-grading/",

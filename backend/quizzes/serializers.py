@@ -248,6 +248,11 @@ class QuizOrderEntrySerializer(serializers.Serializer):
     order = serializers.IntegerField(min_value=1)
 
 
+class QuestionOrderEntrySerializer(serializers.Serializer):
+    question_id = serializers.IntegerField()
+    order = serializers.IntegerField(min_value=1)
+
+
 class QuizPendingAnswerSerializer(serializers.ModelSerializer):
     student = serializers.SerializerMethodField()
     question = serializers.SerializerMethodField()

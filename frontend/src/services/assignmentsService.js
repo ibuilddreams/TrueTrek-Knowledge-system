@@ -47,3 +47,7 @@ export async function updateAssignmentAttachment(id, file) {
 export async function deleteAssignmentAttachment(id) {
   return backendClient.delete(`/assignments/attachments/${id}/`);
 }
+
+export async function reorderAssignmentAttachments(assignmentId, entries) {
+  return backendClient.patch(`/assignments/${assignmentId}/attachments/order/`, entries);
+}

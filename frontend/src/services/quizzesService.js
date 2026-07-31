@@ -51,6 +51,10 @@ export async function deleteQuestion(id) {
   return backendClient.delete(`/quizzes/questions/${id}/`);
 }
 
+export async function reorderQuestions(quizId, entries) {
+  return backendClient.patch(`/quizzes/${quizId}/questions/order/`, entries);
+}
+
 export async function getChoices(questionId) {
   return backendClient.get(`/quizzes/questions/${questionId}/choices/`);
 }
