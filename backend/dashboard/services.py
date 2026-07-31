@@ -1,9 +1,11 @@
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg, Count
 
+from assignments.models import AssignmentSubmission
 from courses.models import Course, CourseInstructor
 from enrollments.models import Enrollment
+from lessons.models import Lesson
 from progress.models import CourseProgress, LearningActivity
-from quizzes.models import QuizResult
+from quizzes.models import Quiz, QuizAnswer, QuizResult
 from users.models import CustomUser
 
 
@@ -63,23 +65,47 @@ def get_student_dashboard(user):
 
 
 def get_teacher_dashboard(user):
-    taught_course_ids = CourseInstructor.objects.filter(instructor=user).values_list(
-        "course_id", flat=True
+    taught_course_ids = list(
+        CourseInstructor.objects.filter(instructor=user).values_list("course_id", flat=True)
     )
     courses = Course.objects.filter(id__in=taught_course_ids)
-    course_progress = CourseProgress.objects.filter(course_id__in=taught_course_ids).select_related("course")
+    course_progress = CourseProgress.objects.filter(course_id__in=taught_course_ids).select_related(
+        "course"
+    )
     recent_activities = LearningActivity.objects.filter(course_id__in=taught_course_ids).order_by(
         "-created_at"
     )[:10]
 
+    published_lessons = Lesson.objects.filter(module__course_id__in=taught_course_ids).count()
+    total_quizzes = Quiz.objects.filter(course_id__in=taught_course_ids).count()
+
+    pending_assignment_submissions = AssignmentSubmission.objects.filter(
+        assignment__course_id__in=taught_course_ids,
+        status__in=[
+            AssignmentSubmission.SubmissionStatus.SUBMITTED,
+            AssignmentSubmission.SubmissionStatus.LATE,
+            AssignmentSubmission.SubmissionStatus.RESUBMITTED,
+        ],
+    ).count()
+    pending_quiz_answers = QuizAnswer.objects.filter(
+        attempt__quiz__course_id__in=taught_course_ids,
+        grading_status=QuizAnswer.GradingStatus.PENDING_GRADING,
+    ).count()
+
+    average_student_progress = (
+        course_progress.aggregate(avg=Avg("completion_percentage"))["avg"] or 0
+    )
+
     statistics = {
-        "courses_taught": courses.count(),
-        "total_students": Enrollment.objects.filter(course_id__in=taught_course_ids)
+        "my_courses": courses.count(),
+        "enrolled_students": Enrollment.objects.filter(course_id__in=taught_course_ids)
         .values("student_id")
         .distinct()
         .count(),
-        "total_lessons": sum(course.modules.aggregate(count=Count("lessons"))["count"] or 0 for course in courses),
-        "average_course_completion": course_progress.aggregate(avg=Avg("completion_percentage"))["avg"] or 0,
+        "published_lessons": published_lessons,
+        "pending_grading": pending_assignment_submissions + pending_quiz_answers,
+        "total_quizzes": total_quizzes,
+        "average_student_progress": round(float(average_student_progress), 2),
     }
 
     students_per_course = list(
@@ -90,7 +116,9 @@ def get_teacher_dashboard(user):
     )
 
     completion_by_course = list(
-        course_progress.values("course__title").annotate(avg=Avg("completion_percentage")).order_by("-avg")
+        course_progress.values("course__title")
+        .annotate(avg=Avg("completion_percentage"))
+        .order_by("-avg")
     )
 
     return {

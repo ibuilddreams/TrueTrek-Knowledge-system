@@ -1,9 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from 'react';
+import { useEffect, useState } from 'react';
 import {
-  Users, Award, TrendingUp, AlertCircle, Clock, Sparkles, Activity,
-  RefreshCw, BookMarked, GraduationCap,
+  Users, TrendingUp, AlertCircle, Sparkles, RefreshCw, BookMarked,
+  GraduationCap, BookOpen, ClipboardList, CircleHelp, BookText,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import {
@@ -44,44 +44,17 @@ export default function DashboardTab({ students }) {
 
   const isDashboardEmpty =
     dashboardStatus === 'succeeded' &&
-    !(dashboardStatistics.courses_taught > 0) &&
-    !(dashboardStatistics.total_students > 0) &&
+    !(dashboardStatistics.my_courses > 0) &&
+    !(dashboardStatistics.enrolled_students > 0) &&
     dashboardRecentActivities.length === 0 &&
     dashboardProgressSummary.length === 0;
 
-  const complianceIndex = Math.round(dashboardStatistics.average_course_completion || 0);
-  const liveTotalEnrolled = dashboardStatistics.total_students || 0;
-  const liveClassAverageScore = Math.round(dashboardStatistics.average_course_completion || 0);
-  const liveAverageProgress = Math.round(dashboardStatistics.average_course_completion || 0);
-  const liveCoursesTaught = dashboardStatistics.courses_taught || 0;
-  const liveTotalLessons = dashboardStatistics.total_lessons || 0;
-
-  const activeStreakDays = useMemo(() => {
-    const daysWithActivity = new Set(
-      dashboardRecentActivities.map((activity) =>
-        new Date(activity.created_at).toDateString()
-      )
-    );
-    return daysWithActivity.size;
-  }, [dashboardRecentActivities]);
-
-  const liveTrendData = useMemo(() => {
-    const days = [];
-    for (let i = 6; i >= 0; i--) {
-      const d = new Date();
-      d.setDate(d.getDate() - i);
-      days.push(d);
-    }
-    return days.map((d) => {
-      const count = dashboardRecentActivities.filter(
-        (activity) => new Date(activity.created_at).toDateString() === d.toDateString()
-      ).length;
-      return {
-        date: d.toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
-        Activity: count
-      };
-    });
-  }, [dashboardRecentActivities]);
+  const liveMyCourses = dashboardStatistics.my_courses || 0;
+  const liveEnrolledStudents = dashboardStatistics.enrolled_students || 0;
+  const livePublishedLessons = dashboardStatistics.published_lessons || 0;
+  const livePendingGrading = dashboardStatistics.pending_grading || 0;
+  const liveTotalQuizzes = dashboardStatistics.total_quizzes || 0;
+  const liveAverageProgress = Math.round(dashboardStatistics.average_student_progress || 0);
 
   const liveStudentsPerCourse = (dashboardCharts.students_per_course || []).map((row) => ({
     name: row.course__title,
@@ -143,8 +116,8 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
       {(dashboardStatus === 'loading' || dashboardStatus === 'idle') && (
         <div className="space-y-10" aria-busy="true" aria-label="Loading dashboard statistics">
           <div className="h-40 rounded-2xl bg-stone-100 animate-pulse" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-            {Array.from({ length: 4 }).map((_, i) => (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: 6 }).map((_, i) => (
               <div key={i} className="h-32 rounded-2xl bg-stone-100 animate-pulse" />
             ))}
           </div>
@@ -261,52 +234,69 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
           </div>
           </div> */}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
             <StatCard
-              label="Total Enrolled"
-              value={liveTotalEnrolled}
+              label="My Courses"
+              value={liveMyCourses}
+              icon={BookOpen}
+              footer={
+                <p className="text-[11px] text-stone-400 font-medium mt-1 font-mono">
+                  Courses assigned to you
+                </p>
+              }
+            />
+            <StatCard
+              label="Enrolled Students"
+              value={liveEnrolledStudents}
               icon={Users}
               footer={
                 <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1 mt-1 font-mono">
-                  <span>● Active Slots Filled</span>
+                  <span>● Active learners across your courses</span>
                 </p>
               }
             />
-
             <StatCard
-              label="Class Avg Score"
-              value={`${liveClassAverageScore}%`}
-              icon={Award}
+              label="Published Lessons"
+              value={livePublishedLessons}
+              icon={BookText}
               footer={
                 <p className="text-[11px] text-stone-400 font-medium mt-1 font-mono">
-                  Average completion across taught courses
+                  Lessons available in your courses
                 </p>
               }
             />
-
             <StatCard
-              label="Avg Program Progress"
+              label="Pending Grading"
+              value={livePendingGrading}
+              icon={ClipboardList}
+              accent="rose"
+              footer={
+                <p className="text-[11px] text-stone-400 font-medium mt-1 font-mono">
+                  Submissions awaiting your review
+                </p>
+              }
+            />
+            <StatCard
+              label="Total Quizzes"
+              value={liveTotalQuizzes}
+              icon={CircleHelp}
+              footer={
+                <p className="text-[11px] text-stone-400 font-medium mt-1 font-mono">
+                  Quizzes across your courses
+                </p>
+              }
+            />
+            <StatCard
+              label="Average Student Progress"
               value={`${liveAverageProgress}%`}
-              icon={Activity}
+              icon={TrendingUp}
+              accent="emerald"
               footer={
                 <div className="w-24 bg-stone-100 h-1.5 rounded-full mt-2.5 overflow-hidden">
-                  <div className="bg-amber-600 h-full" style={{ width: `${liveAverageProgress}%` }} />
+                  <div className="bg-emerald-600 h-full" style={{ width: `${liveAverageProgress}%` }} />
                 </div>
               }
             />
-
-            <StatCard
-              label="Active Streaks (7d)"
-              value={activeStreakDays}
-              icon={Clock}
-              footer={
-                <p className="text-[11px] text-stone-400 mt-1 font-mono">
-                  Days with recorded activity this week
-                </p>
-              }
-            />
-
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
@@ -317,7 +307,7 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
                   <h3 className="font-serif font-bold text-base text-stone-900">Enrolled Students by Course</h3>
                   <p className="text-xs text-stone-400 font-light mt-0.5">Active registration load across your taught courses</p>
                 </div>
-                <span className="text-[10px] font-mono uppercase px-2.5 py-1 bg-stone-50 border border-stone-200 text-stone-500 rounded-lg">{liveCoursesTaught} Courses</span>
+                <span className="text-[10px] font-mono uppercase px-2.5 py-1 bg-stone-50 border border-stone-200 text-stone-500 rounded-lg">{liveMyCourses} Courses</span>
               </div>
 
               <div className="h-72 w-full text-xs font-mono">
@@ -356,7 +346,7 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
                   <h3 className="font-serif font-bold text-base text-stone-900">Average Completion by Course</h3>
                   <p className="text-xs text-stone-400 font-light mt-0.5">Course progress velocity across enrolled students</p>
                 </div>
-                <span className="text-[10px] font-mono uppercase px-2.5 py-1 bg-stone-50 border border-stone-200 text-stone-500 rounded-lg">{liveTotalLessons} Lessons</span>
+                <span className="text-[10px] font-mono uppercase px-2.5 py-1 bg-stone-50 border border-stone-200 text-stone-500 rounded-lg">{livePublishedLessons} Lessons</span>
               </div>
 
               <div className="h-72 w-full text-xs font-mono">
