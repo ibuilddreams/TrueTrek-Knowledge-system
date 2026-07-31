@@ -34,6 +34,7 @@ from .services import (
     get_teacher_assigned_courses,
     get_teacher_assigned_courses_with_students,
     get_teacher_enrolled_student_detail,
+    get_teacher_enrolled_students_roster,
     get_teacher_import_sample,
     send_password_reset_email,
 )
@@ -378,6 +379,18 @@ class TeacherCourseStudentsDetailView(generics.GenericAPIView):
             "students": students_data,
         }
         return success_response(data, message="Students' details fetched successfully")
+
+
+class TeacherEnrolledStudentsRosterView(generics.GenericAPIView):
+    permission_classes = [IsTeacher]
+
+    def get(self, request):
+        students = get_teacher_enrolled_students_roster(request.user)
+        data = {
+            "total_students": len(students),
+            "students": students,
+        }
+        return success_response(data, message="Enrolled students roster fetched successfully")
 
 
 class TeacherEnrolledStudentDetailView(generics.GenericAPIView):

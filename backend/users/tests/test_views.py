@@ -442,6 +442,20 @@ class TeacherSelfServiceViewsTests(APITestCase):
         self.assertIn(self.student_one.id, returned_student_ids)
         self.assertIn(self.student_two.id, returned_student_ids)
 
+    def test_enrolled_students_roster_returns_only_teacher_students(self):
+        self.client.force_authenticate(user=self.teacher)
+
+        response = self.client.get(reverse("teacher-enrolled-students-roster"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data["data"]
+        self.assertEqual(data["total_students"], 2)
+        returned_ids = {entry["id"] for entry in data["students"]}
+        self.assertEqual(returned_ids, {self.student_one.id, self.student_two.id})
+        student_one = next(entry for entry in data["students"] if entry["id"] == self.student_one.id)
+        self.assertEqual(student_one["average_progress"], 50.0)
+        self.assertEqual(student_one["courses_count"], 1)
+
     def test_enrolled_student_detail_returns_student_scoped_to_teacher_courses(self):
         self.client.force_authenticate(user=self.teacher)
 

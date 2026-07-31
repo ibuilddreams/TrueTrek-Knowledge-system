@@ -33,9 +33,13 @@ export default function DashboardTab({ students }) {
   const [isGeneratingAiReport, setIsGeneratingAiReport] = useState(false);
 
   const totalEnrollments = students.length;
-  const averageComplianceScore = Math.round(students.reduce((acc, s) => acc + s.averageScore, 0) / totalEnrollments);
-  const averageProgress = Math.round(students.reduce((acc, s) => acc + s.progressPercent, 0) / totalEnrollments);
-  const highlyActiveCount = students.filter(s => s.streakDays >= 10).length;
+  const averageComplianceScore = totalEnrollments
+    ? Math.round(students.reduce((acc, s) => acc + (s.average_score || 0), 0) / totalEnrollments)
+    : 0;
+  const averageProgress = totalEnrollments
+    ? Math.round(students.reduce((acc, s) => acc + (s.average_progress || 0), 0) / totalEnrollments)
+    : 0;
+  const highlyActiveCount = students.filter((s) => (s.average_progress || 0) >= 80).length;
 
   const dashboardStatistics = dashboardData?.statistics || {};
   const dashboardRecentActivities = dashboardData?.recent_activities || [];
@@ -70,17 +74,18 @@ export default function DashboardTab({ students }) {
     setIsGeneratingAiReport(true);
     setAiReport('');
 
-    const contextStr = students.map(s =>
-      `- ${s.name} at ${s.institution} of ${s.category} tract is in ${s.activeTierId}. Progress: ${s.progressPercent}%, Average Score: ${s.averageScore}. Drills done: ${s.completedDrillIds.join(', ')}`
-    ).join('\n');
+    const contextStr = students.map((s) => {
+      const courseTitles = (s.courses || []).map((course) => course.title).join(", ") || "No courses";
+      return `- ${s.name} (${s.email}) — Courses: ${courseTitles}. Progress: ${Math.round(s.average_progress || 0)}%, Quiz Average: ${Math.round(s.average_score || 0)}%, Status: ${s.status}.`;
+    }).join("\n");
 
     const promptText = `
-Below is the live student enrollment and compliance test scores from our faculty registry. Analyze this data and provide a professional, specific summary.
+Below is the live student enrollment and quiz performance from our faculty registry. Analyze this data and provide a professional, specific summary.
 Class Metrics Summary:
 - Total Enrollments: ${totalEnrollments}
-- Average Compliance Assessment: ${averageComplianceScore}/100
+- Average Quiz Score: ${averageComplianceScore}%
 - Average Curriculum Progress: ${averageProgress}%
-- Streak Leader Count: ${highlyActiveCount}
+- High Progress Students (80%+): ${highlyActiveCount}
 
 Student Dossiers:
 ${contextStr}

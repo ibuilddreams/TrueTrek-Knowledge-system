@@ -5,7 +5,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.mail import send_mail
 from django.db import transaction
-from django.db.models import Count
+from django.db.models import Avg, Count, Max
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
@@ -19,7 +19,8 @@ from courses.models import Course
 from courses.serializers import CourseListSerializer
 from enrollments.models import Enrollment
 from enrollments.serializers import CourseEnrolledStudentSerializer
-from progress.models import CourseProgress
+from progress.models import CourseProgress, LearningActivity
+from quizzes.models import QuizResult
 
 from .models import UserProfile
 from .serializers import StudentSerializer
@@ -178,6 +179,112 @@ def get_teacher_enrolled_student_detail(teacher, student_id):
         "total_courses": len(courses_data),
         "courses": courses_data,
     }
+
+
+def get_teacher_enrolled_students_roster(teacher):
+    taught_course_ids = list(
+        Course.objects.filter(instructors__instructor=teacher).values_list("id", flat=True)
+    )
+
+    enrollments = (
+        Enrollment.objects.filter(course_id__in=taught_course_ids)
+        .select_related("student", "course")
+        .order_by("student__first_name", "student__last_name", "-enrolled_at")
+    )
+
+    student_ids = list({enrollment.student_id for enrollment in enrollments})
+
+    progress_by_student = {
+        row["student_id"]: row["avg_progress"] or 0
+        for row in CourseProgress.objects.filter(
+            student_id__in=student_ids, course_id__in=taught_course_ids
+        )
+        .values("student_id")
+        .annotate(avg_progress=Avg("completion_percentage"))
+    }
+
+    quiz_by_student = {
+        row["attempt__student_id"]: row["avg_score"] or 0
+        for row in QuizResult.objects.filter(
+            attempt__student_id__in=student_ids,
+            attempt__quiz__course_id__in=taught_course_ids,
+        )
+        .values("attempt__student_id")
+        .annotate(avg_score=Avg("percentage"))
+    }
+
+    last_activity_by_student = {
+        row["student_id"]: row["last_activity"]
+        for row in LearningActivity.objects.filter(
+            student_id__in=student_ids, course_id__in=taught_course_ids
+        )
+        .values("student_id")
+        .annotate(last_activity=Max("created_at"))
+    }
+
+    students_map = {}
+    for enrollment in enrollments:
+        student = enrollment.student
+        entry = students_map.get(student.id)
+        if entry is None:
+            entry = {
+                "id": student.id,
+                "name": student.name,
+                "email": student.email,
+                "account_status": student.account_status,
+                "courses": [],
+                "enrolled_at": enrollment.enrolled_at,
+            }
+            students_map[student.id] = entry
+
+        entry["courses"].append(
+            {
+                "id": enrollment.course_id,
+                "title": enrollment.course.title,
+                "status": enrollment.status,
+                "enrolled_at": enrollment.enrolled_at,
+            }
+        )
+        if enrollment.enrolled_at and (
+            entry["enrolled_at"] is None or enrollment.enrolled_at < entry["enrolled_at"]
+        ):
+            entry["enrolled_at"] = enrollment.enrolled_at
+
+    status_priority = {
+        Enrollment.EnrollmentStatus.ACTIVE: 0,
+        Enrollment.EnrollmentStatus.COMPLETED: 1,
+        Enrollment.EnrollmentStatus.SUSPENDED: 2,
+        Enrollment.EnrollmentStatus.CANCELLED: 3,
+    }
+
+    roster = []
+    for student_id, entry in students_map.items():
+        courses = entry["courses"]
+        primary_status = sorted(
+            courses, key=lambda course: status_priority.get(course["status"], 99)
+        )[0]["status"]
+        average_progress = round(float(progress_by_student.get(student_id, 0)), 2)
+        average_score = round(float(quiz_by_student.get(student_id, 0)), 2)
+        last_activity_at = last_activity_by_student.get(student_id)
+
+        roster.append(
+            {
+                "id": entry["id"],
+                "name": entry["name"],
+                "email": entry["email"],
+                "account_status": entry["account_status"],
+                "status": primary_status,
+                "courses_count": len(courses),
+                "courses": courses,
+                "enrolled_at": entry["enrolled_at"],
+                "average_progress": average_progress,
+                "average_score": average_score,
+                "last_activity_at": last_activity_at,
+            }
+        )
+
+    roster.sort(key=lambda item: (item["name"] or "").lower())
+    return roster
 
 
 def _normalize_gender(value):

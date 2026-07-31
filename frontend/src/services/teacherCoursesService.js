@@ -11,7 +11,11 @@ export async function getTeacherAssignedCourses({ search, status, category, tags
 }
 
 export async function getTeacherAssignedCoursesWithStudents() {
-  return backendClient.get("/teacher/me/assignedcourses/studentsenrolled");
+  return backendClient.get("/teacher/me/assignedcourses/studentsenrolled/");
+}
+
+export async function getTeacherEnrolledStudents() {
+  return backendClient.get("/teacher/me/students/");
 }
 
 export async function getTeacherEnrolledStudentDetail(studentId) {

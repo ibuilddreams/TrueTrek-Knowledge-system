@@ -11,6 +11,7 @@ import adminOverviewReducer from "./slices/adminOverview/adminOverviewSlice";
 import teacherDashboardReducer from "./slices/teacherDashboard/teacherDashboardSlice";
 import teacherCoursesReducer from "./slices/teacherCourses/teacherCoursesSlice";
 import teacherStudentDetailReducer from "./slices/teacherStudentDetail/teacherStudentDetailSlice";
+import teacherEnrolledStudentsReducer from "./slices/teacherEnrolledStudents/teacherEnrolledStudentsSlice";
 
 /**
  * Root reducer — add feature reducers here as modules grow.
@@ -28,6 +29,7 @@ const rootReducer = combineReducers({
   teacherDashboard: teacherDashboardReducer,
   teacherCourses: teacherCoursesReducer,
   teacherStudentDetail: teacherStudentDetailReducer,
+  teacherEnrolledStudents: teacherEnrolledStudentsReducer,
 });
 
 export default rootReducer;
