@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, BookMarked, RefreshCw, Search, X } from "lucide-react";
 import { motion } from "motion/react";
@@ -11,7 +12,7 @@ import Pagination from "@/components/ui/Pagination";
 import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
 import StudentCourseCard from "../StudentCourseCard";
-import StudentCourseDetailDrawer from "../StudentCourseDetailDrawer";
+import CourseDetailScreen from "../course-detail/CourseDetailScreen";
 
 const PAGE_SIZE = 6;
 
@@ -24,11 +25,28 @@ const STATUS_FILTER_OPTIONS = [
 ];
 
 export default function CoursesTab() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const selectedCourseId = searchParams.get("course");
+
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, 300);
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
-  const [selectedEnrollment, setSelectedEnrollment] = useState(null);
+
+  function openCourse(courseId) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("course", String(courseId));
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  function closeCourse() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("course");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
 
   const {
     data: enrollments = [],
@@ -111,6 +129,34 @@ export default function CoursesTab() {
         </button>
       </div>
     );
+  }
+
+  if (selectedCourseId) {
+    const selectedEnrollment = enrollments.find(
+      (item) => String(item.course?.id) === String(selectedCourseId)
+    );
+
+    if (!selectedEnrollment) {
+      return (
+        <div className="rounded-2xl border border-dashed border-stone-200 bg-white/70 p-10 text-center space-y-4">
+          <div className="w-12 h-12 bg-stone-50 border border-stone-100 text-stone-400 rounded-2xl flex items-center justify-center mx-auto">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <p className="text-sm text-stone-500">
+            We couldn&apos;t find that course in your enrollments.
+          </p>
+          <button
+            type="button"
+            onClick={closeCourse}
+            className="inline-flex items-center gap-2 px-4 py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-mono uppercase tracking-wider rounded-xl transition"
+          >
+            Back to My Courses
+          </button>
+        </div>
+      );
+    }
+
+    return <CourseDetailScreen enrollment={selectedEnrollment} onBack={closeCourse} />;
   }
 
   if (enrollments.length === 0) {
@@ -300,7 +346,7 @@ export default function CoursesTab() {
               >
                 <StudentCourseCard
                   enrollment={enrollment}
-                  onClick={() => setSelectedEnrollment(enrollment)}
+                  onClick={() => openCourse(enrollment.course?.id)}
                 />
               </motion.div>
             ))}
@@ -308,11 +354,6 @@ export default function CoursesTab() {
           <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
         </>
       )}
-
-      <StudentCourseDetailDrawer
-        enrollment={selectedEnrollment}
-        onClose={() => setSelectedEnrollment(null)}
-      />
     </div>
   );
 }
