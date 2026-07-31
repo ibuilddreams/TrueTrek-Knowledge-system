@@ -1,10 +1,11 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Lock, LogIn } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useGuestOnlyRoute } from "@/hooks/useGuestOnlyRoute";
 import { ROUTES, getPortalRouteForRole } from "@/constants/routes";
 import { toastError, toastSuccess } from "@/lib/toast";
 import AuthGateCard from "@/components/ui/AuthGateCard";
@@ -14,27 +15,17 @@ import Loader from "@/components/ui/Loader";
 
 export default function LoginForm() {
   const router = useRouter();
-  const { login, status, isAuthenticated, role } = useAuth();
+  const { login } = useAuth();
+  const { shouldBlock, isAuthenticated } = useGuestOnlyRoute();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.replace(getPortalRouteForRole(role));
-    }
-  }, [isAuthenticated, role, router]);
-
-  const isSessionPending =
-    status === "idle" || status === "loading" || status === "authenticated";
-
-  if (isSessionPending && !isSubmitting) {
+  if (shouldBlock && !isSubmitting) {
     return (
       <Loader
-        label={
-          status === "authenticated" ? "Redirecting..." : "Checking Session..."
-        }
+        label={isAuthenticated ? "Redirecting to Portal..." : "Checking Session..."}
       />
     );
   }

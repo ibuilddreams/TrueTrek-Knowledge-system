@@ -5,10 +5,12 @@ import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { AlertCircle, Eye, EyeOff, KeyRound } from "lucide-react";
 import { resetPassword } from "@/services/authService";
+import { useGuestOnlyRoute } from "@/hooks/useGuestOnlyRoute";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { ROUTES } from "@/constants/routes";
 import AuthGateCard from "@/components/ui/AuthGateCard";
 import AuthSubmitButton from "@/components/ui/AuthSubmitButton";
+import Loader from "@/components/ui/Loader";
 
 function PasswordField({ id, label, value, onChange, show, onToggleShow, error, autoComplete }) {
   return (
@@ -70,6 +72,7 @@ function validateForm(form) {
 export default function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
+  const { shouldBlock, isAuthenticated } = useGuestOnlyRoute();
   const uid = searchParams.get("uid");
   const token = searchParams.get("token");
 
@@ -79,6 +82,14 @@ export default function ResetPasswordForm() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  if (shouldBlock) {
+    return (
+      <Loader
+        label={isAuthenticated ? "Redirecting to Portal..." : "Checking Session..."}
+      />
+    );
+  }
 
   const handleFieldChange = (field) => (event) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }));

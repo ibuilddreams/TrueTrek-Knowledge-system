@@ -4,11 +4,13 @@ import { useState } from "react";
 import Link from "next/link";
 import { KeyRound, MailCheck } from "lucide-react";
 import { forgotPassword } from "@/services/authService";
+import { useGuestOnlyRoute } from "@/hooks/useGuestOnlyRoute";
 import { toastError } from "@/lib/toast";
 import { ROUTES } from "@/constants/routes";
 import AuthGateCard from "@/components/ui/AuthGateCard";
 import AuthField from "@/components/ui/AuthField";
 import AuthSubmitButton from "@/components/ui/AuthSubmitButton";
+import Loader from "@/components/ui/Loader";
 
 function validateEmail(email) {
   if (!email.trim()) {
@@ -21,10 +23,19 @@ function validateEmail(email) {
 }
 
 export default function ForgotPasswordForm() {
+  const { shouldBlock, isAuthenticated } = useGuestOnlyRoute();
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [successMessage, setSuccessMessage] = useState("");
+
+  if (shouldBlock) {
+    return (
+      <Loader
+        label={isAuthenticated ? "Redirecting to Portal..." : "Checking Session..."}
+      />
+    );
+  }
 
   const handleChange = (event) => {
     setEmail(event.target.value);
