@@ -18,6 +18,7 @@ import { getStudentEnrolledCourseDetail } from "@/services/studentCoursesService
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatDate, formatDateTime } from "@/lib/adminFormatters";
 import CloseButton from "@/components/ui/CloseButton";
+import Loader from "@/components/ui/Loader";
 import StatusBadge from "@/components/ui/StatusBadge";
 
 function ProgressBar({ value }) {
@@ -118,10 +119,11 @@ export default function StudentCourseDetailDrawer({ enrollment, onClose }) {
 
             <div className="px-5 sm:px-6 py-6 space-y-6">
               {(isLoading || (!data && !isError)) && (
-                <div className="space-y-4" aria-busy="true">
-                  <div className="h-20 rounded-2xl bg-stone-100 animate-pulse" />
-                  <div className="h-28 rounded-2xl bg-stone-100 animate-pulse" />
-                  <div className="h-48 rounded-2xl bg-stone-100 animate-pulse" />
+                <div
+                  className="flex min-h-[50vh] items-center justify-center"
+                  aria-busy="true"
+                >
+                  <Loader fullScreen={false} label="Loading course details..." />
                 </div>
               )}
 
