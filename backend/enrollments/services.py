@@ -260,3 +260,27 @@ def get_student_enrolled_course_detail(student, course_id, request=None):
             "completion_percentage": completion_percentage,
         },
     }
+
+
+def get_student_certificates(student):
+    completed = (
+        CourseProgress.objects.filter(student=student, is_completed=True)
+        .select_related("course", "course__category")
+        .order_by("-updated_at")
+    )
+    return [
+        {
+            "id": progress.id,
+            "course": {
+                "id": progress.course_id,
+                "title": progress.course.title,
+                "code": progress.course.code,
+                "category": progress.course.category.name
+                if progress.course.category_id
+                else None,
+            },
+            "completion_percentage": float(progress.completion_percentage),
+            "completed_at": progress.updated_at,
+        }
+        for progress in completed
+    ]

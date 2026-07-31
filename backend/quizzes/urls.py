@@ -14,10 +14,14 @@ from .views import (
     QuizPendingGradingView,
     QuizPublishView,
     StartQuizAttemptView,
+    StudentGradesView,
+    StudentQuizListView,
     SubmitQuizAttemptView,
 )
 
 urlpatterns = [
+    path("student/grades/", StudentGradesView.as_view(), name="quiz-student-grades"),
+    path("student/", StudentQuizListView.as_view(), name="quiz-student-list"),
     path("", QuizListCreateView.as_view(), name="quiz-list-create"),
     path("course/<int:course_id>/", AvailableQuizzesView.as_view(), name="quiz-available-list"),
     path("<int:pk>/", QuizDetailView.as_view(), name="quiz-detail"),

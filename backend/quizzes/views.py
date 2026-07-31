@@ -34,12 +34,30 @@ from .services import (
     QuizPublishError,
     QuizReorderError,
     get_pending_grading_answers,
+    get_student_grades,
+    get_student_quizzes,
     grade_quiz_answer,
     publish_quiz,
     reorder_quizzes,
     start_quiz_attempt,
     submit_quiz_attempt,
 )
+
+
+class StudentQuizListView(generics.GenericAPIView):
+    permission_classes = [IsStudent]
+
+    def get(self, request):
+        data = get_student_quizzes(request.user)
+        return success_response(data, message="Student quizzes fetched successfully")
+
+
+class StudentGradesView(generics.GenericAPIView):
+    permission_classes = [IsStudent]
+
+    def get(self, request):
+        data = get_student_grades(request.user)
+        return success_response(data, message="Student grades fetched successfully")
 
 
 def _scope_quiz_queryset_for_reads(queryset, user):

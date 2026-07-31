@@ -26,10 +26,19 @@ from .serializers import (
 from .services import (
     bulk_import_enrollments,
     get_enrollment_import_sample,
+    get_student_certificates,
     get_student_enrolled_course_detail,
 )
 
 UserModel = get_user_model()
+
+
+class StudentCertificatesView(generics.GenericAPIView):
+    permission_classes = [IsStudent]
+
+    def get(self, request):
+        data = get_student_certificates(request.user)
+        return success_response(data, message="Student certificates fetched successfully")
 
 
 class StudentEnrolledCourseDetailView(generics.GenericAPIView):

@@ -3,7 +3,9 @@ from decimal import Decimal
 from django.db import transaction
 from django.utils import timezone
 
+from assignments.models import AssignmentSubmission
 from common.models import Status
+from enrollments.models import Enrollment
 
 from .models import Choice, Question, Quiz, QuizAnswer, QuizAttempt, QuizResult
 
@@ -26,6 +28,169 @@ class QuizGradingError(Exception):
 
 class QuizReorderError(Exception):
     pass
+
+
+def get_student_quizzes(student):
+    course_ids = list(
+        Enrollment.objects.filter(student=student).values_list("course_id", flat=True)
+    )
+    quizzes = list(
+        Quiz.objects.filter(course_id__in=course_ids, status=Status.PUBLISHED)
+        .select_related("course", "module")
+        .order_by("order", "title")
+    )
+    quiz_ids = [quiz.id for quiz in quizzes]
+    attempts = list(
+        QuizAttempt.objects.filter(student=student, quiz_id__in=quiz_ids)
+        .select_related("result")
+        .order_by("-started_at")
+    )
+    latest_attempt_map = {}
+    attempt_count_map = {}
+    for attempt in attempts:
+        attempt_count_map[attempt.quiz_id] = attempt_count_map.get(attempt.quiz_id, 0) + 1
+        if attempt.quiz_id not in latest_attempt_map:
+            latest_attempt_map[attempt.quiz_id] = attempt
+
+    now = timezone.now()
+    results = []
+    for quiz in quizzes:
+        latest = latest_attempt_map.get(quiz.id)
+        result = getattr(latest, "result", None) if latest else None
+        available = True
+        if quiz.available_from and now < quiz.available_from:
+            available = False
+        if quiz.available_until and now > quiz.available_until:
+            available = False
+
+        results.append(
+            {
+                "id": quiz.id,
+                "title": quiz.title,
+                "description": quiz.description,
+                "passing_score": quiz.passing_score,
+                "time_limit_minutes": quiz.time_limit_minutes,
+                "attempts_allowed": quiz.attempts_allowed,
+                "attempts_used": attempt_count_map.get(quiz.id, 0),
+                "available_from": quiz.available_from,
+                "available_until": quiz.available_until,
+                "is_available": available,
+                "course": {
+                    "id": quiz.course_id,
+                    "title": quiz.course.title if quiz.course_id else None,
+                },
+                "module": {
+                    "id": quiz.module_id,
+                    "title": quiz.module.title if quiz.module_id else None,
+                }
+                if quiz.module_id
+                else None,
+                "latest_attempt": {
+                    "id": latest.id,
+                    "status": latest.status,
+                    "attempt_number": latest.attempt_number,
+                    "percentage": float(result.percentage) if result else None,
+                    "is_passed": result.is_passed if result else None,
+                    "score": float(result.score) if result else None,
+                }
+                if latest
+                else None,
+            }
+        )
+    return results
+
+
+def get_student_grades(student):
+    quiz_results = list(
+        QuizResult.objects.filter(attempt__student=student)
+        .select_related("attempt__quiz__course", "attempt__quiz__module")
+        .order_by("-attempt__ended_at", "-attempt__started_at")
+    )
+    graded_assignments = list(
+        AssignmentSubmission.objects.filter(
+            student=student,
+            status=AssignmentSubmission.SubmissionStatus.GRADED,
+            marks__isnull=False,
+        )
+        .select_related("assignment__course", "assignment__module")
+        .order_by("-graded_at")
+    )
+
+    quiz_entries = [
+        {
+            "id": f"quiz-{result.id}",
+            "type": "QUIZ",
+            "title": result.attempt.quiz.title,
+            "course": {
+                "id": result.attempt.quiz.course_id,
+                "title": result.attempt.quiz.course.title,
+            },
+            "module": {
+                "id": result.attempt.quiz.module_id,
+                "title": result.attempt.quiz.module.title,
+            }
+            if result.attempt.quiz.module_id
+            else None,
+            "score": float(result.score),
+            "percentage": float(result.percentage),
+            "is_passed": result.is_passed,
+            "total_marks": None,
+            "graded_at": result.attempt.ended_at or result.attempt.started_at,
+        }
+        for result in quiz_results
+    ]
+
+    assignment_entries = [
+        {
+            "id": f"assignment-{submission.id}",
+            "type": "ASSIGNMENT",
+            "title": submission.assignment.title,
+            "course": {
+                "id": submission.assignment.course_id,
+                "title": submission.assignment.course.title,
+            },
+            "module": {
+                "id": submission.assignment.module_id,
+                "title": submission.assignment.module.title,
+            }
+            if submission.assignment.module_id
+            else None,
+            "score": submission.marks,
+            "percentage": round(
+                (submission.marks / submission.assignment.total_marks) * 100, 2
+            )
+            if submission.assignment.total_marks
+            else 0,
+            "is_passed": None,
+            "total_marks": submission.assignment.total_marks,
+            "graded_at": submission.graded_at,
+        }
+        for submission in graded_assignments
+    ]
+
+    entries = quiz_entries + assignment_entries
+    entries.sort(key=lambda item: item["graded_at"] or timezone.now(), reverse=True)
+
+    quiz_avg = quiz_results and (
+        sum(float(r.percentage) for r in quiz_results) / len(quiz_results)
+    ) or 0
+    assignment_avg = assignment_entries and (
+        sum(item["percentage"] for item in assignment_entries) / len(assignment_entries)
+    ) or 0
+    all_percentages = [float(r.percentage) for r in quiz_results] + [
+        item["percentage"] for item in assignment_entries
+    ]
+    overall_avg = sum(all_percentages) / len(all_percentages) if all_percentages else 0
+
+    return {
+        "summary": {
+            "overall_average": round(overall_avg, 2),
+            "quiz_average": round(quiz_avg, 2),
+            "assignment_average": round(assignment_avg, 2),
+            "total_graded": len(entries),
+        },
+        "entries": entries,
+    }
 
 
 def publish_quiz(quiz):

@@ -7,11 +7,17 @@ from .views import (
     EnrollmentBulkImportSampleView,
     EnrollmentBulkImportView,
     EnrollmentListCreateView,
+    StudentCertificatesView,
     StudentEnrolledCourseDetailView,
     TeacherEnrollmentListView,
 )
 
 urlpatterns = [
+    path(
+        "student/certificates/",
+        StudentCertificatesView.as_view(),
+        name="enrollment-student-certificates",
+    ),
     path(
         "student/<int:course_id>/",
         StudentEnrolledCourseDetailView.as_view(),

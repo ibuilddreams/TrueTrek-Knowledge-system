@@ -28,12 +28,21 @@ from .services import (
     AssignmentPublishError,
     AssignmentReorderError,
     AssignmentSubmissionError,
+    get_student_assignments,
     grade_submission,
     publish_assignment,
     reorder_assignments,
     submit_assignment,
 )
 from .validators import validate_assignment_file
+
+
+class StudentAssignmentListView(generics.GenericAPIView):
+    permission_classes = [IsStudent]
+
+    def get(self, request):
+        data = get_student_assignments(request.user)
+        return success_response(data, message="Student assignments fetched successfully")
 
 
 def _scope_assignment_queryset_for_reads(queryset, user):

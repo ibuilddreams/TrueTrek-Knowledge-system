@@ -11,9 +11,11 @@ from .views import (
     AssignmentPublishView,
     AssignmentSubmissionListView,
     AssignmentSubmitView,
+    StudentAssignmentListView,
 )
 
 urlpatterns = [
+    path("student/", StudentAssignmentListView.as_view(), name="assignment-student-list"),
     path("", AssignmentListCreateView.as_view(), name="assignment-list-create"),
     path("<int:pk>/", AssignmentDetailView.as_view(), name="assignment-detail"),
     path("<int:pk>/publish/", AssignmentPublishView.as_view(), name="assignment-publish"),

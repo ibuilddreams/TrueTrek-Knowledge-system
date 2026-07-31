@@ -2,6 +2,7 @@ from django.db import transaction
 from django.utils import timezone
 
 from common.models import Status
+from enrollments.models import Enrollment
 
 from .models import Assignment, AssignmentSubmission, AssignmentSubmissionFile
 
@@ -20,6 +21,68 @@ class AssignmentGradingError(Exception):
 
 class AssignmentReorderError(Exception):
     pass
+
+
+def get_student_assignments(student):
+    course_ids = list(
+        Enrollment.objects.filter(student=student).values_list("course_id", flat=True)
+    )
+    assignments = list(
+        Assignment.objects.filter(course_id__in=course_ids, status=Status.PUBLISHED)
+        .select_related("course", "module")
+        .order_by("due_date", "order")
+    )
+    assignment_ids = [assignment.id for assignment in assignments]
+    submission_map = {
+        row.assignment_id: row
+        for row in AssignmentSubmission.objects.filter(
+            student=student, assignment_id__in=assignment_ids
+        )
+    }
+
+    now = timezone.now()
+    results = []
+    for assignment in assignments:
+        submission = submission_map.get(assignment.id)
+        is_overdue = now > assignment.due_date and (
+            submission is None
+            or submission.status
+            in [
+                AssignmentSubmission.SubmissionStatus.DRAFT,
+            ]
+        )
+        results.append(
+            {
+                "id": assignment.id,
+                "title": assignment.title,
+                "description": assignment.description,
+                "due_date": assignment.due_date,
+                "total_marks": assignment.total_marks,
+                "allow_resubmission": assignment.allow_resubmission,
+                "is_overdue": is_overdue,
+                "course": {
+                    "id": assignment.course_id,
+                    "title": assignment.course.title if assignment.course_id else None,
+                },
+                "module": {
+                    "id": assignment.module_id,
+                    "title": assignment.module.title if assignment.module_id else None,
+                }
+                if assignment.module_id
+                else None,
+                "submission": {
+                    "id": submission.id,
+                    "status": submission.status,
+                    "marks": submission.marks,
+                    "feedback": submission.feedback,
+                    "submitted_at": submission.submitted_at,
+                    "graded_at": submission.graded_at,
+                }
+                if submission
+                else None,
+            }
+        )
+    return results
 
 
 def publish_assignment(assignment):
