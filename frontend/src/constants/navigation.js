@@ -46,7 +46,7 @@ export const NAV_LINKS = [
 export const FOOTER_LINKS = [
   { href: ROUTES.CURRICULUM, label: "The 11 Tiers Portfolio" },
   { href: ROUTES.PARTNERSHIPS, label: "School Licensing cost" },
-  { href: ROUTES.PORTAL, label: "Daily Drill Sandbox" },
+  { href: ROUTES.STUDENT_PORTAL, label: "Daily Drill Sandbox" },
   { href: ROUTES.STORE, label: "Strategic Merchant Store" },
 ];
 

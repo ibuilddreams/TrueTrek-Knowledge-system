@@ -4,7 +4,8 @@ from .views import (
     AdminDashboardActivityProgressView,
     AdminDashboardChartsView,
     AdminDashboardStatisticsView,
-    TeacherDashboardView
+    StudentDashboardView,
+    TeacherDashboardView,
 )
 
 urlpatterns = [
@@ -24,8 +25,13 @@ urlpatterns = [
         name="dashboard-admin-charts",
     ),
     path(
-        'api/teacher/dashboard/stats',
+        "api/student/dashboard/stats",
+        StudentDashboardView.as_view(),
+        name="student-dashboard-stats",
+    ),
+    path(
+        "api/teacher/dashboard/stats",
         TeacherDashboardView.as_view(),
-        name='teacher-dashboard-stats',
+        name="teacher-dashboard-stats",
     ),
 ]

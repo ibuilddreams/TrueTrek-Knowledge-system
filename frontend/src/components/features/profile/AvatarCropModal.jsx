@@ -57,16 +57,27 @@ export default function AvatarCropModal({ isOpen, imageSrc, onCancel, onSave }) 
           className="fixed inset-0 z-[100] bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4"
         >
           <motion.div
-            initial={{ opacity: 0, y: 16, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.97 }}
-            transition={{ duration: 0.22, ease: "easeOut" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
             className="bg-white border border-stone-200 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden relative"
           >
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-600 to-amber-800" />
 
+            <button
+              type="button"
+              onClick={onCancel}
+              disabled={isSaving}
+              className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition disabled:opacity-60"
+              title="Close"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
+
             <div className="p-5 sm:p-7">
-              <div className="flex items-center gap-3 mb-5">
+              <div className="flex items-center gap-3 mb-5 pr-8">
                 <IconBadge
                   icon={ImagePlus}
                   size="w-10 h-10"

@@ -56,6 +56,8 @@ class LessonSerializer(serializers.ModelSerializer):
 
 
 class LessonWriteSerializer(serializers.ModelSerializer):
+    order = serializers.IntegerField(min_value=1)
+
     class Meta:
         model = Lesson
         fields = [
@@ -102,11 +104,19 @@ class LessonWriteSerializer(serializers.ModelSerializer):
 
     def validate(self, attrs):
         content_type = attrs.get("content_type", getattr(self.instance, "content_type", None))
-        video_url = attrs.get("video_url", getattr(self.instance, "video_url", None))
-        file = attrs.get("file", getattr(self.instance, "file", None))
         duration_minutes = attrs.get("duration_minutes", getattr(self.instance, "duration_minutes", None))
 
         if content_type == Lesson.ContentType.VIDEO:
+            video_url_sent = "video_url" in attrs
+            file_sent = "file" in attrs
+
+            if video_url_sent or file_sent:
+                video_url = attrs.get("video_url") if video_url_sent else None
+                file = attrs.get("file") if file_sent else None
+            else:
+                video_url = getattr(self.instance, "video_url", None)
+                file = getattr(self.instance, "file", None)
+
             if video_url and file:
                 raise serializers.ValidationError(
                     {"video_url": "Provide either a video URL or an uploaded video file, not both."}
@@ -115,8 +125,15 @@ class LessonWriteSerializer(serializers.ModelSerializer):
                 raise serializers.ValidationError(
                     {"video_url": "A video URL or an uploaded video file is required for video lessons."}
                 )
+
             attrs["duration_minutes"] = None
+            if video_url_sent or file_sent:
+                attrs["video_url"] = video_url or None
+                attrs["file"] = file or None
         else:
+            file = attrs.get("file", getattr(self.instance, "file", None))
+            video_url = attrs.get("video_url", getattr(self.instance, "video_url", None))
+
             if not file:
                 raise serializers.ValidationError({"file": "File is required for PDF or document lessons."})
             if not duration_minutes:

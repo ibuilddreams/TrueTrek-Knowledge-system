@@ -120,7 +120,7 @@ function clearAuthCookies() {
 
 /**
  * @param {string} path
- * @param {{ method?: string, body?: any, headers?: Record<string,string>, skipAuth?: boolean, credentials?: RequestCredentials, baseUrl?: string }} [options]
+ * @param {{ method?: string, body?: any, headers?: Record<string,string>, skipAuth?: boolean, credentials?: RequestCredentials, baseUrl?: string, responseType?: "json" | "blob" }} [options]
  */
 export async function apiRequest(path, options = {}) {
   const {
@@ -130,6 +130,7 @@ export async function apiRequest(path, options = {}) {
     skipAuth = false,
     credentials = "include",
     baseUrl = "",
+    responseType = "json",
     _retried = false,
     ...rest
   } = options;
@@ -146,6 +147,7 @@ export async function apiRequest(path, options = {}) {
     credentials,
     skipAuth,
     baseUrl,
+    responseType,
     ...rest,
   };
 
@@ -177,17 +179,18 @@ export async function apiRequest(path, options = {}) {
 
   let data = null;
   const contentType = response.headers.get("content-type") || "";
-  if (contentType.includes("application/json")) {
-    try {
-      data = await response.json();
-    } catch {
-      data = null;
-    }
-  } else {
-    data = await response.text();
-  }
 
   if (!response.ok) {
+    if (contentType.includes("application/json")) {
+      try {
+        data = await response.json();
+      } catch {
+        data = null;
+      }
+    } else {
+      data = await response.text();
+    }
+
     const error = new Error(
       data?.message ||
         data?.error ||
@@ -224,6 +227,24 @@ export async function apiRequest(path, options = {}) {
     }
 
     return runErrorInterceptors(error);
+  }
+
+  if (responseType === "blob") {
+    const blob = await response.blob();
+    const disposition = response.headers.get("content-disposition") || "";
+    const match = disposition.match(/filename="?([^"]+)"?/i);
+    data = {
+      blob,
+      filename: match?.[1] || null,
+    };
+  } else if (contentType.includes("application/json")) {
+    try {
+      data = await response.json();
+    } catch {
+      data = null;
+    }
+  } else {
+    data = await response.text();
   }
 
   return runResponseInterceptors(response, data);

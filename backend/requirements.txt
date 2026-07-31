@@ -7,3 +7,4 @@ Pillow
 drf-spectacular
 djangorestframework-simplejwt
 gunicorn
+openpyxl

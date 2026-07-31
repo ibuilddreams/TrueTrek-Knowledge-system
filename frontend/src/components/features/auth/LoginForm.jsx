@@ -1,47 +1,31 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Lock, LogIn } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { AUTH_ROLES } from "@/constants/auth";
-import { ROUTES } from "@/constants/routes";
+import { useGuestOnlyRoute } from "@/hooks/useGuestOnlyRoute";
+import { ROUTES, getPortalRouteForRole } from "@/constants/routes";
 import { toastError, toastSuccess } from "@/lib/toast";
 import AuthGateCard from "@/components/ui/AuthGateCard";
 import AuthField from "@/components/ui/AuthField";
 import AuthSubmitButton from "@/components/ui/AuthSubmitButton";
 import Loader from "@/components/ui/Loader";
 
-const ROLE_REDIRECTS = {
-  [AUTH_ROLES.ADMIN]: ROUTES.DASHBOARD,
-  [AUTH_ROLES.FACULTY]: ROUTES.DASHBOARD,
-  [AUTH_ROLES.STUDENT]: ROUTES.PORTAL,
-};
-
 export default function LoginForm() {
   const router = useRouter();
-  const { login, status, isAuthenticated, role } = useAuth();
+  const { login } = useAuth();
+  const { shouldBlock, isAuthenticated } = useGuestOnlyRoute();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
-  useEffect(() => {
-    if (isAuthenticated) {
-      router.replace(ROLE_REDIRECTS[role] || ROUTES.HOME);
-    }
-  }, [isAuthenticated, role, router]);
-
-  const isSessionPending =
-    status === "idle" || status === "loading" || status === "authenticated";
-
-  if (isSessionPending && !isSubmitting) {
+  if (shouldBlock && !isSubmitting) {
     return (
       <Loader
-        label={
-          status === "authenticated" ? "Redirecting..." : "Checking Session..."
-        }
+        label={isAuthenticated ? "Redirecting to Portal..." : "Checking Session..."}
       />
     );
   }
@@ -53,7 +37,7 @@ export default function LoginForm() {
     try {
       const { user } = await login({ email, password });
       toastSuccess(`Welcome back, ${user.name || user.email}.`);
-      router.push(ROLE_REDIRECTS[user.role] || ROUTES.HOME);
+      router.push(getPortalRouteForRole(user.role));
     } catch (error) {
       const message = error?.message || "Unable to sign in. Please try again.";
       setFormError(message);
@@ -89,6 +73,7 @@ export default function LoginForm() {
             autoComplete="current-password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            showPasswordToggle
           />
           <div className="flex justify-end">
             <Link

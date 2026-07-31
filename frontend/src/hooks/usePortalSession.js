@@ -9,34 +9,19 @@ import {
   setAggregateScore,
   setDrillCompletedList,
   setStreakDays,
+  setPoints,
+  setCompletedModules,
+  setConsultationCount,
+  setUnlockedBadges,
 } from "@/store/slices/portal/portalSlice";
 import { resolveUpdater } from "@/utils";
 
-/**
- * Student portal shared progress + auth-aware login flag.
- */
 export function usePortalSession() {
   const dispatch = useDispatch();
   const portal = useSelector(selectPortal);
-  const { isAuthenticated, role, loginStudent, logout } = useAuth();
+  const { isAuthenticated, role, logout } = useAuth();
 
-  const isLoggedIn =
-    isAuthenticated && role === AUTH_ROLES.STUDENT;
-
-  const setIsLoggedIn = useCallback(
-    async (value) => {
-      if (value) {
-        await loginStudent({
-          email: "aiguy503@gmail.com",
-          password: "simulated",
-          name: "Marcus Vance Jr.",
-        });
-      } else {
-        await logout();
-      }
-    },
-    [loginStudent, logout]
-  );
+  const isLoggedIn = isAuthenticated && role === AUTH_ROLES.STUDENT;
 
   const updateDrillCompletedList = useCallback(
     (value) => {
@@ -61,14 +46,56 @@ export function usePortalSession() {
     [dispatch, portal.aggregateScore]
   );
 
+  const updatePoints = useCallback(
+    (value) => {
+      dispatch(setPoints(resolveUpdater(value, portal.points)));
+    },
+    [dispatch, portal.points]
+  );
+
+  const updateCompletedModules = useCallback(
+    (value) => {
+      dispatch(
+        setCompletedModules(resolveUpdater(value, portal.completedModules))
+      );
+    },
+    [dispatch, portal.completedModules]
+  );
+
+  const updateConsultationCount = useCallback(
+    (value) => {
+      dispatch(
+        setConsultationCount(resolveUpdater(value, portal.consultationCount))
+      );
+    },
+    [dispatch, portal.consultationCount]
+  );
+
+  const updateUnlockedBadges = useCallback(
+    (value) => {
+      dispatch(
+        setUnlockedBadges(resolveUpdater(value, portal.unlockedBadges))
+      );
+    },
+    [dispatch, portal.unlockedBadges]
+  );
+
   return {
     isLoggedIn,
+    logout,
     drillCompletedList: portal.drillCompletedList,
     streakDays: portal.streakDays,
     aggregateScore: portal.aggregateScore,
-    setIsLoggedIn,
+    points: portal.points,
+    completedModules: portal.completedModules,
+    consultationCount: portal.consultationCount,
+    unlockedBadges: portal.unlockedBadges,
     setDrillCompletedList: updateDrillCompletedList,
     setStreakDays: updateStreakDays,
     setAggregateScore: updateAggregateScore,
+    setPoints: updatePoints,
+    setCompletedModules: updateCompletedModules,
+    setConsultationCount: updateConsultationCount,
+    setUnlockedBadges: updateUnlockedBadges,
   };
 }

@@ -231,7 +231,7 @@ class CourseListCreateView(generics.ListCreateAPIView):
 
 class CourseDetailView(generics.RetrieveUpdateDestroyAPIView):
     queryset = Course.objects.select_related("category").prefetch_related(
-        "tags", "instructors__instructor", "modules__lessons"
+        "tags", "instructors__instructor", "modules__lessons", "modules__assignments", "modules__quizzes"
     )
     permission_classes = [IsAuthenticated]
 

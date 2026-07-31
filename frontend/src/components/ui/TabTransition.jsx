@@ -7,10 +7,10 @@ export default function TabTransition({ activeKey, children }) {
     <AnimatePresence mode="wait">
       <motion.div
         key={activeKey}
-        initial={{ y: 10 }}
-        animate={{ y: 0 }}
-        exit={{ y: -6 }}
-        transition={{ duration: 0.2, ease: "easeOut" }}
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        exit={{ opacity: 0 }}
+        transition={{ duration: 0.15, ease: "easeOut" }}
       >
         {children}
       </motion.div>

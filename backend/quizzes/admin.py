@@ -16,15 +16,25 @@ class ChoiceInline(admin.TabularInline):
 
 @admin.register(Quiz)
 class QuizAdmin(admin.ModelAdmin):
-    list_display = ("title", "course", "passing_score", "time_limit_minutes", "created_at")
+    list_display = (
+        "title",
+        "course",
+        "status",
+        "passing_score",
+        "attempts_allowed",
+        "time_limit_minutes",
+        "order",
+        "created_at",
+    )
+    list_filter = ("status",)
     search_fields = ("title", "course__title")
-    autocomplete_fields = ("course",)
+    autocomplete_fields = ("course", "module")
     inlines = (QuestionInline,)
 
 
 @admin.register(Question)
 class QuestionAdmin(admin.ModelAdmin):
-    list_display = ("text", "quiz", "question_type", "order")
+    list_display = ("text", "quiz", "question_type", "marks", "order")
     list_filter = ("question_type",)
     search_fields = ("text", "quiz__title")
     autocomplete_fields = ("quiz",)
@@ -41,15 +51,16 @@ class ChoiceAdmin(admin.ModelAdmin):
 
 @admin.register(QuizAttempt)
 class QuizAttemptAdmin(admin.ModelAdmin):
-    list_display = ("student", "quiz", "attempt_number", "started_at", "ended_at")
-    list_filter = ("quiz",)
+    list_display = ("student", "quiz", "attempt_number", "status", "started_at", "ended_at")
+    list_filter = ("quiz", "status")
     search_fields = ("student__username", "quiz__title")
     autocomplete_fields = ("student", "quiz")
 
 
 @admin.register(QuizAnswer)
 class QuizAnswerAdmin(admin.ModelAdmin):
-    list_display = ("attempt", "question", "selected_choice")
+    list_display = ("attempt", "question", "selected_choice", "marks_awarded", "grading_status")
+    list_filter = ("grading_status",)
     search_fields = ("attempt__student__username", "question__text")
     autocomplete_fields = ("attempt", "question", "selected_choice")
 

@@ -1,7 +1,7 @@
 "use client";
 
 import { motion, AnimatePresence } from "motion/react";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, X } from "lucide-react";
 
 export default function DiscardChangesDialog({ isOpen, onDiscard, onContinue }) {
   return (
@@ -15,19 +15,29 @@ export default function DiscardChangesDialog({ isOpen, onDiscard, onContinue }) 
           className="fixed inset-0 z-[100] bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4"
         >
           <motion.div
-            initial={{ opacity: 0, y: 16, scale: 0.97 }}
-            animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: 16, scale: 0.97 }}
-            transition={{ duration: 0.2, ease: "easeOut" }}
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.15, ease: "easeOut" }}
             className="bg-white border border-stone-200 rounded-2xl shadow-xl w-full max-w-sm overflow-hidden relative"
           >
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-600 to-amber-800" />
+
+            <button
+              type="button"
+              onClick={onContinue}
+              className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition"
+              title="Close"
+              aria-label="Close"
+            >
+              <X className="w-4 h-4" />
+            </button>
 
             <div className="p-6">
               <div className="w-11 h-11 bg-amber-50 border border-amber-200/50 text-amber-700 rounded-xl flex items-center justify-center mb-4">
                 <AlertTriangle className="w-5 h-5" />
               </div>
-              <h3 className="text-lg font-serif font-bold text-stone-900">
+              <h3 className="text-lg font-serif font-bold text-stone-900 pr-8">
                 Discard unsaved changes?
               </h3>
               <p className="text-xs text-stone-500 font-light mt-1.5">

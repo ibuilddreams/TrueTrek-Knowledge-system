@@ -1,5 +1,7 @@
 "use client";
 
+import { useState } from "react";
+import { Eye, EyeOff } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
 export default function AuthField({
@@ -12,16 +14,23 @@ export default function AuthField({
   autoComplete,
   error,
   icon: Icon,
+  showPasswordToggle = false,
   inputClassName,
   ...rest
 }) {
   const { isVault } = useTheme();
+  const [showPassword, setShowPassword] = useState(false);
+
+  const isPasswordField = type === "password";
+  const resolvedType =
+    isPasswordField && showPasswordToggle && showPassword ? "text" : type;
 
   const resolvedInputClassName =
     inputClassName ||
     [
       "w-full p-3 rounded-lg border text-xs font-mono focus:outline-none transition",
       Icon ? "pl-10" : "",
+      showPasswordToggle && isPasswordField ? "pr-11" : "",
       isVault
         ? "bg-[#0c0b0a] text-stone-200 placeholder:text-stone-600"
         : "bg-white text-stone-800 placeholder:text-stone-400",
@@ -53,7 +62,7 @@ export default function AuthField({
         )}
         <input
           id={id}
-          type={type}
+          type={resolvedType}
           required={required}
           autoComplete={autoComplete}
           value={value}
@@ -61,6 +70,25 @@ export default function AuthField({
           className={resolvedInputClassName}
           {...rest}
         />
+        {showPasswordToggle && isPasswordField && (
+          <button
+            type="button"
+            onClick={() => setShowPassword((prev) => !prev)}
+            className={`absolute inset-y-0 right-0 pr-3.5 flex items-center transition ${
+              isVault
+                ? "text-stone-500 hover:text-stone-300"
+                : "text-stone-400 hover:text-stone-600"
+            }`}
+            title={showPassword ? "Hide password" : "Show password"}
+            aria-label={showPassword ? "Hide password" : "Show password"}
+          >
+            {showPassword ? (
+              <EyeOff className="w-4 h-4" />
+            ) : (
+              <Eye className="w-4 h-4" />
+            )}
+          </button>
+        )}
       </div>
       {error && (
         <p className="text-[11px] text-red-600 font-mono mt-1.5">{error}</p>

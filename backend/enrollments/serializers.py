@@ -11,11 +11,34 @@ UserModel = get_user_model()
 
 class EnrollmentListSerializer(serializers.ModelSerializer):
     course = CourseListSerializer(read_only=True)
+    completion_percentage = serializers.SerializerMethodField()
+    is_completed = serializers.SerializerMethodField()
 
     class Meta:
         model = Enrollment
-        fields = ["id", "course", "status", "enrolled_at"]
+        fields = [
+            "id",
+            "course",
+            "status",
+            "enrolled_at",
+            "completion_percentage",
+            "is_completed",
+        ]
         read_only_fields = fields
+
+    def get_completion_percentage(self, obj):
+        progress_map = self.context.get("progress_map") or {}
+        progress = progress_map.get(obj.course_id)
+        if progress is None:
+            return 0
+        return round(float(progress.completion_percentage or 0), 2)
+
+    def get_is_completed(self, obj):
+        progress_map = self.context.get("progress_map") or {}
+        progress = progress_map.get(obj.course_id)
+        if progress is None:
+            return False
+        return bool(progress.is_completed)
 
 
 class EnrollmentWriteSerializer(serializers.ModelSerializer):

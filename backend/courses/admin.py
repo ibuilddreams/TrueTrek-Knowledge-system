@@ -25,9 +25,9 @@ class TagAdmin(admin.ModelAdmin):
 
 @admin.register(Course)
 class CourseAdmin(admin.ModelAdmin):
-    list_display = ("title", "category", "status", "difficulty", "duration_minutes", "created_at")
+    list_display = ("code", "title", "category", "status", "difficulty", "duration_minutes", "created_at")
     list_filter = ("status", "difficulty", "category", "tags")
-    search_fields = ("title", "description")
+    search_fields = ("code", "title", "description")
     prepopulated_fields = {"slug": ("title",)}
     autocomplete_fields = ("category",)
     filter_horizontal = ("tags",)

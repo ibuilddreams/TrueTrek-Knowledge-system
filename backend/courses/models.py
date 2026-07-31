@@ -44,6 +44,7 @@ class Course(BaseModel):
         ADVANCED = "ADVANCED", "Advanced"
 
     title = models.CharField(max_length=255)
+    code = models.CharField(max_length=50, unique=True)
     slug = models.SlugField(max_length=255, unique=True, blank=True)
     description = models.TextField(blank=True)
     thumbnail = models.ImageField(upload_to="course_thumbnails/", null=True, blank=True)
@@ -59,9 +60,11 @@ class Course(BaseModel):
         ordering = ["-created_at"]
 
     def __str__(self):
-        return self.title
+        return f"{self.code} — {self.title}"
 
     def save(self, *args, **kwargs):
+        if self.code:
+            self.code = self.code.strip().upper()
         if not self.slug:
             self.slug = slugify(self.title)
         super().save(*args, **kwargs)

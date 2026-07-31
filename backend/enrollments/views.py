@@ -1,12 +1,17 @@
 from django.contrib.auth import get_user_model
+from django.http import FileResponse
 from rest_framework import generics
+from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 
+from common.import_files import ImportFileError
 from common.pagination import Pagination
 from common.response import error_response, success_response
 from courses.models import Course
 from courses.serializers import CourseListSerializer
 from users.permissions import IsAdmin, IsStudent, IsTeacher
+
+from progress.models import CourseProgress
 
 from .models import Enrollment, EnrollmentHistory
 from .serializers import (
@@ -18,8 +23,35 @@ from .serializers import (
     EnrollmentStudentSerializer,
     EnrollmentWriteSerializer,
 )
+from .services import (
+    bulk_import_enrollments,
+    get_enrollment_import_sample,
+    get_student_certificates,
+    get_student_enrolled_course_detail,
+)
 
 UserModel = get_user_model()
+
+
+class StudentCertificatesView(generics.GenericAPIView):
+    permission_classes = [IsStudent]
+
+    def get(self, request):
+        data = get_student_certificates(request.user)
+        return success_response(data, message="Student certificates fetched successfully")
+
+
+class StudentEnrolledCourseDetailView(generics.GenericAPIView):
+    permission_classes = [IsStudent]
+
+    def get(self, request, course_id):
+        data = get_student_enrolled_course_detail(request.user, course_id, request=request)
+        if data is None:
+            return error_response(
+                message="You are not enrolled in this course.",
+                status_code=404,
+            )
+        return success_response(data, message="Enrolled course details fetched successfully")
 
 
 class EnrollmentListCreateView(generics.ListCreateAPIView):
@@ -44,6 +76,22 @@ class EnrollmentListCreateView(generics.ListCreateAPIView):
         # if self.request.method == "POST":
         #     return EnrollmentWriteSerializer
         return EnrollmentListSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        course_ids = list(
+            Enrollment.objects.filter(student=self.request.user).values_list(
+                "course_id", flat=True
+            )
+        )
+        progress_map = {
+            progress.course_id: progress
+            for progress in CourseProgress.objects.filter(
+                student=self.request.user, course_id__in=course_ids
+            )
+        }
+        context["progress_map"] = progress_map
+        return context
 
     def list(self, request, *args, **kwargs):
         enrollments = self.filter_queryset(self.get_queryset())
@@ -99,6 +147,39 @@ class AdminEnrollmentListView(generics.ListCreateAPIView):
             message="Student enrolled successfully",
             status_code=201,
         )
+
+
+class EnrollmentBulkImportView(generics.GenericAPIView):
+    permission_classes = [IsAdmin]
+    parser_classes = [MultiPartParser, FormParser]
+
+    def post(self, request, *args, **kwargs):
+        uploaded_file = request.FILES.get("file")
+        try:
+            result = bulk_import_enrollments(uploaded_file)
+        except ImportFileError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        message = (
+            f"Import completed: {result['success_count']} succeeded, "
+            f"{result['failed_count']} failed."
+        )
+        return success_response(result, message=message)
+
+
+class EnrollmentBulkImportSampleView(generics.GenericAPIView):
+    permission_classes = [IsAdmin]
+
+    def get(self, request, *args, **kwargs):
+        file_format = request.query_params.get("file_format", "csv")
+        try:
+            buffer, filename, content_type = get_enrollment_import_sample(file_format)
+        except ImportFileError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        response = FileResponse(buffer, as_attachment=True, filename=filename)
+        response["Content-Type"] = content_type
+        return response
 
 
 class AdminEnrollmentDetailView(generics.GenericAPIView):

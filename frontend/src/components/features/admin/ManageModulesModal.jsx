@@ -19,16 +19,24 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 import {
+  Calendar,
   Check,
   ChevronDown,
   ChevronUp,
+  ClipboardCheck,
   Edit3,
   FileText,
   GripVertical,
+  HelpCircle,
   Image as ImageIcon,
   Layers,
   ListPlus,
+  Maximize2,
+  Minimize2,
+  Paperclip,
+  PlayCircle,
   Plus,
+  Send,
   Trash2,
   Video,
   X,
@@ -37,7 +45,11 @@ import Modal from "@/components/ui/Modal";
 import Loader from "@/components/ui/Loader";
 import EmptyState from "@/components/ui/EmptyState";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import StatusBadge from "@/components/ui/StatusBadge";
 import AddLessonModal from "@/components/features/admin/AddLessonModal";
+import AddAssignmentModal from "@/components/features/admin/AddAssignmentModal";
+import AssignmentAttachmentsModal from "@/components/features/admin/AssignmentAttachmentsModal";
+import AdminComingSoonModal from "@/components/features/admin/AdminComingSoonModal";
 import {
   createModule,
   deleteModule,
@@ -46,10 +58,17 @@ import {
   updateModule,
 } from "@/services/modulesService";
 import { deleteLesson, getLessons, reorderLessons } from "@/services/lessonsService";
+import {
+  deleteAssignment,
+  getAssignments,
+  publishAssignment,
+  reorderAssignments,
+} from "@/services/assignmentsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
+import { formatDate, formatDateTime } from "@/lib/adminFormatters";
 import { toastError, toastSuccess } from "@/lib/toast";
 
-const INITIAL_FORM = { title: "", description: "", order: "0" };
+const INITIAL_FORM = { title: "", description: "", order: "1" };
 
 const FIELD_CLASS =
   "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60";
@@ -57,6 +76,25 @@ const FIELD_CLASS =
 const LABEL_CLASS = "text-[10px] font-mono text-stone-450 block uppercase tracking-wider mb-1.5 font-semibold";
 
 const ERROR_CLASS = "text-[10px] font-mono text-red-600 mt-1";
+
+const TABS = [
+  { key: "lessons", label: "Lessons", icon: PlayCircle },
+  { key: "assignments", label: "Assignments", icon: ClipboardCheck },
+  { key: "quizzes", label: "Quizzes", icon: HelpCircle },
+];
+
+function formatLessonDate(value) {
+  return formatDate(value);
+}
+
+function formatDueDate(value) {
+  return formatDateTime(value) || "—";
+}
+
+function isPastDue(value) {
+  if (!value) return false;
+  return new Date(value).getTime() < Date.now();
+}
 
 function extractFieldErrors(error) {
   const apiFieldErrors = error?.data?.data;
@@ -87,7 +125,7 @@ function SortableLessonItem({ lesson, moduleId, onEditLesson, onDeleteLesson }) 
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-3 p-2.5 rounded-lg border border-stone-200 bg-stone-50 ${
+      className={`flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-white ${
         isDragging ? "z-10 shadow-lg opacity-90" : ""
       }`}
     >
@@ -98,33 +136,39 @@ function SortableLessonItem({ lesson, moduleId, onEditLesson, onDeleteLesson }) 
         title="Drag to reorder"
         aria-hidden="true"
       >
-        <GripVertical className="w-3.5 h-3.5" />
+        <GripVertical className="w-4 h-4" />
       </span>
-      <LessonIcon className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+      <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+        <LessonIcon className="w-4 h-4" />
+      </div>
       <div className="min-w-0 flex-1">
         <p className="text-xs font-semibold text-stone-800 truncate">{lesson.title}</p>
         <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
-          {lesson.content_type} · {lesson.duration_minutes} min
+          {lesson.content_type}
+          {lesson.duration_minutes ? ` · ${lesson.duration_minutes} min` : ""} ·{" "}
+          {formatLessonDate(lesson.created_at)}
         </p>
       </div>
-      <button
-        type="button"
-        onClick={() => onEditLesson(lesson)}
-        title="Edit lesson"
-        aria-label="Edit lesson"
-        className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition shrink-0 cursor-pointer"
-      >
-        <Edit3 className="w-3 h-3" />
-      </button>
-      <button
-        type="button"
-        onClick={() => onDeleteLesson({ id: lesson.id, title: lesson.title, moduleId })}
-        title="Delete lesson"
-        aria-label="Delete lesson"
-        className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 text-rose-600 hover:bg-rose-50 transition shrink-0 cursor-pointer"
-      >
-        <Trash2 className="w-3 h-3" />
-      </button>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <button
+          type="button"
+          onClick={() => onEditLesson(lesson)}
+          title="Edit lesson"
+          aria-label="Edit lesson"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+        >
+          <Edit3 className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onDeleteLesson({ id: lesson.id, title: lesson.title, moduleId })}
+          title="Delete lesson"
+          aria-label="Delete lesson"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
     </li>
   );
 }
@@ -217,8 +261,237 @@ function ModuleLessonsList({ moduleId, onAddLesson, onEditLesson, onDeleteLesson
         className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
       >
         <Plus className="w-3.5 h-3.5" />
-        Add lesson to this module
+        Add Lesson
       </button>
+    </div>
+  );
+}
+
+function SortableAssignmentItem({
+  assignment,
+  moduleId,
+  onEditAssignment,
+  onDeleteAssignment,
+  onPublishAssignment,
+  isPublishing,
+  onManageAttachments,
+}) {
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
+    id: assignment.id,
+  });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+  };
+
+  const overdue = assignment.status === "PUBLISHED" && isPastDue(assignment.due_date);
+
+  return (
+    <li
+      ref={setNodeRef}
+      style={style}
+      className={`flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-white ${
+        isDragging ? "z-10 shadow-lg opacity-90" : ""
+      }`}
+    >
+      <span
+        {...attributes}
+        {...listeners}
+        className="text-stone-300 cursor-grab shrink-0 touch-none"
+        title="Drag to reorder"
+        aria-hidden="true"
+      >
+        <GripVertical className="w-4 h-4" />
+      </span>
+      <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+        <ClipboardCheck className="w-4 h-4" />
+      </div>
+      <div className="min-w-0 flex-1">
+        <div className="flex items-center gap-2">
+          <p className="text-xs font-semibold text-stone-800 truncate">{assignment.title}</p>
+          <StatusBadge status={assignment.status} />
+        </div>
+        <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5 flex items-center gap-1 flex-wrap">
+          <Calendar className="w-2.5 h-2.5" />
+          <span className={overdue ? "text-rose-500" : ""}>{formatDueDate(assignment.due_date)}</span>
+          <span className="text-stone-200">·</span>
+          <span>{assignment.total_marks} marks</span>
+        </p>
+      </div>
+      <div className="flex items-center gap-1.5 shrink-0">
+        <button
+          type="button"
+          onClick={() => onManageAttachments(assignment)}
+          title="Manage attachments"
+          aria-label="Manage attachments"
+          className="relative w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+        >
+          <Paperclip className="w-3.5 h-3.5" />
+          {assignment.attachments?.length > 0 && (
+            <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-amber-600 text-white text-[9px] font-mono font-bold flex items-center justify-center">
+              {assignment.attachments.length}
+            </span>
+          )}
+        </button>
+        {assignment.status === "DRAFT" && (
+          <button
+            type="button"
+            onClick={() => onPublishAssignment(assignment)}
+            disabled={isPublishing}
+            title="Publish assignment"
+            aria-label="Publish assignment"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-emerald-600 hover:bg-emerald-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            <Send className="w-3.5 h-3.5" />
+          </button>
+        )}
+        <button
+          type="button"
+          onClick={() => onEditAssignment(assignment)}
+          title="Edit assignment"
+          aria-label="Edit assignment"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+        >
+          <Edit3 className="w-3.5 h-3.5" />
+        </button>
+        <button
+          type="button"
+          onClick={() => onDeleteAssignment({ id: assignment.id, title: assignment.title, moduleId })}
+          title="Delete assignment"
+          aria-label="Delete assignment"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+        >
+          <Trash2 className="w-3.5 h-3.5" />
+        </button>
+      </div>
+    </li>
+  );
+}
+
+function ModuleAssignmentsList({ moduleId, onAddAssignment, onEditAssignment, onDeleteAssignment }) {
+  const queryClient = useQueryClient();
+  const [localAssignmentOrderIds, setLocalAssignmentOrderIds] = useState(null);
+  const [attachmentsModalAssignment, setAttachmentsModalAssignment] = useState(null);
+
+  const dndSensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 5 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  const assignmentsQuery = useQuery({
+    queryKey: ["assignments", moduleId],
+    queryFn: async () => {
+      const response = await getAssignments({ moduleId });
+      return response?.data?.results || [];
+    },
+  });
+  const assignments = assignmentsQuery.data || [];
+
+  const reorderAssignmentsMutation = useMutation({
+    mutationFn: (entries) => reorderAssignments(moduleId, entries),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["assignments", moduleId] });
+    },
+    onError: (error) => {
+      toastError(getApiErrorMessage(error, "Unable to reorder assignments."));
+    },
+  });
+
+  const publishAssignmentMutation = useMutation({
+    mutationFn: (assignment) => publishAssignment(assignment.id),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ["assignments", moduleId] });
+      toastSuccess(response?.message || "Assignment published successfully.");
+    },
+    onError: (error) => {
+      toastError(getApiErrorMessage(error, "Unable to publish assignment."));
+    },
+  });
+
+  const displayAssignments = useMemo(() => {
+    if (!localAssignmentOrderIds) return assignments;
+    const currentIds = assignments.map((assignment) => assignment.id);
+    const sameSet =
+      localAssignmentOrderIds.length === currentIds.length &&
+      localAssignmentOrderIds.every((id) => currentIds.includes(id));
+    if (!sameSet) return assignments;
+    const assignmentById = new Map(assignments.map((assignment) => [assignment.id, assignment]));
+    return localAssignmentOrderIds.map((id) => assignmentById.get(id));
+  }, [assignments, localAssignmentOrderIds]);
+
+  const handleAssignmentDragEnd = (event) => {
+    const { active, over } = event;
+    if (!over || active.id === over.id) return;
+
+    const currentIds = displayAssignments.map((assignment) => assignment.id);
+    const oldIndex = currentIds.indexOf(active.id);
+    const newIndex = currentIds.indexOf(over.id);
+    if (oldIndex === -1 || newIndex === -1) return;
+
+    const newOrderIds = arrayMove(currentIds, oldIndex, newIndex);
+    setLocalAssignmentOrderIds(newOrderIds);
+
+    const payload = newOrderIds.map((id, index) => ({ assignment_id: id, order: index + 1 }));
+    reorderAssignmentsMutation.mutate(payload);
+  };
+
+  if (assignmentsQuery.isLoading) {
+    return <Loader fullScreen={false} label="Loading assignments..." />;
+  }
+
+  return (
+    <div className="space-y-2">
+      {displayAssignments.length === 0 ? (
+        <EmptyState
+          icon={ClipboardCheck}
+          label="No assignments in this module yet."
+          description="Create an assignment for students to submit work against."
+          compact
+        />
+      ) : (
+        <DndContext
+          sensors={dndSensors}
+          collisionDetection={closestCenter}
+          onDragEnd={handleAssignmentDragEnd}
+        >
+          <SortableContext
+            items={displayAssignments.map((assignment) => assignment.id)}
+            strategy={verticalListSortingStrategy}
+          >
+            <ul className="space-y-2">
+              {displayAssignments.map((assignment) => (
+                <SortableAssignmentItem
+                  key={assignment.id}
+                  assignment={assignment}
+                  moduleId={moduleId}
+                  onEditAssignment={onEditAssignment}
+                  onDeleteAssignment={onDeleteAssignment}
+                  onPublishAssignment={publishAssignmentMutation.mutate}
+                  isPublishing={publishAssignmentMutation.isPending}
+                  onManageAttachments={setAttachmentsModalAssignment}
+                />
+              ))}
+            </ul>
+          </SortableContext>
+        </DndContext>
+      )}
+
+      <button
+        type="button"
+        onClick={() => onAddAssignment(moduleId)}
+        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
+      >
+        <Plus className="w-3.5 h-3.5" />
+        Add Assignment
+      </button>
+
+      <AssignmentAttachmentsModal
+        isOpen={Boolean(attachmentsModalAssignment)}
+        onClose={() => setAttachmentsModalAssignment(null)}
+        assignment={attachmentsModalAssignment}
+        moduleId={moduleId}
+      />
     </div>
   );
 }
@@ -232,7 +505,13 @@ function SortableModuleItem({
   setDeletingModule,
   openEditLesson,
   setDeletingLesson,
+  openAddAssignment,
+  openEditAssignment,
+  setDeletingAssignment,
 }) {
+  const [activeTab, setActiveTab] = useState("lessons");
+  const [comingSoonTarget, setComingSoonTarget] = useState(null);
+
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({
     id: module.id,
   });
@@ -306,15 +585,75 @@ function SortableModuleItem({
       </div>
 
       {isExpanded && (
-        <div className="border-t border-stone-200 px-4 py-3">
-          <ModuleLessonsList
-            moduleId={module.id}
-            onAddLesson={openAddLesson}
-            onEditLesson={openEditLesson}
-            onDeleteLesson={setDeletingLesson}
-          />
+        <div className="border-t border-stone-200 bg-stone-50/60 px-4 py-4 space-y-4">
+          <div className="inline-flex items-center gap-1 rounded-xl border border-stone-200 bg-white p-1">
+            {TABS.map((tab) => (
+              <button
+                key={tab.key}
+                type="button"
+                onClick={() => setActiveTab(tab.key)}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono font-semibold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
+                  activeTab === tab.key
+                    ? "bg-amber-50 text-amber-800 border border-amber-200"
+                    : "text-stone-500 hover:text-stone-700"
+                }`}
+              >
+                <tab.icon className="w-3.5 h-3.5" />
+                {tab.label} ·{" "}
+                {tab.key === "lessons"
+                  ? module.lessons_count ?? 0
+                  : tab.key === "assignments"
+                    ? module.assignments_count ?? 0
+                    : module.quizzes_count ?? 0}
+              </button>
+            ))}
+          </div>
+
+          {activeTab === "lessons" && (
+            <ModuleLessonsList
+              moduleId={module.id}
+              onAddLesson={openAddLesson}
+              onEditLesson={openEditLesson}
+              onDeleteLesson={setDeletingLesson}
+            />
+          )}
+
+          {activeTab === "assignments" && (
+            <ModuleAssignmentsList
+              moduleId={module.id}
+              onAddAssignment={openAddAssignment}
+              onEditAssignment={openEditAssignment}
+              onDeleteAssignment={setDeletingAssignment}
+            />
+          )}
+
+          {activeTab === "quizzes" && (
+            <div className="space-y-2">
+              <EmptyState
+                icon={HelpCircle}
+                label="Quiz management isn't shown here yet."
+                description="Quizzes aren't wired into module content management yet."
+                compact
+              />
+              <button
+                type="button"
+                onClick={() => setComingSoonTarget("quiz")}
+                className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add Quiz
+              </button>
+            </div>
+          )}
         </div>
       )}
+
+      <AdminComingSoonModal
+        isOpen={comingSoonTarget === "quiz"}
+        onClose={() => setComingSoonTarget(null)}
+        title="Quiz form coming soon"
+        description="Quiz creation isn't built yet — this will let you add a quiz to this module."
+      />
     </li>
   );
 }
@@ -328,9 +667,15 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
   const [deletingModule, setDeletingModule] = useState(null);
-  const [expandedModuleId, setExpandedModuleId] = useState(null);
+  const [expandedModuleIds, setExpandedModuleIds] = useState(new Set());
   const [lessonModalState, setLessonModalState] = useState({ isOpen: false, moduleId: null, lesson: null });
   const [deletingLesson, setDeletingLesson] = useState(null);
+  const [assignmentModalState, setAssignmentModalState] = useState({
+    isOpen: false,
+    moduleId: null,
+    assignment: null,
+  });
+  const [deletingAssignment, setDeletingAssignment] = useState(null);
   const [localModuleOrderIds, setLocalModuleOrderIds] = useState(null);
 
   const dndSensors = useSensors(
@@ -354,8 +699,9 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
     setEditingModule(null);
     setForm(INITIAL_FORM);
     setFieldErrors({});
-    setExpandedModuleId(null);
+    setExpandedModuleIds(new Set());
     setLessonModalState({ isOpen: false, moduleId: null, lesson: null });
+    setAssignmentModalState({ isOpen: false, moduleId: null, assignment: null });
     setLocalModuleOrderIds(null);
   }, [isOpen, courseId]);
 
@@ -384,6 +730,14 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
     mutationFn: (lesson) => deleteLesson(lesson.id),
     onSuccess: (_data, lesson) => {
       queryClient.invalidateQueries({ queryKey: ["lessons", lesson.moduleId] });
+      queryClient.invalidateQueries({ queryKey: ["modules", courseId] });
+    },
+  });
+
+  const deleteAssignmentMutation = useMutation({
+    mutationFn: (assignment) => deleteAssignment(assignment.id),
+    onSuccess: (_data, assignment) => {
+      queryClient.invalidateQueries({ queryKey: ["assignments", assignment.moduleId] });
       queryClient.invalidateQueries({ queryKey: ["modules", courseId] });
     },
   });
@@ -418,7 +772,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
 
   const openCreateForm = () => {
     setEditingModule(null);
-    setForm({ ...INITIAL_FORM, order: String(modules.length) });
+    setForm({ ...INITIAL_FORM, order: String(modules.length + 1) });
     setFieldErrors({});
     setIsFormOpen(true);
   };
@@ -428,7 +782,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
     setForm({
       title: module.title || "",
       description: module.description || "",
-      order: String(module.order ?? 0),
+      order: String(module.order ?? 1),
     });
     setFieldErrors({});
     setIsFormOpen(true);
@@ -439,8 +793,22 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
     setFieldErrors((prev) => ({ ...prev, [field]: null }));
   };
 
+  const areAllExpanded = modules.length > 0 && modules.every((module) => expandedModuleIds.has(module.id));
+
   const toggleExpand = (moduleId) => {
-    setExpandedModuleId((prev) => (prev === moduleId ? null : moduleId));
+    setExpandedModuleIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(moduleId)) {
+        next.delete(moduleId);
+      } else {
+        next.add(moduleId);
+      }
+      return next;
+    });
+  };
+
+  const toggleExpandAll = () => {
+    setExpandedModuleIds(areAllExpanded ? new Set() : new Set(modules.map((module) => module.id)));
   };
 
   const handleModuleDragEnd = (event) => {
@@ -471,6 +839,18 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
     setLessonModalState({ isOpen: false, moduleId: null, lesson: null });
   };
 
+  const openAddAssignment = (moduleId) => {
+    setAssignmentModalState({ isOpen: true, moduleId, assignment: null });
+  };
+
+  const openEditAssignment = (assignment) => {
+    setAssignmentModalState({ isOpen: true, moduleId: null, assignment });
+  };
+
+  const closeAddAssignment = () => {
+    setAssignmentModalState({ isOpen: false, moduleId: null, assignment: null });
+  };
+
   const handleSubmit = async (event) => {
     event.preventDefault();
 
@@ -480,7 +860,9 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
     const errors = {};
     if (!title) errors.title = "Title is required.";
     if (title.length > 255) errors.title = "Title must be at most 255 characters.";
-    if (!Number.isFinite(order) || order < 0) errors.order = "Order must be a positive number.";
+    if (!Number.isFinite(order) || order < 1 || !Number.isInteger(order)) {
+      errors.order = "Order must be 1, 2, 3... only.";
+    }
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -530,6 +912,17 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
     }
   };
 
+  const handleDeleteAssignmentConfirm = async () => {
+    if (!deletingAssignment) return;
+    try {
+      await deleteAssignmentMutation.mutateAsync(deletingAssignment);
+      toastSuccess("Assignment deleted successfully.");
+      setDeletingAssignment(null);
+    } catch (error) {
+      toastError(getApiErrorMessage(error, "Unable to delete assignment."));
+    }
+  };
+
   return (
     <Modal
       isOpen={isOpen}
@@ -572,12 +965,19 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
             <label className={LABEL_CLASS}>Order</label>
             <input
               type="number"
-              min="0"
+              min="1"
+              step="1"
               value={form.order}
               onChange={updateField("order")}
+              onKeyDown={(event) => {
+                if (event.key === "-" || event.key === "e" || event.key === "E" || event.key === "+") {
+                  event.preventDefault();
+                }
+              }}
               disabled={isSubmitting}
               className={FIELD_CLASS}
             />
+            <p className="mt-1.5 text-[10px] font-mono text-stone-400">1 = first position</p>
             {fieldErrors.order && <p className={ERROR_CLASS}>{fieldErrors.order}</p>}
           </div>
 
@@ -615,11 +1015,23 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
         </form>
       ) : (
         <div className="space-y-4">
-          <div className="flex justify-end">
+          <div className="flex items-center justify-between gap-3">
+            {modules.length > 0 ? (
+              <button
+                type="button"
+                onClick={toggleExpandAll}
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-stone-50 text-stone-700 text-[11px] font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all cursor-pointer"
+              >
+                {areAllExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
+                {areAllExpanded ? "Collapse All" : "Expand All"}
+              </button>
+            ) : (
+              <span />
+            )}
             <button
               type="button"
               onClick={openCreateForm}
-              className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:scale-[1.01] transition-all flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
             >
               <ListPlus className="w-4 h-4" />
               Add Module
@@ -645,13 +1057,16 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
                     <SortableModuleItem
                       key={module.id}
                       module={module}
-                      isExpanded={expandedModuleId === module.id}
+                      isExpanded={expandedModuleIds.has(module.id)}
                       toggleExpand={toggleExpand}
                       openAddLesson={openAddLesson}
                       openEditForm={openEditForm}
                       setDeletingModule={setDeletingModule}
                       openEditLesson={openEditLesson}
                       setDeletingLesson={setDeletingLesson}
+                      openAddAssignment={openAddAssignment}
+                      openEditAssignment={openEditAssignment}
+                      setDeletingAssignment={setDeletingAssignment}
                     />
                   ))}
                 </ul>
@@ -681,12 +1096,33 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
         confirmLabel="Delete"
       />
 
+      <ConfirmDialog
+        isOpen={Boolean(deletingAssignment)}
+        onClose={() => setDeletingAssignment(null)}
+        onConfirm={handleDeleteAssignmentConfirm}
+        isConfirming={deleteAssignmentMutation.isPending}
+        title="Delete Assignment"
+        message={`Are you sure you want to delete "${deletingAssignment?.title}"? This cannot be undone.`}
+        confirmLabel="Delete"
+      />
+
       <AddLessonModal
         isOpen={lessonModalState.isOpen}
         onClose={closeAddLesson}
         modules={modules}
         defaultModuleId={lessonModalState.moduleId}
         lesson={lessonModalState.lesson}
+        onSaved={() => {
+          queryClient.invalidateQueries({ queryKey: ["modules", courseId] });
+        }}
+      />
+
+      <AddAssignmentModal
+        isOpen={assignmentModalState.isOpen}
+        onClose={closeAddAssignment}
+        modules={modules}
+        defaultModuleId={assignmentModalState.moduleId}
+        assignment={assignmentModalState.assignment}
         onSaved={() => {
           queryClient.invalidateQueries({ queryKey: ["modules", courseId] });
         }}
