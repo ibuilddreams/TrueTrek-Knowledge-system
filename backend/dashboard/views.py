@@ -1,12 +1,20 @@
-from rest_framework.views import APIView
+from rest_framework.generics import GenericAPIView
 
 from common.response import success_response
-from users.permissions import IsAdmin, IsTeacher
+from users.permissions import IsAdmin, IsStudent, IsTeacher
 
-from .services import get_admin_dashboard, get_teacher_dashboard
+from .services import get_admin_dashboard, get_student_dashboard, get_teacher_dashboard
 
 
-class TeacherDashboardView(APIView):
+class StudentDashboardView(GenericAPIView):
+    permission_classes = [IsStudent]
+
+    def get(self, request):
+        data = get_student_dashboard(request.user)
+        return success_response(data, message="Student dashboard fetched successfully")
+
+
+class TeacherDashboardView(GenericAPIView):
     permission_classes = [IsTeacher]
 
     def get(self, request):
@@ -14,7 +22,7 @@ class TeacherDashboardView(APIView):
         return success_response(data, message="Teacher dashboard fetched successfully")
 
 
-class AdminDashboardStatisticsView(APIView):
+class AdminDashboardStatisticsView(GenericAPIView):
     permission_classes = [IsAdmin]
 
     def get(self, request):
@@ -24,7 +32,7 @@ class AdminDashboardStatisticsView(APIView):
         )
 
 
-class AdminDashboardActivityProgressView(APIView):
+class AdminDashboardActivityProgressView(GenericAPIView):
     permission_classes = [IsAdmin]
 
     def get(self, request):
@@ -38,7 +46,7 @@ class AdminDashboardActivityProgressView(APIView):
         )
 
 
-class AdminDashboardChartsView(APIView):
+class AdminDashboardChartsView(GenericAPIView):
     permission_classes = [IsAdmin]
 
     def get(self, request):

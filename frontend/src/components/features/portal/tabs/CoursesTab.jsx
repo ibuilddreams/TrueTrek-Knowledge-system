@@ -9,6 +9,7 @@ import { getApiErrorMessage } from "@/lib/apiErrors";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import Pagination from "@/components/ui/Pagination";
 import EmptyState from "@/components/ui/EmptyState";
+import Loader from "@/components/ui/Loader";
 import StudentCourseCard from "../StudentCourseCard";
 import StudentCourseDetailDrawer from "../StudentCourseDetailDrawer";
 
@@ -79,13 +80,8 @@ export default function CoursesTab() {
 
   if (isLoading) {
     return (
-      <div className="space-y-8" aria-busy="true" aria-label="Loading courses">
-        <div className="h-24 rounded-2xl bg-stone-100/80 animate-pulse" />
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5">
-          {Array.from({ length: 3 }).map((_, index) => (
-            <div key={index} className="h-64 rounded-2xl bg-stone-100/80 animate-pulse" />
-          ))}
-        </div>
+      <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
+        <Loader fullScreen={false} label="Loading your courses..." />
       </div>
     );
   }

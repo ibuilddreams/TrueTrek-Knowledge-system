@@ -191,12 +191,7 @@ function StudentPortalContent() {
       </div>
 
       <TabTransition activeKey={activeTab}>
-        {activeTab === "dashboard" && (
-          <DashboardTab
-            drillCompletedList={drillCompletedList}
-            aggregateScore={aggregateScore}
-          />
-        )}
+        {activeTab === "dashboard" && <DashboardTab />}
         {activeTab === "courses" && <CoursesTab />}
         {activeTab === "drill" && (
           <DrillTab
