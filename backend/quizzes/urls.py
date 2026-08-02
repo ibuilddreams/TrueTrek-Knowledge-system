@@ -8,23 +8,31 @@ from .views import (
     QuestionListCreateView,
     QuestionOrderView,
     QuizAnswerGradeView,
+    QuizAttemptAutosaveView,
     QuizAttemptDetailView,
     QuizAttemptResultView,
     QuizCourseProgressListView,
     QuizDetailView,
     QuizListCreateView,
+    QuizMyAttemptDetailView,
     QuizOrderView,
     QuizPendingGradingView,
     QuizPublishView,
     QuizStudentAttemptListView,
     StartQuizAttemptView,
     StudentGradesView,
+    StudentQuizAttemptsListView,
     StudentQuizListView,
     SubmitQuizAttemptView,
 )
 
 urlpatterns = [
     path("student/grades/", StudentGradesView.as_view(), name="quiz-student-grades"),
+    path(
+        "student/attempts/",
+        StudentQuizAttemptsListView.as_view(),
+        name="quiz-student-attempts-list",
+    ),
     path("student/", StudentQuizListView.as_view(), name="quiz-student-list"),
     path("", QuizListCreateView.as_view(), name="quiz-list-create"),
     path(
@@ -56,11 +64,21 @@ urlpatterns = [
     ),
     path("choices/<int:pk>/", ChoiceDetailView.as_view(), name="choice-detail"),
     path("attempts/<int:attempt_id>/submit/", SubmitQuizAttemptView.as_view(), name="quiz-attempt-submit"),
+    path(
+        "attempts/<int:attempt_id>/autosave/",
+        QuizAttemptAutosaveView.as_view(),
+        name="quiz-attempt-autosave",
+    ),
     path("attempts/<int:attempt_id>/result/", QuizAttemptResultView.as_view(), name="quiz-attempt-result"),
     path(
         "attempts/<int:attempt_id>/detail/",
         QuizAttemptDetailView.as_view(),
         name="quiz-attempt-detail",
+    ),
+    path(
+        "attempts/<int:attempt_id>/my-detail/",
+        QuizMyAttemptDetailView.as_view(),
+        name="quiz-attempt-my-detail",
     ),
     path("answers/<int:pk>/grade/", QuizAnswerGradeView.as_view(), name="quiz-answer-grade"),
     path("order/<int:module_id>/", QuizOrderView.as_view(), name="quiz-order"),

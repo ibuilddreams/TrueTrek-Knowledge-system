@@ -42,15 +42,6 @@ export default function GradeSubmissionModal({ row, onClose, courseId }) {
           }}
           className="space-y-4"
         >
-          <div>
-            <label className="text-[10px] font-mono uppercase tracking-wider text-stone-450 font-semibold mb-1.5 block">
-              Submission
-            </label>
-            <p className="text-xs text-stone-700 bg-stone-50 border border-stone-100 rounded-xl p-3 whitespace-pre-wrap leading-relaxed">
-              {row.submission_text?.trim() ? row.submission_text : "No written submission text provided."}
-            </p>
-          </div>
-
           {row.files?.length > 0 && (
             <div>
               <label className="text-[10px] font-mono uppercase tracking-wider text-stone-450 font-semibold mb-1.5 block">

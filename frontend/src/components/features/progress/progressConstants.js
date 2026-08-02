@@ -23,4 +23,6 @@ export const QUIZ_STATUS_OPTIONS = [
   { value: "IN_PROGRESS", label: "In Progress" },
   { value: "PASSED", label: "Passed" },
   { value: "FAILED", label: "Failed" },
+  { value: "EXPIRED", label: "Expired" },
+  { value: "ABANDONED", label: "Abandoned" },
 ];

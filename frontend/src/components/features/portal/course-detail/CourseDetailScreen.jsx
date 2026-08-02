@@ -7,17 +7,23 @@ import {
   ArrowLeft,
   BookOpen,
   Calendar,
+  CalendarClock,
   CheckCircle2,
   ChevronDown,
   ChevronUp,
   Circle,
   CircleHelp,
   ClipboardList,
+  FileQuestion,
+  FileText,
   HelpCircle,
+  Image as ImageIcon,
   Layers,
   Lock,
   RefreshCw,
+  Repeat,
   UserRound,
+  Video,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { getStudentEnrolledCourseDetail } from "@/services/studentCoursesService";
@@ -39,6 +45,24 @@ const ASSIGNMENT_STATUS_STYLES = {
   RETURNED: "bg-sky-50 text-sky-700 border-sky-100",
   RESUBMITTED: "bg-amber-50 text-amber-700 border-amber-100",
 };
+
+const LESSON_TYPE_META = {
+  VIDEO: { icon: Video, label: "Video", badge: "bg-sky-50 text-sky-600 border-sky-100" },
+  PDF: { icon: FileText, label: "PDF", badge: "bg-rose-50 text-rose-600 border-rose-100" },
+  DOCUMENT: { icon: FileText, label: "Document", badge: "bg-blue-50 text-blue-600 border-blue-100" },
+  IMAGE: { icon: ImageIcon, label: "Image", badge: "bg-violet-50 text-violet-600 border-violet-100" },
+  DEFAULT: { icon: FileQuestion, label: "Lesson", badge: "bg-stone-50 text-stone-500 border-stone-200" },
+};
+
+function RowIcon({ icon: Icon, className }) {
+  return (
+    <span
+      className={`flex items-center justify-center w-8 h-8 rounded-lg border shrink-0 ${className}`}
+    >
+      <Icon className="w-4 h-4" />
+    </span>
+  );
+}
 
 function ProgressBar({ value }) {
   const progress = Math.round(value || 0);
@@ -98,24 +122,34 @@ function quizStatusLabel(quiz) {
 }
 
 function LessonRow({ lesson, onOpen, disabled }) {
+  const meta = LESSON_TYPE_META[lesson.content_type] || LESSON_TYPE_META.DEFAULT;
   return (
     <button
       type="button"
       onClick={() => onOpen(lesson)}
       disabled={disabled}
-      className="w-full flex items-center gap-2.5 text-[12px] text-stone-700 py-1.5 text-left hover:text-amber-800 disabled:hover:text-stone-700 disabled:cursor-default transition"
+      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-stone-50 disabled:hover:bg-transparent disabled:cursor-default transition-colors group"
     >
-      {lesson.is_completed ? (
-        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-      ) : (
-        <Circle className="w-3.5 h-3.5 text-stone-300 shrink-0" />
-      )}
-      <span className="truncate flex-1">{lesson.title}</span>
-      {lesson.duration_minutes ? (
-        <span className="text-[10px] font-mono text-stone-400 shrink-0">
-          {lesson.duration_minutes}m
+      <RowIcon icon={meta.icon} className={meta.badge} />
+      <span className="min-w-0 flex-1">
+        <span className="block text-[12.5px] font-medium text-stone-700 group-hover:text-amber-800 truncate transition-colors">
+          {lesson.title}
         </span>
-      ) : null}
+        <span className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
+          <span>{meta.label}</span>
+          {lesson.duration_minutes ? (
+            <>
+              <span className="w-0.5 h-0.5 rounded-full bg-stone-300 shrink-0" />
+              <span>{lesson.duration_minutes}m</span>
+            </>
+          ) : null}
+        </span>
+      </span>
+      {lesson.is_completed ? (
+        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+      ) : (
+        <Circle className="w-4 h-4 text-stone-200 shrink-0" />
+      )}
     </button>
   );
 }
@@ -126,23 +160,24 @@ function AssignmentRow({ assignment, onOpen }) {
     <button
       type="button"
       onClick={() => onOpen(assignment)}
-      className="w-full flex items-center justify-between gap-2 text-[12px] text-stone-600 py-1 text-left hover:text-amber-800 transition"
+      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-stone-50 transition-colors group"
     >
-      <span className="inline-flex items-center gap-2 min-w-0">
-        <ClipboardList className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-        <span className="truncate">{assignment.title}</span>
-      </span>
-      <span className="flex items-center gap-2 shrink-0">
+      <RowIcon icon={ClipboardList} className="bg-amber-50 text-amber-600 border-amber-100" />
+      <span className="min-w-0 flex-1">
+        <span className="block text-[12.5px] font-medium text-stone-700 group-hover:text-amber-800 truncate transition-colors">
+          {assignment.title}
+        </span>
         {assignment.due_date ? (
-          <span className="text-[10px] font-mono text-stone-400">
+          <span className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
+            <CalendarClock className="w-3 h-3 shrink-0" />
             Due {formatDateTime(assignment.due_date)}
           </span>
         ) : null}
-        <span
-          className={`text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${className}`}
-        >
-          {label}
-        </span>
+      </span>
+      <span
+        className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border shrink-0 ${className}`}
+      >
+        {label}
       </span>
     </button>
   );
@@ -154,21 +189,22 @@ function QuizRow({ quiz, onOpen }) {
     <button
       type="button"
       onClick={() => onOpen(quiz)}
-      className="w-full flex items-center justify-between gap-2 text-[12px] text-stone-600 py-1 text-left hover:text-amber-800 transition"
+      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-stone-50 transition-colors group"
     >
-      <span className="inline-flex items-center gap-2 min-w-0">
-        <CircleHelp className="w-3.5 h-3.5 text-amber-600 shrink-0" />
-        <span className="truncate">{quiz.title}</span>
-      </span>
-      <span className="flex items-center gap-2 shrink-0">
-        <span className="text-[10px] font-mono text-stone-400">
+      <RowIcon icon={CircleHelp} className="bg-violet-50 text-violet-600 border-violet-100" />
+      <span className="min-w-0 flex-1">
+        <span className="block text-[12.5px] font-medium text-stone-700 group-hover:text-amber-800 truncate transition-colors">
+          {quiz.title}
+        </span>
+        <span className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
+          <Repeat className="w-3 h-3 shrink-0" />
           {quiz.attempts_used}/{quiz.attempts_allowed} attempts
         </span>
-        <span
-          className={`text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded border ${className}`}
-        >
-          {label}
-        </span>
+      </span>
+      <span
+        className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border shrink-0 ${className}`}
+      >
+        {label}
       </span>
     </button>
   );
@@ -277,9 +313,13 @@ function ModuleAccordionItem({
             transition={{ duration: 0.22, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="px-4 sm:px-5 pb-4 sm:pb-5 space-y-3">
+            <div className="px-4 sm:px-5 pb-4 sm:pb-5 space-y-4">
               {(module.lessons || []).length > 0 && (
-                <div className="space-y-0.5 pt-1 border-t border-stone-100">
+                <div className="space-y-0.5 pt-2 border-t border-stone-100">
+                  <p className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-wider text-stone-400 px-2 pb-1">
+                    <BookOpen className="w-3 h-3" />
+                    Lessons
+                  </p>
                   {displayLessons === null ? (
                     <div className="py-2">
                       <Loader fullScreen={false} label="Loading lessons..." />
@@ -298,7 +338,11 @@ function ModuleAccordionItem({
               )}
 
               {moduleAssignments.length > 0 && (
-                <div className="space-y-0.5 pt-1 border-t border-stone-100">
+                <div className="space-y-0.5 pt-2 border-t border-stone-100">
+                  <p className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-wider text-stone-400 px-2 pb-1">
+                    <ClipboardList className="w-3 h-3" />
+                    Assignments
+                  </p>
                   {moduleAssignments.map((assignment) => (
                     <AssignmentRow
                       key={assignment.id}
@@ -310,7 +354,11 @@ function ModuleAccordionItem({
               )}
 
               {moduleQuizzes.length > 0 && (
-                <div className="space-y-0.5 pt-1 border-t border-stone-100">
+                <div className="space-y-0.5 pt-2 border-t border-stone-100">
+                  <p className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-wider text-stone-400 px-2 pb-1">
+                    <HelpCircle className="w-3 h-3" />
+                    Quizzes
+                  </p>
                   {moduleQuizzes.map((quiz) => (
                     <QuizRow key={quiz.id} quiz={quiz} onOpen={onOpenQuiz} />
                   ))}
@@ -377,6 +425,23 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
     "Instructor TBD";
 
   const canInteract = detailEnrollment.status === "ACTIVE";
+
+  const lessonCompletionById = useMemo(() => {
+    const map = new Map();
+    modules.forEach((module) => {
+      (module.lessons || []).forEach((lesson) => map.set(lesson.id, lesson.is_completed));
+    });
+    return map;
+  }, [modules]);
+
+  const effectiveSelectedLesson = useMemo(() => {
+    if (!selectedLesson) return null;
+    if (!lessonCompletionById.has(selectedLesson.id)) return selectedLesson;
+    return {
+      ...selectedLesson,
+      is_completed: lessonCompletionById.get(selectedLesson.id),
+    };
+  }, [selectedLesson, lessonCompletionById]);
 
   const courseAssignments = useMemo(
     () => allAssignments.filter((assignment) => assignment.course?.id === courseId),
@@ -605,7 +670,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
       )}
 
       <LessonViewerModal
-        lesson={selectedLesson}
+        lesson={effectiveSelectedLesson}
         courseId={courseId}
         canInteract={canInteract}
         onClose={() => setSelectedLesson(null)}

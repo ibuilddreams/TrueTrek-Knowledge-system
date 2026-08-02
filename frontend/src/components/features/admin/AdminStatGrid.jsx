@@ -57,7 +57,7 @@ const CARDS = [
     icon: TrendingUp,
     accent: "emerald",
     hint: "Mean progress across courses",
-    format: (s) => `${s.average_course_completion ?? 0}%`,
+    format: (s) => `${(Math.round((s.average_course_completion ?? 0) * 100) / 100)}%`,
   },
 ];
 

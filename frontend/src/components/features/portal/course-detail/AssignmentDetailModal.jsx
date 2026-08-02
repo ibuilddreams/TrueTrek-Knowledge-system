@@ -1,7 +1,7 @@
 "use client";
 
 import { useQuery } from "@tanstack/react-query";
-import { Calendar, ClipboardList, Paperclip } from "lucide-react";
+import { Calendar, ClipboardList, Download, Paperclip } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import Loader from "@/components/ui/Loader";
 import { getAssignmentAttachments } from "@/services/assignmentsService";
@@ -10,7 +10,11 @@ import { useMyAssignmentSubmission } from "@/hooks/student/useAssignmentSubmissi
 import AssignmentSubmissionForm from "./AssignmentSubmissionForm";
 import AssignmentSubmissionStatus from "./AssignmentSubmissionStatus";
 
-export default function AssignmentDetailModal({ assignment, canInteract, onClose }) {
+export default function AssignmentDetailModal({
+  assignment,
+  canInteract,
+  onClose,
+}) {
   const isOpen = Boolean(assignment);
   const assignmentId = assignment?.id;
 
@@ -23,13 +27,15 @@ export default function AssignmentDetailModal({ assignment, canInteract, onClose
     enabled: isOpen && Boolean(assignmentId),
   });
 
-  const { data: submission, isLoading: isLoadingSubmission } = useMyAssignmentSubmission(
-    assignmentId,
-    { enabled: isOpen }
-  );
+  const { data: submission, isLoading: isLoadingSubmission } =
+    useMyAssignmentSubmission(assignmentId, { enabled: isOpen });
 
-  const isPastDue = assignment ? new Date(assignment.due_date) < new Date() : false;
-  const canSubmit = canInteract && (!isPastDue || !submission || Boolean(assignment?.allow_resubmission));
+  const isPastDue = assignment
+    ? new Date(assignment.due_date) < new Date()
+    : false;
+  const canSubmit =
+    canInteract &&
+    (!isPastDue || !submission || Boolean(assignment?.allow_resubmission));
 
   return (
     <Modal
@@ -48,7 +54,8 @@ export default function AssignmentDetailModal({ assignment, canInteract, onClose
         <div className="space-y-6">
           <div className="space-y-3">
             <p className="text-sm text-stone-600 font-light leading-relaxed whitespace-pre-line">
-              {assignment.description || "No instructions have been added for this assignment."}
+              {assignment.description ||
+                "No instructions have been added for this assignment."}
             </p>
             <div className="flex flex-wrap gap-2 text-[10px] font-mono uppercase tracking-wider">
               <span
@@ -76,16 +83,25 @@ export default function AssignmentDetailModal({ assignment, canInteract, onClose
               </h5>
               <div className="space-y-1.5">
                 {attachments.map((attachment) => (
-                  <a
+                  <div
                     key={attachment.id}
-                    href={attachment.file}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="flex items-center gap-2 text-[12px] text-stone-600 hover:text-amber-800 transition"
+                    className="flex items-center justify-between gap-2 text-[12px] text-stone-600 bg-stone-50 border border-stone-200 rounded-lg px-3 py-2"
                   >
-                    <Paperclip className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                    <span className="truncate">{attachment.original_name || attachment.file}</span>
-                  </a>
+                    <span className="inline-flex items-center gap-1.5 min-w-0 truncate">
+                      <Paperclip className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                      <span className="truncate">
+                        {attachment.original_name || attachment.file}
+                      </span>
+                    </span>
+                    <a
+                      href={attachment.file}
+                      download={attachment.original_name || true}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 border border-stone-200 hover:border-amber-300 hover:bg-white text-stone-500 hover:text-amber-800 text-[10px] font-mono uppercase tracking-wider rounded-md transition shrink-0"
+                    >
+                      <Download className="w-3.5 h-3.5" />
+                      Download
+                    </a>
+                  </div>
                 ))}
               </div>
             </div>
@@ -98,7 +114,9 @@ export default function AssignmentDetailModal({ assignment, canInteract, onClose
               </div>
             ) : (
               <>
-                {submission && <AssignmentSubmissionStatus submission={submission} />}
+                {submission && (
+                  <AssignmentSubmissionStatus submission={submission} />
+                )}
                 <AssignmentSubmissionForm
                   assignment={assignment}
                   hasSubmission={Boolean(submission)}

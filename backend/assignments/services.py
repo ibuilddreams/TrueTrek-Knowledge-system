@@ -1,6 +1,7 @@
 from django.db import transaction
 from django.utils import timezone
 
+from common.image import build_absolute_image_url
 from common.models import Status
 from enrollments.models import Enrollment
 
@@ -27,7 +28,7 @@ class AssignmentAttachmentReorderError(Exception):
     pass
 
 
-def get_student_assignments(student):
+def get_student_assignments(student, request=None):
     course_ids = list(
         Enrollment.objects.filter(student=student).values_list("course_id", flat=True)
     )
@@ -41,7 +42,7 @@ def get_student_assignments(student):
         row.assignment_id: row
         for row in AssignmentSubmission.objects.filter(
             student=student, assignment_id__in=assignment_ids
-        )
+        ).prefetch_related("files")
     }
 
     now = timezone.now()
@@ -81,6 +82,20 @@ def get_student_assignments(student):
                     "feedback": submission.feedback,
                     "submitted_at": submission.submitted_at,
                     "graded_at": submission.graded_at,
+                    "percentage": (
+                        round((submission.marks / assignment.total_marks) * 100, 2)
+                        if submission.marks is not None and assignment.total_marks
+                        else None
+                    ),
+                    "files": [
+                        {
+                            "id": file.id,
+                            "file": build_absolute_image_url(request, file.file),
+                            "original_name": file.original_name,
+                            "file_type": file.file_type,
+                        }
+                        for file in submission.files.all()
+                    ],
                 }
                 if submission
                 else None,
@@ -103,14 +118,14 @@ def publish_assignment(assignment):
     return assignment
 
 
-def submit_assignment(student, assignment, submission_text="", files=None):
+def submit_assignment(student, assignment, files=None):
     files = files or []
 
     if assignment.status != Status.PUBLISHED:
         raise AssignmentSubmissionError("This assignment is not currently published.")
 
-    if not submission_text.strip() and not files:
-        raise AssignmentSubmissionError("Provide submission text or at least one file.")
+    if not files:
+        raise AssignmentSubmissionError("Provide at least one file.")
 
     now = timezone.now()
     is_late = now > assignment.due_date
@@ -137,7 +152,6 @@ def submit_assignment(student, assignment, submission_text="", files=None):
                 else AssignmentSubmission.SubmissionStatus.SUBMITTED
             )
 
-        submission.submission_text = submission_text
         submission.submitted_at = now
 
         if assignment.grading_mode == Assignment.GradingMode.AUTO:

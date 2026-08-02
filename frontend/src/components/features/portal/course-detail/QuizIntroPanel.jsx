@@ -46,8 +46,8 @@ export default function QuizIntroPanel({ quiz, canInteract, isStarting, onStart 
         <div className="flex items-start gap-2 rounded-xl border border-amber-100 bg-amber-50 px-3.5 py-3 text-xs text-amber-800">
           <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
           <span>
-            You have a previous attempt that was never submitted. Starting a new attempt still
-            counts toward your limit and the old one can&apos;t be resumed.
+            You have an attempt in progress. Continuing will resume it exactly where you left
+            off — it won&apos;t count as a new attempt.
           </span>
         </div>
       ) : null}
@@ -65,7 +65,7 @@ export default function QuizIntroPanel({ quiz, canInteract, isStarting, onStart 
         ) : (
           <PlayCircle className="w-3.5 h-3.5" />
         )}
-        Start attempt
+        {hasInProgress && !isExhausted ? "Resume attempt" : "Start attempt"}
       </button>
     </div>
   );

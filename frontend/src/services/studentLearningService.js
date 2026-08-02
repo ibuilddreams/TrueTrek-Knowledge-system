@@ -8,8 +8,8 @@ export async function getStudentQuizzes() {
   return backendClient.get("/quizzes/student/");
 }
 
-export async function getStudentGrades() {
-  return backendClient.get("/quizzes/student/grades/");
+export async function getStudentQuizAttempts() {
+  return backendClient.get("/quizzes/student/attempts/");
 }
 
 export async function getStudentCertificates() {

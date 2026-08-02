@@ -2,6 +2,8 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import {
+  autosaveQuizAttempt,
+  getQuizAttemptMyDetail,
   getQuizAttemptResult,
   startQuizAttempt,
   submitQuizAttempt,
@@ -38,11 +40,33 @@ export function useSubmitQuizAttempt() {
   });
 }
 
+export function useAutosaveQuizAttempt() {
+  return useMutation({
+    mutationFn: ({ attemptId, payload, keepalive }) =>
+      autosaveQuizAttempt(attemptId, payload, keepalive ? { keepalive: true } : undefined),
+    // Autosave runs silently in the background — a dropped request just means the next
+    // debounced save (or the final submit) picks up the answers instead, no need to
+    // interrupt the student with a toast.
+    retry: 1,
+  });
+}
+
 export function useQuizAttemptResult(attemptId, { enabled = true } = {}) {
   return useQuery({
     queryKey: ["quizAttemptResult", attemptId],
     queryFn: async () => {
       const response = await getQuizAttemptResult(attemptId);
+      return response?.data || null;
+    },
+    enabled: Boolean(attemptId) && enabled,
+  });
+}
+
+export function useQuizAttemptMyDetail(attemptId, { enabled = true } = {}) {
+  return useQuery({
+    queryKey: ["quizAttemptMyDetail", attemptId],
+    queryFn: async () => {
+      const response = await getQuizAttemptMyDetail(attemptId);
       return response?.data || null;
     },
     enabled: Boolean(attemptId) && enabled,

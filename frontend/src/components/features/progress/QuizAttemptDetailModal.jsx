@@ -4,9 +4,15 @@ import { useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, ListChecks, XCircle } from "lucide-react";
 import Modal from "@/components/ui/Modal";
+import StatusBadge from "@/components/ui/StatusBadge";
 import { getQuizAttemptDetail, gradeQuizAnswer } from "@/services/quizzesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
+
+const ATTEMPT_STATUS_NOTES = {
+  EXPIRED: "This attempt ended automatically once its time limit ran out.",
+  ABANDONED: "The student never submitted this attempt — it was auto-closed after a long period of inactivity.",
+};
 
 export default function QuizAttemptDetailModal({ attemptId, onClose, courseId }) {
   const queryClient = useQueryClient();
@@ -57,7 +63,8 @@ export default function QuizAttemptDetailModal({ attemptId, onClose, courseId })
       {detailQuery.isLoading && <p className="text-xs text-stone-400">Loading...</p>}
       {data && (
         <div className="space-y-4">
-          <div className="flex items-center gap-4 text-xs font-mono">
+          <div className="flex items-center gap-3 text-xs font-mono flex-wrap">
+            <StatusBadge status={data.status} />
             <span
               className={`font-bold ${data.is_passed ? "text-emerald-700" : "text-rose-600"}`}
             >
@@ -65,6 +72,11 @@ export default function QuizAttemptDetailModal({ attemptId, onClose, courseId })
             </span>
             <span className="text-stone-400">Passing: {data.quiz.passing_score}%</span>
           </div>
+          {ATTEMPT_STATUS_NOTES[data.status] ? (
+            <p className="text-xs text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+              {ATTEMPT_STATUS_NOTES[data.status]}
+            </p>
+          ) : null}
 
           <ul className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
             {data.questions.map((question, index) => (
@@ -146,17 +158,21 @@ export default function QuizAttemptDetailModal({ attemptId, onClose, courseId })
                             ? `${question.marks_awarded}/${question.marks} marks`
                             : "Pending grading"}
                         </span>
-                        <button
-                          type="button"
-                          onClick={() => {
-                            setGradingAnswerId(question.answer_id);
-                            setMarksAwarded(question.marks_awarded ?? "");
-                            setAnswerFeedback(question.feedback || "");
-                          }}
-                          className="text-[11px] font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer"
-                        >
-                          {question.marks_awarded !== null ? "Edit Grade" : "Grade"}
-                        </button>
+                        {question.answer_id !== null ? (
+                          <button
+                            type="button"
+                            onClick={() => {
+                              setGradingAnswerId(question.answer_id);
+                              setMarksAwarded(question.marks_awarded ?? "");
+                              setAnswerFeedback(question.feedback || "");
+                            }}
+                            className="text-[11px] font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer"
+                          >
+                            {question.marks_awarded !== null ? "Edit Grade" : "Grade"}
+                          </button>
+                        ) : (
+                          <span className="text-[10px] font-mono text-stone-300">No answer recorded</span>
+                        )}
                       </div>
                     )}
                   </div>

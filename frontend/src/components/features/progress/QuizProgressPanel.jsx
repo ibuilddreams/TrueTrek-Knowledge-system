@@ -2,7 +2,7 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { CheckCircle2, ListChecks, Target, Trophy } from "lucide-react";
+import { AlertTriangle, CheckCircle2, ListChecks, Target, Trophy } from "lucide-react";
 import DataTable from "@/components/ui/DataTable";
 import Pagination from "@/components/ui/Pagination";
 import SearchBar from "@/components/ui/SearchBar";
@@ -143,11 +143,17 @@ export default function QuizProgressPanel({ courseId }) {
 
   return (
     <div className="space-y-5">
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
         <StatCard label="Average Score" value={`${stats?.average_score ?? 0}%`} icon={Target} />
         <StatCard label="Pass Rate" value={`${stats?.pass_rate ?? 0}%`} icon={Trophy} accent="emerald" />
         <StatCard label="Total Attempts" value={stats?.total_attempts ?? "—"} icon={ListChecks} accent="stone" />
         <StatCard label="Completed Quizzes" value={stats?.completed_quizzes ?? "—"} icon={CheckCircle2} accent="rose" />
+        <StatCard
+          label="Abandoned/Expired"
+          value={stats?.abandoned_attempts ?? "—"}
+          icon={AlertTriangle}
+          accent="amber"
+        />
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
