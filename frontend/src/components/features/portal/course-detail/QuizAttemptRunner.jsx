@@ -1,7 +1,10 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Loader2, Timer } from "lucide-react";
+import { useAutosaveQuizAttempt } from "@/hooks/student/useQuizAttempt";
+
+const AUTOSAVE_DEBOUNCE_MS = 2000;
 
 function formatSeconds(totalSeconds) {
   const minutes = Math.floor(totalSeconds / 60);
@@ -9,27 +12,93 @@ function formatSeconds(totalSeconds) {
   return `${String(minutes).padStart(2, "0")}:${String(seconds).padStart(2, "0")}`;
 }
 
+function buildInitialAnswers(savedAnswers) {
+  const initial = {};
+  (savedAnswers || []).forEach((item) => {
+    const hasChoice = item.selected_choice !== null && item.selected_choice !== undefined;
+    const hasText = Boolean(item.text_answer && item.text_answer.trim());
+    if (!hasChoice && !hasText) return;
+    initial[item.question] = {
+      selectedChoice: item.selected_choice ?? undefined,
+      textAnswer: item.text_answer ?? "",
+    };
+  });
+  return initial;
+}
+
+function buildAnswersPayload(answers) {
+  return {
+    answers: Object.entries(answers).map(([questionId, answer]) => ({
+      question: Number(questionId),
+      selected_choice: answer.selectedChoice ?? null,
+      text_answer: answer.textAnswer ?? "",
+    })),
+  };
+}
+
 export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
   const questions = attempt.questions || [];
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [answers, setAnswers] = useState({});
+  const [answers, setAnswers] = useState(() => buildInitialAnswers(attempt.saved_answers));
   const timeLimitMinutes = attempt.quiz?.time_limit_minutes || 0;
   const [secondsLeft, setSecondsLeft] = useState(
-    timeLimitMinutes > 0 ? timeLimitMinutes * 60 : null
+    attempt.seconds_remaining ?? (timeLimitMinutes > 0 ? timeLimitMinutes * 60 : null)
   );
 
   const currentQuestion = questions[currentIndex];
   const answeredCount = Object.keys(answers).length;
 
+  const autosaveMutation = useAutosaveQuizAttempt();
+  const answersRef = useRef(answers);
+  const autosaveTimeoutRef = useRef(null);
+  const skipNextAutosaveRef = useRef(true);
+
   function buildPayload() {
-    return {
-      answers: Object.entries(answers).map(([questionId, answer]) => ({
-        question: Number(questionId),
-        selected_choice: answer.selectedChoice ?? null,
-        text_answer: answer.textAnswer ?? "",
-      })),
-    };
+    return buildAnswersPayload(answers);
   }
+
+  function autosaveNow(sourceAnswers, options) {
+    if (Object.keys(sourceAnswers).length === 0) return;
+    autosaveMutation.mutate({
+      attemptId: attempt.attempt_id,
+      payload: buildAnswersPayload(sourceAnswers),
+      ...options,
+    });
+  }
+
+  useEffect(() => {
+    answersRef.current = answers;
+    // The very first render just seeds state from the server — nothing to save yet.
+    if (skipNextAutosaveRef.current) {
+      skipNextAutosaveRef.current = false;
+      return undefined;
+    }
+    if (autosaveTimeoutRef.current) clearTimeout(autosaveTimeoutRef.current);
+    autosaveTimeoutRef.current = setTimeout(() => {
+      autosaveNow(answers);
+    }, AUTOSAVE_DEBOUNCE_MS);
+    return () => clearTimeout(autosaveTimeoutRef.current);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers]);
+
+  useEffect(() => {
+    function saveBeforeLeaving() {
+      autosaveNow(answersRef.current, { keepalive: true });
+    }
+    function handleVisibilityChange() {
+      if (document.visibilityState === "hidden") saveBeforeLeaving();
+    }
+    window.addEventListener("pagehide", saveBeforeLeaving);
+    document.addEventListener("visibilitychange", handleVisibilityChange);
+    return () => {
+      window.removeEventListener("pagehide", saveBeforeLeaving);
+      document.removeEventListener("visibilitychange", handleVisibilityChange);
+      // Also flush on unmount (e.g. the student explicitly closes the quiz modal),
+      // so the very latest keystroke isn't lost to the debounce window.
+      saveBeforeLeaving();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     if (secondsLeft === null) return undefined;
@@ -52,6 +121,11 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
 
   return (
     <div className="space-y-5">
+      {attempt.resumed ? (
+        <div className="rounded-xl border border-amber-100 bg-amber-50 px-3.5 py-2.5 text-xs text-amber-800">
+          Resumed from your last session — answers you&apos;d already saved are pre-filled.
+        </div>
+      ) : null}
       <div className="flex items-center justify-between gap-3">
         <p className="text-[11px] font-mono uppercase tracking-wider text-stone-400">
           Question {currentIndex + 1} of {questions.length} · {answeredCount} answered

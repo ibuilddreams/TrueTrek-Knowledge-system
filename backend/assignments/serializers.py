@@ -219,7 +219,6 @@ class AssignmentSubmissionSerializer(serializers.ModelSerializer):
             "id",
             "assignment",
             "student",
-            "submission_text",
             "submitted_at",
             "status",
             "marks",
@@ -236,10 +235,6 @@ class AssignmentSubmissionSerializer(serializers.ModelSerializer):
 
     def get_student(self, obj):
         return {"id": obj.student_id, "name": obj.student.name}
-
-
-class AssignmentSubmitSerializer(serializers.Serializer):
-    submission_text = serializers.CharField(required=False, allow_blank=True, default="")
 
 
 class AssignmentGradeSerializer(serializers.Serializer):

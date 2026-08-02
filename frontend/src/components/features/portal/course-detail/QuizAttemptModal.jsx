@@ -4,6 +4,7 @@ import { useState } from "react";
 import { CircleHelp } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { useStartQuizAttempt, useSubmitQuizAttempt } from "@/hooks/student/useQuizAttempt";
+import { toastInfo } from "@/lib/toast";
 import QuizIntroPanel from "./QuizIntroPanel";
 import QuizAttemptRunner from "./QuizAttemptRunner";
 import QuizResultPanel from "./QuizResultPanel";
@@ -26,7 +27,7 @@ export default function QuizAttemptModal({ quiz, canInteract, onClose }) {
   function handleRequestClose() {
     if (phase === "in_progress") {
       const confirmed = window.confirm(
-        "You have an unsubmitted quiz attempt. Leaving now means it can't be resumed and still counts toward your attempt limit. Leave anyway?"
+        "Your progress is saved automatically, so you can resume this attempt later. Close for now?"
       );
       if (!confirmed) return;
     }
@@ -38,6 +39,9 @@ export default function QuizAttemptModal({ quiz, canInteract, onClose }) {
       onSuccess: (response) => {
         setAttempt(response?.data || null);
         setPhase("in_progress");
+        if (response?.data?.resumed) {
+          toastInfo("Resuming your in-progress attempt.");
+        }
       },
     });
   }

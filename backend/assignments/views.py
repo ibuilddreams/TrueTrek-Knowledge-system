@@ -23,7 +23,6 @@ from .serializers import (
     AssignmentSerializer,
     AssignmentSubmissionFileSerializer,
     AssignmentSubmissionSerializer,
-    AssignmentSubmitSerializer,
     AssignmentWriteSerializer,
 )
 from .services import (
@@ -46,7 +45,7 @@ class StudentAssignmentListView(generics.GenericAPIView):
     permission_classes = [IsStudent]
 
     def get(self, request):
-        data = get_student_assignments(request.user)
+        data = get_student_assignments(request.user, request=request)
         return success_response(data, message="Student assignments fetched successfully")
 
 
@@ -419,7 +418,6 @@ class AssignmentSubmissionListView(generics.ListAPIView):
 
 class AssignmentSubmitView(generics.GenericAPIView):
     permission_classes = [IsStudent]
-    serializer_class = AssignmentSubmitSerializer
     parser_classes = [MultiPartParser, FormParser]
 
     def post(self, request, assignment_id):
@@ -437,14 +435,9 @@ class AssignmentSubmitView(generics.GenericAPIView):
         ).exists():
             return error_response(message="You are not enrolled in this course.", status_code=403)
 
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
         files = request.FILES.getlist("files")
-        if not serializer.validated_data.get("submission_text", "").strip() and not files:
-            return error_response(
-                message="Provide submission text or at least one file.", status_code=400
-            )
+        if not files:
+            return error_response(message="Provide at least one file.", status_code=400)
 
         try:
             for uploaded_file in files:
@@ -453,12 +446,7 @@ class AssignmentSubmitView(generics.GenericAPIView):
             return error_response(message=str(exc.detail), status_code=400)
 
         try:
-            submission = submit_assignment(
-                request.user,
-                assignment,
-                serializer.validated_data.get("submission_text", ""),
-                files,
-            )
+            submission = submit_assignment(request.user, assignment, files)
         except AssignmentSubmissionError as exc:
             return error_response(message=str(exc), status_code=400)
 
@@ -593,7 +581,6 @@ class AssignmentCourseProgressListView(generics.GenericAPIView):
                         },
                         "status": submission.status if submission else "PENDING",
                         "submission_id": submission.id if submission else None,
-                        "submission_text": submission.submission_text if submission else "",
                         "submitted_at": submission.submitted_at if submission else None,
                         "marks": submission.marks if submission else None,
                         "feedback": submission.feedback if submission else "",

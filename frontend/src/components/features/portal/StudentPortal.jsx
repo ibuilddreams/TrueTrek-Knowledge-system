@@ -3,7 +3,6 @@
 import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
-import confetti from "canvas-confetti";
 import { usePortalSession } from "@/hooks/usePortalSession";
 import { useStudentProfile } from "@/hooks/useStudentProfile";
 import { ROUTES } from "@/constants/routes";
@@ -15,7 +14,6 @@ import {
   VALID_PORTAL_TABS,
   DEFAULT_PORTAL_TAB,
   resolvePortalTab,
-  buildPortalBadges,
 } from "./portalConstants";
 import PortalHeader from "./PortalHeader";
 import PortalToast from "./PortalToast";
@@ -23,11 +21,9 @@ import DashboardTab from "./tabs/DashboardTab";
 import CoursesTab from "./tabs/CoursesTab";
 import AssignmentsTab from "./tabs/AssignmentsTab";
 import QuizzesTab from "./tabs/QuizzesTab";
-import GradesTab from "./tabs/GradesTab";
 import CertificatesTab from "./tabs/CertificatesTab";
 import DrillTab from "./tabs/DrillTab";
 import WarRoomTab from "./tabs/WarRoomTab";
-import AchievementsTab from "./tabs/AchievementsTab";
 
 function StudentPortalContent() {
   const router = useRouter();
@@ -45,12 +41,7 @@ function StudentPortalContent() {
     setAggregateScore,
     points,
     setPoints,
-    completedModules,
-    setCompletedModules,
-    consultationCount,
     setConsultationCount,
-    unlockedBadges,
-    setUnlockedBadges,
   } = session;
 
   const { displayName, status: profileStatus } = useStudentProfile(isLoggedIn);
@@ -58,7 +49,7 @@ function StudentPortalContent() {
 
   const activeTab = useMemo(
     () => resolvePortalTab(searchParams.get("tab")),
-    [searchParams]
+    [searchParams],
   );
 
   useEffect(() => {
@@ -73,53 +64,6 @@ function StudentPortalContent() {
     const timer = setTimeout(() => setLastNotification(null), 5000);
     return () => clearTimeout(timer);
   }, [lastNotification]);
-
-  useEffect(() => {
-    if (!isLoggedIn) return;
-
-    const badges = buildPortalBadges({
-      isLoggedIn,
-      drillCompletedList,
-      aggregateScore,
-      consultationCount,
-      streakDays,
-      completedModules,
-    });
-
-    const newlyUnlocked = badges.filter(
-      (badge) => badge.isUnlocked && !unlockedBadges.includes(badge.id)
-    );
-
-    if (newlyUnlocked.length === 0) return;
-
-    const latest = newlyUnlocked[newlyUnlocked.length - 1];
-    setUnlockedBadges((prev) => {
-      const merged = [...prev];
-      newlyUnlocked.forEach((badge) => {
-        if (!merged.includes(badge.id)) merged.push(badge.id);
-      });
-      return merged;
-    });
-    setLastNotification({
-      title: "Badge unlocked",
-      desc: `${latest.title}: ${latest.desc}`,
-      type: "badge",
-    });
-    confetti({
-      particleCount: 100,
-      spread: 70,
-      colors: ["#fbbf24", "#f59e0b", "#d97706"],
-    });
-  }, [
-    isLoggedIn,
-    completedModules,
-    drillCompletedList,
-    streakDays,
-    consultationCount,
-    aggregateScore,
-    unlockedBadges,
-    setUnlockedBadges,
-  ]);
 
   const setActiveTab = useCallback(
     (tabId) => {
@@ -137,7 +81,7 @@ function StudentPortalContent() {
         scroll: false,
       });
     },
-    [pathname, router, searchParams]
+    [pathname, router, searchParams],
   );
 
   if (!isLoggedIn) {
@@ -152,7 +96,8 @@ function StudentPortalContent() {
             Student Access Required
           </h2>
           <p className="text-xs text-stone-500 font-light mb-6">
-            Sign in with a student account to open your courses, drills, and progress suite.
+            Sign in with a student account to open your courses, drills, and
+            progress suite.
           </p>
           <button
             type="button"
@@ -198,8 +143,7 @@ function StudentPortalContent() {
         {activeTab === "courses" && <CoursesTab />}
         {activeTab === "assignments" && <AssignmentsTab />}
         {activeTab === "quizzes" && <QuizzesTab />}
-        {activeTab === "grades" && <GradesTab />}
-        {activeTab === "certificates" && <CertificatesTab />}
+        {activeTab === "certificates" && <CertificatesTab studentName={displayName} />}
         {activeTab === "drill" && (
           <DrillTab
             drillCompletedList={drillCompletedList}
@@ -214,21 +158,6 @@ function StudentPortalContent() {
           <WarRoomTab
             setConsultationCount={setConsultationCount}
             setPoints={setPoints}
-            onNotify={setLastNotification}
-          />
-        )}
-        {activeTab === "achievements" && (
-          <AchievementsTab
-            isLoggedIn={isLoggedIn}
-            points={points}
-            setPoints={setPoints}
-            completedModules={completedModules}
-            setCompletedModules={setCompletedModules}
-            drillCompletedList={drillCompletedList}
-            aggregateScore={aggregateScore}
-            consultationCount={consultationCount}
-            streakDays={streakDays}
-            unlockedBadges={unlockedBadges}
             onNotify={setLastNotification}
           />
         )}

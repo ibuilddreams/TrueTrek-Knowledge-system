@@ -20,6 +20,7 @@ from .serializers import (
     QuestionSerializer,
     QuestionWriteSerializer,
     QuizAnswerGradeSerializer,
+    QuizAttemptAutosaveSerializer,
     QuizAvailableSerializer,
     QuizOrderEntrySerializer,
     QuizPendingAnswerSerializer,
@@ -36,8 +37,14 @@ from .services import (
     QuizGradingError,
     QuizPublishError,
     QuizReorderError,
+    autosave_quiz_attempt,
+    finalize_stale_attempts,
+    get_attempt_saved_answers,
+    get_attempt_seconds_remaining,
     get_pending_grading_answers,
+    get_quiz_attempt_detail,
     get_student_grades,
+    get_student_quiz_attempts,
     get_student_quizzes,
     grade_quiz_answer,
     publish_quiz,
@@ -62,6 +69,16 @@ class StudentGradesView(generics.GenericAPIView):
     def get(self, request):
         data = get_student_grades(request.user)
         return success_response(data, message="Student grades fetched successfully")
+
+
+class StudentQuizAttemptsListView(generics.GenericAPIView):
+    """Full attempt history for the authenticated student, across every enrolled course."""
+
+    permission_classes = [IsStudent]
+
+    def get(self, request):
+        data = get_student_quiz_attempts(request.user)
+        return success_response(data, message="Student quiz attempts fetched successfully")
 
 
 def _scope_quiz_queryset_for_reads(queryset, user):
@@ -448,7 +465,7 @@ class StartQuizAttemptView(generics.GenericAPIView):
             return error_response(message="You are not enrolled in this course.", status_code=403)
 
         try:
-            attempt = start_quiz_attempt(request.user, quiz)
+            attempt, is_new = start_quiz_attempt(request.user, quiz)
         except QuizAttemptError as exc:
             return error_response(message=str(exc), status_code=403)
 
@@ -456,6 +473,9 @@ class StartQuizAttemptView(generics.GenericAPIView):
         data = {
             "attempt_id": attempt.id,
             "attempt_number": attempt.attempt_number,
+            "resumed": not is_new,
+            "seconds_remaining": get_attempt_seconds_remaining(attempt),
+            "saved_answers": [] if is_new else get_attempt_saved_answers(attempt),
             "quiz": {
                 "id": quiz.id,
                 "title": quiz.title,
@@ -463,7 +483,46 @@ class StartQuizAttemptView(generics.GenericAPIView):
             },
             "questions": StudentQuestionSerializer(questions, many=True).data,
         }
-        return success_response(data, message="Quiz attempt started", status_code=201)
+        message = "Quiz attempt started" if is_new else "Resuming your in-progress attempt"
+        return success_response(data, message=message, status_code=201 if is_new else 200)
+
+
+class QuizAttemptAutosaveView(generics.GenericAPIView):
+    """Periodic/background save of in-progress answers, so a refresh, dropped connection,
+    or abandoned tab doesn't lose the student's work or leave the attempt's true state
+    ambiguous to teachers/admins."""
+
+    permission_classes = [IsStudent]
+    serializer_class = QuizAttemptAutosaveSerializer
+
+    def post(self, request, attempt_id):
+        try:
+            attempt = QuizAttempt.objects.select_related("quiz").get(
+                pk=attempt_id, student=request.user
+            )
+        except QuizAttempt.DoesNotExist:
+            return error_response(
+                message="Quiz attempt with the given id does not exist.", status_code=404
+            )
+
+        finalize_stale_attempts([attempt])
+        if attempt.status != QuizAttempt.AttemptStatus.IN_PROGRESS:
+            return error_response(
+                message="This quiz attempt is no longer in progress.", status_code=400
+            )
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            autosave_quiz_attempt(attempt, serializer.validated_data["answers"])
+        except InvalidAnswerError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        return success_response(
+            {"seconds_remaining": get_attempt_seconds_remaining(attempt)},
+            message="Progress saved",
+        )
 
 
 class SubmitQuizAttemptView(generics.GenericAPIView):
@@ -480,10 +539,15 @@ class SubmitQuizAttemptView(generics.GenericAPIView):
                 message="Quiz attempt with the given id does not exist.", status_code=404
             )
 
+        finalize_stale_attempts([attempt])
         if attempt.ended_at is not None:
-            return error_response(
-                message="This quiz attempt has already been submitted.", status_code=400
-            )
+            if attempt.status == QuizAttempt.AttemptStatus.EXPIRED:
+                message = "This quiz attempt already ended after its time limit expired."
+            elif attempt.status == QuizAttempt.AttemptStatus.ABANDONED:
+                message = "This quiz attempt was marked abandoned due to inactivity."
+            else:
+                message = "This quiz attempt has already been submitted."
+            return error_response(message=message, status_code=400)
 
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -630,6 +694,7 @@ class QuizCourseProgressListView(generics.GenericAPIView):
             quizzes = quizzes.filter(id=quiz_id)
         quizzes = list(quizzes.order_by("module", "order"))
         quiz_ids = [quiz.id for quiz in quizzes]
+        quiz_by_id = {quiz.id: quiz for quiz in quizzes}
 
         enrollments = Enrollment.objects.filter(
             course=course, status=Enrollment.EnrollmentStatus.ACTIVE
@@ -640,11 +705,15 @@ class QuizCourseProgressListView(generics.GenericAPIView):
         enrollments = list(enrollments)
         student_ids = [enrollment.student_id for enrollment in enrollments]
 
-        attempts = (
+        attempts = list(
             QuizAttempt.objects.filter(quiz_id__in=quiz_ids, student_id__in=student_ids)
             .select_related("result")
             .order_by("-started_at")
         )
+        for attempt in attempts:
+            attempt.quiz = quiz_by_id[attempt.quiz_id]
+        finalize_stale_attempts(attempts)
+
         latest_attempt_map = {}
         attempts_count_map = {}
         for attempt in attempts:
@@ -662,8 +731,12 @@ class QuizCourseProgressListView(generics.GenericAPIView):
 
                 if latest is None:
                     effective_status = "NOT_ATTEMPTED"
-                elif result is None:
+                elif latest.status == QuizAttempt.AttemptStatus.IN_PROGRESS:
                     effective_status = "IN_PROGRESS"
+                elif latest.status == QuizAttempt.AttemptStatus.EXPIRED:
+                    effective_status = "EXPIRED"
+                elif latest.status == QuizAttempt.AttemptStatus.ABANDONED:
+                    effective_status = "ABANDONED"
                 elif result.is_passed:
                     effective_status = "PASSED"
                 else:
@@ -696,7 +769,10 @@ class QuizCourseProgressListView(generics.GenericAPIView):
                     }
                 )
 
-        completed_rows = [row for row in all_rows if row["percentage"] is not None]
+        # PASSED/FAILED means the attempt actually reached submission; EXPIRED/ABANDONED
+        # attempts get a QuizResult too (so their partial score is visible per-row) but
+        # shouldn't count as a genuine completion in the aggregate stats.
+        completed_rows = [row for row in all_rows if row["status"] in ("PASSED", "FAILED")]
         passed_count = sum(1 for row in completed_rows if row["is_passed"])
         stats = {
             "average_score": (
@@ -709,6 +785,9 @@ class QuizCourseProgressListView(generics.GenericAPIView):
             ),
             "total_attempts": sum(row["attempts_count"] for row in all_rows),
             "completed_quizzes": len(completed_rows),
+            "abandoned_attempts": sum(
+                1 for row in all_rows if row["status"] in ("EXPIRED", "ABANDONED")
+            ),
         }
 
         status_filter = request.query_params.get("status")
@@ -740,11 +819,14 @@ class QuizStudentAttemptListView(generics.GenericAPIView):
                 message="You do not have permission to perform this action.", status_code=403
             )
 
-        attempts = (
+        attempts = list(
             QuizAttempt.objects.filter(quiz=quiz, student_id=student_id)
             .select_related("result")
             .order_by("-attempt_number")
         )
+        for attempt in attempts:
+            attempt.quiz = quiz
+        finalize_stale_attempts(attempts)
 
         data = []
         for attempt in attempts:
@@ -793,63 +875,26 @@ class QuizAttemptDetailView(generics.GenericAPIView):
                 message="You do not have permission to perform this action.", status_code=403
             )
 
-        questions = attempt.quiz.questions.prefetch_related("choices").order_by("order")
-        answers_map = {
-            answer.question_id: answer
-            for answer in attempt.answers.select_related("selected_choice", "question")
-        }
+        finalize_stale_attempts([attempt])
+        data = get_quiz_attempt_detail(attempt)
+        return success_response(data, message="Quiz attempt detail fetched successfully")
 
-        questions_data = []
-        for question in questions:
-            answer = answers_map.get(question.id)
-            choices_data = [
-                {
-                    "id": choice.id,
-                    "text": choice.text,
-                    "is_correct": choice.is_correct,
-                    "is_selected": bool(answer and answer.selected_choice_id == choice.id),
-                }
-                for choice in question.choices.all()
-            ]
-            questions_data.append(
-                {
-                    "id": question.id,
-                    "text": question.text,
-                    "question_type": question.question_type,
-                    "marks": question.marks,
-                    "choices": choices_data,
-                    "text_answer": answer.text_answer if answer else "",
-                    "marks_awarded": (
-                        float(answer.marks_awarded)
-                        if answer and answer.marks_awarded is not None
-                        else None
-                    ),
-                    "grading_status": answer.grading_status if answer else None,
-                    "feedback": answer.feedback if answer else "",
-                    "answer_id": answer.id if answer else None,
-                }
+
+class QuizMyAttemptDetailView(generics.GenericAPIView):
+    """Full question-by-question breakdown of one of the authenticated student's own attempts."""
+
+    permission_classes = [IsStudent]
+
+    def get(self, request, attempt_id):
+        try:
+            attempt = QuizAttempt.objects.select_related("quiz__course", "student", "result").get(
+                pk=attempt_id, student=request.user
+            )
+        except QuizAttempt.DoesNotExist:
+            return error_response(
+                message="Quiz attempt with the given id does not exist.", status_code=404
             )
 
-        result = getattr(attempt, "result", None)
-        data = {
-            "attempt_id": attempt.id,
-            "attempt_number": attempt.attempt_number,
-            "status": attempt.status,
-            "student": {
-                "id": attempt.student_id,
-                "name": attempt.student.name,
-                "email": attempt.student.email,
-            },
-            "quiz": {
-                "id": attempt.quiz_id,
-                "title": attempt.quiz.title,
-                "passing_score": attempt.quiz.passing_score,
-            },
-            "started_at": attempt.started_at,
-            "ended_at": attempt.ended_at,
-            "score": float(result.score) if result else None,
-            "percentage": float(result.percentage) if result else None,
-            "is_passed": result.is_passed if result else None,
-            "questions": questions_data,
-        }
+        finalize_stale_attempts([attempt])
+        data = get_quiz_attempt_detail(attempt)
         return success_response(data, message="Quiz attempt detail fetched successfully")

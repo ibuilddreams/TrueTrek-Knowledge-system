@@ -104,6 +104,14 @@ export async function submitQuizAttempt(attemptId, payload) {
   return backendClient.post(`/quizzes/attempts/${attemptId}/submit/`, payload);
 }
 
+export async function autosaveQuizAttempt(attemptId, payload, options) {
+  return backendClient.post(`/quizzes/attempts/${attemptId}/autosave/`, payload, options);
+}
+
 export async function getQuizAttemptResult(attemptId) {
   return backendClient.get(`/quizzes/attempts/${attemptId}/result/`);
+}
+
+export async function getQuizAttemptMyDetail(attemptId) {
+  return backendClient.get(`/quizzes/attempts/${attemptId}/my-detail/`);
 }

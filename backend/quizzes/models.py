@@ -2,6 +2,7 @@ from django.conf import settings
 from django.core.validators import MinValueValidator
 from django.db import models
 from django.db.models import Q
+from django.utils import timezone
 
 from common.models import BaseModel, Status
 from courses.models import Course
@@ -71,6 +72,7 @@ class QuizAttempt(BaseModel):
         SUBMITTED = "SUBMITTED", "Submitted"
         GRADED = "GRADED", "Graded"
         EXPIRED = "EXPIRED", "Expired"
+        ABANDONED = "ABANDONED", "Abandoned"
 
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="attempts")
     student = models.ForeignKey(
@@ -82,6 +84,9 @@ class QuizAttempt(BaseModel):
     )
     started_at = models.DateTimeField(auto_now_add=True)
     ended_at = models.DateTimeField(null=True, blank=True)
+    # Bumped on every autosave while IN_PROGRESS; used to detect genuinely abandoned
+    # attempts (as opposed to ones with an active but slow/disconnected client).
+    last_activity_at = models.DateTimeField(default=timezone.now)
 
     class Meta:
         ordering = ["-started_at"]

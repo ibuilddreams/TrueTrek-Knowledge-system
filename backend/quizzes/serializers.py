@@ -229,6 +229,10 @@ class QuizSubmitSerializer(serializers.Serializer):
     answers = QuizAnswerEntrySerializer(many=True)
 
 
+class QuizAttemptAutosaveSerializer(serializers.Serializer):
+    answers = QuizAnswerEntrySerializer(many=True)
+
+
 class QuizResultSerializer(serializers.ModelSerializer):
     quiz = serializers.SerializerMethodField()
     attempt_number = serializers.IntegerField(source="attempt.attempt_number", read_only=True)

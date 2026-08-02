@@ -10,9 +10,7 @@ import {
   setDrillCompletedList,
   setStreakDays,
   setPoints,
-  setCompletedModules,
   setConsultationCount,
-  setUnlockedBadges,
 } from "@/store/slices/portal/portalSlice";
 import { resolveUpdater } from "@/utils";
 
@@ -53,15 +51,6 @@ export function usePortalSession() {
     [dispatch, portal.points]
   );
 
-  const updateCompletedModules = useCallback(
-    (value) => {
-      dispatch(
-        setCompletedModules(resolveUpdater(value, portal.completedModules))
-      );
-    },
-    [dispatch, portal.completedModules]
-  );
-
   const updateConsultationCount = useCallback(
     (value) => {
       dispatch(
@@ -71,15 +60,6 @@ export function usePortalSession() {
     [dispatch, portal.consultationCount]
   );
 
-  const updateUnlockedBadges = useCallback(
-    (value) => {
-      dispatch(
-        setUnlockedBadges(resolveUpdater(value, portal.unlockedBadges))
-      );
-    },
-    [dispatch, portal.unlockedBadges]
-  );
-
   return {
     isLoggedIn,
     logout,
@@ -87,15 +67,11 @@ export function usePortalSession() {
     streakDays: portal.streakDays,
     aggregateScore: portal.aggregateScore,
     points: portal.points,
-    completedModules: portal.completedModules,
     consultationCount: portal.consultationCount,
-    unlockedBadges: portal.unlockedBadges,
     setDrillCompletedList: updateDrillCompletedList,
     setStreakDays: updateStreakDays,
     setAggregateScore: updateAggregateScore,
     setPoints: updatePoints,
-    setCompletedModules: updateCompletedModules,
     setConsultationCount: updateConsultationCount,
-    setUnlockedBadges: updateUnlockedBadges,
   };
 }

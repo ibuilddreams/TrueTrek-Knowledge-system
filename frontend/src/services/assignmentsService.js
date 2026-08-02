@@ -69,9 +69,8 @@ export async function gradeAssignmentSubmission(submissionId, payload) {
   return backendClient.post(`/assignments/submissions/${submissionId}/grade/`, payload);
 }
 
-export async function submitAssignment(assignmentId, { submissionText = "", files = [] } = {}) {
+export async function submitAssignment(assignmentId, { files = [] } = {}) {
   const formData = new FormData();
-  formData.append("submission_text", submissionText);
   files.forEach((file) => formData.append("files", file));
   return backendClient.post(`/assignments/${assignmentId}/submit/`, formData);
 }

@@ -1,19 +1,61 @@
 "use client";
 
+import { useRef } from "react";
+import { RotateCcw, RotateCw } from "lucide-react";
 import { getVideoEmbedUrl } from "@/lib/videoEmbed";
 
-export default function VideoLessonPlayer({ lesson }) {
-  if (lesson.file) {
-    return (
-      // eslint-disable-next-line jsx-a11y/media-has-caption
+const SKIP_AMOUNTS = [-10, -5, 5, 10];
+
+function SkipButton({ seconds, onSkip }) {
+  const isForward = seconds > 0;
+  const Icon = isForward ? RotateCw : RotateCcw;
+
+  return (
+    <button
+      type="button"
+      onClick={() => onSkip(seconds)}
+      className="inline-flex items-center gap-1 px-2.5 py-1.5 rounded-lg border border-stone-200 bg-white hover:border-amber-300 hover:text-amber-800 text-stone-600 text-[11px] font-mono transition"
+    >
+      <Icon className="w-3.5 h-3.5" />
+      {isForward ? "+" : "-"}
+      {Math.abs(seconds)}s
+    </button>
+  );
+}
+
+function NativeVideoPlayer({ src }) {
+  const videoRef = useRef(null);
+
+  const skip = (seconds) => {
+    const video = videoRef.current;
+    if (!video) return;
+    const duration = Number.isFinite(video.duration) ? video.duration : Infinity;
+    video.currentTime = Math.min(Math.max(video.currentTime + seconds, 0), duration);
+  };
+
+  return (
+    <div className="space-y-2">
+      {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <video
+        ref={videoRef}
         controls
         className="w-full aspect-video rounded-xl bg-stone-950"
-        src={lesson.file}
+        src={src}
       >
         Your browser does not support the video tag.
       </video>
-    );
+      <div className="flex items-center justify-center gap-2">
+        {SKIP_AMOUNTS.map((seconds) => (
+          <SkipButton key={seconds} seconds={seconds} onSkip={skip} />
+        ))}
+      </div>
+    </div>
+  );
+}
+
+export default function VideoLessonPlayer({ lesson }) {
+  if (lesson.file) {
+    return <NativeVideoPlayer src={lesson.file} />;
   }
 
   if (lesson.video_url) {
@@ -33,16 +75,7 @@ export default function VideoLessonPlayer({ lesson }) {
       );
     }
 
-    return (
-      // eslint-disable-next-line jsx-a11y/media-has-caption
-      <video
-        controls
-        className="w-full aspect-video rounded-xl bg-stone-950"
-        src={lesson.video_url}
-      >
-        Your browser does not support the video tag.
-      </video>
-    );
+    return <NativeVideoPlayer src={lesson.video_url} />;
   }
 
   return (

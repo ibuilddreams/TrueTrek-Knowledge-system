@@ -28,12 +28,6 @@ export default function AssignmentSubmissionStatus({ submission }) {
         </span>
       </div>
 
-      {submission.submission_text ? (
-        <p className="text-sm text-stone-700 font-light whitespace-pre-line">
-          {submission.submission_text}
-        </p>
-      ) : null}
-
       {(submission.files || []).length > 0 && (
         <div className="space-y-1.5">
           {submission.files.map((file) => (
@@ -63,6 +57,11 @@ export default function AssignmentSubmissionStatus({ submission }) {
           <div className="flex items-center gap-1.5 text-sm font-serif font-bold text-emerald-700">
             <CheckCircle2 className="w-4 h-4" />
             {submission.marks} / {submission.assignment?.total_marks ?? "—"} marks
+            {submission.percentage !== null && submission.percentage !== undefined ? (
+              <span className="text-emerald-600/80 font-mono text-xs font-normal">
+                ({submission.percentage}%)
+              </span>
+            ) : null}
           </div>
           {submission.feedback ? (
             <p className="text-xs text-stone-600 font-light">{submission.feedback}</p>

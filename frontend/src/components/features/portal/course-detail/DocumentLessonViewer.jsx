@@ -17,21 +17,15 @@ export default function DocumentLessonViewer({ lesson }) {
 
   return (
     <div className="space-y-3">
-      {isPdf ? (
-        <iframe
-          src={fileUrl}
-          title={lesson.title}
-          className="w-full h-[60vh] rounded-xl border border-stone-200 bg-stone-50"
-        />
-      ) : (
-        <div className="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-8 flex flex-col items-center text-center gap-2">
-          <FileText className="w-8 h-8 text-amber-600" />
-          <p className="text-sm text-stone-700 font-medium">{lesson.title}</p>
-          <p className="text-xs text-stone-500">
-            Preview isn&apos;t available for this file type — download it or open it in a new tab.
-          </p>
-        </div>
-      )}
+      <div className="rounded-2xl border border-stone-200 bg-stone-50 px-5 py-8 flex flex-col items-center text-center gap-2">
+        <FileText className="w-8 h-8 text-amber-600" />
+        <p className="text-sm text-stone-700 font-medium">{lesson.title}</p>
+        <p className="text-xs text-stone-500">
+          {isPdf
+            ? "Preview isn't available here — download it or open it in a new tab."
+            : "This file type can't be previewed in the browser — download it or open it in a new tab (which will download it too)."}
+        </p>
+      </div>
 
       <div className="flex items-center gap-2">
         <a

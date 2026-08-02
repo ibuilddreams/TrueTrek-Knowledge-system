@@ -78,7 +78,6 @@ class AssignmentSubmission(BaseModel):
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="assignment_submissions"
     )
-    submission_text = models.TextField(blank=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(
         max_length=20, choices=SubmissionStatus.choices, default=SubmissionStatus.DRAFT
