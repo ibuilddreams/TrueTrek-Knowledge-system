@@ -182,11 +182,11 @@ export default function TeachersTab() {
             type="button"
             onClick={() => setIsBulkImportOpen(true)}
             className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-2"
-            title="Bulk import teachers from CSV or XLSX"
-            aria-label="Bulk import teachers from CSV or XLSX"
+            title="Bulk add teachers from a CSV or XLSX file"
+            aria-label="Bulk add teachers from a CSV or XLSX file"
           >
             <Upload className="w-4 h-4" />
-            BULK IMPORT
+            BULK ADD
           </button>
           <button
             type="button"

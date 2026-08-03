@@ -16,21 +16,41 @@ import Modal from "@/components/ui/Modal";
 import {
   BULK_IMPORT_CONFIG,
   buildErrorReportCsv,
+  buildSkippedReportCsv,
   downloadBlob,
   validateImportFileHeaders,
 } from "@/lib/bulkImport";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
-function ImportSummary({ result, type, onDownloadErrors }) {
+function getSkippedRowDisplay(entry, type) {
+  if (type === "enrollments") {
+    return {
+      title: entry.course_code || "Enrollment",
+      subtitle: [entry.student_email, entry.teacher_email].filter(Boolean).join(" · "),
+    };
+  }
+  return {
+    title: [entry.first_name, entry.last_name].filter(Boolean).join(" ") || entry.email || entry.username,
+    subtitle: [entry.email, entry.username].filter(Boolean).join(" · "),
+  };
+}
+
+function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
   const total = result.total_rows || 0;
   const success = result.success_count || 0;
+  const skipped = result.skipped_count || 0;
   const failed = result.failed_count || 0;
   const successRate = total > 0 ? Math.round((success / total) * 100) : 0;
   const errors = result.errors || [];
+  const skippedRows = result.skipped || [];
 
   const outcome =
-    failed === 0 ? "success" : success === 0 ? "failed" : "partial";
+    failed === 0 && skipped === 0
+      ? "success"
+      : success === 0
+        ? "failed"
+        : "partial";
 
   const outcomeMeta = {
     success: {
@@ -44,8 +64,8 @@ function ImportSummary({ result, type, onDownloadErrors }) {
     },
     partial: {
       icon: AlertTriangle,
-      label: "Import completed with some failures",
-      detail: `${success} succeeded and ${failed} failed. Review the errors below.`,
+      label: "Import completed with some rows skipped or failed",
+      detail: `${success} created, ${skipped} skipped as duplicates, ${failed} failed. Review the details below.`,
       wrap: "border-amber-200 bg-amber-50/70",
       iconWrap: "bg-amber-100 text-amber-800",
       labelClass: "text-amber-950",
@@ -53,8 +73,11 @@ function ImportSummary({ result, type, onDownloadErrors }) {
     },
     failed: {
       icon: XCircle,
-      label: "Import finished with no successful rows",
-      detail: `All ${failed} row${failed === 1 ? "" : "s"} failed. Download the error report to fix and retry.`,
+      label: "Import finished with no new records created",
+      detail:
+        skipped > 0 && failed === 0
+          ? `All ${skipped} row${skipped === 1 ? "" : "s"} matched existing accounts and were skipped.`
+          : `All ${total} row${total === 1 ? "" : "s"} were skipped or failed. Review the details below.`,
       wrap: "border-rose-200 bg-rose-50/70",
       iconWrap: "bg-rose-100 text-rose-700",
       labelClass: "text-rose-950",
@@ -96,7 +119,7 @@ function ImportSummary({ result, type, onDownloadErrors }) {
         </div>
       </div>
 
-      <div className="grid grid-cols-3 gap-2.5">
+      <div className="grid grid-cols-4 gap-2.5">
         <div className="rounded-2xl border border-stone-200 bg-white p-3.5">
           <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400 font-semibold">
             Total
@@ -107,10 +130,18 @@ function ImportSummary({ result, type, onDownloadErrors }) {
         </div>
         <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/40 p-3.5">
           <p className="text-[10px] font-mono uppercase tracking-wider text-emerald-700 font-semibold">
-            Success
+            Created
           </p>
           <p className="text-2xl font-serif font-bold text-emerald-700 mt-1 tabular-nums">
             {success}
+          </p>
+        </div>
+        <div className="rounded-2xl border border-amber-200/80 bg-amber-50/40 p-3.5">
+          <p className="text-[10px] font-mono uppercase tracking-wider text-amber-700 font-semibold">
+            Skipped
+          </p>
+          <p className="text-2xl font-serif font-bold text-amber-700 mt-1 tabular-nums">
+            {skipped}
           </p>
         </div>
         <div className="rounded-2xl border border-rose-200/80 bg-rose-50/40 p-3.5">
@@ -145,6 +176,58 @@ function ImportSummary({ result, type, onDownloadErrors }) {
           />
         </div>
       </div>
+
+      {skippedRows.length > 0 && (
+        <div className="rounded-2xl border border-stone-200 bg-white overflow-hidden">
+          <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between gap-3 bg-stone-50/80">
+            <div>
+              <p className="text-[10px] font-mono uppercase tracking-wider text-stone-500 font-semibold">
+                Skipped duplicates
+              </p>
+              <p className="text-[11px] text-stone-500 mt-0.5">
+                {skippedRows.length} row{skippedRows.length === 1 ? "" : "s"} already existed and{" "}
+                {skippedRows.length === 1 ? "was" : "were"} left unchanged.
+              </p>
+            </div>
+            {onDownloadSkipped && (
+              <button
+                type="button"
+                onClick={onDownloadSkipped}
+                className="shrink-0 px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900 text-[10px] font-mono uppercase tracking-wider font-semibold transition flex items-center gap-1.5"
+              >
+                <Download className="w-3 h-3" />
+                Skipped Report
+              </button>
+            )}
+          </div>
+
+          <div className="max-h-56 overflow-y-auto divide-y divide-stone-100">
+            {skippedRows.map((entry) => {
+              const display = getSkippedRowDisplay(entry, type);
+              return (
+                <div
+                  key={`${entry.row}-${entry.email || entry.student_email}`}
+                  className="px-4 py-3 flex items-start gap-2.5"
+                >
+                  <div className="w-7 h-7 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                    <AlertTriangle className="w-3.5 h-3.5" />
+                  </div>
+                  <div className="min-w-0 flex-1 flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <p className="text-xs text-stone-800 font-medium truncate">{display.title}</p>
+                      <p className="text-[11px] text-stone-500 mt-0.5 truncate">{display.subtitle}</p>
+                      <p className="text-[11px] text-amber-700 mt-0.5 truncate">{entry.reason}</p>
+                    </div>
+                    <span className="shrink-0 text-[10px] font-mono font-semibold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">
+                      R{entry.row}
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        </div>
+      )}
 
       {errors.length > 0 && (
         <div className="rounded-2xl border border-stone-200 bg-white overflow-hidden">
@@ -328,10 +411,11 @@ export default function BulkImportModal({
       setResult(data);
       onImported?.(data);
 
-      if (data?.failed_count > 0 && data?.success_count > 0) {
-        toastSuccess(response?.message || "Import completed with some failures.");
-      } else if (data?.failed_count > 0) {
-        toastError(response?.message || "Import completed with failures.");
+      const hasIssues = data?.failed_count > 0 || data?.skipped_count > 0;
+      if (hasIssues && data?.success_count > 0) {
+        toastSuccess(response?.message || "Import completed with some rows skipped or failed.");
+      } else if (hasIssues) {
+        toastError(response?.message || "Import completed with no new records created.");
       } else {
         toastSuccess(response?.message || "Import completed successfully.");
       }
@@ -350,6 +434,15 @@ export default function BulkImportModal({
     downloadBlob(
       new Blob([csv], { type: "text/csv;charset=utf-8;" }),
       `${type}_import_errors.csv`
+    );
+  };
+
+  const handleDownloadSkipped = () => {
+    if (!result?.skipped?.length) return;
+    const csv = buildSkippedReportCsv(result.skipped, type);
+    downloadBlob(
+      new Blob([csv], { type: "text/csv;charset=utf-8;" }),
+      `${type}_import_skipped.csv`
     );
   };
 
@@ -380,6 +473,7 @@ export default function BulkImportModal({
             result={result}
             type={type}
             onDownloadErrors={handleDownloadErrors}
+            onDownloadSkipped={result?.skipped?.length ? handleDownloadSkipped : null}
           />
         ) : (
           <>
