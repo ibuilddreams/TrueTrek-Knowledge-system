@@ -8,7 +8,7 @@ from django.utils import timezone
 from assignments.models import Assignment
 from common.models import Status
 from common.ordering import get_next_order
-from courses.models import Category, Course, CourseInstructor
+from courses.models import Category, Course, CourseInstructor, Tag
 from enrollments.models import Enrollment
 from lessons.models import Lesson
 from modules.models import Module
@@ -26,18 +26,23 @@ ADMIN_DATA = {
 
 TEACHER_DATA = [
     {"email": f"teacher{i}@example.com", "first_name": "Teacher", "last_name": str(i)}
-    for i in range(1, 7)
+    for i in range(1, 9)
 ]
 
 STUDENT_DATA = [
     {"email": f"student{i}@example.com", "first_name": "Student", "last_name": str(i)}
-    for i in range(1, 13)
+    for i in range(1, 16)
 ]
 
-COURSE_COUNT = 8
+COURSE_COUNT = 12
 MODULES_PER_COURSE = 5
 LESSONS_PER_MODULE = 5
-ASSIGNMENTS_PER_MODULE = 2
+
+# Course numbers (1-indexed, matching "Course {i}") that get more than one instructor
+# assigned, to demonstrate the multi-teacher-per-course feature — each of these courses'
+# enrollments are then round-robined across its instructors so every teacher only sees
+# their own section of students.
+MULTI_TEACHER_COURSES = {2: 2, 6: 3, 10: 2}
 
 YOUTUBE_DEMO_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
 
@@ -70,9 +75,9 @@ LESSON_CONTENT_CYCLE = [
     },
 ]
 
-# Reused for every quiz: a 10-question mix of MCQ (4 choices each), True/False
-# (2 choices each), and Short Answer (no choices), matching what the quiz
-# builder UI now enforces.
+# Full 10-question mix of MCQ (4 choices each), True/False (2 choices each), and Short
+# Answer (no choices) — used whole for a module's only quiz, and split into the two
+# halves below when a module has two quizzes, so each quiz gets distinct question types.
 QUESTION_TEMPLATES = [
     {
         "type": Question.QuestionType.MCQ,
@@ -140,17 +145,22 @@ QUESTION_TEMPLATES = [
         "choices": [],
     },
 ]
+MCQ_TEMPLATES = [t for t in QUESTION_TEMPLATES if t["type"] == Question.QuestionType.MCQ]
+NON_MCQ_TEMPLATES = [t for t in QUESTION_TEMPLATES if t["type"] != Question.QuestionType.MCQ]
 
 
 class Command(BaseCommand):
     help = (
-        "Seeds the database with demo users, courses, modules, lessons, assignments, "
-        "quizzes and enrollments. Safe to re-run: existing rows are looked up with "
-        "get_or_create and are never overwritten."
+        "Wipes existing demo data (teachers, students, courses, modules, lessons, "
+        "assignments, quizzes, enrollments) and reseeds it fresh. The admin account is "
+        "kept/created via get_or_create rather than deleted."
     )
 
     def handle(self, *args, **options):
         with transaction.atomic():
+            self._reset_data()
+            self.stdout.write(self.style.WARNING("Cleared existing seed data"))
+
             self._create_user(ADMIN_DATA, User.Roles.ADMIN)
             self.stdout.write(self.style.SUCCESS("Created 1 admin"))
 
@@ -165,10 +175,18 @@ class Command(BaseCommand):
             courses = self._create_courses(category, teachers)
             self.stdout.write(self.style.SUCCESS(f"Created {len(courses)} courses"))
 
-            course_instructor_map = {
+            course_lead_map = {
                 ci.course_id: ci.instructor
                 for ci in CourseInstructor.objects.filter(course__in=courses, is_lead=True)
             }
+            course_instructors_map = {
+                course.id: [ci.instructor for ci in course.instructors.order_by("-is_lead", "id")]
+                for course in courses
+            }
+            multi_teacher_count = sum(1 for ids in course_instructors_map.values() if len(ids) > 1)
+            self.stdout.write(
+                self.style.SUCCESS(f"Assigned multiple teachers to {multi_teacher_count} courses")
+            )
 
             modules = self._create_modules(courses)
             self.stdout.write(self.style.SUCCESS(f"Created {len(modules)} modules"))
@@ -176,20 +194,27 @@ class Command(BaseCommand):
             lessons = self._create_lessons(modules)
             self.stdout.write(self.style.SUCCESS(f"Created {len(lessons)} lessons"))
 
-            assignments = self._create_assignments(modules, course_instructor_map)
+            assignments = self._create_assignments(modules, course_lead_map)
             self.stdout.write(self.style.SUCCESS(f"Created {len(assignments)} assignments"))
 
             quizzes = self._create_quizzes(modules)
-            self.stdout.write(
-                self.style.SUCCESS(
-                    f"Created {len(quizzes)} quizzes with {len(QUESTION_TEMPLATES)} questions each"
-                )
-            )
+            self.stdout.write(self.style.SUCCESS(f"Created {len(quizzes)} quizzes"))
 
-            enrollments = self._create_enrollments(students, courses)
+            enrollments = self._create_enrollments(students, courses, course_instructors_map)
             self.stdout.write(self.style.SUCCESS(f"Created {len(enrollments)} enrollments"))
 
         self.stdout.write(self.style.SUCCESS("Seed data completed successfully."))
+
+    def _reset_data(self):
+        # Deleting teacher/student users cascades their CourseInstructor rows, enrollments,
+        # quiz attempts/answers, and assignment submissions. Deleting courses afterward
+        # cascades modules/lessons/assignments/quizzes/questions/choices. Category is
+        # PROTECTed by Course.category, so it (and Tag) must be cleared last. The admin
+        # account is intentionally left alone — only demo teacher/student data is wiped.
+        User.objects.filter(role__in=[User.Roles.TEACHER, User.Roles.STUDENT]).delete()
+        Course.objects.all().delete()
+        Category.objects.all().delete()
+        Tag.objects.all().delete()
 
     def _create_user(self, data, role):
         username = data["email"]
@@ -226,12 +251,15 @@ class Command(BaseCommand):
             if not course.code:
                 course.code = f"COURSE{i}"
                 course.save(update_fields=["code"])
-            teacher = teachers[(i - 1) % len(teachers)]
-            CourseInstructor.objects.update_or_create(
-                course=course,
-                instructor=teacher,
-                defaults={"is_lead": True},
-            )
+
+            teacher_count = MULTI_TEACHER_COURSES.get(i, 1)
+            for slot in range(teacher_count):
+                teacher = teachers[(i - 1 + slot) % len(teachers)]
+                CourseInstructor.objects.update_or_create(
+                    course=course,
+                    instructor=teacher,
+                    defaults={"is_lead": slot == 0},
+                )
             courses.append(course)
         return courses
 
@@ -270,16 +298,16 @@ class Command(BaseCommand):
                 lessons.append(lesson)
         return lessons
 
-    def _create_assignments(self, modules, course_instructor_map):
-        # Assignment.order is uniquely constrained per module, and modules may already
-        # have unrelated assignments (created manually through the app). Look up by
-        # title only, and compute a fresh order at creation time so we never collide
-        # with orders already taken by pre-existing rows.
+    def _create_assignments(self, modules, course_lead_map):
+        # Assignment.order is uniquely constrained per module, so compute the order at
+        # creation time instead of assuming 1. Each module gets 1 or 2 assignments
+        # (alternating), per the requested range.
         assignments = []
         now = timezone.now()
-        for module in modules:
-            instructor = course_instructor_map.get(module.course_id)
-            for i in range(1, ASSIGNMENTS_PER_MODULE + 1):
+        for module_index, module in enumerate(modules):
+            instructor = course_lead_map.get(module.course_id)
+            assignments_count = 2 if module_index % 2 == 0 else 1
+            for i in range(1, assignments_count + 1):
                 title = f"{module.title} - Assignment {i}"
                 assignment = Assignment.objects.filter(module=module, title=title).first()
                 if assignment is None:
@@ -303,31 +331,40 @@ class Command(BaseCommand):
         return assignments
 
     def _create_quizzes(self, modules):
-        # Same reasoning as _create_assignments: Quiz.order is uniquely constrained
-        # per module, so compute the order at creation time instead of assuming 1.
+        # Quiz.order is uniquely constrained per module. Each module gets 1 or 2 quizzes
+        # (alternating, opposite phase from assignments); when a module has two quizzes,
+        # each one is seeded with a distinct subset of question types (MCQ vs. True/False +
+        # Short Answer) instead of the same 10-question mix twice.
         quizzes = []
-        for module in modules:
-            title = f"{module.title} - Quiz"
-            quiz = Quiz.objects.filter(module=module, title=title).first()
-            if quiz is None:
-                quiz = Quiz.objects.create(
-                    module=module,
-                    title=title,
-                    course=module.course,
-                    description=f"Assessment quiz for {module.title}",
-                    passing_score=40,
-                    time_limit_minutes=15,
-                    attempts_allowed=3,
-                    status=Status.PUBLISHED,
-                    order=get_next_order(Quiz.objects.filter(module=module)),
+        for module_index, module in enumerate(modules):
+            quizzes_count = 2 if module_index % 2 == 1 else 1
+            for quiz_num in range(1, quizzes_count + 1):
+                title = (
+                    f"{module.title} - Quiz {quiz_num}" if quizzes_count > 1 else f"{module.title} - Quiz"
                 )
-            self._create_questions(quiz)
-            quizzes.append(quiz)
+                quiz = Quiz.objects.filter(module=module, title=title).first()
+                if quiz is None:
+                    quiz = Quiz.objects.create(
+                        module=module,
+                        title=title,
+                        course=module.course,
+                        description=f"Assessment quiz for {module.title}",
+                        passing_score=40,
+                        time_limit_minutes=15,
+                        attempts_allowed=3,
+                        status=Status.PUBLISHED,
+                        order=get_next_order(Quiz.objects.filter(module=module)),
+                    )
+                templates = QUESTION_TEMPLATES if quizzes_count == 1 else (
+                    MCQ_TEMPLATES if quiz_num == 1 else NON_MCQ_TEMPLATES
+                )
+                self._create_questions(quiz, templates)
+                quizzes.append(quiz)
         return quizzes
 
-    def _create_questions(self, quiz):
+    def _create_questions(self, quiz, templates):
         questions = []
-        for order, template in enumerate(QUESTION_TEMPLATES, start=1):
+        for order, template in enumerate(templates, start=1):
             question, _ = Question.objects.get_or_create(
                 quiz=quiz,
                 text=template["text"],
@@ -346,14 +383,21 @@ class Command(BaseCommand):
             questions.append(question)
         return questions
 
-    def _create_enrollments(self, students, courses):
+    def _create_enrollments(self, students, courses, course_instructors_map):
+        # Every student is enrolled in every course. For courses with more than one
+        # instructor, students are round-robined across those instructors so each
+        # teacher ends up with their own separate section of students.
         enrollments = []
-        for student in students:
-            for course in courses:
+        for course in courses:
+            instructors = course_instructors_map.get(course.id) or []
+            if not instructors:
+                continue
+            for index, student in enumerate(students):
+                teacher = instructors[index % len(instructors)]
                 enrollment, _ = Enrollment.objects.get_or_create(
                     student=student,
                     course=course,
-                    defaults={"status": Enrollment.EnrollmentStatus.ACTIVE},
+                    defaults={"status": Enrollment.EnrollmentStatus.ACTIVE, "teacher": teacher},
                 )
                 enrollments.append(enrollment)
         return enrollments

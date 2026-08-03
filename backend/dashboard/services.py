@@ -113,19 +113,23 @@ def get_teacher_dashboard(user):
     taught_course_ids = list(
         CourseInstructor.objects.filter(instructor=user).values_list("course_id", flat=True)
     )
-    courses = Course.objects.filter(id__in=taught_course_ids)
-    course_progress = CourseProgress.objects.filter(course_id__in=taught_course_ids).select_related(
-        "course"
+    taught_student_ids = list(
+        Enrollment.objects.filter(teacher=user).values_list("student_id", flat=True)
     )
-    recent_activities = LearningActivity.objects.filter(course_id__in=taught_course_ids).order_by(
-        "-created_at"
-    )[:10]
+    courses = Course.objects.filter(id__in=taught_course_ids)
+    course_progress = CourseProgress.objects.filter(
+        course_id__in=taught_course_ids, student_id__in=taught_student_ids
+    ).select_related("course")
+    recent_activities = LearningActivity.objects.filter(
+        course_id__in=taught_course_ids, student_id__in=taught_student_ids
+    ).order_by("-created_at")[:10]
 
     published_lessons = Lesson.objects.filter(module__course_id__in=taught_course_ids).count()
     total_quizzes = Quiz.objects.filter(course_id__in=taught_course_ids).count()
 
     pending_assignment_submissions = AssignmentSubmission.objects.filter(
         assignment__course_id__in=taught_course_ids,
+        student_id__in=taught_student_ids,
         status__in=[
             AssignmentSubmission.SubmissionStatus.SUBMITTED,
             AssignmentSubmission.SubmissionStatus.LATE,
@@ -134,6 +138,7 @@ def get_teacher_dashboard(user):
     ).count()
     pending_quiz_answers = QuizAnswer.objects.filter(
         attempt__quiz__course_id__in=taught_course_ids,
+        attempt__student_id__in=taught_student_ids,
         grading_status=QuizAnswer.GradingStatus.PENDING_GRADING,
     ).count()
 
@@ -143,7 +148,7 @@ def get_teacher_dashboard(user):
 
     statistics = {
         "my_courses": courses.count(),
-        "enrolled_students": Enrollment.objects.filter(course_id__in=taught_course_ids)
+        "enrolled_students": Enrollment.objects.filter(teacher=user)
         .values("student_id")
         .distinct()
         .count(),
@@ -154,7 +159,7 @@ def get_teacher_dashboard(user):
     }
 
     students_per_course = list(
-        Enrollment.objects.filter(course_id__in=taught_course_ids)
+        Enrollment.objects.filter(teacher=user)
         .values("course__title")
         .annotate(count=Count("student_id", distinct=True))
         .order_by("-count")

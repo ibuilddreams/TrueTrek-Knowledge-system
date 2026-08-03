@@ -47,8 +47,8 @@ class QuizCourseProgressListViewTests(APITestCase):
 
         self.student_1 = _make_user("quizstudent1", UserModel.Roles.STUDENT)
         self.student_2 = _make_user("quizstudent2", UserModel.Roles.STUDENT)
-        Enrollment.objects.create(student=self.student_1, course=self.course)
-        Enrollment.objects.create(student=self.student_2, course=self.course)
+        Enrollment.objects.create(student=self.student_1, course=self.course, teacher=self.instructor)
+        Enrollment.objects.create(student=self.student_2, course=self.course, teacher=self.instructor)
 
         attempt = QuizAttempt.objects.create(
             quiz=self.quiz,
@@ -112,7 +112,7 @@ class QuizStudentAttemptListViewTests(APITestCase):
         CourseInstructor.objects.create(course=self.course, instructor=self.instructor)
 
         self.student = _make_user("attemptstudent", UserModel.Roles.STUDENT)
-        Enrollment.objects.create(student=self.student, course=self.course)
+        Enrollment.objects.create(student=self.student, course=self.course, teacher=self.instructor)
 
         attempt_1 = QuizAttempt.objects.create(
             quiz=self.quiz, student=self.student, attempt_number=1, ended_at=timezone.now()
@@ -172,7 +172,7 @@ class QuizAttemptDetailViewTests(APITestCase):
         CourseInstructor.objects.create(course=self.course, instructor=self.instructor)
 
         self.student = _make_user("detailattemptstudent", UserModel.Roles.STUDENT)
-        Enrollment.objects.create(student=self.student, course=self.course)
+        Enrollment.objects.create(student=self.student, course=self.course, teacher=self.instructor)
 
         self.attempt = QuizAttempt.objects.create(
             quiz=self.quiz, student=self.student, attempt_number=1, ended_at=timezone.now()
@@ -641,7 +641,7 @@ class QuizCourseProgressAbandonedAttemptTests(APITestCase):
         CourseInstructor.objects.create(course=self.course, instructor=self.instructor)
 
         self.student = _make_user("progressabandonstudent", UserModel.Roles.STUDENT)
-        Enrollment.objects.create(student=self.student, course=self.course)
+        Enrollment.objects.create(student=self.student, course=self.course, teacher=self.instructor)
 
         attempt, _ = start_quiz_attempt(self.student, self.quiz)
         _age_attempt(attempt, started_at=timezone.now() - timedelta(minutes=20))

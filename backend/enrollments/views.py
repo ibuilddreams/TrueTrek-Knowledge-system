@@ -124,6 +124,10 @@ class AdminEnrollmentListView(generics.ListCreateAPIView):
         if course_id:
             queryset = queryset.filter(course_id=course_id)
 
+        teacher_id = self.request.query_params.get("teacher")
+        if teacher_id:
+            queryset = queryset.filter(teacher_id=teacher_id)
+
         return queryset
 
     def get_serializer_class(self):
@@ -262,7 +266,7 @@ class TeacherEnrollmentListView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Enrollment.objects.filter(
-            course__instructors__instructor=self.request.user
+            teacher=self.request.user
         ).select_related("student", "course", "course__category").prefetch_related(
             "course__tags", "course__instructors__instructor"
         )

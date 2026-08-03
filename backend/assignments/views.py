@@ -9,6 +9,7 @@ from common.response import error_response, success_response
 from courses.models import Course
 from courses.services import is_course_instructor
 from enrollments.models import Enrollment
+from enrollments.services import can_view_student_in_course, get_visible_enrollments
 from modules.models import Module
 from users.permissions import IsStudent
 
@@ -395,9 +396,15 @@ class AssignmentSubmissionListView(generics.ListAPIView):
     permission_classes = [IsCourseInstructorOrAdmin]
 
     def get_queryset(self):
-        return AssignmentSubmission.objects.filter(
+        queryset = AssignmentSubmission.objects.filter(
             assignment_id=self.kwargs["assignment_id"]
         ).select_related("assignment", "student").prefetch_related("files")
+        if not self.request.user.is_admin:
+            visible_student_ids = get_visible_enrollments(
+                self.assignment.course, self.request.user
+            ).values_list("student_id", flat=True)
+            queryset = queryset.filter(student_id__in=visible_student_ids)
+        return queryset
 
     def list(self, request, *args, **kwargs):
         try:
@@ -408,6 +415,7 @@ class AssignmentSubmissionListView(generics.ListAPIView):
             )
 
         self.check_object_permissions(request, assignment)
+        self.assignment = assignment
 
         submissions = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(submissions)
@@ -500,6 +508,13 @@ class AssignmentGradeSubmissionView(generics.GenericAPIView):
                 message="You do not have permission to perform this action.", status_code=403
             )
 
+        if not request.user.is_admin and not can_view_student_in_course(
+            request.user, submission.student_id, submission.assignment.course
+        ):
+            return error_response(
+                message="You do not have permission to perform this action.", status_code=403
+            )
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
 
@@ -543,9 +558,7 @@ class AssignmentCourseProgressListView(generics.GenericAPIView):
         assignments = list(assignments.order_by("module", "order"))
         assignment_ids = [assignment.id for assignment in assignments]
 
-        enrollments = Enrollment.objects.filter(
-            course=course, status=Enrollment.EnrollmentStatus.ACTIVE
-        ).select_related("student")
+        enrollments = get_visible_enrollments(course, request.user).select_related("student")
         student_id = request.query_params.get("student")
         if student_id:
             enrollments = enrollments.filter(student_id=student_id)

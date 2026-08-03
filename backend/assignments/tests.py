@@ -42,8 +42,8 @@ class AssignmentCourseProgressListViewTests(APITestCase):
 
         self.student_1 = _make_user("assignmentstudent1", UserModel.Roles.STUDENT)
         self.student_2 = _make_user("assignmentstudent2", UserModel.Roles.STUDENT)
-        Enrollment.objects.create(student=self.student_1, course=self.course)
-        Enrollment.objects.create(student=self.student_2, course=self.course)
+        Enrollment.objects.create(student=self.student_1, course=self.course, teacher=self.instructor)
+        Enrollment.objects.create(student=self.student_2, course=self.course, teacher=self.instructor)
 
         AssignmentSubmission.objects.create(
             assignment=self.assignment,

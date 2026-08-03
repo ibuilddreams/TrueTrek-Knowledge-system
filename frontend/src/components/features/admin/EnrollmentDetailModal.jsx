@@ -29,6 +29,10 @@ export default function EnrollmentDetailModal({ isOpen, onClose, enrollment }) {
             <StatusBadge status={enrollment.course?.status} />
           </div>
           <div>
+            <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mb-1">Teacher</p>
+            <p className="text-stone-700 font-semibold">{enrollment.teacher?.name || "Unassigned"}</p>
+          </div>
+          <div>
             <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mb-1">Enrolled At</p>
             <p className="text-stone-700 font-semibold">{formatDateTime(enrollment.enrolled_at)}</p>
           </div>
