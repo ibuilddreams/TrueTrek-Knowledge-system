@@ -2,13 +2,23 @@ const STUDENT_HEADERS = [
   "First Name",
   "Last Name",
   "Email",
+  "Username",
   "Password",
-  "Phone",
+  "Gender",
+];
+
+const TEACHER_HEADERS = [
+  "First Name",
+  "Last Name",
+  "Email",
+  "Username",
+  "Password",
   "Gender",
 ];
 
 const ENROLLMENT_HEADERS = ["Student Email"];
 const ENROLLMENT_COURSE_HEADERS = ["Course Code", "Course Title"];
+const ENROLLMENT_TEACHER_HEADERS = ["Teacher Email"];
 
 const ALLOWED_EXTENSIONS = [".csv", ".xlsx"];
 
@@ -21,6 +31,7 @@ const HEADER_ALIASES = {
   phonenumber: "Phone",
   gender: "Gender",
   studentemail: "Student Email",
+  teacheremail: "Teacher Email",
   coursecode: "Course Code",
   code: "Course Code",
   coursetitle: "Course Title",
@@ -153,10 +164,13 @@ function parseCsvLine(line, delimiter = ",") {
 }
 
 export function buildErrorReportCsv(errors, type) {
+  const isUserImport = type === "students" || type === "teachers";
   const headers =
     type === "enrollments"
-      ? ["Row", "Student Email", "Course Code", "Error"]
-      : ["Row", "Email", "First Name", "Last Name", "Error"];
+      ? ["Row", "Student Email", "Course Code", "Teacher Email", "Error"]
+      : isUserImport
+        ? ["Row", "Email", "Username", "First Name", "Last Name", "Error"]
+        : ["Row", "Email", "First Name", "Last Name", "Error"];
 
   const lines = [headers.join(",")];
   (errors || []).forEach((entry) => {
@@ -167,15 +181,60 @@ export function buildErrorReportCsv(errors, type) {
             entry.row,
             data.student_email || "",
             data.course_code || "",
+            data.teacher_email || "",
             entry.error || "",
           ]
-        : [
-            entry.row,
-            data.email || "",
-            data.first_name || "",
-            data.last_name || "",
-            entry.error || "",
-          ];
+        : isUserImport
+          ? [
+              entry.row,
+              data.email || "",
+              data.username || "",
+              data.first_name || "",
+              data.last_name || "",
+              entry.error || "",
+            ]
+          : [
+              entry.row,
+              data.email || "",
+              data.first_name || "",
+              data.last_name || "",
+              entry.error || "",
+            ];
+    lines.push(cells.map(escapeCsvCell).join(","));
+  });
+
+  return lines.join("\n");
+}
+
+export function buildSkippedReportCsv(skipped, type) {
+  if (type === "enrollments") {
+    const headers = ["Row", "Student Email", "Course Code", "Teacher Email", "Reason"];
+    const lines = [headers.join(",")];
+    (skipped || []).forEach((entry) => {
+      const cells = [
+        entry.row,
+        entry.student_email || "",
+        entry.course_code || "",
+        entry.teacher_email || "",
+        entry.reason || "",
+      ];
+      lines.push(cells.map(escapeCsvCell).join(","));
+    });
+    return lines.join("\n");
+  }
+
+  const headers = ["Row", "Email", "Username", "First Name", "Last Name", "Reason"];
+
+  const lines = [headers.join(",")];
+  (skipped || []).forEach((entry) => {
+    const cells = [
+      entry.row,
+      entry.email || "",
+      entry.username || "",
+      entry.first_name || "",
+      entry.last_name || "",
+      entry.reason || "",
+    ];
     lines.push(cells.map(escapeCsvCell).join(","));
   });
 
@@ -203,45 +262,48 @@ export function downloadBlob(blob, filename) {
 
 export const BULK_IMPORT_CONFIG = {
   students: {
-    title: "Bulk Import Students",
-    subtitle: "Upload a CSV or XLSX file to create multiple student accounts.",
+    title: "Bulk Add Students",
+    subtitle: "Upload a CSV or XLSX file to create multiple student accounts at once.",
     requiredHeaders: STUDENT_HEADERS,
     optionalHeaders: [],
     requireOneOf: [],
     instructions: [
       "Download the sample template and keep the header row unchanged.",
-      "Required columns: First Name, Last Name, Email, Password, Phone, Gender.",
+      "Required columns: First Name, Last Name, Email, Username, Password, Gender.",
       "Gender must be Male, Female, or Other.",
-      "Phone is optional. Username is auto-generated from email.",
-      "Valid rows will be imported even if some rows fail.",
+      "One student per row. Enter each student's own Username and Password.",
+      "Students that already exist (matching Email or Username) are skipped, not updated or duplicated.",
+      "Valid new rows are created even if other rows are skipped or invalid.",
     ],
   },
   teachers: {
-    title: "Bulk Import Teachers",
-    subtitle: "Upload a CSV or XLSX file to create multiple teacher accounts.",
-    requiredHeaders: STUDENT_HEADERS,
+    title: "Bulk Add Teachers",
+    subtitle: "Upload a CSV or XLSX file to create multiple teacher accounts at once.",
+    requiredHeaders: TEACHER_HEADERS,
     optionalHeaders: [],
     requireOneOf: [],
     instructions: [
       "Download the sample template and keep the header row unchanged.",
-      "Required columns: First Name, Last Name, Email, Password, Phone, Gender.",
+      "Required columns: First Name, Last Name, Email, Username, Password, Gender.",
       "Gender must be Male, Female, or Other.",
-      "Phone is optional. Username is auto-generated from email.",
-      "Valid rows will be imported even if some rows fail.",
+      "One teacher per row. Enter each teacher's own Username and Password.",
+      "Teachers that already exist (matching Email or Username) are skipped, not updated or duplicated.",
+      "Valid new rows are created even if other rows are skipped or invalid.",
     ],
   },
   enrollments: {
     title: "Bulk Enrollment",
     subtitle: "Upload a CSV or XLSX file to enroll students into courses.",
     requiredHeaders: ENROLLMENT_HEADERS,
-    optionalHeaders: ENROLLMENT_COURSE_HEADERS,
+    optionalHeaders: [...ENROLLMENT_COURSE_HEADERS, ...ENROLLMENT_TEACHER_HEADERS],
     requireOneOf: ENROLLMENT_COURSE_HEADERS,
     instructions: [
       "Download the sample template and keep the header row unchanged.",
       "Required: Student Email, plus Course Code or Course Title.",
       "Course Code is preferred (e.g. CS101). Course Title also works.",
-      "Student must already exist and be Active.",
-      "Course must be Published. Valid rows import even if some fail.",
+      "Teacher Email is optional if the course has exactly one instructor — it is required when a course has multiple instructors, so you control who the student is enrolled with.",
+      "Student must already exist and be Active. Course must be Published.",
+      "Enrollments that already exist for that student and course are skipped, not duplicated. Valid new rows import even if others are skipped or invalid.",
     ],
   },
 };

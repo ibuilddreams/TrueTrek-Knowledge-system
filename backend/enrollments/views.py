@@ -165,7 +165,8 @@ class EnrollmentBulkImportView(generics.GenericAPIView):
             return error_response(message=str(exc), status_code=400)
 
         message = (
-            f"Import completed: {result['success_count']} succeeded, "
+            f"Import completed: {result['success_count']} created, "
+            f"{result['skipped_count']} skipped as duplicates, "
             f"{result['failed_count']} failed."
         )
         return success_response(result, message=message)

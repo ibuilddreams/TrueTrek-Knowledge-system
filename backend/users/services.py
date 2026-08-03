@@ -1,8 +1,6 @@
 from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
-from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models import Avg, Count, Max, Q
@@ -22,17 +20,20 @@ from enrollments.serializers import CourseEnrolledStudentSerializer
 from progress.models import CourseProgress, LearningActivity
 from quizzes.models import QuizResult
 
-from .models import UserProfile
 from .serializers import StudentSerializer
 
 UserModel = get_user_model()
+
+
+class DuplicateRecordError(Exception):
+    """Raised when an imported row matches an existing user (or an earlier row in the same file)."""
 
 STUDENT_IMPORT_HEADERS = [
     "First Name",
     "Last Name",
     "Email",
+    "Username",
     "Password",
-    "Phone",
     "Gender",
 ]
 
@@ -40,8 +41,8 @@ TEACHER_IMPORT_HEADERS = [
     "First Name",
     "Last Name",
     "Email",
+    "Username",
     "Password",
-    "Phone",
     "Gender",
 ]
 
@@ -50,16 +51,16 @@ STUDENT_SAMPLE_ROWS = [
         "First Name": "John",
         "Last Name": "Doe",
         "Email": "john@example.com",
+        "Username": "john.doe",
         "Password": "Password123",
-        "Phone": "+1234567890",
         "Gender": "Male",
     },
     {
         "First Name": "Jane",
         "Last Name": "Smith",
         "Email": "jane@example.com",
+        "Username": "jane.smith",
         "Password": "Password123",
-        "Phone": "+1234567891",
         "Gender": "Female",
     },
 ]
@@ -69,16 +70,16 @@ TEACHER_SAMPLE_ROWS = [
         "First Name": "Alex",
         "Last Name": "Morgan",
         "Email": "alex.morgan@example.com",
+        "Username": "alex.morgan",
         "Password": "Password123",
-        "Phone": "+1234567800",
         "Gender": "Male",
     },
     {
         "First Name": "Sam",
         "Last Name": "Lee",
         "Email": "sam.lee@example.com",
+        "Username": "sam.lee",
         "Password": "Password123",
-        "Phone": "+1234567801",
         "Gender": "Female",
     },
 ]
@@ -299,25 +300,12 @@ def _normalize_gender(value):
     return GENDER_ALIASES.get(key)
 
 
-def _unique_username_from_email(email):
-    local_part = email.split("@", 1)[0].strip().lower()
-    base = "".join(char if char.isalnum() or char in "._-" else "_" for char in local_part) or "user"
-    base = base[:120]
-    candidate = base
-    suffix = 1
-    while UserModel.objects.filter(username__iexact=candidate).exists():
-        suffix_text = str(suffix)
-        candidate = f"{base[: 150 - len(suffix_text) - 1]}_{suffix_text}"
-        suffix += 1
-    return candidate
-
-
-def _create_imported_user(row_data, role):
+def _create_imported_student(row_data, seen_emails, seen_usernames):
     first_name = row_data.get("First Name", "").strip()
     last_name = row_data.get("Last Name", "").strip()
     email = UserModel.objects.normalize_email(row_data.get("Email", "").strip())
+    username = row_data.get("Username", "").strip()
     password = row_data.get("Password", "")
-    phone = row_data.get("Phone", "").strip()
     gender = _normalize_gender(row_data.get("Gender", ""))
 
     if not first_name:
@@ -326,20 +314,24 @@ def _create_imported_user(row_data, role):
         raise ValueError("Last Name is required.")
     if not email:
         raise ValueError("Email is required.")
+    if not username:
+        raise ValueError("Username is required.")
     if not password:
         raise ValueError("Password is required.")
     if gender is None:
         raise ValueError("Gender must be Male, Female, or Other.")
 
-    if UserModel.objects.filter(email__iexact=email).exists():
-        raise ValueError("A user with this email already exists.")
+    email_key = email.lower()
+    username_key = username.lower()
 
-    try:
-        validate_password(password)
-    except DjangoValidationError as exc:
-        raise ValueError(" ".join(exc.messages)) from exc
+    if email_key in seen_emails or username_key in seen_usernames:
+        raise DuplicateRecordError("Duplicate email or username within the uploaded file.")
 
-    username = _unique_username_from_email(email)
+    if (
+        UserModel.objects.filter(email__iexact=email).exists()
+        or UserModel.objects.filter(username__iexact=username).exists()
+    ):
+        raise DuplicateRecordError("Student already exists.")
 
     with transaction.atomic():
         user = UserModel.objects.create_user(
@@ -349,13 +341,11 @@ def _create_imported_user(row_data, role):
             first_name=first_name,
             last_name=last_name,
             gender=gender,
-            role=role,
+            role=UserModel.Roles.STUDENT,
         )
-        if phone:
-            UserProfile.objects.update_or_create(
-                user=user,
-                defaults={"phone_number": phone},
-            )
+
+    seen_emails.add(email_key)
+    seen_usernames.add(username_key)
 
     return {
         "id": user.id,
@@ -365,48 +355,101 @@ def _create_imported_user(row_data, role):
         "full_name": user.name,
         "email": user.email,
         "gender": user.gender,
-        "phone": phone,
         "role": user.role,
     }
 
 
-def _create_imported_student(row_data):
-    return _create_imported_user(row_data, UserModel.Roles.STUDENT)
+def _create_imported_teacher(row_data, seen_emails, seen_usernames):
+    first_name = row_data.get("First Name", "").strip()
+    last_name = row_data.get("Last Name", "").strip()
+    email = UserModel.objects.normalize_email(row_data.get("Email", "").strip())
+    username = row_data.get("Username", "").strip()
+    password = row_data.get("Password", "")
+    gender = _normalize_gender(row_data.get("Gender", ""))
 
+    if not first_name:
+        raise ValueError("First Name is required.")
+    if not last_name:
+        raise ValueError("Last Name is required.")
+    if not email:
+        raise ValueError("Email is required.")
+    if not username:
+        raise ValueError("Username is required.")
+    if not password:
+        raise ValueError("Password is required.")
+    if gender is None:
+        raise ValueError("Gender must be Male, Female, or Other.")
 
-def _create_imported_teacher(row_data):
-    return _create_imported_user(row_data, UserModel.Roles.TEACHER)
+    email_key = email.lower()
+    username_key = username.lower()
+
+    if email_key in seen_emails or username_key in seen_usernames:
+        raise DuplicateRecordError("Duplicate email or username within the uploaded file.")
+
+    if (
+        UserModel.objects.filter(email__iexact=email).exists()
+        or UserModel.objects.filter(username__iexact=username).exists()
+    ):
+        raise DuplicateRecordError("Teacher already exists.")
+
+    with transaction.atomic():
+        user = UserModel.objects.create_user(
+            email=email,
+            password=password,
+            username=username,
+            first_name=first_name,
+            last_name=last_name,
+            gender=gender,
+            role=UserModel.Roles.TEACHER,
+        )
+
+    seen_emails.add(email_key)
+    seen_usernames.add(username_key)
+
+    return {
+        "id": user.id,
+        "username": user.username,
+        "first_name": user.first_name,
+        "last_name": user.last_name,
+        "full_name": user.name,
+        "email": user.email,
+        "gender": user.gender,
+        "role": user.role,
+    }
 
 
 def bulk_import_students(uploaded_file):
     rows = parse_tabular_file(uploaded_file, STUDENT_IMPORT_HEADERS)
 
     created = []
+    skipped = []
     errors = []
+    seen_emails = set()
+    seen_usernames = set()
 
     for entry in rows:
         row_number = entry["row_number"]
         row_data = entry["data"]
+        row_identity = {
+            "email": row_data.get("Email", ""),
+            "username": row_data.get("Username", ""),
+            "first_name": row_data.get("First Name", ""),
+            "last_name": row_data.get("Last Name", ""),
+        }
         try:
-            created.append(_create_imported_student(row_data))
+            created.append(_create_imported_student(row_data, seen_emails, seen_usernames))
+        except DuplicateRecordError as exc:
+            skipped.append({"row": row_number, "reason": str(exc), **row_identity})
         except Exception as exc:
-            errors.append(
-                {
-                    "row": row_number,
-                    "error": str(exc),
-                    "data": {
-                        "email": row_data.get("Email", ""),
-                        "first_name": row_data.get("First Name", ""),
-                        "last_name": row_data.get("Last Name", ""),
-                    },
-                }
-            )
+            errors.append({"row": row_number, "error": str(exc), "data": row_identity})
 
     return {
         "total_rows": len(rows),
         "success_count": len(created),
+        "skipped_count": len(skipped),
         "failed_count": len(errors),
         "created": created,
+        "skipped": skipped,
         "errors": errors,
     }
 
@@ -432,31 +475,34 @@ def bulk_import_teachers(uploaded_file):
     rows = parse_tabular_file(uploaded_file, TEACHER_IMPORT_HEADERS)
 
     created = []
+    skipped = []
     errors = []
+    seen_emails = set()
+    seen_usernames = set()
 
     for entry in rows:
         row_number = entry["row_number"]
         row_data = entry["data"]
+        row_identity = {
+            "email": row_data.get("Email", ""),
+            "username": row_data.get("Username", ""),
+            "first_name": row_data.get("First Name", ""),
+            "last_name": row_data.get("Last Name", ""),
+        }
         try:
-            created.append(_create_imported_teacher(row_data))
+            created.append(_create_imported_teacher(row_data, seen_emails, seen_usernames))
+        except DuplicateRecordError as exc:
+            skipped.append({"row": row_number, "reason": str(exc), **row_identity})
         except Exception as exc:
-            errors.append(
-                {
-                    "row": row_number,
-                    "error": str(exc),
-                    "data": {
-                        "email": row_data.get("Email", ""),
-                        "first_name": row_data.get("First Name", ""),
-                        "last_name": row_data.get("Last Name", ""),
-                    },
-                }
-            )
+            errors.append({"row": row_number, "error": str(exc), "data": row_identity})
 
     return {
         "total_rows": len(rows),
         "success_count": len(created),
+        "skipped_count": len(skipped),
         "failed_count": len(errors),
         "created": created,
+        "skipped": skipped,
         "errors": errors,
     }
 

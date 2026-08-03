@@ -8,7 +8,7 @@ from common.import_files import (
     parse_tabular_file,
 )
 from common.models import Status
-from courses.models import Course
+from courses.models import Course, CourseInstructor
 from courses.serializers import CourseDetailSerializer
 from lessons.models import Lesson
 from progress.models import CourseProgress, LessonProgress, ModuleProgress
@@ -18,12 +18,22 @@ from .models import Enrollment
 
 UserModel = get_user_model()
 
+
+class DuplicateEnrollmentError(Exception):
+    """Raised when an imported row matches an enrollment that already exists."""
+
+
 ENROLLMENT_IMPORT_HEADERS = ["Student Email"]
 ENROLLMENT_COURSE_HEADERS = ["Course Code", "Course Title"]
+ENROLLMENT_TEACHER_HEADERS = ["Teacher Email"]
 
 ENROLLMENT_SAMPLE_ROWS = [
-    {"Student Email": "john@example.com", "Course Code": "CS101"},
-    {"Student Email": "jane@example.com", "Course Code": "MATH201"},
+    {"Student Email": "john@example.com", "Course Code": "CS101", "Teacher Email": ""},
+    {
+        "Student Email": "jane@example.com",
+        "Course Code": "MATH201",
+        "Teacher Email": "teacher@example.com",
+    },
 ]
 
 
@@ -44,6 +54,37 @@ def _resolve_course(row_data):
         return course
 
     raise ValueError("Course Code or Course Title is required.")
+
+
+def _resolve_teacher_for_enrollment(course, teacher_email):
+    """Resolves which instructor to enroll the student under.
+
+    A course can have multiple assigned instructors, so an explicit Teacher Email
+    is required to disambiguate. When the course has exactly one instructor, that
+    instructor is used automatically so single-instructor courses don't need the
+    column filled in.
+    """
+    teacher_email = (teacher_email or "").strip()
+
+    if teacher_email:
+        email = UserModel.objects.normalize_email(teacher_email)
+        teacher = UserModel.objects.filter(
+            email__iexact=email, role=UserModel.Roles.TEACHER
+        ).first()
+        if teacher is None:
+            raise ValueError(f"No teacher found with email '{email}'.")
+        if not CourseInstructor.objects.filter(course=course, instructor=teacher).exists():
+            raise ValueError("Selected teacher is not assigned to this course.")
+        return teacher
+
+    instructors = list(CourseInstructor.objects.filter(course=course).select_related("instructor"))
+    if len(instructors) == 1:
+        return instructors[0].instructor
+    if not instructors:
+        raise ValueError("This course has no assigned teacher. Provide a Teacher Email.")
+    raise ValueError(
+        "This course has multiple assigned teachers. Provide a Teacher Email to choose one."
+    )
 
 
 def _create_imported_enrollment(row_data):
@@ -67,10 +108,12 @@ def _create_imported_enrollment(row_data):
         raise ValueError("Enrollment is only allowed for published courses.")
 
     if Enrollment.objects.filter(student=student, course=course).exists():
-        raise ValueError("This student is already enrolled in this course.")
+        raise DuplicateEnrollmentError("Student is already enrolled in this course.")
+
+    teacher = _resolve_teacher_for_enrollment(course, row_data.get("Teacher Email", ""))
 
     with transaction.atomic():
-        enrollment = Enrollment.objects.create(student=student, course=course)
+        enrollment = Enrollment.objects.create(student=student, course=course, teacher=teacher)
 
     return {
         "id": enrollment.id,
@@ -79,6 +122,8 @@ def _create_imported_enrollment(row_data):
         "course_id": course.id,
         "course_title": course.title,
         "course_code": course.code,
+        "teacher_email": teacher.email,
+        "teacher_name": teacher.name,
         "status": enrollment.status,
     }
 
@@ -87,43 +132,43 @@ def bulk_import_enrollments(uploaded_file):
     rows = parse_tabular_file(
         uploaded_file,
         ENROLLMENT_IMPORT_HEADERS,
-        optional_headers=ENROLLMENT_COURSE_HEADERS,
+        optional_headers=ENROLLMENT_COURSE_HEADERS + ENROLLMENT_TEACHER_HEADERS,
         require_one_of=ENROLLMENT_COURSE_HEADERS,
     )
 
     created = []
+    skipped = []
     errors = []
 
     for entry in rows:
         row_number = entry["row_number"]
         row_data = entry["data"]
+        row_identity = {
+            "student_email": row_data.get("Student Email", ""),
+            "course_code": row_data.get("Course Code", "") or row_data.get("Course Title", ""),
+            "teacher_email": row_data.get("Teacher Email", ""),
+        }
         try:
             created.append(_create_imported_enrollment(row_data))
+        except DuplicateEnrollmentError as exc:
+            skipped.append({"row": row_number, "reason": str(exc), **row_identity})
         except Exception as exc:
-            errors.append(
-                {
-                    "row": row_number,
-                    "error": str(exc),
-                    "data": {
-                        "student_email": row_data.get("Student Email", ""),
-                        "course_code": row_data.get("Course Code", "")
-                        or row_data.get("Course Title", ""),
-                    },
-                }
-            )
+            errors.append({"row": row_number, "error": str(exc), "data": row_identity})
 
     return {
         "total_rows": len(rows),
         "success_count": len(created),
+        "skipped_count": len(skipped),
         "failed_count": len(errors),
         "created": created,
+        "skipped": skipped,
         "errors": errors,
     }
 
 
 def get_enrollment_import_sample(file_format):
     format_key = (file_format or "csv").lower()
-    headers = ["Student Email", "Course Code"]
+    headers = ["Student Email", "Course Code", "Teacher Email"]
     if format_key == "xlsx":
         return (
             build_sample_workbook(headers, ENROLLMENT_SAMPLE_ROWS),
