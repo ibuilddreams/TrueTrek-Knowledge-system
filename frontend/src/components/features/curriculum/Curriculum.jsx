@@ -14,7 +14,7 @@ import SectionHeading from '@/components/ui/SectionHeading';
 export default function Curriculum() {
   const router = useRouter();
   const { isLoggedIn, drillCompletedList } = usePortalSession();
-  const onNavigateToPortal = () => router.push(ROUTES.PORTAL);
+  const onNavigateToPortal = () => router.push(ROUTES.STUDENT_PORTAL);
   const [selectedTag, setSelectedTag] = useState('All');
   const [activeTier, setActiveTier] = useState(null);
   const [hoveredBadgeTierId, setHoveredBadgeTierId] = useState(null);

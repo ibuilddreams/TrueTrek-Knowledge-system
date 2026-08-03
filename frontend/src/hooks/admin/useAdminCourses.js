@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getCourses } from "@/services/coursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
@@ -14,10 +14,12 @@ import {
 export function useAdminCourses() {
   const dispatch = useDispatch();
   const courses = useSelector(selectCourses);
+  const statusRef = useRef(courses.status);
+  statusRef.current = courses.status;
 
   const loadCourses = useCallback(
     async ({ force = false, search, status, category, tags } = {}) => {
-      if (!force && (courses.status === "loading" || courses.status === "succeeded")) {
+      if (!force && statusRef.current !== "idle") {
         return;
       }
 
@@ -36,7 +38,7 @@ export function useAdminCourses() {
         dispatch(coursesFetchFailed(getApiErrorMessage(error, "Unable to load courses.")));
       }
     },
-    [dispatch, courses.status]
+    [dispatch]
   );
 
   return { ...courses, loadCourses };

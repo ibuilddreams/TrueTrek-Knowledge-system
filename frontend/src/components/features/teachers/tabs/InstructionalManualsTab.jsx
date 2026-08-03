@@ -107,7 +107,6 @@ export default function InstructionalManualsTab() {
             <div className="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between text-[11px] font-mono text-stone-450">
               <span>Ref ID: {manual.id}</span>
               <button
-                onClick={() => window.alert(`Manual detail guide for ${manual.title} registered to licensed institutional network account. Printable framework generated successfully.`)}
                 className="text-amber-700 hover:text-amber-905 font-bold flex items-center gap-1 hover:underline"
               >
                 PRINT SYLLABUS

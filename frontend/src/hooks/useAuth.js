@@ -24,6 +24,7 @@ import {
   logout as logoutRequest,
 } from "@/services/authService";
 import { AUTH_ROLES } from "@/constants/auth";
+import { getQueryClient } from "@/lib/queryClient";
 
 /**
  * Cookie-backed authentication hook.
@@ -60,6 +61,7 @@ export function useAuth() {
       try {
         const data = await loginAsStudent({ email, password, name });
         if (data?.user) {
+          getQueryClient().clear();
           dispatch(authSucceeded(data.user));
         }
         return data;
@@ -77,6 +79,7 @@ export function useAuth() {
       try {
         const data = await loginAsFaculty({ email, password, name });
         if (data?.user) {
+          getQueryClient().clear();
           dispatch(authSucceeded(data.user));
         }
         return data;
@@ -93,6 +96,7 @@ export function useAuth() {
       dispatch(authLoading());
       try {
         const data = await loginWithCredentials({ email, password });
+        getQueryClient().clear();
         dispatch(authSucceeded(data.user));
         return data;
       } catch (error) {
@@ -109,6 +113,11 @@ export function useAuth() {
     } finally {
       clearBackendSession();
       dispatch(authCleared());
+      // Every cached query (dashboard, course detail, quizzes, submissions, grades, ...)
+      // is keyed on data scope, not on user id, and the QueryClient is a module-level
+      // singleton — without this, a different account logging in in the same tab would
+      // render this user's cached progress/completion data before the first refetch.
+      getQueryClient().clear();
     }
   }, [dispatch]);
 

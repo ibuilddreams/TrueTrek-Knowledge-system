@@ -1,7 +1,8 @@
 from django.conf import settings
-from django.conf.urls.static import static
 from django.contrib import admin
-from django.urls import include, path
+from django.urls import include, path, re_path
+
+from common.media_views import serve_ranged
 from drf_spectacular.views import SpectacularAPIView, SpectacularRedocView, SpectacularSwaggerView
 from rest_framework.permissions import AllowAny
 from users.views import (
@@ -32,4 +33,7 @@ urlpatterns = [
 ]
 
 if settings.DEBUG:
-    urlpatterns += static(settings.MEDIA_URL, document_root=settings.MEDIA_ROOT)
+    media_prefix = settings.MEDIA_URL.lstrip('/')
+    urlpatterns += [
+        re_path(rf'^{media_prefix}(?P<path>.*)$', serve_ranged, {'document_root': settings.MEDIA_ROOT}),
+    ]

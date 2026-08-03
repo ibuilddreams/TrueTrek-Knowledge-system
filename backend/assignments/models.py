@@ -53,9 +53,13 @@ class AssignmentAttachment(BaseModel):
     file = models.FileField(upload_to="assignments/attachments/")
     original_name = models.CharField(max_length=255, blank=True)
     file_type = models.CharField(max_length=20, blank=True)
+    order = models.PositiveIntegerField(default=0)
     uploaded_by = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, blank=True
     )
+
+    class Meta:
+        ordering = ["assignment", "order"]
 
     def __str__(self):
         return self.original_name or self.file.name
@@ -74,7 +78,6 @@ class AssignmentSubmission(BaseModel):
     student = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="assignment_submissions"
     )
-    submission_text = models.TextField(blank=True)
     submitted_at = models.DateTimeField(null=True, blank=True)
     status = models.CharField(
         max_length=20, choices=SubmissionStatus.choices, default=SubmissionStatus.DRAFT

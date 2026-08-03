@@ -16,6 +16,7 @@ export default function EnrollStudentModal({ isOpen, onClose, onEnrolled, defaul
   const [isLoadingOptions, setIsLoadingOptions] = useState(false);
   const [selectedStudentId, setSelectedStudentId] = useState("");
   const [selectedCourseId, setSelectedCourseId] = useState(defaultCourseId || "");
+  const [selectedTeacherId, setSelectedTeacherId] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   useEffect(() => {
@@ -23,6 +24,7 @@ export default function EnrollStudentModal({ isOpen, onClose, onEnrolled, defaul
 
     setSelectedStudentId("");
     setSelectedCourseId(defaultCourseId || "");
+    setSelectedTeacherId("");
 
     let isMounted = true;
     setIsLoadingOptions(true);
@@ -60,6 +62,20 @@ export default function EnrollStudentModal({ isOpen, onClose, onEnrolled, defaul
     label: course.status ? `${course.title} · ${course.status}` : course.title,
   }));
 
+  const selectedCourse = courses.find(
+    (course) => String(course.id) === String(selectedCourseId)
+  );
+  const courseInstructors = selectedCourse?.instructors || [];
+  const teacherOptions = courseInstructors.map((instructor) => ({
+    value: instructor.id,
+    label: instructor.name || instructor.email,
+  }));
+
+  const handleCourseChange = (courseId) => {
+    setSelectedCourseId(courseId);
+    setSelectedTeacherId("");
+  };
+
   const handleClose = () => {
     if (isSubmitting) return;
     onClose();
@@ -67,8 +83,8 @@ export default function EnrollStudentModal({ isOpen, onClose, onEnrolled, defaul
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!selectedStudentId || !selectedCourseId) {
-      toastError("Please select both a student and a course.");
+    if (!selectedStudentId || !selectedCourseId || !selectedTeacherId) {
+      toastError("Please select a student, a course, and a teacher.");
       return;
     }
 
@@ -77,6 +93,7 @@ export default function EnrollStudentModal({ isOpen, onClose, onEnrolled, defaul
       const response = await createEnrollment({
         student: selectedStudentId,
         course: selectedCourseId,
+        teacher: selectedTeacherId,
       });
       toastSuccess(response?.message || "Student enrolled successfully.");
       onEnrolled?.();
@@ -115,10 +132,22 @@ export default function EnrollStudentModal({ isOpen, onClose, onEnrolled, defaul
           searchPlaceholder="Search courses..."
           options={courseOptions}
           value={selectedCourseId}
-          onChange={setSelectedCourseId}
+          onChange={handleCourseChange}
           loading={isLoadingOptions}
           disabled={isSubmitting || Boolean(defaultCourseId)}
           emptyLabel="No courses found."
+        />
+
+        <SearchableSelect
+          label="Teacher"
+          placeholder={selectedCourseId ? "Select a teacher" : "Select a course first"}
+          searchPlaceholder="Search teachers..."
+          options={teacherOptions}
+          value={selectedTeacherId}
+          onChange={setSelectedTeacherId}
+          loading={isLoadingOptions}
+          disabled={isSubmitting || !selectedCourseId}
+          emptyLabel="No teachers assigned to this course."
         />
 
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-stone-100">

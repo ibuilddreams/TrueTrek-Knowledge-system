@@ -9,9 +9,7 @@ const initialState = {
   streakDays: 6,
   aggregateScore: 100,
   points: 450,
-  completedModules: ["tier-1b", "tier-1c"],
   consultationCount: 0,
-  unlockedBadges: ["recruit"],
 };
 
 const portalSlice = createSlice({
@@ -30,14 +28,8 @@ const portalSlice = createSlice({
     setPoints(state, action) {
       state.points = action.payload;
     },
-    setCompletedModules(state, action) {
-      state.completedModules = action.payload;
-    },
     setConsultationCount(state, action) {
       state.consultationCount = action.payload;
-    },
-    setUnlockedBadges(state, action) {
-      state.unlockedBadges = action.payload;
     },
     resetPortalProgress(state) {
       Object.assign(state, initialState);
@@ -50,9 +42,7 @@ export const {
   setStreakDays,
   setAggregateScore,
   setPoints,
-  setCompletedModules,
   setConsultationCount,
-  setUnlockedBadges,
   resetPortalProgress,
 } = portalSlice.actions;
 

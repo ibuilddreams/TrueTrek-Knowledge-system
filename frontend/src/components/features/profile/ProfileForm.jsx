@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { getProfile, updateProfile } from "@/services/profileService";
 import { toastError, toastSuccess } from "@/lib/toast";
-import { ROUTES } from "@/constants/routes";
+import { getPortalRouteForRole } from "@/constants/routes";
 import { useAuth } from "@/hooks/useAuth";
 import AuthField from "@/components/ui/AuthField";
 import Loader from "@/components/ui/Loader";
@@ -65,7 +65,7 @@ function validateForm(form) {
 
 export default function ProfileForm() {
   const router = useRouter();
-  const { updateUserName } = useAuth();
+  const { updateUserName, role } = useAuth();
   const fileInputRef = useRef(null);
 
   const [form, setForm] = useState(EMPTY_FORM);
@@ -152,13 +152,13 @@ export default function ProfileForm() {
       setIsDiscardDialogOpen(true);
       return;
     }
-    router.push(ROUTES.DASHBOARD);
+    router.push(getPortalRouteForRole(role));
   };
 
   const handleDiscardChanges = () => {
     resetFormToInitial();
     setIsDiscardDialogOpen(false);
-    router.push(ROUTES.DASHBOARD);
+    router.push(getPortalRouteForRole(role));
   };
 
   const handleContinueEditing = () => {

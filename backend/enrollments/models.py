@@ -16,6 +16,14 @@ class Enrollment(BaseModel):
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="enrollments"
     )
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="enrollments")
+    teacher = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="taught_enrollments",
+        limit_choices_to={"role": "TEACHER"},
+    )
     enrolled_at = models.DateTimeField(auto_now_add=True)
     status = models.CharField(
         max_length=20, choices=EnrollmentStatus.choices, default=EnrollmentStatus.ACTIVE

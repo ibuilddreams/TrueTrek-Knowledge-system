@@ -1,3 +1,5 @@
+import { AUTH_ROLES } from "./auth";
+
 /**
  * Central route path constants for App Router navigation.
  */
@@ -7,13 +9,16 @@ export const ROUTES = {
   PARTNERSHIPS: "/partnerships",
   STORE: "/store",
   FUTURE_CLIENTS: "/future-clients",
-  PORTAL: "/portal",
+  ADMIN_PORTAL: "/adminportal",
+  TEACHER_PORTAL: "/teacherportal",
+  STUDENT_PORTAL: "/studentportal",
   LOGIN: "/login",
   FORGOT_PASSWORD: "/forgot-password",
   RESET_PASSWORD: "/reset-password",
-  DASHBOARD: "/dashboard",
-  TEACHERS: "/teachers",
   PROFILE: "/profile",
+  DASHBOARD: "/dashboard",
+  PORTAL: "/portal",
+  TEACHERS: "/teachers",
 };
 
 export const ROUTE_KEYS = {
@@ -22,11 +27,21 @@ export const ROUTE_KEYS = {
   PARTNERSHIPS: "partnerships",
   STORE: "store",
   FUTURE_CLIENTS: "future-clients",
-  PORTAL: "portal",
+  STUDENT_PORTAL: "studentportal",
+  ADMIN_PORTAL: "adminportal",
+  TEACHER_PORTAL: "teacherportal",
   LOGIN: "login",
+  PORTAL: "portal",
   DASHBOARD: "dashboard",
   TEACHERS: "teachers",
 };
+
+export function getPortalRouteForRole(role) {
+  if (role === AUTH_ROLES.ADMIN) return ROUTES.ADMIN_PORTAL;
+  if (role === AUTH_ROLES.FACULTY) return ROUTES.TEACHER_PORTAL;
+  if (role === AUTH_ROLES.STUDENT) return ROUTES.STUDENT_PORTAL;
+  return ROUTES.HOME;
+}
 
 /** Map pathname → logical section key used for active nav styling */
 export function getSectionFromPathname(pathname) {
@@ -36,14 +51,17 @@ export function getSectionFromPathname(pathname) {
   if (pathname.startsWith(ROUTES.STORE)) return ROUTE_KEYS.STORE;
   if (pathname.startsWith(ROUTES.FUTURE_CLIENTS)) return ROUTE_KEYS.FUTURE_CLIENTS;
   if (
+    pathname.startsWith(ROUTES.STUDENT_PORTAL) ||
     pathname.startsWith(ROUTES.PORTAL) ||
     pathname.startsWith(ROUTES.LOGIN) ||
     pathname.startsWith(ROUTES.FORGOT_PASSWORD) ||
     pathname.startsWith(ROUTES.RESET_PASSWORD)
   ) {
-    return ROUTE_KEYS.PORTAL;
+    return ROUTE_KEYS.STUDENT_PORTAL;
   }
   if (
+    pathname.startsWith(ROUTES.ADMIN_PORTAL) ||
+    pathname.startsWith(ROUTES.TEACHER_PORTAL) ||
     pathname.startsWith(ROUTES.DASHBOARD) ||
     pathname.startsWith(ROUTES.TEACHERS) ||
     pathname.startsWith(ROUTES.PROFILE)

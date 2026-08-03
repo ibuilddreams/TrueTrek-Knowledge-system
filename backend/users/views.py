@@ -34,6 +34,7 @@ from .services import (
     get_teacher_assigned_courses,
     get_teacher_assigned_courses_with_students,
     get_teacher_enrolled_student_detail,
+    get_teacher_enrolled_students_roster,
     get_teacher_import_sample,
     send_password_reset_email,
 )
@@ -161,7 +162,8 @@ class StudentBulkImportView(generics.GenericAPIView):
             return error_response(message=str(exc), status_code=400)
 
         message = (
-            f"Import completed: {result['success_count']} succeeded, "
+            f"Import completed: {result['success_count']} created, "
+            f"{result['skipped_count']} skipped as duplicates, "
             f"{result['failed_count']} failed."
         )
         return success_response(result, message=message)
@@ -286,7 +288,8 @@ class TeacherBulkImportView(generics.GenericAPIView):
             return error_response(message=str(exc), status_code=400)
 
         message = (
-            f"Import completed: {result['success_count']} succeeded, "
+            f"Import completed: {result['success_count']} created, "
+            f"{result['skipped_count']} skipped as duplicates, "
             f"{result['failed_count']} failed."
         )
         return success_response(result, message=message)
@@ -371,13 +374,25 @@ class TeacherCourseStudentsDetailView(generics.GenericAPIView):
         if not is_course_instructor(request.user, course):
             return error_response(message="You are not assigned to this course.", status_code=403)
 
-        students_data = get_course_students_detail(course)
+        students_data = get_course_students_detail(course, teacher=request.user)
         data = {
             "course_id": course.id,
             "total_students": len(students_data),
             "students": students_data,
         }
         return success_response(data, message="Students' details fetched successfully")
+
+
+class TeacherEnrolledStudentsRosterView(generics.GenericAPIView):
+    permission_classes = [IsTeacher]
+
+    def get(self, request):
+        students = get_teacher_enrolled_students_roster(request.user)
+        data = {
+            "total_students": len(students),
+            "students": students,
+        }
+        return success_response(data, message="Enrolled students roster fetched successfully")
 
 
 class TeacherEnrolledStudentDetailView(generics.GenericAPIView):

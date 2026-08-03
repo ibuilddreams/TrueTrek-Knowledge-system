@@ -11,6 +11,8 @@ from courses.models import Course
 from courses.serializers import CourseListSerializer
 from users.permissions import IsAdmin, IsStudent, IsTeacher
 
+from progress.models import CourseProgress
+
 from .models import Enrollment, EnrollmentHistory
 from .serializers import (
     AdminEnrollmentWriteSerializer,
@@ -21,9 +23,35 @@ from .serializers import (
     EnrollmentStudentSerializer,
     EnrollmentWriteSerializer,
 )
-from .services import bulk_import_enrollments, get_enrollment_import_sample
+from .services import (
+    bulk_import_enrollments,
+    get_enrollment_import_sample,
+    get_student_certificates,
+    get_student_enrolled_course_detail,
+)
 
 UserModel = get_user_model()
+
+
+class StudentCertificatesView(generics.GenericAPIView):
+    permission_classes = [IsStudent]
+
+    def get(self, request):
+        data = get_student_certificates(request.user)
+        return success_response(data, message="Student certificates fetched successfully")
+
+
+class StudentEnrolledCourseDetailView(generics.GenericAPIView):
+    permission_classes = [IsStudent]
+
+    def get(self, request, course_id):
+        data = get_student_enrolled_course_detail(request.user, course_id, request=request)
+        if data is None:
+            return error_response(
+                message="You are not enrolled in this course.",
+                status_code=404,
+            )
+        return success_response(data, message="Enrolled course details fetched successfully")
 
 
 class EnrollmentListCreateView(generics.ListCreateAPIView):
@@ -48,6 +76,22 @@ class EnrollmentListCreateView(generics.ListCreateAPIView):
         # if self.request.method == "POST":
         #     return EnrollmentWriteSerializer
         return EnrollmentListSerializer
+
+    def get_serializer_context(self):
+        context = super().get_serializer_context()
+        course_ids = list(
+            Enrollment.objects.filter(student=self.request.user).values_list(
+                "course_id", flat=True
+            )
+        )
+        progress_map = {
+            progress.course_id: progress
+            for progress in CourseProgress.objects.filter(
+                student=self.request.user, course_id__in=course_ids
+            )
+        }
+        context["progress_map"] = progress_map
+        return context
 
     def list(self, request, *args, **kwargs):
         enrollments = self.filter_queryset(self.get_queryset())
@@ -79,6 +123,10 @@ class AdminEnrollmentListView(generics.ListCreateAPIView):
         course_id = self.request.query_params.get("course")
         if course_id:
             queryset = queryset.filter(course_id=course_id)
+
+        teacher_id = self.request.query_params.get("teacher")
+        if teacher_id:
+            queryset = queryset.filter(teacher_id=teacher_id)
 
         return queryset
 
@@ -117,7 +165,8 @@ class EnrollmentBulkImportView(generics.GenericAPIView):
             return error_response(message=str(exc), status_code=400)
 
         message = (
-            f"Import completed: {result['success_count']} succeeded, "
+            f"Import completed: {result['success_count']} created, "
+            f"{result['skipped_count']} skipped as duplicates, "
             f"{result['failed_count']} failed."
         )
         return success_response(result, message=message)
@@ -218,7 +267,7 @@ class TeacherEnrollmentListView(generics.ListAPIView):
 
     def get_queryset(self):
         queryset = Enrollment.objects.filter(
-            course__instructors__instructor=self.request.user
+            teacher=self.request.user
         ).select_related("student", "course", "course__category").prefetch_related(
             "course__tags", "course__instructors__instructor"
         )

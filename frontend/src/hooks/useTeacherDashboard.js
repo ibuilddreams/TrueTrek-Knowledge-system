@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback } from "react";
+import { useCallback, useRef } from "react";
 import { useDispatch, useSelector } from "react-redux";
 import { getTeacherDashboardStats } from "@/services/teacherDashboardService";
 import {
@@ -13,10 +13,12 @@ import {
 export function useTeacherDashboard() {
   const dispatch = useDispatch();
   const dashboard = useSelector(selectTeacherDashboard);
+  const statusRef = useRef(dashboard.status);
+  statusRef.current = dashboard.status;
 
   const loadDashboard = useCallback(
     async ({ force = false } = {}) => {
-      if (!force && (dashboard.status === "loading" || dashboard.status === "succeeded")) {
+      if (!force && statusRef.current !== "idle") {
         return;
       }
 
@@ -30,7 +32,7 @@ export function useTeacherDashboard() {
         );
       }
     },
-    [dispatch, dashboard.status]
+    [dispatch]
   );
 
   return { ...dashboard, loadDashboard };

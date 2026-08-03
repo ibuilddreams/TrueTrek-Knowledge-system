@@ -3,6 +3,8 @@ from django.urls import path
 from .views import (
     AssignmentAttachmentDetailView,
     AssignmentAttachmentListCreateView,
+    AssignmentAttachmentOrderView,
+    AssignmentCourseProgressListView,
     AssignmentDetailView,
     AssignmentGradeSubmissionView,
     AssignmentListCreateView,
@@ -11,9 +13,16 @@ from .views import (
     AssignmentPublishView,
     AssignmentSubmissionListView,
     AssignmentSubmitView,
+    StudentAssignmentListView,
 )
 
 urlpatterns = [
+    path("student/", StudentAssignmentListView.as_view(), name="assignment-student-list"),
+    path(
+        "course/<int:course_id>/progress/",
+        AssignmentCourseProgressListView.as_view(),
+        name="assignment-course-progress",
+    ),
     path("", AssignmentListCreateView.as_view(), name="assignment-list-create"),
     path("<int:pk>/", AssignmentDetailView.as_view(), name="assignment-detail"),
     path("<int:pk>/publish/", AssignmentPublishView.as_view(), name="assignment-publish"),
@@ -26,6 +35,11 @@ urlpatterns = [
         "attachments/<int:pk>/",
         AssignmentAttachmentDetailView.as_view(),
         name="assignment-attachment-detail",
+    ),
+    path(
+        "<int:assignment_id>/attachments/order/",
+        AssignmentAttachmentOrderView.as_view(),
+        name="assignment-attachment-order",
     ),
     path(
         "<int:assignment_id>/submissions/",

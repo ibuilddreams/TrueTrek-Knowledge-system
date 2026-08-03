@@ -8,6 +8,7 @@ import {
   Folder,
   GraduationCap,
   LayoutDashboard,
+  LineChart,
   Lock,
   Shield,
   Tag,
@@ -28,6 +29,7 @@ import CoursesTab from "@/components/features/admin/tabs/CoursesTab";
 import EnrollmentsTab from "@/components/features/admin/tabs/EnrollmentsTab";
 import StudentsTab from "@/components/features/admin/tabs/StudentsTab";
 import TeachersTab from "@/components/features/admin/tabs/TeachersTab";
+import ProgressTab from "@/components/features/admin/tabs/ProgressTab";
 import TagsTab from "@/components/features/admin/tabs/TagsTab";
 import CategoriesTab from "@/components/features/admin/tabs/CategoriesTab";
 
@@ -37,6 +39,7 @@ const TABS = [
   { id: "enrollments", label: "Enrollments", icon: ClipboardList },
   { id: "students", label: "Students", icon: GraduationCap },
   { id: "teachers", label: "Teachers", icon: Users },
+  { id: "progress", label: "Progress", icon: LineChart },
   { id: "tags", label: "Tags", icon: Tag },
   { id: "categories", label: "Categories", icon: Folder },
 ];
@@ -48,6 +51,7 @@ const TAB_COMPONENTS = {
   enrollments: EnrollmentsTab,
   students: StudentsTab,
   teachers: TeachersTab,
+  progress: ProgressTab,
   tags: TagsTab,
   categories: CategoriesTab,
 };
@@ -123,33 +127,37 @@ function AdminDashboardContent() {
       id="admin-dashboard-container"
       className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 font-sans"
     >
-      <div className="relative rounded-3xl border border-stone-200/90 bg-white shadow-sm mb-8 z-20">
-        <div className="absolute inset-0 rounded-3xl overflow-hidden pointer-events-none">
-          <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-600 via-amber-700 to-amber-900" />
-          <div className="absolute -right-16 -top-16 w-56 h-56 rounded-full bg-amber-100/40 blur-3xl" />
+      <div className="relative z-30 flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 mb-8 border-b border-stone-200">
+        <div className="flex items-center gap-4 sm:gap-5 min-w-0">
+          <div className="relative shrink-0">
+            <div className="absolute inset-0 rounded-[1.15rem] bg-amber-500/25 blur-md scale-110" />
+            <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-[1.15rem] bg-gradient-to-br from-amber-400 via-amber-600 to-amber-800 text-white flex items-center justify-center shadow-[0_10px_24px_-12px_rgba(180,83,9,0.7)] ring-2 ring-white">
+              <Shield className="w-7 h-7" />
+            </div>
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-stone-900 border-2 border-[#faf9f6] text-amber-400 flex items-center justify-center shadow-sm">
+              <Lock className="w-3 h-3" />
+            </div>
+          </div>
+
+          <div className="min-w-0 pt-0.5">
+            <div className="inline-flex items-center gap-2 mb-1.5">
+              <span className="h-px w-4 bg-amber-500/70" />
+              <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-700/90">
+                Admin Portal
+              </span>
+            </div>
+            <h1 className="text-2xl sm:text-[2rem] font-serif font-bold tracking-tight text-stone-900 leading-none">
+              Control Center
+            </h1>
+            <p className="text-[13px] text-stone-500 font-light mt-2 leading-snug max-w-md">
+              Courses, enrollments, users, and platform health — in one place
+              {user?.name ? ` · ${user.name}` : ""}.
+            </p>
+          </div>
         </div>
-        <div className="relative p-6 sm:p-8 flex flex-wrap items-center justify-between gap-5">
-          <div className="flex items-start gap-4 min-w-0">
-            <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-amber-600 to-amber-800 text-white flex items-center justify-center shadow-md shrink-0">
-              <Shield className="w-6 h-6" />
-            </div>
-            <div className="min-w-0">
-              <p className="text-[10px] font-mono uppercase tracking-widest text-amber-700 font-bold">
-                Administration
-              </p>
-              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-stone-900 tracking-tight">
-                Control Center
-              </h1>
-              <p className="text-xs text-stone-500 font-light mt-1.5 max-w-xl leading-relaxed">
-                Monitor platform health, manage courses and enrollments, and keep
-                learner progress under audit
-                {user?.name ? ` — signed in as ${user.name}` : ""}.
-              </p>
-            </div>
-          </div>
-          <div className="relative z-30 flex items-center gap-3">
-            <AccountMenu onProfile={() => router.push(ROUTES.PROFILE)} />
-          </div>
+
+        <div className="relative z-40 flex items-center gap-3">
+          <AccountMenu onProfile={() => router.push(ROUTES.PROFILE)} />
         </div>
       </div>
 

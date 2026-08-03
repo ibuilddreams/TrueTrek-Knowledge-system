@@ -1,5 +1,7 @@
 from django.db.models import Avg
 
+from assignments.models import Assignment, AssignmentSubmission
+from common.models import Status
 from enrollments.models import Enrollment
 from lessons.models import Lesson
 from progress.models import LessonProgress
@@ -23,6 +25,19 @@ def _build_student_detail(course, enrollment, total_lessons, include_course_id):
     quizzes_attempted = quiz_results.count()
     average_percentage = quiz_results.aggregate(avg=Avg("percentage"))["avg"] or 0
 
+    total_assignments = Assignment.objects.filter(course=course, status=Status.PUBLISHED).count()
+    submitted_assignments = AssignmentSubmission.objects.filter(
+        student=student,
+        assignment__course=course,
+        status__in=[
+            AssignmentSubmission.SubmissionStatus.SUBMITTED,
+            AssignmentSubmission.SubmissionStatus.LATE,
+            AssignmentSubmission.SubmissionStatus.GRADED,
+            AssignmentSubmission.SubmissionStatus.RETURNED,
+            AssignmentSubmission.SubmissionStatus.RESUBMITTED,
+        ],
+    ).count()
+
     data = {
         "student_id": student.id,
         "name": student.name,
@@ -40,8 +55,8 @@ def _build_student_detail(course, enrollment, total_lessons, include_course_id):
             "average_percentage": round(float(average_percentage), 2),
         },
         "assignments": {
-            "submitted": 0,
-            "total": 0,
+            "submitted": submitted_assignments,
+            "total": total_assignments,
         },
     }
 
@@ -51,8 +66,10 @@ def _build_student_detail(course, enrollment, total_lessons, include_course_id):
     return data
 
 
-def get_course_students_detail(course):
+def get_course_students_detail(course, teacher=None):
     enrollments = Enrollment.objects.filter(course=course).select_related("student")
+    if teacher is not None:
+        enrollments = enrollments.filter(teacher=teacher)
     total_lessons = Lesson.objects.filter(module__course=course).count()
 
     return [

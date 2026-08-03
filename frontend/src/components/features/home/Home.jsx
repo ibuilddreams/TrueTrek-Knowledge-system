@@ -21,7 +21,7 @@ import PresetPromptPills from '@/components/ui/PresetPromptPills';
 export default function Home() {
   const router = useRouter();
   const onExploreTiers = () => router.push(ROUTES.CURRICULUM);
-  const onNavigateToPortal = () => router.push(ROUTES.PORTAL);
+  const onNavigateToPortal = () => router.push(ROUTES.STUDENT_PORTAL);
   const [selectedAuditProfile, setSelectedAuditProfile] = useState('athlete');
   const [activeFaqIndex, setActiveFaqIndex] = useState(null);
 

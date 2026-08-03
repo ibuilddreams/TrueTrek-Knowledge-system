@@ -237,9 +237,19 @@ class TeacherUpdateSerializer(serializers.ModelSerializer):
 
 class TeacherCourseStatsSerializer(CourseListSerializer):
     total_students = serializers.IntegerField(read_only=True)
+    modules_count = serializers.IntegerField(read_only=True)
+    lessons_count = serializers.IntegerField(read_only=True)
+    assignments_count = serializers.IntegerField(read_only=True)
+    quizzes_count = serializers.IntegerField(read_only=True)
 
     class Meta(CourseListSerializer.Meta):
-        fields = CourseListSerializer.Meta.fields + ["total_students"]
+        fields = CourseListSerializer.Meta.fields + [
+            "total_students",
+            "modules_count",
+            "lessons_count",
+            "assignments_count",
+            "quizzes_count",
+        ]
 
 
 class UserProfileSerializer(serializers.ModelSerializer):

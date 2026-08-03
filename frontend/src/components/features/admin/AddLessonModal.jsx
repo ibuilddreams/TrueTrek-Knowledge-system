@@ -16,6 +16,11 @@ import Modal from "@/components/ui/Modal";
 import { createLesson, updateLesson } from "@/services/lessonsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
+import {
+  getVideoEmbedUrl,
+  isIframeEmbedCode,
+  normalizePastedVideoInput,
+} from "@/lib/videoEmbed";
 
 const CONTENT_TYPES = [
   { value: "VIDEO", label: "Video" },
@@ -82,35 +87,6 @@ function formatFileSize(bytes) {
 function getFileExtension(name) {
   const parts = name.split(".");
   return parts.length > 1 ? parts.pop().toUpperCase() : "FILE";
-}
-
-function getVideoEmbedUrl(url) {
-  try {
-    const parsed = new URL(url);
-    const host = parsed.hostname.replace("www.", "");
-
-    if (host === "youtube.com" || host === "m.youtube.com") {
-      const videoId = parsed.searchParams.get("v");
-      if (videoId) return `https://www.youtube.com/embed/${videoId}`;
-      const shortsMatch = parsed.pathname.match(/\/shorts\/([\w-]+)/);
-      if (shortsMatch) return `https://www.youtube.com/embed/${shortsMatch[1]}`;
-      return null;
-    }
-
-    if (host === "youtu.be") {
-      const videoId = parsed.pathname.replace("/", "");
-      return videoId ? `https://www.youtube.com/embed/${videoId}` : null;
-    }
-
-    if (host === "vimeo.com") {
-      const videoId = parsed.pathname.replace("/", "");
-      return videoId ? `https://player.vimeo.com/video/${videoId}` : null;
-    }
-
-    return null;
-  } catch {
-    return null;
-  }
 }
 
 function FilePreviewCard({ file, icon: Icon }) {
@@ -236,6 +212,12 @@ export default function AddLessonModal({
     setFieldErrors((prev) => ({ ...prev, file: null }));
   };
 
+  const handleVideoUrlChange = (event) => {
+    const value = normalizePastedVideoInput(event.target.value);
+    setForm((prev) => ({ ...prev, video_url: value }));
+    setFieldErrors((prev) => ({ ...prev, video_url: null }));
+  };
+
   const validate = () => {
     const errors = {};
     const title = form.title.trim();
@@ -253,7 +235,13 @@ export default function AddLessonModal({
 
     if (form.content_type === "VIDEO") {
       if (videoSourceMode === "LINK") {
-        if (!form.video_url.trim()) errors.video_url = "Video URL is required.";
+        const trimmedUrl = form.video_url.trim();
+        if (!trimmedUrl) {
+          errors.video_url = "Video URL is required.";
+        } else if (isIframeEmbedCode(trimmedUrl)) {
+          errors.video_url =
+            "Couldn't read a video link from that embed code. Please check it and try again.";
+        }
       } else if (!file && !hasExistingFile) {
         errors.file = "Please select a video file to upload.";
       }
@@ -442,19 +430,22 @@ export default function AddLessonModal({
           <div>
             <label className={LABEL_CLASS}>Video URL</label>
             <input
-              type="url"
+              type="text"
               value={form.video_url}
-              onChange={updateField("video_url")}
+              onChange={handleVideoUrlChange}
               disabled={isSubmitting}
-              placeholder="https://www.youtube.com/watch?v=..."
+              placeholder="Paste a YouTube/Vimeo link or an <iframe> embed code"
               className={FIELD_CLASS}
               autoComplete="off"
             />
+            <p className="mt-1.5 text-[10px] font-mono text-stone-400">
+              Paste a video link, or the full &lt;iframe&gt; embed code — we&apos;ll extract the link automatically.
+            </p>
             {fieldErrors.video_url && (
               <p className={ERROR_CLASS}>{fieldErrors.video_url}</p>
             )}
 
-            {trimmedVideoUrl && (
+            {trimmedVideoUrl && !isIframeEmbedCode(trimmedVideoUrl) && (
               <div className="mt-3 rounded-xl overflow-hidden border border-stone-200 bg-stone-900 aspect-video">
                 {videoEmbedUrl ? (
                   <iframe

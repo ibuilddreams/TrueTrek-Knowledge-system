@@ -7,10 +7,22 @@ from .views import (
     EnrollmentBulkImportSampleView,
     EnrollmentBulkImportView,
     EnrollmentListCreateView,
+    StudentCertificatesView,
+    StudentEnrolledCourseDetailView,
     TeacherEnrollmentListView,
 )
 
 urlpatterns = [
+    path(
+        "student/certificates/",
+        StudentCertificatesView.as_view(),
+        name="enrollment-student-certificates",
+    ),
+    path(
+        "student/<int:course_id>/",
+        StudentEnrolledCourseDetailView.as_view(),
+        name="enrollment-student-course-detail",
+    ),
     path("student/", EnrollmentListCreateView.as_view(), name="enrollment-student-list-create"),
     path("admin/", AdminEnrollmentListView.as_view(), name="enrollment-admin-list"),
     path("admin/bulk-import/", EnrollmentBulkImportView.as_view(), name="enrollment-bulk-import"),
