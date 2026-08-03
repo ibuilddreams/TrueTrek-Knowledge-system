@@ -66,8 +66,10 @@ def _build_student_detail(course, enrollment, total_lessons, include_course_id):
     return data
 
 
-def get_course_students_detail(course):
+def get_course_students_detail(course, teacher=None):
     enrollments = Enrollment.objects.filter(course=course).select_related("student")
+    if teacher is not None:
+        enrollments = enrollments.filter(teacher=teacher)
     total_lessons = Lesson.objects.filter(module__course=course).count()
 
     return [

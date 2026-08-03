@@ -1,3 +1,5 @@
+import os
+
 from django.db import transaction
 from django.utils import timezone
 
@@ -6,6 +8,7 @@ from common.models import Status
 from enrollments.models import Enrollment
 
 from .models import Assignment, AssignmentAttachment, AssignmentSubmission, AssignmentSubmissionFile
+from .validators import get_file_category
 
 
 class AssignmentPublishError(Exception):
@@ -164,7 +167,13 @@ def submit_assignment(student, assignment, files=None):
         submission.save()
 
         for uploaded_file in files:
-            AssignmentSubmissionFile.objects.create(submission=submission, file=uploaded_file)
+            extension = os.path.splitext(uploaded_file.name)[1].lower()
+            AssignmentSubmissionFile.objects.create(
+                submission=submission,
+                file=uploaded_file,
+                original_name=os.path.basename(uploaded_file.name),
+                file_type=get_file_category(extension) or "",
+            )
 
     return submission
 

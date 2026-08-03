@@ -6,6 +6,7 @@ from common.pagination import Pagination
 from common.response import error_response, success_response
 from courses.models import Course
 from enrollments.models import Enrollment
+from enrollments.services import can_view_student_in_course, get_visible_enrollments
 from lessons.models import Lesson
 from modules.models import Module
 from quizzes.models import Quiz, QuizResult
@@ -132,9 +133,7 @@ class CourseLessonProgressListView(generics.GenericAPIView):
         total_lessons = lessons_qs.count()
         lesson_ids = list(lessons_qs.values_list("id", flat=True))
 
-        enrollments = Enrollment.objects.filter(
-            course=course, status=Enrollment.EnrollmentStatus.ACTIVE
-        ).select_related("student")
+        enrollments = get_visible_enrollments(course, request.user).select_related("student")
 
         search = request.query_params.get("search")
         if search:
@@ -211,7 +210,7 @@ class StudentLessonProgressDetailView(generics.GenericAPIView):
         except Course.DoesNotExist:
             return error_response(message="Course with the given id does not exist.", status_code=404)
 
-        if not Enrollment.objects.filter(student_id=student_id, course=course).exists():
+        if not can_view_student_in_course(request.user, student_id, course):
             return error_response(
                 message="This student is not enrolled in this course.", status_code=404
             )

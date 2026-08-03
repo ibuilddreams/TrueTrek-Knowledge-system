@@ -8,6 +8,7 @@ from common.response import error_response, success_response
 from courses.models import Course
 from courses.services import is_course_instructor
 from enrollments.models import Enrollment
+from enrollments.services import can_view_student_in_course, get_visible_enrollments
 from modules.models import Module
 from users.permissions import IsStudent
 
@@ -586,7 +587,8 @@ class QuizPendingGradingView(generics.ListAPIView):
     permission_classes = [IsCourseInstructorOrAdmin]
 
     def get_queryset(self):
-        return get_pending_grading_answers(self.quiz)
+        teacher = None if self.request.user.is_admin else self.request.user
+        return get_pending_grading_answers(self.quiz, teacher=teacher)
 
     def list(self, request, *args, **kwargs):
         try:
@@ -617,6 +619,13 @@ class QuizAnswerGradeView(generics.GenericAPIView):
 
         if not (
             request.user.is_admin or is_course_instructor(request.user, answer.attempt.quiz.course)
+        ):
+            return error_response(
+                message="You do not have permission to perform this action.", status_code=403
+            )
+
+        if not request.user.is_admin and not can_view_student_in_course(
+            request.user, answer.attempt.student_id, answer.attempt.quiz.course
         ):
             return error_response(
                 message="You do not have permission to perform this action.", status_code=403
@@ -696,9 +705,7 @@ class QuizCourseProgressListView(generics.GenericAPIView):
         quiz_ids = [quiz.id for quiz in quizzes]
         quiz_by_id = {quiz.id: quiz for quiz in quizzes}
 
-        enrollments = Enrollment.objects.filter(
-            course=course, status=Enrollment.EnrollmentStatus.ACTIVE
-        ).select_related("student")
+        enrollments = get_visible_enrollments(course, request.user).select_related("student")
         student_id = request.query_params.get("student")
         if student_id:
             enrollments = enrollments.filter(student_id=student_id)
@@ -819,6 +826,13 @@ class QuizStudentAttemptListView(generics.GenericAPIView):
                 message="You do not have permission to perform this action.", status_code=403
             )
 
+        if not request.user.is_admin and not can_view_student_in_course(
+            request.user, student_id, quiz.course
+        ):
+            return error_response(
+                message="You do not have permission to perform this action.", status_code=403
+            )
+
         attempts = list(
             QuizAttempt.objects.filter(quiz=quiz, student_id=student_id)
             .select_related("result")
@@ -870,6 +884,13 @@ class QuizAttemptDetailView(generics.GenericAPIView):
 
         if not (
             request.user.is_admin or is_course_instructor(request.user, attempt.quiz.course)
+        ):
+            return error_response(
+                message="You do not have permission to perform this action.", status_code=403
+            )
+
+        if not request.user.is_admin and not can_view_student_in_course(
+            request.user, attempt.student_id, attempt.quiz.course
         ):
             return error_response(
                 message="You do not have permission to perform this action.", status_code=403

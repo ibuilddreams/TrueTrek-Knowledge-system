@@ -262,6 +262,20 @@ def get_student_enrolled_course_detail(student, course_id, request=None):
     }
 
 
+def get_visible_enrollments(course, user):
+    """Active enrollments in a course visible to user — all for admins, only their own section for teachers."""
+    enrollments = Enrollment.objects.filter(course=course, status=Enrollment.EnrollmentStatus.ACTIVE)
+    if not user.is_admin:
+        enrollments = enrollments.filter(teacher=user)
+    return enrollments
+
+
+def can_view_student_in_course(user, student_id, course):
+    if user.is_admin:
+        return Enrollment.objects.filter(student_id=student_id, course=course).exists()
+    return Enrollment.objects.filter(student_id=student_id, course=course, teacher=user).exists()
+
+
 def get_student_certificates(student):
     completed = (
         CourseProgress.objects.filter(student=student, is_completed=True)

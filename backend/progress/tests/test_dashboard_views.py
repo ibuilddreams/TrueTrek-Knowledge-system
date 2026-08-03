@@ -44,8 +44,8 @@ class CourseLessonProgressListViewTests(APITestCase):
 
         self.student_1 = _make_user("dashboardstudent1", UserModel.Roles.STUDENT)
         self.student_2 = _make_user("dashboardstudent2", UserModel.Roles.STUDENT)
-        Enrollment.objects.create(student=self.student_1, course=self.course)
-        Enrollment.objects.create(student=self.student_2, course=self.course)
+        Enrollment.objects.create(student=self.student_1, course=self.course, teacher=self.instructor)
+        Enrollment.objects.create(student=self.student_2, course=self.course, teacher=self.instructor)
 
         LessonProgress.objects.create(
             student=self.student_1,
@@ -122,7 +122,7 @@ class StudentLessonProgressDetailViewTests(APITestCase):
         CourseInstructor.objects.create(course=self.course, instructor=self.instructor)
 
         self.student = _make_user("detaildashstudent", UserModel.Roles.STUDENT)
-        Enrollment.objects.create(student=self.student, course=self.course)
+        Enrollment.objects.create(student=self.student, course=self.course, teacher=self.instructor)
 
         LessonProgress.objects.create(
             student=self.student, lesson=self.lesson, is_completed=True, completed_at=timezone.now()

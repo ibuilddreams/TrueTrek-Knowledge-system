@@ -5,8 +5,8 @@ export async function getEnrollments({ pageSize = 100 } = {}) {
   return backendClient.get(`/enrollments/admin/?page_size=${pageSize}`);
 }
 
-export async function createEnrollment({ student, course }) {
-  return backendClient.post("/enrollments/admin/", { student, course });
+export async function createEnrollment({ student, course, teacher }) {
+  return backendClient.post("/enrollments/admin/", { student, course, teacher });
 }
 
 export async function updateEnrollmentStatus(id, { status, note }) {

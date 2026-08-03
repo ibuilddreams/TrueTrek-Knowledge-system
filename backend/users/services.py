@@ -5,7 +5,7 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.exceptions import ValidationError as DjangoValidationError
 from django.core.mail import send_mail
 from django.db import transaction
-from django.db.models import Avg, Count, Max
+from django.db.models import Avg, Count, Max, Q
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
@@ -119,7 +119,9 @@ def get_teacher_assigned_courses(teacher):
     return (
         Course.objects.filter(instructors__instructor=teacher)
         .annotate(
-            total_students=Count("enrollments", distinct=True),
+            total_students=Count(
+                "enrollments", filter=Q(enrollments__teacher=teacher), distinct=True
+            ),
             modules_count=Count("modules", distinct=True),
             lessons_count=Count("modules__lessons", distinct=True),
             assignments_count=Count("assignments", distinct=True),
@@ -135,7 +137,9 @@ def get_teacher_assigned_courses_with_students(teacher):
 
     courses_data = []
     for course in courses:
-        enrollments = Enrollment.objects.filter(course=course).select_related("student")
+        enrollments = Enrollment.objects.filter(course=course, teacher=teacher).select_related(
+            "student"
+        )
         courses_data.append(
             {
                 "id": course.id,
@@ -152,7 +156,7 @@ def get_teacher_assigned_courses_with_students(teacher):
 
 def get_teacher_enrolled_student_detail(teacher, student_id):
     enrollments = (
-        Enrollment.objects.filter(student_id=student_id, course__instructors__instructor=teacher)
+        Enrollment.objects.filter(student_id=student_id, teacher=teacher)
         .select_related("student", "course", "course__category")
         .prefetch_related("course__tags", "course__instructors__instructor")
     )
@@ -188,15 +192,12 @@ def get_teacher_enrolled_student_detail(teacher, student_id):
 
 
 def get_teacher_enrolled_students_roster(teacher):
-    taught_course_ids = list(
-        Course.objects.filter(instructors__instructor=teacher).values_list("id", flat=True)
-    )
-
     enrollments = (
-        Enrollment.objects.filter(course_id__in=taught_course_ids)
+        Enrollment.objects.filter(teacher=teacher)
         .select_related("student", "course")
         .order_by("student__first_name", "student__last_name", "-enrolled_at")
     )
+    taught_course_ids = list({enrollment.course_id for enrollment in enrollments})
 
     student_ids = list({enrollment.student_id for enrollment in enrollments})
 

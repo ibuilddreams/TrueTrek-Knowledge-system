@@ -611,14 +611,20 @@ def submit_quiz_attempt(attempt, answers_data):
     return _recompute_quiz_result(attempt)
 
 
-def get_pending_grading_answers(quiz):
-    return (
+def get_pending_grading_answers(quiz, teacher=None):
+    answers = (
         QuizAnswer.objects.filter(
             question__quiz=quiz, grading_status=QuizAnswer.GradingStatus.PENDING_GRADING
         )
         .select_related("attempt", "attempt__student", "question")
         .order_by("attempt", "question__order")
     )
+    if teacher is not None:
+        visible_student_ids = Enrollment.objects.filter(
+            course=quiz.course, teacher=teacher, status=Enrollment.EnrollmentStatus.ACTIVE
+        ).values_list("student_id", flat=True)
+        answers = answers.filter(attempt__student_id__in=visible_student_ids)
+    return answers
 
 
 def grade_quiz_answer(answer, marks_awarded, feedback=""):

@@ -372,7 +372,7 @@ class TeacherCourseStudentsDetailView(generics.GenericAPIView):
         if not is_course_instructor(request.user, course):
             return error_response(message="You are not assigned to this course.", status_code=403)
 
-        students_data = get_course_students_detail(course)
+        students_data = get_course_students_detail(course, teacher=request.user)
         data = {
             "course_id": course.id,
             "total_students": len(students_data),

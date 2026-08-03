@@ -309,7 +309,9 @@ class AdminTeacherAssignedCoursesWithStudentsView(generics.GenericAPIView):
 
         courses_data = []
         for course in courses:
-            enrollments = Enrollment.objects.filter(course=course).select_related("student")
+            enrollments = Enrollment.objects.filter(
+                course=course, teacher_id=teacher_id
+            ).select_related("student")
             courses_data.append(
                 {
                     "id": course.id,

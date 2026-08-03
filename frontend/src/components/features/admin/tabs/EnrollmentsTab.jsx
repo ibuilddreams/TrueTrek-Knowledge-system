@@ -56,7 +56,7 @@ export default function EnrollmentsTab() {
     return items.filter((enrollment) => {
       const haystack = `${enrollment.student?.name || ""} ${enrollment.student?.email || ""} ${
         enrollment.course?.title || ""
-      }`.toLowerCase();
+      } ${enrollment.teacher?.name || ""}`.toLowerCase();
       const matchesSearch = !query || haystack.includes(query);
       const matchesStatus = !statusFilter || enrollment.status === statusFilter;
       return matchesSearch && matchesStatus;
@@ -78,6 +78,7 @@ export default function EnrollmentsTab() {
       ),
     },
     { key: "course", header: "Course", render: (enrollment) => enrollment.course?.title || "—" },
+    { key: "teacher", header: "Teacher", render: (enrollment) => enrollment.teacher?.name || "Unassigned" },
     { key: "status", header: "Status", render: (enrollment) => <StatusBadge status={enrollment.status} /> },
     { key: "enrolled_at", header: "Enrolled", render: (enrollment) => formatDateTime(enrollment.enrolled_at) },
     {
