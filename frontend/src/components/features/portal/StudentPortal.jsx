@@ -143,7 +143,9 @@ function StudentPortalContent() {
         {activeTab === "courses" && <CoursesTab />}
         {activeTab === "assignments" && <AssignmentsTab />}
         {activeTab === "quizzes" && <QuizzesTab />}
-        {activeTab === "certificates" && <CertificatesTab studentName={displayName} />}
+        {activeTab === "certificates" && (
+          <CertificatesTab studentName={displayName} />
+        )}
         {activeTab === "drill" && (
           <DrillTab
             drillCompletedList={drillCompletedList}

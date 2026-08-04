@@ -50,7 +50,8 @@ export default function PortalHeader({
             </h1>
           )}
           <p className="text-[13px] text-stone-500 font-light mt-2 leading-snug max-w-md">
-            Courses, certificates, daily drills, war room, and progress — in one place.
+            Courses, certificates, daily drills, war room, and progress — in one
+            place.
           </p>
         </div>
       </div>

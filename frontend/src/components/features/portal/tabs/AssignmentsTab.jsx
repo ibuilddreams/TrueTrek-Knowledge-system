@@ -60,8 +60,12 @@ const STATUS_FILTERS = [
 
 function sortAssignments(list) {
   return [...list].sort((a, b) => {
-    const at = a.submission.submitted_at ? new Date(a.submission.submitted_at).getTime() : 0;
-    const bt = b.submission.submitted_at ? new Date(b.submission.submitted_at).getTime() : 0;
+    const at = a.submission.submitted_at
+      ? new Date(a.submission.submitted_at).getTime()
+      : 0;
+    const bt = b.submission.submitted_at
+      ? new Date(b.submission.submitted_at).getTime()
+      : 0;
     return bt - at;
   });
 }
@@ -100,7 +104,13 @@ function FilterButton({ active, onClick, children }) {
   );
 }
 
-function CourseSummaryCard({ courseTitle, submittedCount, gradedCount, averagePercentage, onOpen }) {
+function CourseSummaryCard({
+  courseTitle,
+  submittedCount,
+  gradedCount,
+  averagePercentage,
+  onOpen,
+}) {
   const tone = averagePercentage === null ? null : scoreTone(averagePercentage);
 
   return (
@@ -111,8 +121,12 @@ function CourseSummaryCard({ courseTitle, submittedCount, gradedCount, averagePe
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">Course</p>
-          <h3 className="font-serif font-bold text-stone-900 mt-0.5 truncate">{courseTitle}</h3>
+          <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
+            Course
+          </p>
+          <h3 className="font-serif font-bold text-stone-900 mt-0.5 truncate">
+            {courseTitle}
+          </h3>
         </div>
         <span className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
           <ClipboardList className="w-4 h-4" />
@@ -120,13 +134,17 @@ function CourseSummaryCard({ courseTitle, submittedCount, gradedCount, averagePe
       </div>
       <div className="grid grid-cols-3 gap-2 text-center">
         <div>
-          <p className="text-lg font-serif font-bold text-stone-900">{submittedCount}</p>
+          <p className="text-lg font-serif font-bold text-stone-900">
+            {submittedCount}
+          </p>
           <p className="text-[9px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
             Submitted
           </p>
         </div>
         <div>
-          <p className="text-lg font-serif font-bold text-stone-900">{gradedCount}</p>
+          <p className="text-lg font-serif font-bold text-stone-900">
+            {gradedCount}
+          </p>
           <p className="text-[9px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
             Graded
           </p>
@@ -144,7 +162,9 @@ function CourseSummaryCard({ courseTitle, submittedCount, gradedCount, averagePe
         <div className="h-1.5 rounded-full bg-stone-100 overflow-hidden">
           <div
             className={`h-full rounded-full ${tone.bar}`}
-            style={{ width: `${Math.min(100, Math.max(0, averagePercentage))}%` }}
+            style={{
+              width: `${Math.min(100, Math.max(0, averagePercentage))}%`,
+            }}
           />
         </div>
       ) : null}
@@ -183,7 +203,8 @@ function AssignmentHistoryRow({ assignment, onOpen }) {
           {assignment.module ? <span>{assignment.module.title}</span> : null}
           {submission.submitted_at ? (
             <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" /> {formatDateTime(submission.submitted_at)}
+              <Clock className="w-3 h-3" />{" "}
+              {formatDateTime(submission.submitted_at)}
             </span>
           ) : null}
           <span>{gradingLabel}</span>
@@ -200,7 +221,9 @@ function AssignmentHistoryRow({ assignment, onOpen }) {
             <span className="flex-1 h-1.5 rounded-full bg-stone-100 overflow-hidden">
               <span
                 className={`block h-full rounded-full ${tone.bar}`}
-                style={{ width: `${Math.min(100, Math.max(0, submission.percentage ?? 0))}%` }}
+                style={{
+                  width: `${Math.min(100, Math.max(0, submission.percentage ?? 0))}%`,
+                }}
               />
             </span>
             <span className={`text-[11px] font-mono font-bold ${tone.text}`}>
@@ -218,7 +241,9 @@ function AssignmentHistoryRow({ assignment, onOpen }) {
         {isGraded ? (
           <span className="text-[11px] font-mono text-stone-500">
             {submission.marks}/{assignment.total_marks}
-            {submission.percentage !== null ? ` · ${submission.percentage}%` : ""}
+            {submission.percentage !== null
+              ? ` · ${submission.percentage}%`
+              : ""}
           </span>
         ) : null}
       </span>
@@ -245,7 +270,7 @@ export default function AssignmentsTab() {
 
   const submittedAssignments = useMemo(
     () => assignments.filter((assignment) => assignment.submission),
-    [assignments]
+    [assignments],
   );
 
   const groupsByCourse = useMemo(() => {
@@ -253,40 +278,57 @@ export default function AssignmentsTab() {
     submittedAssignments.forEach((assignment) => {
       const courseId = assignment.course?.id;
       if (!courseId) return;
-      const group = map.get(courseId) || { course: assignment.course, assignments: [] };
+      const group = map.get(courseId) || {
+        course: assignment.course,
+        assignments: [],
+      };
       group.assignments.push(assignment);
       map.set(courseId, group);
     });
     return Array.from(map.values()).map((group) => {
       const assignmentsSorted = sortAssignments(group.assignments);
       const gradedCount = assignmentsSorted.filter(
-        (assignment) => assignment.submission.marks !== null
+        (assignment) => assignment.submission.marks !== null,
       ).length;
       const percentages = assignmentsSorted
         .map((assignment) => assignment.submission.percentage)
         .filter((value) => value !== null && value !== undefined);
       const averagePercentage = percentages.length
-        ? Math.round(percentages.reduce((sum, value) => sum + value, 0) / percentages.length)
+        ? Math.round(
+            percentages.reduce((sum, value) => sum + value, 0) /
+              percentages.length,
+          )
         : null;
-      return { ...group, assignments: assignmentsSorted, gradedCount, averagePercentage };
+      return {
+        ...group,
+        assignments: assignmentsSorted,
+        gradedCount,
+        averagePercentage,
+      };
     });
   }, [submittedAssignments]);
 
   const selectedGroup = useMemo(
     () =>
       selectedCourseId
-        ? groupsByCourse.find((item) => String(item.course.id) === String(selectedCourseId))
+        ? groupsByCourse.find(
+            (item) => String(item.course.id) === String(selectedCourseId),
+          )
         : null,
-    [groupsByCourse, selectedCourseId]
+    [groupsByCourse, selectedCourseId],
   );
 
   const filteredAssignments = useMemo(() => {
     if (!selectedGroup) return [];
     if (statusFilter === "GRADED") {
-      return selectedGroup.assignments.filter((a) => a.submission.marks !== null);
+      return selectedGroup.assignments.filter(
+        (a) => a.submission.marks !== null,
+      );
     }
     if (statusFilter === "PENDING") {
-      return selectedGroup.assignments.filter((a) => a.submission.marks === null);
+      return selectedGroup.assignments.filter(
+        (a) => a.submission.marks === null,
+      );
     }
     return selectedGroup.assignments;
   }, [selectedGroup, statusFilter]);
@@ -302,14 +344,19 @@ export default function AssignmentsTab() {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("assignmentCourse");
     const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
   }
 
   let content;
 
   if (isLoading) {
     content = (
-      <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
+      <div
+        className="flex min-h-[50vh] items-center justify-center"
+        aria-busy="true"
+      >
         <Loader fullScreen={false} label="Loading your assignments..." />
       </div>
     );
@@ -323,7 +370,10 @@ export default function AssignmentsTab() {
           Failed to Load Assignments
         </h2>
         <p className="text-xs text-stone-500 font-light mb-6">
-          {getApiErrorMessage(error, "Unable to load your submitted assignments.")}
+          {getApiErrorMessage(
+            error,
+            "Unable to load your submitted assignments.",
+          )}
         </p>
         <button
           type="button"
@@ -451,7 +501,8 @@ export default function AssignmentsTab() {
             Your submitted assignments
           </h2>
           <p className="text-sm text-stone-500 font-light mt-2">
-            Grouped by course — open a course to review submissions, marks, and feedback.
+            Grouped by course — open a course to review submissions, marks, and
+            feedback.
           </p>
         </div>
         <motion.div

@@ -24,7 +24,9 @@ function CertificateCard({ certificate, onOpen }) {
           <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
             {course.category || "Course"}
           </p>
-          <h3 className="font-serif font-bold text-stone-900 mt-0.5 truncate">{course.title}</h3>
+          <h3 className="font-serif font-bold text-stone-900 mt-0.5 truncate">
+            {course.title}
+          </h3>
         </div>
         <span className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
           <Award className="w-4 h-4" />
@@ -48,13 +50,22 @@ function CertificateCard({ certificate, onOpen }) {
 
 export default function CertificatesTab({ studentName }) {
   const [openCertificate, setOpenCertificate] = useState(null);
-  const { data: certificates = [], isLoading, isError, error, refetch } = useStudentCertificates();
+  const {
+    data: certificates = [],
+    isLoading,
+    isError,
+    error,
+    refetch,
+  } = useStudentCertificates();
 
   let content;
 
   if (isLoading) {
     content = (
-      <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
+      <div
+        className="flex min-h-[50vh] items-center justify-center"
+        aria-busy="true"
+      >
         <Loader fullScreen={false} label="Loading your certificates..." />
       </div>
     );
@@ -119,7 +130,8 @@ export default function CertificatesTab({ studentName }) {
           Your certificates
         </h2>
         <p className="text-sm text-stone-500 font-light mt-2">
-          Earned automatically once every lesson and quiz in a course is completed.
+          Earned automatically once every lesson and quiz in a course is
+          completed.
         </p>
       </div>
 
