@@ -4,7 +4,6 @@ import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, LineChart, Search, TrendingUp, Users } from "lucide-react";
 import { getTeacherCourseStudents } from "@/services/teacherCoursesService";
-import { getDaysAgoDateString } from "@/lib/dates";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import SearchBar from "@/components/ui/SearchBar";
 import SearchableSelect from "@/components/ui/SearchableSelect";
@@ -37,26 +36,6 @@ const AVATAR_COLORS = [
   "bg-stone-600",
 ];
 
-const DUMMY_NAME_POOL = [
-  "Aisha Rahman",
-  "Amelia Warton",
-  "Ana Marquez",
-  "Andre Costa",
-  "Ben Carter",
-  "Caleb Moore",
-  "Diana Cole",
-  "Ethan Brooks",
-  "Fatima Noor",
-  "Grace Kim",
-  "Hassan Ali",
-  "Isla Thompson",
-];
-
-function seededFraction(seed) {
-  const value = Math.sin(seed) * 10000;
-  return value - Math.floor(value);
-}
-
 function initialsFor(name) {
   return name
     .split(" ")
@@ -64,36 +43,6 @@ function initialsFor(name) {
     .join("")
     .slice(0, 2)
     .toUpperCase();
-}
-
-function buildDummyStudents(courseId, totalStudents) {
-  const count = totalStudents > 0 ? totalStudents : 6;
-  const numericSeed = Number(courseId) || 1;
-
-  return Array.from({ length: count }, (_, index) => {
-    const seed = numericSeed * 97 + index * 13;
-    const name = DUMMY_NAME_POOL[index % DUMMY_NAME_POOL.length];
-    const emailHandle = name.toLowerCase().replace(/[^a-z]+/g, ".");
-    const progress = Math.round(30 + seededFraction(seed) * 65);
-    const quizAvg = Math.round(40 + seededFraction(seed + 1) * 55);
-    const lessons = Math.round(5 + seededFraction(seed + 2) * 25);
-    const assigns = Math.round(1 + seededFraction(seed + 3) * 8);
-    const daysAgo = Math.round(seededFraction(seed + 4) * 60);
-    const isActive = seededFraction(seed + 5) > 0.15;
-
-    return {
-      id: `dummy-${courseId}-${index}`,
-      name,
-      email: `${emailHandle}@truetrek.edu`,
-      enrolledAt: getDaysAgoDateString(daysAgo),
-      progress,
-      lessons,
-      assigns,
-      quizAvg,
-      status: isActive ? "ACTIVE" : "INACTIVE",
-      avatarColor: AVATAR_COLORS[index % AVATAR_COLORS.length],
-    };
-  });
 }
 
 function mapApiStudent(student, index) {
@@ -122,7 +71,7 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
   const [sortOption, setSortOption] = useState("name_asc");
   const [page, setPage] = useState(1);
 
-  const { data: apiStudents } = useQuery({
+  const { data: apiStudents, isLoading } = useQuery({
     queryKey: ["teacherCourseStudents", courseId],
     queryFn: async () => {
       const response = await getTeacherCourseStudents(courseId);
@@ -133,12 +82,7 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
     retry: false,
   });
 
-  const dummyStudents = useMemo(
-    () => buildDummyStudents(courseId, course?.total_students),
-    [courseId, course?.total_students],
-  );
-
-  const students = apiStudents?.length > 0 ? apiStudents : dummyStudents;
+  const students = apiStudents || [];
 
   const filteredStudents = useMemo(() => {
     const query = debouncedSearch.trim().toLowerCase();
@@ -350,25 +294,35 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
-        {paginatedStudents.length === 0 ? (
+        {isLoading ? (
+          <div className="py-10 text-center">
+            <p className="text-xs font-medium text-stone-500">Loading students...</p>
+          </div>
+        ) : paginatedStudents.length === 0 ? (
           <div className="py-10 text-center">
             <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-stone-50 border border-stone-100 text-stone-400 flex items-center justify-center">
               <Search className="w-5 h-5" />
             </div>
-            <p className="text-xs font-medium text-stone-500">No students match your filters.</p>
+            <p className="text-xs font-medium text-stone-500">
+              {students.length === 0
+                ? "No students are enrolled in this course yet."
+                : "No students match your filters."}
+            </p>
           </div>
         ) : (
           <DataTable columns={columns} rows={paginatedStudents} keyField="id" />
         )}
-        <Pagination
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalLabel={`Showing ${Math.min((page - 1) * PAGE_SIZE + 1, filteredStudents.length)}-${Math.min(
-            page * PAGE_SIZE,
-            filteredStudents.length,
-          )} of ${filteredStudents.length}`}
-        />
+        {!isLoading && (
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalLabel={`Showing ${Math.min((page - 1) * PAGE_SIZE + 1, filteredStudents.length)}-${Math.min(
+              page * PAGE_SIZE,
+              filteredStudents.length,
+            )} of ${filteredStudents.length}`}
+          />
+        )}
       </div>
     </div>
   );
