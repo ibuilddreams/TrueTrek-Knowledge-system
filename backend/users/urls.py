@@ -5,6 +5,7 @@ from .views import (
     StudentBulkImportSampleView,
     StudentBulkImportView,
     StudentDetailView,
+    StudentHardDeleteView,
     StudentListCreateView,
     TeacherAssignedCoursesListView,
     TeacherAssignedCoursesStudentsView,
@@ -14,6 +15,7 @@ from .views import (
     TeacherDetailView,
     TeacherEnrolledStudentDetailView,
     TeacherEnrolledStudentsRosterView,
+    TeacherHardDeleteView,
     TeacherListCreateView,
 )
 from courses.views import (AdminTeacherAssignedCoursesView, AdminTeacherAssignedCoursesWithStudentsView)
@@ -29,6 +31,7 @@ urlpatterns = [
         name="student-bulk-import-sample",
     ),
     path("student/<int:pk>/admin/", StudentDetailView.as_view(), name="student-detail"),
+    path("student/<int:pk>/admin/permanent/", StudentHardDeleteView.as_view(), name="student-hard-delete"),
     path('student/<int:student_id>/courses/admin/', AdminStudentEnrollmentListView.as_view(), name='enrollment-student-admin-list',),
 
     # Teachers
@@ -40,6 +43,7 @@ urlpatterns = [
         name="teacher-bulk-import-sample",
     ),
     path("teacher/<int:pk>/admin/", TeacherDetailView.as_view(), name="teacher-detail"),
+    path("teacher/<int:pk>/admin/permanent/", TeacherHardDeleteView.as_view(), name="teacher-hard-delete"),
     path('teacher/<int:teacher_id>/assignedcourses', AdminTeacherAssignedCoursesView.as_view(), name='teacher-assigned-courses-admin-list',),
     path('teacher/<int:teacher_id>/assignedcourses/studentsenrolled', AdminTeacherAssignedCoursesWithStudentsView.as_view(), name='teacher-assigned-courses-students-admin-list',),
 

@@ -1,13 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { BookPlus, Check, Edit3, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import MultiSelect from "@/components/ui/MultiSelect";
 import { createCourse, getCourseById, getCourseStatusChoices, updateCourse } from "@/services/coursesService";
-import { getCategories } from "@/services/categoriesService";
-import { getTags } from "@/services/tagsService";
+import { createCategory, getCategories } from "@/services/categoriesService";
+import { createTag, getTags } from "@/services/tagsService";
 import { getTeachers } from "@/services/teachersService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -38,6 +39,7 @@ const ERROR_CLASS = "text-[10px] font-mono text-red-600 mt-1";
 
 export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) {
   const isEditMode = Boolean(course);
+  const queryClient = useQueryClient();
 
   const [form, setForm] = useState(INITIAL_FORM);
   const [thumbnailFile, setThumbnailFile] = useState(null);
@@ -46,19 +48,82 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
   const [selectedInstructorIds, setSelectedInstructorIds] = useState([]);
   const [leadInstructorIds, setLeadInstructorIds] = useState([]);
 
-  const [categories, setCategories] = useState([]);
-  const [tags, setTags] = useState([]);
-  const [teachers, setTeachers] = useState([]);
-  const [statusOptions, setStatusOptions] = useState([]);
-  const [isLoadingOptions, setIsLoadingOptions] = useState(false);
-  const [isLoadingCourse, setIsLoadingCourse] = useState(false);
-
   const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
+  const categoriesQuery = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const response = await getCategories({ pageSize: 100 });
+      return response?.data?.results || [];
+    },
+    enabled: isOpen,
+  });
+
+  const tagsQuery = useQuery({
+    queryKey: ["tags"],
+    queryFn: async () => {
+      const response = await getTags();
+      return response?.data || [];
+    },
+    enabled: isOpen,
+  });
+
+  const teachersQuery = useQuery({
+    queryKey: ["teachers"],
+    queryFn: async () => {
+      const response = await getTeachers();
+      return response?.data?.users || [];
+    },
+    enabled: isOpen,
+  });
+
+  const statusChoicesQuery = useQuery({
+    queryKey: ["courseStatusChoices"],
+    queryFn: async () => {
+      const response = await getCourseStatusChoices();
+      return response?.data || [];
+    },
+    enabled: isOpen,
+  });
+
+  const courseDetailQuery = useQuery({
+    queryKey: ["course", course?.id],
+    queryFn: async () => {
+      const response = await getCourseById(course.id);
+      return response?.data || null;
+    },
+    enabled: isOpen && Boolean(course?.id),
+  });
+
+  const categories = categoriesQuery.data || [];
+  const tags = tagsQuery.data || [];
+  const teachers = teachersQuery.data || [];
+  const statusOptions = statusChoicesQuery.data || [];
+  const isLoadingOptions =
+    categoriesQuery.isLoading || tagsQuery.isLoading || teachersQuery.isLoading || statusChoicesQuery.isLoading;
+  const isLoadingCourse = courseDetailQuery.isLoading;
+
+  const createCategoryMutation = useMutation({
+    mutationFn: (payload) => createCategory(payload),
+    onSuccess: (response) => {
+      const category = response?.data;
+      queryClient.setQueryData(["categories"], (old) => (category && old ? [...old, category] : old));
+      queryClient.invalidateQueries({ queryKey: ["categories"] });
+    },
+  });
+
+  const createTagMutation = useMutation({
+    mutationFn: (payload) => createTag(payload),
+    onSuccess: (response) => {
+      const tag = response?.data;
+      queryClient.setQueryData(["tags"], (old) => (tag && old ? [...old, tag] : old));
+      queryClient.invalidateQueries({ queryKey: ["tags"] });
+    },
+  });
+
   useEffect(() => {
     if (!isOpen) return;
-
     setForm(INITIAL_FORM);
     setThumbnailFile(null);
     setExistingThumbnailUrl(null);
@@ -66,75 +131,43 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
     setSelectedInstructorIds([]);
     setLeadInstructorIds([]);
     setFieldErrors({});
-
-    let isMounted = true;
-    setIsLoadingOptions(true);
-
-    (async () => {
-      try {
-        const [categoriesResponse, tagsResponse, teachersResponse, statusResponse] = await Promise.all([
-          getCategories(),
-          getTags(),
-          getTeachers(),
-          getCourseStatusChoices(),
-        ]);
-        if (!isMounted) return;
-        setCategories(categoriesResponse?.data?.results || []);
-        setTags(tagsResponse?.data || []);
-        setTeachers(teachersResponse?.data?.users || []);
-        setStatusOptions(statusResponse?.data || []);
-      } catch (error) {
-        if (isMounted) {
-          toastError(getApiErrorMessage(error, "Unable to load course options."));
-        }
-      } finally {
-        if (isMounted) setIsLoadingOptions(false);
-      }
-    })();
-
-    return () => {
-      isMounted = false;
-    };
   }, [isOpen]);
 
   useEffect(() => {
-    if (!isOpen || !course) return;
+    const detail = courseDetailQuery.data;
+    if (!isOpen || !course || !detail) return;
 
-    let isMounted = true;
-    setIsLoadingCourse(true);
+    setForm({
+      title: detail.title || "",
+      code: detail.code || "",
+      description: detail.description || "",
+      category: detail.category?.id || "",
+      status: detail.status || "DRAFT",
+      difficulty: detail.difficulty || "BEGINNER",
+      duration_minutes: String(detail.duration_minutes ?? 0),
+    });
+    setExistingThumbnailUrl(detail.thumbnail || null);
+    setSelectedTagIds((detail.tags || []).map((tag) => tag.id));
+    setSelectedInstructorIds((detail.instructors || []).map((instructor) => instructor.id));
+    setLeadInstructorIds(
+      (detail.instructors || []).filter((instructor) => instructor.is_lead).map((instructor) => instructor.id)
+    );
+  }, [isOpen, course, courseDetailQuery.data]);
 
-    (async () => {
-      try {
-        const response = await getCourseById(course.id);
-        const detail = response?.data;
-        if (!isMounted || !detail) return;
+  useEffect(() => {
+    if (!isOpen) return;
+    const failedQuery = [categoriesQuery, tagsQuery, teachersQuery, statusChoicesQuery].find(
+      (query) => query.isError
+    );
+    if (failedQuery) {
+      toastError(getApiErrorMessage(failedQuery.error, "Unable to load course options."));
+    }
+  }, [isOpen, categoriesQuery.isError, tagsQuery.isError, teachersQuery.isError, statusChoicesQuery.isError]);
 
-        setForm({
-          title: detail.title || "",
-          code: detail.code || "",
-          description: detail.description || "",
-          category: detail.category?.id || "",
-          status: detail.status || "DRAFT",
-          difficulty: detail.difficulty || "BEGINNER",
-          duration_minutes: String(detail.duration_minutes ?? 0),
-        });
-        setExistingThumbnailUrl(detail.thumbnail || null);
-        setSelectedTagIds((detail.tags || []).map((tag) => tag.id));
-        setSelectedInstructorIds((detail.instructors || []).map((instructor) => instructor.id));
-        setLeadInstructorIds(
-          (detail.instructors || []).filter((instructor) => instructor.is_lead).map((instructor) => instructor.id)
-        );
-      } catch (error) {
-        if (isMounted) toastError(getApiErrorMessage(error, "Unable to load course details."));
-      } finally {
-        if (isMounted) setIsLoadingCourse(false);
-      }
-    })();
-
-    return () => {
-      isMounted = false;
-    };
-  }, [isOpen, course]);
+  useEffect(() => {
+    if (!isOpen || !courseDetailQuery.isError) return;
+    toastError(getApiErrorMessage(courseDetailQuery.error, "Unable to load course details."));
+  }, [isOpen, courseDetailQuery.isError]);
 
   const handleClose = () => {
     if (isSubmitting) return;
@@ -162,6 +195,33 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
   const handleInstructorsChange = (nextIds) => {
     setSelectedInstructorIds(nextIds);
     setLeadInstructorIds((prev) => prev.filter((id) => nextIds.includes(id)));
+  };
+
+  const handleCreateCategory = async (name) => {
+    try {
+      const response = await createCategoryMutation.mutateAsync({ name });
+      const category = response?.data;
+      if (!category) throw new Error("Unable to create category.");
+      setFieldErrors((prev) => ({ ...prev, category: null }));
+      return { value: category.id, label: category.name };
+    } catch (error) {
+      const nameError = error?.data?.data?.name;
+      throw new Error(
+        Array.isArray(nameError) ? nameError[0] : getApiErrorMessage(error, "Unable to create category.")
+      );
+    }
+  };
+
+  const handleCreateTag = async (name) => {
+    try {
+      const response = await createTagMutation.mutateAsync({ name });
+      const tag = response?.data;
+      if (!tag) throw new Error("Unable to create tag.");
+      return { value: tag.id, label: tag.name };
+    } catch (error) {
+      const nameError = error?.data?.data?.name;
+      throw new Error(Array.isArray(nameError) ? nameError[0] : getApiErrorMessage(error, "Unable to create tag."));
+    }
   };
 
   const handleSubmit = async (event) => {
@@ -319,6 +379,8 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
               loading={isLoadingOptions}
               disabled={isBusy}
               emptyLabel="No categories found."
+              onCreate={handleCreateCategory}
+              createLabel="Add New Category"
             />
             {fieldErrors.category && <p className={ERROR_CLASS}>{fieldErrors.category}</p>}
           </div>
@@ -334,6 +396,8 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
               loading={isLoadingOptions}
               disabled={isBusy}
               emptyLabel="No tags found."
+              onCreate={handleCreateTag}
+              createLabel="Add New Tag"
             />
             {fieldErrors.tags && <p className={ERROR_CLASS}>{fieldErrors.tags}</p>}
           </div>

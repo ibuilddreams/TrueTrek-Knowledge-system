@@ -13,7 +13,7 @@ from common.import_files import (
     build_sample_workbook,
     parse_tabular_file,
 )
-from courses.models import Course
+from courses.models import Course, CourseInstructor
 from courses.serializers import CourseListSerializer
 from enrollments.models import Enrollment
 from enrollments.serializers import CourseEnrolledStudentSerializer
@@ -293,6 +293,35 @@ def get_teacher_enrolled_students_roster(teacher):
 
     roster.sort(key=lambda item: (item["name"] or "").lower())
     return roster
+
+
+def hard_delete_student(student):
+    """Permanently deletes a student and all of their course data.
+
+    Enrollments, progress records, quiz attempts/results, and assignment
+    submissions all cascade-delete automatically via their FK constraints.
+    """
+    with transaction.atomic():
+        affected_enrollments = Enrollment.objects.filter(student=student).count()
+        student.delete()
+    return affected_enrollments
+
+
+def hard_delete_teacher(teacher):
+    """Permanently deletes a teacher, unassigning them from any courses they instruct.
+
+    CourseInstructor rows cascade-delete automatically; Enrollment.teacher is
+    SET_NULL, so existing student enrollments/progress are preserved.
+    """
+    with transaction.atomic():
+        affected_courses = (
+            CourseInstructor.objects.filter(instructor=teacher)
+            .values("course_id")
+            .distinct()
+            .count()
+        )
+        teacher.delete()
+    return affected_courses
 
 
 def _normalize_gender(value):

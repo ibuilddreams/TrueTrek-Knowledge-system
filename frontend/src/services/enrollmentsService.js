@@ -13,6 +13,10 @@ export async function updateEnrollmentStatus(id, { status, note }) {
   return backendClient.patch(`/enrollments/${id}/admin/`, { status, note });
 }
 
+export async function removeEnrollment(id) {
+  return backendClient.delete(`/enrollments/${id}/admin/`);
+}
+
 export async function bulkImportEnrollments(file) {
   const formData = new FormData();
   formData.append("file", file);

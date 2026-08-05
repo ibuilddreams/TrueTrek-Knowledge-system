@@ -110,6 +110,10 @@ export function useAuth() {
   const logout = useCallback(async () => {
     try {
       await logoutRequest();
+    } catch {
+      // /api/auth/logout only clears the legacy demo-scaffold session cookie
+      // (unused by the real backend-authenticated flow) — never let it block
+      // the real cleanup below, which is what actually ends the session.
     } finally {
       clearBackendSession();
       dispatch(authCleared());

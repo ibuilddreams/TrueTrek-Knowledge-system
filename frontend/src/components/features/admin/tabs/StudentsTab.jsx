@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Edit3, Eye, Upload, UserCheck, UserPlus, UserX } from "lucide-react";
+import { Edit3, Eye, Trash2, Upload, UserCheck, UserPlus, UserX } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 import { useAdminStudents } from "@/hooks/admin/useAdminStudents";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -9,6 +10,7 @@ import {
   bulkImportStudents,
   deleteStudent,
   downloadStudentImportSample,
+  permanentlyDeleteStudent,
   updateStudent,
 } from "@/services/studentsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
@@ -50,8 +52,13 @@ export default function StudentsTab() {
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [activatingStudent, setActivatingStudent] = useState(null);
   const [isActivating, setIsActivating] = useState(false);
+  const [deletingStudent, setDeletingStudent] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+
+  const deleteStudentMutation = useMutation({
+    mutationFn: (id) => permanentlyDeleteStudent(id),
+  });
 
   useEffect(() => {
     loadStudents();
@@ -115,6 +122,19 @@ export default function StudentsTab() {
     }
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!deletingStudent) return;
+    try {
+      await deleteStudentMutation.mutateAsync(deletingStudent.id);
+      toastSuccess("Student permanently deleted.");
+      setDeletingStudent(null);
+      loadStudents({ force: true });
+      loadEnrollments({ force: true });
+    } catch (error) {
+      toastError(getApiErrorMessage(error, "Unable to delete student."));
+    }
+  };
+
   const columns = [
     {
       key: "name",
@@ -153,6 +173,13 @@ export default function StudentsTab() {
               label: "Activate",
               icon: UserCheck,
               onSelect: () => setActivatingStudent(student),
+            },
+            {
+              key: "delete",
+              label: "Delete Permanently",
+              icon: Trash2,
+              tone: "danger",
+              onSelect: () => setDeletingStudent(student),
             },
           ]}
         />
@@ -241,6 +268,16 @@ export default function StudentsTab() {
         title="Activate Student"
         message={`Are you sure you want to activate "${activatingStudent?.full_name}"?`}
         confirmLabel="Activate"
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(deletingStudent)}
+        onClose={() => setDeletingStudent(null)}
+        onConfirm={handleDeleteConfirm}
+        isConfirming={deleteStudentMutation.isPending}
+        title="Permanently Delete Student"
+        message={`Are you sure you want to permanently delete "${deletingStudent?.full_name}"? This action cannot be undone and will remove all of their enrollments, progress, quiz attempts, and assignment submissions.`}
+        confirmLabel="Delete Permanently"
       />
 
       <CreateStudentModal

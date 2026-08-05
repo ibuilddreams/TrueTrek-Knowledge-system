@@ -28,6 +28,7 @@ from .services import (
     get_enrollment_import_sample,
     get_student_certificates,
     get_student_enrolled_course_detail,
+    remove_enrollment,
 )
 
 UserModel = get_user_model()
@@ -219,6 +220,17 @@ class AdminEnrollmentDetailView(generics.GenericAPIView):
             EnrollmentManageSerializer(enrollment).data,
             message="Enrollment status updated successfully",
         )
+
+    def delete(self, request, pk):
+        try:
+            enrollment = Enrollment.objects.select_related("student", "course").get(pk=pk)
+        except Enrollment.DoesNotExist:
+            return error_response(
+                message="Enrollment with the given id does not exist.", status_code=404
+            )
+
+        remove_enrollment(enrollment)
+        return success_response(None, message="Enrollment removed successfully")
 
 
 class AdminCourseEnrollmentListView(generics.GenericAPIView):

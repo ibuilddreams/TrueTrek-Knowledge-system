@@ -60,7 +60,7 @@ export default function SearchableSelect({
   };
 
   const handleCreateSubmit = async (event) => {
-    event.preventDefault();
+    event?.preventDefault?.();
     const trimmed = newOptionName.trim();
     if (!trimmed) {
       setCreateError("Name is required.");
@@ -140,7 +140,7 @@ export default function SearchableSelect({
           {onCreate && (
             <div className="border-t border-stone-100 shrink-0">
               {isCreating ? (
-                <form onSubmit={handleCreateSubmit} className="p-2.5 space-y-1.5">
+                <div className="p-2.5 space-y-1.5">
                   <input
                     autoFocus
                     type="text"
@@ -148,6 +148,9 @@ export default function SearchableSelect({
                     onChange={(event) => {
                       setNewOptionName(event.target.value);
                       setCreateError("");
+                    }}
+                    onKeyDown={(event) => {
+                      if (event.key === "Enter") handleCreateSubmit(event);
                     }}
                     disabled={isSubmittingCreate}
                     placeholder={`${createLabel} name`}
@@ -168,7 +171,8 @@ export default function SearchableSelect({
                       Cancel
                     </button>
                     <button
-                      type="submit"
+                      type="button"
+                      onClick={handleCreateSubmit}
                       disabled={isSubmittingCreate}
                       className="px-3 py-1.5 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-[10px] font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5"
                     >
@@ -182,7 +186,7 @@ export default function SearchableSelect({
                       )}
                     </button>
                   </div>
-                </form>
+                </div>
               ) : (
                 <button
                   type="button"

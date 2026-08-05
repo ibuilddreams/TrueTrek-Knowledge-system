@@ -80,7 +80,9 @@ export default function StudentCourseCard({ enrollment, onClick }) {
           : undefined
       }
       className={`group relative flex flex-col h-full rounded-2xl border border-stone-200/80 bg-white/90 p-5 sm:p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-200/70 hover:shadow-[0_12px_32px_-20px_rgba(120,53,15,0.28)] ${
-        onClick ? "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 focus-visible:ring-offset-2" : ""
+        onClick
+          ? "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 focus-visible:ring-offset-2"
+          : ""
       }`}
     >
       <div className="absolute inset-x-6 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -169,9 +171,7 @@ export default function StudentCourseCard({ enrollment, onClick }) {
               isCompleted ? "text-emerald-700" : "text-amber-700"
             }`}
           >
-            {isCompleted ? (
-              <CheckCircle2 className="w-3.5 h-3.5" />
-            ) : null}
+            {isCompleted ? <CheckCircle2 className="w-3.5 h-3.5" /> : null}
             <span>{isCompleted ? "Completed" : "In progress"}</span>
           </div>
         </div>
