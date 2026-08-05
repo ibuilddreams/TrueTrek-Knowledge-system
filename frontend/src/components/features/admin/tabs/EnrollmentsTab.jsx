@@ -1,20 +1,25 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Edit3, Eye, Upload, UserPlus } from "lucide-react";
+import { Edit3, Eye, Trash2, Upload, UserPlus } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { formatDateTime } from "@/lib/adminFormatters";
 import {
   bulkImportEnrollments,
   downloadEnrollmentImportSample,
+  removeEnrollment,
 } from "@/services/enrollmentsService";
+import { getApiErrorMessage } from "@/lib/apiErrors";
+import { toastError, toastSuccess } from "@/lib/toast";
 import SearchBar from "@/components/ui/SearchBar";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import DataTable from "@/components/ui/DataTable";
 import Pagination from "@/components/ui/Pagination";
 import StatusBadge from "@/components/ui/StatusBadge";
 import ActionMenu from "@/components/ui/ActionMenu";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EnrollmentDetailModal from "@/components/features/admin/EnrollmentDetailModal";
 import EnrollmentStatusModal from "@/components/features/admin/EnrollmentStatusModal";
 import EnrollStudentModal from "@/components/features/admin/EnrollStudentModal";
@@ -40,8 +45,25 @@ export default function EnrollmentsTab() {
 
   const [viewEnrollment, setViewEnrollment] = useState(null);
   const [editEnrollment, setEditEnrollment] = useState(null);
+  const [removingEnrollment, setRemovingEnrollment] = useState(null);
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+
+  const removeEnrollmentMutation = useMutation({
+    mutationFn: (id) => removeEnrollment(id),
+  });
+
+  const handleRemoveConfirm = async () => {
+    if (!removingEnrollment) return;
+    try {
+      await removeEnrollmentMutation.mutateAsync(removingEnrollment.id);
+      toastSuccess("Enrollment removed successfully.");
+      setRemovingEnrollment(null);
+      loadEnrollments({ force: true });
+    } catch (error) {
+      toastError(getApiErrorMessage(error, "Unable to remove enrollment."));
+    }
+  };
 
   useEffect(() => {
     loadEnrollments();
@@ -89,6 +111,13 @@ export default function EnrollmentsTab() {
           actions={[
             { key: "view", label: "View Details", icon: Eye, onSelect: () => setViewEnrollment(enrollment) },
             { key: "edit", label: "Edit Status", icon: Edit3, onSelect: () => setEditEnrollment(enrollment) },
+            {
+              key: "remove",
+              label: "Remove Enrollment",
+              icon: Trash2,
+              tone: "danger",
+              onSelect: () => setRemovingEnrollment(enrollment),
+            },
           ]}
         />
       ),
@@ -162,6 +191,16 @@ export default function EnrollmentsTab() {
         onClose={() => setEditEnrollment(null)}
         enrollment={editEnrollment}
         onUpdated={() => loadEnrollments({ force: true })}
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(removingEnrollment)}
+        onClose={() => setRemovingEnrollment(null)}
+        onConfirm={handleRemoveConfirm}
+        isConfirming={removeEnrollmentMutation.isPending}
+        title="Remove Enrollment"
+        message={`Are you sure you want to remove "${removingEnrollment?.student?.name}" from "${removingEnrollment?.course?.title}"? This cannot be undone and will delete their progress, quiz attempts, and assignment submissions for this course.`}
+        confirmLabel="Remove"
       />
 
       <EnrollStudentModal

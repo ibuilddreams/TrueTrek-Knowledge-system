@@ -1,6 +1,7 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
 
+from assignments.models import AssignmentSubmission
 from common.import_files import (
     ImportFileError,
     build_sample_csv,
@@ -11,8 +12,8 @@ from common.models import Status
 from courses.models import Course, CourseInstructor
 from courses.serializers import CourseDetailSerializer
 from lessons.models import Lesson
-from progress.models import CourseProgress, LessonProgress, ModuleProgress
-from quizzes.models import Quiz
+from progress.models import CourseProgress, LearningActivity, LessonProgress, ModuleProgress
+from quizzes.models import Quiz, QuizAttempt
 
 from .models import Enrollment
 
@@ -305,6 +306,28 @@ def get_student_enrolled_course_detail(student, course_id, request=None):
             "completion_percentage": completion_percentage,
         },
     }
+
+
+def remove_enrollment(enrollment):
+    """Permanently removes a student's enrollment from a course.
+
+    Also deletes all of the student's data scoped to that course — lesson,
+    module, and course progress; learning activity; quiz attempts (and their
+    answers/results); and assignment submissions (and their files) — so no
+    orphaned records are left behind. EnrollmentHistory rows cascade with the
+    enrollment itself.
+    """
+    student = enrollment.student
+    course = enrollment.course
+
+    with transaction.atomic():
+        LessonProgress.objects.filter(student=student, lesson__module__course=course).delete()
+        ModuleProgress.objects.filter(student=student, module__course=course).delete()
+        CourseProgress.objects.filter(student=student, course=course).delete()
+        LearningActivity.objects.filter(student=student, course=course).delete()
+        QuizAttempt.objects.filter(student=student, quiz__course=course).delete()
+        AssignmentSubmission.objects.filter(student=student, assignment__course=course).delete()
+        enrollment.delete()
 
 
 def get_visible_enrollments(course, user):

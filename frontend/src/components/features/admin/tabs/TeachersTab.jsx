@@ -1,7 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Edit3, Eye, Upload, UserCheck, UserPlus, UserX } from "lucide-react";
+import { Edit3, Eye, Trash2, Upload, UserCheck, UserPlus, UserX } from "lucide-react";
+import { useMutation } from "@tanstack/react-query";
 import { useAdminTeachers } from "@/hooks/admin/useAdminTeachers";
 import { useAdminCourses } from "@/hooks/admin/useAdminCourses";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
@@ -9,6 +10,7 @@ import {
   bulkImportTeachers,
   deleteTeacher,
   downloadTeacherImportSample,
+  permanentlyDeleteTeacher,
   updateTeacher,
 } from "@/services/teachersService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
@@ -50,8 +52,13 @@ export default function TeachersTab() {
   const [isDeactivating, setIsDeactivating] = useState(false);
   const [activatingTeacher, setActivatingTeacher] = useState(null);
   const [isActivating, setIsActivating] = useState(false);
+  const [deletingTeacher, setDeletingTeacher] = useState(null);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isBulkImportOpen, setIsBulkImportOpen] = useState(false);
+
+  const deleteTeacherMutation = useMutation({
+    mutationFn: (id) => permanentlyDeleteTeacher(id),
+  });
 
   useEffect(() => {
     loadTeachers();
@@ -117,6 +124,19 @@ export default function TeachersTab() {
     }
   };
 
+  const handleDeleteConfirm = async () => {
+    if (!deletingTeacher) return;
+    try {
+      await deleteTeacherMutation.mutateAsync(deletingTeacher.id);
+      toastSuccess("Teacher permanently deleted.");
+      setDeletingTeacher(null);
+      loadTeachers({ force: true });
+      loadCourses({ force: true });
+    } catch (error) {
+      toastError(getApiErrorMessage(error, "Unable to delete teacher."));
+    }
+  };
+
   const columns = [
     {
       key: "name",
@@ -155,6 +175,13 @@ export default function TeachersTab() {
               label: "Activate",
               icon: UserCheck,
               onSelect: () => setActivatingTeacher(teacher),
+            },
+            {
+              key: "delete",
+              label: "Delete Permanently",
+              icon: Trash2,
+              tone: "danger",
+              onSelect: () => setDeletingTeacher(teacher),
             },
           ]}
         />
@@ -243,6 +270,16 @@ export default function TeachersTab() {
         title="Activate Teacher"
         message={`Are you sure you want to activate "${activatingTeacher?.full_name}"?`}
         confirmLabel="Activate"
+      />
+
+      <ConfirmDialog
+        isOpen={Boolean(deletingTeacher)}
+        onClose={() => setDeletingTeacher(null)}
+        onConfirm={handleDeleteConfirm}
+        isConfirming={deleteTeacherMutation.isPending}
+        title="Permanently Delete Teacher"
+        message={`Are you sure you want to permanently delete "${deletingTeacher?.full_name}"? This action cannot be undone and will remove them as an instructor from all assigned courses.`}
+        confirmLabel="Delete Permanently"
       />
 
       <CreateTeacherModal

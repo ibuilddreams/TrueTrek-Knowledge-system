@@ -21,6 +21,10 @@ export async function deleteTeacher(id) {
   return backendClient.delete(`/teacher/${id}/admin/`);
 }
 
+export async function permanentlyDeleteTeacher(id) {
+  return backendClient.delete(`/teacher/${id}/admin/permanent/`);
+}
+
 export async function bulkImportTeachers(file) {
   const formData = new FormData();
   formData.append("file", file);

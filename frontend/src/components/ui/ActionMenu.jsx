@@ -17,7 +17,8 @@ export default function ActionMenu({ actions = [] }) {
 
     const updatePosition = () => {
       const rect = buttonRef.current.getBoundingClientRect();
-      const menuWidth = 176;
+      const longestLabelLength = Math.max(...visibleActions.map(({ label }) => label.length));
+      const menuWidth = Math.min(240, Math.max(176, longestLabelLength * 7 + 64));
       const estimatedHeight = visibleActions.length * 40 + 12;
       const spaceBelow = window.innerHeight - rect.bottom;
       const openUpward = spaceBelow < estimatedHeight && rect.top > spaceBelow;
@@ -110,7 +111,7 @@ export default function ActionMenu({ actions = [] }) {
                   setIsOpen(false);
                   onSelect?.();
                 }}
-                className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold font-mono transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
+                className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-xs font-semibold font-mono text-left whitespace-nowrap transition-colors disabled:opacity-60 disabled:cursor-not-allowed ${
                   tone === "danger" ? "text-rose-600 hover:bg-rose-50" : "text-stone-700 hover:bg-stone-50"
                 }`}
               >

@@ -36,6 +36,8 @@ from .services import (
     get_teacher_enrolled_student_detail,
     get_teacher_enrolled_students_roster,
     get_teacher_import_sample,
+    hard_delete_student,
+    hard_delete_teacher,
     send_password_reset_email,
 )
 
@@ -148,6 +150,27 @@ class StudentDetailView(generics.RetrieveUpdateDestroyAPIView):
         student.is_active = False
         student.save(update_fields=["account_status", "is_active"])
         return success_response(None, message="Student deactivated successfully")
+
+
+class StudentHardDeleteView(generics.DestroyAPIView):
+    """Permanently deletes a student account and all of their course data."""
+
+    http_method_names = ["delete", "head", "options"]
+    queryset = UserModel.objects.filter(role=UserModel.Roles.STUDENT)
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        permission = IsAdmin()
+        permission.message = "You do not have permission to perform this action. Only admin can perform this action."
+        return [permission]
+
+    def destroy(self, request, *args, **kwargs):
+        student = self.get_object()
+        affected_enrollments = hard_delete_student(student)
+        return success_response(
+            None,
+            message=f"Student permanently deleted. Removed from {affected_enrollments} course enrollment(s).",
+        )
 
 
 class StudentBulkImportView(generics.GenericAPIView):
@@ -274,6 +297,27 @@ class TeacherDetailView(generics.RetrieveUpdateDestroyAPIView):
         teacher.is_active = False
         teacher.save(update_fields=["account_status", "is_active"])
         return success_response(None, message="Teacher deactivated successfully")
+
+
+class TeacherHardDeleteView(generics.DestroyAPIView):
+    """Permanently deletes a teacher account, unassigning them from any courses."""
+
+    http_method_names = ["delete", "head", "options"]
+    queryset = UserModel.objects.filter(role=UserModel.Roles.TEACHER)
+    permission_classes = [IsAuthenticated]
+
+    def get_permissions(self):
+        permission = IsAdmin()
+        permission.message = "You do not have permission to perform this action. Only admin can perform this action."
+        return [permission]
+
+    def destroy(self, request, *args, **kwargs):
+        teacher = self.get_object()
+        affected_courses = hard_delete_teacher(teacher)
+        return success_response(
+            None,
+            message=f"Teacher permanently deleted. Removed as instructor from {affected_courses} course(s).",
+        )
 
 
 class TeacherBulkImportView(generics.GenericAPIView):
