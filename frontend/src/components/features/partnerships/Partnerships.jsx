@@ -222,7 +222,7 @@ export default function Partnerships() {
                 <button
                   id="btn-partnership-schedule"
                   onClick={() => alert(`Strategic licensing simulation requested for ${studentCount} pathfinders on ${licenceTier.toUpperCase()} configuration. In a live administration, our educational covenants coordinator will schedule a briefing.`)}
-                  className="w-full bg-white hover:bg-stone-100 text-stone-950 font-semibold py-3 px-4 rounded-xl text-xs tracking-wider uppercase transition shadow-md"
+                  className="w-full bg-[#ffffff] hover:bg-[#f5f5f4] text-stone-950 font-semibold py-3 px-4 rounded-xl text-xs tracking-wider uppercase transition shadow-md"
                 >
                   Request Licensing Briefing
                 </button>

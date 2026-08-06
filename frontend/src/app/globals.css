@@ -1,5 +1,13 @@
 @import "tailwindcss";
 
+@theme {
+  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
+    "Liberation Mono", "Courier New", monospace;
+  --font-display: "Space Grotesk", sans-serif;
+}
+
 button:not(:disabled),
 [role="button"]:not([aria-disabled="true"]),
 a[href],
@@ -27,4 +35,121 @@ select:disabled {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
+}
+
+/* ==========================================================================
+   Vault dark-mode overrides.
+   SiteShell puts a `vault-dark` class on the page wrapper when the user
+   toggles dark/vault theme. These rules remap common light-theme utility
+   classes to dark equivalents for any descendant, so most pages get a
+   working dark mode without needing per-element isVault conditionals.
+   ========================================================================== */
+
+.vault-dark .bg-white,
+.vault-dark .bg-white\/90 {
+  background-color: #161412 !important;
+}
+
+.vault-dark .bg-stone-50,
+.vault-dark .bg-\[\#faf9f6\] {
+  background-color: #0f0e0d !important;
+}
+
+.vault-dark .bg-stone-100 {
+  background-color: #1c1917 !important;
+}
+
+.vault-dark .bg-stone-200 {
+  background-color: #2b2622 !important;
+}
+
+.vault-dark .bg-amber-50 {
+  background-color: #261e14 !important;
+  color: #fbbf24 !important;
+}
+
+.vault-dark .bg-amber-600\/10 {
+  background-color: rgba(245, 158, 11, 0.12) !important;
+}
+
+.vault-dark .bg-orange-50 {
+  background-color: #2a1b12 !important;
+  color: #f97316 !important;
+}
+
+.vault-dark .bg-emerald-50 {
+  background-color: #10241c !important;
+  color: #34d399 !important;
+}
+
+.vault-dark .bg-blue-50 {
+  background-color: #101f2e !important;
+  color: #60a5fa !important;
+}
+
+.vault-dark .bg-stone-900 {
+  background-color: #2e2a27 !important;
+  color: #faf9f6 !important;
+  border-color: #443e38 !important;
+}
+
+.vault-dark .text-stone-900,
+.vault-dark .text-stone-800 {
+  color: #f5f5f4 !important;
+}
+
+.vault-dark .text-stone-700,
+.vault-dark .text-stone-600 {
+  color: #a8a29e !important;
+}
+
+.vault-dark .text-stone-500,
+.vault-dark .text-stone-400 {
+  color: #78716c !important;
+}
+
+.vault-dark .text-stone-300 {
+  color: #d6d3d1 !important;
+}
+
+.vault-dark .text-amber-900,
+.vault-dark .text-amber-800,
+.vault-dark .text-amber-750,
+.vault-dark .text-amber-700 {
+  color: #f59e0b !important;
+}
+
+.vault-dark .text-orange-700 {
+  color: #f97316 !important;
+}
+
+.vault-dark .text-emerald-700 {
+  color: #34d399 !important;
+}
+
+.vault-dark .text-blue-700 {
+  color: #60a5fa !important;
+}
+
+.vault-dark .border-stone-100,
+.vault-dark .border-stone-200,
+.vault-dark .border-stone-200\/80 {
+  border-color: #24211e !important;
+}
+
+.vault-dark .border-amber-200,
+.vault-dark .border-amber-100 {
+  border-color: rgba(245, 158, 11, 0.25) !important;
+}
+
+.vault-dark .border-orange-100 {
+  border-color: rgba(249, 115, 22, 0.25) !important;
+}
+
+.vault-dark .border-emerald-100 {
+  border-color: rgba(52, 211, 153, 0.25) !important;
+}
+
+.vault-dark .border-blue-100 {
+  border-color: rgba(96, 165, 250, 0.25) !important;
 }

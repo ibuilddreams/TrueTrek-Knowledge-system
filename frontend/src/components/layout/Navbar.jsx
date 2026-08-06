@@ -18,11 +18,7 @@ export default function Navbar() {
 
   const linkClass = (key) =>
     `hover:text-amber-500 transition-colors ${
-      activeSection === key
-        ? "text-amber-500 font-bold"
-        : isVault
-          ? "text-stone-400"
-          : "text-stone-500"
+      activeSection === key ? "text-amber-500 font-bold" : "text-stone-500"
     }`;
 
   return (
@@ -45,7 +41,7 @@ export default function Navbar() {
           TTL
         </div>
         <h1
-          className={`text-xl md:text-2xl font-serif font-black tracking-tight transition-colors duration-250 ${
+          className={`text-xl md:text-2xl font-serif font-black tracking-wide transition-colors duration-250 ${
             isVault
               ? "text-[#f5f5f4] group-hover:text-amber-500"
               : "text-stone-900 group-hover:text-amber-800"
@@ -57,9 +53,7 @@ export default function Navbar() {
 
       <div
         id="desktop-nav-links"
-        className={`hidden md:flex gap-8 font-mono text-xs tracking-wider uppercase font-semibold ${
-          isVault ? "text-stone-400" : "text-stone-605"
-        }`}
+        className="hidden md:flex gap-8 font-mono text-xs tracking-wider capitalize font-semibold"
       >
         {NAV_LINKS.map((link) => (
           <Link
