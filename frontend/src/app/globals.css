@@ -153,3 +153,11 @@ select:disabled {
 .vault-dark .border-blue-100 {
   border-color: rgba(96, 165, 250, 0.25) !important;
 }
+
+/* TabNav sidebar variant: text-stone-400/500 both map to the same dim
+   #78716c above, which is too low-contrast for icon/description text
+   sitting directly on a near-black vault card. Brighten just these. */
+.vault-dark .tabnav-sidebar-icon,
+.vault-dark .tabnav-sidebar-desc {
+  color: #a8a29e !important;
+}
