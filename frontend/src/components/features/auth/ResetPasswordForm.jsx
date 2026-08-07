@@ -3,54 +3,16 @@
 import { useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import Link from "next/link";
-import { AlertCircle, Eye, EyeOff, KeyRound } from "lucide-react";
+import { AlertCircle, CheckCircle2, KeyRound } from "lucide-react";
 import { resetPassword } from "@/services/authService";
 import { useGuestOnlyRoute } from "@/hooks/useGuestOnlyRoute";
+import { useTheme } from "@/hooks/useTheme";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { ROUTES } from "@/constants/routes";
 import AuthGateCard from "@/components/ui/AuthGateCard";
+import AuthField from "@/components/ui/AuthField";
 import AuthSubmitButton from "@/components/ui/AuthSubmitButton";
 import Loader from "@/components/ui/Loader";
-
-function PasswordField({ id, label, value, onChange, show, onToggleShow, error, autoComplete }) {
-  return (
-    <div>
-      <label
-        htmlFor={id}
-        className="text-[10px] font-mono text-stone-400 block uppercase tracking-wider mb-1.5"
-      >
-        {label}
-      </label>
-      <div className="relative">
-        <input
-          id={id}
-          type={show ? "text" : "password"}
-          required
-          autoComplete={autoComplete}
-          value={value}
-          onChange={onChange}
-          className={`w-full p-3 pr-11 rounded-lg border text-xs font-mono bg-stone-50 text-stone-800 focus:outline-none transition ${
-            error
-              ? "border-red-300 focus:border-red-500"
-              : "border-stone-200 focus:border-amber-600"
-          }`}
-        />
-        <button
-          type="button"
-          onClick={onToggleShow}
-          className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-stone-350 hover:text-stone-600 transition"
-          title={show ? "Hide password" : "Show password"}
-          aria-label={show ? "Hide password" : "Show password"}
-        >
-          {show ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-        </button>
-      </div>
-      {error && (
-        <p className="text-[11px] text-red-600 font-mono mt-1.5">{error}</p>
-      )}
-    </div>
-  );
-}
 
 function validateForm(form) {
   const errors = {};
@@ -73,13 +35,12 @@ export default function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { shouldBlock, isAuthenticated } = useGuestOnlyRoute();
+  const { isVault } = useTheme();
   const uid = searchParams.get("uid");
   const token = searchParams.get("token");
 
   const [form, setForm] = useState({ newPassword: "", confirmPassword: "" });
   const [errors, setErrors] = useState({});
-  const [showNewPassword, setShowNewPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
 
@@ -132,10 +93,18 @@ export default function ResetPasswordForm() {
         title="Invalid Reset Link"
         subtitle="This password reset link is invalid or has expired."
       >
-        <p className="text-center text-xs text-stone-500 font-light">
+        <p
+          className={`text-center text-xs font-light ${
+            isVault ? "text-stone-400" : "text-stone-500"
+          }`}
+        >
           <Link
             href={ROUTES.FORGOT_PASSWORD}
-            className="font-semibold text-stone-700 hover:text-amber-800 transition"
+            className={`font-semibold transition ${
+              isVault
+                ? "text-stone-200 hover:text-amber-500"
+                : "text-stone-700 hover:text-amber-800"
+            }`}
           >
             Request a new reset link
           </Link>
@@ -151,31 +120,43 @@ export default function ResetPasswordForm() {
       subtitle="Choose a new password for your account."
     >
       {isSuccess ? (
-        <p className="text-center text-xs text-emerald-700 font-medium">
-          Your password has been reset successfully. Redirecting to Sign In...
-        </p>
+        <div
+          className={`p-3.5 rounded-xl flex items-start gap-2.5 text-xs font-medium ${
+            isVault
+              ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
+              : "bg-emerald-50 border border-emerald-100 text-emerald-700"
+          }`}
+        >
+          <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
+          <span>
+            Your password has been reset successfully. Redirecting to Sign
+            In&hellip;
+          </span>
+        </div>
       ) : (
         <form onSubmit={handleSubmit} className="space-y-4">
-          <PasswordField
+          <AuthField
             id="input-reset-new-password"
             label="New Password"
+            type="password"
+            required
             autoComplete="new-password"
             value={form.newPassword}
             onChange={handleFieldChange("newPassword")}
-            show={showNewPassword}
-            onToggleShow={() => setShowNewPassword((prev) => !prev)}
             error={errors.newPassword}
+            showPasswordToggle
           />
 
-          <PasswordField
+          <AuthField
             id="input-reset-confirm-password"
             label="Confirm New Password"
+            type="password"
+            required
             autoComplete="new-password"
             value={form.confirmPassword}
             onChange={handleFieldChange("confirmPassword")}
-            show={showConfirmPassword}
-            onToggleShow={() => setShowConfirmPassword((prev) => !prev)}
             error={errors.confirmPassword}
+            showPasswordToggle
           />
 
           <AuthSubmitButton

@@ -2,11 +2,12 @@
 
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
   AlertTriangle,
   ArrowLeft,
-  ArrowRight,
+  CalendarClock,
   CheckCircle2,
   ChevronRight,
   Clock,
@@ -16,11 +17,14 @@ import {
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useStudentAssignments } from "@/hooks/student/useStudentAssignments";
+import { getStudentEnrollments } from "@/services/studentCoursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatDateTime } from "@/lib/adminFormatters";
+import { useTheme } from "@/hooks/useTheme";
 import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
-import AssignmentSubmissionDetailModal from "../history/AssignmentSubmissionDetailModal";
+import AssignmentDetailModal from "../course-detail/AssignmentDetailModal";
+import CourseworkSummaryCard from "../CourseworkSummaryCard";
 
 const STATUS_STYLES = {
   DRAFT: "bg-stone-50 text-stone-500 border-stone-200",
@@ -29,6 +33,15 @@ const STATUS_STYLES = {
   GRADED: "bg-emerald-50 text-emerald-700 border-emerald-100",
   RETURNED: "bg-sky-50 text-sky-700 border-sky-100",
   RESUBMITTED: "bg-amber-50 text-amber-700 border-amber-100",
+};
+
+const STATUS_STYLES_VAULT = {
+  DRAFT: "bg-stone-500/10 text-stone-400 border-stone-500/20",
+  SUBMITTED: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  LATE: "bg-rose-500/10 text-rose-400 border-rose-500/20",
+  GRADED: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
+  RETURNED: "bg-sky-500/10 text-sky-400 border-sky-500/20",
+  RESUBMITTED: "bg-amber-500/10 text-amber-400 border-amber-500/20",
 };
 
 const STATUS_ICON = {
@@ -40,10 +53,15 @@ const STATUS_ICON = {
   RESUBMITTED: RefreshCw,
 };
 
+const NOT_SUBMITTED_STYLE = "bg-stone-50 text-stone-500 border-stone-200";
+const NOT_SUBMITTED_STYLE_VAULT = "bg-stone-500/10 text-stone-400 border-stone-500/20";
+const OVERDUE_STYLE = "bg-rose-50 text-rose-600 border-rose-100";
+const OVERDUE_STYLE_VAULT = "bg-rose-500/10 text-rose-400 border-rose-500/20";
+
 const SCORE_TONES = {
-  high: { bar: "bg-emerald-500", text: "text-emerald-700" },
-  mid: { bar: "bg-amber-500", text: "text-amber-700" },
-  low: { bar: "bg-rose-500", text: "text-rose-600" },
+  high: { bar: "bg-emerald-500", text: "text-emerald-700", textVault: "text-emerald-400" },
+  mid: { bar: "bg-amber-500", text: "text-amber-700", textVault: "text-amber-400" },
+  low: { bar: "bg-rose-500", text: "text-rose-600", textVault: "text-rose-400" },
 };
 
 function scoreTone(percentage) {
@@ -54,12 +72,19 @@ function scoreTone(percentage) {
 
 const STATUS_FILTERS = [
   { id: "ALL", label: "All" },
+  { id: "PENDING", label: "To Do" },
+  { id: "SUBMITTED", label: "Awaiting Grading" },
   { id: "GRADED", label: "Graded" },
-  { id: "PENDING", label: "Pending" },
 ];
 
 function sortAssignments(list) {
-  return [...list].sort((a, b) => {
+  const pending = list.filter((assignment) => !assignment.submission);
+  const submitted = list.filter((assignment) => assignment.submission);
+
+  pending.sort(
+    (a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime(),
+  );
+  submitted.sort((a, b) => {
     const at = a.submission.submitted_at
       ? new Date(a.submission.submitted_at).getTime()
       : 0;
@@ -68,13 +93,21 @@ function sortAssignments(list) {
       : 0;
     return bt - at;
   });
+
+  return [...pending, ...submitted];
 }
 
-function StatChip({ label, value, tone = "stone" }) {
+function StatChip({ label, value, tone = "stone", isVault }) {
   const toneClasses = {
-    stone: "bg-stone-50 border-stone-100 text-stone-700",
-    amber: "bg-amber-50 border-amber-100 text-amber-800",
-    emerald: "bg-emerald-50 border-emerald-100 text-emerald-700",
+    stone: isVault
+      ? "bg-white/5 border-stone-700 text-stone-300"
+      : "bg-stone-50 border-stone-100 text-stone-700",
+    amber: isVault
+      ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
+      : "bg-amber-50 border-amber-100 text-amber-800",
+    emerald: isVault
+      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+      : "bg-emerald-50 border-emerald-100 text-emerald-700",
   };
   return (
     <div
@@ -88,15 +121,19 @@ function StatChip({ label, value, tone = "stone" }) {
   );
 }
 
-function FilterButton({ active, onClick, children }) {
+function FilterButton({ active, onClick, isVault, children }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider border transition ${
         active
-          ? "bg-stone-900 border-stone-900 text-white"
-          : "bg-white border-stone-200 text-stone-500 hover:border-amber-300 hover:text-amber-800"
+          ? isVault
+            ? "bg-amber-600 border-amber-600 text-stone-950"
+            : "bg-stone-900 border-stone-900 text-white"
+          : isVault
+            ? "bg-stone-900/60 border-stone-700 text-stone-400 hover:border-amber-600/50 hover:text-amber-400"
+            : "bg-white border-stone-200 text-stone-500 hover:border-amber-300 hover:text-amber-800"
       }`}
     >
       {children}
@@ -104,91 +141,51 @@ function FilterButton({ active, onClick, children }) {
   );
 }
 
-function CourseSummaryCard({
-  courseTitle,
-  submittedCount,
-  gradedCount,
-  averagePercentage,
-  onOpen,
-}) {
-  const tone = averagePercentage === null ? null : scoreTone(averagePercentage);
-
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group w-full text-left rounded-2xl border border-stone-200 bg-white hover:border-amber-300 hover:shadow-[0_10px_30px_-20px_rgba(28,25,23,0.35)] transition p-5 space-y-4"
-    >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
-            Course
-          </p>
-          <h3 className="font-serif font-bold text-stone-900 mt-0.5 truncate">
-            {courseTitle}
-          </h3>
-        </div>
-        <span className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
-          <ClipboardList className="w-4 h-4" />
-        </span>
-      </div>
-      <div className="grid grid-cols-3 gap-2 text-center">
-        <div>
-          <p className="text-lg font-serif font-bold text-stone-900">
-            {submittedCount}
-          </p>
-          <p className="text-[9px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
-            Submitted
-          </p>
-        </div>
-        <div>
-          <p className="text-lg font-serif font-bold text-stone-900">
-            {gradedCount}
-          </p>
-          <p className="text-[9px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
-            Graded
-          </p>
-        </div>
-        <div>
-          <p className="text-lg font-serif font-bold text-amber-800">
-            {averagePercentage === null ? "—" : `${averagePercentage}%`}
-          </p>
-          <p className="text-[9px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
-            Avg score
-          </p>
-        </div>
-      </div>
-      {tone ? (
-        <div className="h-1.5 rounded-full bg-stone-100 overflow-hidden">
-          <div
-            className={`h-full rounded-full ${tone.bar}`}
-            style={{
-              width: `${Math.min(100, Math.max(0, averagePercentage))}%`,
-            }}
-          />
-        </div>
-      ) : null}
-      <div className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-stone-400 group-hover:text-amber-700 transition">
-        View submissions
-        <ArrowRight className="w-3 h-3 group-hover:translate-x-0.5 transition-transform" />
-      </div>
-    </button>
-  );
-}
-
-function AssignmentHistoryRow({ assignment, onOpen }) {
+function AssignmentRow({ assignment, isVault, onOpen }) {
   const submission = assignment.submission;
-  const isGraded = submission.marks !== null;
-  const gradingLabel = isGraded ? "Graded" : "Pending review";
-  const statusClass = STATUS_STYLES[submission.status] || STATUS_STYLES.DRAFT;
-  const StatusIcon = STATUS_ICON[submission.status] || ClipboardList;
+  const hasSubmission = Boolean(submission);
+  const isGraded = hasSubmission && submission.marks !== null;
+  const isOverdue = !hasSubmission && assignment.is_overdue;
+
+  const statusClass = hasSubmission
+    ? isVault
+      ? STATUS_STYLES_VAULT[submission.status] || STATUS_STYLES_VAULT.DRAFT
+      : STATUS_STYLES[submission.status] || STATUS_STYLES.DRAFT
+    : isOverdue
+      ? isVault
+        ? OVERDUE_STYLE_VAULT
+        : OVERDUE_STYLE
+      : isVault
+        ? NOT_SUBMITTED_STYLE_VAULT
+        : NOT_SUBMITTED_STYLE;
+  const StatusIcon = hasSubmission
+    ? STATUS_ICON[submission.status] || ClipboardList
+    : isOverdue
+      ? AlertTriangle
+      : Clock;
+  const statusLabel = hasSubmission
+    ? submission.status
+    : isOverdue
+      ? "OVERDUE"
+      : "NOT SUBMITTED";
+  const gradingLabel = hasSubmission
+    ? isGraded
+      ? "Graded"
+      : "Pending review"
+    : isOverdue
+      ? "Past due"
+      : "Awaiting submission";
   const tone = isGraded ? scoreTone(submission.percentage) : null;
 
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="group w-full flex items-center gap-3 rounded-xl border border-stone-200 bg-white hover:border-amber-300 hover:shadow-[0_8px_24px_-18px_rgba(28,25,23,0.35)] transition p-3.5 text-left"
+      className={`group w-full flex items-center gap-3 rounded-xl border transition p-3.5 text-left ${
+        isVault
+          ? "border-stone-800 bg-[#161412] hover:border-amber-700/50 hover:shadow-[0_8px_24px_-18px_rgba(0,0,0,0.6)]"
+          : "border-stone-200 bg-white hover:border-amber-300 hover:shadow-[0_8px_24px_-18px_rgba(28,25,23,0.35)]"
+      }`}
     >
       <span
         className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 border ${statusClass}`}
@@ -196,15 +193,28 @@ function AssignmentHistoryRow({ assignment, onOpen }) {
         <StatusIcon className="w-4 h-4" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block text-[13px] font-medium text-stone-800 truncate">
+        <span
+          className={`block text-[13px] font-medium truncate ${
+            isVault ? "text-stone-200" : "text-stone-800"
+          }`}
+        >
           {assignment.title}
         </span>
-        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-mono uppercase tracking-wider text-stone-400 mt-1">
+        <span
+          className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-mono uppercase tracking-wider mt-1 ${
+            isVault ? "text-stone-500" : "text-stone-400"
+          }`}
+        >
           {assignment.module ? <span>{assignment.module.title}</span> : null}
-          {submission.submitted_at ? (
+          {hasSubmission && submission.submitted_at ? (
             <span className="flex items-center gap-1">
               <Clock className="w-3 h-3" />{" "}
               {formatDateTime(submission.submitted_at)}
+            </span>
+          ) : !hasSubmission ? (
+            <span className="flex items-center gap-1">
+              <CalendarClock className="w-3 h-3" />
+              Due {formatDateTime(assignment.due_date)}
             </span>
           ) : null}
           <span>{gradingLabel}</span>
@@ -214,11 +224,11 @@ function AssignmentHistoryRow({ assignment, onOpen }) {
         <span
           className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${statusClass}`}
         >
-          {submission.status}
+          {statusLabel}
         </span>
         {isGraded ? (
           <span className="flex items-center gap-1.5 w-full">
-            <span className="flex-1 h-1.5 rounded-full bg-stone-100 overflow-hidden">
+            <span className={`flex-1 h-1.5 rounded-full overflow-hidden ${isVault ? "bg-white/10" : "bg-stone-100"}`}>
               <span
                 className={`block h-full rounded-full ${tone.bar}`}
                 style={{
@@ -226,7 +236,7 @@ function AssignmentHistoryRow({ assignment, onOpen }) {
                 }}
               />
             </span>
-            <span className={`text-[11px] font-mono font-bold ${tone.text}`}>
+            <span className={`text-[11px] font-mono font-bold ${isVault ? tone.textVault : tone.text}`}>
               {submission.marks}/{assignment.total_marks}
             </span>
           </span>
@@ -236,10 +246,10 @@ function AssignmentHistoryRow({ assignment, onOpen }) {
         <span
           className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${statusClass}`}
         >
-          {submission.status}
+          {statusLabel}
         </span>
         {isGraded ? (
-          <span className="text-[11px] font-mono text-stone-500">
+          <span className={`text-[11px] font-mono ${isVault ? "text-stone-400" : "text-stone-500"}`}>
             {submission.marks}/{assignment.total_marks}
             {submission.percentage !== null
               ? ` · ${submission.percentage}%`
@@ -247,12 +257,19 @@ function AssignmentHistoryRow({ assignment, onOpen }) {
           </span>
         ) : null}
       </span>
-      <ChevronRight className="w-4 h-4 text-stone-300 group-hover:text-amber-600 transition shrink-0" />
+      <ChevronRight
+        className={`w-4 h-4 transition shrink-0 ${
+          isVault
+            ? "text-stone-600 group-hover:text-amber-500"
+            : "text-stone-300 group-hover:text-amber-600"
+        }`}
+      />
     </button>
   );
 }
 
 export default function AssignmentsTab() {
+  const { isVault } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -268,14 +285,27 @@ export default function AssignmentsTab() {
     refetch,
   } = useStudentAssignments();
 
-  const submittedAssignments = useMemo(
-    () => assignments.filter((assignment) => assignment.submission),
-    [assignments],
-  );
+  const { data: enrollments = [] } = useQuery({
+    queryKey: ["studentEnrollments"],
+    queryFn: async () => {
+      const response = await getStudentEnrollments({ page: 1, pageSize: 100 });
+      return response?.data?.results || [];
+    },
+  });
+
+  const enrollmentStatusByCourseId = useMemo(() => {
+    const map = new Map();
+    enrollments.forEach((enrollment) => {
+      if (enrollment.course?.id) {
+        map.set(enrollment.course.id, enrollment.status);
+      }
+    });
+    return map;
+  }, [enrollments]);
 
   const groupsByCourse = useMemo(() => {
     const map = new Map();
-    submittedAssignments.forEach((assignment) => {
+    assignments.forEach((assignment) => {
       const courseId = assignment.course?.id;
       if (!courseId) return;
       const group = map.get(courseId) || {
@@ -287,11 +317,19 @@ export default function AssignmentsTab() {
     });
     return Array.from(map.values()).map((group) => {
       const assignmentsSorted = sortAssignments(group.assignments);
+      const pendingCount = assignmentsSorted.filter(
+        (assignment) => !assignment.submission,
+      ).length;
+      const awaitingCount = assignmentsSorted.filter(
+        (assignment) =>
+          assignment.submission && assignment.submission.marks === null,
+      ).length;
       const gradedCount = assignmentsSorted.filter(
-        (assignment) => assignment.submission.marks !== null,
+        (assignment) =>
+          assignment.submission && assignment.submission.marks !== null,
       ).length;
       const percentages = assignmentsSorted
-        .map((assignment) => assignment.submission.percentage)
+        .map((assignment) => assignment.submission?.percentage)
         .filter((value) => value !== null && value !== undefined);
       const averagePercentage = percentages.length
         ? Math.round(
@@ -302,11 +340,13 @@ export default function AssignmentsTab() {
       return {
         ...group,
         assignments: assignmentsSorted,
+        pendingCount,
+        awaitingCount,
         gradedCount,
         averagePercentage,
       };
     });
-  }, [submittedAssignments]);
+  }, [assignments]);
 
   const selectedGroup = useMemo(
     () =>
@@ -318,16 +358,23 @@ export default function AssignmentsTab() {
     [groupsByCourse, selectedCourseId],
   );
 
+  const canInteractWithSelectedCourse =
+    selectedGroup &&
+    enrollmentStatusByCourseId.get(selectedGroup.course.id) === "ACTIVE";
+
   const filteredAssignments = useMemo(() => {
     if (!selectedGroup) return [];
-    if (statusFilter === "GRADED") {
+    if (statusFilter === "PENDING") {
+      return selectedGroup.assignments.filter((a) => !a.submission);
+    }
+    if (statusFilter === "SUBMITTED") {
       return selectedGroup.assignments.filter(
-        (a) => a.submission.marks !== null,
+        (a) => a.submission && a.submission.marks === null,
       );
     }
-    if (statusFilter === "PENDING") {
+    if (statusFilter === "GRADED") {
       return selectedGroup.assignments.filter(
-        (a) => a.submission.marks === null,
+        (a) => a.submission && a.submission.marks !== null,
       );
     }
     return selectedGroup.assignments;
@@ -362,81 +409,116 @@ export default function AssignmentsTab() {
     );
   } else if (isError) {
     content = (
-      <div className="bg-white border border-stone-200 rounded-2xl p-8 text-center max-w-lg mx-auto">
-        <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+      <div
+        className={`border rounded-2xl p-8 text-center max-w-lg mx-auto ${
+          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200 bg-white"
+        }`}
+      >
+        <div
+          className={`w-12 h-12 border rounded-2xl flex items-center justify-center mx-auto mb-4 ${
+            isVault
+              ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
+              : "bg-rose-50 border-rose-100 text-rose-600"
+          }`}
+        >
           <AlertCircle className="w-6 h-6" />
         </div>
-        <h2 className="text-xl font-serif font-bold text-stone-900 mb-2">
+        <h2 className={`text-xl font-serif font-bold mb-2 ${isVault ? "text-stone-50" : "text-stone-900"}`}>
           Failed to Load Assignments
         </h2>
-        <p className="text-xs text-stone-500 font-light mb-6">
-          {getApiErrorMessage(
-            error,
-            "Unable to load your submitted assignments.",
-          )}
+        <p className={`text-xs font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+          {getApiErrorMessage(error, "Unable to load your assignments.")}
         </p>
         <button
           type="button"
           onClick={() => refetch()}
-          className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition"
+          className={`inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition ${
+            isVault
+              ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
+              : "bg-stone-900 hover:bg-stone-800 text-stone-100"
+          }`}
         >
           <RefreshCw className="w-4 h-4" />
           Retry
         </button>
       </div>
     );
-  } else if (submittedAssignments.length === 0) {
+  } else if (assignments.length === 0) {
     content = (
-      <div className="rounded-2xl border border-dashed border-stone-200 bg-white/70">
+      <div
+        className={`rounded-2xl border border-dashed ${
+          isVault ? "border-stone-700 bg-[#161412]/70" : "border-stone-200 bg-white/70"
+        }`}
+      >
         <EmptyState
           icon={ClipboardList}
-          label="No submitted assignments yet"
-          description="Once you submit an assignment in any of your courses, it will appear here."
+          label="No assignments yet"
+          description="Once your instructors publish assignments in your enrolled courses, they will appear here."
         />
       </div>
     );
   } else if (selectedCourseId) {
     if (!selectedGroup) {
       content = (
-        <div className="rounded-2xl border border-dashed border-stone-200 bg-white/70 p-10 text-center space-y-4">
-          <p className="text-sm text-stone-500">
-            We couldn&apos;t find submissions for that course.
+        <div
+          className={`rounded-2xl border border-dashed p-10 text-center space-y-4 ${
+            isVault ? "border-stone-700 bg-[#161412]/70" : "border-stone-200 bg-white/70"
+          }`}
+        >
+          <p className={`text-sm ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+            We couldn&apos;t find assignments for that course.
           </p>
           <button
             type="button"
             onClick={closeCourse}
-            className="inline-flex items-center gap-2 px-4 py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-mono uppercase tracking-wider rounded-xl transition"
+            className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-mono uppercase tracking-wider rounded-xl transition ${
+              isVault
+                ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
+                : "bg-stone-900 hover:bg-stone-800 text-white"
+            }`}
           >
             Back to Assignments
           </button>
         </div>
       );
     } else {
-      const gradedCount = selectedGroup.gradedCount;
-      const pendingCount = selectedGroup.assignments.length - gradedCount;
+      const { pendingCount, awaitingCount, gradedCount } = selectedGroup;
 
       content = (
         <div className="space-y-5">
           <button
             type="button"
             onClick={closeCourse}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-stone-200 hover:border-amber-300 hover:text-amber-800 text-stone-600 text-[11px] font-mono uppercase tracking-wider rounded-xl transition"
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 border text-[11px] font-mono uppercase tracking-wider rounded-xl transition ${
+              isVault
+                ? "border-stone-700 hover:border-amber-600/50 hover:text-amber-400 text-stone-400"
+                : "border-stone-200 hover:border-amber-300 hover:text-amber-800 text-stone-600"
+            }`}
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Back to Assignments
           </button>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h2 className="font-serif font-bold text-2xl text-stone-900">
+              <h2 className={`font-serif font-bold text-2xl ${isVault ? "text-stone-50" : "text-stone-900"}`}>
                 {selectedGroup.course.title}
               </h2>
-              <p className="text-xs text-stone-500 font-light mt-1">
-                {selectedGroup.assignments.length} submitted assignment
-                {selectedGroup.assignments.length === 1 ? "" : "s"}
+              <p className={`text-xs font-light mt-1 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+                {selectedGroup.assignments.length} assignment
+                {selectedGroup.assignments.length === 1 ? "" : "s"} total
+                {!canInteractWithSelectedCourse
+                  ? " · enrollment isn't active, submissions are disabled"
+                  : ""}
               </p>
             </div>
             <div className="flex items-center gap-2.5">
-              <StatChip label="Graded" value={gradedCount} tone="emerald" />
+              <StatChip
+                label="To do"
+                value={pendingCount}
+                tone={pendingCount > 0 ? "amber" : "stone"}
+                isVault={isVault}
+              />
+              <StatChip label="Graded" value={gradedCount} tone="emerald" isVault={isVault} />
               <StatChip
                 label="Avg score"
                 value={
@@ -445,22 +527,26 @@ export default function AssignmentsTab() {
                     : `${selectedGroup.averagePercentage}%`
                 }
                 tone="amber"
+                isVault={isVault}
               />
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-2 flex-wrap">
             {STATUS_FILTERS.map((filter) => {
               const count =
                 filter.id === "ALL"
                   ? selectedGroup.assignments.length
-                  : filter.id === "GRADED"
-                    ? gradedCount
-                    : pendingCount;
+                  : filter.id === "PENDING"
+                    ? pendingCount
+                    : filter.id === "SUBMITTED"
+                      ? awaitingCount
+                      : gradedCount;
               return (
                 <FilterButton
                   key={filter.id}
                   active={statusFilter === filter.id}
                   onClick={() => setStatusFilter(filter.id)}
+                  isVault={isVault}
                 >
                   {filter.label} ({count})
                 </FilterButton>
@@ -468,7 +554,11 @@ export default function AssignmentsTab() {
             })}
           </div>
           {filteredAssignments.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-stone-200 bg-white/70">
+            <div
+              className={`rounded-2xl border border-dashed ${
+                isVault ? "border-stone-700 bg-[#161412]/70" : "border-stone-200 bg-white/70"
+              }`}
+            >
               <EmptyState
                 icon={ClipboardList}
                 label="Nothing here"
@@ -479,9 +569,10 @@ export default function AssignmentsTab() {
           ) : (
             <div className="space-y-2.5">
               {filteredAssignments.map((assignment) => (
-                <AssignmentHistoryRow
+                <AssignmentRow
                   key={assignment.id}
                   assignment={assignment}
+                  isVault={isVault}
                   onOpen={() => setDetailAssignment(assignment)}
                 />
               ))}
@@ -494,15 +585,19 @@ export default function AssignmentsTab() {
     content = (
       <div className="space-y-6">
         <div>
-          <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-700/80 mb-2">
-            Submitted work
+          <p
+            className={`text-[10px] font-mono uppercase tracking-[0.2em] mb-2 ${
+              isVault ? "text-amber-500" : "text-amber-700/80"
+            }`}
+          >
+            Coursework
           </p>
-          <h2 className="font-serif font-bold text-2xl sm:text-3xl text-stone-900">
-            Your submitted assignments
+          <h2 className={`font-serif font-bold text-2xl sm:text-3xl ${isVault ? "text-stone-50" : "text-stone-900"}`}>
+            Your assignments
           </h2>
-          <p className="text-sm text-stone-500 font-light mt-2">
-            Grouped by course — open a course to review submissions, marks, and
-            feedback.
+          <p className={`text-sm font-light mt-2 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+            Grouped by course — open a course to submit pending work or review
+            past submissions, marks, and feedback.
           </p>
         </div>
         <motion.div
@@ -512,12 +607,17 @@ export default function AssignmentsTab() {
           className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
         >
           {groupsByCourse.map((group) => (
-            <CourseSummaryCard
+            <CourseworkSummaryCard
               key={group.course.id}
               courseTitle={group.course.title}
-              submittedCount={group.assignments.length}
-              gradedCount={group.gradedCount}
+              accent="amber"
+              itemLabel="assignment"
+              totalCount={group.assignments.length}
+              pendingCount={group.pendingCount}
+              completedCount={group.gradedCount}
+              completedLabel="Graded"
               averagePercentage={group.averagePercentage}
+              isVault={isVault}
               onOpen={() => openCourse(group.course.id)}
             />
           ))}
@@ -529,8 +629,9 @@ export default function AssignmentsTab() {
   return (
     <>
       {content}
-      <AssignmentSubmissionDetailModal
+      <AssignmentDetailModal
         assignment={detailAssignment}
+        canInteract={Boolean(canInteractWithSelectedCourse)}
         onClose={() => setDetailAssignment(null)}
       />
     </>

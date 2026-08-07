@@ -105,7 +105,7 @@ export default function MultiSelect({
   return (
     <div ref={containerRef} className="relative">
       {label && (
-        <label className="text-[10px] font-mono text-stone-450 block uppercase tracking-wider mb-1.5 font-semibold">
+        <label className="text-[10px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold">
           {label}
         </label>
       )}
@@ -116,9 +116,9 @@ export default function MultiSelect({
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
           disabled={disabled || loading}
-          className="w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-850 flex items-center justify-between gap-2 transition disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-800 flex items-center justify-between gap-2 transition disabled:opacity-60 disabled:cursor-not-allowed"
         >
-          <span className={selectedOptions.length ? "text-stone-850" : "text-stone-400"}>
+          <span className={selectedOptions.length ? "text-stone-800" : "text-stone-400"}>
             {loading ? "Loading..." : selectedOptions.length ? `${selectedOptions.length} selected` : placeholder}
           </span>
           <ChevronDown
@@ -183,7 +183,7 @@ export default function MultiSelect({
                       }}
                       disabled={isSubmittingCreate}
                       placeholder={`${createLabel} name`}
-                      className="w-full px-3 py-2 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-lg text-xs font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60"
+                      className="w-full px-3 py-2 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-lg text-xs font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60"
                     />
                     {createError && <p className="text-[10px] font-mono text-red-600">{createError}</p>}
                     <div className="flex items-center justify-end gap-2 pt-1">

@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { User, ChevronDown, LogOut } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLogoutFlow } from "@/hooks/useLogoutFlow";
+import { useTheme } from "@/hooks/useTheme";
 import { getProfile } from "@/services/profileService";
 
 const FALLBACK_LABEL = "My Account";
@@ -17,8 +18,14 @@ function getFirstName(name) {
   return firstWord || FALLBACK_LABEL;
 }
 
-export default function AccountMenu({ label, onProfile, variant = "light" }) {
+export default function AccountMenu({
+  label,
+  onProfile,
+  variant = "light",
+  className = "",
+}) {
   const isDark = variant === "dark";
+  const { isVault } = useTheme();
   const { user } = useAuth();
   const { isSigningOut, signOut } = useLogoutFlow();
   const [backendProfile, setBackendProfile] = useState(null);
@@ -197,13 +204,25 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
             left: menuPosition.left,
             width: MENU_WIDTH,
           }}
-          className="max-w-[calc(100vw-2rem)] bg-white border border-stone-200 rounded-xl shadow-2xl py-1.5 z-40"
+          className={`max-w-[calc(100vw-2rem)] font-mono border rounded-xl shadow-2xl py-1.5 z-40 ${
+            isVault
+              ? "bg-stone-900 border-stone-800"
+              : "bg-white border-stone-200"
+          }`}
         >
-          <div className="px-3.5 py-2 border-b border-stone-100 mb-1">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-semibold">
+          <div
+            className={`px-3.5 py-2 mb-1 border-b ${
+              isVault ? "border-stone-800" : "border-stone-100"
+            }`}
+          >
+            <p className="text-[10px] uppercase tracking-widest text-stone-400 font-semibold">
               Account
             </p>
-            <p className="text-xs font-semibold text-stone-800 truncate mt-0.5">
+            <p
+              className={`text-xs font-semibold truncate mt-0.5 ${
+                isVault ? "text-stone-100" : "text-stone-800"
+              }`}
+            >
               {displayLabel}
             </p>
           </div>
@@ -228,15 +247,23 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
                   handleItemKeyDown(event, index, menuItems.length)
                 }
                 className={
-                  "w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold font-mono focus:outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-transparent " +
+                  "w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold focus:outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-transparent " +
                   (danger
-                    ? "text-rose-700 hover:bg-rose-50 focus:bg-rose-50"
-                    : "text-stone-700 hover:bg-stone-50 focus:bg-stone-50")
+                    ? isVault
+                      ? "text-rose-400 hover:bg-rose-500/10 focus:bg-rose-500/10"
+                      : "text-rose-700 hover:bg-rose-50 focus:bg-rose-50"
+                    : isVault
+                      ? "text-stone-200 hover:bg-stone-800 focus:bg-stone-800"
+                      : "text-stone-700 hover:bg-stone-50 focus:bg-stone-50")
                 }
               >
                 <Icon
                   className={`w-4 h-4 ${
-                    danger ? "text-rose-500" : "text-stone-400"
+                    danger
+                      ? "text-rose-500"
+                      : isVault
+                        ? "text-stone-500"
+                        : "text-stone-400"
                   }`}
                 />
                 {itemLabel}
@@ -251,7 +278,7 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
   return (
     <div
       ref={containerRef}
-      className={`relative inline-block text-left ${isOpen ? "z-40" : "z-20"}`}
+      className={`relative inline-block text-left ${className} ${isOpen ? "z-40" : "z-20"}`}
     >
       <button
         id="account-menu-trigger"
@@ -263,13 +290,13 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         className={
-          "px-3.5 py-2.5 text-xs font-semibold font-mono rounded-xl tracking-wider transition-all duration-200 flex items-center gap-2 border shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed " +
+          "w-full px-3.5 py-2.5 text-xs font-semibold font-mono rounded-xl tracking-wider transition-all duration-200 flex items-center gap-2 border shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed " +
           (isOpen
             ? isDark
               ? "bg-stone-800 border-stone-700 shadow-md"
               : "bg-white border-amber-200 ring-2 ring-amber-600/15"
             : isDark
-              ? "bg-stone-850 hover:bg-stone-800 border-stone-800 hover:border-stone-700 hover:shadow-md"
+              ? "bg-stone-950 hover:bg-stone-800 border-stone-800 hover:border-stone-700 hover:shadow-md"
               : "bg-stone-50 hover:bg-white border-stone-200 hover:border-stone-300")
         }
         title="Open account menu"

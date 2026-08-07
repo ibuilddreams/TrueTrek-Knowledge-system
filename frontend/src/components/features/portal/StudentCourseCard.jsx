@@ -3,6 +3,7 @@
 import { Calendar, CheckCircle2, UserRound } from "lucide-react";
 import { motion } from "motion/react";
 import { formatDate } from "@/lib/adminFormatters";
+import { useTheme } from "@/hooks/useTheme";
 
 function getInitials(title) {
   return (title || "C")
@@ -14,7 +15,7 @@ function getInitials(title) {
     .toUpperCase();
 }
 
-function ProgressRing({ value }) {
+function ProgressRing({ value, isVault }) {
   const size = 52;
   const stroke = 4;
   const radius = (size - stroke) / 2;
@@ -29,7 +30,7 @@ function ProgressRing({ value }) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#f5f5f4"
+          stroke={isVault ? "rgba(255,255,255,0.1)" : "#f5f5f4"}
           strokeWidth={stroke}
         />
         <motion.circle
@@ -37,7 +38,7 @@ function ProgressRing({ value }) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke={value >= 80 ? "#059669" : "#d97706"}
+          stroke={value >= 80 ? (isVault ? "#34d399" : "#059669") : isVault ? "#f59e0b" : "#d97706"}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -46,7 +47,11 @@ function ProgressRing({ value }) {
           transition={{ duration: 0.7, ease: "easeOut" }}
         />
       </svg>
-      <span className="absolute inset-0 flex items-center justify-center text-[11px] font-mono font-bold text-stone-800">
+      <span
+        className={`absolute inset-0 flex items-center justify-center text-[11px] font-mono font-bold ${
+          isVault ? "text-stone-100" : "text-stone-800"
+        }`}
+      >
         {value}%
       </span>
     </div>
@@ -54,6 +59,7 @@ function ProgressRing({ value }) {
 }
 
 export default function StudentCourseCard({ enrollment, onClick }) {
+  const { isVault } = useTheme();
   const course = enrollment.course || {};
   const progress = Math.round(enrollment.completion_percentage || 0);
   const instructors = course.instructors || [];
@@ -79,7 +85,11 @@ export default function StudentCourseCard({ enrollment, onClick }) {
             }
           : undefined
       }
-      className={`group relative flex flex-col h-full rounded-2xl border border-stone-200/80 bg-white/90 p-5 sm:p-6 transition-all duration-300 hover:-translate-y-0.5 hover:border-amber-200/70 hover:shadow-[0_12px_32px_-20px_rgba(120,53,15,0.28)] ${
+      className={`group relative flex flex-col h-full rounded-2xl border p-5 sm:p-6 transition-all duration-300 hover:-translate-y-0.5 ${
+        isVault
+          ? "border-stone-800 bg-[#161412] hover:border-amber-700/50 hover:shadow-[0_12px_32px_-20px_rgba(0,0,0,0.6)]"
+          : "border-stone-200/80 bg-white/90 hover:border-amber-200/70 hover:shadow-[0_12px_32px_-20px_rgba(120,53,15,0.28)]"
+      } ${
         onClick
           ? "cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 focus-visible:ring-offset-2"
           : ""
@@ -89,7 +99,14 @@ export default function StudentCourseCard({ enrollment, onClick }) {
 
       <div className="flex items-start justify-between gap-3 mb-5">
         <div className="flex items-center gap-3 min-w-0">
-          <div className="w-12 h-12 rounded-2xl overflow-hidden border border-stone-100 bg-stone-50 text-amber-700 flex items-center justify-center shrink-0 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]">
+          <div
+            className={`w-12 h-12 rounded-2xl overflow-hidden flex items-center justify-center shrink-0 ${
+              isVault
+                ? "border border-amber-500/20 bg-amber-500/10 text-amber-400"
+                : "border border-stone-100 bg-stone-50 text-amber-700 shadow-[inset_0_1px_0_rgba(255,255,255,0.8)]"
+            }`}
+          >
+
             {course.image ? (
               <img
                 src={course.image}
@@ -103,10 +120,18 @@ export default function StudentCourseCard({ enrollment, onClick }) {
             )}
           </div>
           <div className="min-w-0">
-            <p className="text-[10px] font-mono uppercase tracking-[0.16em] text-stone-400 truncate">
+            <p
+              className={`text-[10px] font-mono uppercase tracking-[0.16em] truncate ${
+                isVault ? "text-stone-500" : "text-stone-400"
+              }`}
+            >
               {course.category?.name || "General"}
             </p>
-            <h3 className="font-serif font-bold text-[1.05rem] text-stone-900 leading-snug mt-0.5 line-clamp-2">
+            <h3
+              className={`font-serif font-bold text-[1.05rem] leading-snug mt-0.5 line-clamp-2 ${
+                isVault ? "text-stone-50" : "text-stone-900"
+              }`}
+            >
               {course.title}
             </h3>
           </div>
@@ -115,10 +140,16 @@ export default function StudentCourseCard({ enrollment, onClick }) {
         <span
           className={`shrink-0 inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider px-2 py-1 rounded-lg border ${
             statusLabel === "ACTIVE"
-              ? "bg-emerald-50/80 text-emerald-700 border-emerald-100"
+              ? isVault
+                ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
+                : "bg-emerald-50/80 text-emerald-700 border-emerald-100"
               : statusLabel === "COMPLETED"
-                ? "bg-sky-50/80 text-sky-700 border-sky-100"
-                : "bg-stone-50 text-stone-500 border-stone-200"
+                ? isVault
+                  ? "bg-sky-500/10 text-sky-400 border-sky-500/20"
+                  : "bg-sky-50/80 text-sky-700 border-sky-100"
+                : isVault
+                  ? "bg-stone-500/10 text-stone-400 border-stone-500/20"
+                  : "bg-stone-50 text-stone-500 border-stone-200"
           }`}
         >
           <span
@@ -135,27 +166,49 @@ export default function StudentCourseCard({ enrollment, onClick }) {
       </div>
 
       <div className="flex items-center gap-4 mb-5">
-        <ProgressRing value={progress} />
+        <ProgressRing value={progress} isVault={isVault} />
         <div className="min-w-0 flex-1">
-          <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-stone-400 mb-1">
+          <p
+            className={`text-[10px] font-mono uppercase tracking-[0.14em] mb-1 ${
+              isVault ? "text-stone-500" : "text-stone-400"
+            }`}
+          >
             Learning progress
           </p>
-          <p className="text-sm text-stone-700 font-medium leading-snug">
+          <p
+            className={`text-sm font-medium leading-snug ${
+              isVault ? "text-stone-300" : "text-stone-700"
+            }`}
+          >
             {isCompleted
               ? "Course completed"
               : progress === 0
                 ? "Ready to begin"
                 : "Keep going — you're making progress"}
           </p>
-          <p className="text-[11px] text-stone-400 mt-1 font-mono truncate">
+          <p
+            className={`text-[11px] mt-1 font-mono truncate ${
+              isVault ? "text-stone-500" : "text-stone-400"
+            }`}
+          >
             {course.code || "No code"}
           </p>
         </div>
       </div>
 
-      <div className="mt-auto space-y-3 pt-4 border-t border-stone-100">
-        <div className="flex items-center gap-2 text-[12px] text-stone-600 min-w-0">
-          <UserRound className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+      <div
+        className={`mt-auto space-y-3 pt-4 border-t ${
+          isVault ? "border-stone-800" : "border-stone-100"
+        }`}
+      >
+        <div
+          className={`flex items-center gap-2 text-[12px] min-w-0 ${
+            isVault ? "text-stone-300" : "text-stone-600"
+          }`}
+        >
+          <UserRound
+            className={`w-3.5 h-3.5 shrink-0 ${isVault ? "text-stone-500" : "text-stone-400"}`}
+          />
           <span className="truncate">{leadInstructor}</span>
         </div>
 

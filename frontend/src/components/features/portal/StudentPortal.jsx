@@ -114,7 +114,7 @@ function StudentPortalContent() {
   return (
     <div
       id="student-portal-view"
-      className="py-10 px-4 sm:px-6 md:px-10 max-w-7xl mx-auto min-h-[85vh] font-sans"
+      className="pb-10  px-4 sm:px-6 md:px-10 max-w-7xl mx-auto min-h-[85vh] font-sans"
     >
       <PortalToast
         notification={lastNotification}
@@ -129,41 +129,46 @@ function StudentPortalContent() {
         aggregateScore={aggregateScore}
       />
 
-      <div className="mb-8">
-        <TabNav
-          tabs={PORTAL_TABS}
-          activeTab={activeTab}
-          onChange={setActiveTab}
-          ariaLabel="Student portal sections"
-        />
-      </div>
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8 items-start">
+        <div className="lg:col-span-1 lg:sticky lg:top-24">
+          <TabNav
+            variant="sidebar"
+            tabs={PORTAL_TABS}
+            activeTab={activeTab}
+            onChange={setActiveTab}
+            ariaLabel="Student portal sections"
+          />
+        </div>
 
-      <TabTransition activeKey={activeTab}>
-        {activeTab === "dashboard" && <DashboardTab />}
-        {activeTab === "courses" && <CoursesTab />}
-        {activeTab === "assignments" && <AssignmentsTab />}
-        {activeTab === "quizzes" && <QuizzesTab />}
-        {activeTab === "certificates" && (
-          <CertificatesTab studentName={displayName} />
-        )}
-        {activeTab === "drill" && (
-          <DrillTab
-            drillCompletedList={drillCompletedList}
-            setDrillCompletedList={setDrillCompletedList}
-            setPoints={setPoints}
-            setStreakDays={setStreakDays}
-            setAggregateScore={setAggregateScore}
-            onNotify={setLastNotification}
-          />
-        )}
-        {activeTab === "warroom" && (
-          <WarRoomTab
-            setConsultationCount={setConsultationCount}
-            setPoints={setPoints}
-            onNotify={setLastNotification}
-          />
-        )}
-      </TabTransition>
+        <div className="lg:col-span-3">
+          <TabTransition activeKey={activeTab}>
+            {activeTab === "dashboard" && <DashboardTab />}
+            {activeTab === "courses" && <CoursesTab />}
+            {activeTab === "assignments" && <AssignmentsTab />}
+            {activeTab === "quizzes" && <QuizzesTab />}
+            {activeTab === "certificates" && (
+              <CertificatesTab studentName={displayName} />
+            )}
+            {activeTab === "drill" && (
+              <DrillTab
+                drillCompletedList={drillCompletedList}
+                setDrillCompletedList={setDrillCompletedList}
+                setPoints={setPoints}
+                setStreakDays={setStreakDays}
+                setAggregateScore={setAggregateScore}
+                onNotify={setLastNotification}
+              />
+            )}
+            {activeTab === "warroom" && (
+              <WarRoomTab
+                setConsultationCount={setConsultationCount}
+                setPoints={setPoints}
+                onNotify={setLastNotification}
+              />
+            )}
+          </TabTransition>
+        </div>
+      </div>
     </div>
   );
 }

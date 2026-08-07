@@ -364,23 +364,22 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
                   />
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <AreaChart data={liveCompletionByCourse} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
-                      <defs>
-                        <linearGradient id="scoreColor" x1="0" y1="0" x2="0" y2="1">
-                          <stop offset="5%" stopColor="#b45309" stopOpacity={0.2} />
-                          <stop offset="95%" stopColor="#b45309" stopOpacity={0} />
-                        </linearGradient>
-                      </defs>
-                      <CartesianGrid strokeDasharray="3 3" stroke="#f5f5f4" />
+                    <BarChart data={liveCompletionByCourse} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
                       <XAxis dataKey="name" stroke="#78716c" />
-                      <YAxis stroke="#78716c" />
+                      <YAxis allowDecimals={false} domain={[0, 100]} stroke="#78716c" />
                       <Tooltip
                         contentStyle={{ backgroundColor: '#1c1917', border: '1px solid #44403c', borderRadius: '12px' }}
                         labelStyle={{ color: '#fff', fontFamily: 'serif', fontWeight: 'bold' }}
-                        itemStyle={{ fontFamily: 'monospace' }}
+                        itemStyle={{ fontFamily: 'monospace', color: '#f59e0b' }}
+                        formatter={(value) => [`${value}%`, 'Completion']}
                       />
-                      <Area type="monotone" dataKey="Completion" stroke="#b45309" fillOpacity={1} fill="url(#scoreColor)" strokeWidth={2} name="Completion %" />
-                    </AreaChart>
+                      <Bar dataKey="Completion" fill="#b45309" radius={[4, 4, 0, 0]}>
+                        {liveCompletionByCourse.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#b45309' : '#d97706'} />
+                        ))}
+                      </Bar>
+                    </BarChart>
                   </ResponsiveContainer>
                 )}
               </div>

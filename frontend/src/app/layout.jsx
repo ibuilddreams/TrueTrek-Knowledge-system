@@ -4,19 +4,19 @@ import AppProviders from "@/providers/AppProviders";
 
 const inter = Inter({
   subsets: ["latin"],
-  variable: "--font-sans",
+  variable: "--font-inter",
   display: "swap",
 });
 
 const playfair = Playfair_Display({
   subsets: ["latin"],
-  variable: "--font-serif",
+  variable: "--font-playfair",
   display: "swap",
 });
 
 const spaceGrotesk = Space_Grotesk({
   subsets: ["latin"],
-  variable: "--font-display",
+  variable: "--font-grotesk",
   display: "swap",
 });
 

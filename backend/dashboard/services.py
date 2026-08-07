@@ -1,4 +1,5 @@
-from django.db.models import Avg, Count, Q
+from django.db.models import Avg, Count, DecimalField, OuterRef, Q, Subquery, Value
+from django.db.models.functions import Coalesce
 from django.utils import timezone
 
 from assignments.models import Assignment, AssignmentSubmission
@@ -142,8 +143,18 @@ def get_teacher_dashboard(user):
         grading_status=QuizAnswer.GradingStatus.PENDING_GRADING,
     ).count()
 
+    enrollment_progress = CourseProgress.objects.filter(
+        course_id=OuterRef("course_id"), student_id=OuterRef("student_id")
+    ).values("completion_percentage")[:1]
+    enrollments_with_progress = Enrollment.objects.filter(teacher=user).annotate(
+        progress_percentage=Coalesce(
+            Subquery(enrollment_progress, output_field=DecimalField()),
+            Value(0, output_field=DecimalField()),
+        )
+    )
+
     average_student_progress = (
-        course_progress.aggregate(avg=Avg("completion_percentage"))["avg"] or 0
+        enrollments_with_progress.aggregate(avg=Avg("progress_percentage"))["avg"] or 0
     )
 
     statistics = {
@@ -166,8 +177,8 @@ def get_teacher_dashboard(user):
     )
 
     completion_by_course = list(
-        course_progress.values("course__title")
-        .annotate(avg=Avg("completion_percentage"))
+        enrollments_with_progress.values("course__title")
+        .annotate(avg=Avg("progress_percentage"))
         .order_by("-avg")
     )
 
