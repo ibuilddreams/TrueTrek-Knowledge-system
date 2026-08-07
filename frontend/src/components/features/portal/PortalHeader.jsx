@@ -58,67 +58,64 @@ export default function PortalHeader({
           </div>
         </div>
 
-        <div className="flex flex-col gap-3">
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="bg-stone-950/60 border border-stone-800 p-3 rounded-xl flex items-center gap-3 min-w-[140px]">
-              <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-                <Award className="w-4 h-4 text-amber-400" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[9px] font-mono uppercase text-stone-100 tracking-wider">
-                  XP / Level
-                </p>
-                <p className="text-xs font-mono font-bold text-stone-100 mt-0.5 truncate">
-                  {points} · Lvl {levelInfo.level}
-                </p>
-              </div>
+        <div className="grid grid-cols-2 gap-3">
+          <div className="bg-stone-950/60 border border-stone-800 p-3 rounded-xl flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+              <Award className="w-4 h-4 text-amber-400" />
             </div>
-
-            <div className="bg-stone-950/60 border border-stone-800 p-3 rounded-xl flex items-center gap-3 min-w-[120px]">
-              <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-                <Flame className="w-4 h-4 text-amber-400" />
-              </div>
-              <div className="min-w-0">
-                <p className="text-[9px] font-mono uppercase text-stone-100 tracking-wider">
-                  Streak
-                </p>
-                <p className="text-xs font-mono font-bold text-stone-100 mt-0.5">
-                  {streakDays} Days
-                </p>
-              </div>
+            <div className="min-w-0">
+              <p className="text-[9px] font-mono uppercase text-stone-100 tracking-wider">
+                XP / Level
+              </p>
+              <p className="text-xs font-mono font-bold text-stone-100 mt-0.5 truncate">
+                {points} · Lvl {levelInfo.level}
+              </p>
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-3">
-            <div className="bg-stone-950/60 border border-stone-800 p-3 rounded-xl flex items-center gap-3 min-w-[150px]">
-              <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-                <Medal className="w-4 h-4 text-amber-400" />
-              </div>
-              <div className="min-w-0 w-full">
-                <p className="text-[9px] font-mono uppercase text-stone-100 tracking-wider">
-                  Score
+          <div className="bg-stone-950/60 border border-stone-800 p-3 rounded-xl flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+              <Flame className="w-4 h-4 text-amber-400" />
+            </div>
+            <div className="min-w-0">
+              <p className="text-[9px] font-mono uppercase text-stone-100 tracking-wider">
+                Streak
+              </p>
+              <p className="text-xs font-mono font-bold text-stone-100 mt-0.5">
+                {streakDays} Days
+              </p>
+            </div>
+          </div>
+
+          <div className="bg-stone-950/60 border border-stone-800 p-3 rounded-xl flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
+              <Medal className="w-4 h-4 text-amber-400" />
+            </div>
+            <div className="min-w-0 w-full">
+              <p className="text-[9px] font-mono uppercase text-stone-100 tracking-wider">
+                Score
+              </p>
+              <div className="flex items-center gap-2 mt-0.5">
+                <p className="text-xs font-mono font-bold text-stone-100 shrink-0">
+                  {aggregateScore}%
                 </p>
-                <div className="flex items-center gap-2 mt-0.5">
-                  <p className="text-xs font-mono font-bold text-stone-100 shrink-0">
-                    {aggregateScore}%
-                  </p>
-                  <div className="w-14 bg-stone-800 h-1.5 rounded-full overflow-hidden shrink-0">
-                    <motion.div
-                      className="bg-amber-500 h-full rounded-full"
-                      initial={{ width: 0 }}
-                      animate={{ width: `${aggregateScore}%` }}
-                      transition={{ duration: 0.8 }}
-                    />
-                  </div>
+                <div className="w-14 bg-stone-800 h-1.5 rounded-full overflow-hidden shrink-0">
+                  <motion.div
+                    className="bg-amber-500 h-full rounded-full"
+                    initial={{ width: 0 }}
+                    animate={{ width: `${aggregateScore}%` }}
+                    transition={{ duration: 0.8 }}
+                  />
                 </div>
               </div>
             </div>
-
-            <AccountMenu
-              variant="dark"
-              onProfile={() => router.push(ROUTES.PROFILE)}
-            />
           </div>
+
+          <AccountMenu
+            variant="dark"
+            className="w-full"
+            onProfile={() => router.push(ROUTES.PROFILE)}
+          />
         </div>
       </div>
     </div>

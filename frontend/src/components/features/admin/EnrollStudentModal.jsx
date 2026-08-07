@@ -155,7 +155,7 @@ export default function EnrollStudentModal({ isOpen, onClose, onEnrolled, defaul
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -164,7 +164,7 @@ export default function EnrollStudentModal({ isOpen, onClose, onEnrolled, defaul
           <button
             type="submit"
             disabled={isSubmitting || isLoadingOptions}
-            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2"
+            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>

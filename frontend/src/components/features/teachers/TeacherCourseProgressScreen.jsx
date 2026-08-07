@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ArrowLeft, LineChart } from "lucide-react";
 import TabNav from "@/components/ui/TabNav";
+import TabTransition from "@/components/ui/TabTransition";
 import { SUB_TABS } from "@/components/features/progress/progressConstants";
 import LessonProgressPanel from "@/components/features/progress/LessonProgressPanel";
 import AssignmentProgressPanel from "@/components/features/progress/AssignmentProgressPanel";
@@ -41,9 +42,11 @@ export default function TeacherCourseProgressScreen({ courseId, course, onBack }
 
       <TabNav tabs={SUB_TABS} activeTab={activeSubTab} onChange={setActiveSubTab} ariaLabel="Progress sections" />
 
-      {activeSubTab === "lessons" && <LessonProgressPanel courseId={courseId} />}
-      {activeSubTab === "assignments" && <AssignmentProgressPanel courseId={courseId} />}
-      {activeSubTab === "quizzes" && <QuizProgressPanel courseId={courseId} />}
+      <TabTransition activeKey={activeSubTab}>
+        {activeSubTab === "lessons" && <LessonProgressPanel courseId={courseId} />}
+        {activeSubTab === "assignments" && <AssignmentProgressPanel courseId={courseId} />}
+        {activeSubTab === "quizzes" && <QuizProgressPanel courseId={courseId} />}
+      </TabTransition>
     </div>
   );
 }

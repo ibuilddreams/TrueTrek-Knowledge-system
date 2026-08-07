@@ -164,7 +164,7 @@ export default function EnrollmentScoresTab() {
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-stone-50 text-stone-450 font-mono text-[10px] uppercase tracking-wider border-b border-stone-200/80">
+              <tr className="bg-stone-50 text-stone-400 font-mono text-[10px] uppercase tracking-wider border-b border-stone-200/80">
                 <th className="py-4 px-6 font-semibold">Student Name / Email</th>
                 <th className="py-4 px-6 font-semibold">Courses</th>
                 <th className="py-4 px-6 font-semibold text-center">Avg Score</th>
@@ -175,7 +175,7 @@ export default function EnrollmentScoresTab() {
               </tr>
             </thead>
 
-            <tbody className="divide-y divide-stone-100 text-stone-702 text-xs">
+            <tbody className="divide-y divide-stone-100 text-stone-700 text-xs">
               {filteredStudents.length > 0 ? (
                 filteredStudents.map((student) => {
                   const daysSinceLast = daysSinceActivity(student.last_activity_at);

@@ -23,6 +23,7 @@ import {
 } from "recharts";
 import { getStudentDashboardStats } from "@/services/studentDashboardService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
+import { useTheme } from "@/hooks/useTheme";
 import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
 
@@ -68,7 +69,7 @@ function ProgressRing({ value, size = 128, stroke = 10 }) {
   );
 }
 
-function CourseStat({ label, value, icon: Icon, delay = 0 }) {
+function CourseStat({ label, value, icon: Icon, delay = 0, isVault }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -76,14 +77,22 @@ function CourseStat({ label, value, icon: Icon, delay = 0 }) {
       transition={{ duration: 0.35, delay }}
       className="flex items-center gap-3.5 min-w-0"
     >
-      <div className="w-10 h-10 rounded-xl bg-stone-100 border border-stone-200/80 text-stone-600 flex items-center justify-center shrink-0">
+      <div
+        className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
+          isVault ? "bg-white/5 border-white/10 text-stone-300" : "bg-stone-100 border-stone-200/80 text-stone-600"
+        }`}
+      >
         <Icon className="w-4 h-4" />
       </div>
       <div className="min-w-0">
-        <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-stone-400 truncate">
+        <p
+          className={`text-[10px] font-mono uppercase tracking-[0.14em] truncate ${
+            isVault ? "text-stone-500" : "text-stone-400"
+          }`}
+        >
           {label}
         </p>
-        <p className="text-2xl font-serif font-bold text-stone-900 leading-none mt-1">
+        <p className={`text-2xl font-serif font-bold leading-none mt-1 ${isVault ? "text-stone-50" : "text-stone-900"}`}>
           {value}
         </p>
       </div>
@@ -91,12 +100,20 @@ function CourseStat({ label, value, icon: Icon, delay = 0 }) {
   );
 }
 
-function ActionMetric({ label, value, icon: Icon, tone = "stone", delay = 0 }) {
+function ActionMetric({ label, value, icon: Icon, tone = "stone", delay = 0, isVault }) {
   const tones = {
-    stone: "bg-stone-50 border-stone-200/80 text-stone-600",
-    amber: "bg-amber-50/80 border-amber-100 text-amber-800",
-    rose: "bg-rose-50/70 border-rose-100 text-rose-700",
-    emerald: "bg-emerald-50/70 border-emerald-100 text-emerald-700",
+    stone: isVault
+      ? "bg-white/5 border-white/10 text-stone-300"
+      : "bg-stone-50 border-stone-200/80 text-stone-600",
+    amber: isVault
+      ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
+      : "bg-amber-50/80 border-amber-100 text-amber-800",
+    rose: isVault
+      ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
+      : "bg-rose-50/70 border-rose-100 text-rose-700",
+    emerald: isVault
+      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
+      : "bg-emerald-50/70 border-emerald-100 text-emerald-700",
   };
 
   return (
@@ -104,15 +121,27 @@ function ActionMetric({ label, value, icon: Icon, tone = "stone", delay = 0 }) {
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
-      className="group relative rounded-2xl border border-stone-200/80 bg-white/90 p-5 overflow-hidden transition-shadow hover:shadow-[0_14px_40px_-28px_rgba(28,25,23,0.45)]"
+      className={`group relative rounded-2xl border p-5 overflow-hidden transition-shadow ${
+        isVault
+          ? "border-stone-800 bg-[#161412] hover:shadow-[0_14px_40px_-28px_rgba(0,0,0,0.6)]"
+          : "border-stone-200/80 bg-white/90 hover:shadow-[0_14px_40px_-28px_rgba(28,25,23,0.45)]"
+      }`}
     >
       <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-stone-400">
+          <p
+            className={`text-[10px] font-mono uppercase tracking-[0.14em] ${
+              isVault ? "text-stone-500" : "text-stone-400"
+            }`}
+          >
             {label}
           </p>
-          <p className="text-3xl font-serif font-bold text-stone-900 mt-2 tracking-tight">
+          <p
+            className={`text-3xl font-serif font-bold mt-2 tracking-tight ${
+              isVault ? "text-stone-50" : "text-stone-900"
+            }`}
+          >
             {value}
           </p>
         </div>
@@ -127,6 +156,7 @@ function ActionMetric({ label, value, icon: Icon, tone = "stone", delay = 0 }) {
 }
 
 export default function DashboardTab() {
+  const { isVault } = useTheme();
   const {
     data,
     isLoading,
@@ -151,20 +181,34 @@ export default function DashboardTab() {
 
   if (isError) {
     return (
-      <div className="bg-white border border-stone-200 rounded-2xl p-8 text-center max-w-lg mx-auto">
-        <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+      <div
+        className={`border rounded-2xl p-8 text-center max-w-lg mx-auto ${
+          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200 bg-white"
+        }`}
+      >
+        <div
+          className={`w-12 h-12 border rounded-2xl flex items-center justify-center mx-auto mb-4 ${
+            isVault
+              ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
+              : "bg-rose-50 border-rose-100 text-rose-600"
+          }`}
+        >
           <AlertCircle className="w-6 h-6" />
         </div>
-        <h2 className="text-xl font-serif font-bold text-stone-900 mb-2">
+        <h2 className={`text-xl font-serif font-bold mb-2 ${isVault ? "text-stone-50" : "text-stone-900"}`}>
           Failed to Load Dashboard
         </h2>
-        <p className="text-xs text-stone-500 font-light mb-6">
+        <p className={`text-xs font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
           {getApiErrorMessage(error, "Unable to load your dashboard.")}
         </p>
         <button
           type="button"
           onClick={() => refetch()}
-          className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition"
+          className={`inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition ${
+            isVault
+              ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
+              : "bg-stone-900 hover:bg-stone-800 text-stone-100"
+          }`}
         >
           <RefreshCw className="w-4 h-4" />
           Retry
@@ -190,7 +234,11 @@ export default function DashboardTab() {
 
   if (enrolledCourses === 0) {
     return (
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm">
+      <div
+        className={`border rounded-2xl shadow-sm ${
+          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200 bg-white"
+        }`}
+      >
         <EmptyState
           icon={BookMarked}
           label="No dashboard data yet"
@@ -267,14 +315,23 @@ export default function DashboardTab() {
         </div>
       </motion.section>
 
-      <section className="rounded-2xl border border-stone-200/80 bg-white/90 px-5 sm:px-7 py-5 sm:py-6 shadow-[0_10px_36px_-28px_rgba(28,25,23,0.35)]">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4 divide-y sm:divide-y-0 sm:divide-x divide-stone-100">
+      <section
+        className={`rounded-2xl border px-5 sm:px-7 py-5 sm:py-6 shadow-[0_10px_36px_-28px_rgba(28,25,23,0.35)] ${
+          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200/80 bg-white/90"
+        }`}
+      >
+        <div
+          className={`grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4 divide-y sm:divide-y-0 sm:divide-x ${
+            isVault ? "divide-white/10" : "divide-stone-100"
+          }`}
+        >
           <div className="sm:pr-4 pt-0">
             <CourseStat
               label="Enrolled Courses"
               value={enrolledCourses}
               icon={BookMarked}
               delay={0.05}
+              isVault={isVault}
             />
           </div>
           <div className="sm:px-4 pt-6 sm:pt-0">
@@ -283,6 +340,7 @@ export default function DashboardTab() {
               value={activeCourses}
               icon={BookOpen}
               delay={0.1}
+              isVault={isVault}
             />
           </div>
           <div className="sm:pl-4 pt-6 sm:pt-0">
@@ -291,6 +349,7 @@ export default function DashboardTab() {
               value={completedCourses}
               icon={CheckCircle2}
               delay={0.15}
+              isVault={isVault}
             />
           </div>
         </div>
@@ -303,6 +362,7 @@ export default function DashboardTab() {
           icon={ClipboardList}
           tone="rose"
           delay={0.08}
+          isVault={isVault}
         />
         <ActionMetric
           label="Upcoming Quizzes"
@@ -310,6 +370,7 @@ export default function DashboardTab() {
           icon={CircleHelp}
           tone="stone"
           delay={0.12}
+          isVault={isVault}
         />
         <ActionMetric
           label="Average Grade"
@@ -317,21 +378,30 @@ export default function DashboardTab() {
           icon={TrendingUp}
           tone="amber"
           delay={0.16}
+          isVault={isVault}
         />
       </section>
 
-      <section className="relative overflow-hidden rounded-2xl border border-stone-200/80 bg-white p-5 sm:p-7 shadow-[0_10px_36px_-28px_rgba(28,25,23,0.3)]">
+      <section
+        className={`relative overflow-hidden rounded-2xl border p-5 sm:p-7 shadow-[0_10px_36px_-28px_rgba(28,25,23,0.3)] ${
+          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200/80 bg-white"
+        }`}
+      >
         <div className="pointer-events-none absolute -right-16 -top-20 w-56 h-56 rounded-full bg-amber-400/10 blur-3xl" />
         <div className="relative mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
-            <p className="text-[10px] font-mono uppercase tracking-[0.16em] text-amber-700/80 mb-1">
+            <p
+              className={`text-[10px] font-mono uppercase tracking-[0.16em] mb-1 ${
+                isVault ? "text-amber-500" : "text-amber-700/80"
+              }`}
+            >
               Course progress
             </p>
-            <h3 className="text-xl font-serif font-bold text-stone-900">
+            <h3 className={`text-xl font-serif font-bold ${isVault ? "text-stone-50" : "text-stone-900"}`}>
               Progress by enrolled course
             </h3>
           </div>
-          <p className="text-xs text-stone-400 font-light">
+          <p className={`text-xs font-light ${isVault ? "text-stone-500" : "text-stone-400"}`}>
             {progressByCourse.length} course
             {progressByCourse.length === 1 ? "" : "s"} tracked
           </p>

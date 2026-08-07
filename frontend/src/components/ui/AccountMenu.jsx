@@ -18,7 +18,12 @@ function getFirstName(name) {
   return firstWord || FALLBACK_LABEL;
 }
 
-export default function AccountMenu({ label, onProfile, variant = "light" }) {
+export default function AccountMenu({
+  label,
+  onProfile,
+  variant = "light",
+  className = "",
+}) {
   const isDark = variant === "dark";
   const { isVault } = useTheme();
   const { user } = useAuth();
@@ -273,7 +278,7 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
   return (
     <div
       ref={containerRef}
-      className={`relative inline-block text-left ${isOpen ? "z-40" : "z-20"}`}
+      className={`relative inline-block text-left ${className} ${isOpen ? "z-40" : "z-20"}`}
     >
       <button
         id="account-menu-trigger"
@@ -285,7 +290,7 @@ export default function AccountMenu({ label, onProfile, variant = "light" }) {
         aria-haspopup="menu"
         aria-expanded={isOpen}
         className={
-          "px-3.5 py-2.5 text-xs font-semibold font-mono rounded-xl tracking-wider transition-all duration-200 flex items-center gap-2 border shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed " +
+          "w-full px-3.5 py-2.5 text-xs font-semibold font-mono rounded-xl tracking-wider transition-all duration-200 flex items-center gap-2 border shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed " +
           (isOpen
             ? isDark
               ? "bg-stone-800 border-stone-700 shadow-md"
