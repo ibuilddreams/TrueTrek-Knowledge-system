@@ -47,7 +47,9 @@ export default function CoursesTab() {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("course");
     const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    router.replace(query ? `${pathname}?${query}` : pathname, {
+      scroll: false,
+    });
   }
 
   const {
@@ -85,25 +87,33 @@ export default function CoursesTab() {
     if (enrollments.length === 0) return 0;
     const total = enrollments.reduce(
       (sum, item) => sum + (Number(item.completion_percentage) || 0),
-      0
+      0,
     );
     return Math.round(total / enrollments.length);
   }, [enrollments]);
 
-  const activeCount = enrollments.filter((item) => item.status === "ACTIVE").length;
+  const activeCount = enrollments.filter(
+    (item) => item.status === "ACTIVE",
+  ).length;
   const completedCount = enrollments.filter(
-    (item) => item.status === "COMPLETED" || item.is_completed
+    (item) => item.status === "COMPLETED" || item.is_completed,
   ).length;
 
-  const totalPages = Math.max(1, Math.ceil(filteredEnrollments.length / PAGE_SIZE));
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredEnrollments.length / PAGE_SIZE),
+  );
   const paginatedEnrollments = filteredEnrollments.slice(
     (page - 1) * PAGE_SIZE,
-    page * PAGE_SIZE
+    page * PAGE_SIZE,
   );
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
+      <div
+        className="flex min-h-[50vh] items-center justify-center"
+        aria-busy="true"
+      >
         <Loader fullScreen={false} label="Loading your courses..." />
       </div>
     );
@@ -113,7 +123,9 @@ export default function CoursesTab() {
     return (
       <div
         className={`border rounded-2xl p-8 text-center max-w-lg mx-auto ${
-          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200 bg-white"
+          isVault
+            ? "border-stone-800 bg-[#161412]"
+            : "border-stone-200 bg-white"
         }`}
       >
         <div
@@ -125,10 +137,14 @@ export default function CoursesTab() {
         >
           <AlertCircle className="w-6 h-6" />
         </div>
-        <h2 className={`text-xl font-serif font-bold mb-2 ${isVault ? "text-stone-50" : "text-stone-900"}`}>
+        <h2
+          className={`text-xl font-serif font-bold mb-2 ${isVault ? "text-stone-50" : "text-stone-900"}`}
+        >
           Failed to Load Courses
         </h2>
-        <p className={`text-xs font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+        <p
+          className={`text-xs font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}
+        >
           {getApiErrorMessage(error, "Unable to load your enrolled courses.")}
         </p>
         <button
@@ -149,24 +165,30 @@ export default function CoursesTab() {
 
   if (selectedCourseId) {
     const selectedEnrollment = enrollments.find(
-      (item) => String(item.course?.id) === String(selectedCourseId)
+      (item) => String(item.course?.id) === String(selectedCourseId),
     );
 
     if (!selectedEnrollment) {
       return (
         <div
           className={`rounded-2xl border border-dashed p-10 text-center space-y-4 ${
-            isVault ? "border-stone-700 bg-[#161412]/70" : "border-stone-200 bg-white/70"
+            isVault
+              ? "border-stone-700 bg-[#161412]/70"
+              : "border-stone-200 bg-white/70"
           }`}
         >
           <div
             className={`w-12 h-12 border rounded-2xl flex items-center justify-center mx-auto ${
-              isVault ? "bg-stone-900/60 border-stone-700 text-stone-500" : "bg-stone-50 border-stone-100 text-stone-400"
+              isVault
+                ? "bg-stone-900/60 border-stone-700 text-stone-500"
+                : "bg-stone-50 border-stone-100 text-stone-400"
             }`}
           >
             <AlertCircle className="w-6 h-6" />
           </div>
-          <p className={`text-sm ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+          <p
+            className={`text-sm ${isVault ? "text-stone-400" : "text-stone-500"}`}
+          >
             We couldn&apos;t find that course in your enrollments.
           </p>
           <button
@@ -184,14 +206,21 @@ export default function CoursesTab() {
       );
     }
 
-    return <CourseDetailScreen enrollment={selectedEnrollment} onBack={closeCourse} />;
+    return (
+      <CourseDetailScreen
+        enrollment={selectedEnrollment}
+        onBack={closeCourse}
+      />
+    );
   }
 
   if (enrollments.length === 0) {
     return (
       <div
         className={`rounded-2xl border border-dashed ${
-          isVault ? "border-stone-700 bg-[#161412]/70" : "border-stone-200 bg-white/70"
+          isVault
+            ? "border-stone-700 bg-[#161412]/70"
+            : "border-stone-200 bg-white/70"
         }`}
       >
         <EmptyState
@@ -210,7 +239,9 @@ export default function CoursesTab() {
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.4, ease: "easeOut" }}
         className={`relative overflow-hidden rounded-[1.75rem] border shadow-[0_18px_50px_-36px_rgba(28,25,23,0.45)] ${
-          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200/90 bg-white"
+          isVault
+            ? "border-stone-800 bg-[#161412]"
+            : "border-stone-200/90 bg-white"
         }`}
       >
         <div
@@ -248,7 +279,8 @@ export default function CoursesTab() {
                   isVault ? "text-stone-400" : "text-stone-500"
                 }`}
               >
-                Track progress across every course assigned to you — calm, clear, and ready when you are.
+                Track progress across every course assigned to you — calm,
+                clear, and ready when you are.
               </p>
             </div>
 
@@ -268,7 +300,9 @@ export default function CoursesTab() {
                     }`}
                   >
                     {averageProgress}
-                    <span className={`text-base ml-0.5 ${isVault ? "text-amber-500/70" : "text-amber-700/60"}`}>
+                    <span
+                      className={`text-base ml-0.5 ${isVault ? "text-amber-500/70" : "text-amber-700/60"}`}
+                    >
                       %
                     </span>
                   </p>
@@ -289,7 +323,9 @@ export default function CoursesTab() {
               >
                 <motion.div
                   className={`h-full rounded-full bg-linear-to-r ${
-                    isVault ? "from-amber-500 to-amber-300" : "from-amber-600 to-amber-400"
+                    isVault
+                      ? "from-amber-500 to-amber-300"
+                      : "from-amber-600 to-amber-400"
                   }`}
                   initial={{ width: 0 }}
                   animate={{ width: `${averageProgress}%` }}
@@ -301,7 +337,9 @@ export default function CoursesTab() {
 
           <div
             className={`mt-8 pt-6 border-t grid grid-cols-1 sm:grid-cols-3 gap-5 sm:gap-0 sm:divide-x ${
-              isVault ? "border-stone-800 sm:divide-stone-800" : "border-stone-200/70 sm:divide-stone-200/80"
+              isVault
+                ? "border-stone-800 sm:divide-stone-800"
+                : "border-stone-200/70 sm:divide-stone-200/80"
             }`}
           >
             <div className="sm:pr-6">
@@ -379,7 +417,9 @@ export default function CoursesTab() {
 
       <div
         className={`rounded-2xl border shadow-[0_8px_30px_-24px_rgba(28,25,23,0.35)] overflow-hidden ${
-          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200/80 bg-white/90"
+          isVault
+            ? "border-stone-800 bg-[#161412]"
+            : "border-stone-200/80 bg-white/90"
         }`}
       >
         <div className="flex flex-col gap-4 p-4 sm:p-5">
@@ -444,8 +484,12 @@ export default function CoursesTab() {
                 );
               })}
             </div>
-            <p className={`text-xs sm:text-right shrink-0 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
-              <span className={`font-serif font-bold ${isVault ? "text-stone-50" : "text-stone-900"}`}>
+            <p
+              className={`text-xs sm:text-right shrink-0 ${isVault ? "text-stone-400" : "text-stone-500"}`}
+            >
+              <span
+                className={`font-serif font-bold ${isVault ? "text-stone-50" : "text-stone-900"}`}
+              >
                 {filteredEnrollments.length}
               </span>
               {filteredEnrollments.length === 1 ? " course" : " courses"}
@@ -463,7 +507,9 @@ export default function CoursesTab() {
       {filteredEnrollments.length === 0 ? (
         <div
           className={`rounded-2xl border border-dashed ${
-            isVault ? "border-stone-700 bg-[#161412]/60" : "border-stone-200 bg-white/60"
+            isVault
+              ? "border-stone-700 bg-[#161412]/60"
+              : "border-stone-200 bg-white/60"
           }`}
         >
           <EmptyState
@@ -495,7 +541,11 @@ export default function CoursesTab() {
               </motion.div>
             ))}
           </motion.div>
-          <Pagination page={page} totalPages={totalPages} onPageChange={setPage} />
+          <Pagination
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+          />
         </>
       )}
     </div>
