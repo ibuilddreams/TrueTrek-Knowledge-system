@@ -44,6 +44,7 @@ const FILE_LABEL = {
 };
 
 const FILE_ICON = {
+  VIDEO: Video,
   PDF: FileText,
   DOCUMENT: FileText,
   IMAGE: ImageIcon,
@@ -189,8 +190,7 @@ export default function TeacherLessonFormModal({
     setFieldErrors((prev) => ({ ...prev, [field]: null }));
   };
 
-  const handleContentTypeChange = (event) => {
-    const value = event.target.value;
+  const handleContentTypeChange = (value) => {
     setForm((prev) => ({ ...prev, content_type: value, video_url: "", duration_minutes: "" }));
     setVideoSourceMode("UPLOAD");
     setFile(null);
@@ -359,18 +359,28 @@ export default function TeacherLessonFormModal({
 
         <div>
           <label className={LABEL_CLASS}>Content Type</label>
-          <select
-            value={form.content_type}
-            onChange={handleContentTypeChange}
-            disabled={isSubmitting}
-            className={FIELD_CLASS}
-          >
-            {CONTENT_TYPES.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
+          <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+            {CONTENT_TYPES.map((option) => {
+              const Icon = FILE_ICON[option.value] || FileText;
+              const isActive = form.content_type === option.value;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() => handleContentTypeChange(option.value)}
+                  disabled={isSubmitting}
+                  className={`px-3 py-2.5 rounded-xl text-[11px] font-semibold font-mono tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
+                    isActive
+                      ? "bg-stone-900 text-white border-stone-900"
+                      : "bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {option.label}
+                </button>
+              );
+            })}
+          </div>
         </div>
 
         {isVideo && (
