@@ -278,7 +278,7 @@ select:disabled {
   background-color: #3a3532 !important;
 }
 
-.vault-dark .divide-stone-100 > :not([hidden]) ~ :not([hidden]) {
+.vault-dark .divide-stone-100 > :not(:last-child) {
   border-color: #24211e !important;
 }
 

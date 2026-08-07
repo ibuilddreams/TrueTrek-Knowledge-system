@@ -140,7 +140,17 @@ export default function DashboardTab() {
           </h2>
         </div>
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          <Panel title="Recent Activities" icon={Activity}>
+          <Panel
+            title="Recent Activities"
+            icon={Activity}
+            action={
+              recentActivities.length > 0 && (
+                <span className="text-[10px] font-mono font-semibold text-stone-400">
+                  {recentActivities.length} total
+                </span>
+              )
+            }
+          >
             {recentActivities.length === 0 ? (
               <EmptyState
                 icon={Sparkles}
@@ -149,11 +159,11 @@ export default function DashboardTab() {
                 compact
               />
             ) : (
-              <ul className="space-y-2.5">
+              <ul className="space-y-2 max-h-90 overflow-y-auto pr-1.5 -mr-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-stone-200 [&::-webkit-scrollbar-thumb]:rounded-full [&:hover::-webkit-scrollbar-thumb]:bg-stone-300">
                 {recentActivities.map((activity) => (
                   <li
                     key={activity.id}
-                    className="flex items-start gap-3 p-3.5 rounded-xl border border-stone-100 bg-gradient-to-r from-stone-50/80 to-white hover:border-amber-200/60 transition"
+                    className="flex items-start gap-3 p-3 rounded-xl border border-stone-100 bg-stone-50/60 hover:bg-white hover:border-amber-200/60 hover:shadow-sm transition"
                   >
                     <span className="mt-0.5 w-8 h-8 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
                       <Clock3 className="w-3.5 h-3.5" />
@@ -172,7 +182,17 @@ export default function DashboardTab() {
             )}
           </Panel>
 
-          <Panel title="Progress Summary" icon={TrendingUp}>
+          <Panel
+            title="Progress Summary"
+            icon={TrendingUp}
+            action={
+              progressSummary.length > 0 && (
+                <span className="text-[10px] font-mono font-semibold text-stone-400">
+                  {progressSummary.length} total
+                </span>
+              )
+            }
+          >
             {progressSummary.length === 0 ? (
               <EmptyState
                 icon={TrendingUp}
@@ -181,15 +201,22 @@ export default function DashboardTab() {
                 compact
               />
             ) : (
-              <ul className="space-y-3">
+              <ul className="space-y-2.5 max-h-90 overflow-y-auto pr-1.5 -mr-1.5 [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-stone-200 [&::-webkit-scrollbar-thumb]:rounded-full [&:hover::-webkit-scrollbar-thumb]:bg-stone-300">
                 {progressSummary.map((entry, index) => {
                   const percent = Number(
                     entry.completion_percentage ?? entry.progress ?? 0
                   );
+                  const clampedPercent = Math.min(Math.max(percent, 0), 100);
+                  const barColorClass =
+                    clampedPercent >= 75
+                      ? "from-emerald-500 to-emerald-700"
+                      : clampedPercent >= 40
+                      ? "from-amber-500 to-amber-700"
+                      : "from-rose-400 to-rose-600";
                   return (
                     <li
                       key={entry.id ?? index}
-                      className="p-3.5 rounded-xl border border-stone-100 bg-stone-50/50"
+                      className="p-3.5 rounded-xl border border-stone-100 bg-stone-50/50 hover:bg-white hover:border-amber-200/60 transition"
                     >
                       <div className="flex items-center justify-between gap-3 mb-2">
                         <span className="text-xs font-semibold text-stone-800 truncate">
@@ -203,8 +230,8 @@ export default function DashboardTab() {
                       </div>
                       <div className="h-1.5 rounded-full bg-stone-200 overflow-hidden">
                         <div
-                          className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-800 transition-all duration-500"
-                          style={{ width: `${Math.min(Math.max(percent, 0), 100)}%` }}
+                          className={`h-full rounded-full bg-gradient-to-r ${barColorClass} transition-all duration-500`}
+                          style={{ width: `${clampedPercent}%` }}
                         />
                       </div>
                     </li>

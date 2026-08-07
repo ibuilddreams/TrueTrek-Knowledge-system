@@ -1,7 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Edit3, Eye, Trash2, Upload, UserCheck, UserPlus, UserX } from "lucide-react";
+import {
+  Edit3,
+  Eye,
+  Trash2,
+  Upload,
+  UserCheck,
+  UserPlus,
+  UserX,
+} from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useAdminTeachers } from "@/hooks/admin/useAdminTeachers";
 import { useAdminCourses } from "@/hooks/admin/useAdminCourses";
@@ -84,15 +92,23 @@ export default function TeachersTab() {
   const filteredTeachers = useMemo(() => {
     const query = debouncedSearch.trim().toLowerCase();
     return items.filter((teacher) => {
-      const haystack = `${teacher.full_name || ""} ${teacher.email || ""}`.toLowerCase();
+      const haystack =
+        `${teacher.full_name || ""} ${teacher.email || ""}`.toLowerCase();
       const matchesSearch = !query || haystack.includes(query);
-      const matchesStatus = !statusFilter || teacher.account_status === statusFilter;
+      const matchesStatus =
+        !statusFilter || teacher.account_status === statusFilter;
       return matchesSearch && matchesStatus;
     });
   }, [items, debouncedSearch, statusFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredTeachers.length / PAGE_SIZE));
-  const paginatedTeachers = filteredTeachers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const totalPages = Math.max(
+    1,
+    Math.ceil(filteredTeachers.length / PAGE_SIZE),
+  );
+  const paginatedTeachers = filteredTeachers.slice(
+    (page - 1) * PAGE_SIZE,
+    page * PAGE_SIZE,
+  );
 
   const handleDeactivateConfirm = async () => {
     if (!deactivatingTeacher) return;
@@ -141,10 +157,18 @@ export default function TeachersTab() {
     {
       key: "name",
       header: "Teacher Name",
-      render: (teacher) => <span className="font-semibold text-stone-800">{teacher.full_name}</span>,
+      render: (teacher) => (
+        <span className="font-semibold text-stone-800">
+          {teacher.full_name}
+        </span>
+      ),
     },
     { key: "email", header: "Email", render: (teacher) => teacher.email },
-    { key: "status", header: "Status", render: (teacher) => <StatusBadge status={teacher.account_status} /> },
+    {
+      key: "status",
+      header: "Status",
+      render: (teacher) => <StatusBadge status={teacher.account_status} />,
+    },
     {
       key: "courses",
       header: "Assigned Courses",
@@ -161,8 +185,18 @@ export default function TeachersTab() {
       render: (teacher) => (
         <ActionMenu
           actions={[
-            { key: "view", label: "View Profile", icon: Eye, onSelect: () => setViewTeacherId(teacher.id) },
-            { key: "edit", label: "Edit Teacher", icon: Edit3, onSelect: () => setEditingTeacher(teacher) },
+            {
+              key: "view",
+              label: "View Profile",
+              icon: Eye,
+              onSelect: () => setViewTeacherId(teacher.id),
+            },
+            {
+              key: "edit",
+              label: "Edit Teacher",
+              icon: Edit3,
+              onSelect: () => setEditingTeacher(teacher),
+            },
             teacher.account_status !== "DEACTIVATED" && {
               key: "deactivate",
               label: "Deactivate",
@@ -193,7 +227,11 @@ export default function TeachersTab() {
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 min-w-0">
-          <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search teachers by name or email..." />
+          <SearchBar
+            value={searchInput}
+            onChange={setSearchInput}
+            placeholder="Search teachers by name or email..."
+          />
           <div className="w-full sm:w-56 shrink-0">
             <SearchableSelect
               placeholder="All Statuses"

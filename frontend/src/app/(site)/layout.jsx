@@ -1,10 +1,8 @@
 import SiteShell from "@/components/layout/SiteShell";
-import PageTransition from "@/components/layout/PageTransition";
 
+// The page-transition wrapper lives in ./template.jsx, not here — see that
+// file for why. layout.jsx persists across navigations, so it must not
+// own anything keyed by the route.
 export default function SiteLayout({ children }) {
-  return (
-    <SiteShell>
-      <PageTransition>{children}</PageTransition>
-    </SiteShell>
-  );
+  return <SiteShell>{children}</SiteShell>;
 }

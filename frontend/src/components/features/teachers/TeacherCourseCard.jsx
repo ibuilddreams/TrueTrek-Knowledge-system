@@ -1,5 +1,6 @@
 "use client";
 
+import { useState } from "react";
 import {
   BookOpen,
   ClipboardCheck,
@@ -59,23 +60,47 @@ export default function TeacherCourseCard({
   onViewCourse,
   onViewStudents,
 }) {
+  const [imageFailed, setImageFailed] = useState(false);
   const statusDotClass =
     STATUS_DOT_STYLES[course.status] || STATUS_DOT_STYLES.ARCHIVED;
   const statusTextClass =
     STATUS_TEXT_STYLES[course.status] || STATUS_TEXT_STYLES.ARCHIVED;
+  const hasThumbnail = Boolean(course.image) && !imageFailed;
 
   return (
     <div className="group relative w-full bg-white border border-stone-200/90 rounded-2xl shadow-[0_1px_2px_rgba(28,25,23,0.04),0_8px_24px_-12px_rgba(28,25,23,0.08)] overflow-hidden transition-all duration-300 hover:shadow-[0_4px_10px_rgba(28,25,23,0.06),0_16px_32px_-14px_rgba(180,83,9,0.18)] hover:border-amber-200/80">
-      <div className="relative h-20 bg-gradient-to-r from-amber-600 to-amber-800 px-5 pt-4 flex items-start justify-between">
-        <span className="inline-flex items-center bg-white/95 text-amber-800 text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-full shadow-sm truncate max-w-[45%]">
-          {course.category?.name || "Uncategorized"}
-        </span>
-        <span
-          className={`shrink-0 inline-flex items-center gap-1.5 bg-white/95 text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-full shadow-sm ${statusTextClass}`}
-        >
-          <span className={`w-1.5 h-1.5 rounded-full ${statusDotClass}`} />
-          {course.status}
-        </span>
+      <div className="relative h-20 overflow-hidden">
+        {hasThumbnail ? (
+          <img
+            src={course.image}
+            alt=""
+            onError={() => setImageFailed(true)}
+            className="absolute inset-0 w-full h-full object-cover transition-transform duration-500 ease-out group-hover:scale-105"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-amber-600 via-amber-700 to-amber-900">
+            <Layers className="absolute -right-3 -bottom-5 w-28 h-28 text-white/10 rotate-15" />
+          </div>
+        )}
+        <div
+          className={
+            hasThumbnail
+              ? "absolute inset-0 bg-gradient-to-b from-black/55 via-black/10 to-black/40"
+              : "absolute inset-0 bg-gradient-to-b from-black/10 via-transparent to-black/10"
+          }
+        />
+
+        <div className="relative h-full px-5 pt-4 flex items-start justify-between gap-2">
+          <span className="inline-flex items-center bg-white/95 text-amber-800 text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-full shadow-sm truncate max-w-[45%]">
+            {course.category?.name || "Uncategorized"}
+          </span>
+          <span
+            className={`shrink-0 inline-flex items-center gap-1.5 bg-white/95 text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-full shadow-sm ${statusTextClass}`}
+          >
+            <span className={`w-1.5 h-1.5 rounded-full ${statusDotClass}`} />
+            {course.status}
+          </span>
+        </div>
       </div>
 
       <div className="px-5 sm:px-6 pb-5 sm:pb-6">
@@ -83,7 +108,7 @@ export default function TeacherCourseCard({
           <div className="w-12 h-12 rounded-2xl bg-white border border-stone-200 text-amber-700 flex items-center justify-center shrink-0 shadow-md">
             <Layers className="w-5 h-5" />
           </div>
-          <h3 className="font-serif font-bold text-base text-stone-900 leading-snug truncate pt-6">
+          <h3 className="font-serif font-bold text-base text-stone-900 leading-snug truncate">
             {course.title}
           </h3>
         </div>

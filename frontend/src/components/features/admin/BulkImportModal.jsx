@@ -13,6 +13,7 @@ import {
   XCircle,
 } from "lucide-react";
 import Modal from "@/components/ui/Modal";
+import { useTheme } from "@/hooks/useTheme";
 import {
   BULK_IMPORT_CONFIG,
   buildErrorReportCsv,
@@ -36,7 +37,7 @@ function getSkippedRowDisplay(entry, type) {
   };
 }
 
-function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
+function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped, isVault }) {
   const total = result.total_rows || 0;
   const success = result.success_count || 0;
   const skipped = result.skipped_count || 0;
@@ -57,19 +58,19 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
       icon: CheckCircle2,
       label: "Import completed successfully",
       detail: `${success} row${success === 1 ? "" : "s"} imported with no errors.`,
-      wrap: "border-emerald-200 bg-emerald-50/70",
-      iconWrap: "bg-emerald-100 text-emerald-700",
-      labelClass: "text-emerald-900",
-      detailClass: "text-emerald-700/80",
+      wrap: isVault ? "border-emerald-500/20 bg-emerald-500/10" : "border-emerald-200 bg-emerald-50/70",
+      iconWrap: isVault ? "bg-emerald-500/15 text-emerald-400" : "bg-emerald-100 text-emerald-700",
+      labelClass: isVault ? "text-emerald-300" : "text-emerald-900",
+      detailClass: isVault ? "text-emerald-400/80" : "text-emerald-700/80",
     },
     partial: {
       icon: AlertTriangle,
       label: "Import completed with some rows skipped or failed",
       detail: `${success} created, ${skipped} skipped as duplicates, ${failed} failed. Review the details below.`,
-      wrap: "border-amber-200 bg-amber-50/70",
-      iconWrap: "bg-amber-100 text-amber-800",
-      labelClass: "text-amber-950",
-      detailClass: "text-amber-800/80",
+      wrap: isVault ? "border-amber-500/20 bg-amber-500/10" : "border-amber-200 bg-amber-50/70",
+      iconWrap: isVault ? "bg-amber-500/15 text-amber-400" : "bg-amber-100 text-amber-800",
+      labelClass: isVault ? "text-amber-300" : "text-amber-950",
+      detailClass: isVault ? "text-amber-400/80" : "text-amber-800/80",
     },
     failed: {
       icon: XCircle,
@@ -78,10 +79,10 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
         skipped > 0 && failed === 0
           ? `All ${skipped} row${skipped === 1 ? "" : "s"} matched existing accounts and were skipped.`
           : `All ${total} row${total === 1 ? "" : "s"} were skipped or failed. Review the details below.`,
-      wrap: "border-rose-200 bg-rose-50/70",
-      iconWrap: "bg-rose-100 text-rose-700",
-      labelClass: "text-rose-950",
-      detailClass: "text-rose-700/80",
+      wrap: isVault ? "border-rose-500/20 bg-rose-500/10" : "border-rose-200 bg-rose-50/70",
+      iconWrap: isVault ? "bg-rose-500/15 text-rose-400" : "bg-rose-100 text-rose-700",
+      labelClass: isVault ? "text-rose-300" : "text-rose-950",
+      detailClass: isVault ? "text-rose-400/80" : "text-rose-700/80",
     },
   }[outcome];
 
@@ -100,6 +101,13 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
       count: rows.length,
     }));
   }, [errors]);
+
+  const cardWrap = isVault ? "border-stone-700/60 bg-white/5" : "border-stone-200 bg-white";
+  const cardHeaderWrap = isVault ? "border-stone-800 bg-white/5" : "border-stone-100 bg-stone-50/80";
+  const mutedLabel = isVault ? "text-stone-500" : "text-stone-400";
+  const mutedText = isVault ? "text-stone-500" : "text-stone-500";
+  const chipWrap = isVault ? "bg-white/5 border-stone-700/60 text-stone-400" : "bg-stone-50 border-stone-200 text-stone-600";
+  const divideClass = isVault ? "divide-stone-800" : "divide-stone-100";
 
   return (
     <div className="space-y-4">
@@ -120,50 +128,86 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
       </div>
 
       <div className="grid grid-cols-4 gap-2.5">
-        <div className="rounded-2xl border border-stone-200 bg-white p-3.5">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400 font-semibold">
+        <div className={`rounded-2xl border p-3.5 ${cardWrap}`}>
+          <p className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${mutedLabel}`}>
             Total
           </p>
-          <p className="text-2xl font-serif font-bold text-stone-900 mt-1 tabular-nums">
+          <p className={`text-2xl font-serif font-bold mt-1 tabular-nums ${isVault ? "text-stone-50" : "text-stone-900"}`}>
             {total}
           </p>
         </div>
-        <div className="rounded-2xl border border-emerald-200/80 bg-emerald-50/40 p-3.5">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-emerald-700 font-semibold">
+        <div
+          className={`rounded-2xl border p-3.5 ${
+            isVault ? "border-emerald-500/20 bg-emerald-500/5" : "border-emerald-200/80 bg-emerald-50/40"
+          }`}
+        >
+          <p
+            className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${
+              isVault ? "text-emerald-400" : "text-emerald-700"
+            }`}
+          >
             Created
           </p>
-          <p className="text-2xl font-serif font-bold text-emerald-700 mt-1 tabular-nums">
+          <p
+            className={`text-2xl font-serif font-bold mt-1 tabular-nums ${
+              isVault ? "text-emerald-400" : "text-emerald-700"
+            }`}
+          >
             {success}
           </p>
         </div>
-        <div className="rounded-2xl border border-amber-200/80 bg-amber-50/40 p-3.5">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-amber-700 font-semibold">
+        <div
+          className={`rounded-2xl border p-3.5 ${
+            isVault ? "border-amber-500/20 bg-amber-500/5" : "border-amber-200/80 bg-amber-50/40"
+          }`}
+        >
+          <p
+            className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${
+              isVault ? "text-amber-400" : "text-amber-700"
+            }`}
+          >
             Skipped
           </p>
-          <p className="text-2xl font-serif font-bold text-amber-700 mt-1 tabular-nums">
+          <p
+            className={`text-2xl font-serif font-bold mt-1 tabular-nums ${
+              isVault ? "text-amber-400" : "text-amber-700"
+            }`}
+          >
             {skipped}
           </p>
         </div>
-        <div className="rounded-2xl border border-rose-200/80 bg-rose-50/40 p-3.5">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-rose-700 font-semibold">
+        <div
+          className={`rounded-2xl border p-3.5 ${
+            isVault ? "border-rose-500/20 bg-rose-500/5" : "border-rose-200/80 bg-rose-50/40"
+          }`}
+        >
+          <p
+            className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${
+              isVault ? "text-rose-400" : "text-rose-700"
+            }`}
+          >
             Failed
           </p>
-          <p className="text-2xl font-serif font-bold text-rose-700 mt-1 tabular-nums">
+          <p
+            className={`text-2xl font-serif font-bold mt-1 tabular-nums ${
+              isVault ? "text-rose-400" : "text-rose-700"
+            }`}
+          >
             {failed}
           </p>
         </div>
       </div>
 
-      <div className="rounded-2xl border border-stone-200 bg-white p-3.5 space-y-2">
+      <div className={`rounded-2xl border p-3.5 space-y-2 ${cardWrap}`}>
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-stone-500 font-semibold">
+          <p className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${isVault ? "text-stone-400" : "text-stone-500"}`}>
             Success rate
           </p>
-          <p className="text-xs font-mono font-semibold text-stone-700 tabular-nums">
+          <p className={`text-xs font-mono font-semibold tabular-nums ${isVault ? "text-stone-300" : "text-stone-700"}`}>
             {successRate}%
           </p>
         </div>
-        <div className="h-2.5 rounded-full bg-stone-100 overflow-hidden">
+        <div className={`h-2.5 rounded-full overflow-hidden ${isVault ? "bg-white/10" : "bg-stone-100"}`}>
           <div
             className={`h-full rounded-full transition-all duration-500 ${
               outcome === "failed"
@@ -178,13 +222,13 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
       </div>
 
       {skippedRows.length > 0 && (
-        <div className="rounded-2xl border border-stone-200 bg-white overflow-hidden">
-          <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between gap-3 bg-stone-50/80">
+        <div className={`rounded-2xl border overflow-hidden ${cardWrap}`}>
+          <div className={`px-4 py-3 border-b flex items-center justify-between gap-3 ${cardHeaderWrap}`}>
             <div>
-              <p className="text-[10px] font-mono uppercase tracking-wider text-stone-500 font-semibold">
+              <p className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${mutedLabel}`}>
                 Skipped duplicates
               </p>
-              <p className="text-[11px] text-stone-500 mt-0.5">
+              <p className={`text-[11px] mt-0.5 ${mutedText}`}>
                 {skippedRows.length} row{skippedRows.length === 1 ? "" : "s"} already existed and{" "}
                 {skippedRows.length === 1 ? "was" : "were"} left unchanged.
               </p>
@@ -193,7 +237,11 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
               <button
                 type="button"
                 onClick={onDownloadSkipped}
-                className="shrink-0 px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900 text-[10px] font-mono uppercase tracking-wider font-semibold transition flex items-center gap-1.5"
+                className={`shrink-0 px-3 py-2 rounded-lg border text-[10px] font-mono uppercase tracking-wider font-semibold transition flex items-center gap-1.5 ${
+                  isVault
+                    ? "border-amber-500/20 bg-amber-500/10 hover:bg-amber-500/15 text-amber-400"
+                    : "border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900"
+                }`}
               >
                 <Download className="w-3 h-3" />
                 Skipped Report
@@ -201,7 +249,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
             )}
           </div>
 
-          <div className="max-h-56 overflow-y-auto divide-y divide-stone-100">
+          <div className={`max-h-56 overflow-y-auto divide-y ${divideClass}`}>
             {skippedRows.map((entry) => {
               const display = getSkippedRowDisplay(entry, type);
               return (
@@ -209,16 +257,34 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
                   key={`${entry.row}-${entry.email || entry.student_email}`}
                   className="px-4 py-3 flex items-start gap-2.5"
                 >
-                  <div className="w-7 h-7 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0 mt-0.5">
+                  <div
+                    className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${
+                      isVault
+                        ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
+                        : "bg-amber-50 border-amber-100 text-amber-700"
+                    }`}
+                  >
                     <AlertTriangle className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0 flex-1 flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-xs text-stone-800 font-medium truncate">{display.title}</p>
-                      <p className="text-[11px] text-stone-500 mt-0.5 truncate">{display.subtitle}</p>
-                      <p className="text-[11px] text-amber-700 mt-0.5 truncate">{entry.reason}</p>
+                      <p className={`text-xs font-medium truncate ${isVault ? "text-stone-100" : "text-stone-800"}`}>
+                        {display.title}
+                      </p>
+                      <p className={`text-[11px] mt-0.5 truncate ${isVault ? "text-stone-500" : "text-stone-500"}`}>
+                        {display.subtitle}
+                      </p>
+                      <p className={`text-[11px] mt-0.5 truncate ${isVault ? "text-amber-400" : "text-amber-700"}`}>
+                        {entry.reason}
+                      </p>
                     </div>
-                    <span className="shrink-0 text-[10px] font-mono font-semibold uppercase tracking-wider text-amber-700 bg-amber-50 border border-amber-100 px-2 py-0.5 rounded-md">
+                    <span
+                      className={`shrink-0 text-[10px] font-mono font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md ${
+                        isVault
+                          ? "bg-amber-500/10 border border-amber-500/20 text-amber-400"
+                          : "bg-amber-50 border border-amber-100 text-amber-700"
+                      }`}
+                    >
                       R{entry.row}
                     </span>
                   </div>
@@ -230,13 +296,13 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
       )}
 
       {errors.length > 0 && (
-        <div className="rounded-2xl border border-stone-200 bg-white overflow-hidden">
-          <div className="px-4 py-3 border-b border-stone-100 flex items-center justify-between gap-3 bg-stone-50/80">
+        <div className={`rounded-2xl border overflow-hidden ${cardWrap}`}>
+          <div className={`px-4 py-3 border-b flex items-center justify-between gap-3 ${cardHeaderWrap}`}>
             <div>
-              <p className="text-[10px] font-mono uppercase tracking-wider text-stone-500 font-semibold">
+              <p className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${mutedLabel}`}>
                 Row errors
               </p>
-              <p className="text-[11px] text-stone-500 mt-0.5">
+              <p className={`text-[11px] mt-0.5 ${mutedText}`}>
                 {errors.length} failed row{errors.length === 1 ? "" : "s"} · {groupedErrors.length}{" "}
                 issue type{groupedErrors.length === 1 ? "" : "s"}
               </p>
@@ -244,26 +310,42 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
             <button
               type="button"
               onClick={onDownloadErrors}
-              className="shrink-0 px-3 py-2 rounded-lg border border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900 text-[10px] font-mono uppercase tracking-wider font-semibold transition flex items-center gap-1.5"
+              className={`shrink-0 px-3 py-2 rounded-lg border text-[10px] font-mono uppercase tracking-wider font-semibold transition flex items-center gap-1.5 ${
+                isVault
+                  ? "border-amber-500/20 bg-amber-500/10 hover:bg-amber-500/15 text-amber-400"
+                  : "border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900"
+              }`}
             >
               <Download className="w-3 h-3" />
               Error Report
             </button>
           </div>
 
-          <div className="max-h-56 overflow-y-auto divide-y divide-stone-100">
+          <div className={`max-h-56 overflow-y-auto divide-y ${divideClass}`}>
             {groupedErrors.map((group) => (
               <div key={group.message} className="px-4 py-3.5">
                 <div className="flex items-start gap-2.5">
-                  <div className="w-7 h-7 rounded-lg bg-rose-50 border border-rose-100 text-rose-600 flex items-center justify-center shrink-0 mt-0.5">
+                  <div
+                    className={`w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 ${
+                      isVault
+                        ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
+                        : "bg-rose-50 border-rose-100 text-rose-600"
+                    }`}
+                  >
                     <AlertCircle className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-xs text-rose-800 font-medium leading-relaxed">
+                      <p className={`text-xs font-medium leading-relaxed ${isVault ? "text-rose-300" : "text-rose-800"}`}>
                         {group.message}
                       </p>
-                      <span className="shrink-0 text-[10px] font-mono font-semibold uppercase tracking-wider text-rose-600 bg-rose-50 border border-rose-100 px-2 py-0.5 rounded-md">
+                      <span
+                        className={`shrink-0 text-[10px] font-mono font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md ${
+                          isVault
+                            ? "bg-rose-500/10 border border-rose-500/20 text-rose-400"
+                            : "bg-rose-50 border border-rose-100 text-rose-600"
+                        }`}
+                      >
                         {group.count}×
                       </span>
                     </div>
@@ -276,18 +358,26 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
                         return (
                           <span
                             key={`${entry.row}-${email}-${course}`}
-                            className="inline-flex items-center gap-1.5 max-w-full px-2 py-1 rounded-lg bg-stone-50 border border-stone-200 text-[10px] font-mono text-stone-600"
+                            className={`inline-flex items-center gap-1.5 max-w-full px-2 py-1 rounded-lg border text-[10px] font-mono ${chipWrap}`}
                             title={[email, course].filter(Boolean).join(" · ")}
                           >
-                            <span className="font-semibold text-stone-800">R{entry.row}</span>
+                            <span className={isVault ? "font-semibold text-stone-100" : "font-semibold text-stone-800"}>
+                              R{entry.row}
+                            </span>
                             {email && (
-                              <span className="truncate max-w-[120px] text-stone-500">{email}</span>
+                              <span className={`truncate max-w-[120px] ${isVault ? "text-stone-500" : "text-stone-500"}`}>
+                                {email}
+                              </span>
                             )}
                           </span>
                         );
                       })}
                       {group.rows.length > 8 && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-lg bg-stone-100 text-[10px] font-mono text-stone-500">
+                        <span
+                          className={`inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-mono ${
+                            isVault ? "bg-white/10 text-stone-500" : "bg-stone-100 text-stone-500"
+                          }`}
+                        >
                           +{group.rows.length - 8} more
                         </span>
                       )}
@@ -301,7 +391,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
       )}
 
       {errors.length === 0 && type === "enrollments" && (
-        <p className="text-[11px] text-stone-500 font-mono text-center">
+        <p className={`text-[11px] font-mono text-center ${isVault ? "text-stone-500" : "text-stone-500"}`}>
           All enrollment rows were processed successfully.
         </p>
       )}
@@ -317,6 +407,7 @@ export default function BulkImportModal({
   onDownloadSample,
   onImported,
 }) {
+  const { isVault } = useTheme();
   const config = BULK_IMPORT_CONFIG[type];
   const inputRef = useRef(null);
 
@@ -474,18 +565,29 @@ export default function BulkImportModal({
             type={type}
             onDownloadErrors={handleDownloadErrors}
             onDownloadSkipped={result?.skipped?.length ? handleDownloadSkipped : null}
+            isVault={isVault}
           />
         ) : (
           <>
-            <div className="rounded-xl border border-amber-200/60 bg-amber-50/50 p-4">
-              <p className="text-[10px] font-mono uppercase tracking-wider text-amber-800 font-semibold mb-2">
+            <div
+              className={`rounded-xl border p-4 ${
+                isVault ? "border-amber-500/20 bg-amber-500/10" : "border-amber-200/60 bg-amber-50/50"
+              }`}
+            >
+              <p
+                className={`text-[10px] font-mono uppercase tracking-wider font-semibold mb-2 ${
+                  isVault ? "text-amber-400" : "text-amber-800"
+                }`}
+              >
                 Instructions
               </p>
               <ul className="space-y-1.5">
                 {config.instructions.map((item) => (
                   <li
                     key={item}
-                    className="text-xs text-stone-600 font-light leading-relaxed pl-3 relative before:content-[''] before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-amber-600"
+                    className={`text-xs font-light leading-relaxed pl-3 relative before:content-[''] before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-amber-600 ${
+                      isVault ? "text-stone-400" : "text-stone-600"
+                    }`}
                   >
                     {item}
                   </li>
@@ -498,7 +600,11 @@ export default function BulkImportModal({
                 type="button"
                 onClick={() => handleDownloadSample("csv")}
                 disabled={isDownloading || isUploading}
-                className="flex-1 px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                className={`flex-1 px-4 py-3 text-xs font-semibold font-mono rounded-xl tracking-wider transition-all flex items-center justify-center gap-2 border shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${
+                  isVault
+                    ? "bg-white/5 hover:bg-white/10 text-stone-300 border-stone-700/60"
+                    : "bg-stone-50 hover:bg-stone-100 text-stone-700 border-stone-200"
+                }`}
               >
                 <Download className="w-3.5 h-3.5" />
                 Sample CSV
@@ -507,7 +613,11 @@ export default function BulkImportModal({
                 type="button"
                 onClick={() => handleDownloadSample("xlsx")}
                 disabled={isDownloading || isUploading}
-                className="flex-1 px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                className={`flex-1 px-4 py-3 text-xs font-semibold font-mono rounded-xl tracking-wider transition-all flex items-center justify-center gap-2 border shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${
+                  isVault
+                    ? "bg-white/5 hover:bg-white/10 text-stone-300 border-stone-700/60"
+                    : "bg-stone-50 hover:bg-stone-100 text-stone-700 border-stone-200"
+                }`}
               >
                 <Download className="w-3.5 h-3.5" />
                 Sample XLSX
@@ -515,21 +625,29 @@ export default function BulkImportModal({
             </div>
 
             <div>
-              <label className="text-[10px] font-mono text-stone-450 block uppercase tracking-wider mb-1.5 font-semibold">
+              <label
+                className={`text-[10px] font-mono block uppercase tracking-wider mb-1.5 font-semibold ${
+                  isVault ? "text-stone-500" : "text-stone-450"
+                }`}
+              >
                 Upload File
               </label>
               <label
                 className={`flex flex-col items-center justify-center gap-2 w-full min-h-[140px] rounded-xl border border-dashed px-4 py-6 transition cursor-pointer ${
                   isUploading
-                    ? "border-stone-200 bg-stone-50 opacity-60 cursor-not-allowed"
-                    : "border-stone-300 bg-stone-50/70 hover:border-amber-500 hover:bg-amber-50/30"
+                    ? isVault
+                      ? "border-stone-700 bg-white/5 opacity-50 cursor-not-allowed"
+                      : "border-stone-200 bg-stone-50 opacity-60 cursor-not-allowed"
+                    : isVault
+                      ? "border-stone-700 bg-white/5 hover:border-amber-500/50 hover:bg-amber-500/10"
+                      : "border-stone-300 bg-stone-50/70 hover:border-amber-500 hover:bg-amber-50/30"
                 }`}
               >
-                <FileUp className="w-6 h-6 text-amber-700" />
-                <span className="text-xs font-mono text-stone-600 text-center">
+                <FileUp className={`w-6 h-6 ${isVault ? "text-amber-400" : "text-amber-700"}`} />
+                <span className={`text-xs font-mono text-center ${isVault ? "text-stone-300" : "text-stone-600"}`}>
                   {file ? file.name : "Choose CSV or XLSX file"}
                 </span>
-                <span className="text-[10px] font-mono text-stone-400 uppercase tracking-wider">
+                <span className={`text-[10px] font-mono uppercase tracking-wider ${isVault ? "text-stone-500" : "text-stone-400"}`}>
                   Max 5MB
                 </span>
                 <input
@@ -544,7 +662,11 @@ export default function BulkImportModal({
             </div>
 
             {validationError && (
-              <div className="flex items-start gap-2 rounded-xl border border-rose-200 bg-rose-50 px-3.5 py-3 text-xs text-rose-700">
+              <div
+                className={`flex items-start gap-2 rounded-xl border px-3.5 py-3 text-xs ${
+                  isVault ? "border-rose-500/20 bg-rose-500/10 text-rose-400" : "border-rose-200 bg-rose-50 text-rose-700"
+                }`}
+              >
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <p>{validationError}</p>
               </div>
@@ -552,11 +674,15 @@ export default function BulkImportModal({
 
             {(isUploading || uploadProgress > 0) && (
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-stone-500">
+                <div
+                  className={`flex items-center justify-between text-[10px] font-mono uppercase tracking-wider ${
+                    isVault ? "text-stone-500" : "text-stone-500"
+                  }`}
+                >
                   <span>{isUploading ? "Uploading..." : "Ready"}</span>
                   <span>{uploadProgress}%</span>
                 </div>
-                <div className="h-2 rounded-full bg-stone-100 overflow-hidden">
+                <div className={`h-2 rounded-full overflow-hidden ${isVault ? "bg-white/10" : "bg-stone-100"}`}>
                   <div
                     className="h-full bg-gradient-to-r from-amber-600 to-amber-800 transition-all duration-200"
                     style={{ width: `${uploadProgress}%` }}
@@ -567,12 +693,20 @@ export default function BulkImportModal({
           </>
         )}
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2 border-t border-stone-100">
+        <div
+          className={`flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2 border-t ${
+            isVault ? "border-stone-800" : "border-stone-100"
+          }`}
+        >
           <button
             type="button"
             onClick={handleClose}
             disabled={isUploading}
-            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            className={`px-4 py-3 text-xs font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${
+              isVault
+                ? "bg-stone-800/60 hover:bg-stone-800 text-stone-300 border-stone-700"
+                : "bg-stone-50 hover:bg-stone-100 text-stone-700 border-stone-200"
+            }`}
           >
             <X className="w-3.5 h-3.5" />
             Close
@@ -581,7 +715,9 @@ export default function BulkImportModal({
             <button
               type="button"
               onClick={handleImportAnother}
-              className="px-6 py-3 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2"
+              className={`px-6 py-3 text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 ${
+                isVault ? "bg-stone-700 hover:bg-stone-600" : "bg-stone-900 hover:bg-stone-800"
+              }`}
             >
               <Upload className="w-3.5 h-3.5" />
               Import Another
@@ -591,7 +727,9 @@ export default function BulkImportModal({
               type="button"
               onClick={handleUpload}
               disabled={!file || isUploading || Boolean(validationError)}
-              className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2"
+              className={`px-6 py-3 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 ${
+                isVault ? "bg-stone-700 hover:bg-stone-600" : "bg-stone-900 hover:bg-stone-800"
+              }`}
             >
               {isUploading ? (
                 <>
