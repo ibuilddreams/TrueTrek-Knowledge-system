@@ -18,6 +18,7 @@ export function useStartQuizAttempt() {
     mutationFn: (quizId) => startQuizAttempt(quizId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["studentQuizzes"] });
+      queryClient.invalidateQueries({ queryKey: ["studentQuizAttempts"] });
     },
     onError: (error) => {
       toastError(getApiErrorMessage(error, "Unable to start this quiz attempt."));
@@ -33,6 +34,7 @@ export function useSubmitQuizAttempt() {
     onSuccess: (response) => {
       toastSuccess(response?.message || "Quiz submitted successfully");
       queryClient.invalidateQueries({ queryKey: ["studentQuizzes"] });
+      queryClient.invalidateQueries({ queryKey: ["studentQuizAttempts"] });
     },
     onError: (error) => {
       toastError(getApiErrorMessage(error, "Unable to submit this quiz attempt."));

@@ -14,6 +14,7 @@ import SearchableSelect from "@/components/ui/SearchableSelect";
 import Pagination from "@/components/ui/Pagination";
 import EmptyState from "@/components/ui/EmptyState";
 import TeacherCourseCard from "@/components/features/teachers/TeacherCourseCard";
+import TeacherCourseFormModal from "@/components/features/teachers/TeacherCourseFormModal";
 import CourseStudentsScreen from "./CourseStudentsScreen";
 import CourseContentScreen from "./CourseContentScreen";
 
@@ -39,6 +40,7 @@ export default function MyCoursesTab() {
   const [categoryFilter, setCategoryFilter] = useState("");
   const [tagFilter, setTagFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [isAddCourseModalOpen, setIsAddCourseModalOpen] = useState(false);
 
   const {
     data: courses = [],
@@ -226,6 +228,7 @@ export default function MyCoursesTab() {
 
         <button
           type="button"
+          onClick={() => setIsAddCourseModalOpen(true)}
           className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0 cursor-pointer"
           title="Add a new course"
           aria-label="Add a new course"
@@ -234,6 +237,12 @@ export default function MyCoursesTab() {
           ADD COURSE
         </button>
       </div>
+
+      <TeacherCourseFormModal
+        isOpen={isAddCourseModalOpen}
+        onClose={() => setIsAddCourseModalOpen(false)}
+        onSaved={() => refetchCourses()}
+      />
 
       {isCoursesLoading && (
         <div

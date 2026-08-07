@@ -5,6 +5,7 @@ import Modal from "@/components/ui/Modal";
 import Loader from "@/components/ui/Loader";
 import { formatDateTime } from "@/lib/adminFormatters";
 import { useQuizAttemptMyDetail } from "@/hooks/student/useQuizAttempt";
+import { useTheme } from "@/hooks/useTheme";
 
 function formatDuration(seconds) {
   if (seconds === null || seconds === undefined) return "—";
@@ -13,16 +14,35 @@ function formatDuration(seconds) {
   return minutes === 0 ? `${remaining}s` : `${minutes}m ${remaining}s`;
 }
 
-function SummaryTile({ label, value, valueClassName = "text-stone-900" }) {
+function SummaryTile({ label, value, tone = "neutral", isVault }) {
+  const toneClass =
+    tone === "emerald"
+      ? isVault
+        ? "text-emerald-400"
+        : "text-emerald-700"
+      : tone === "rose"
+        ? isVault
+          ? "text-rose-400"
+          : "text-rose-600"
+        : isVault
+          ? "text-stone-50"
+          : "text-stone-900";
   return (
-    <div className="rounded-xl border border-stone-100 bg-stone-50/80 px-3 py-2.5">
-      <p className="text-[9px] font-mono uppercase tracking-wider text-stone-400">{label}</p>
-      <p className={`text-base font-serif font-bold mt-0.5 ${valueClassName}`}>{value}</p>
+    <div
+      className={`rounded-xl border px-3 py-2.5 ${
+        isVault ? "border-stone-800 bg-white/5" : "border-stone-100 bg-stone-50/80"
+      }`}
+    >
+      <p className={`text-[9px] font-mono uppercase tracking-wider ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+        {label}
+      </p>
+      <p className={`text-base font-serif font-bold mt-0.5 ${toneClass}`}>{value}</p>
     </div>
   );
 }
 
 export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
+  const { isVault } = useTheme();
   const isOpen = Boolean(attemptId);
   const { data, isLoading } = useQuizAttemptMyDetail(attemptId, { enabled: isOpen });
 
@@ -43,38 +63,46 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
             <SummaryTile
               label="Score"
               value={data.score !== null ? `${data.score}/${data.total_marks}` : "—"}
+              isVault={isVault}
             />
             <SummaryTile
               label="Percentage"
               value={data.percentage !== null ? `${data.percentage}%` : "—"}
-              valueClassName={data.is_passed ? "text-emerald-700" : "text-rose-600"}
+              tone={data.is_passed ? "emerald" : "rose"}
+              isVault={isVault}
             />
-            <SummaryTile label="Time taken" value={formatDuration(data.time_taken_seconds)} />
+            <SummaryTile
+              label="Time taken"
+              value={formatDuration(data.time_taken_seconds)}
+              isVault={isVault}
+            />
             <SummaryTile
               label="Result"
               value={data.is_passed === null ? "Pending" : data.is_passed ? "Passed" : "Failed"}
-              valueClassName={
-                data.is_passed === null
-                  ? "text-stone-500"
-                  : data.is_passed
-                    ? "text-emerald-700"
-                    : "text-rose-600"
-              }
+              tone={data.is_passed === null ? "neutral" : data.is_passed ? "emerald" : "rose"}
+              isVault={isVault}
             />
           </div>
 
-          <p className="text-[11px] text-stone-400 font-mono uppercase tracking-wider">
+          <p className={`text-[11px] font-mono uppercase tracking-wider ${isVault ? "text-stone-500" : "text-stone-400"}`}>
             Submitted {formatDateTime(data.ended_at)}
           </p>
 
           <ul className="space-y-3 max-h-[50vh] overflow-y-auto pr-1">
             {data.questions.map((question, index) => (
-              <li key={question.id} className="rounded-xl border border-stone-200 p-4">
+              <li
+                key={question.id}
+                className={`rounded-xl border p-4 ${isVault ? "border-stone-800" : "border-stone-200"}`}
+              >
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <p className="text-xs font-semibold text-stone-800">
+                  <p className={`text-xs font-semibold ${isVault ? "text-stone-200" : "text-stone-800"}`}>
                     {index + 1}. {question.text}
                   </p>
-                  <span className="text-[10px] font-mono uppercase text-stone-400 shrink-0">
+                  <span
+                    className={`text-[10px] font-mono uppercase shrink-0 ${
+                      isVault ? "text-stone-500" : "text-stone-400"
+                    }`}
+                  >
                     {question.marks_awarded !== null
                       ? `${question.marks_awarded}/${question.marks} marks`
                       : `${question.marks} marks`}
@@ -83,14 +111,24 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
 
                 {question.question_type === "SHORT_ANSWER" ? (
                   <div className="space-y-2">
-                    <p className="text-xs text-stone-600 bg-stone-50 border border-stone-100 rounded-lg p-3 whitespace-pre-wrap">
+                    <p
+                      className={`text-xs border rounded-lg p-3 whitespace-pre-wrap ${
+                        isVault
+                          ? "text-stone-300 bg-white/5 border-stone-800"
+                          : "text-stone-600 bg-stone-50 border-stone-100"
+                      }`}
+                    >
                       {question.text_answer || "No answer provided."}
                     </p>
                     <span
                       className={`inline-block text-[10px] font-mono uppercase tracking-wider ${
                         question.grading_status === "PENDING_GRADING"
-                          ? "text-amber-700"
-                          : "text-emerald-700"
+                          ? isVault
+                            ? "text-amber-400"
+                            : "text-amber-700"
+                          : isVault
+                            ? "text-emerald-400"
+                            : "text-emerald-700"
                       }`}
                     >
                       {question.grading_status === "PENDING_GRADING"
@@ -98,7 +136,9 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
                         : "Graded"}
                     </span>
                     {question.feedback ? (
-                      <p className="text-[11px] text-stone-500 font-light">{question.feedback}</p>
+                      <p className={`text-[11px] font-light ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+                        {question.feedback}
+                      </p>
                     ) : null}
                   </div>
                 ) : (
@@ -108,10 +148,16 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
                         key={choice.id}
                         className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs border ${
                           choice.is_correct
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                            ? isVault
+                              ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
+                              : "border-emerald-200 bg-emerald-50 text-emerald-800"
                             : choice.is_selected
-                              ? "border-rose-200 bg-rose-50 text-rose-700"
-                              : "border-stone-100 bg-stone-50/60 text-stone-600"
+                              ? isVault
+                                ? "border-rose-500/30 bg-rose-500/10 text-rose-300"
+                                : "border-rose-200 bg-rose-50 text-rose-700"
+                              : isVault
+                                ? "border-stone-800 bg-white/5 text-stone-400"
+                                : "border-stone-100 bg-stone-50/60 text-stone-600"
                         }`}
                       >
                         {choice.is_correct && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}

@@ -1,15 +1,14 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { BookPlus, Check, Edit3, X } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { BookPlus, Check, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import MultiSelect from "@/components/ui/MultiSelect";
-import { createCourse, getCourseById, getCourseStatusChoices, updateCourse } from "@/services/coursesService";
-import { createCategory, getCategories } from "@/services/categoriesService";
-import { createTag, getTags } from "@/services/tagsService";
-import { getTeachers } from "@/services/teachersService";
+import { createCourse, getCourseStatusChoices } from "@/services/coursesService";
+import { getCategories } from "@/services/categoriesService";
+import { getTags } from "@/services/tagsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
@@ -37,17 +36,22 @@ const LABEL_CLASS =
 
 const ERROR_CLASS = "text-[10px] font-mono text-red-600 mt-1";
 
-export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) {
-  const isEditMode = Boolean(course);
-  const queryClient = useQueryClient();
+function extractFieldErrors(error) {
+  const apiFieldErrors = error?.data?.data;
+  if (apiFieldErrors && typeof apiFieldErrors === "object") {
+    const mapped = {};
+    Object.entries(apiFieldErrors).forEach(([key, value]) => {
+      mapped[key] = Array.isArray(value) ? value[0] : String(value);
+    });
+    return mapped;
+  }
+  return null;
+}
 
+export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [thumbnailFile, setThumbnailFile] = useState(null);
-  const [existingThumbnailUrl, setExistingThumbnailUrl] = useState(null);
   const [selectedTagIds, setSelectedTagIds] = useState([]);
-  const [selectedInstructorIds, setSelectedInstructorIds] = useState([]);
-  const [leadInstructorIds, setLeadInstructorIds] = useState([]);
-
   const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -69,15 +73,6 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
     enabled: isOpen,
   });
 
-  const teachersQuery = useQuery({
-    queryKey: ["teachers"],
-    queryFn: async () => {
-      const response = await getTeachers();
-      return response?.data?.users || [];
-    },
-    enabled: isOpen,
-  });
-
   const statusChoicesQuery = useQuery({
     queryKey: ["courseStatusChoices"],
     queryFn: async () => {
@@ -87,87 +82,29 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
     enabled: isOpen,
   });
 
-  const courseDetailQuery = useQuery({
-    queryKey: ["course", course?.id],
-    queryFn: async () => {
-      const response = await getCourseById(course.id);
-      return response?.data || null;
-    },
-    enabled: isOpen && Boolean(course?.id),
-  });
-
   const categories = categoriesQuery.data || [];
   const tags = tagsQuery.data || [];
-  const teachers = teachersQuery.data || [];
   const statusOptions = statusChoicesQuery.data || [];
   const isLoadingOptions =
-    categoriesQuery.isLoading || tagsQuery.isLoading || teachersQuery.isLoading || statusChoicesQuery.isLoading;
-  const isLoadingCourse = courseDetailQuery.isLoading;
-
-  const createCategoryMutation = useMutation({
-    mutationFn: (payload) => createCategory(payload),
-    onSuccess: (response) => {
-      const category = response?.data;
-      queryClient.setQueryData(["categories"], (old) => (category && old ? [...old, category] : old));
-      queryClient.invalidateQueries({ queryKey: ["categories"] });
-    },
-  });
-
-  const createTagMutation = useMutation({
-    mutationFn: (payload) => createTag(payload),
-    onSuccess: (response) => {
-      const tag = response?.data;
-      queryClient.setQueryData(["tags"], (old) => (tag && old ? [...old, tag] : old));
-      queryClient.invalidateQueries({ queryKey: ["tags"] });
-    },
-  });
+    categoriesQuery.isLoading || tagsQuery.isLoading || statusChoicesQuery.isLoading;
 
   useEffect(() => {
     if (!isOpen) return;
     setForm(INITIAL_FORM);
     setThumbnailFile(null);
-    setExistingThumbnailUrl(null);
     setSelectedTagIds([]);
-    setSelectedInstructorIds([]);
-    setLeadInstructorIds([]);
     setFieldErrors({});
   }, [isOpen]);
 
   useEffect(() => {
-    const detail = courseDetailQuery.data;
-    if (!isOpen || !course || !detail) return;
-
-    setForm({
-      title: detail.title || "",
-      code: detail.code || "",
-      description: detail.description || "",
-      category: detail.category?.id || "",
-      status: detail.status || "DRAFT",
-      difficulty: detail.difficulty || "BEGINNER",
-      duration_minutes: String(detail.duration_minutes ?? 0),
-    });
-    setExistingThumbnailUrl(detail.thumbnail || null);
-    setSelectedTagIds((detail.tags || []).map((tag) => tag.id));
-    setSelectedInstructorIds((detail.instructors || []).map((instructor) => instructor.id));
-    setLeadInstructorIds(
-      (detail.instructors || []).filter((instructor) => instructor.is_lead).map((instructor) => instructor.id)
-    );
-  }, [isOpen, course, courseDetailQuery.data]);
-
-  useEffect(() => {
     if (!isOpen) return;
-    const failedQuery = [categoriesQuery, tagsQuery, teachersQuery, statusChoicesQuery].find(
+    const failedQuery = [categoriesQuery, tagsQuery, statusChoicesQuery].find(
       (query) => query.isError
     );
     if (failedQuery) {
       toastError(getApiErrorMessage(failedQuery.error, "Unable to load course options."));
     }
-  }, [isOpen, categoriesQuery.isError, tagsQuery.isError, teachersQuery.isError, statusChoicesQuery.isError]);
-
-  useEffect(() => {
-    if (!isOpen || !courseDetailQuery.isError) return;
-    toastError(getApiErrorMessage(courseDetailQuery.error, "Unable to load course details."));
-  }, [isOpen, courseDetailQuery.isError]);
+  }, [isOpen, categoriesQuery.isError, tagsQuery.isError, statusChoicesQuery.isError]);
 
   const handleClose = () => {
     if (isSubmitting) return;
@@ -181,48 +118,6 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
 
   const categoryOptions = categories.map((category) => ({ value: category.id, label: category.name }));
   const tagOptions = tags.map((tag) => ({ value: tag.id, label: tag.name }));
-  const instructorOptions = teachers.map((teacher) => ({
-    value: teacher.id,
-    label: teacher.full_name || teacher.email,
-  }));
-
-  const toggleLeadInstructor = (instructorId) => {
-    setLeadInstructorIds((prev) =>
-      prev.includes(instructorId) ? prev.filter((id) => id !== instructorId) : [...prev, instructorId]
-    );
-  };
-
-  const handleInstructorsChange = (nextIds) => {
-    setSelectedInstructorIds(nextIds);
-    setLeadInstructorIds((prev) => prev.filter((id) => nextIds.includes(id)));
-  };
-
-  const handleCreateCategory = async (name) => {
-    try {
-      const response = await createCategoryMutation.mutateAsync({ name });
-      const category = response?.data;
-      if (!category) throw new Error("Unable to create category.");
-      setFieldErrors((prev) => ({ ...prev, category: null }));
-      return { value: category.id, label: category.name };
-    } catch (error) {
-      const nameError = error?.data?.data?.name;
-      throw new Error(
-        Array.isArray(nameError) ? nameError[0] : getApiErrorMessage(error, "Unable to create category.")
-      );
-    }
-  };
-
-  const handleCreateTag = async (name) => {
-    try {
-      const response = await createTagMutation.mutateAsync({ name });
-      const tag = response?.data;
-      if (!tag) throw new Error("Unable to create tag.");
-      return { value: tag.id, label: tag.name };
-    } catch (error) {
-      const nameError = error?.data?.data?.name;
-      throw new Error(Array.isArray(nameError) ? nameError[0] : getApiErrorMessage(error, "Unable to create tag."));
-    }
-  };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -256,48 +151,29 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
     formData.append("difficulty", form.difficulty);
     formData.append("duration_minutes", String(durationMinutes));
     selectedTagIds.forEach((tagId) => formData.append("tags", tagId));
-    if (selectedInstructorIds.length) {
-      formData.append(
-        "instructors",
-        JSON.stringify(
-          selectedInstructorIds.map((instructorId) => ({
-            instructor: instructorId,
-            is_lead: leadInstructorIds.includes(instructorId),
-          }))
-        )
-      );
-    }
 
     setIsSubmitting(true);
     try {
-      const response = isEditMode ? await updateCourse(course.id, formData) : await createCourse(formData);
-      toastSuccess(response?.message || `Course ${isEditMode ? "updated" : "created"} successfully.`);
+      const response = await createCourse(formData);
+      toastSuccess(response?.message || "Course created successfully.");
       onSaved?.();
       handleClose();
     } catch (error) {
-      const apiFieldErrors = error?.data?.data;
-      if (apiFieldErrors && typeof apiFieldErrors === "object") {
-        const mapped = {};
-        Object.entries(apiFieldErrors).forEach(([key, value]) => {
-          mapped[key] = Array.isArray(value) ? value[0] : String(value);
-        });
-        setFieldErrors(mapped);
-      }
-      toastError(getApiErrorMessage(error, `Unable to ${isEditMode ? "update" : "create"} course.`));
+      const mapped = extractFieldErrors(error);
+      if (mapped) setFieldErrors(mapped);
+      toastError(getApiErrorMessage(error, "Unable to create course."));
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const isBusy = isSubmitting || isLoadingCourse;
-
   return (
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      icon={isEditMode ? Edit3 : BookPlus}
-      title={isEditMode ? "Edit Course" : "Add Course"}
-      subtitle={isEditMode ? "Update the course details." : "Create a new course."}
+      icon={BookPlus}
+      title="Add Course"
+      subtitle="Create a new course. You'll be added as its lead instructor."
       maxWidth="max-w-2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -307,7 +183,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
             type="text"
             value={form.title}
             onChange={updateField("title")}
-            disabled={isBusy}
+            disabled={isSubmitting}
             placeholder="Course title"
             className={FIELD_CLASS}
             autoComplete="off"
@@ -321,7 +197,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
             type="text"
             value={form.code}
             onChange={updateField("code")}
-            disabled={isBusy}
+            disabled={isSubmitting}
             placeholder="CS101"
             className={FIELD_CLASS}
             autoComplete="off"
@@ -334,7 +210,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
           <textarea
             value={form.description}
             onChange={updateField("description")}
-            disabled={isBusy}
+            disabled={isSubmitting}
             placeholder="Course description"
             rows={3}
             className={`${FIELD_CLASS} resize-none`}
@@ -344,21 +220,11 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
 
         <div>
           <label className={LABEL_CLASS}>Thumbnail</label>
-          {existingThumbnailUrl && !thumbnailFile && (
-            <div className="mb-2 flex items-center gap-2">
-              <img
-                src={existingThumbnailUrl}
-                alt="Current thumbnail"
-                className="w-14 h-14 object-cover rounded-lg border border-stone-200"
-              />
-              <span className="text-[10px] font-mono text-stone-400">Current thumbnail</span>
-            </div>
-          )}
           <input
             type="file"
             accept="image/*"
             onChange={(event) => setThumbnailFile(event.target.files?.[0] || null)}
-            disabled={isBusy}
+            disabled={isSubmitting}
             className={`${FIELD_CLASS} file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-stone-200 file:text-stone-700 file:text-[10px] file:font-mono file:uppercase file:tracking-wider`}
           />
           {fieldErrors.thumbnail && <p className={ERROR_CLASS}>{fieldErrors.thumbnail}</p>}
@@ -377,10 +243,8 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
                 setFieldErrors((prev) => ({ ...prev, category: null }));
               }}
               loading={isLoadingOptions}
-              disabled={isBusy}
+              disabled={isSubmitting}
               emptyLabel="No categories found."
-              onCreate={handleCreateCategory}
-              createLabel="Add New Category"
             />
             {fieldErrors.category && <p className={ERROR_CLASS}>{fieldErrors.category}</p>}
           </div>
@@ -394,10 +258,8 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
               values={selectedTagIds}
               onChange={setSelectedTagIds}
               loading={isLoadingOptions}
-              disabled={isBusy}
+              disabled={isSubmitting}
               emptyLabel="No tags found."
-              onCreate={handleCreateTag}
-              createLabel="Add New Tag"
             />
             {fieldErrors.tags && <p className={ERROR_CLASS}>{fieldErrors.tags}</p>}
           </div>
@@ -409,7 +271,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
             <select
               value={form.status}
               onChange={updateField("status")}
-              disabled={isBusy || isLoadingOptions}
+              disabled={isSubmitting || isLoadingOptions}
               className={FIELD_CLASS}
             >
               {statusOptions.length === 0 && <option value={form.status}>Loading...</option>}
@@ -427,7 +289,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
             <select
               value={form.difficulty}
               onChange={updateField("difficulty")}
-              disabled={isBusy}
+              disabled={isSubmitting}
               className={FIELD_CLASS}
             >
               {DIFFICULTY_OPTIONS.map((option) => (
@@ -445,61 +307,18 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
               min="0"
               value={form.duration_minutes}
               onChange={updateField("duration_minutes")}
-              disabled={isBusy}
+              disabled={isSubmitting}
               className={FIELD_CLASS}
             />
             {fieldErrors.duration_minutes && <p className={ERROR_CLASS}>{fieldErrors.duration_minutes}</p>}
           </div>
         </div>
 
-        <div>
-          <MultiSelect
-            label="Instructors"
-            placeholder="Select instructors"
-            searchPlaceholder="Search instructors..."
-            options={instructorOptions}
-            values={selectedInstructorIds}
-            onChange={handleInstructorsChange}
-            loading={isLoadingOptions}
-            disabled={isBusy}
-            emptyLabel="No teachers found."
-          />
-          {fieldErrors.instructors && <p className={ERROR_CLASS}>{fieldErrors.instructors}</p>}
-
-          {selectedInstructorIds.length > 0 && (
-            <ul className="mt-3 space-y-2">
-              {selectedInstructorIds.map((instructorId) => {
-                const instructor = teachers.find((teacher) => teacher.id === instructorId);
-                if (!instructor) return null;
-                return (
-                  <li
-                    key={instructorId}
-                    className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-stone-100 bg-stone-50/60 text-xs"
-                  >
-                    <span className="font-semibold text-stone-800">
-                      {instructor.full_name || instructor.email}
-                    </span>
-                    <label className="flex items-center gap-1.5 text-[10px] font-mono text-stone-500 uppercase tracking-wider">
-                      <input
-                        type="checkbox"
-                        checked={leadInstructorIds.includes(instructorId)}
-                        onChange={() => toggleLeadInstructor(instructorId)}
-                        disabled={isBusy}
-                      />
-                      Lead Instructor
-                    </label>
-                  </li>
-                );
-              })}
-            </ul>
-          )}
-        </div>
-
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-stone-100">
           <button
             type="button"
             onClick={handleClose}
-            disabled={isBusy}
+            disabled={isSubmitting}
             className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
@@ -508,18 +327,18 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
 
           <button
             type="submit"
-            disabled={isBusy}
+            disabled={isSubmitting}
             className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>
                 <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                {isEditMode ? "Updating..." : "Creating..."}
+                Creating...
               </>
             ) : (
               <>
                 <Check className="w-3.5 h-3.5" />
-                {isEditMode ? "Update Course" : "Create Course"}
+                Create Course
               </>
             )}
           </button>

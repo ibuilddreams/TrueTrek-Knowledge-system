@@ -1,19 +1,10 @@
 "use client";
 
 import { usePathname } from "next/navigation";
-import { motion } from "motion/react";
+import ViewTransition from "@/components/ui/ViewTransition";
 
 export default function PageTransition({ children }) {
   const pathname = usePathname();
 
-  return (
-    <motion.div
-      key={pathname}
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ duration: 0.18, ease: "easeOut" }}
-    >
-      {children}
-    </motion.div>
-  );
+  return <ViewTransition viewKey={pathname}>{children}</ViewTransition>;
 }

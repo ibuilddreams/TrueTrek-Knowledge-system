@@ -3,9 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Lock, LogIn } from "lucide-react";
+import confetti from "canvas-confetti";
+import { AlertCircle, Lock, LogIn } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuestOnlyRoute } from "@/hooks/useGuestOnlyRoute";
+import { useTheme } from "@/hooks/useTheme";
 import { ROUTES, getPortalRouteForRole } from "@/constants/routes";
 import { toastError, toastSuccess } from "@/lib/toast";
 import AuthGateCard from "@/components/ui/AuthGateCard";
@@ -17,6 +19,7 @@ export default function LoginForm() {
   const router = useRouter();
   const { login } = useAuth();
   const { shouldBlock, isAuthenticated } = useGuestOnlyRoute();
+  const { isVault } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -25,7 +28,9 @@ export default function LoginForm() {
   if (shouldBlock && !isSubmitting) {
     return (
       <Loader
-        label={isAuthenticated ? "Redirecting to Portal..." : "Checking Session..."}
+        label={
+          isAuthenticated ? "Redirecting to Portal..." : "Checking Session..."
+        }
       />
     );
   }
@@ -37,6 +42,12 @@ export default function LoginForm() {
     try {
       const { user } = await login({ email, password });
       toastSuccess(`Welcome back, ${user.name || user.email}.`);
+      confetti({
+        particleCount: 80,
+        spread: 60,
+        origin: { y: 0.8 },
+        colors: ["#d97706", "#b45309", "#1c1917"],
+      });
       router.push(getPortalRouteForRole(user.role));
     } catch (error) {
       const message = error?.message || "Unable to sign in. Please try again.";
@@ -78,7 +89,11 @@ export default function LoginForm() {
           <div className="flex justify-end">
             <Link
               href={ROUTES.FORGOT_PASSWORD}
-              className="text-[11px] font-mono font-semibold text-stone-500 hover:text-amber-800 uppercase tracking-wider transition"
+              className={`text-[11px] font-mono font-semibold uppercase tracking-wider transition ${
+                isVault
+                  ? "text-stone-500 hover:text-amber-500"
+                  : "text-stone-500 hover:text-amber-800"
+              }`}
             >
               Forgot Password?
             </Link>
@@ -86,7 +101,16 @@ export default function LoginForm() {
         </div>
 
         {formError && (
-          <p className="text-[11px] text-red-600 font-mono">{formError}</p>
+          <div
+            className={`p-3.5 rounded-xl flex items-start gap-2.5 text-xs font-mono ${
+              isVault
+                ? "bg-red-500/10 border border-red-500/20 text-red-400"
+                : "bg-red-50 border border-red-100 text-red-600"
+            }`}
+          >
+            <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
+            <span>{formError}</span>
+          </div>
         )}
 
         <AuthSubmitButton
