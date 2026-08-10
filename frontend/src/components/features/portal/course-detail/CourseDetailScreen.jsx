@@ -97,6 +97,52 @@ function StatChip({ label, value }) {
   );
 }
 
+function instructorInitials(name) {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function InstructorAvatar({ name, avatar }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const hasAvatar = Boolean(avatar) && !imageFailed;
+  if (hasAvatar) {
+    return (
+      <img
+        src={avatar}
+        alt={name || "Instructor avatar"}
+        onError={() => setImageFailed(true)}
+        className="w-8 h-8 rounded-full object-cover shrink-0"
+      />
+    );
+  }
+  return (
+    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-600 text-white font-bold text-[10px] shrink-0">
+      {instructorInitials(name)}
+    </span>
+  );
+}
+
+function CourseThumbnail({ image, title }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const hasImage = Boolean(image) && !imageFailed;
+  return (
+    <div className="relative w-full h-44 sm:h-56 rounded-2xl border border-stone-200 overflow-hidden shrink-0">
+      <img
+        src={hasImage ? image : "/images/course-placeholder.svg"}
+        alt={title ? `${title} thumbnail` : "Course thumbnail"}
+        onError={() => setImageFailed(true)}
+        className="absolute inset-0 w-full h-full object-cover"
+      />
+    </div>
+  );
+}
+
 function assignmentStatusLabel(submission) {
   if (!submission) {
     return { label: "Not submitted", className: "bg-stone-50 text-stone-500 border-stone-200" };
@@ -418,11 +464,12 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
   const detailEnrollment = data?.enrollment || enrollment || {};
   const stats = data?.stats || {};
   const modules = data?.modules || [];
-  const instructors = course.instructors || [];
-  const leadInstructor =
-    instructors.find((item) => item.is_lead)?.name ||
-    instructors[0]?.name ||
+  const courseInstructors = course.instructors || [];
+  const fallbackInstructorName =
+    courseInstructors.find((item) => item.is_lead)?.name ||
+    courseInstructors[0]?.name ||
     "Instructor TBD";
+  const assignedInstructor = detailEnrollment.teacher || null;
 
   const canInteract = detailEnrollment.status === "ACTIVE";
 
@@ -542,6 +589,8 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
             <StatusBadge status={detailEnrollment.status} />
           </div>
 
+          <CourseThumbnail image={course.image} title={course.title} />
+
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <div className="lg:col-span-2 space-y-6 min-w-0">
               <div className="rounded-2xl border border-stone-200 bg-white p-5 sm:p-6 space-y-4">
@@ -625,7 +674,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
               </div>
             </div>
 
-            <div className="space-y-4 lg:sticky lg:top-6">
+            <div className="space-y-4 lg:sticky lg:top-24">
               <div className="rounded-2xl border border-stone-200 bg-white p-5 space-y-4">
                 <ProgressBar value={stats.completion_percentage} />
 
@@ -647,11 +696,38 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
                   <StatChip label="Quizzes" value={stats.total_quizzes || 0} />
                 </div>
 
-                <div className="pt-3 border-t border-stone-100 space-y-2.5 text-[12px] text-stone-600">
-                  <div className="flex items-center gap-2">
-                    <UserRound className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                    <span>{leadInstructor}</span>
+                <div className="pt-3 border-t border-stone-100 space-y-3">
+                  <div className="space-y-2">
+                    <p className="text-[9px] font-mono uppercase tracking-wider text-stone-400">
+                      Instructor
+                    </p>
+                    {assignedInstructor ? (
+                      <div className="flex items-center gap-2.5">
+                        <InstructorAvatar
+                          name={assignedInstructor.name}
+                          avatar={assignedInstructor.avatar}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[12px] font-medium text-stone-800 truncate">
+                            {assignedInstructor.name}
+                          </p>
+                          {assignedInstructor.email ? (
+                            <p className="text-[10px] text-stone-400 font-mono truncate">
+                              {assignedInstructor.email}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-[12px] text-stone-600">
+                        <UserRound className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                        <span>{fallbackInstructorName}</span>
+                      </div>
+                    )}
                   </div>
+                </div>
+
+                <div className="space-y-2.5 text-[12px] text-stone-600">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-3.5 h-3.5 text-stone-400 shrink-0" />
                     <span>Enrolled {formatDate(detailEnrollment.enrolled_at)}</span>
