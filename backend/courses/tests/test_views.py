@@ -169,6 +169,38 @@ class CourseListCreateViewTests(APITestCase):
         self.assertFalse(Course.objects.filter(title="Advanced Django").exists())
 
 
+class PublicCourseListViewTests(APITestCase):
+    def setUp(self):
+        self.url = reverse("course-public-list")
+        self.category = Category.objects.create(name="Programming")
+        Course.objects.create(
+            title="Published Course", code="PUB101", category=self.category, status=Status.PUBLISHED
+        )
+        Course.objects.create(
+            title="Draft Course", code="DRAFT101", category=self.category, status=Status.DRAFT
+        )
+
+    def test_list_does_not_require_authentication(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+    def test_list_only_returns_published_courses(self):
+        response = self.client.get(self.url)
+
+        results = response.data["data"]["results"]
+        titles = [item["title"] for item in results]
+        self.assertIn("Published Course", titles)
+        self.assertNotIn("Draft Course", titles)
+
+    def test_list_does_not_expose_instructors(self):
+        response = self.client.get(self.url)
+
+        results = response.data["data"]["results"]
+        self.assertNotIn("instructors", results[0])
+        self.assertNotIn("status", results[0])
+
+
 class CourseDetailViewTests(APITestCase):
     def setUp(self):
         self.category = Category.objects.create(name="Programming")

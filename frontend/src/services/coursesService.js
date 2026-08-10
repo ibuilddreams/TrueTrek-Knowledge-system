@@ -1,5 +1,14 @@
 import { backendClient } from "./apiClient";
 
+export async function getPublicCourses({ page = 1, pageSize = 100, search, category } = {}) {
+  const params = new URLSearchParams();
+  params.set("page", page);
+  params.set("page_size", pageSize);
+  if (search) params.set("search", search);
+  if (category) params.set("category", category);
+  return backendClient.get(`/courses/public/?${params.toString()}`);
+}
+
 export async function getCourses({ pageSize = 100, search, status, category, tags } = {}) {
   const params = new URLSearchParams();
   params.set("page_size", pageSize);
