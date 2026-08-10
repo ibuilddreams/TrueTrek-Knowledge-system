@@ -14,6 +14,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
 import StudentCourseCard from "../StudentCourseCard";
 import CourseDetailScreen from "../course-detail/CourseDetailScreen";
+import LessonViewPending from "../lesson-view/LessonViewPending";
 
 const PAGE_SIZE = 6;
 
@@ -31,6 +32,10 @@ export default function CoursesTab() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const selectedCourseId = searchParams.get("course");
+  // Deep-linking straight into a lesson/quiz/assignment — while enrollments are still
+  // loading, show the same full-screen takeover the lesson view itself uses instead of
+  // this tab's own inline loader, so the portal header/sidebar never flash on refresh.
+  const isDeepLinkingIntoContent = Boolean(selectedCourseId && searchParams.get("content"));
 
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, 300);
@@ -109,6 +114,9 @@ export default function CoursesTab() {
   );
 
   if (isLoading) {
+    if (isDeepLinkingIntoContent) {
+      return <LessonViewPending />;
+    }
     return (
       <div
         className="flex min-h-[50vh] items-center justify-center"
@@ -120,6 +128,15 @@ export default function CoursesTab() {
   }
 
   if (isError) {
+    if (isDeepLinkingIntoContent) {
+      return (
+        <LessonViewPending
+          isError
+          errorMessage={getApiErrorMessage(error, "Unable to load your enrolled courses.")}
+          onRetry={() => refetch()}
+        />
+      );
+    }
     return (
       <div
         className={`border rounded-2xl p-8 text-center max-w-lg mx-auto ${

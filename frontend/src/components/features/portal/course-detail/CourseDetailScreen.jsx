@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
@@ -34,9 +35,8 @@ import { useStudentAssignments } from "@/hooks/student/useStudentAssignments";
 import { useStudentQuizzes } from "@/hooks/student/useStudentQuizzes";
 import Loader from "@/components/ui/Loader";
 import StatusBadge from "@/components/ui/StatusBadge";
-import LessonViewerModal from "./LessonViewerModal";
-import AssignmentDetailModal from "./AssignmentDetailModal";
-import QuizAttemptModal from "./QuizAttemptModal";
+import LessonViewScreen from "../lesson-view/LessonViewScreen";
+import LessonViewPending from "../lesson-view/LessonViewPending";
 
 const ASSIGNMENT_STATUS_STYLES = {
   SUBMITTED: "bg-amber-50 text-amber-700 border-amber-100",
@@ -93,6 +93,52 @@ function StatChip({ label, value }) {
         {label}
       </p>
       <p className="text-base font-serif font-bold text-stone-900 mt-0.5">{value}</p>
+    </div>
+  );
+}
+
+function instructorInitials(name) {
+  if (!name) return "?";
+  return name
+    .split(" ")
+    .filter(Boolean)
+    .map((part) => part[0])
+    .join("")
+    .slice(0, 2)
+    .toUpperCase();
+}
+
+function InstructorAvatar({ name, avatar }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const hasAvatar = Boolean(avatar) && !imageFailed;
+  if (hasAvatar) {
+    return (
+      <img
+        src={avatar}
+        alt={name || "Instructor avatar"}
+        onError={() => setImageFailed(true)}
+        className="w-8 h-8 rounded-full object-cover shrink-0"
+      />
+    );
+  }
+  return (
+    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-600 text-white font-bold text-[10px] shrink-0">
+      {instructorInitials(name)}
+    </span>
+  );
+}
+
+function CourseThumbnail({ image, title }) {
+  const [imageFailed, setImageFailed] = useState(false);
+  const hasImage = Boolean(image) && !imageFailed;
+  return (
+    <div className="relative w-full h-44 sm:h-56 rounded-2xl border border-stone-200 overflow-hidden shrink-0">
+      <img
+        src={hasImage ? image : "/images/course-placeholder.svg"}
+        alt={title ? `${title} thumbnail` : "Course thumbnail"}
+        onError={() => setImageFailed(true)}
+        className="absolute inset-0 w-full h-full object-cover"
+      />
     </div>
   );
 }
@@ -380,20 +426,59 @@ function ModuleAccordionItem({
 }
 
 export default function CourseDetailScreen({ enrollment, onBack }) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const courseId = enrollment?.course?.id;
   const [expandedModuleIds, setExpandedModuleIds] = useState(() => new Set());
-  const [selectedLesson, setSelectedLesson] = useState(null);
-  const [selectedAssignment, setSelectedAssignment] = useState(null);
-  const [selectedQuiz, setSelectedQuiz] = useState(null);
+
+  const contentParam = searchParams.get("content");
+  const activeItem = useMemo(() => {
+    if (!contentParam) return null;
+    const separatorIndex = contentParam.indexOf("-");
+    if (separatorIndex === -1) return null;
+    const type = contentParam.slice(0, separatorIndex).toUpperCase();
+    const id = Number(contentParam.slice(separatorIndex + 1));
+    if (!["LESSON", "ASSIGNMENT", "QUIZ"].includes(type) || !Number.isFinite(id)) return null;
+    return { type, id };
+  }, [contentParam]);
+
+  function openContent(type, id) {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("content", `${type.toLowerCase()}-${id}`);
+    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+  }
+
+  function closeContent() {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("content");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
+
+  // Tracks the last courseId this effect actually reacted to — compared by value rather
+  // than a "have we mounted yet" boolean, because React's Strict Mode replays effects
+  // once in dev: a boolean flag would already read "mounted" on that replay and treat it
+  // as a real course switch, wiping the `content` param and bouncing a refreshed lesson
+  // view back to the course overview even though courseId never changed.
+  const lastReactedCourseIdRef = useRef(courseId);
 
   useEffect(() => {
+    if (lastReactedCourseIdRef.current === courseId) {
+      return;
+    }
+    lastReactedCourseIdRef.current = courseId;
     setExpandedModuleIds(new Set());
-    setSelectedLesson(null);
-    setSelectedAssignment(null);
-    setSelectedQuiz(null);
     if (typeof window !== "undefined") {
       window.scrollTo(0, 0);
     }
+    const params = new URLSearchParams(searchParams.toString());
+    if (params.has("content")) {
+      params.delete("content");
+      const query = params.toString();
+      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
   const {
@@ -418,30 +503,14 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
   const detailEnrollment = data?.enrollment || enrollment || {};
   const stats = data?.stats || {};
   const modules = data?.modules || [];
-  const instructors = course.instructors || [];
-  const leadInstructor =
-    instructors.find((item) => item.is_lead)?.name ||
-    instructors[0]?.name ||
+  const courseInstructors = course.instructors || [];
+  const fallbackInstructorName =
+    courseInstructors.find((item) => item.is_lead)?.name ||
+    courseInstructors[0]?.name ||
     "Instructor TBD";
+  const assignedInstructor = detailEnrollment.teacher || null;
 
   const canInteract = detailEnrollment.status === "ACTIVE";
-
-  const lessonCompletionById = useMemo(() => {
-    const map = new Map();
-    modules.forEach((module) => {
-      (module.lessons || []).forEach((lesson) => map.set(lesson.id, lesson.is_completed));
-    });
-    return map;
-  }, [modules]);
-
-  const effectiveSelectedLesson = useMemo(() => {
-    if (!selectedLesson) return null;
-    if (!lessonCompletionById.has(selectedLesson.id)) return selectedLesson;
-    return {
-      ...selectedLesson,
-      is_completed: lessonCompletionById.get(selectedLesson.id),
-    };
-  }, [selectedLesson, lessonCompletionById]);
 
   const courseAssignments = useMemo(
     () => allAssignments.filter((assignment) => assignment.course?.id === courseId),
@@ -485,41 +554,71 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
 
   return (
     <div className="space-y-6">
-      <button
-        type="button"
-        onClick={onBack}
-        className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-stone-200 hover:border-amber-300 hover:text-amber-800 text-stone-600 text-[11px] font-mono uppercase tracking-wider rounded-xl transition"
-      >
-        <ArrowLeft className="w-3.5 h-3.5" />
-        Back to My Courses
-      </button>
-
-      {(isLoading || (!data && !isError)) && (
-        <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
-          <Loader fullScreen={false} label="Loading course details..." />
-        </div>
+      {!activeItem && (
+        <button
+          type="button"
+          onClick={onBack}
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-stone-200 hover:border-amber-300 hover:text-amber-800 text-stone-600 text-[11px] font-mono uppercase tracking-wider rounded-xl transition"
+        >
+          <ArrowLeft className="w-3.5 h-3.5" />
+          Back to My Courses
+        </button>
       )}
 
-      {isError && (
-        <div className="text-center py-12">
-          <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-6 h-6" />
+      {(isLoading || (!data && !isError)) &&
+        (activeItem ? (
+          <LessonViewPending />
+        ) : (
+          <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
+            <Loader fullScreen={false} label="Loading course details..." />
           </div>
-          <p className="text-xs text-rose-600 mb-4">
-            {getApiErrorMessage(error, "Unable to load course details.")}
-          </p>
-          <button
-            type="button"
-            onClick={() => refetch()}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-xs font-mono uppercase rounded-lg"
-          >
-            <RefreshCw className="w-3.5 h-3.5" />
-            Retry
-          </button>
-        </div>
+        ))}
+
+      {isError &&
+        (activeItem ? (
+          <LessonViewPending
+            isError
+            errorMessage={getApiErrorMessage(error, "Unable to load course details.")}
+            onRetry={() => refetch()}
+          />
+        ) : (
+          <div className="text-center py-12">
+            <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <AlertCircle className="w-6 h-6" />
+            </div>
+            <p className="text-xs text-rose-600 mb-4">
+              {getApiErrorMessage(error, "Unable to load course details.")}
+            </p>
+            <button
+              type="button"
+              onClick={() => refetch()}
+              className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-xs font-mono uppercase rounded-lg"
+            >
+              <RefreshCw className="w-3.5 h-3.5" />
+              Retry
+            </button>
+          </div>
+        ))}
+
+      {data && activeItem && (
+        <LessonViewScreen
+          course={course}
+          courseId={courseId}
+          modules={modules}
+          courseAssignments={courseAssignments}
+          courseQuizzes={courseQuizzes}
+          assignmentsByModule={assignmentsByModule}
+          quizzesByModule={quizzesByModule}
+          courseLevelAssignments={courseLevelAssignments}
+          courseLevelQuizzes={courseLevelQuizzes}
+          canInteract={canInteract}
+          activeItem={activeItem}
+          onSelectItem={openContent}
+          onExit={closeContent}
+        />
       )}
 
-      {data && (
+      {data && !activeItem && (
         <motion.div
           initial={{ opacity: 0, y: 12 }}
           animate={{ opacity: 1, y: 0 }}
@@ -541,6 +640,8 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
             </div>
             <StatusBadge status={detailEnrollment.status} />
           </div>
+
+          <CourseThumbnail image={course.image} title={course.title} />
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <div className="lg:col-span-2 space-y-6 min-w-0">
@@ -570,11 +671,15 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
                     <AssignmentRow
                       key={assignment.id}
                       assignment={assignment}
-                      onOpen={setSelectedAssignment}
+                      onOpen={(item) => openContent("assignment", item.id)}
                     />
                   ))}
                   {courseLevelQuizzes.map((quiz) => (
-                    <QuizRow key={quiz.id} quiz={quiz} onOpen={setSelectedQuiz} />
+                    <QuizRow
+                      key={quiz.id}
+                      quiz={quiz}
+                      onOpen={(item) => openContent("quiz", item.id)}
+                    />
                   ))}
                 </div>
               )}
@@ -615,9 +720,9 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
                         moduleAssignments={assignmentsByModule.get(module.id) || []}
                         moduleQuizzes={quizzesByModule.get(module.id) || []}
                         canInteract={canInteract}
-                        onOpenLesson={setSelectedLesson}
-                        onOpenAssignment={setSelectedAssignment}
-                        onOpenQuiz={setSelectedQuiz}
+                        onOpenLesson={(lesson) => openContent("lesson", lesson.id)}
+                        onOpenAssignment={(assignment) => openContent("assignment", assignment.id)}
+                        onOpenQuiz={(quiz) => openContent("quiz", quiz.id)}
                       />
                     ))}
                   </div>
@@ -625,7 +730,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
               </div>
             </div>
 
-            <div className="space-y-4 lg:sticky lg:top-6">
+            <div className="space-y-4 lg:sticky lg:top-24">
               <div className="rounded-2xl border border-stone-200 bg-white p-5 space-y-4">
                 <ProgressBar value={stats.completion_percentage} />
 
@@ -647,11 +752,38 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
                   <StatChip label="Quizzes" value={stats.total_quizzes || 0} />
                 </div>
 
-                <div className="pt-3 border-t border-stone-100 space-y-2.5 text-[12px] text-stone-600">
-                  <div className="flex items-center gap-2">
-                    <UserRound className="w-3.5 h-3.5 text-stone-400 shrink-0" />
-                    <span>{leadInstructor}</span>
+                <div className="pt-3 border-t border-stone-100 space-y-3">
+                  <div className="space-y-2">
+                    <p className="text-[9px] font-mono uppercase tracking-wider text-stone-400">
+                      Instructor
+                    </p>
+                    {assignedInstructor ? (
+                      <div className="flex items-center gap-2.5">
+                        <InstructorAvatar
+                          name={assignedInstructor.name}
+                          avatar={assignedInstructor.avatar}
+                        />
+                        <div className="min-w-0 flex-1">
+                          <p className="text-[12px] font-medium text-stone-800 truncate">
+                            {assignedInstructor.name}
+                          </p>
+                          {assignedInstructor.email ? (
+                            <p className="text-[10px] text-stone-400 font-mono truncate">
+                              {assignedInstructor.email}
+                            </p>
+                          ) : null}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex items-center gap-2 text-[12px] text-stone-600">
+                        <UserRound className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                        <span>{fallbackInstructorName}</span>
+                      </div>
+                    )}
                   </div>
+                </div>
+
+                <div className="space-y-2.5 text-[12px] text-stone-600">
                   <div className="flex items-center gap-2">
                     <Calendar className="w-3.5 h-3.5 text-stone-400 shrink-0" />
                     <span>Enrolled {formatDate(detailEnrollment.enrolled_at)}</span>
@@ -668,23 +800,6 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
           </div>
         </motion.div>
       )}
-
-      <LessonViewerModal
-        lesson={effectiveSelectedLesson}
-        courseId={courseId}
-        canInteract={canInteract}
-        onClose={() => setSelectedLesson(null)}
-      />
-      <AssignmentDetailModal
-        assignment={selectedAssignment}
-        canInteract={canInteract}
-        onClose={() => setSelectedAssignment(null)}
-      />
-      <QuizAttemptModal
-        quiz={selectedQuiz}
-        canInteract={canInteract}
-        onClose={() => setSelectedQuiz(null)}
-      />
     </div>
   );
 }

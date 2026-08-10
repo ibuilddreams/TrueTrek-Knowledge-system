@@ -1,17 +1,30 @@
 "use client";
 
-import { Download } from "lucide-react";
+import { Download, Loader2 } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
+import { useFileDownload } from "@/hooks/useFileDownload";
+import { getFilenameFromUrl } from "@/lib/downloadFile";
 
 export default function ImageLessonViewer({ lesson }) {
+  const { isVault } = useTheme();
+  const { download, isDownloading } = useFileDownload();
   const fileUrl = lesson.file;
 
   if (!fileUrl) {
     return (
-      <div className="rounded-2xl border border-dashed border-stone-200 bg-stone-50 px-4 py-10 text-center">
-        <p className="text-xs text-stone-500">No image is attached to this lesson.</p>
+      <div
+        className={`rounded-2xl border border-dashed px-4 py-10 text-center ${
+          isVault ? "border-stone-700 bg-white/5" : "border-stone-200 bg-stone-50"
+        }`}
+      >
+        <p className={`text-xs ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+          No image is attached to this lesson.
+        </p>
       </div>
     );
   }
+
+  const filename = getFilenameFromUrl(fileUrl, lesson.title || "lesson-image");
 
   return (
     <div className="space-y-3">
@@ -19,16 +32,27 @@ export default function ImageLessonViewer({ lesson }) {
       <img
         src={fileUrl}
         alt={lesson.title}
-        className="w-full max-h-[60vh] object-contain rounded-xl border border-stone-200 bg-stone-50"
+        className={`w-full max-h-[70vh] object-contain rounded-xl border ${
+          isVault ? "border-stone-800 bg-[#0c0b0a]" : "border-stone-200 bg-stone-50"
+        }`}
       />
-      <a
-        href={fileUrl}
-        download
-        className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-stone-900 hover:bg-stone-800 text-white text-[11px] font-mono uppercase tracking-wider rounded-lg transition"
+      <button
+        type="button"
+        onClick={() => download(fileUrl, filename)}
+        disabled={isDownloading}
+        className={`inline-flex items-center gap-1.5 px-3.5 py-2 disabled:opacity-50 text-[11px] font-mono uppercase tracking-wider rounded-lg transition ${
+          isVault
+            ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
+            : "bg-stone-900 hover:bg-stone-800 text-white"
+        }`}
       >
-        <Download className="w-3.5 h-3.5" />
+        {isDownloading ? (
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+        ) : (
+          <Download className="w-3.5 h-3.5" />
+        )}
         Download
-      </a>
+      </button>
     </div>
   );
 }
