@@ -11,10 +11,19 @@ UserModel = get_user_model()
 
 
 class EnrollmentTeacherSerializer(serializers.ModelSerializer):
+    avatar = serializers.SerializerMethodField()
+
     class Meta:
         model = UserModel
-        fields = ["id", "name", "email"]
+        fields = ["id", "name", "email", "avatar"]
         read_only_fields = fields
+
+    def get_avatar(self, obj):
+        request = self.context.get("request")
+        profile = getattr(obj, "profile", None)
+        if profile and profile.avatar and request:
+            return request.build_absolute_uri(profile.avatar.url)
+        return None
 
 
 class EnrollmentListSerializer(serializers.ModelSerializer):

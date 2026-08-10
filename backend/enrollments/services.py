@@ -16,6 +16,7 @@ from progress.models import CourseProgress, LearningActivity, LessonProgress, Mo
 from quizzes.models import Quiz, QuizAttempt
 
 from .models import Enrollment
+from .serializers import EnrollmentTeacherSerializer
 
 UserModel = get_user_model()
 
@@ -188,7 +189,7 @@ def get_enrollment_import_sample(file_format):
 def get_student_enrolled_course_detail(student, course_id, request=None):
     enrollment = (
         Enrollment.objects.filter(student=student, course_id=course_id)
-        .select_related("course", "course__category")
+        .select_related("course", "course__category", "teacher", "teacher__profile")
         .prefetch_related(
             "course__tags",
             "course__instructors__instructor",
@@ -294,6 +295,13 @@ def get_student_enrolled_course_detail(student, course_id, request=None):
             "enrolled_at": enrollment.enrolled_at,
             "completion_percentage": completion_percentage,
             "is_completed": bool(course_progress.is_completed) if course_progress else False,
+            "teacher": (
+                EnrollmentTeacherSerializer(
+                    enrollment.teacher, context={"request": request}
+                ).data
+                if enrollment.teacher
+                else None
+            ),
         },
         "course": CourseDetailSerializer(course, context={"request": request}).data,
         "modules": modules_data,
