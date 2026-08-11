@@ -1,7 +1,8 @@
 from django.contrib.auth import get_user_model
 from rest_framework import generics
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import AllowAny, IsAuthenticated
 
+from common.models import Status
 from common.pagination import Pagination
 from common.response import error_response, success_response
 from enrollments.models import Enrollment
@@ -14,6 +15,7 @@ from .serializers import (
     CourseDetailSerializer,
     CourseListSerializer,
     CourseWriteSerializer,
+    PublicCourseListSerializer,
     TagSerializer,
     TagWriteSerializer,
     TeacherSerializer,
@@ -172,6 +174,38 @@ class TagDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         tag.delete()
         return success_response(None, message="Tag deleted successfully")
+
+
+class PublicCourseListView(generics.ListAPIView):
+    """Anonymous-safe curriculum browsing — published courses only, no auth required."""
+
+    queryset = Course.objects.select_related("category").prefetch_related("tags").filter(
+        status=Status.PUBLISHED
+    )
+    serializer_class = PublicCourseListSerializer
+    permission_classes = [AllowAny]
+    pagination_class = Pagination
+
+    def get_queryset(self):
+        queryset = super().get_queryset()
+        params = self.request.query_params
+
+        search = params.get("search")
+        if search:
+            queryset = queryset.filter(title__icontains=search)
+
+        category_param = params.get("category")
+        if category_param:
+            queryset = queryset.filter(category_id=category_param)
+
+        return queryset.distinct()
+
+    def list(self, request, *args, **kwargs):
+        courses = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(courses)
+        serializer = self.get_serializer(page, many=True)
+        paginated_data = self.paginator.get_paginated_response(serializer.data).data
+        return success_response(paginated_data, message="Courses fetched successfully")
 
 
 class CourseListCreateView(generics.ListCreateAPIView):
