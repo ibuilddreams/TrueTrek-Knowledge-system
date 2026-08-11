@@ -105,6 +105,25 @@ class CourseListSerializer(serializers.ModelSerializer):
         return None
 
 
+class PublicCourseListSerializer(CourseListSerializer):
+    """Anonymous-safe course card data — published courses only, no instructor PII."""
+
+    class Meta(CourseListSerializer.Meta):
+        fields = [
+            "id",
+            "title",
+            "slug",
+            "code",
+            "description",
+            "image",
+            "category",
+            "tags",
+            "difficulty",
+            "duration_minutes",
+        ]
+        read_only_fields = fields
+
+
 class CourseLessonSerializer(serializers.ModelSerializer):
     file = serializers.SerializerMethodField()
 
