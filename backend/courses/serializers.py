@@ -95,7 +95,7 @@ class CourseListSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Course
-        fields = ["id", "title", "slug", "code", "image", "category", "status", "tags", "instructors", "created_at", "updated_at"]
+        fields = ["id", "title", "slug", "code", "image", "category", "status", "amount", "tags", "instructors", "created_at", "updated_at"]
         read_only_fields = fields
 
     def get_image(self, obj):
@@ -120,6 +120,7 @@ class PublicCourseListSerializer(CourseListSerializer):
             "tags",
             "difficulty",
             "duration_minutes",
+            "amount",
         ]
         read_only_fields = fields
 
@@ -208,6 +209,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
             "status",
             "difficulty",
             "duration_minutes",
+            "amount",
             "tags",
             "instructors",
             "modules",
@@ -251,6 +253,7 @@ class CourseWriteSerializer(serializers.ModelSerializer):
             "status",
             "difficulty",
             "duration_minutes",
+            "amount",
             "tags",
             "instructors",
         ]
@@ -293,6 +296,11 @@ class CourseWriteSerializer(serializers.ModelSerializer):
         if queryset.exists():
             raise serializers.ValidationError("A course with this code already exists.")
         return code
+
+    def validate_amount(self, value):
+        if value < 0:
+            raise serializers.ValidationError("Amount must be a positive number.")
+        return value
 
     def create(self, validated_data):
         tags = validated_data.pop("tags", [])

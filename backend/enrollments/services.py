@@ -1,5 +1,6 @@
 from django.contrib.auth import get_user_model
 from django.db import transaction
+from django.db.models import Count
 
 from assignments.models import AssignmentSubmission
 from common.import_files import (
@@ -87,6 +88,34 @@ def _resolve_teacher_for_enrollment(course, teacher_email):
     raise ValueError(
         "This course has multiple assigned teachers. Provide a Teacher Email to choose one."
     )
+
+
+def assign_teacher_for_course(course):
+    """Auto-assigns an instructor for a new enrollment (store checkout, not CSV import).
+
+    One instructor -> that instructor. Multiple -> whoever currently teaches the
+    fewest active students *for this course* (least-enrolled-students), so a
+    course's students spread out evenly across its teachers instead of always
+    stacking onto the first one. None assigned -> None, caller must not enroll.
+    """
+    instructor_ids = list(
+        CourseInstructor.objects.filter(course=course)
+        .order_by("id")
+        .values_list("instructor_id", flat=True)
+    )
+    if not instructor_ids:
+        return None
+    if len(instructor_ids) == 1:
+        return UserModel.objects.get(pk=instructor_ids[0])
+
+    enrollment_counts = {
+        row["teacher_id"]: row["total"]
+        for row in Enrollment.objects.filter(course=course, teacher_id__in=instructor_ids)
+        .values("teacher_id")
+        .annotate(total=Count("id"))
+    }
+    best_instructor_id = min(instructor_ids, key=lambda tid: enrollment_counts.get(tid, 0))
+    return UserModel.objects.get(pk=best_instructor_id)
 
 
 def _create_imported_enrollment(row_data):
