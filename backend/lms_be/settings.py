@@ -48,6 +48,7 @@ INSTALLED_APPS = [
     'progress',
     'quizzes',
     'assignments',
+    'carts',
     'reports',
     'search',
     'uploads',

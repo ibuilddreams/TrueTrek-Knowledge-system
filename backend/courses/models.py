@@ -55,6 +55,7 @@ class Course(BaseModel):
         max_length=20, choices=Difficulty.choices, default=Difficulty.BEGINNER
     )
     duration_minutes = models.PositiveIntegerField(default=0)
+    amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 
     class Meta:
         ordering = ["-created_at"]

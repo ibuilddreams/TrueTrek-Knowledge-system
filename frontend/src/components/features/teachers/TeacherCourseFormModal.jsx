@@ -26,6 +26,7 @@ const INITIAL_FORM = {
   status: "DRAFT",
   difficulty: "BEGINNER",
   duration_minutes: "0",
+  amount: "0",
 };
 
 const FIELD_CLASS =
@@ -35,6 +36,13 @@ const LABEL_CLASS =
   "text-[10px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold";
 
 const ERROR_CLASS = "text-[10px] font-mono text-red-600 mt-1";
+
+function sanitizeAmountInput(rawValue) {
+  const digitsAndDot = rawValue.replace(/[^0-9.]/g, "");
+  const [integerPart, ...decimalParts] = digitsAndDot.split(".");
+  if (decimalParts.length === 0) return integerPart;
+  return `${integerPart}.${decimalParts.join("").slice(0, 2)}`;
+}
 
 function extractFieldErrors(error) {
   const apiFieldErrors = error?.data?.data;
@@ -116,6 +124,11 @@ export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
     setFieldErrors((prev) => ({ ...prev, [field]: null }));
   };
 
+  const handleAmountChange = (event) => {
+    setForm((prev) => ({ ...prev, amount: sanitizeAmountInput(event.target.value) }));
+    setFieldErrors((prev) => ({ ...prev, amount: null }));
+  };
+
   const categoryOptions = categories.map((category) => ({ value: category.id, label: category.name }));
   const tagOptions = tags.map((tag) => ({ value: tag.id, label: tag.name }));
 
@@ -125,6 +138,7 @@ export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
     const title = form.title.trim();
     const code = form.code.trim().toUpperCase();
     const durationMinutes = Number(form.duration_minutes);
+    const amount = Number(form.amount);
 
     const errors = {};
     if (!title) errors.title = "Title is required.";
@@ -134,6 +148,9 @@ export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
     if (!form.category) errors.category = "Category is required.";
     if (!Number.isFinite(durationMinutes) || durationMinutes < 0) {
       errors.duration_minutes = "Duration must be a positive number.";
+    }
+    if (!Number.isFinite(amount) || amount < 0) {
+      errors.amount = "Amount must be a positive number.";
     }
 
     if (Object.keys(errors).length > 0) {
@@ -150,6 +167,7 @@ export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
     formData.append("status", form.status);
     formData.append("difficulty", form.difficulty);
     formData.append("duration_minutes", String(durationMinutes));
+    formData.append("amount", String(amount));
     selectedTagIds.forEach((tagId) => formData.append("tags", tagId));
 
     setIsSubmitting(true);
@@ -265,7 +283,7 @@ export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
           <div>
             <label className={LABEL_CLASS}>Status</label>
             <select
@@ -311,6 +329,20 @@ export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
               className={FIELD_CLASS}
             />
             {fieldErrors.duration_minutes && <p className={ERROR_CLASS}>{fieldErrors.duration_minutes}</p>}
+          </div>
+
+          <div>
+            <label className={LABEL_CLASS}>Amount ($)</label>
+            <input
+              type="text"
+              inputMode="decimal"
+              value={form.amount}
+              onChange={handleAmountChange}
+              disabled={isSubmitting}
+              placeholder="0.00"
+              className={FIELD_CLASS}
+            />
+            {fieldErrors.amount && <p className={ERROR_CLASS}>{fieldErrors.amount}</p>}
           </div>
         </div>
 

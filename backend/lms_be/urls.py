@@ -21,6 +21,7 @@ urlpatterns = [
     path('api/quizzes/', include('quizzes.urls')),
     path('api/assignments/', include('assignments.urls')),
     path('api/enrollments/', include('enrollments.urls')),
+    path('api/carts/', include('carts.urls')),
     path('api/progress/', include('progress.urls')),
     path('api/dashboard/', include('dashboard.urls')),
     path('api/auth/login/', CustomTokenObtainPairView.as_view()),
