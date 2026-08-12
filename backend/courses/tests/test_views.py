@@ -200,6 +200,50 @@ class PublicCourseListViewTests(APITestCase):
         self.assertNotIn("instructors", results[0])
         self.assertNotIn("status", results[0])
 
+    def test_exclude_enrolled_has_no_effect_for_guests(self):
+        response = self.client.get(self.url, {"exclude_enrolled": "true"})
+
+        titles = [item["title"] for item in response.data["data"]["results"]]
+        self.assertIn("Published Course", titles)
+
+    def test_exclude_enrolled_hides_courses_the_student_already_has(self):
+        from enrollments.models import Enrollment
+
+        student = UserModel.objects.create_user(
+            username="storestudent",
+            email="storestudent@example.com",
+            password="StrongPass123!",
+            role=UserModel.Roles.STUDENT,
+            gender=UserModel.Gender.MALE,
+        )
+        enrolled_course = Course.objects.get(title="Published Course")
+        Enrollment.objects.create(student=student, course=enrolled_course)
+        self.client.force_authenticate(user=student)
+
+        response = self.client.get(self.url, {"exclude_enrolled": "true"})
+
+        titles = [item["title"] for item in response.data["data"]["results"]]
+        self.assertNotIn("Published Course", titles)
+
+    def test_without_exclude_enrolled_param_shows_everything_for_students_too(self):
+        from enrollments.models import Enrollment
+
+        student = UserModel.objects.create_user(
+            username="curriculumstudent",
+            email="curriculumstudent@example.com",
+            password="StrongPass123!",
+            role=UserModel.Roles.STUDENT,
+            gender=UserModel.Gender.MALE,
+        )
+        enrolled_course = Course.objects.get(title="Published Course")
+        Enrollment.objects.create(student=student, course=enrolled_course)
+        self.client.force_authenticate(user=student)
+
+        response = self.client.get(self.url)
+
+        titles = [item["title"] for item in response.data["data"]["results"]]
+        self.assertIn("Published Course", titles)
+
 
 class CourseDetailViewTests(APITestCase):
     def setUp(self):

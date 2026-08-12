@@ -1,11 +1,18 @@
 import { backendClient } from "./apiClient";
 
-export async function getPublicCourses({ page = 1, pageSize = 100, search, category } = {}) {
+export async function getPublicCourses({
+  page = 1,
+  pageSize = 100,
+  search,
+  category,
+  excludeEnrolled,
+} = {}) {
   const params = new URLSearchParams();
   params.set("page", page);
   params.set("page_size", pageSize);
   if (search) params.set("search", search);
   if (category) params.set("category", category);
+  if (excludeEnrolled) params.set("exclude_enrolled", "true");
   return backendClient.get(`/courses/public/?${params.toString()}`);
 }
 

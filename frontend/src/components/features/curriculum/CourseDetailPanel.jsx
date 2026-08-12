@@ -27,18 +27,19 @@ async function fetchCourseDetail(courseId, role) {
         course: data.course || {},
         modules: data.modules || [],
         stats: data.stats || null,
+        enrollment: data.enrollment || null,
       };
     } catch (error) {
       if (error?.status !== 404) throw error;
       const response = await getCourseById(courseId);
       const course = response?.data || {};
-      return { enrolled: false, course, modules: course.modules || [], stats: null };
+      return { enrolled: false, course, modules: course.modules || [], stats: null, enrollment: null };
     }
   }
 
   const response = await getCourseById(courseId);
   const course = response?.data || {};
-  return { enrolled: null, course, modules: course.modules || [], stats: null };
+  return { enrolled: null, course, modules: course.modules || [], stats: null, enrollment: null };
 }
 
 export default function CourseDetailPanel({ course: cardCourse, onClose }) {
@@ -62,8 +63,14 @@ export default function CourseDetailPanel({ course: cardCourse, onClose }) {
   const course = data?.course || cardCourse || {};
   const modules = data?.modules || [];
   const instructors = course.instructors || [];
-  const leadInstructor =
+  const fallbackInstructor =
     instructors.find((item) => item.is_lead)?.name || instructors[0]?.name || "Instructor TBD";
+  // For an enrolled student this must be the teacher actually assigned to
+  // their enrollment, not just any instructor on the course — a
+  // multi-instructor course can assign different students to different
+  // teachers. Only fall back to the course's lead instructor when there's no
+  // per-student assignment to show (not enrolled, or a legacy null teacher).
+  const leadInstructor = data?.enrollment?.teacher?.name || fallbackInstructor;
   const isNotEnrolledStudent = role === AUTH_ROLES.STUDENT && data?.enrolled === false;
 
   return (

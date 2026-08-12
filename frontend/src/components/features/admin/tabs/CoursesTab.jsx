@@ -18,7 +18,7 @@ import { getCategories } from "@/services/categoriesService";
 import { getTags } from "@/services/tagsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
-import { formatDate } from "@/lib/adminFormatters";
+import { formatAmount, formatDate } from "@/lib/adminFormatters";
 import SearchBar from "@/components/ui/SearchBar";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import DataTable from "@/components/ui/DataTable";
@@ -166,6 +166,15 @@ export default function CoursesTab() {
       key: "status",
       header: "Status",
       render: (course) => <StatusBadge status={course.status} />,
+    },
+    {
+      key: "amount",
+      header: "Amount",
+      render: (course) => (
+        <span className="font-mono text-stone-600">
+          {formatAmount(course.amount)}
+        </span>
+      ),
     },
     {
       key: "instructors",

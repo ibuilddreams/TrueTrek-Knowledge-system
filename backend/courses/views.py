@@ -198,6 +198,17 @@ class PublicCourseListView(generics.ListAPIView):
         if category_param:
             queryset = queryset.filter(category_id=category_param)
 
+        # Opt-in — the public curriculum/marketing page shares this endpoint and
+        # must keep showing every course regardless of the viewer's enrollment
+        # status. Only the Store page passes this, so it's the only caller that
+        # gets already-enrolled courses hidden.
+        exclude_enrolled = params.get("exclude_enrolled") in ("1", "true", "True")
+        if exclude_enrolled and self.request.user and self.request.user.is_authenticated:
+            enrolled_course_ids = Enrollment.objects.filter(
+                student=self.request.user
+            ).values_list("course_id", flat=True)
+            queryset = queryset.exclude(id__in=enrolled_course_ids)
+
         return queryset.distinct()
 
     def list(self, request, *args, **kwargs):

@@ -37,3 +37,10 @@ export function formatDateTime(isoString) {
   const meridiem = parts.hours >= 12 ? "PM" : "AM";
   return `${parts.month}/${parts.day}/${parts.year}, ${hour12}:${parts.minutes} ${meridiem}`;
 }
+
+export function formatAmount(amount) {
+  const value = Number(amount);
+  if (!Number.isFinite(value)) return "—";
+  if (value === 0) return "Free";
+  return `$${value.toFixed(2)}`;
+}

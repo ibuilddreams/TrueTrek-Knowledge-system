@@ -19,11 +19,10 @@ export default function StudentCourseCard({ enrollment, onClick }) {
   const { isVault } = useTheme();
   const course = enrollment.course || {};
   const progress = Math.round(enrollment.completion_percentage || 0);
-  const instructors = course.instructors || [];
-  const leadInstructor =
-    instructors.find((item) => item.is_lead)?.name ||
-    instructors[0]?.name ||
-    "Instructor TBD";
+  // The teacher assigned to *this* enrollment, not just any instructor on the
+  // course — a multi-instructor course can have different students assigned
+  // to different teachers, so `course.instructors` isn't the right source.
+  const assignedInstructor = enrollment.teacher?.name || "Instructor TBD";
   const isCompleted = Boolean(enrollment.is_completed);
   const statusLabel = enrollment.status || "ACTIVE";
 
@@ -139,7 +138,7 @@ export default function StudentCourseCard({ enrollment, onClick }) {
           {course.title}
         </h3>
         <p className="text-xs font-mono text-stone-400 mb-3 tracking-tight truncate">
-          Instructor: {leadInstructor}
+          Instructor: {assignedInstructor}
         </p>
         <p
           className={`text-[13px] leading-relaxed line-clamp-3 font-light mb-4 ${
