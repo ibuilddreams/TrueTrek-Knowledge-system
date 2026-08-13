@@ -33,8 +33,6 @@ function StudentPortalContent() {
   const session = usePortalSession();
   const {
     isLoggedIn,
-    drillCompletedList,
-    setDrillCompletedList,
     streakDays,
     setStreakDays,
     aggregateScore,
@@ -151,8 +149,6 @@ function StudentPortalContent() {
             )}
             {activeTab === "drill" && (
               <DrillTab
-                drillCompletedList={drillCompletedList}
-                setDrillCompletedList={setDrillCompletedList}
                 setPoints={setPoints}
                 setStreakDays={setStreakDays}
                 setAggregateScore={setAggregateScore}

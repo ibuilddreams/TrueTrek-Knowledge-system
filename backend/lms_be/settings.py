@@ -49,6 +49,7 @@ INSTALLED_APPS = [
     'quizzes',
     'assignments',
     'carts',
+    'daily_drill',
     'reports',
     'search',
     'uploads',
