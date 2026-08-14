@@ -54,12 +54,8 @@ function toPublicBackendUser(rawUser) {
   };
 }
 
-export async function loginWithCredentials({ email, password }) {
-  const response = await backendClient.post("/auth/login/", {
-    email,
-    password,
-  });
-  const { access_token, refresh_token, user } = response?.data || {};
+function persistBackendSession(responseData) {
+  const { access_token, refresh_token, user } = responseData || {};
   const publicUser = toPublicBackendUser(user);
 
   setClientCookie(AUTH_COOKIE.ACCESS_TOKEN, access_token);
@@ -67,6 +63,35 @@ export async function loginWithCredentials({ email, password }) {
   setClientCookie(AUTH_COOKIE.USER, JSON.stringify(publicUser));
 
   return { user: publicUser };
+}
+
+export async function loginWithCredentials({ email, password }) {
+  const response = await backendClient.post("/auth/login/", {
+    email,
+    password,
+  });
+  return persistBackendSession(response?.data);
+}
+
+export async function signup({ username, firstName, lastName, email, password, gender }) {
+  const response = await backendClient.post("/auth/signup/", {
+    username,
+    first_name: firstName,
+    last_name: lastName,
+    email,
+    password,
+    gender,
+  });
+  return persistBackendSession(response?.data);
+}
+
+// `credential` is the ID token JWT Google's Identity Services callback hands
+// back (see GoogleSignInButton.jsx) — the backend verifies it against
+// GOOGLE_CLIENT_ID and either logs in the matching account or creates a new
+// STUDENT one.
+export async function loginWithGoogle(credential) {
+  const response = await backendClient.post("/auth/google/", { credential });
+  return persistBackendSession(response?.data);
 }
 
 export async function forgotPassword({ email }) {

@@ -6,5 +6,7 @@ psycopg[binary]
 Pillow
 drf-spectacular
 djangorestframework-simplejwt
+google-auth
+requests
 gunicorn
 openpyxl

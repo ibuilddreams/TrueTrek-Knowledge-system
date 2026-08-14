@@ -1,8 +1,12 @@
+from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
+from google.auth.exceptions import GoogleAuthError
+from google.auth.transport import requests as google_requests
+from google.oauth2 import id_token as google_id_token
 from rest_framework import serializers
 from rest_framework.exceptions import PermissionDenied, ValidationError
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
@@ -13,6 +17,22 @@ from courses.serializers import CourseListSerializer
 from .models import UserProfile
 
 UserModel = get_user_model()
+
+
+def _build_token_response(user):
+    refresh = CustomTokenObtainPairSerializer.get_token(user)
+    return {
+        "refresh_token": str(refresh),
+        "access_token": str(refresh.access_token),
+        "user": {
+            "id": user.id,
+            "first_name": user.first_name,
+            "last_name": user.last_name,
+            "full_name": user.name,
+            "email": user.email,
+            "role": user.role,
+        },
+    }
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -114,6 +134,109 @@ class CreateStudentSerializer(serializers.ModelSerializer):
             "gender": instance.gender,
             "role": instance.role,
         }
+
+
+class SignupSerializer(serializers.ModelSerializer):
+    """Self-service signup — always creates a STUDENT account and, unlike
+    CreateStudentSerializer (admin-only), returns JWT tokens immediately so the
+    onboarding wizard can move straight into the questionnaire without a
+    separate login step."""
+
+    password = serializers.CharField(write_only=True, validators=[validate_password])
+    gender = serializers.ChoiceField(choices=UserModel.Gender.choices, required=True)
+
+    class Meta:
+        model = UserModel
+        fields = ["id", "username", "first_name", "last_name", "email", "password", "gender"]
+
+    def validate_email(self, value):
+        email = UserModel.objects.normalize_email(value)
+        if UserModel.objects.filter(email__iexact=email).exists():
+            raise ValidationError("A user with this email already exists.")
+        return email
+
+    def validate_username(self, value):
+        if UserModel.objects.filter(username__iexact=value).exists():
+            raise ValidationError("A user with this username already exists.")
+        return value
+
+    def create(self, validated_data):
+        password = validated_data.pop("password")
+        return UserModel.objects.create_user(
+            password=password,
+            role=UserModel.Roles.STUDENT,
+            **validated_data,
+        )
+
+    def to_representation(self, instance):
+        return _build_token_response(instance)
+
+
+class GoogleAuthSerializer(serializers.Serializer):
+    """Google Sign-In — verifies the ID token from Google Identity Services
+    (frontend's GoogleSignInButton), then logs the matching user in or creates
+    a new STUDENT account on first sign-in. Google-created accounts get an
+    unusable password (Google is the only way in until the user sets one via
+    forgot-password) and `gender` defaults to OTHER since Google's basic scopes
+    don't provide it — the user can update it later from their profile."""
+
+    credential = serializers.CharField(write_only=True)
+
+    def validate_credential(self, value):
+        if not settings.GOOGLE_CLIENT_ID:
+            raise ValidationError("Google sign-in is not configured on this server.")
+
+        try:
+            payload = google_id_token.verify_oauth2_token(
+                value, google_requests.Request(), settings.GOOGLE_CLIENT_ID
+            )
+        except (ValueError, GoogleAuthError):
+            # ValueError: malformed/expired/wrong-audience token (the common case).
+            # GoogleAuthError: e.g. couldn't reach Google to fetch/refresh its
+            # signing certs — a transient network issue, not the caller's fault,
+            # but still surfaced as a clean 400 rather than an unhandled 500.
+            raise ValidationError("Invalid or expired Google credential.")
+
+        if not payload.get("email"):
+            raise ValidationError("This Google account has no email address.")
+        if not payload.get("email_verified"):
+            raise ValidationError("This Google account's email address is not verified.")
+
+        return payload
+
+    def _generate_username(self, email):
+        base = email.split("@")[0] or "user"
+        username = base
+        suffix = 1
+        while UserModel.objects.filter(username__iexact=username).exists():
+            suffix += 1
+            username = f"{base}{suffix}"
+        return username
+
+    def save(self):
+        payload = self.validated_data["credential"]
+        email = UserModel.objects.normalize_email(payload["email"])
+
+        user = UserModel.objects.filter(email__iexact=email).first()
+        if user is None:
+            user = UserModel.objects.create_user(
+                username=self._generate_username(email),
+                email=email,
+                password=None,
+                first_name=payload.get("given_name", ""),
+                last_name=payload.get("family_name", ""),
+                gender=UserModel.Gender.OTHER,
+                role=UserModel.Roles.STUDENT,
+                is_verified=True,
+            )
+
+        if not user.is_active:
+            raise PermissionDenied("Your account is inactive.")
+
+        return user
+
+    def to_representation(self, instance):
+        return _build_token_response(instance)
 
 
 class StudentSerializer(serializers.ModelSerializer):

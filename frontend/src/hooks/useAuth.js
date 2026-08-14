@@ -21,7 +21,9 @@ import {
   loginAsFaculty,
   loginAsStudent,
   loginWithCredentials,
+  loginWithGoogle,
   logout as logoutRequest,
+  signup as signupRequest,
 } from "@/services/authService";
 import { AUTH_ROLES } from "@/constants/auth";
 import { getQueryClient } from "@/lib/queryClient";
@@ -91,11 +93,13 @@ export function useAuth() {
     [dispatch]
   );
 
-  const login = useCallback(
-    async ({ email, password }) => {
+  // Shared by every backend-session-issuing auth request (password login,
+  // signup, Google sign-in) — each just differs in which service call it makes.
+  const runAuthRequest = useCallback(
+    async (requestFn) => {
       dispatch(authLoading());
       try {
-        const data = await loginWithCredentials({ email, password });
+        const data = await requestFn();
         getQueryClient().clear();
         dispatch(authSucceeded(data.user));
         return data;
@@ -105,6 +109,21 @@ export function useAuth() {
       }
     },
     [dispatch]
+  );
+
+  const login = useCallback(
+    ({ email, password }) => runAuthRequest(() => loginWithCredentials({ email, password })),
+    [runAuthRequest]
+  );
+
+  const signup = useCallback(
+    (payload) => runAuthRequest(() => signupRequest(payload)),
+    [runAuthRequest]
+  );
+
+  const loginGoogle = useCallback(
+    (credential) => runAuthRequest(() => loginWithGoogle(credential)),
+    [runAuthRequest]
   );
 
   const logout = useCallback(async () => {
@@ -147,6 +166,8 @@ export function useAuth() {
     login,
     loginStudent,
     loginFaculty,
+    loginGoogle,
+    signup,
     logout,
     refreshSession,
     updateUserName,

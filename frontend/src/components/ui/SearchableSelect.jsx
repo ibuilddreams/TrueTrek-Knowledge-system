@@ -96,7 +96,7 @@ export default function SearchableSelect({
         disabled={disabled || loading}
         className="w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-800 flex items-center justify-between gap-2 transition disabled:opacity-60 disabled:cursor-not-allowed"
       >
-        <span className={selectedOption ? "text-stone-800" : "text-stone-400"}>
+        <span className={`min-w-0 truncate ${selectedOption ? "text-stone-800" : "text-stone-400"}`}>
           {loading ? "Loading..." : selectedOption ? selectedOption.label : placeholder}
         </span>
         <ChevronDown
@@ -129,7 +129,7 @@ export default function SearchableSelect({
                     onClick={() => handleSelect(option)}
                     className="w-full flex items-center justify-between gap-2 px-4 py-2.5 text-xs font-mono text-stone-700 hover:bg-stone-50 transition-colors text-left"
                   >
-                    <span>{option.label}</span>
+                    <span className="min-w-0 truncate">{option.label}</span>
                     {option.value === value && <Check className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
                   </button>
                 </li>

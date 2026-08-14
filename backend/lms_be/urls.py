@@ -9,7 +9,9 @@ from users.views import (
     CustomTokenObtainPairView,
     CustomTokenRefreshView,
     ForgotPasswordView,
+    GoogleAuthView,
     ResetPasswordView,
+    SignupView,
 )
 
 urlpatterns = [
@@ -22,9 +24,14 @@ urlpatterns = [
     path('api/assignments/', include('assignments.urls')),
     path('api/enrollments/', include('enrollments.urls')),
     path('api/carts/', include('carts.urls')),
+    path('api/daily-drill/', include('daily_drill.urls')),
     path('api/progress/', include('progress.urls')),
     path('api/dashboard/', include('dashboard.urls')),
+    path('api/pathways/', include('pathways.urls')),
+    path('api/onboarding/', include('onboarding.urls')),
     path('api/auth/login/', CustomTokenObtainPairView.as_view()),
+    path('api/auth/signup/', SignupView.as_view()),
+    path('api/auth/google/', GoogleAuthView.as_view()),
     path('api/auth/refresh/', CustomTokenRefreshView.as_view()),
     path('api/auth/forgot-password/', ForgotPasswordView.as_view()),
     path('api/auth/reset-password/', ResetPasswordView.as_view()),

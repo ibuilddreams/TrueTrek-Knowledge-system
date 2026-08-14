@@ -1,22 +1,21 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import confetti from "canvas-confetti";
 import { AlertCircle, Lock, LogIn } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuestOnlyRoute } from "@/hooks/useGuestOnlyRoute";
 import { useTheme } from "@/hooks/useTheme";
-import { ROUTES, getPortalRouteForRole } from "@/constants/routes";
+import { ROUTES } from "@/constants/routes";
 import { toastError, toastSuccess } from "@/lib/toast";
 import AuthGateCard from "@/components/ui/AuthGateCard";
 import AuthField from "@/components/ui/AuthField";
 import AuthSubmitButton from "@/components/ui/AuthSubmitButton";
 import Loader from "@/components/ui/Loader";
+import GoogleSignInButton from "@/components/features/auth/GoogleSignInButton";
 
 export default function LoginForm() {
-  const router = useRouter();
   const { login } = useAuth();
   const { shouldBlock, isAuthenticated } = useGuestOnlyRoute();
   const { isVault } = useTheme();
@@ -28,11 +27,26 @@ export default function LoginForm() {
   if (shouldBlock && !isSubmitting) {
     return (
       <Loader
-        label={
-          isAuthenticated ? "Redirecting to Portal..." : "Checking Session..."
-        }
+        label={isAuthenticated ? "Redirecting..." : "Checking Session..."}
       />
     );
+  }
+
+  // Navigation itself is NOT done here — useGuestOnlyRoute (above) reacts to
+  // isAuthenticated flipping true and sends the user to /onboarding or their
+  // portal, whichever is correct. Doing it here too would race that check.
+  function celebrateSignIn(user) {
+    // toastSuccess(`Welcome back, ${user.name || user.email}.`); // disabled: clashes visually with the confetti animation
+    confetti({
+      particleCount: 80,
+      spread: 60,
+      origin: { y: 0.8 },
+      colors: ["#d97706", "#b45309", "#1c1917"],
+    });
+  }
+
+  function handleGoogleSuccess({ user }) {
+    celebrateSignIn(user);
   }
 
   const handleSubmit = async (e) => {
@@ -41,14 +55,7 @@ export default function LoginForm() {
     setIsSubmitting(true);
     try {
       const { user } = await login({ email, password });
-      toastSuccess(`Welcome back, ${user.name || user.email}.`);
-      confetti({
-        particleCount: 80,
-        spread: 60,
-        origin: { y: 0.8 },
-        colors: ["#d97706", "#b45309", "#1c1917"],
-      });
-      router.push(getPortalRouteForRole(user.role));
+      celebrateSignIn(user);
     } catch (error) {
       const message = error?.message || "Unable to sign in. Please try again.";
       setFormError(message);
@@ -120,6 +127,24 @@ export default function LoginForm() {
           isSubmitting={isSubmitting}
           icon={LogIn}
         />
+
+        <div className="relative flex items-center py-1">
+          <div
+            className={`flex-1 h-px ${isVault ? "bg-stone-800" : "bg-stone-200"}`}
+          />
+          <span
+            className={`px-3 text-[10px] font-mono uppercase tracking-wider ${
+              isVault ? "text-stone-600" : "text-stone-400"
+            }`}
+          >
+            Or
+          </span>
+          <div
+            className={`flex-1 h-px ${isVault ? "bg-stone-800" : "bg-stone-200"}`}
+          />
+        </div>
+
+        <GoogleSignInButton onSuccess={handleGoogleSuccess} disabled={isSubmitting} />
       </form>
     </AuthGateCard>
   );

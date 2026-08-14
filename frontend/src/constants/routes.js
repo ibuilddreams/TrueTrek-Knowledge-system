@@ -8,6 +8,8 @@ export const ROUTES = {
   CURRICULUM: "/curriculum",
   PARTNERSHIPS: "/partnerships",
   STORE: "/store",
+  ONBOARDING: "/onboarding",
+  PATHWAYS: "/pathways",
   FUTURE_CLIENTS: "/future-clients",
   ADMIN_PORTAL: "/adminportal",
   TEACHER_PORTAL: "/teacherportal",
@@ -26,6 +28,8 @@ export const ROUTE_KEYS = {
   CURRICULUM: "curriculum",
   PARTNERSHIPS: "partnerships",
   STORE: "store",
+  ONBOARDING: "onboarding",
+  PATHWAYS: "pathways",
   FUTURE_CLIENTS: "future-clients",
   STUDENT_PORTAL: "studentportal",
   ADMIN_PORTAL: "adminportal",
@@ -49,6 +53,8 @@ export function getSectionFromPathname(pathname) {
   if (pathname.startsWith(ROUTES.CURRICULUM)) return ROUTE_KEYS.CURRICULUM;
   if (pathname.startsWith(ROUTES.PARTNERSHIPS)) return ROUTE_KEYS.PARTNERSHIPS;
   if (pathname.startsWith(ROUTES.STORE)) return ROUTE_KEYS.STORE;
+  if (pathname.startsWith(ROUTES.ONBOARDING)) return ROUTE_KEYS.ONBOARDING;
+  if (pathname.startsWith(ROUTES.PATHWAYS)) return ROUTE_KEYS.PATHWAYS;
   if (pathname.startsWith(ROUTES.FUTURE_CLIENTS)) return ROUTE_KEYS.FUTURE_CLIENTS;
   if (
     pathname.startsWith(ROUTES.STUDENT_PORTAL) ||

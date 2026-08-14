@@ -1,56 +1,124 @@
 "use client";
 
-import { useState } from "react";
-import { HelpCircle, RefreshCw } from "lucide-react";
+import { useEffect } from "react";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { AlertCircle, HelpCircle, Swords } from "lucide-react";
 import confetti from "canvas-confetti";
-import { DRILL_QUESTIONS } from "@/data/curriculum";
+import { getTodaysDrill, submitDrillAttempt } from "@/services/dailyDrillService";
+import { getApiErrorMessage } from "@/lib/apiErrors";
+import { toastError } from "@/lib/toast";
+import Loader from "@/components/ui/Loader";
+import EmptyState from "@/components/ui/EmptyState";
 
 export default function DrillTab({
-  drillCompletedList,
-  setDrillCompletedList,
   setPoints,
   setStreakDays,
   setAggregateScore,
   onNotify,
 }) {
-  const [activeDrillIndex, setActiveDrillIndex] = useState(0);
-  const [selectedOption, setSelectedOption] = useState(null);
+  const queryClient = useQueryClient();
 
-  const activeDrill = DRILL_QUESTIONS[activeDrillIndex];
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ["daily-drill", "today"],
+    queryFn: async () => {
+      const response = await getTodaysDrill();
+      return response?.data || null;
+    },
+  });
 
-  const handleSelectOption = (optionKey, score) => {
-    setSelectedOption(optionKey);
+  const stats = data?.stats;
 
-    if (drillCompletedList.includes(activeDrill.id)) return;
+  useEffect(() => {
+    if (!stats) return;
+    setPoints(stats.points);
+    setStreakDays(stats.streak);
+    setAggregateScore(stats.aggregate_score);
+    // setPoints/setStreakDays/setAggregateScore identities change with the
+    // values they set (see usePortalSession) — depending on the raw stat
+    // values here, not the setters, avoids re-firing this effect forever.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stats?.points, stats?.streak, stats?.aggregate_score]);
 
-    setDrillCompletedList([...drillCompletedList, activeDrill.id]);
+  const submitMutation = useMutation({
+    mutationFn: (optionId) => submitDrillAttempt(optionId),
+    onSuccess: (response) => {
+      const result = response?.data;
+      if (!result) return;
 
-    const isPerfect = score === 100;
-    let earnedXP = score * 2;
-    if (isPerfect) earnedXP += 100;
+      queryClient.setQueryData(["daily-drill", "today"], result);
 
-    setPoints((prev) => prev + earnedXP);
-    onNotify?.({
-      title: `🔥 DRILL COMPLETED (+${earnedXP} XP)`,
-      desc: `You scored ${score}/100. ${isPerfect ? "PERFECT SCORE BONUS! " : ""}Your scorecard has been updated.`,
-      type: "points",
-    });
-
-    if (isPerfect) {
-      setStreakDays((prev) => prev + 1);
-      confetti({
-        particleCount: 120,
-        spread: 80,
-        colors: ["#059669", "#10b981", "#fbbf24"],
+      const isPerfect = result.score_awarded === 100;
+      onNotify?.({
+        title: `🔥 DRILL COMPLETED (+${result.xp_earned} XP)`,
+        desc: `You scored ${result.score_awarded}/100. ${
+          isPerfect ? "PERFECT SCORE BONUS! " : ""
+        }Your scorecard has been updated.`,
+        type: "points",
       });
-    }
 
-    setAggregateScore((prev) => Math.round((prev + score) / 2));
-  };
+      if (isPerfect) {
+        confetti({
+          particleCount: 120,
+          spread: 80,
+          colors: ["#059669", "#10b981", "#fbbf24"],
+        });
+      }
+    },
+    onError: (mutationError) => {
+      toastError(getApiErrorMessage(mutationError, "Unable to submit your answer."));
+    },
+  });
 
-  const handleNextDrill = () => {
-    setSelectedOption(null);
-    setActiveDrillIndex((prev) => (prev + 1) % DRILL_QUESTIONS.length);
+  if (isLoading) {
+    return (
+      <div className="bg-white border border-stone-200 rounded-2xl p-6 min-h-[40vh] flex items-center justify-center">
+        <Loader fullScreen={false} label="Loading today's drill..." />
+      </div>
+    );
+  }
+
+  if (isError) {
+    return (
+      <div className="bg-white border border-stone-200 rounded-2xl p-6">
+        <div className="flex flex-col items-center justify-center text-center py-10 gap-3">
+          <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-100 text-red-500 flex items-center justify-center">
+            <AlertCircle className="w-5 h-5" />
+          </div>
+          <p className="text-xs font-medium text-stone-600">
+            {getApiErrorMessage(error, "Unable to load today's drill.")}
+          </p>
+          <button
+            type="button"
+            onClick={() => refetch()}
+            className="mt-1 bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs py-2 px-4 rounded-lg tracking-wide transition"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  const question = data?.question;
+
+  if (!question) {
+    return (
+      <div className="bg-white border border-stone-200 rounded-2xl p-6">
+        <EmptyState
+          icon={Swords}
+          label="No drill available today"
+          description="Check back soon — a new situational drill is added regularly."
+        />
+      </div>
+    );
+  }
+
+  const attempted = data.attempted;
+  const isSubmitting = submitMutation.isPending;
+
+  const handleSelectOption = (optionId) => {
+    if (attempted || isSubmitting) return;
+    submitMutation.mutate(optionId);
   };
 
   return (
@@ -65,7 +133,7 @@ export default function DrillTab({
           </h4>
         </div>
         <span className="text-xs font-mono text-stone-500">
-          Exercise {activeDrillIndex + 1} of {DRILL_QUESTIONS.length}
+          {attempted ? "Completed Today" : "Today's Exercise"}
         </span>
       </div>
 
@@ -80,11 +148,11 @@ export default function DrillTab({
           </span>
         </div>
         <p className="text-sm md:text-base leading-relaxed font-medium text-stone-50 relative z-10">
-          {activeDrill.scenario}
+          {question.scenario}
         </p>
         <p className="text-xs text-amber-500 font-mono mt-4 flex items-center gap-1.5 bg-stone-950/80 p-2.5 rounded border border-stone-800 relative z-10">
           <HelpCircle className="w-4 h-4 shrink-0" />
-          Guidelines: {activeDrill.guidelines}
+          Guidelines: {question.guidelines}
         </p>
       </div>
 
@@ -92,21 +160,23 @@ export default function DrillTab({
         <p className="text-xs font-mono uppercase text-stone-400 tracking-wider">
           Select Your Action
         </p>
-        {activeDrill.options.map((option) => {
-          const isSelected = selectedOption === option.key;
-          const isPerfect = option.score === 100;
+        {question.options.map((option) => {
+          const isRevealed = option.score !== undefined;
+          const isPerfect = isRevealed && option.score === 100;
+          const isSelected = attempted && isRevealed;
 
           return (
             <button
-              key={option.key}
+              key={option.id}
               type="button"
-              onClick={() => handleSelectOption(option.key, option.score)}
-              className={`w-full text-left p-4 rounded-xl border flex gap-4 transition-all ${
+              disabled={attempted || isSubmitting}
+              onClick={() => handleSelectOption(option.id)}
+              className={`w-full text-left p-4 rounded-xl border flex gap-4 transition-all disabled:cursor-not-allowed ${
                 isSelected
                   ? isPerfect
                     ? "bg-emerald-50 border-emerald-500 text-emerald-950 shadow-xs"
                     : "bg-orange-50 border-orange-500 text-orange-950 shadow-xs"
-                  : "bg-white hover:bg-stone-50 border-stone-200 text-stone-700"
+                  : "bg-white hover:bg-stone-50 border-stone-200 text-stone-700 disabled:hover:bg-white"
               }`}
             >
               <span
@@ -146,21 +216,15 @@ export default function DrillTab({
         })}
       </div>
 
-      {selectedOption && (
-        <div className="flex items-center justify-between pt-4 border-t border-stone-100 gap-4">
-          <span className="text-xs text-stone-500">
-            Drill tracking updates automatically on your scorecard.
-          </span>
-          <button
-            type="button"
-            onClick={handleNextDrill}
-            className="bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs py-2.5 px-4 rounded-lg tracking-wide flex items-center gap-1.5 transition shrink-0"
-          >
-            Next Exercise
-            <RefreshCw className="w-3.5 h-3.5" />
-          </button>
-        </div>
-      )}
+      <div className="flex items-center justify-between pt-4 border-t border-stone-100 gap-4">
+        <span className="text-xs text-stone-500">
+          {attempted
+            ? "You've completed today's drill — a new one arrives tomorrow."
+            : isSubmitting
+              ? "Submitting your answer..."
+              : "Drill tracking updates automatically on your scorecard."}
+        </span>
+      </div>
     </div>
   );
 }
