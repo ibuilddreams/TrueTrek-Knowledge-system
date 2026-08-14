@@ -7,9 +7,11 @@ import {
   ClipboardList,
   Folder,
   GraduationCap,
+  HelpCircle,
   LayoutDashboard,
   LineChart,
   Lock,
+  Route,
   Shield,
   Tag,
   Users,
@@ -32,6 +34,8 @@ import TeachersTab from "@/components/features/admin/tabs/TeachersTab";
 import ProgressTab from "@/components/features/admin/tabs/ProgressTab";
 import TagsTab from "@/components/features/admin/tabs/TagsTab";
 import CategoriesTab from "@/components/features/admin/tabs/CategoriesTab";
+import PathwaysTab from "@/components/features/admin/tabs/PathwaysTab";
+import QuestionnaireTab from "@/components/features/admin/tabs/QuestionnaireTab";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -42,6 +46,8 @@ const TABS = [
   { id: "progress", label: "Progress", icon: LineChart },
   { id: "tags", label: "Tags", icon: Tag },
   { id: "categories", label: "Categories", icon: Folder },
+  { id: "pathways", label: "Pathways", icon: Route },
+  { id: "questionnaire", label: "Questionnaire", icon: HelpCircle },
 ];
 
 const TAB_COMPONENTS = {
@@ -54,6 +60,8 @@ const TAB_COMPONENTS = {
   progress: ProgressTab,
   tags: TagsTab,
   categories: CategoriesTab,
+  pathways: PathwaysTab,
+  questionnaire: QuestionnaireTab,
 };
 
 const VALID_TABS = new Set(TABS.map((tab) => tab.id));

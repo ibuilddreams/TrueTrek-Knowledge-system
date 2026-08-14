@@ -26,6 +26,7 @@ import { getApiErrorMessage } from "@/lib/apiErrors";
 import { useTheme } from "@/hooks/useTheme";
 import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
+import MyPathwaysSummary from "../MyPathwaysSummary";
 
 function ProgressRing({ value, size = 128, stroke = 10 }) {
   const radius = (size - stroke) / 2;
@@ -381,6 +382,8 @@ export default function DashboardTab() {
           isVault={isVault}
         />
       </section>
+
+      <MyPathwaysSummary />
 
       <section
         className={`relative overflow-hidden rounded-2xl border p-5 sm:p-7 shadow-[0_10px_36px_-28px_rgba(28,25,23,0.3)] ${

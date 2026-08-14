@@ -15,9 +15,11 @@ from .serializers import (
     CreateTeacherSerializer,
     CustomTokenObtainPairSerializer,
     ForgotPasswordSerializer,
+    GoogleAuthSerializer,
     ProfileSerializer,
     ProfileUpdateSerializer,
     ResetPasswordSerializer,
+    SignupSerializer,
     StudentSerializer,
     StudentUpdateSerializer,
     TeacherCourseStatsSerializer,
@@ -60,6 +62,38 @@ class CustomTokenRefreshView(TokenRefreshView):
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         return success_response(serializer.validated_data, message="Token refreshed")
+
+
+class SignupView(generics.GenericAPIView):
+    """Self-service signup for the public onboarding flow — always creates a
+    STUDENT account and logs the user in immediately (see SignupSerializer)."""
+
+    serializer_class = SignupSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return success_response(
+            serializer.to_representation(user), message="Account created successfully", status_code=201
+        )
+
+
+class GoogleAuthView(generics.GenericAPIView):
+    """Google Sign-In endpoint — verifies the ID token and logs the user in,
+    creating a STUDENT account on first sign-in (see GoogleAuthSerializer)."""
+
+    serializer_class = GoogleAuthSerializer
+    permission_classes = [AllowAny]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+        user = serializer.save()
+        return success_response(
+            serializer.to_representation(user), message="Signed in with Google successfully"
+        )
 
 
 class StudentListCreateView(generics.ListCreateAPIView):

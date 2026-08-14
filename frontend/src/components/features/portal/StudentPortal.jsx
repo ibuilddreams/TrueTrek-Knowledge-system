@@ -5,6 +5,7 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
 import { usePortalSession } from "@/hooks/usePortalSession";
 import { useStudentProfile } from "@/hooks/useStudentProfile";
+import { useNeedsOnboarding } from "@/hooks/useNeedsOnboarding";
 import { ROUTES } from "@/constants/routes";
 import TabNav from "@/components/ui/TabNav";
 import TabTransition from "@/components/ui/TabTransition";
@@ -44,6 +45,15 @@ function StudentPortalContent() {
 
   const { displayName, status: profileStatus } = useStudentProfile(isLoggedIn);
   const [lastNotification, setLastNotification] = useState(null);
+
+  // A student with no purchased/assigned pathway yet hasn't finished
+  // onboarding — send them back into it instead of showing an empty
+  // dashboard, whether they landed here via login or a direct/bookmarked URL.
+  const { isChecking: isCheckingOnboarding, needsOnboarding } = useNeedsOnboarding(isLoggedIn);
+
+  useEffect(() => {
+    if (needsOnboarding) router.replace(ROUTES.ONBOARDING);
+  }, [needsOnboarding, router]);
 
   const activeTab = useMemo(
     () => resolvePortalTab(searchParams.get("tab")),
@@ -107,6 +117,10 @@ function StudentPortalContent() {
         </div>
       </div>
     );
+  }
+
+  if (isCheckingOnboarding || needsOnboarding) {
+    return <Loader label="Checking your pathway access..." />;
   }
 
   return (

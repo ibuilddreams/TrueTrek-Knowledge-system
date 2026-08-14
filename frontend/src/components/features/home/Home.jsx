@@ -32,6 +32,11 @@ export default function Home() {
   const router = useRouter();
   const onExploreTiers = () => router.push(ROUTES.CURRICULUM);
   const onNavigateToPortal = () => router.push(ROUTES.STUDENT_PORTAL);
+  // New/unauthenticated visitors are guided into the onboarding wizard
+  // (signup -> questionnaire -> pathway recommendation -> payment) rather
+  // than dropped straight into passive browsing, so the hero's primary CTA
+  // and the post-quiz recommendation CTA use this instead of onExploreTiers.
+  const onStartOnboarding = () => router.push(ROUTES.ONBOARDING);
   const [selectedAuditProfile, setSelectedAuditProfile] = useState("athlete");
   const [activeFaqIndex, setActiveFaqIndex] = useState(null);
 
@@ -307,7 +312,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
         >
           <button
             id="btn-explore-curriculum"
-            onClick={onExploreTiers}
+            onClick={onStartOnboarding}
             className="w-full sm:w-auto bg-amber-600 hover:bg-amber-500 text-white font-semibold px-8 py-3.5 rounded-full flex items-center justify-center gap-2 transition duration-300 shadow-lg shadow-amber-950/40 text-sm tracking-wide"
           >
             Explore 11-Tier Curriculum
@@ -501,7 +506,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                 </span>
                 <button
                   id="btn-recommendation-cta"
-                  onClick={onExploreTiers}
+                  onClick={onStartOnboarding}
                   className="bg-white hover:bg-stone-50 text-stone-950 text-xs font-semibold px-5 py-2.5 rounded-full flex items-center gap-1.5 transition duration-350 shrink-0 shadow-sm"
                 >
                   {auditRecommendations[selectedAuditProfile].actionLabel}

@@ -50,6 +50,8 @@ INSTALLED_APPS = [
     'assignments',
     'carts',
     'daily_drill',
+    'pathways',
+    'onboarding',
     'reports',
     'search',
     'uploads',
@@ -176,6 +178,11 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
 PASSWORD_RESET_TIMEOUT = int(os.getenv('PASSWORD_RESET_TIMEOUT', 3600))
+
+# OAuth 2.0 Client ID from Google Cloud Console (APIs & Services > Credentials).
+# Must match the frontend's NEXT_PUBLIC_GOOGLE_CLIENT_ID — it's the audience the
+# ID token is verified against in users/views.py::GoogleAuthView.
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
 
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
 EMAIL_HOST = os.getenv('EMAIL_HOST', '')
