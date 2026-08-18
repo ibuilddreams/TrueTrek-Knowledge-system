@@ -52,6 +52,7 @@ INSTALLED_APPS = [
     'daily_drill',
     'pathways',
     'onboarding',
+    'future_clients',
     'reports',
     'search',
     'uploads',

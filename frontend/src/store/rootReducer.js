@@ -7,6 +7,7 @@ import coursesReducer from "./slices/courses/coursesSlice";
 import studentsReducer from "./slices/students/studentsSlice";
 import teachersReducer from "./slices/teachers/teachersSlice";
 import enrollmentsReducer from "./slices/enrollments/enrollmentsSlice";
+import futureClientsReducer from "./slices/futureClients/futureClientsSlice";
 import adminOverviewReducer from "./slices/adminOverview/adminOverviewSlice";
 import teacherDashboardReducer from "./slices/teacherDashboard/teacherDashboardSlice";
 import teacherCoursesReducer from "./slices/teacherCourses/teacherCoursesSlice";
@@ -25,6 +26,7 @@ const rootReducer = combineReducers({
   students: studentsReducer,
   teachers: teachersReducer,
   enrollments: enrollmentsReducer,
+  futureClients: futureClientsReducer,
   adminOverview: adminOverviewReducer,
   teacherDashboard: teacherDashboardReducer,
   teacherCourses: teacherCoursesReducer,

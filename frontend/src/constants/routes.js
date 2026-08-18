@@ -15,6 +15,7 @@ export const ROUTES = {
   TEACHER_PORTAL: "/teacherportal",
   STUDENT_PORTAL: "/studentportal",
   LOGIN: "/login",
+  SIGNUP: "/signup",
   FORGOT_PASSWORD: "/forgot-password",
   RESET_PASSWORD: "/reset-password",
   PROFILE: "/profile",
@@ -35,6 +36,7 @@ export const ROUTE_KEYS = {
   ADMIN_PORTAL: "adminportal",
   TEACHER_PORTAL: "teacherportal",
   LOGIN: "login",
+  SIGNUP: "signup",
   PORTAL: "portal",
   DASHBOARD: "dashboard",
   TEACHERS: "teachers",
@@ -60,6 +62,7 @@ export function getSectionFromPathname(pathname) {
     pathname.startsWith(ROUTES.STUDENT_PORTAL) ||
     pathname.startsWith(ROUTES.PORTAL) ||
     pathname.startsWith(ROUTES.LOGIN) ||
+    pathname.startsWith(ROUTES.SIGNUP) ||
     pathname.startsWith(ROUTES.FORGOT_PASSWORD) ||
     pathname.startsWith(ROUTES.RESET_PASSWORD)
   ) {

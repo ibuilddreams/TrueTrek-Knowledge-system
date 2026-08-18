@@ -11,10 +11,9 @@ import {
   saveOnboardingProgress,
 } from "@/services/onboardingService";
 import { AUTH_ROLES } from "@/constants/auth";
-import { getPortalRouteForRole } from "@/constants/routes";
+import { ROUTES, getPortalRouteForRole } from "@/constants/routes";
 import Loader from "@/components/ui/Loader";
 import OnboardingProgress from "./OnboardingProgress";
-import SignupStep from "./SignupStep";
 import QuestionnaireStep from "./QuestionnaireStep";
 import RecommendationStep from "./RecommendationStep";
 import PathwayPreviewStep from "./PathwayPreviewStep";
@@ -88,11 +87,19 @@ export default function OnboardingWizard() {
     isAuthenticated &&
     (!isStudentRole || (!isCheckingNeedsOnboarding && !needsOnboarding));
 
+  // Signup now lives on its own dedicated page (/signup) instead of being
+  // rendered as this wizard's first step — an unauthenticated visitor is
+  // sent there, and useGuestOnlyRoute on that page sends a freshly-signed-up
+  // student straight back here once authenticated (landing on Questionnaire).
+  const shouldRedirectToSignup = isAuthResolved && !isAuthenticated;
+
   useEffect(() => {
     if (shouldLeaveWizard) {
       router.replace(getPortalRouteForRole(role));
+    } else if (shouldRedirectToSignup) {
+      router.replace(ROUTES.SIGNUP);
     }
-  }, [shouldLeaveWizard, role, router]);
+  }, [shouldLeaveWizard, shouldRedirectToSignup, role, router]);
 
   // Runs exactly once, as soon as enough is known to decide the resume
   // point — never re-runs afterward, so it can't clobber in-progress state
@@ -101,7 +108,8 @@ export default function OnboardingWizard() {
     if (hasResumed.current || !isAuthResolved) return;
 
     if (!isAuthenticated) {
-      setStep("signup");
+      // Nothing to resume — shouldRedirectToSignup's effect sends the
+      // visitor to /signup. Leave `step` null so the Loader stays up.
       hasResumed.current = true;
       return;
     }
@@ -163,7 +171,7 @@ export default function OnboardingWizard() {
     [step]
   );
 
-  if (shouldLeaveWizard || step === null) {
+  if (shouldLeaveWizard || shouldRedirectToSignup || step === null) {
     return <Loader label="Loading your progress..." />;
   }
 
@@ -172,8 +180,6 @@ export default function OnboardingWizard() {
       <div className="max-w-3xl mx-auto px-6 pt-12">
         <OnboardingProgress steps={ONBOARDING_STEPS} activeIndex={activeIndex} />
       </div>
-
-      {step === "signup" && <SignupStep onContinue={() => setStep("questionnaire")} />}
 
       {step === "questionnaire" && (
         <QuestionnaireStep

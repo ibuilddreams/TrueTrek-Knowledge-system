@@ -145,6 +145,24 @@ export default function LoginForm() {
         </div>
 
         <GoogleSignInButton onSuccess={handleGoogleSuccess} disabled={isSubmitting} />
+
+        <p
+          className={`text-center text-xs font-light ${
+            isVault ? "text-stone-400" : "text-stone-500"
+          }`}
+        >
+          New to TrueTrek?{" "}
+          <Link
+            href={ROUTES.SIGNUP}
+            className={`font-semibold transition ${
+              isVault
+                ? "text-stone-200 hover:text-amber-500"
+                : "text-stone-700 hover:text-amber-800"
+            }`}
+          >
+            Create an Account
+          </Link>
+        </p>
       </form>
     </AuthGateCard>
   );
