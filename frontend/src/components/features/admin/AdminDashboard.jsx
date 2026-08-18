@@ -14,6 +14,7 @@ import {
   Route,
   Shield,
   Tag,
+  UserPlus,
   Users,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -36,12 +37,14 @@ import TagsTab from "@/components/features/admin/tabs/TagsTab";
 import CategoriesTab from "@/components/features/admin/tabs/CategoriesTab";
 import PathwaysTab from "@/components/features/admin/tabs/PathwaysTab";
 import QuestionnaireTab from "@/components/features/admin/tabs/QuestionnaireTab";
+import FutureClientsTab from "@/components/features/admin/tabs/FutureClientsTab";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
   { id: "courses", label: "Courses", icon: BookOpen },
   { id: "enrollments", label: "Enrollments", icon: ClipboardList },
   { id: "students", label: "Students", icon: GraduationCap },
+  { id: "future-clients", label: "Future Clients", icon: UserPlus },
   { id: "teachers", label: "Teachers", icon: Users },
   { id: "progress", label: "Progress", icon: LineChart },
   { id: "tags", label: "Tags", icon: Tag },
@@ -56,6 +59,7 @@ const TAB_COMPONENTS = {
   courses: CoursesTab,
   enrollments: EnrollmentsTab,
   students: StudentsTab,
+  "future-clients": FutureClientsTab,
   teachers: TeachersTab,
   progress: ProgressTab,
   tags: TagsTab,
