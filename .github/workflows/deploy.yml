@@ -150,6 +150,24 @@ jobs:
           python manage.py check
           echo "::notice title=Django checks::manage.py check passed"
 
+      - name: Validate migration graph
+        working-directory: backend
+        env:
+          SECRET_KEY: ci-validation-only-not-for-production
+          DEBUG: "False"
+          ALLOWED_HOSTS: localhost,127.0.0.1
+          DB_NAME: truetrek_lms
+          DB_USER: truetrek
+          DB_PASSWORD: unused
+          DB_HOST: localhost
+          DB_PORT: "5432"
+        run: |
+          set -euo pipefail
+          # Fails early on conflicting leaf nodes (same error migrate would hit in deploy).
+          python manage.py showmigrations --plan >/dev/null
+          python manage.py makemigrations --check --dry-run
+          echo "::notice title=Migrations::Migration graph is consistent (no conflicts)"
+
       - name: Set up Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
         with:
