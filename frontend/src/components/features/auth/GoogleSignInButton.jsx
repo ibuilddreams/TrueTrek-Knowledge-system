@@ -34,12 +34,21 @@ export default function GoogleSignInButton({ onSuccess, disabled = false }) {
     [loginGoogle, onSuccess]
   );
 
+  // `onSuccess` (and therefore `handleCredentialResponse`) gets a new identity
+  // on every parent re-render (e.g. each keystroke in LoginForm's fields).
+  // Routing the GSI callback through this ref — instead of putting
+  // `handleCredentialResponse` in the effect below — keeps `initialize()`/
+  // `renderButton()` from re-running on every render, which is what was
+  // triggering GSI's "initialize() is called multiple times" warning.
+  const handleCredentialResponseRef = useRef(handleCredentialResponse);
+  handleCredentialResponseRef.current = handleCredentialResponse;
+
   useEffect(() => {
     if (!isScriptReady || !containerRef.current || !window.google?.accounts?.id) return;
 
     window.google.accounts.id.initialize({
       client_id: GOOGLE_CLIENT_ID,
-      callback: handleCredentialResponse,
+      callback: (response) => handleCredentialResponseRef.current(response),
     });
     window.google.accounts.id.renderButton(containerRef.current, {
       type: "standard",
@@ -48,7 +57,7 @@ export default function GoogleSignInButton({ onSuccess, disabled = false }) {
       text: "continue_with",
       width: Math.min(360, containerRef.current.offsetWidth || 320),
     });
-  }, [isScriptReady, handleCredentialResponse]);
+  }, [isScriptReady]);
 
   // No client ID configured yet — keep the control visibly present (per the
   // Calm/Headspace-style onboarding requirement) but clearly inert, exactly

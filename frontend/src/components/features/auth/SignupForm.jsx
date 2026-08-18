@@ -1,15 +1,18 @@
 "use client";
 
 import { useState } from "react";
+import Link from "next/link";
 import { AlertCircle, UserPlus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useGuestOnlyRoute } from "@/hooks/useGuestOnlyRoute";
 import { useTheme } from "@/hooks/useTheme";
+import { ROUTES } from "@/constants/routes";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 import AuthGateCard from "@/components/ui/AuthGateCard";
 import AuthField from "@/components/ui/AuthField";
 import AuthSubmitButton from "@/components/ui/AuthSubmitButton";
-import GoogleSignInButton from "@/components/features/auth/GoogleSignInButton";
+import Loader from "@/components/ui/Loader";
 
 const GENDER_OPTIONS = [
   { value: "MALE", label: "Male" },
@@ -17,13 +20,13 @@ const GENDER_OPTIONS = [
   { value: "OTHER", label: "Other" },
 ];
 
-// Public onboarding intentionally doesn't ask visitors to pick a username —
-// the real login is by email (CustomTokenObtainPairSerializer.username_field
-// = "email" on the backend), so `username` is only an internal, never-shown
-// identifier. Derive one from the email's local part with a random suffix so
-// a uniqueness collision (backend enforces case-insensitive uniqueness)
-// doesn't surface a confusing "username taken" error to someone who never
-// entered one.
+// The backend requires `gender` on CustomUser (no default, enforced in
+// CustomUserManager.create_user) even though this form never shows a
+// username field — the real login is by email, so `username` is only an
+// internal, never-shown identifier. Derive one from the email's local part
+// with a random suffix so a uniqueness collision (backend enforces
+// case-insensitive uniqueness) doesn't surface a confusing "username taken"
+// error to someone who never entered one.
 function generateUsername(email) {
   const base =
     email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9_.-]/g, "") || "user";
@@ -31,8 +34,9 @@ function generateUsername(email) {
   return `${base}-${suffix}`;
 }
 
-export default function SignupStep({ onContinue }) {
+export default function SignupForm() {
   const { signup } = useAuth();
+  const { shouldBlock, isAuthenticated } = useGuestOnlyRoute();
   const { isVault } = useTheme();
   const [form, setForm] = useState({
     firstName: "",
@@ -44,17 +48,24 @@ export default function SignupStep({ onContinue }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
 
+  if (shouldBlock && !isSubmitting) {
+    return (
+      <Loader
+        label={isAuthenticated ? "Redirecting..." : "Checking Session..."}
+      />
+    );
+  }
+
   function updateField(field) {
     return (event) => {
       setForm((prev) => ({ ...prev, [field]: event.target.value }));
     };
   }
 
-  function handleGoogleSuccess({ user }) {
-    toastSuccess(`Welcome, ${user.name || user.email}. Let's find your pathway.`);
-    onContinue();
-  }
-
+  // Navigation itself is NOT done here — useGuestOnlyRoute (above) reacts to
+  // isAuthenticated flipping true and sends the new student straight into
+  // /onboarding (they land on the Questionnaire step, since signup already
+  // logs them in). Doing it here too would race that check.
   async function handleSubmit(event) {
     event.preventDefault();
     setFormError("");
@@ -69,7 +80,6 @@ export default function SignupStep({ onContinue }) {
         gender: form.gender,
       });
       toastSuccess(`Welcome, ${user.name || user.email}. Let's find your pathway.`);
-      onContinue();
     } catch (error) {
       const message = getApiErrorMessage(
         error,
@@ -105,7 +115,7 @@ export default function SignupStep({ onContinue }) {
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-2 gap-3.5">
           <AuthField
-            id="input-onboarding-first-name"
+            id="input-signup-first-name"
             label="First Name"
             required
             autoComplete="given-name"
@@ -113,7 +123,7 @@ export default function SignupStep({ onContinue }) {
             onChange={updateField("firstName")}
           />
           <AuthField
-            id="input-onboarding-last-name"
+            id="input-signup-last-name"
             label="Last Name"
             required
             autoComplete="family-name"
@@ -123,7 +133,7 @@ export default function SignupStep({ onContinue }) {
         </div>
 
         <AuthField
-          id="input-onboarding-email"
+          id="input-signup-email"
           label="Email"
           type="email"
           required
@@ -133,7 +143,7 @@ export default function SignupStep({ onContinue }) {
         />
 
         <AuthField
-          id="input-onboarding-password"
+          id="input-signup-password"
           label="Password"
           type="password"
           required
@@ -145,7 +155,7 @@ export default function SignupStep({ onContinue }) {
 
         <div>
           <label
-            htmlFor="input-onboarding-gender"
+            htmlFor="input-signup-gender"
             className={`text-[10px] font-mono block uppercase tracking-wider mb-1.5 ${
               isVault ? "text-stone-500" : "text-stone-400"
             }`}
@@ -153,7 +163,7 @@ export default function SignupStep({ onContinue }) {
             Gender
           </label>
           <select
-            id="input-onboarding-gender"
+            id="input-signup-gender"
             required
             value={form.gender}
             onChange={updateField("gender")}
@@ -184,26 +194,30 @@ export default function SignupStep({ onContinue }) {
         )}
 
         <AuthSubmitButton
-          id="submit-onboarding-signup-btn"
-          label="Create Account & Continue"
+          id="submit-signup-btn"
+          label="Create Account"
           loadingLabel="Creating Account..."
           isSubmitting={isSubmitting}
           icon={UserPlus}
         />
 
-        <div className="relative flex items-center py-1">
-          <div className={`flex-1 h-px ${isVault ? "bg-stone-800" : "bg-stone-200"}`} />
-          <span
-            className={`px-3 text-[10px] font-mono uppercase tracking-wider ${
-              isVault ? "text-stone-600" : "text-stone-400"
+        <p
+          className={`text-center text-xs font-light ${
+            isVault ? "text-stone-400" : "text-stone-500"
+          }`}
+        >
+          Already have an account?{" "}
+          <Link
+            href={ROUTES.LOGIN}
+            className={`font-semibold transition ${
+              isVault
+                ? "text-stone-200 hover:text-amber-500"
+                : "text-stone-700 hover:text-amber-800"
             }`}
           >
-            Or
-          </span>
-          <div className={`flex-1 h-px ${isVault ? "bg-stone-800" : "bg-stone-200"}`} />
-        </div>
-
-        <GoogleSignInButton onSuccess={handleGoogleSuccess} disabled={isSubmitting} />
+            Sign In
+          </Link>
+        </p>
       </form>
     </AuthGateCard>
   );

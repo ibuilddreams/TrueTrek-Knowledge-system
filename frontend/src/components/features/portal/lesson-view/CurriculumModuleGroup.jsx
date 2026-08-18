@@ -45,7 +45,7 @@ export default function CurriculumModuleGroup({
               isVault ? "text-stone-500" : "text-stone-400"
             }`}
           >
-            Module {module.order + 1}
+            Module {module.order}
           </p>
           <h5
             className={`text-[13px] font-serif font-bold mt-0.5 truncate ${

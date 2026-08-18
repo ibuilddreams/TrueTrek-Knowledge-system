@@ -17,6 +17,9 @@ const STATUS_COLORS = {
   GRADED: "bg-emerald-50 text-emerald-700 border-emerald-200",
   EXPIRED: "bg-orange-50 text-orange-700 border-orange-200",
   ABANDONED: "bg-stone-200 text-stone-600 border-stone-300",
+  PENDING: "bg-amber-50 text-amber-700 border-amber-200",
+  APPROVED: "bg-emerald-50 text-emerald-700 border-emerald-200",
+  REJECTED: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
 export default function StatusBadge({ status }) {

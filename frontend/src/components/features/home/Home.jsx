@@ -2,10 +2,12 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import { useQuery } from "@tanstack/react-query";
 import {
   Target,
   ArrowRight,
   Award,
+  BookOpen,
   Flame,
   ShieldCheck,
   Zap,
@@ -24,6 +26,8 @@ import { ADVISOR_PERSONAS } from "@/data/curriculum";
 import { INDEX_FAQ_ITEMS } from "@/constants/faq";
 import { ROUTES } from "@/constants/routes";
 import { requestAdvisorAdvice } from "@/services/advisorService";
+import { getPublicPathwayById, getPublicPathways } from "@/services/pathwaysService";
+import { formatCoursePrice } from "@/lib/store";
 import SectionHeading from "@/components/ui/SectionHeading";
 import PingDotSpinner from "@/components/ui/PingDotSpinner";
 import PresetPromptPills from "@/components/ui/PresetPromptPills";
@@ -37,7 +41,7 @@ export default function Home() {
   // than dropped straight into passive browsing, so the hero's primary CTA
   // and the post-quiz recommendation CTA use this instead of onExploreTiers.
   const onStartOnboarding = () => router.push(ROUTES.ONBOARDING);
-  const [selectedAuditProfile, setSelectedAuditProfile] = useState("athlete");
+  const [selectedPathwayId, setSelectedPathwayId] = useState(null);
   const [activeFaqIndex, setActiveFaqIndex] = useState(null);
 
   // Inline Interactive Consultation Board states
@@ -185,68 +189,37 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
     }
   };
 
-  const auditRecommendations = {
-    athlete: {
-      title: "D1 Collegiate / Pro Athlete Track",
-      targetTiers:
-        "Tier 1 (Youth Athletics), Tier 2 (Recruiting Window), Tier 6 (Elite Pros & NIL)",
-      objective:
-        "Secure high-impact athletic scholarship offers and structure durable NIL personal brand capitalization.",
-      impactScore: "98.4% Collegiate Selection Rate",
-      roadmap: [
-        "Complete high school recruitment video architecture auditing.",
-        "Run deep social media footprint compliance diagnostic.",
-        "Adopt daily Sleep Stabilization & Cortisol reduction drills.",
-        "Establish single-member LLC for tax-sheltered brand endorsements.",
-      ],
-      actionLabel: "Assess NIL Feasibility",
+  // Pathways shown in the "Determine Your Pathway" diagnostic below are the
+  // real, purchasable pathways from the backend (same data as /pathways),
+  // not hardcoded copy — so this section always reflects what's actually
+  // for sale.
+  const { data: pathwaysData, isLoading: isPathwaysLoading } = useQuery({
+    queryKey: ["home-pathways"],
+    queryFn: async () => {
+      const response = await getPublicPathways({ pageSize: 12 });
+      return response?.data?.results || [];
     },
-    scholar: {
-      title: "Elite Scholarship & Academic Spike Track",
-      targetTiers:
-        "Tier 3 (Early Academic Spike), Tier 4 (Common App Mastery), Tier 8 (Cognitive Bias)",
-      objective:
-        "Master competitive academic portfolios, write elite college personal statements, and structure custom spikes.",
-      impactScore: "4.8x Ivy League Admission Multiplier",
-      roadmap: [
-        "Outline your personal Extracurricular Spike Profile.",
-        "Audit common application essays with Ivy scout feedback.",
-        "Train on system cognitive diagnostics & executive bias matrices.",
-        "Formulate elite master recommendation solicitations.",
-      ],
-      actionLabel: "Audit Academic Portfolio",
+  });
+  const pathways = pathwaysData || [];
+
+  useEffect(() => {
+    if (!selectedPathwayId && pathways.length > 0) {
+      setSelectedPathwayId(pathways[0].id);
+    }
+  }, [pathways, selectedPathwayId]);
+
+  const { data: selectedPathway } = useQuery({
+    queryKey: ["home-pathway-detail", selectedPathwayId],
+    queryFn: async () => {
+      const response = await getPublicPathwayById(selectedPathwayId);
+      return response?.data;
     },
-    founder: {
-      title: "Venture & Professional Pathfinder",
-      targetTiers:
-        "Tier 5 (Pathfinders), Tier 7 (Startup Foundations), Tier 8 (Executive Mastery)",
-      objective:
-        "Translate raw craft into scalable technological projects, secure seed financing, and build robust capital models.",
-      impactScore: "$145M+ Aggregate Portfolio Value",
-      roadmap: [
-        "Draft a compliant simple pre-seed Simple Agreement for Future Equity (SAFE).",
-        "Deploy dynamic MVP prototyping and alpha release testing scheme.",
-        "Audit pre-revenue capitalization boards to screen out predatory investors.",
-        "Implement structural crisis-strategy Response Protocols.",
-      ],
-      actionLabel: "Simulate Venture Cap-Table",
-    },
-    parent: {
-      title: "Parent Coach & Stewardship Track",
-      targetTiers:
-        "Tier 1b (Parent Playbook), Tier 9 (Legacy Office Foundations)",
-      objective:
-        "Navigate the high-pressure scouting maze safely while maintaining values-based family stewardship structures.",
-      impactScore: "100% Parent Advisory Trust Factor",
-      roadmap: [
-        "Analyze regional club team ROI metrics and travel fee structures.",
-        "Review early pre-contract agency representation traps.",
-        "Establish multi-generational values-driven trust frameworks.",
-        "Coordinate holistic cognitive-behavioral support structures.",
-      ],
-      actionLabel: "Review Parenting Playbook",
-    },
-  };
+    enabled: Boolean(selectedPathwayId),
+  });
+
+  const pathwayCourses = [...(selectedPathway?.courses || [])].sort(
+    (a, b) => a.order - b.order,
+  );
 
   return (
     <div
@@ -392,129 +365,133 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
             subtitle="Select your high-potential profile archetype below and see your recommended developmental curriculum, custom metrics, and action blueprint."
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-            {/* Left Selection Columns */}
-            <div id="audit-selector-group" className="lg:col-span-4 space-y-3">
-              {[
-                {
-                  id: "athlete",
-                  label: "Pro & Collegiate Athlete",
-                  accent: "D1 Prospects",
-                },
-                {
-                  id: "scholar",
-                  label: "Scholarly Academic Elite",
-                  accent: "Ivy League Candidates",
-                },
-                {
-                  id: "founder",
-                  label: "Venture Founder / Craftsman",
-                  accent: "Scale Builders",
-                },
-                {
-                  id: "parent",
-                  label: "Parent Advisor / Steward",
-                  accent: "Family Wealth Stewards",
-                },
-              ].map((item) => (
-                <button
-                  id={`audit-profile-btn-${item.id}`}
-                  key={item.id}
-                  onClick={() => setSelectedAuditProfile(item.id)}
-                  className={`w-full text-left p-4 rounded-xl border transition-all duration-300 flex flex-col gap-1 ${
-                    selectedAuditProfile === item.id
-                      ? "bg-amber-600/10 border-amber-500/80 text-white shadow-md"
-                      : "bg-stone-900/60 border-stone-800/40 text-stone-400 hover:bg-stone-900 hover:border-stone-800"
-                  }`}
-                >
-                  <span className="font-medium text-sm text-stone-200">
-                    {item.label}
-                  </span>
-                  <span
-                    className={`text-xs font-mono uppercase tracking-wider ${
-                      selectedAuditProfile === item.id
-                        ? "text-amber-500"
-                        : "text-stone-500"
+          {isPathwaysLoading && (
+            <div className="flex items-center justify-center min-h-[200px] text-stone-500 text-xs font-mono uppercase tracking-wider">
+              Loading pathways...
+            </div>
+          )}
+
+          {!isPathwaysLoading && pathways.length === 0 && (
+            <div className="flex items-center justify-center min-h-[200px] text-stone-500 text-xs font-mono uppercase tracking-wider">
+              No pathways published yet — check back soon.
+            </div>
+          )}
+
+          {!isPathwaysLoading && pathways.length > 0 && (
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+              {/* Left Selection Columns */}
+              <div id="audit-selector-group" className="lg:col-span-4 space-y-3">
+                {pathways.map((pathway) => (
+                  <button
+                    id={`audit-profile-btn-${pathway.id}`}
+                    key={pathway.id}
+                    onClick={() => setSelectedPathwayId(pathway.id)}
+                    className={`w-full text-left p-4 rounded-xl border transition-all duration-300 flex flex-col gap-1 ${
+                      selectedPathwayId === pathway.id
+                        ? "bg-amber-600/10 border-amber-500/80 text-white shadow-md"
+                        : "bg-stone-900/60 border-stone-800/40 text-stone-400 hover:bg-stone-900 hover:border-stone-800"
                     }`}
                   >
-                    {item.accent}
-                  </span>
-                </button>
-              ))}
-            </div>
-
-            {/* Right Audit Recommendation Container */}
-            <div
-              id="audit-results-container"
-              className="lg:col-span-8 bg-stone-900 border border-stone-800/80 rounded-2xl p-6 md:p-8 relative min-h-[380px] flex flex-col justify-between"
-            >
-              <div>
-                <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-800 pb-4 mb-6">
-                  <div>
-                    <span className="text-amber-500 text-xs font-mono tracking-widest uppercase block mb-1">
-                      RECOMMENDED SUB-TRACK
+                    <span className="font-medium text-sm text-stone-200">
+                      {pathway.name}
                     </span>
-                    <h3 className="text-xl md:text-2xl font-serif font-semibold tracking-tight text-white">
-                      {auditRecommendations[selectedAuditProfile].title}
-                    </h3>
-                  </div>
-                  <div className="bg-amber-600/15 border border-amber-500/20 px-3 py-1.5 rounded-lg text-amber-500 font-mono text-xs font-semibold">
-                    {auditRecommendations[selectedAuditProfile].impactScore}
-                  </div>
-                </div>
+                    <span
+                      className={`text-xs font-mono uppercase tracking-wider ${
+                        selectedPathwayId === pathway.id
+                          ? "text-amber-500"
+                          : "text-stone-500"
+                      }`}
+                    >
+                      {pathway.course_count} Course
+                      {pathway.course_count === 1 ? "" : "s"} Bundle
+                    </span>
+                  </button>
+                ))}
+              </div>
 
-                <div className="mb-6">
-                  <p className="text-stone-300 text-sm leading-relaxed mb-6">
-                    <span className="font-semibold text-stone-200">
-                      Objective Profile Target:
-                    </span>{" "}
-                    {auditRecommendations[selectedAuditProfile].objective}
-                  </p>
-                  <div className="bg-stone-950 p-3 rounded-lg border border-stone-850 mb-6 flex gap-2.5 items-center">
-                    <Target className="text-amber-500 w-5 h-5 flex-shrink-0" />
-                    <p className="text-xs text-stone-300">
-                      <span className="font-mono font-medium text-amber-500 block uppercase tracking-wider text-[10px]">
-                        Primary Core Curriculum Licensing
+              {/* Right Audit Recommendation Container */}
+              <div
+                id="audit-results-container"
+                className="lg:col-span-8 bg-stone-900 border border-stone-800/80 rounded-2xl p-6 md:p-8 relative min-h-[380px] flex flex-col justify-between"
+              >
+                <div>
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-800 pb-4 mb-6">
+                    <div>
+                      <span className="text-amber-500 text-xs font-mono tracking-widest uppercase block mb-1">
+                        RECOMMENDED PATHWAY
                       </span>
-                      {auditRecommendations[selectedAuditProfile].targetTiers}
-                    </p>
+                      <h3 className="text-xl md:text-2xl font-serif font-semibold tracking-tight text-white">
+                        {selectedPathway?.name || "..."}
+                      </h3>
+                    </div>
+                    <div className="bg-amber-600/15 border border-amber-500/20 px-3 py-1.5 rounded-lg text-amber-500 font-mono text-xs font-semibold">
+                      {formatCoursePrice(selectedPathway?.base_price)} Bundle
+                    </div>
                   </div>
 
-                  <p className="text-xs font-mono uppercase text-stone-400 tracking-wider mb-3">
-                    Incubator Strategic Checklist
-                  </p>
-                  <ul className="space-y-2.5">
-                    {auditRecommendations[selectedAuditProfile].roadmap.map(
-                      (step, index) => (
+                  <div className="mb-6">
+                    <p className="text-stone-300 text-sm leading-relaxed mb-6">
+                      <span className="font-semibold text-stone-200">
+                        Objective Profile Target:
+                      </span>{" "}
+                      {selectedPathway?.description ||
+                        selectedPathway?.summary ||
+                        "Loading pathway details..."}
+                    </p>
+                    <div className="bg-stone-950 p-3 rounded-lg border border-stone-850 mb-6 flex gap-2.5 items-center">
+                      <Target className="text-amber-500 w-5 h-5 shrink-0" />
+                      <p className="text-xs text-stone-300">
+                        <span className="font-mono font-medium text-amber-500 block uppercase tracking-wider text-[10px]">
+                          Primary Core Curriculum Licensing
+                        </span>
+                        {pathwayCourses.length > 0
+                          ? pathwayCourses
+                              .map(({ course }) => course.title)
+                              .join(", ")
+                          : "Course lineup coming soon."}
+                      </p>
+                    </div>
+
+                    <p className="text-xs font-mono uppercase text-stone-400 tracking-wider mb-3">
+                      Included In This Pathway
+                    </p>
+                    <ul className="space-y-2.5">
+                      {pathwayCourses.map(({ course }) => (
                         <li
-                          key={index}
+                          key={course.id}
                           className="flex items-start gap-2.5 text-stone-300 text-xs leading-relaxed"
                         >
-                          <ShieldCheck className="w-4 h-4 text-amber-500 mt-0.5 flex-shrink-0" />
-                          <span>{step}</span>
+                          <ShieldCheck className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                          <span>{course.title}</span>
                         </li>
-                      ),
-                    )}
-                  </ul>
+                      ))}
+                      {pathwayCourses.length === 0 && (
+                        <li className="flex items-start gap-2.5 text-stone-500 text-xs leading-relaxed">
+                          <BookOpen className="w-4 h-4 text-stone-600 mt-0.5 shrink-0" />
+                          <span>No courses attached to this pathway yet.</span>
+                        </li>
+                      )}
+                    </ul>
+                  </div>
+                </div>
+
+                <div className="border-t border-stone-800 text-right pt-6 mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <span className="text-stone-400 text-xs font-light text-left">
+                    Licensed across 40+ educational administrations. Verified
+                    athletic and academic compliance.
+                  </span>
+                  <button
+                    id="btn-recommendation-cta"
+                    onClick={onStartOnboarding}
+                    className="bg-white hover:bg-stone-50 text-stone-950 text-xs font-semibold px-5 py-2.5 rounded-full flex items-center gap-1.5 transition duration-350 shrink-0 shadow-sm"
+                  >
+                    Explore {selectedPathway?.name || "This Pathway"}
+                    <Zap className="w-3.5 h-3.5 text-amber-600" />
+                  </button>
                 </div>
               </div>
-
-              <div className="border-t border-stone-800 text-right pt-6 mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-                <span className="text-stone-400 text-xs font-light text-left">
-                  Licensed across 40+ educational administrations. Verified
-                  athletic and academic compliance.
-                </span>
-                <button
-                  id="btn-recommendation-cta"
-                  onClick={onStartOnboarding}
-                  className="bg-white hover:bg-stone-50 text-stone-950 text-xs font-semibold px-5 py-2.5 rounded-full flex items-center gap-1.5 transition duration-350 shrink-0 shadow-sm"
-                >
-                  {auditRecommendations[selectedAuditProfile].actionLabel}
-                  <Zap className="w-3.5 h-3.5 text-amber-600" />
-                </button>
-              </div>
             </div>
-          </div>
+          )}
         </div>
       </section>
 

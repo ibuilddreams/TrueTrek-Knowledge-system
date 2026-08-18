@@ -301,7 +301,7 @@ function ModuleAccordionItem({
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
             <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
-              Module {module.order + 1}
+              Module {module.order}
             </p>
             <h5 className="font-serif font-bold text-stone-900 mt-0.5 truncate">
               {module.title}
