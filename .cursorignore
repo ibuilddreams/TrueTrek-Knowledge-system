@@ -1,0 +1,10 @@
+.env
+.env.*
+node_modules/
+.git/
+dist/
+build/
+uploads/
+secrets/
+*.pem
+*.key
