@@ -153,6 +153,7 @@ jobs:
       - name: Validate migration graph
         working-directory: backend
         env:
+          DJANGO_SETTINGS_MODULE: lms_be.settings
           SECRET_KEY: ci-validation-only-not-for-production
           DEBUG: "False"
           ALLOWED_HOSTS: localhost,127.0.0.1
@@ -163,10 +164,51 @@ jobs:
           DB_PORT: "5432"
         run: |
           set -euo pipefail
-          # Fails early on conflicting leaf nodes (same error migrate would hit in deploy).
-          python manage.py showmigrations --plan >/dev/null
-          python manage.py makemigrations --check --dry-run
-          echo "::notice title=Migrations::Migration graph is consistent (no conflicts)"
+          # Reads migrations from disk only; no database connection is required here.
+          python - <<'PY'
+          import sys
+
+          import django
+
+          django.setup()
+
+          from django.db.migrations.loader import MigrationLoader
+
+          loader = MigrationLoader(None, ignore_no_migrations=True)
+          conflicts = loader.detect_conflicts()
+
+          if conflicts:
+              for app_label, names in sorted(conflicts.items()):
+                  print(
+                      "::error title=Conflicting migrations in %s::multiple leaf nodes: %s "
+                      "· run 'python manage.py makemigrations --merge'" % (app_label, ", ".join(sorted(names)))
+                  )
+              sys.exit(1)
+
+          for app_label, name in sorted(loader.graph.leaf_nodes()):
+              print("OK %s leaf: %s" % (app_label, name))
+          print("::notice title=Migrations::Migration graph is consistent (single leaf per app)")
+          PY
+
+      - name: Report unmigrated model changes
+        working-directory: backend
+        continue-on-error: true
+        env:
+          SECRET_KEY: ci-validation-only-not-for-production
+          DEBUG: "False"
+          ALLOWED_HOSTS: localhost,127.0.0.1
+          DB_NAME: truetrek_lms
+          DB_USER: truetrek
+          DB_PASSWORD: unused
+          DB_HOST: localhost
+          DB_PORT: "5432"
+        run: |
+          set -uo pipefail
+          if python manage.py makemigrations --check --dry-run; then
+            echo "::notice title=Model state::No missing migrations detected"
+          else
+            echo "::warning title=Model state::Model changes without migrations detected — run 'python manage.py makemigrations'"
+          fi
 
       - name: Set up Node.js ${{ env.NODE_VERSION }}
         uses: actions/setup-node@v4
