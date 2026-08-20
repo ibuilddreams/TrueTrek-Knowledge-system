@@ -5,6 +5,7 @@ from rest_framework.test import APITestCase
 
 from common.models import Status
 from pathways.models import Pathway
+from tiers.models import Tier, TierPathway
 
 from ..models import (
     OnboardingProgress,
@@ -82,6 +83,18 @@ class QuestionnaireFlowTests(OnboardingTestCase):
         by_name = {row["name"]: row["score"] for row in response.data["data"]}
         self.assertEqual(by_name["Parent Pathway"], 5)
         self.assertEqual(by_name["Athlete Pathway"], 0)
+
+    def test_recommendation_surfaces_tier_when_present_and_omits_it_when_absent(self):
+        tier = Tier.objects.create(name="The Blueprint", level=1)
+        TierPathway.objects.create(tier=tier, pathway=self.parent_pathway, order=1)
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get(reverse("onboarding-recommendations"))
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        by_name = {row["name"]: row["tiers"] for row in response.data["data"]}
+        self.assertEqual(by_name["Parent Pathway"][0]["name"], "The Blueprint")
+        self.assertEqual(by_name["Athlete Pathway"], [])
 
     def test_questions_reflect_previously_saved_answer(self):
         QuestionnaireAnswer.objects.create(

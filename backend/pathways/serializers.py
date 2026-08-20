@@ -30,8 +30,8 @@ class PathwayCourseSerializer(serializers.ModelSerializer):
 
 
 class PathwayListSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
     course_count = serializers.IntegerField(source="pathway_courses.count", read_only=True)
+    tiers = serializers.SerializerMethodField()
 
     class Meta:
         model = Pathway
@@ -40,21 +40,25 @@ class PathwayListSerializer(serializers.ModelSerializer):
             "name",
             "slug",
             "summary",
-            "image",
             "status",
             "base_price",
+            "tiers",
             "course_count",
             "created_at",
             "updated_at",
         ]
         read_only_fields = fields
 
-    def get_image(self, obj):
-        return build_absolute_image_url(self.context.get("request"), obj.thumbnail)
+    def get_tiers(self, obj):
+        # A pathway can belong to more than one tier — every tier it's currently
+        # attached to, not just one, so the admin badge can show all of them.
+        return [
+            {"id": tp.tier_id, "name": tp.tier.name, "slug": tp.tier.slug, "level": tp.tier.level}
+            for tp in obj.tier_pathways.select_related("tier").order_by("tier__level")
+        ]
 
 
 class PathwayDetailSerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
     courses = serializers.SerializerMethodField()
 
     class Meta:
@@ -65,7 +69,6 @@ class PathwayDetailSerializer(serializers.ModelSerializer):
             "slug",
             "summary",
             "description",
-            "image",
             "status",
             "base_price",
             "courses",
@@ -73,9 +76,6 @@ class PathwayDetailSerializer(serializers.ModelSerializer):
             "updated_at",
         ]
         read_only_fields = fields
-
-    def get_image(self, obj):
-        return build_absolute_image_url(self.context.get("request"), obj.thumbnail)
 
     def get_courses(self, obj):
         pathway_courses = obj.pathway_courses.select_related("course").order_by("order")
@@ -97,7 +97,14 @@ class PublicPathwayDetailSerializer(PathwayDetailSerializer):
 class PathwayWriteSerializer(serializers.ModelSerializer):
     class Meta:
         model = Pathway
-        fields = ["id", "name", "summary", "description", "thumbnail", "status", "base_price"]
+        fields = [
+            "id",
+            "name",
+            "summary",
+            "description",
+            "status",
+            "base_price",
+        ]
         read_only_fields = ["id"]
 
     def validate_name(self, value):
@@ -187,15 +194,10 @@ class PathwayCheckoutRequestSerializer(serializers.Serializer):
 
 
 class PathwayEnrollmentPathwaySerializer(serializers.ModelSerializer):
-    image = serializers.SerializerMethodField()
-
     class Meta:
         model = Pathway
-        fields = ["id", "name", "slug", "summary", "image"]
+        fields = ["id", "name", "slug", "summary"]
         read_only_fields = fields
-
-    def get_image(self, obj):
-        return build_absolute_image_url(self.context.get("request"), obj.thumbnail)
 
 
 class PathwayEnrollmentSerializer(serializers.ModelSerializer):

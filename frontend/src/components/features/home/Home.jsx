@@ -26,7 +26,10 @@ import { ADVISOR_PERSONAS } from "@/data/curriculum";
 import { INDEX_FAQ_ITEMS } from "@/constants/faq";
 import { ROUTES } from "@/constants/routes";
 import { requestAdvisorAdvice } from "@/services/advisorService";
-import { getPublicPathwayById, getPublicPathways } from "@/services/pathwaysService";
+import {
+  getPublicPathwayById,
+  getPublicPathways,
+} from "@/services/pathwaysService";
 import { formatCoursePrice } from "@/lib/store";
 import SectionHeading from "@/components/ui/SectionHeading";
 import PingDotSpinner from "@/components/ui/PingDotSpinner";
@@ -270,7 +273,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           transition={{ duration: 0.8, delay: 0.3 }}
           className="text-stone-300 text-lg md:text-xl font-sans max-w-2xl font-light mb-10 leading-relaxed"
         >
-          The premier 11-tier educational roadmap and strategic incubator
+          The premier 9-tier educational roadmap and strategic incubator
           helping high-potential athletes, world-class scholars, and
           entrepreneurial pathfinders master real-world capital, law, and
           legacy.
@@ -285,10 +288,10 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
         >
           <button
             id="btn-explore-curriculum"
-            onClick={onStartOnboarding}
+            onClick={onExploreTiers}
             className="w-full sm:w-auto bg-amber-600 hover:bg-amber-500 text-white font-semibold px-8 py-3.5 rounded-full flex items-center justify-center gap-2 transition duration-300 shadow-lg shadow-amber-950/40 text-sm tracking-wide"
           >
-            Explore 11-Tier Curriculum
+            Explore 9-Tier Curriculum
             <ArrowRight className="w-4 h-4" />
           </button>
           <button
@@ -380,7 +383,10 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           {!isPathwaysLoading && pathways.length > 0 && (
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
               {/* Left Selection Columns */}
-              <div id="audit-selector-group" className="lg:col-span-4 space-y-3">
+              <div
+                id="audit-selector-group"
+                className="lg:col-span-4 space-y-3 lg:max-h-128 lg:overflow-y-auto pr-1"
+              >
                 {pathways.map((pathway) => (
                   <button
                     id={`audit-profile-btn-${pathway.id}`}

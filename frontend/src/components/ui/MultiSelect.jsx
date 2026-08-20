@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
+import { createPortal } from "react-dom";
 import { Check, ChevronDown, Plus, Search, X } from "lucide-react";
 
 const DROPDOWN_ESTIMATED_HEIGHT = 300;
@@ -20,13 +21,14 @@ export default function MultiSelect({
 }) {
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
-  const [openUpward, setOpenUpward] = useState(false);
+  const [popupStyle, setPopupStyle] = useState(null);
   const [isCreating, setIsCreating] = useState(false);
   const [newOptionName, setNewOptionName] = useState("");
   const [isSubmittingCreate, setIsSubmittingCreate] = useState(false);
   const [createError, setCreateError] = useState("");
   const containerRef = useRef(null);
   const triggerRef = useRef(null);
+  const popupRef = useRef(null);
 
   const selectedOptions = options.filter((option) => values.includes(option.value));
 
@@ -40,9 +42,9 @@ export default function MultiSelect({
     if (!isOpen) return;
 
     const handleClickOutside = (event) => {
-      if (containerRef.current && !containerRef.current.contains(event.target)) {
-        setIsOpen(false);
-      }
+      if (containerRef.current && containerRef.current.contains(event.target)) return;
+      if (popupRef.current && popupRef.current.contains(event.target)) return;
+      setIsOpen(false);
     };
 
     document.addEventListener("mousedown", handleClickOutside);
@@ -59,10 +61,30 @@ export default function MultiSelect({
 
   useLayoutEffect(() => {
     if (!isOpen || !triggerRef.current) return;
-    const rect = triggerRef.current.getBoundingClientRect();
-    const spaceBelow = window.innerHeight - rect.bottom;
-    const spaceAbove = rect.top;
-    setOpenUpward(spaceBelow < DROPDOWN_ESTIMATED_HEIGHT && spaceAbove > spaceBelow);
+
+    const updatePosition = () => {
+      const rect = triggerRef.current.getBoundingClientRect();
+      const spaceBelow = window.innerHeight - rect.bottom;
+      const spaceAbove = rect.top;
+      const openUpward = spaceBelow < DROPDOWN_ESTIMATED_HEIGHT && spaceAbove > spaceBelow;
+
+      setPopupStyle({
+        position: "fixed",
+        left: rect.left,
+        width: rect.width,
+        ...(openUpward
+          ? { bottom: window.innerHeight - rect.top + 8, maxHeight: spaceAbove - 16 }
+          : { top: rect.bottom + 8, maxHeight: spaceBelow - 16 }),
+      });
+    };
+
+    updatePosition();
+    window.addEventListener("scroll", updatePosition, true);
+    window.addEventListener("resize", updatePosition);
+    return () => {
+      window.removeEventListener("scroll", updatePosition, true);
+      window.removeEventListener("resize", updatePosition);
+    };
   }, [isOpen]);
 
   const toggleOption = (option) => {
@@ -126,12 +148,15 @@ export default function MultiSelect({
           />
         </button>
 
-        {isOpen && !loading && (
-          <div
-            className={`absolute z-20 w-full bg-white border border-stone-200 rounded-xl shadow-lg overflow-hidden ${
-              openUpward ? "bottom-full mb-2" : "top-full mt-2"
-            }`}
-          >
+        {isOpen &&
+          !loading &&
+          popupStyle &&
+          createPortal(
+            <div
+              ref={popupRef}
+              style={{ ...popupStyle, zIndex: 200 }}
+              className="bg-white border border-stone-200 rounded-xl shadow-lg overflow-hidden flex flex-col"
+            >
             <div className="p-2 border-b border-stone-100 flex items-center gap-2">
               <Search className="w-3.5 h-3.5 text-stone-400 shrink-0" />
               <input
@@ -228,8 +253,9 @@ export default function MultiSelect({
                 )}
               </div>
             )}
-          </div>
-        )}
+            </div>,
+            document.body
+          )}
       </div>
 
       {selectedOptions.length > 0 && (

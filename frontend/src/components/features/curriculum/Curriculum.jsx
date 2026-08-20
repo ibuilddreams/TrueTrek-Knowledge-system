@@ -2,124 +2,178 @@
 
 import { useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import { AlertCircle, BookOpen, CheckCircle, LogIn, RefreshCw } from "lucide-react";
-import { motion } from "motion/react";
+import { useQuery } from "@tanstack/react-query";
+import {
+  AlertCircle,
+  CheckCircle2,
+  ChevronRight,
+  Clock,
+  Compass,
+  Filter,
+  GraduationCap,
+  Layers3,
+  Lock,
+  LogIn,
+  RefreshCw,
+  Sparkles,
+} from "lucide-react";
+import { motion, AnimatePresence } from "motion/react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "@/hooks/useTheme";
-import { AUTH_ROLES } from "@/constants/auth";
 import { ROUTES, getPortalRouteForRole } from "@/constants/routes";
-import { getPublicCourses } from "@/services/coursesService";
-import { getStudentEnrollments } from "@/services/studentCoursesService";
+import { getMyTierProgress, getPublicTierById, getPublicTiers } from "@/services/tiersService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import SectionHeading from "@/components/ui/SectionHeading";
+import CloseButton from "@/components/ui/CloseButton";
 import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
-import Pagination from "@/components/ui/Pagination";
-import CurriculumFilterBar from "./CurriculumFilterBar";
-import CourseTierCard from "./CourseTierCard";
-import CourseDetailPanel from "./CourseDetailPanel";
-import CurriculumLoginPrompt from "./CurriculumLoginPrompt";
 
-const PAGE_SIZE = 9;
+const STATUS_META = {
+  LOCKED: { label: "LOCKED", icon: Lock, pulse: false },
+  UNLOCKED: { label: "UNLOCKED", icon: Sparkles, pulse: false },
+  IN_PROGRESS: { label: "IN PROGRESS", icon: Sparkles, pulse: true },
+  COMPLETED: { label: "COMPLETED", icon: CheckCircle2, pulse: false },
+};
+
+const CATEGORY_COLORS = {
+  Athletic: {
+    vault: "bg-orange-950/40 text-orange-300 border-orange-800/50",
+    light: "bg-orange-50 text-orange-700 border-orange-200/50",
+  },
+  Academic: {
+    vault: "bg-blue-950/40 text-blue-300 border-blue-800/50",
+    light: "bg-blue-50 text-blue-700 border-blue-200/50",
+  },
+  Professional: {
+    vault: "bg-emerald-950/40 text-emerald-300 border-emerald-800/50",
+    light: "bg-emerald-50 text-emerald-700 border-emerald-200/50",
+  },
+  Vocational: {
+    vault: "bg-rose-950/40 text-rose-300 border-rose-800/50",
+    light: "bg-rose-50 text-rose-700 border-rose-200/50",
+  },
+  Legacy: {
+    vault: "bg-amber-950/40 text-amber-300 border-amber-800/50",
+    light: "bg-amber-50 text-amber-700 border-amber-200/50",
+  },
+  Foundation: {
+    vault: "bg-purple-950/40 text-purple-300 border-purple-800/50",
+    light: "bg-purple-50 text-purple-700 border-purple-200/50",
+  },
+};
+
+// Categories are real Category rows shared with courses (not a fixed enum), so any
+// category name not in CATEGORY_COLORS above (a newly added admin category) still
+// renders with a sensible neutral badge instead of breaking.
+function getCategoryColor(categoryName, vault) {
+  const palette = CATEGORY_COLORS[categoryName];
+  if (palette) return vault ? palette.vault : palette.light;
+  return vault ? "bg-stone-900 text-stone-300 border-stone-700" : "bg-stone-50 text-stone-700 border-stone-200";
+}
+
+function getStatusColor(status, vault) {
+  switch (status) {
+    case "COMPLETED":
+      return vault
+        ? "bg-emerald-900/30 text-emerald-300 border-emerald-700/40"
+        : "bg-emerald-50 text-emerald-700 border-emerald-200";
+    case "IN_PROGRESS":
+    case "UNLOCKED":
+      return vault
+        ? "bg-amber-900/30 text-amber-300 border-amber-700/40"
+        : "bg-amber-50 text-amber-700 border-amber-200";
+    default:
+      return vault
+        ? "bg-stone-800/60 text-stone-500 border-stone-700/50"
+        : "bg-stone-100 text-stone-400 border-stone-200/60";
+  }
+}
+
+function StatusPill({ status, vault }) {
+  const meta = STATUS_META[status];
+  if (!meta) return null;
+  const Icon = meta.icon;
+  return (
+    <span
+      className={`flex items-center gap-1 text-[10px] font-mono font-bold border px-2.5 py-1 rounded-full shrink-0 ${
+        meta.pulse ? "animate-pulse" : ""
+      } ${getStatusColor(status, vault)}`}
+    >
+      <Icon className="w-3 h-3 shrink-0" />
+      {meta.label}
+    </span>
+  );
+}
 
 export default function Curriculum() {
   const router = useRouter();
   const { isVault } = useTheme();
   const { isAuthenticated, role, user } = useAuth();
 
-  const [selectedCategoryId, setSelectedCategoryId] = useState(null);
-  const [page, setPage] = useState(1);
-  const [activeCourse, setActiveCourse] = useState(null);
-  const [loginPromptCourse, setLoginPromptCourse] = useState(null);
+  const [selectedFilter, setSelectedFilter] = useState("All");
+  const [activeTierId, setActiveTierId] = useState(null);
 
   const onNavigateToPortal = () => router.push(getPortalRouteForRole(role));
 
-  function handleSelectCategory(categoryId) {
-    setSelectedCategoryId(categoryId);
-    setPage(1);
-  }
-
-  // Paginated, server-filtered by category — the API call carries `page` and
-  // `category` as query params so the backend does the filtering, not the client.
   const {
-    data,
+    data: tiers = [],
     isLoading,
-    isFetching,
     isError,
     error,
     refetch,
   } = useQuery({
-    queryKey: ["curriculum-public-courses", page, selectedCategoryId],
+    queryKey: ["curriculum-tiers"],
     queryFn: async () => {
-      const response = await getPublicCourses({
-        page,
-        pageSize: PAGE_SIZE,
-        category: selectedCategoryId || undefined,
-      });
-      return response?.data || { results: [], count: 0 };
-    },
-    placeholderData: keepPreviousData,
-  });
-
-  const courses = data?.results || [];
-  const totalCourses = data?.count || 0;
-  const totalPages = Math.max(1, Math.ceil(totalCourses / PAGE_SIZE));
-
-  // Independent, unfiltered fetch used only to populate the filter tabs — the
-  // paginated/category-filtered query above can't be used for this, since once
-  // a category is selected its results would only ever contain that category.
-  const { data: categorySourceCourses = [] } = useQuery({
-    queryKey: ["curriculum-categories-source"],
-    queryFn: async () => {
-      const response = await getPublicCourses({ pageSize: 100 });
+      const response = await getPublicTiers({ pageSize: 100 });
       return response?.data?.results || [];
     },
-    staleTime: 5 * 60 * 1000,
   });
 
-  // Only students carry an enrollment concept — admins/teachers/faculty browse
-  // the catalog without a per-course locked/unlocked state.
-  const { data: enrollments = [] } = useQuery({
-    queryKey: ["studentEnrollments"],
+  const { data: myProgress = [] } = useQuery({
+    queryKey: ["my-tier-progress"],
     queryFn: async () => {
-      const response = await getStudentEnrollments({ page: 1, pageSize: 100 });
-      return response?.data?.results || [];
+      const response = await getMyTierProgress();
+      return response?.data || [];
     },
-    enabled: role === AUTH_ROLES.STUDENT,
+    enabled: isAuthenticated,
   });
+  const progressByTierId = useMemo(
+    () => new Map(myProgress.map((row) => [row.tier.id, row])),
+    [myProgress]
+  );
 
-  const enrollmentByCourseId = useMemo(() => {
-    const map = new Map();
-    enrollments.forEach((item) => {
-      if (item.course?.id) map.set(item.course.id, item);
+  const activeTierQuery = useQuery({
+    queryKey: ["curriculum-tier-detail", activeTierId],
+    queryFn: async () => {
+      const response = await getPublicTierById(activeTierId);
+      return response?.data || null;
+    },
+    enabled: Boolean(activeTierId),
+  });
+  const activeTier = activeTierQuery.data;
+  const activeTierProgress = activeTierId ? progressByTierId.get(activeTierId) : null;
+
+  const categoryFilters = useMemo(() => {
+    const seen = new Map();
+    tiers.forEach((tier) => {
+      if (tier.category?.name && !seen.has(tier.category.name)) {
+        seen.set(tier.category.name, tier.category.id);
+      }
     });
-    return map;
-  }, [enrollments]);
+    return ["All", ...seen.keys()];
+  }, [tiers]);
 
-  function getEnrollmentStatus(courseId) {
-    if (role !== AUTH_ROLES.STUDENT) return null;
-    const enrollment = enrollmentByCourseId.get(courseId);
-    if (!enrollment) return "LOCKED";
-    if (enrollment.is_completed) return "COMPLETED";
-    if (enrollment.status === "ACTIVE") return "IN_PROGRESS";
-    return null;
-  }
+  const filteredTiers = useMemo(() => {
+    if (selectedFilter === "All") return tiers;
+    return tiers.filter((tier) => tier.category?.name === selectedFilter);
+  }, [tiers, selectedFilter]);
 
-  const categories = useMemo(() => {
-    const map = new Map();
-    categorySourceCourses.forEach((course) => {
-      if (course.category?.id) map.set(course.category.id, course.category);
-    });
-    return Array.from(map.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [categorySourceCourses]);
-
-  function handleCardClick(course) {
+  function handleSelectPathway() {
     if (!isAuthenticated) {
-      setLoginPromptCourse(course);
+      router.push(ROUTES.LOGIN);
       return;
     }
-    setActiveCourse(course);
+    router.push(ROUTES.PATHWAYS);
   }
 
   return (
@@ -132,13 +186,13 @@ export default function Curriculum() {
       <div className="max-w-6xl mx-auto">
         <SectionHeading
           className="mb-12"
-          eyebrow="Modular Framework Structure"
+          eyebrow="The Life Education Journey"
           eyebrowClassName={isVault ? "text-amber-500" : "text-amber-700"}
-          heading="Curriculum"
+          heading="Tier Curriculum"
           headingClassName={`text-4xl md:text-5xl font-serif font-semibold tracking-tight ${
             isVault ? "text-stone-100" : "text-stone-900"
           }`}
-          subtitle="Explore every course on TrueTrek Learning, browse each module and lesson inside, and pick up right where you left off."
+          subtitle="Nine tiers, each built around a stage of the journey — from foundational readiness through elite and executive mastery. Explore what's inside before you commit to a pathway."
           subtitleClassName={`text-sm max-w-2xl mx-auto font-light leading-relaxed mb-4 ${
             isVault ? "text-stone-400" : "text-stone-600"
           }`}
@@ -157,7 +211,7 @@ export default function Curriculum() {
                   isVault ? "bg-emerald-600/15 text-emerald-400" : "bg-emerald-600/10 text-emerald-700"
                 }`}
               >
-                <CheckCircle className="w-4 h-4" />
+                <CheckCircle2 className="w-4 h-4" />
               </div>
               <div>
                 <p
@@ -172,8 +226,7 @@ export default function Curriculum() {
                     isVault ? "text-emerald-400" : "text-emerald-700"
                   }`}
                 >
-                  Signed in as {user?.name || user?.email}. Open a course below to view its full
-                  curriculum and track progress.
+                  Signed in as {user?.name || user?.email}. Your real progress is shown on each tier below.
                 </p>
               </div>
             </div>
@@ -198,7 +251,7 @@ export default function Curriculum() {
                   isVault ? "bg-amber-600/15 text-amber-500" : "bg-amber-600/10 text-amber-750"
                 }`}
               >
-                <LogIn className="w-4 h-4" />
+                <Layers3 className="w-4 h-4" />
               </div>
               <div>
                 <p
@@ -213,8 +266,7 @@ export default function Curriculum() {
                     isVault ? "text-stone-400" : "text-stone-500"
                   }`}
                 >
-                  Log in to open a course's full curriculum, track enrollment progress, and
-                  continue lessons.
+                  Every tier is visible to everyone. Sign in to track your own progress through them.
                 </p>
               </div>
             </div>
@@ -232,11 +284,37 @@ export default function Curriculum() {
           </div>
         )}
 
-        <CurriculumFilterBar
-          categories={categories}
-          selectedCategoryId={selectedCategoryId}
-          onSelect={handleSelectCategory}
-        />
+        <div
+          className={`flex flex-wrap items-center justify-center gap-2 mb-12 border-b pb-6 ${
+            isVault ? "border-stone-800" : "border-stone-200"
+          }`}
+        >
+          <span
+            className={`mr-2 font-mono text-xs flex items-center gap-1 ${
+              isVault ? "text-stone-400" : "text-stone-500"
+            }`}
+          >
+            <Filter className="w-3.5 h-3.5" /> Filter Category:
+          </span>
+          {categoryFilters.map((filter) => (
+            <button
+              id={`filter-tag-${filter.replace(/\s+/g, "-").toLowerCase()}`}
+              key={filter}
+              onClick={() => setSelectedFilter(filter)}
+              className={`px-4 py-2 rounded-full text-xs font-mono tracking-wide transition duration-300 border ${
+                selectedFilter === filter
+                  ? isVault
+                    ? "bg-amber-600 text-stone-950 border-amber-600 font-semibold"
+                    : "bg-stone-900 text-white border-stone-900 font-semibold"
+                  : isVault
+                    ? "bg-stone-900/60 hover:bg-stone-800 text-stone-400 border-stone-700"
+                    : "bg-white hover:bg-stone-100 text-stone-600 border-stone-200/80 shadow-xs"
+              }`}
+            >
+              {filter}
+            </button>
+          ))}
+        </div>
 
         {isLoading && (
           <div className="flex min-h-[40vh] items-center justify-center" aria-busy="true">
@@ -270,7 +348,7 @@ export default function Curriculum() {
               onClick={() => refetch()}
               className={`inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition ${
                 isVault
-                  ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
+                  ? "bg-amber-600 hover:bg-amber-500 text-stone-100"
                   : "bg-stone-900 hover:bg-stone-800 text-stone-100"
               }`}
             >
@@ -280,59 +358,310 @@ export default function Curriculum() {
           </div>
         )}
 
-        {!isLoading && !isError && courses.length === 0 && (
+        {!isLoading && !isError && filteredTiers.length === 0 && (
           <div
             className={`rounded-2xl border border-dashed ${
               isVault ? "border-stone-700 bg-[#161412]/70" : "border-stone-200 bg-white/70"
             }`}
           >
             <EmptyState
-              icon={BookOpen}
-              label={selectedCategoryId === null ? "No courses published yet" : "No matching courses"}
-              description={
-                selectedCategoryId === null
-                  ? "Check back soon — new courses are added regularly."
-                  : "Try selecting a different category filter."
-              }
+              icon={Layers3}
+              label="No tiers in this category yet"
+              description="Try a different filter, or check back soon."
             />
           </div>
         )}
 
-        {!isLoading && !isError && courses.length > 0 && (
-          <>
-            <motion.div
-              id="tiers-cards-grid"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 transition-opacity duration-200 ${
-                isFetching ? "opacity-60" : "opacity-100"
-              }`}
-            >
-              {courses.map((course) => (
-                <CourseTierCard
-                  key={course.id}
-                  course={course}
-                  enrollmentStatus={getEnrollmentStatus(course.id)}
-                  onClick={() => handleCardClick(course)}
-                />
-              ))}
-            </motion.div>
+        {!isLoading && !isError && filteredTiers.length > 0 && (
+          <motion.div
+            id="tiers-cards-grid"
+            initial={{ opacity: 0, y: 8 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.25, ease: "easeOut" }}
+            className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+          >
+            {filteredTiers.map((tier) => {
+              const progress = progressByTierId.get(tier.id);
+              return (
+                <div
+                  id={`tier-card-${tier.id}`}
+                  key={tier.id}
+                  onClick={() => setActiveTierId(tier.id)}
+                  className={`border rounded-2xl p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer flex flex-col justify-between group ${
+                    isVault ? "bg-[#161412] border-stone-800" : "bg-white border-stone-200/80"
+                  }`}
+                >
+                  <div>
+                    <div
+                      className={`flex items-center justify-between gap-2 border-b pb-3 mb-4 ${
+                        isVault ? "border-stone-800" : "border-stone-100"
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 min-w-0">
+                        <span
+                          className={`font-mono text-xs font-bold px-2.5 py-1 rounded-md shrink-0 ${
+                            isVault ? "text-amber-500 bg-amber-600/15" : "text-amber-750 bg-amber-50"
+                          }`}
+                        >
+                          Tier {tier.level}
+                        </span>
+                        <span
+                          className={`text-[10px] uppercase font-mono tracking-wider px-2 py-0.5 rounded-full border truncate ${getCategoryColor(
+                            tier.category?.name,
+                            isVault
+                          )}`}
+                        >
+                          {tier.category?.name || "Uncategorized"}
+                        </span>
+                      </div>
+                      {isAuthenticated && progress && <StatusPill status={progress.status} vault={isVault} />}
+                    </div>
 
-            <Pagination
-              page={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              totalLabel={`${totalCourses} course${totalCourses === 1 ? "" : "s"}`}
-            />
-          </>
+                    <h3
+                      className={`text-lg font-serif font-semibold tracking-tight mb-2 transition-colors duration-250 ${
+                        isVault
+                          ? "text-stone-100 group-hover:text-amber-500"
+                          : "text-stone-900 group-hover:text-amber-800"
+                      }`}
+                    >
+                      {tier.name}
+                    </h3>
+                    {tier.audience && (
+                      <p className="text-xs font-mono text-stone-400 mb-3 tracking-tight">
+                        Focus: {tier.audience}
+                      </p>
+                    )}
+                    <p className="text-[11px] font-mono uppercase tracking-wider text-stone-400 mb-3">
+                      {tier.pathway_count} pathway{tier.pathway_count === 1 ? "" : "s"}
+                    </p>
+                  </div>
+
+                  <div
+                    className={`flex items-center justify-between pt-4 border-t ${
+                      isVault ? "border-stone-800" : "border-stone-100"
+                    }`}
+                  >
+                    <span className="text-stone-400 text-[11px] font-mono">
+                      {tier.estimated_duration || "Self-paced"}
+                    </span>
+                    <span
+                      className={`text-xs font-semibold flex items-center gap-0.5 group-hover:gap-1.5 transition-all ${
+                        isVault ? "text-amber-500" : "text-amber-700"
+                      }`}
+                    >
+                      Analyze Tier Details
+                      <ChevronRight className="w-3.5 h-3.5" />
+                    </span>
+                  </div>
+                </div>
+              );
+            })}
+          </motion.div>
         )}
 
-        <CourseDetailPanel course={activeCourse} onClose={() => setActiveCourse(null)} />
-        <CurriculumLoginPrompt
-          course={loginPromptCourse}
-          onClose={() => setLoginPromptCourse(null)}
-        />
+        <AnimatePresence>
+          {activeTierId && (
+            <>
+              <div
+                id="drawer-backdrop"
+                onClick={() => setActiveTierId(null)}
+                className="fixed inset-0 bg-stone-900/40 backdrop-blur-xs z-50 transition-opacity"
+              />
+
+              <motion.div
+                id="drawer-surface"
+                initial={{ x: "100%" }}
+                animate={{ x: 0 }}
+                exit={{ x: "100%" }}
+                transition={{ type: "spring", damping: 25, stiffness: 200 }}
+                className={`fixed right-0 top-0 bottom-0 w-full max-w-lg shadow-2xl z-50 p-6 md:p-8 flex flex-col justify-between overflow-y-auto ${
+                  isVault ? "bg-[#161412] border-l border-stone-800" : "bg-white"
+                }`}
+              >
+                {activeTierQuery.isLoading || !activeTier ? (
+                  <div className="flex-1 flex items-center justify-center">
+                    <Loader fullScreen={false} label="Loading tier..." />
+                  </div>
+                ) : (
+                  <>
+                    <div>
+                      <div
+                        className={`flex items-center justify-between border-b pb-4 mb-6 ${
+                          isVault ? "border-stone-800" : "border-stone-100"
+                        }`}
+                      >
+                        <div className="flex flex-wrap items-center gap-2">
+                          <span
+                            className={`font-mono text-sm font-bold px-3 py-1.5 rounded-lg border ${
+                              isVault
+                                ? "text-amber-400 bg-amber-600/15 border-amber-700/40"
+                                : "text-amber-800 bg-amber-50 border-amber-200/40"
+                            }`}
+                          >
+                            Tier {activeTier.level}
+                          </span>
+                          <span
+                            className={`text-xs uppercase font-mono tracking-widest px-3 py-1 rounded-full border ${getCategoryColor(
+                              activeTier.category?.name,
+                              isVault
+                            )}`}
+                          >
+                            {activeTier.category?.name || "Uncategorized"}
+                          </span>
+                          {isAuthenticated && activeTierProgress && (
+                            <StatusPill status={activeTierProgress.status} vault={isVault} />
+                          )}
+                        </div>
+                        <CloseButton onClick={() => setActiveTierId(null)} title="Close details drawer" />
+                      </div>
+
+                      <h3
+                        className={`text-2xl md:text-3xl font-serif font-bold tracking-tight mb-1 ${
+                          isVault ? "text-stone-100" : "text-stone-900"
+                        }`}
+                      >
+                        {activeTier.name}
+                      </h3>
+                      {activeTier.audience && (
+                        <p
+                          className={`font-mono text-xs tracking-wider uppercase mb-4 ${
+                            isVault ? "text-stone-400" : "text-stone-500"
+                          }`}
+                        >
+                          {activeTier.audience}
+                        </p>
+                      )}
+
+                      {activeTier.audience && (
+                        <div
+                          className={`border p-4 rounded-xl mb-6 ${
+                            isVault ? "bg-stone-900/40 border-stone-800" : "bg-stone-50 border-stone-200/60"
+                          }`}
+                        >
+                          <p className="text-stone-400 text-[10px] font-mono uppercase tracking-wider mb-1">
+                            AUDIENCE SCOPE
+                          </p>
+                          <p className={`text-sm font-medium ${isVault ? "text-stone-200" : "text-stone-800"}`}>
+                            {activeTier.audience}
+                          </p>
+                        </div>
+                      )}
+
+                      <p
+                        className={`text-sm leading-relaxed mb-8 font-light ${
+                          isVault ? "text-stone-400" : "text-stone-600"
+                        }`}
+                      >
+                        {activeTier.focus_description || "No description has been added for this tier yet."}
+                      </p>
+
+                      <div className="mb-6">
+                        <div className="flex items-center gap-2 mb-3">
+                          <Compass className="w-4 h-4 text-amber-700" />
+                          <h4
+                            className={`text-xs font-mono uppercase tracking-wider ${
+                              isVault ? "text-stone-100" : "text-stone-900"
+                            }`}
+                          >
+                            CURRICULUM FOCUS PATHWAYS
+                          </h4>
+                        </div>
+                        {activeTier.pathways?.length ? (
+                          <div className="flex flex-wrap gap-2">
+                            {activeTier.pathways.map((tierPathway) => (
+                              <span
+                                key={tierPathway.id}
+                                className={`px-3.5 py-2 rounded-xl text-xs font-medium border ${
+                                  isVault
+                                    ? "bg-stone-800/60 text-stone-300 border-stone-700/50"
+                                    : "bg-stone-100 text-stone-800 border-stone-200/40"
+                                }`}
+                              >
+                                {tierPathway.pathway.name}
+                              </span>
+                            ))}
+                          </div>
+                        ) : (
+                          <p className={`text-xs font-light ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+                            Pathways for this tier are being finalized.
+                          </p>
+                        )}
+                      </div>
+
+                      <div className="mb-8">
+                        <div className="flex items-center gap-2 mb-3">
+                          <GraduationCap className="w-4 h-4 text-amber-700" />
+                          <h4
+                            className={`text-xs font-mono uppercase tracking-wider ${
+                              isVault ? "text-stone-100" : "text-stone-900"
+                            }`}
+                          >
+                            WHAT YOU'LL LEARN
+                          </h4>
+                        </div>
+                        {activeTier.pathways?.length ? (
+                          <ul className="space-y-2">
+                            {activeTier.pathways.map((tierPathway) => (
+                              <li
+                                key={tierPathway.id}
+                                className={`flex items-start gap-2.5 text-xs leading-relaxed ${
+                                  isVault ? "text-stone-400" : "text-stone-650"
+                                }`}
+                              >
+                                <span className="w-1.5 h-1.5 rounded-full bg-amber-600 mt-1.5 shrink-0" />
+                                <span>
+                                  Complete <strong>{tierPathway.pathway.name}</strong> —{" "}
+                                  {tierPathway.pathway.course_count} course
+                                  {tierPathway.pathway.course_count === 1 ? "" : "s"}
+                                </span>
+                              </li>
+                            ))}
+                          </ul>
+                        ) : (
+                          <p className={`text-xs font-light ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+                            Outcomes will appear once pathways are attached to this tier.
+                          </p>
+                        )}
+                      </div>
+                    </div>
+
+                    <div
+                      className={`pt-6 border-t flex items-center justify-between -mx-6 md:-mx-8 -mb-6 md:-mb-8 p-6 ${
+                        isVault ? "border-stone-800 bg-stone-900/40" : "border-stone-100 bg-stone-50"
+                      }`}
+                    >
+                      <div
+                        className={`flex items-center gap-2 font-mono text-xs ${
+                          isVault ? "text-stone-400" : "text-stone-500"
+                        }`}
+                      >
+                        <Clock className="w-4 h-4 text-amber-700" />
+                        <span>
+                          ESTIMATED DURATION:{" "}
+                          <strong className={isVault ? "text-stone-200" : "text-stone-800"}>
+                            {activeTier.estimated_duration || "Self-paced"}
+                          </strong>
+                        </span>
+                      </div>
+                      <button
+                        id="drawer-select-pathway-btn"
+                        onClick={handleSelectPathway}
+                        className={`font-semibold text-xs px-5 py-2.5 rounded-lg tracking-wide transition flex items-center gap-1.5 ${
+                          isVault
+                            ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
+                            : "bg-stone-900 hover:bg-stone-800 text-white"
+                        }`}
+                      >
+                        {!isAuthenticated && <LogIn className="w-3.5 h-3.5" />}
+                        Select Pathway
+                      </button>
+                    </div>
+                  </>
+                )}
+              </motion.div>
+            </>
+          )}
+        </AnimatePresence>
       </div>
     </div>
   );

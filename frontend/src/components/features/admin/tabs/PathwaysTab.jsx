@@ -127,6 +127,25 @@ export default function PathwaysTab() {
       ),
     },
     {
+      key: "tiers",
+      header: "Tiers",
+      render: (pathway) =>
+        pathway.tiers?.length ? (
+          <div className="flex flex-wrap gap-1">
+            {pathway.tiers.map((tier) => (
+              <span
+                key={tier.id}
+                className="text-[10px] font-mono uppercase tracking-wider text-stone-600 bg-stone-100 border border-stone-200 rounded-md px-2 py-1"
+              >
+                #{tier.level} {tier.name}
+              </span>
+            ))}
+          </div>
+        ) : (
+          <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400">Unassigned</span>
+        ),
+    },
+    {
       key: "course_count",
       header: "Courses",
       render: (pathway) => pathway.course_count ?? 0,

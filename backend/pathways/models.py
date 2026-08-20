@@ -12,7 +12,6 @@ class Pathway(BaseModel):
     slug = models.SlugField(max_length=255, unique=True, blank=True)
     summary = models.CharField(max_length=500, blank=True)
     description = models.TextField(blank=True)
-    thumbnail = models.ImageField(upload_to="pathway_thumbnails/", null=True, blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     base_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
 

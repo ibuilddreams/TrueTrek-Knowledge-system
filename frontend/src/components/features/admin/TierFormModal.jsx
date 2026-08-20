@@ -2,9 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, Edit3, Route, X } from "lucide-react";
+import { Check, Edit3, Layers3, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
-import { createPathway, getPathwayById, updatePathway } from "@/services/pathwaysService";
+import { createTier, getTierById, updateTier } from "@/services/tiersService";
+import { getCategories } from "@/services/categoriesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
@@ -16,10 +17,12 @@ const STATUS_OPTIONS = [
 
 const INITIAL_FORM = {
   name: "",
-  summary: "",
-  description: "",
-  base_price: "0",
+  level: "1",
+  audience: "",
+  focus_description: "",
   status: "DRAFT",
+  category: "",
+  estimated_duration: "",
 };
 
 const FIELD_CLASS =
@@ -30,47 +33,54 @@ const LABEL_CLASS =
 
 const ERROR_CLASS = "text-[10px] font-mono text-red-600 mt-1";
 
-function sanitizeAmountInput(rawValue) {
-  const digitsAndDot = rawValue.replace(/[^0-9.]/g, "");
-  const [integerPart, ...decimalParts] = digitsAndDot.split(".");
-  if (decimalParts.length === 0) return integerPart;
-  return `${integerPart}.${decimalParts.join("").slice(0, 2)}`;
+function sanitizeIntegerInput(rawValue) {
+  return rawValue.replace(/[^0-9]/g, "");
 }
 
-export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) {
-  const isEditMode = Boolean(pathway);
+export default function TierFormModal({ isOpen, onClose, onSaved, tier }) {
+  const isEditMode = Boolean(tier);
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
 
-  const pathwayDetailQuery = useQuery({
-    queryKey: ["pathway", pathway?.id],
+  const tierDetailQuery = useQuery({
+    queryKey: ["tier", tier?.id],
     queryFn: async () => {
-      const response = await getPathwayById(pathway.id);
+      const response = await getTierById(tier.id);
       return response?.data || null;
     },
-    enabled: isOpen && Boolean(pathway?.id),
+    enabled: isOpen && Boolean(tier?.id),
   });
 
-  const createPathwayMutation = useMutation({
-    mutationFn: (payload) => createPathway(payload),
+  const categoriesQuery = useQuery({
+    queryKey: ["categories"],
+    queryFn: async () => {
+      const response = await getCategories({ pageSize: 100 });
+      return response?.data?.results || [];
+    },
+    enabled: isOpen,
+  });
+  const categories = categoriesQuery.data || [];
+
+  const createTierMutation = useMutation({
+    mutationFn: (payload) => createTier(payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pathways"] });
+      queryClient.invalidateQueries({ queryKey: ["tiers"] });
     },
   });
 
-  const updatePathwayMutation = useMutation({
-    mutationFn: ({ id, payload }) => updatePathway(id, payload),
+  const updateTierMutation = useMutation({
+    mutationFn: ({ id, payload }) => updateTier(id, payload),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["pathways"] });
-      queryClient.invalidateQueries({ queryKey: ["pathway", pathway?.id] });
+      queryClient.invalidateQueries({ queryKey: ["tiers"] });
+      queryClient.invalidateQueries({ queryKey: ["tier", tier?.id] });
     },
   });
 
-  const isSubmitting = createPathwayMutation.isPending || updatePathwayMutation.isPending;
-  const isLoadingPathway = isEditMode && pathwayDetailQuery.isLoading;
-  const isBusy = isSubmitting || isLoadingPathway;
+  const isSubmitting = createTierMutation.isPending || updateTierMutation.isPending;
+  const isLoadingTier = isEditMode && tierDetailQuery.isLoading;
+  const isBusy = isSubmitting || isLoadingTier;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -79,22 +89,24 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
   }, [isOpen]);
 
   useEffect(() => {
-    const detail = pathwayDetailQuery.data;
+    const detail = tierDetailQuery.data;
     if (!isOpen || !isEditMode || !detail) return;
 
     setForm({
       name: detail.name || "",
-      summary: detail.summary || "",
-      description: detail.description || "",
-      base_price: String(detail.base_price ?? 0),
+      level: String(detail.level ?? 1),
+      audience: detail.audience || "",
+      focus_description: detail.focus_description || "",
       status: detail.status || "DRAFT",
+      category: detail.category?.id ? String(detail.category.id) : "",
+      estimated_duration: detail.estimated_duration || "",
     });
-  }, [isOpen, isEditMode, pathwayDetailQuery.data]);
+  }, [isOpen, isEditMode, tierDetailQuery.data]);
 
   useEffect(() => {
-    if (!isOpen || !pathwayDetailQuery.isError) return;
-    toastError(getApiErrorMessage(pathwayDetailQuery.error, "Unable to load pathway details."));
-  }, [isOpen, pathwayDetailQuery.isError, pathwayDetailQuery.error]);
+    if (!isOpen || !tierDetailQuery.isError) return;
+    toastError(getApiErrorMessage(tierDetailQuery.error, "Unable to load tier details."));
+  }, [isOpen, tierDetailQuery.isError, tierDetailQuery.error]);
 
   const handleClose = () => {
     if (isSubmitting) return;
@@ -106,24 +118,20 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
     setFieldErrors((prev) => ({ ...prev, [field]: null }));
   };
 
-  const handleAmountChange = (event) => {
-    setForm((prev) => ({ ...prev, base_price: sanitizeAmountInput(event.target.value) }));
-    setFieldErrors((prev) => ({ ...prev, base_price: null }));
+  const handleLevelChange = (event) => {
+    setForm((prev) => ({ ...prev, level: sanitizeIntegerInput(event.target.value) }));
+    setFieldErrors((prev) => ({ ...prev, level: null }));
   };
 
   const handleSubmit = async (event) => {
     event.preventDefault();
 
     const name = form.name.trim();
-    const summary = form.summary.trim();
-    const basePrice = Number(form.base_price);
+    const level = Number(form.level);
 
     const errors = {};
     if (!name) errors.name = "Name is required.";
-    if (!summary) errors.summary = "Summary is required.";
-    if (!Number.isFinite(basePrice) || basePrice < 0) {
-      errors.base_price = "Base price must be a positive number.";
-    }
+    if (!Number.isFinite(level) || level < 1) errors.level = "Level must be a positive number.";
 
     if (Object.keys(errors).length > 0) {
       setFieldErrors(errors);
@@ -132,17 +140,19 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
 
     const payload = {
       name,
-      summary,
-      description: form.description.trim(),
-      base_price: basePrice,
+      level,
+      audience: form.audience.trim(),
+      focus_description: form.focus_description.trim(),
       status: form.status,
+      category: form.category ? Number(form.category) : null,
+      estimated_duration: form.estimated_duration.trim(),
     };
 
     try {
       const response = isEditMode
-        ? await updatePathwayMutation.mutateAsync({ id: pathway.id, payload })
-        : await createPathwayMutation.mutateAsync(payload);
-      toastSuccess(response?.message || `Pathway ${isEditMode ? "updated" : "created"} successfully.`);
+        ? await updateTierMutation.mutateAsync({ id: tier.id, payload })
+        : await createTierMutation.mutateAsync(payload);
+      toastSuccess(response?.message || `Tier ${isEditMode ? "updated" : "created"} successfully.`);
       onSaved?.();
       handleClose();
     } catch (error) {
@@ -154,7 +164,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
         });
         setFieldErrors(mapped);
       }
-      toastError(getApiErrorMessage(error, `Unable to ${isEditMode ? "update" : "create"} pathway.`));
+      toastError(getApiErrorMessage(error, `Unable to ${isEditMode ? "update" : "create"} tier.`));
     }
   };
 
@@ -162,9 +172,9 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      icon={isEditMode ? Edit3 : Route}
-      title={isEditMode ? "Edit Pathway" : "Add Pathway"}
-      subtitle={isEditMode ? "Update the pathway details." : "Create a new pathway."}
+      icon={isEditMode ? Edit3 : Layers3}
+      title={isEditMode ? "Edit Tier" : "Add Tier"}
+      subtitle={isEditMode ? "Update the tier details." : "Create a new curriculum tier."}
       maxWidth="max-w-2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -175,7 +185,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
             value={form.name}
             onChange={updateField("name")}
             disabled={isBusy}
-            placeholder="Pathway name"
+            placeholder="e.g. The Blueprint"
             className={FIELD_CLASS}
             autoComplete="off"
           />
@@ -183,45 +193,45 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
         </div>
 
         <div>
-          <label className={LABEL_CLASS}>Summary</label>
+          <label className={LABEL_CLASS}>Audience</label>
           <input
             type="text"
-            value={form.summary}
-            onChange={updateField("summary")}
+            value={form.audience}
+            onChange={updateField("audience")}
             disabled={isBusy}
-            placeholder="Short one-line summary"
+            placeholder="e.g. 8th-10th Grade Athletes"
             className={FIELD_CLASS}
             autoComplete="off"
           />
-          {fieldErrors.summary && <p className={ERROR_CLASS}>{fieldErrors.summary}</p>}
+          {fieldErrors.audience && <p className={ERROR_CLASS}>{fieldErrors.audience}</p>}
         </div>
 
         <div>
-          <label className={LABEL_CLASS}>Description</label>
+          <label className={LABEL_CLASS}>Focus Description</label>
           <textarea
-            value={form.description}
-            onChange={updateField("description")}
+            value={form.focus_description}
+            onChange={updateField("focus_description")}
             disabled={isBusy}
-            placeholder="Full pathway description"
+            placeholder="What this tier focuses on"
             rows={4}
             className={`${FIELD_CLASS} resize-none`}
           />
-          {fieldErrors.description && <p className={ERROR_CLASS}>{fieldErrors.description}</p>}
+          {fieldErrors.focus_description && <p className={ERROR_CLASS}>{fieldErrors.focus_description}</p>}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className={LABEL_CLASS}>Base Price ($)</label>
+            <label className={LABEL_CLASS}>Level</label>
             <input
               type="text"
-              inputMode="decimal"
-              value={form.base_price}
-              onChange={handleAmountChange}
+              inputMode="numeric"
+              value={form.level}
+              onChange={handleLevelChange}
               disabled={isBusy}
-              placeholder="0.00"
+              placeholder="1"
               className={FIELD_CLASS}
             />
-            {fieldErrors.base_price && <p className={ERROR_CLASS}>{fieldErrors.base_price}</p>}
+            {fieldErrors.level && <p className={ERROR_CLASS}>{fieldErrors.level}</p>}
           </div>
 
           <div>
@@ -239,6 +249,40 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
               ))}
             </select>
             {fieldErrors.status && <p className={ERROR_CLASS}>{fieldErrors.status}</p>}
+          </div>
+        </div>
+
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+          <div>
+            <label className={LABEL_CLASS}>Category</label>
+            <select
+              value={form.category}
+              onChange={updateField("category")}
+              disabled={isBusy || categoriesQuery.isLoading}
+              className={FIELD_CLASS}
+            >
+              <option value="">Uncategorized</option>
+              {categories.map((option) => (
+                <option key={option.id} value={option.id}>
+                  {option.name}
+                </option>
+              ))}
+            </select>
+            {fieldErrors.category && <p className={ERROR_CLASS}>{fieldErrors.category}</p>}
+          </div>
+
+          <div>
+            <label className={LABEL_CLASS}>Estimated Duration</label>
+            <input
+              type="text"
+              value={form.estimated_duration}
+              onChange={updateField("estimated_duration")}
+              disabled={isBusy}
+              placeholder="e.g. 12 Months"
+              className={FIELD_CLASS}
+              autoComplete="off"
+            />
+            {fieldErrors.estimated_duration && <p className={ERROR_CLASS}>{fieldErrors.estimated_duration}</p>}
           </div>
         </div>
 
@@ -266,7 +310,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
             ) : (
               <>
                 <Check className="w-3.5 h-3.5" />
-                {isEditMode ? "Update Pathway" : "Create Pathway"}
+                {isEditMode ? "Update Tier" : "Create Tier"}
               </>
             )}
           </button>

@@ -7,7 +7,6 @@ import {
   CheckCircle2,
   GraduationCap,
   Layers,
-  Route,
 } from "lucide-react";
 import { getPublicPathwayById } from "@/services/pathwaysService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
@@ -18,6 +17,7 @@ import Loader from "@/components/ui/Loader";
 export default function PathwayDetailModal({
   pathwayId,
   isSelected = false,
+  isOwned = false,
   canSelect = true,
   onClose,
   onToggleSelect,
@@ -54,30 +54,15 @@ export default function PathwayDetailModal({
 
       {!isLoading && !isError && pathway && (
         <div className="space-y-5">
-          <div className="relative h-48 -mx-5 -mt-5 sm:-mx-7 sm:-mt-7 rounded-t-2xl overflow-hidden bg-stone-100">
-            {pathway.image ? (
-              <img
-                src={pathway.image}
-                alt={pathway.name}
-                className="w-full h-full object-cover"
-                referrerPolicy="no-referrer"
-              />
-            ) : (
-              <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-stone-800 to-stone-950">
-                <Route className="w-12 h-12 text-amber-500/70" />
-              </div>
-            )}
-            <div className="absolute inset-0 bg-gradient-to-t from-stone-950/70 to-transparent"></div>
-            <div className="absolute bottom-4 left-6 right-6 text-white text-left">
-              <span className="text-[9px] font-mono tracking-wider font-extrabold uppercase bg-amber-600 text-white px-2 py-0.5 rounded-md mb-2 inline-flex items-center gap-1">
-                <Layers className="w-3 h-3" />
-                {pathway.courses?.length || 0} Course
-                {(pathway.courses?.length || 0) === 1 ? "" : "s"}
-              </span>
-              <h3 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-white leading-tight">
-                {pathway.name}
-              </h3>
-            </div>
+          <div className="space-y-3 border-b border-stone-100 pb-4">
+            <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-md text-amber-700 bg-amber-50 inline-flex items-center gap-1.5">
+              <Layers className="w-3 h-3" />
+              {pathway.courses?.length || 0} Course
+              {(pathway.courses?.length || 0) === 1 ? "" : "s"}
+            </span>
+            <h3 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-stone-900 leading-tight">
+              {pathway.name}
+            </h3>
           </div>
 
           <div className="flex items-center justify-between">
@@ -153,7 +138,15 @@ export default function PathwayDetailModal({
             >
               Close
             </button>
-            {canSelect ? (
+            {isOwned ? (
+              <span
+                className="flex-1 font-mono text-[11px] uppercase font-bold py-3 rounded-xl flex items-center justify-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200"
+                title="You already have access to this pathway"
+              >
+                <CheckCircle2 className="w-4 h-4" />
+                Already Purchased
+              </span>
+            ) : canSelect ? (
               <button
                 type="button"
                 onClick={() => {
