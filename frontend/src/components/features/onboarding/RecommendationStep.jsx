@@ -130,6 +130,13 @@ export default function RecommendationStep({
                         </span>
                       )}
                     </div>
+                    {pathway.tiers?.length > 0 && (
+                      <p className="text-[10px] font-mono uppercase tracking-wider text-amber-700 mb-1.5">
+                        {pathway.tiers
+                          .map((tier) => `Tier ${tier.level} — ${tier.name}`)
+                          .join(" · ")}
+                      </p>
+                    )}
                     <p className="text-xs text-stone-500 font-light leading-relaxed mb-2 line-clamp-2">
                       {pathway.summary}
                     </p>

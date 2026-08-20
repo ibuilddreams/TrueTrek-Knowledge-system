@@ -18,7 +18,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES, getPortalRouteForRole } from "@/constants/routes";
-import { checkoutPathways, getPublicPathways } from "@/services/pathwaysService";
+import { checkoutPathways, getMyPathways, getPublicPathways } from "@/services/pathwaysService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatCoursePrice } from "@/lib/store";
 import { toastError, toastInfo, toastSuccess } from "@/lib/toast";
@@ -63,6 +63,19 @@ export default function PathwaysStore() {
   const totalPathways = data?.count || 0;
   const totalPages = Math.max(1, Math.ceil(totalPathways / PAGE_SIZE));
 
+  const { data: myPathwaysData } = useQuery({
+    queryKey: ["my-pathways"],
+    queryFn: async () => {
+      const response = await getMyPathways();
+      return response?.data || [];
+    },
+    enabled: isAuthenticated && isStudent,
+  });
+  const ownedPathwayIds = useMemo(
+    () => new Set((myPathwaysData || []).map((enrollment) => enrollment.pathway.id)),
+    [myPathwaysData],
+  );
+
   const selectedPathways = useMemo(() => Array.from(selectedMap.values()), [selectedMap]);
   const selectedIds = useMemo(() => new Set(selectedMap.keys()), [selectedMap]);
   const selectedTotal = useMemo(
@@ -79,6 +92,11 @@ export default function PathwaysStore() {
 
     if (!isStudent) {
       toastInfo("Only student accounts can purchase pathways.");
+      return;
+    }
+
+    if (ownedPathwayIds.has(pathway.id)) {
+      toastInfo("You already have access to this pathway.");
       return;
     }
 
@@ -285,6 +303,7 @@ export default function PathwaysStore() {
                   key={pathway.id}
                   pathway={pathway}
                   isSelected={selectedIds.has(pathway.id)}
+                  isOwned={ownedPathwayIds.has(pathway.id)}
                   canSelect={canSelect}
                   onViewDetails={(item) => setViewingPathwayId(item.id)}
                   onToggleSelect={toggleSelect}
@@ -338,6 +357,7 @@ export default function PathwaysStore() {
       <PathwayDetailModal
         pathwayId={viewingPathwayId}
         isSelected={viewingPathwayId ? selectedIds.has(viewingPathwayId) : false}
+        isOwned={viewingPathwayId ? ownedPathwayIds.has(viewingPathwayId) : false}
         canSelect={canSelect}
         onClose={() => setViewingPathwayId(null)}
         onToggleSelect={toggleSelect}

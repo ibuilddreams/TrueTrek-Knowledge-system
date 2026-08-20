@@ -53,6 +53,7 @@ INSTALLED_APPS = [
     'pathways',
     'onboarding',
     'future_clients',
+    'tiers',
     'reports',
     'search',
     'uploads',

@@ -28,6 +28,7 @@ urlpatterns = [
     path('api/progress/', include('progress.urls')),
     path('api/dashboard/', include('dashboard.urls')),
     path('api/pathways/', include('pathways.urls')),
+    path('api/tiers/', include('tiers.urls')),
     path('api/onboarding/', include('onboarding.urls')),
     path('api/future-clients/', include('future_clients.urls')),
     path('api/auth/login/', CustomTokenObtainPairView.as_view()),

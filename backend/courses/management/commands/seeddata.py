@@ -1,22 +1,33 @@
 from datetime import timedelta
 
+import requests
 from django.contrib.auth import get_user_model
-from django.core.management.base import BaseCommand
+from django.core.files.base import ContentFile
+from django.core.files.storage import default_storage
+from django.core.management.base import BaseCommand, CommandError
 from django.db import transaction
 from django.utils import timezone
+from django.utils.text import slugify
 
 from assignments.models import Assignment
+from carts.models import CartItem
 from common.models import Status
 from common.ordering import get_next_order
 from courses.models import Category, Course, CourseInstructor, Tag
+from daily_drill.models import DrillOption, DrillQuestion
+from enrollments.models import Enrollment, EnrollmentHistory
+from future_clients.models import FutureClientApplication
 from lessons.models import Lesson
 from modules.models import Module
+from onboarding.models import OnboardingProgress
 from onboarding.models import Question as OnboardingQuestion
 from onboarding.models import QuestionOption, QuestionOptionPathwayWeight
-from pathways.models import Pathway, PathwayBundleRule, PathwayCourse
+from pathways.models import Pathway, PathwayBundleRule, PathwayCourse, PathwayEnrollment
+from progress.models import CourseProgress, LearningActivity, LessonProgress, ModuleProgress
 from quizzes.models import Choice
 from quizzes.models import Question as QuizQuestion
 from quizzes.models import Quiz
+from tiers.models import Tier, TierPathway, TierProgress
 
 User = get_user_model()
 
@@ -62,7 +73,51 @@ STUDENT_NAMES = [
     ("Jacob", "Lewis"),
 ]
 
+# The single curated category vocabulary shared by Course.category and
+# Tier.category (see courses/migrations/0003_seed_tier_categories.py and
+# 0004_consolidate_categories.py). `_reset_data` wipes every category and this
+# command recreates exactly this list, so a reseed can never reintroduce the
+# divergent one-off categories those migrations consolidated away.
+CATEGORY_NAMES = ["Academic", "Athletic", "Foundation", "Legacy", "Professional", "Vocational"]
+
 YOUTUBE_DEMO_URL = "https://www.youtube.com/watch?v=dQw4w9WgXcQ"
+
+# Real, publicly hosted sample files. `_download_assets` fetches each one ONCE
+# into MEDIA_ROOT before the seeding transaction opens, then the seeded rows
+# point their FileField/ImageField at the saved copy. Downloading (rather than
+# committing fixtures) is what makes local and server seeds identical, since
+# backend/media/ is gitignored and shipped fixtures would never reach the server.
+LESSON_PDF_URL = "https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf"
+LESSON_DOCX_URL = "https://calibre-ebook.com/downloads/demos/demo.docx"
+
+# Every PDF/DOCX lesson shares one downloaded file rather than getting its own
+# copy — the seeded documents are identical demo content, so 50+ duplicates on
+# disk would buy nothing.
+LESSON_ASSET_PATHS = {
+    "pdf": "lessons/seed-sample-lesson.pdf",
+    "docx": "lessons/seed-sample-lesson.docx",
+}
+LESSON_ASSET_URLS = {"pdf": LESSON_PDF_URL, "docx": LESSON_DOCX_URL}
+
+# One thumbnail per course, keyed by course code. Course.thumbnail is an
+# ImageField, so these are downloaded into MEDIA_ROOT/course_thumbnails/ and the
+# field points at the local copy — a remote URL cannot be stored directly,
+# because the serializers render it through `thumbnail.url` (see
+# courses/serializers.py and common/image.py).
+COURSE_THUMBNAIL_URLS = {
+    "PYTHON101": "https://images.unsplash.com/photo-1526379095098-d400fd0bf935?w=1200&q=80",
+    "WEBDEV101": "https://images.unsplash.com/photo-1517180102446-f3ece451e9d8?w=1200&q=80",
+    "ALGEBRA101": "https://images.unsplash.com/photo-1635070041078-e363dbe005cb?w=1200&q=80",
+    "HISTORY101": "https://images.unsplash.com/photo-1461360370896-922624d12aa1?w=1200&q=80",
+    "BIOLOGY101": "https://images.unsplash.com/photo-1576086213369-97a306d36557?w=1200&q=80",
+    "BUSINESS101": "https://images.unsplash.com/photo-1454165804606-c3d57bc86b40?w=1200&q=80",
+    "WRITING101": "https://images.unsplash.com/photo-1455390582262-044cdead277a?w=1200&q=80",
+    "ATHLETIC101": "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=1200&q=80",
+    "NIL101": "https://images.unsplash.com/photo-1521791136064-7986c2920216?w=1200&q=80",
+    "T1-01": "https://images.unsplash.com/photo-1541339907198-e08756dedf3f?w=1200&q=80",
+    "T1-02": "https://images.unsplash.com/photo-1434030216411-0b793f4b4173?w=1200&q=80",
+    "T1-03": "https://images.unsplash.com/photo-1574717024653-61fd2cf4d44d?w=1200&q=80",
+}
 
 # Every module gets exactly these three lesson types, in this order, per the
 # "PDF, Video, DOC/DOCX in every module" requirement.
@@ -74,31 +129,34 @@ LESSON_TYPE_LABELS = {
     Lesson.ContentType.DOCUMENT: "Reference Guide (DOCX)",
 }
 
+# `asset` names the LESSON_ASSET_PATHS entry attached to Lesson.file. PDF and
+# DOCUMENT lessons must carry a file — lessons/serializers.py rejects them
+# without one — while VIDEO lessons carry a video_url instead.
 LESSON_TYPE_CONTENT = {
     Lesson.ContentType.VIDEO: {
         "video_url": YOUTUBE_DEMO_URL,
         "content_data": "",
         "duration_minutes": 12,
+        "asset": None,
     },
     Lesson.ContentType.PDF: {
         "video_url": None,
         "content_data": "Downloadable PDF reference material covering this module's topic in depth.",
         "duration_minutes": None,
+        "asset": "pdf",
     },
     Lesson.ContentType.DOCUMENT: {
         "video_url": None,
         "content_data": "Supplementary DOCX handout with worked examples and practice notes.",
         "duration_minutes": None,
+        "asset": "docx",
     },
 }
-
-# Each module's `questions` list holds exactly 10 (text, [4 options], correct_index)
-# MCQ tuples, per the "10 MCQs, 4 options, one correct answer" requirement.
 COURSE_DEFS = [
     {
         "code": "PYTHON101",
         "title": "Python Programming Fundamentals",
-        "category": "Technology",
+        "category": "Vocational",
         "description": "A hands-on introduction to Python covering core syntax, data structures, functions, and object-oriented programming.",
         "difficulty": Course.Difficulty.BEGINNER,
         "amount": 149,
@@ -168,7 +226,7 @@ COURSE_DEFS = [
     {
         "code": "WEBDEV101",
         "title": "Web Development with JavaScript",
-        "category": "Technology",
+        "category": "Vocational",
         "description": "Build modern, interactive websites with HTML, CSS, and JavaScript, from static pages to dynamic web apps.",
         "difficulty": Course.Difficulty.INTERMEDIATE,
         "amount": 179,
@@ -238,7 +296,7 @@ COURSE_DEFS = [
     {
         "code": "ALGEBRA101",
         "title": "Algebra & Geometry Essentials",
-        "category": "Mathematics",
+        "category": "Academic",
         "description": "Build a strong foundation in algebra and geometry, from linear equations to core geometric formulas.",
         "difficulty": Course.Difficulty.BEGINNER,
         "amount": 99,
@@ -308,7 +366,7 @@ COURSE_DEFS = [
     {
         "code": "HISTORY101",
         "title": "World History: Civilizations & Empires",
-        "category": "Humanities",
+        "category": "Academic",
         "description": "Trace the rise and fall of major civilizations and empires, from ancient Egypt to the early modern world.",
         "difficulty": Course.Difficulty.BEGINNER,
         "amount": 89,
@@ -378,7 +436,7 @@ COURSE_DEFS = [
     {
         "code": "BIOLOGY101",
         "title": "Biology: Life Sciences Foundations",
-        "category": "Science",
+        "category": "Academic",
         "description": "Explore the fundamentals of biology, from cell structure to genetics and ecology.",
         "difficulty": Course.Difficulty.BEGINNER,
         "amount": 109,
@@ -448,7 +506,7 @@ COURSE_DEFS = [
     {
         "code": "BUSINESS101",
         "title": "Business & Entrepreneurship Basics",
-        "category": "Business",
+        "category": "Professional",
         "description": "Learn the fundamentals of running a business and launching a startup, from planning to marketing and finance.",
         "difficulty": Course.Difficulty.INTERMEDIATE,
         "amount": 159,
@@ -518,7 +576,7 @@ COURSE_DEFS = [
     {
         "code": "WRITING101",
         "title": "Academic Writing & Communication Skills",
-        "category": "Communication",
+        "category": "Academic",
         "description": "Strengthen grammar, essay writing, and public speaking skills for academic and professional success.",
         "difficulty": Course.Difficulty.BEGINNER,
         "amount": 79,
@@ -588,7 +646,7 @@ COURSE_DEFS = [
     {
         "code": "ATHLETIC101",
         "title": "Athletic Performance & Sports Psychology",
-        "category": "Athletics",
+        "category": "Athletic",
         "description": "Training principles, recovery science, and mental performance strategies for competitive student-athletes.",
         "difficulty": Course.Difficulty.BEGINNER,
         "amount": 139,
@@ -658,7 +716,7 @@ COURSE_DEFS = [
     {
         "code": "NIL101",
         "title": "NIL & Student-Athlete Branding",
-        "category": "Athletics",
+        "category": "Athletic",
         "description": "Practical guidance on Name, Image, and Likeness (NIL) opportunities, personal branding, and the recruiting process for student-athletes.",
         "difficulty": Course.Difficulty.INTERMEDIATE,
         "amount": 169,
@@ -721,6 +779,156 @@ COURSE_DEFS = [
                     ("What is 'compensation in kind' in an NIL deal?", ["Payment through goods or services rather than cash", "A type of penalty", "A tax exemption", "A recruiting violation"], 0),
                     ("Why should an athlete keep copies of all signed agreements?", ["To have a record of obligations and protect against future disputes", "Contracts are not legally binding otherwise", "It's required to remain eligible to play", "Copies are not necessary once signed"], 0),
                     ("What is a general best practice before agreeing to any NIL or endorsement deal?", ["Read and fully understand every term before signing", "Sign quickly to avoid losing the deal", "Skip reading and trust the other party", "Only verbal agreements are needed"], 0),
+                ],
+            },
+        ],
+    },
+    {
+        "code": "T1-01",
+        "title": "NCAA Academic Eligibility 101",
+        "category": "Athletic",
+        "description": "A complete walkthrough of NCAA academic eligibility requirements for prospective student-athletes — core course requirements, the sliding scale, and amateurism certification.",
+        "difficulty": Course.Difficulty.BEGINNER,
+        "amount": 49,
+        "modules": [
+            {
+                "title": "Understanding NCAA Eligibility Basics",
+                "description": "The core rules every student-athlete and parent needs to know first.",
+                "assignment": {
+                    "title": "Build Your Eligibility Timeline",
+                    "description": "Map your remaining high school semesters against the NCAA core-course requirements and identify which courses you still need and when you will take them.",
+                },
+                "questions": [
+                    ("What is the primary purpose of the NCAA Eligibility Center?", ["Certifying the academic and amateur status of prospective college athletes", "Scheduling college games", "Distributing athletic scholarships directly", "Ranking high school teams"], 0),
+                    ("How many NCAA-approved core courses must a Division I recruit complete?", ["16", "10", "20", "24"], 0),
+                    ("When should a student-athlete typically register with the NCAA Eligibility Center?", ["Around the start of their junior year of high school", "After graduating college", "In elementary school", "Only after signing with a team"], 0),
+                    ("Which subject areas count toward NCAA core courses?", ["English, math, natural/physical science, social science, and world language", "Physical education and study hall", "Elective art courses only", "Any course the school offers"], 0),
+                    ("What is a 'core-course GPA'?", ["A GPA calculated only from NCAA-approved core courses", "The same as the overall high school GPA", "A GPA based only on senior year grades", "A GPA that includes athletic performance"], 0),
+                    ("Which document must a high school submit so its courses count as NCAA core courses?", ["An NCAA-approved list of courses for that high school", "A team roster", "A coach's recommendation letter", "A stadium safety report"], 0),
+                    ("What happens if a recruit does not meet Division I academic standards?", ["They may be ineligible to compete or receive athletics aid as a freshman", "They automatically become a Division III athlete", "Their high school diploma is revoked", "Nothing — standards are optional"], 0),
+                    ("Which NCAA division does not use the Eligibility Center's initial-eligibility certification for competition?", ["Division III", "Division I", "Division II", "All divisions require it"], 0),
+                    ("Why do transcripts need to be sent directly from the high school?", ["To provide an official, verified record the NCAA can certify", "Students are not allowed to see their own grades", "It reduces the number of core courses required", "It replaces the amateurism questionnaire"], 0),
+                    ("What is the safest general strategy for staying academically eligible?", ["Track core-course progress every semester rather than fixing it senior year", "Wait until senior year and retake courses then", "Focus only on athletic performance", "Assume the coach will handle eligibility"], 0),
+                ],
+            },
+            {
+                "title": "The Sliding Scale and Amateurism",
+                "description": "How GPA and test scores combine, and how to certify your amateur status.",
+                "assignment": {
+                    "title": "Sliding Scale Self-Assessment",
+                    "description": "Using your current core-course GPA, locate your position on the NCAA sliding scale and write a short plan for the grades you need in your remaining core courses.",
+                },
+                "questions": [
+                    ("What does the NCAA 'sliding scale' relate to each other?", ["Core-course GPA and standardized test scores", "Height and weight", "Team wins and scholarship value", "Attendance and graduation date"], 0),
+                    ("On a sliding scale, what happens if a recruit's core-course GPA is lower?", ["A higher test score is generally required", "The GPA requirement is waived", "The core-course count drops to 10", "Nothing changes"], 0),
+                    ("What is 'amateurism certification'?", ["Confirmation that an athlete has not violated rules on pay for athletic participation", "A physical fitness test", "A academic tutoring program", "A scholarship application"], 0),
+                    ("Which of these has historically been an amateurism concern for recruits?", ["Accepting pay or benefits based on athletic skill from a non-permitted source", "Playing on a high school team", "Attending a college campus tour", "Taking an AP class"], 0),
+                    ("What is an 'academic redshirt' status in Division I?", ["A status allowing aid and practice but not competition in the first year", "A permanent ban from college sports", "A guaranteed starting position", "An award for academic excellence"], 0),
+                    ("Why is the amateurism questionnaire part of the Eligibility Center process?", ["It collects the competition and compensation history the NCAA reviews", "It measures athletic ability", "It replaces the transcript", "It sets scholarship amounts"], 0),
+                    ("Which record should an athlete keep about outside teams they played for?", ["Team names, seasons, and any expenses or benefits received", "Only the team colors", "Nothing needs to be recorded", "Only the final scores"], 0),
+                    ("How do NIL earnings differ from traditional amateurism violations?", ["NIL compensation is permitted under current rules within specific requirements", "NIL earnings are always a violation", "NIL earnings are identical to pay-for-play", "NIL rules apply only to professionals"], 0),
+                    ("What should a recruit do before signing any agreement involving their athletic participation?", ["Confirm compliance with NCAA and school rules first", "Sign immediately to secure the money", "Ignore it — agreements do not affect eligibility", "Only tell their teammates"], 0),
+                    ("What is the most reliable source for current eligibility standards?", ["The NCAA Eligibility Center's official published requirements", "Social media rumors", "A teammate's recollection", "An unofficial fan forum"], 0),
+                ],
+            },
+        ],
+    },
+    {
+        "code": "T1-02",
+        "title": "Transcript Optimization",
+        "category": "Athletic",
+        "description": "Learn how college coaches and admissions officers actually read a high school transcript — GPA weighting, course rigor signals, and realistic strategies for improving a weak record.",
+        "difficulty": Course.Difficulty.BEGINNER,
+        "amount": 49,
+        "modules": [
+            {
+                "title": "How Coaches Read a Transcript",
+                "description": "What actually stands out to a recruiter skimming hundreds of transcripts.",
+                "assignment": {
+                    "title": "Transcript Self-Audit",
+                    "description": "Review your own transcript and write a one-page summary of its strongest signal, its weakest signal, and the single change that would improve it most.",
+                },
+                "questions": [
+                    ("What is the difference between a weighted and an unweighted GPA?", ["A weighted GPA gives extra points for advanced courses; an unweighted one does not", "They are calculated identically", "An unweighted GPA includes athletics", "A weighted GPA excludes core courses"], 0),
+                    ("What does 'course rigor' refer to on a transcript?", ["The difficulty level of the courses a student chose to take", "The number of absences", "The student's class rank only", "The size of the school"], 0),
+                    ("Why might a recruiter value an upward grade trend?", ["It signals growth, maturity, and the ability to handle harder coursework", "Grade trends are never considered", "It reduces the core-course requirement", "It replaces test scores"], 0),
+                    ("Which typically signals stronger academic preparation?", ["A B in an honors or AP course", "An A in a study hall", "A pass in physical education", "A withdrawn course"], 0),
+                    ("What does a 'W' or withdrawal on a transcript usually indicate?", ["A course was dropped after enrollment", "A course was passed with honors", "A perfect attendance record", "A transfer credit"], 0),
+                    ("Why is consistency across semesters important on a transcript?", ["It shows sustained effort rather than a single strong term", "Only the final semester is reviewed", "Consistency lowers the GPA", "It has no effect"], 0),
+                    ("What is class rank?", ["A student's academic standing relative to their graduating class", "A team position", "A test score percentile", "A measure of course rigor"], 0),
+                    ("Why do some schools no longer report class rank?", ["To reduce competitive pressure and because it can misrepresent strong cohorts", "Because ranking is illegal", "Because GPAs are no longer calculated", "Because coaches requested it"], 0),
+                    ("What should a student do if their transcript contains an error?", ["Contact the school counselor promptly to have it corrected officially", "Edit the copy themselves", "Ignore it", "Send an unofficial version instead"], 0),
+                    ("Which pairing best supports a competitive academic profile?", ["Strong core-course grades combined with demonstrated course rigor", "A high GPA earned entirely in electives", "A single strong semester", "Athletic statistics only"], 0),
+                ],
+            },
+            {
+                "title": "Fixing a Weak Transcript",
+                "description": "Practical, realistic steps to improve your standing before senior year.",
+                "assignment": {
+                    "title": "Recovery Plan Draft",
+                    "description": "Build a semester-by-semester recovery plan listing the specific courses, grades, and support resources you will use to raise your core-course GPA.",
+                },
+                "questions": [
+                    ("What is generally the most effective time to begin repairing a weak transcript?", ["As early as possible, since each additional semester dilutes past grades less", "The final month of senior year", "After college applications are submitted", "It cannot be repaired"], 0),
+                    ("How does retaking a core course usually help?", ["A higher replacement grade can raise the core-course GPA", "It removes the course from the transcript entirely", "It adds an extra core course requirement", "It has no effect on GPA"], 0),
+                    ("What is credit recovery?", ["A program allowing a student to re-earn credit for a failed course", "A scholarship type", "A method of skipping a grade", "An athletic waiver"], 0),
+                    ("Why should a student verify that an online course is NCAA-approved before enrolling?", ["Unapproved courses will not count toward core-course requirements", "Online courses are always approved", "Approval only affects tuition", "It determines the letter grade"], 0),
+                    ("Which is a realistic first step when grades slip?", ["Meeting the counselor and teachers to identify the specific gaps", "Changing schools immediately", "Dropping all hard courses", "Waiting for grades to improve on their own"], 0),
+                    ("How can a student demonstrate improvement to a coach mid-year?", ["Sharing an updated official transcript or progress report", "Verbally claiming better grades", "Posting on social media", "Nothing can be shown mid-year"], 0),
+                    ("What is a common risk of overloading on advanced courses to fix a transcript?", ["Grades in several courses may drop, worsening the overall record", "It always raises the GPA", "Advanced courses are not counted", "It reduces graduation requirements"], 0),
+                    ("Why is summer school sometimes recommended?", ["It offers a focused chance to raise a specific grade or recover a credit", "It replaces the entire transcript", "It removes the need for core courses", "It guarantees eligibility"], 0),
+                    ("What role do tutoring and study skills play in transcript recovery?", ["They address the underlying cause rather than just the grade", "They are irrelevant to grades", "They only help athletes", "They replace coursework"], 0),
+                    ("What is the most honest way to address a weak semester with a coach?", ["Explain the context briefly and show the concrete plan and progress since", "Hide the semester from the transcript", "Blame the teachers", "Avoid the topic entirely"], 0),
+                ],
+            },
+        ],
+    },
+    {
+        "code": "T1-03",
+        "title": "The Perfect Highlight Tape",
+        "category": "Athletic",
+        "description": "Everything you need to produce a highlight tape that actually gets watched — clip selection, ideal length, sequencing for impact, and how to share it with college coaches.",
+        "difficulty": Course.Difficulty.BEGINNER,
+        "amount": 39,
+        "modules": [
+            {
+                "title": "Planning Your Highlight Tape",
+                "description": "Selecting the right clips before you touch an editing tool.",
+                "assignment": {
+                    "title": "Draft Your Clip List",
+                    "description": "Choose and describe your best clips in the order you would present them, explaining in one sentence what each clip is meant to prove about you as a player.",
+                },
+                "questions": [
+                    ("Roughly how long do most college coaches spend on an initial highlight tape?", ["Under a minute before deciding whether to keep watching", "At least thirty minutes", "A full hour", "They watch every second"], 0),
+                    ("Which clips should open a highlight tape?", ["The strongest, most clearly impressive plays", "The weakest plays, saving the best for last", "Warm-up footage", "Team introductions"], 0),
+                    ("Why is clip quantity usually less important than clip quality?", ["A short reel of excellent plays holds attention better than a long mixed one", "Coaches count the clips", "Longer tapes rank higher in searches", "Quantity determines eligibility"], 0),
+                    ("What should a highlight clip make immediately obvious?", ["Which player on the field is you", "The name of the venue", "The final score", "The weather conditions"], 0),
+                    ("Which is the most useful way to identify yourself in a clip?", ["A brief spotlight, arrow, or circle at the start of the play", "Narration over the entire clip", "A logo covering the frame", "No identification at all"], 0),
+                    ("Why should clips show the play developing rather than only the result?", ["Coaches evaluate decision-making and positioning, not just the outcome", "Longer clips are required", "It hides mistakes", "Results are irrelevant"], 0),
+                    ("What kind of footage generally does not belong on a highlight tape?", ["Plays where your contribution is unclear or minimal", "Your best defensive stops", "Clean, well-framed game action", "Plays that show your athleticism"], 0),
+                    ("Why is film from multiple games valuable?", ["It shows consistency rather than one exceptional day", "It makes the tape longer", "It is required by the NCAA", "It reduces editing work"], 0),
+                    ("What is the purpose of a short title card at the start of a tape?", ["Presenting name, position, graduation year, and contact details clearly", "Filling time", "Replacing the highlights", "Listing team sponsors"], 0),
+                    ("What is the best practice for the raw footage you select from?", ["Keep the highest-quality original files available for editing", "Use screen recordings of social media posts", "Use the most compressed copy available", "Delete originals after one edit"], 0),
+                ],
+            },
+            {
+                "title": "Editing and Sharing",
+                "description": "Turning your clip selection into a finished, shareable tape.",
+                "assignment": {
+                    "title": "Publish and Share Your Tape",
+                    "description": "Export a finished cut of your highlight tape, publish it to an unlisted or public link, and draft the short email you would send a college coach alongside it.",
+                },
+                "questions": [
+                    ("What is a sensible target length for a first highlight tape?", ["Roughly three to five minutes of concentrated highlights", "Thirty to forty minutes", "Under ten seconds", "Length does not matter"], 0),
+                    ("Why is loud background music often discouraged?", ["It can distract from the play and may cause takedowns for copyrighted tracks", "Music is technically impossible to add", "Coaches require silence by rule", "It shortens the video"], 0),
+                    ("What is the safest way to host a highlight tape for coaches?", ["A stable link on a well-known video platform that does not expire", "An attachment in every email", "A temporary file-sharing link", "A private device only"], 0),
+                    ("What should the video's title and description include?", ["Name, graduation year, position, and key contact information", "Only the sport", "Nothing at all", "A long personal essay"], 0),
+                    ("Why should transitions and effects be kept minimal?", ["They slow the pace and distract from the actual play", "Effects are not supported by editors", "Coaches require exactly three effects", "They reduce file size"], 0),
+                    ("What is the benefit of putting full game film alongside a highlight tape?", ["It lets interested coaches verify performance across a whole game", "It replaces the highlight tape", "It is required for eligibility", "It shortens evaluation time"], 0),
+                    ("How should a tape be updated over a season?", ["Refresh it with stronger recent clips as the season progresses", "Never change it once published", "Delete and restart from scratch weekly", "Only update after graduating"], 0),
+                    ("Which export setting generally serves a highlight tape best?", ["A widely compatible high-definition format such as 1080p MP4", "The lowest resolution available", "A raw uncompressed master file", "An audio-only file"], 0),
+                    ("What makes an outreach email to a coach effective?", ["A short, specific message with the tape link, position, and academic details", "A long message with no link", "A mass email with no name", "Only a video attachment"], 0),
+                    ("What is the final quality check before sharing a tape?", ["Watching it end to end as a coach would, on the device they would use", "Skipping review to publish faster", "Asking a teammate to describe it unseen", "Checking only the first frame"], 0),
                 ],
             },
         ],
@@ -796,6 +1004,149 @@ PATHWAY_DEFS = [
         "base_price": 259,
         "course_codes": ["WRITING101", "HISTORY101", "BIOLOGY101", "ALGEBRA101"],
     },
+    {
+        "key": "the_blueprint",
+        "name": "The Blueprint",
+        "summary": "Early positioning, academic foundations, and avoiding common pitfalls.",
+        "description": (
+            "The entry pathway for 8th-10th grade athletes — NCAA eligibility rules, transcript "
+            "strategy, and highlight-tape fundamentals, before mistakes become expensive."
+        ),
+        "base_price": 199,
+        "course_codes": ["T1-01", "T1-02", "T1-03"],
+    },
+    {
+        "key": "athletic_recruiting",
+        "name": "Athletic Recruiting Readiness Pathway",
+        "summary": "NIL literacy and personal branding for athletes entering the recruiting window.",
+        "description": (
+            "Coursework for upperclassmen athletes navigating recruiting, NIL basics, and "
+            "building a personal brand college programs notice."
+        ),
+        "base_price": 199,
+        "course_codes": ["ATHLETIC101", "NIL101", "WRITING101"],
+    },
+    {
+        "key": "trade_vocational",
+        "name": "Trade & Vocational Skills Pathway",
+        "summary": "Practical business and technical skills for trades, freelancing, and alternative paths.",
+        "description": (
+            "For students exploring vocational, trade, or entrepreneurial paths instead of a "
+            "traditional 4-year degree — practical business and technical foundations."
+        ),
+        "base_price": 179,
+        "course_codes": ["BUSINESS101", "WEBDEV101", "PYTHON101"],
+    },
+    {
+        "key": "elite_athlete_business",
+        "name": "Elite Athlete Business Pathway",
+        "summary": "NIL, branding, and business fundamentals for college stars and pro-bound athletes.",
+        "description": (
+            "Advanced NIL contract literacy, personal brand management, and business basics for "
+            "athletes at the top of their recruiting class or already competing at the college level."
+        ),
+        "base_price": 279,
+        "course_codes": ["NIL101", "BUSINESS101", "ATHLETIC101"],
+    },
+    {
+        "key": "strategic_analytics",
+        "name": "Strategic Analytics Pathway",
+        "summary": "Technical and analytical foundations for high-stakes decision-making.",
+        "description": (
+            "Programming, web literacy, and communication foundations that support structured, "
+            "data-informed decision-making."
+        ),
+        "base_price": 249,
+        "course_codes": ["PYTHON101", "WEBDEV101", "WRITING101"],
+    },
+]
+
+# The nine tiers, in level order. `pathway_keys` are PATHWAY_DEFS keys and their
+# list order becomes each TierPathway.order (1-based, per tier). A pathway may
+# legitimately appear under more than one tier — TierPathway is a real M2M, not
+# a Pathway.tier FK.
+TIER_DEFS = [
+    {
+        "level": 1,
+        "name": "The Blueprint",
+        "audience": "8th-10th Grade Athletes",
+        "focus_description": "Early positioning, academic foundations, and avoiding common pitfalls.",
+        "category": "Athletic",
+        "estimated_duration": "12 Months",
+        "pathway_keys": ["the_blueprint", "athlete_sports"],
+    },
+    {
+        "level": 2,
+        "name": "The Parent Playbook",
+        "audience": "Parents of Rising Elite Athletes",
+        "focus_description": "Managing external pressures, vetting professionals, and protecting the family.",
+        "category": "Foundation",
+        "estimated_duration": "Ongoing",
+        "pathway_keys": ["parent_homeschool"],
+    },
+    {
+        "level": 3,
+        "name": "The Recruiting Window",
+        "audience": "High School Upperclassmen Athletes and Their Parents (11th-12th Grade)",
+        "focus_description": "Securing the offer, official visits, and early NIL preparation.",
+        "category": "Athletic",
+        "estimated_duration": "8 Months",
+        "pathway_keys": ["athletic_recruiting"],
+    },
+    {
+        "level": 4,
+        "name": "The Scholar's Foundation",
+        "audience": "Ambitious Non-Athlete Students and Their Parents (7th-10th Grade)",
+        "focus_description": "Academic excellence, early leadership, tech literacy, and extracurricular strategy.",
+        "category": "Academic",
+        "estimated_duration": "18 Months",
+        "pathway_keys": ["ivy_league", "education_academic"],
+    },
+    {
+        "level": 5,
+        "name": "The Career Launchpad",
+        "audience": "High School Upperclassmen and College Students (11th Grade - College)",
+        "focus_description": "College admissions, internships, networking, and early career placement.",
+        "category": "Academic",
+        "estimated_duration": "6-9 Months",
+        "pathway_keys": ["international_student"],
+    },
+    {
+        "level": 6,
+        "name": "The Pathfinder",
+        "audience": "11th Grade to Young Adults Exploring Trades, Vocational, or Alternative Paths",
+        "focus_description": "Practical life skills, financial independence, career exploration, and self-discovery.",
+        "category": "Vocational",
+        "estimated_duration": "6 Months",
+        "pathway_keys": ["trade_vocational"],
+    },
+    {
+        "level": 7,
+        "name": "The Elite Level",
+        "audience": "College Stars, Top-100 High School Recruits, and Pro-Bound Athletes",
+        "focus_description": "NIL maximization, pro transition, complex contract negotiation, and foundational wealth building.",
+        "category": "Athletic",
+        "estimated_duration": "Year-Round",
+        "pathway_keys": ["elite_athlete_business"],
+    },
+    {
+        "level": 8,
+        "name": "The Business Elite Level",
+        "audience": "High-Level Corporate Executives, Founders, and Business Leaders",
+        "focus_description": "Business scaling, operational efficiency, AI integration, infrastructure building, and strategic resource allocation.",
+        "category": "Professional",
+        "estimated_duration": "6 Months",
+        "pathway_keys": ["business"],
+    },
+    {
+        "level": 9,
+        "name": "Critical Thinking",
+        "audience": "High-Stakes Decision-Makers Across All Domains",
+        "focus_description": "Cognitive biases, mental models, risk assessment, game theory, and strategic execution.",
+        "category": "Legacy",
+        "estimated_duration": "Custom Iterative",
+        "pathway_keys": ["strategic_analytics"],
+    },
 ]
 
 BUNDLE_RULES = [
@@ -805,8 +1156,145 @@ BUNDLE_RULES = [
     {"pathway_count": 5, "discount_percent": 35},
 ]
 
+# Daily Drill scenarios. `_reset_data` wipes the drill bank along with everything
+# else, so it is reseeded here — otherwise the Daily Drill feature would be empty
+# after every seed. Each option carries the impact/rationale text the drill result
+# screen shows once a student picks it.
+DRILL_DEFS = [
+    {
+        "scenario": (
+            "An energy drink brand \"HyperCharge\" offers you a $15,000 NIL contract. However, the "
+            "contract contains a non-compete clause that blocks you from wearing or endorsing any "
+            "activewear brand, even during official collegiate tournaments which are sponsored by "
+            "your varsity equipment sponsor. What is your move?"
+        ),
+        "guidelines": "Goal: Balance immediate monetization with future flexibility and compliance with institutional athletic rules.",
+        "options": [
+            {
+                "key": "A",
+                "text": "Sign immediately. $15k is high upfront liquidity and you can deal with school policy violations later.",
+                "impact": "High immediate revenue, but severely compromises athletic eligibility. This could lead to suspensions and violate university licensing covenants.",
+                "rationale": "Accepting cash with restrictive covenants that violate school athletic rules leads to suspensions. Immediate cash is wiped out by damage to athlete reputation.",
+                "score": 30,
+            },
+            {
+                "key": "B",
+                "text": "Reject the offer outright and state that the athletic-wear restrictions make you too big a risk to sign.",
+                "impact": "Zero conflict, but also zero revenue. Misses an opportunity to show commercial posture and negotiate better terms.",
+                "rationale": "While safe, an elite operator negotiates for mutual fit instead of flat rejection.",
+                "score": 60,
+            },
+            {
+                "key": "C",
+                "text": "Present a redlined counter-contract excluding official school athletic uniforms from the non-compete scope, capping the restriction to beverage products.",
+                "impact": "Demonstrates professional executive posture, protects university compliance standing, and keeps the beverage cash flowing.",
+                "rationale": "Perfect deal-making posture. This keeps you in play for your school equipment sponsor and still lands the HyperCharge beverage contract.",
+                "score": 100,
+            },
+        ],
+    },
+    {
+        "scenario": (
+            "Your tracking metrics reveal severe sleep debt (averaging 5.4 hours) caused by exam "
+            "weeks colliding with 5:30 AM pre-dawn training runs. National scouts visit your camp "
+            "in 3 days and your energy is depleted. How do you adjust your schedule?"
+        ),
+        "guidelines": "Goal: Optimize cognition and muscle recovery while maintaining visibility with the scouting staff.",
+        "options": [
+            {
+                "key": "A",
+                "text": "Power through with high-caffeine supplements. Push harder; scouts want to see relentless stamina.",
+                "impact": "Heart-rate spikes, nervous fatigue, elevated cortisol, and a real risk of cramps or poor reaction time during scout drills.",
+                "rationale": "Pushing through physiological fatigue with stimulants produces a hollow performance and sharply increases injury risk.",
+                "score": 40,
+            },
+            {
+                "key": "B",
+                "text": "Ask the coaching staff to swap pre-dawn runs for afternoon film sessions, using the mornings for recovery sleep.",
+                "impact": "Restores central nervous system recovery and cognitive clarity for the scout drills while keeping playbook knowledge sharp.",
+                "rationale": "Recovery is a performance weapon. Afternoon film keeps you visible and compliant while restoring physical output.",
+                "score": 100,
+            },
+            {
+                "key": "C",
+                "text": "Skip training entirely without telling the staff, claiming sudden illness to guarantee rest.",
+                "impact": "Restores physical state but craters trust with the scouting team and head coaches.",
+                "rationale": "Uncoordinated absences signal unreliability, a major red flag for scouts evaluating culture fit.",
+                "score": 25,
+            },
+        ],
+    },
+    {
+        "scenario": (
+            "An alumnus and business owner offers to fund your tech venture with $50,000, but "
+            "requests 45% equity and a veto right over all subsequent funding rounds — before you "
+            "have even launched an MVP. He says: \"Take it now, or you will find no other backing "
+            "in this town.\" How do you proceed?"
+        ),
+        "guidelines": "Goal: Secure startup resources without surrendering future venture control or paralyzing the cap table.",
+        "options": [
+            {
+                "key": "A",
+                "text": "Accept immediately. $50k is crucial to build the product and start hiring.",
+                "impact": "The venture is hyper-diluted and later investors reject the terms because of the alumni veto right.",
+                "rationale": "Giving away 45% plus a veto right at pre-seed blocks all future financing agility and turns you into a subsidiary rather than a founder.",
+                "score": 35,
+            },
+            {
+                "key": "B",
+                "text": "Decline the terms diplomatically and counter with a SAFE at a fair valuation cap, deferring the equity conversion to the next institutional round.",
+                "impact": "Preserves cap-table health, keeps funding options open, and signals business maturity.",
+                "rationale": "A SAFE keeps governance clean and aligns valuation with standard startup practice, blocking an early predatory takeover.",
+                "score": 100,
+            },
+            {
+                "key": "C",
+                "text": "Decline and tell the alumnus his terms are predatory and that you will expose his practices across campus networks.",
+                "impact": "Protects equity, but burns a powerful institutional bridge and creates toxic noise around your team.",
+                "rationale": "Combative communication never yields long-term strategic leverage, even when you are right on the substance.",
+                "score": 50,
+            },
+        ],
+    },
+    {
+        "scenario": (
+            "Bidding a major electrical upgrade for an industrial warehouse, a subcontractor submits "
+            "a bid 40% below market average but mentions they operate under \"unregistered staff "
+            "arrangements\". Winning guarantees high margins but exposes you to regulatory audits. "
+            "What is your call?"
+        ),
+        "guidelines": "Goal: Secure commercial margins while maintaining licensing integrity and occupational safety compliance.",
+        "options": [
+            {
+                "key": "A",
+                "text": "Accept the low bid. It secures maximum short-term profit, and regulatory issues sit with the subcontractor.",
+                "impact": "Very high immediate margin, but exposes your contractor license to suspension and potential safety liability under audit.",
+                "rationale": "Using unregistered labour violates general contractor licensing covenants. Licence suspension far outweighs short-term bid profit.",
+                "score": 35,
+            },
+            {
+                "key": "B",
+                "text": "Reject the bid outright and work only with premium contractors, even if it makes you uncompetitive locally.",
+                "impact": "Maintains perfect compliance standing, but misses the chance to set vendor standards or negotiate conforming terms.",
+                "rationale": "Safe, but an elite contractor manages risk proactively and communicates compliance standards rather than rejecting silently.",
+                "score": 65,
+            },
+            {
+                "key": "C",
+                "text": "Formally request proof of workers' compensation insurance and current field certifications, countering with standard vendor compliance codes.",
+                "impact": "Demonstrates professional posture, protects your licensing standing, and forces compliance while keeping the bid live.",
+                "rationale": "Formalizing compliance requirements shields your firm from audits while keeping you commercially competitive.",
+                "score": 100,
+            },
+        ],
+    },
+]
+
 # Onboarding questionnaire used to recommend a pathway. Each option's "weights"
-# dict maps a PATHWAY_DEFS "key" -> weight toward that pathway.
+# dict maps a PATHWAY_DEFS "key" -> weight toward that pathway. Every pathway key
+# must appear somewhere below, otherwise that pathway can only ever be
+# recommended at score 0 (see onboarding/services.compute_pathway_recommendations,
+# which ranks every published pathway and falls back to 0 for unweighted ones).
 QUESTIONNAIRE = [
     {
         "text": "What best describes your current situation?",
@@ -814,8 +1302,11 @@ QUESTIONNAIRE = [
             {"text": "I'm a parent supporting my child's homeschool education", "weights": {"parent_homeschool": 3}},
             {"text": "I'm a student focused on traditional academic coursework", "weights": {"education_academic": 3}},
             {"text": "I'm aiming for Ivy League or other highly selective admissions", "weights": {"ivy_league": 3}},
-            {"text": "I'm a competitive student-athlete balancing sports and school", "weights": {"athlete_sports": 3}},
+            {"text": "I'm a competitive student-athlete balancing sports and school", "weights": {"athlete_sports": 3, "the_blueprint": 2}},
+            {"text": "I'm an athlete in the middle of the recruiting window (11th-12th grade)", "weights": {"athletic_recruiting": 3, "athlete_sports": 1}},
+            {"text": "I'm a college or pro-bound athlete managing NIL opportunities", "weights": {"elite_athlete_business": 3}},
             {"text": "I'm interested in business, entrepreneurship, or finance", "weights": {"business": 3}},
+            {"text": "I'm exploring trades, vocational training, or an alternative path", "weights": {"trade_vocational": 3}},
             {"text": "I'm an international student preparing to study abroad", "weights": {"international_student": 3}},
         ],
     },
@@ -823,25 +1314,29 @@ QUESTIONNAIRE = [
         "text": "What age range are you focused on?",
         "options": [
             {"text": "Elementary / homeschool age", "weights": {"parent_homeschool": 2}},
-            {"text": "Middle school", "weights": {"education_academic": 1}},
-            {"text": "High school", "weights": {"education_academic": 1, "ivy_league": 1, "athlete_sports": 1}},
-            {"text": "College and beyond", "weights": {"business": 1, "international_student": 1}},
+            {"text": "Middle school", "weights": {"education_academic": 1, "the_blueprint": 2}},
+            {"text": "High school", "weights": {"education_academic": 1, "ivy_league": 1, "athlete_sports": 1, "athletic_recruiting": 1, "trade_vocational": 1}},
+            {"text": "College and beyond", "weights": {"business": 1, "international_student": 1, "elite_athlete_business": 1, "strategic_analytics": 1}},
         ],
     },
     {
         "text": "How much time can you commit each week?",
         "options": [
             {"text": "1-2 hours", "weights": {"parent_homeschool": 1}},
-            {"text": "3-5 hours", "weights": {"education_academic": 1, "athlete_sports": 1}},
-            {"text": "5+ hours", "weights": {"ivy_league": 2, "business": 1}},
+            {"text": "3-5 hours", "weights": {"education_academic": 1, "athlete_sports": 1, "trade_vocational": 1}},
+            {"text": "5+ hours", "weights": {"ivy_league": 2, "business": 1, "strategic_analytics": 1}},
         ],
     },
     {
         "text": "What's your top academic goal right now?",
         "options": [
             {"text": "Getting into a top-tier or Ivy League university", "weights": {"ivy_league": 3}},
-            {"text": "Balancing athletics with strong academics", "weights": {"athlete_sports": 3}},
+            {"text": "Balancing athletics with strong academics", "weights": {"athlete_sports": 3, "the_blueprint": 1}},
+            {"text": "Earning a college athletic offer", "weights": {"athletic_recruiting": 3, "the_blueprint": 2}},
+            {"text": "Maximizing NIL and business opportunities as an athlete", "weights": {"elite_athlete_business": 3}},
             {"text": "Building practical business or entrepreneurial skills", "weights": {"business": 3}},
+            {"text": "Learning a trade or launching work of my own", "weights": {"trade_vocational": 3}},
+            {"text": "Sharpening decision-making and strategic thinking", "weights": {"strategic_analytics": 3}},
             {"text": "Preparing for studying in another country", "weights": {"international_student": 3}},
             {"text": "Staying on track with core school subjects", "weights": {"education_academic": 2}},
         ],
@@ -849,8 +1344,8 @@ QUESTIONNAIRE = [
     {
         "text": "Are you currently playing a competitive sport?",
         "options": [
-            {"text": "Yes, at a competitive or travel level", "weights": {"athlete_sports": 3}},
-            {"text": "Yes, recreationally", "weights": {"athlete_sports": 1}},
+            {"text": "Yes, at a competitive or travel level", "weights": {"athlete_sports": 3, "the_blueprint": 2, "athletic_recruiting": 2, "elite_athlete_business": 1}},
+            {"text": "Yes, recreationally", "weights": {"athlete_sports": 1, "the_blueprint": 1}},
             {"text": "No", "weights": {"education_academic": 1}},
         ],
     },
@@ -866,7 +1361,8 @@ QUESTIONNAIRE = [
         "options": [
             {"text": "My child (I'm the parent or guardian)", "weights": {"parent_homeschool": 3}},
             {"text": "Myself, as a student", "weights": {"education_academic": 2}},
-            {"text": "Myself, to build career or business skills", "weights": {"business": 2}},
+            {"text": "Myself, as an athlete building a college or pro career", "weights": {"the_blueprint": 2, "athletic_recruiting": 2, "elite_athlete_business": 2}},
+            {"text": "Myself, to build career or business skills", "weights": {"business": 2, "trade_vocational": 1}},
         ],
     },
     {
@@ -875,7 +1371,10 @@ QUESTIONNAIRE = [
             {"text": "Structured, standards-aligned academics", "weights": {"education_academic": 2}},
             {"text": "A competitive edge for elite admissions", "weights": {"ivy_league": 2}},
             {"text": "Flexibility around a sports schedule", "weights": {"athlete_sports": 2}},
+            {"text": "A clear roadmap through recruiting and NIL decisions", "weights": {"the_blueprint": 2, "athletic_recruiting": 2, "elite_athlete_business": 2}},
             {"text": "Real-world business and financial literacy", "weights": {"business": 2}},
+            {"text": "Hands-on, job-ready technical skills", "weights": {"trade_vocational": 2, "strategic_analytics": 1}},
+            {"text": "Sharper judgement under pressure and uncertainty", "weights": {"strategic_analytics": 2}},
             {"text": "Support for a global or cross-border education path", "weights": {"international_student": 2}},
             {"text": "Simplicity and guidance for homeschool parents", "weights": {"parent_homeschool": 2}},
         ],
@@ -885,13 +1384,16 @@ QUESTIONNAIRE = [
 
 class Command(BaseCommand):
     help = (
-        "Wipes ALL existing teachers, students, courses, modules, lessons, assignments, "
-        "quizzes, enrollments, pathways, and onboarding questions, then reseeds a complete, "
-        "realistic demo dataset. The admin account is preserved (get_or_create, never "
-        "deleted) rather than reset. Student-course enrollments are intentionally NOT "
-        "seeded — enroll students manually (e.g. via the admin portal) after seeding. "
-        "Safe to re-run — every run produces the same dataset. Pass --noinput to skip the "
-        "confirmation prompt (e.g. for CI/deploy scripts)."
+        "Wipes EVERY row except the admin account(s), then reseeds a complete, realistic demo "
+        "dataset: the six canonical categories, teachers, students, courses (with downloaded "
+        "thumbnails and PDF/DOCX lesson files), modules, lessons, assignments, quizzes, pathways, "
+        "tiers, bundle pricing rules, the onboarding questionnaire, and the Daily Drill bank. "
+        "Admin accounts and superusers are preserved (get_or_create, never deleted) rather than "
+        "reset. Student-course enrollments are intentionally NOT seeded — enroll students manually "
+        "(e.g. via the admin portal) after seeding. Safe to re-run — every run produces the same "
+        "dataset, and media files already on disk are reused rather than re-downloaded. Pass "
+        "--noinput to skip the confirmation prompt (e.g. for CI/deploy scripts) and --skip-assets "
+        "to seed without network access."
     )
 
     def add_arguments(self, parser):
@@ -900,23 +1402,36 @@ class Command(BaseCommand):
             action="store_true",
             help="Skip the confirmation prompt and seed immediately.",
         )
+        parser.add_argument(
+            "--skip-assets",
+            action="store_true",
+            help=(
+                "Don't download course thumbnails or lesson PDF/DOCX files. Use when the machine "
+                "has no outbound network access — courses and lessons are seeded without media."
+            ),
+        )
 
     def handle(self, *args, **options):
         if not options["noinput"]:
             confirm = input(
-                "This will DELETE all existing teachers, students, courses, modules, lessons, "
-                "assignments, quizzes, enrollments, pathways, and onboarding questions (the "
-                "admin account is preserved) and reseed fresh demo data. Students will NOT "
-                "be auto-enrolled in any course.\n"
+                "This will DELETE every row except the admin account(s) — teachers, students, "
+                "courses, modules, lessons, assignments, quizzes, enrollments, progress, pathways, "
+                "tiers, onboarding questions, and daily drills — and reseed fresh demo data. "
+                "Students will NOT be auto-enrolled in any course.\n"
                 "Type 'yes' to continue: "
             )
             if confirm.strip().lower() != "yes":
                 self.stdout.write(self.style.WARNING("Aborted — no changes were made."))
                 return
 
+        # Assets are fetched BEFORE the transaction opens, so a dozen-plus network
+        # round trips never hold a write transaction open, and an unreachable host
+        # degrades to "seeded without that file" instead of rolling the seed back.
+        assets = self._download_assets(skip=options["skip_assets"])
+
         with transaction.atomic():
             self._reset_data()
-            self.stdout.write(self.style.WARNING("Cleared existing seed data (admin preserved)"))
+            self.stdout.write(self.style.WARNING("Cleared existing data (admin preserved)"))
 
             self._create_admin()
             self.stdout.write(self.style.SUCCESS("Ensured 1 admin"))
@@ -933,12 +1448,17 @@ class Command(BaseCommand):
             ]
             self.stdout.write(self.style.SUCCESS(f"Created {len(students)} students"))
 
+            # Wraps around when there are more courses than teachers, so adding a
+            # course def never has to be paired with adding a teacher name.
             teachers_by_code = {
-                course_def["code"]: teachers[i] for i, course_def in enumerate(COURSE_DEFS)
+                course_def["code"]: teachers[index % len(teachers)]
+                for index, course_def in enumerate(COURSE_DEFS)
             }
 
             categories = self._create_categories()
-            courses_by_code = self._create_course_content(categories, teachers_by_code)
+            self.stdout.write(self.style.SUCCESS(f"Ensured {len(categories)} categories"))
+
+            courses_by_code = self._create_course_content(categories, teachers_by_code, assets)
             self.stdout.write(
                 self.style.SUCCESS(
                     f"Created {len(courses_by_code)} courses with modules, lessons, "
@@ -949,28 +1469,110 @@ class Command(BaseCommand):
             pathways_by_key = self._seed_pathways(courses_by_code)
             self.stdout.write(self.style.SUCCESS(f"Created {len(pathways_by_key)} pathways"))
 
+            tiers = self._create_tiers(categories, pathways_by_key)
+            self.stdout.write(
+                self.style.SUCCESS(f"Created {len(tiers)} tiers with their pathway attachments")
+            )
+
             self._seed_bundle_rules()
             self.stdout.write(self.style.SUCCESS(f"Ensured {len(BUNDLE_RULES)} bundle pricing rule(s)"))
 
             self._seed_questionnaire(pathways_by_key)
             self.stdout.write(self.style.SUCCESS(f"Seeded {len(QUESTIONNAIRE)} onboarding questions"))
 
+            self._seed_drills()
+            self.stdout.write(self.style.SUCCESS(f"Seeded {len(DRILL_DEFS)} daily drill scenarios"))
+
         self.stdout.write(self.style.SUCCESS("Seed data completed successfully."))
 
+    def _download_assets(self, skip=False):
+        """Fetches every course thumbnail and the shared lesson PDF/DOCX into media
+        storage and returns the stored paths, keyed for `_create_course_content`
+        and `_create_lesson`. Any file that can't be fetched is simply absent from
+        the result, and the row that wanted it is seeded without media."""
+        assets = {"thumbnails": {}, "lessons": {}}
+
+        if skip:
+            self.stdout.write(
+                self.style.WARNING("--skip-assets: seeding without thumbnails or lesson files")
+            )
+            return assets
+
+        for name, url in LESSON_ASSET_URLS.items():
+            path = self._store_asset(LESSON_ASSET_PATHS[name], url)
+            if path:
+                assets["lessons"][name] = path
+
+        for code, url in COURSE_THUMBNAIL_URLS.items():
+            path = self._store_asset(f"course_thumbnails/seed-{slugify(code)}.jpg", url)
+            if path:
+                assets["thumbnails"][code] = path
+
+        self.stdout.write(
+            self.style.SUCCESS(
+                f"Prepared {len(assets['lessons'])} lesson file(s) and "
+                f"{len(assets['thumbnails'])} thumbnail(s) in media storage"
+            )
+        )
+        return assets
+
+    def _store_asset(self, path, url):
+        """Downloads `url` to MEDIA_ROOT/<path> once and returns the stored name to
+        assign to a FileField/ImageField. A file already on disk is reused, so
+        re-seeding neither re-downloads nor accumulates suffixed duplicates the way
+        an unconditional `default_storage.save` would (`seed-python101_a1b2c3.jpg`).
+        Returns None on any failure — a missing demo file must not abort the seed."""
+        if default_storage.exists(path):
+            return path
+
+        try:
+            response = requests.get(url, timeout=30)
+            response.raise_for_status()
+        except requests.RequestException as exc:
+            self.stdout.write(self.style.WARNING(f"Could not download {url} ({exc}) — skipping."))
+            return None
+
+        return default_storage.save(path, ContentFile(response.content))
+
     def _reset_data(self):
-        # Deleting teacher/student users cascades their CourseInstructor rows, cart items,
-        # enrollments, quiz attempts/answers, assignment submissions, onboarding progress/
-        # answers, and pathway enrollments. Deleting courses cascades modules/lessons/
-        # assignments/quizzes/questions/choices/pathway_courses. Deleting pathways cascades
-        # their pathway_courses and onboarding question-option weights. Category is
-        # PROTECTed by Course.category, so it (and Tag) must be cleared after courses. The
-        # admin account is intentionally left alone.
-        User.objects.filter(role__in=[User.Roles.TEACHER, User.Roles.STUDENT]).delete()
+        """Wipes every row except admin accounts and superusers.
+
+        Deleting the non-admin users cascades their enrollments, submissions, quiz
+        attempts, progress, cart items, drill attempts, pathway enrollments, and
+        onboarding answers; the explicit deletes below cover the same tables for
+        rows an admin might own, plus the content that no user owns at all.
+
+        Order matters: Category is PROTECTed by both Course.category and
+        Tier.category, so every course and tier has to be gone before categories
+        can be cleared.
+        """
+        User.objects.exclude(role=User.Roles.ADMIN).exclude(is_superuser=True).delete()
+
+        # Learner-activity tables — anything still here belongs to an admin account.
+        EnrollmentHistory.objects.all().delete()
+        Enrollment.objects.all().delete()
+        LessonProgress.objects.all().delete()
+        ModuleProgress.objects.all().delete()
+        CourseProgress.objects.all().delete()
+        LearningActivity.objects.all().delete()
+        CartItem.objects.all().delete()
+        OnboardingProgress.objects.all().delete()
+        PathwayEnrollment.objects.all().delete()
+        TierProgress.objects.all().delete()
+
+        # Applications carry their own applicant details rather than an FK to a
+        # seeded user, so deleting users doesn't cascade them.
+        FutureClientApplication.objects.all().delete()
+        DrillQuestion.objects.all().delete()
+
         Course.objects.all().delete()
-        Category.objects.all().delete()
-        Tag.objects.all().delete()
+        Tier.objects.all().delete()
         Pathway.objects.all().delete()
         OnboardingQuestion.objects.all().delete()
+        PathwayBundleRule.objects.all().delete()
+
+        Category.objects.all().delete()
+        Tag.objects.all().delete()
 
     def _create_admin(self):
         user, created = User.objects.get_or_create(
@@ -1012,10 +1614,22 @@ class Command(BaseCommand):
         return user
 
     def _create_categories(self):
-        names = sorted({course_def["category"] for course_def in COURSE_DEFS})
-        return {name: Category.objects.get_or_create(name=name)[0] for name in names}
+        categories = {name: Category.objects.get_or_create(name=name)[0] for name in CATEGORY_NAMES}
 
-    def _create_course_content(self, categories, teachers_by_code):
+        # Guards against a new course or tier def quietly reintroducing a seventh
+        # category and re-splitting the vocabulary courses.0004 consolidated.
+        referenced = {course_def["category"] for course_def in COURSE_DEFS}
+        referenced |= {tier_def["category"] for tier_def in TIER_DEFS}
+        unknown = sorted(referenced - set(categories))
+        if unknown:
+            raise CommandError(
+                "Seed definitions reference categories that are not in CATEGORY_NAMES: "
+                + ", ".join(unknown)
+            )
+
+        return categories
+
+    def _create_course_content(self, categories, teachers_by_code, assets):
         courses_by_code = {}
         for course_def in COURSE_DEFS:
             course, _ = Course.objects.get_or_create(
@@ -1024,6 +1638,7 @@ class Command(BaseCommand):
                     "title": course_def["title"],
                     "description": course_def["description"],
                     "category": categories[course_def["category"]],
+                    "thumbnail": assets["thumbnails"].get(course_def["code"]) or "",
                     "status": Status.PUBLISHED,
                     "difficulty": course_def["difficulty"],
                     "amount": course_def["amount"],
@@ -1044,14 +1659,16 @@ class Command(BaseCommand):
                 )
 
                 for lesson_order, content_type in enumerate(LESSON_TYPE_CYCLE, start=1):
-                    self._create_lesson(module, module_def["title"], content_type, lesson_order)
+                    self._create_lesson(
+                        module, module_def["title"], content_type, lesson_order, assets["lessons"]
+                    )
 
                 self._create_assignment(module, course, module_def["assignment"], teacher, module_order)
                 self._create_quiz(module, course, module_def["title"], module_def["questions"])
 
         return courses_by_code
 
-    def _create_lesson(self, module, module_title, content_type, order):
+    def _create_lesson(self, module, module_title, content_type, order, lesson_assets):
         label = LESSON_TYPE_LABELS[content_type]
         spec = LESSON_TYPE_CONTENT[content_type]
         Lesson.objects.get_or_create(
@@ -1062,6 +1679,8 @@ class Command(BaseCommand):
                 "content_type": content_type,
                 "content_data": spec["content_data"],
                 "video_url": spec["video_url"],
+                # VIDEO lessons carry a video_url instead, so `asset` is None there.
+                "file": lesson_assets.get(spec["asset"]) or "",
                 "duration_minutes": spec["duration_minutes"],
                 "order": order,
             },
@@ -1108,11 +1727,19 @@ class Command(BaseCommand):
                     "order": order,
                 },
             )
-            for choice_index, option_text in enumerate(options):
+            # Every COURSE_DEFS question authors its correct option at index 0, and
+            # Choice has no Meta.ordering — so inserting them as written would put
+            # the right answer first in every single question, making the seeded
+            # quizzes answerable without reading them. Rotating by the question's
+            # order spreads the correct answer across all four positions and stays
+            # deterministic, so re-seeding reproduces the same quizzes.
+            correct_text = options[correct_index]
+            rotation = order % len(options)
+            for option_text in options[rotation:] + options[:rotation]:
                 Choice.objects.get_or_create(
                     question=question,
                     text=option_text,
-                    defaults={"is_correct": choice_index == correct_index},
+                    defaults={"is_correct": option_text == correct_text},
                 )
         return quiz
 
@@ -1138,6 +1765,30 @@ class Command(BaseCommand):
                 )
         return pathways_by_key
 
+    def _create_tiers(self, categories, pathways_by_key):
+        tiers = []
+        for tier_def in TIER_DEFS:
+            tier, _ = Tier.objects.update_or_create(
+                level=tier_def["level"],
+                defaults={
+                    "name": tier_def["name"],
+                    "audience": tier_def["audience"],
+                    "focus_description": tier_def["focus_description"],
+                    "status": Status.PUBLISHED,
+                    "category": categories[tier_def["category"]],
+                    "estimated_duration": tier_def["estimated_duration"],
+                },
+            )
+            tiers.append(tier)
+
+            # `order` restarts at 1 for each tier — the uniqueness constraint is
+            # per-tier (unique_tierpathway_order_per_tier), not global.
+            for order, pathway_key in enumerate(tier_def["pathway_keys"], start=1):
+                TierPathway.objects.update_or_create(
+                    tier=tier, pathway=pathways_by_key[pathway_key], defaults={"order": order}
+                )
+        return tiers
+
     def _seed_bundle_rules(self):
         for rule in BUNDLE_RULES:
             PathwayBundleRule.objects.update_or_create(
@@ -1158,3 +1809,21 @@ class Command(BaseCommand):
                     QuestionOptionPathwayWeight.objects.create(
                         option=option, pathway=pathways_by_key[pathway_key], weight=weight
                     )
+
+    def _seed_drills(self):
+        for drill_def in DRILL_DEFS:
+            question, _ = DrillQuestion.objects.get_or_create(
+                scenario=drill_def["scenario"],
+                defaults={"guidelines": drill_def["guidelines"], "status": Status.PUBLISHED},
+            )
+            for option_def in drill_def["options"]:
+                DrillOption.objects.update_or_create(
+                    question=question,
+                    key=option_def["key"],
+                    defaults={
+                        "text": option_def["text"],
+                        "impact": option_def["impact"],
+                        "rationale": option_def["rationale"],
+                        "score": option_def["score"],
+                    },
+                )

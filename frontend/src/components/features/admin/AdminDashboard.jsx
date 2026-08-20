@@ -9,6 +9,7 @@ import {
   GraduationCap,
   HelpCircle,
   LayoutDashboard,
+  Layers3,
   LineChart,
   Lock,
   Route,
@@ -36,6 +37,7 @@ import ProgressTab from "@/components/features/admin/tabs/ProgressTab";
 import TagsTab from "@/components/features/admin/tabs/TagsTab";
 import CategoriesTab from "@/components/features/admin/tabs/CategoriesTab";
 import PathwaysTab from "@/components/features/admin/tabs/PathwaysTab";
+import TiersTab from "@/components/features/admin/tabs/TiersTab";
 import QuestionnaireTab from "@/components/features/admin/tabs/QuestionnaireTab";
 import FutureClientsTab from "@/components/features/admin/tabs/FutureClientsTab";
 
@@ -49,6 +51,7 @@ const TABS = [
   { id: "progress", label: "Progress", icon: LineChart },
   { id: "tags", label: "Tags", icon: Tag },
   { id: "categories", label: "Categories", icon: Folder },
+  { id: "tiers", label: "Tiers", icon: Layers3 },
   { id: "pathways", label: "Pathways", icon: Route },
   { id: "questionnaire", label: "Questionnaire", icon: HelpCircle },
 ];
@@ -64,6 +67,7 @@ const TAB_COMPONENTS = {
   progress: ProgressTab,
   tags: TagsTab,
   categories: CategoriesTab,
+  tiers: TiersTab,
   pathways: PathwaysTab,
   questionnaire: QuestionnaireTab,
 };

@@ -75,16 +75,7 @@ export default function MyPathwaysSummary() {
                   isVault ? "border-stone-700 bg-stone-950" : "border-stone-200 bg-white"
                 }`}
               >
-                {pathway.image ? (
-                  <img
-                    src={pathway.image}
-                    alt={pathway.name}
-                    className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                  />
-                ) : (
-                  <Route className="w-4 h-4 text-amber-600" />
-                )}
+                <Route className="w-4 h-4 text-amber-600" />
               </div>
               <div className="min-w-0">
                 <p

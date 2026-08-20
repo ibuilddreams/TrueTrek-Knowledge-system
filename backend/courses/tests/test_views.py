@@ -105,6 +105,16 @@ class CategoryDetailViewTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(Category.objects.filter(id=self.category.id).exists())
 
+    def test_delete_category_still_in_use_returns_409_instead_of_500(self):
+        Course.objects.create(title="Intro to Design", code="DES101", category=self.category)
+        self.client.force_authenticate(user=self.admin)
+
+        response = self.client.delete(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_409_CONFLICT)
+        self.assertIn("course", response.data["message"].lower())
+        self.assertTrue(Category.objects.filter(id=self.category.id).exists())
+
 
 class CourseListCreateViewTests(APITestCase):
     def setUp(self):
