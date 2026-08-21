@@ -13,3 +13,11 @@ export {
   resetPassword,
 } from "./authService";
 export { getProfile, updateProfile } from "./profileService";
+export {
+  startCourseGeneration,
+  getCourseGeneration,
+  cancelCourseGeneration,
+  retryCourseGeneration,
+  listCourseGenerations,
+  getAiCourseGenerationUsage,
+} from "./aiCoursesService";

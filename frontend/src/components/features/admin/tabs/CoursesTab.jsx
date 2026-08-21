@@ -7,6 +7,7 @@ import {
   Eye,
   Layers,
   RefreshCw,
+  Sparkles,
   Trash2,
   UserPlus,
 } from "lucide-react";
@@ -29,6 +30,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import CourseDetailModal from "@/components/features/admin/CourseDetailModal";
 import EnrollStudentModal from "@/components/features/admin/EnrollStudentModal";
 import CreateCourseModal from "@/components/features/admin/CreateCourseModal";
+import AiCourseModal from "@/components/features/admin/AiCourseModal";
 import UpdateCourseStatusModal from "@/components/features/admin/UpdateCourseStatusModal";
 import ManageModulesModal from "@/components/features/admin/ManageModulesModal";
 
@@ -63,6 +65,7 @@ export default function CoursesTab() {
   const [deletingCourse, setDeletingCourse] = useState(null);
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
+  const [isAiModalOpen, setIsAiModalOpen] = useState(false);
   const [managingModulesCourse, setManagingModulesCourse] = useState(null);
 
   useEffect(() => {
@@ -273,16 +276,28 @@ export default function CoursesTab() {
           </div>
         </div>
 
-        <button
-          type="button"
-          onClick={() => setIsCreateModalOpen(true)}
-          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
-          title="Create a new course"
-          aria-label="Create a new course"
-        >
-          <BookPlus className="w-4 h-4" />
-          ADD COURSE
-        </button>
+        <div className="flex flex-col sm:flex-row gap-2 shrink-0">
+          <button
+            type="button"
+            onClick={() => setIsAiModalOpen(true)}
+            className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-2"
+            title="Generate a complete draft course with AI"
+            aria-label="Generate a complete draft course with AI"
+          >
+            <Sparkles className="w-4 h-4" />
+            CREATE WITH AI
+          </button>
+          <button
+            type="button"
+            onClick={() => setIsCreateModalOpen(true)}
+            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+            title="Create a new course"
+            aria-label="Create a new course"
+          >
+            <BookPlus className="w-4 h-4" />
+            ADD COURSE
+          </button>
+        </div>
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
@@ -334,6 +349,13 @@ export default function CoursesTab() {
           setEditingCourse(null);
         }}
         onSaved={refreshCourses}
+      />
+
+      <AiCourseModal
+        isOpen={isAiModalOpen}
+        onClose={() => setIsAiModalOpen(false)}
+        onSaved={refreshCourses}
+        onReviewCourse={(course) => setManagingModulesCourse(course)}
       />
 
       <UpdateCourseStatusModal

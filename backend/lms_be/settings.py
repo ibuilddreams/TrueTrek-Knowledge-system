@@ -58,6 +58,7 @@ INSTALLED_APPS = [
     'search',
     'uploads',
     'audit_logs',
+    'ai_courses',
 ]
 
 MIDDLEWARE = [
@@ -148,6 +149,13 @@ REST_FRAMEWORK = {
     ],
     'EXCEPTION_HANDLER': 'common.exceptions.custom_exception_handler',
     'DEFAULT_SCHEMA_CLASS': 'drf_spectacular.openapi.AutoSchema',
+    'DEFAULT_THROTTLE_CLASSES': [
+        'rest_framework.throttling.ScopedRateThrottle',
+    ],
+    'DEFAULT_THROTTLE_RATES': {
+        
+        'ai-generation': '5/hour',
+    },
 }
 
 SPECTACULAR_SETTINGS = {
@@ -181,9 +189,7 @@ DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
 PASSWORD_RESET_TIMEOUT = int(os.getenv('PASSWORD_RESET_TIMEOUT', 3600))
 
-# OAuth 2.0 Client ID from Google Cloud Console (APIs & Services > Credentials).
-# Must match the frontend's NEXT_PUBLIC_GOOGLE_CLIENT_ID — it's the audience the
-# ID token is verified against in users/views.py::GoogleAuthView.
+
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
 
 EMAIL_BACKEND = os.getenv('EMAIL_BACKEND', 'django.core.mail.backends.console.EmailBackend')
@@ -193,6 +199,54 @@ EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
 EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@truetrek.edu')
+
+
+GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
+AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini')
+AI_MODEL = os.getenv('AI_MODEL', 'gemini-3.6-flash')
+AI_REQUEST_TIMEOUT = int(os.getenv('AI_REQUEST_TIMEOUT', 120))
+AI_MAX_MODULES = int(os.getenv('AI_MAX_MODULES', 12))
+AI_MAX_LESSONS = int(os.getenv('AI_MAX_LESSONS', 10))
+AI_MONTHLY_LIMIT = int(os.getenv('AI_MONTHLY_LIMIT', 50))
+
+AI_MAX_CONCURRENT_GENERATIONS = int(os.getenv('AI_MAX_CONCURRENT_GENERATIONS', 3))
+
+AI_STALE_JOB_THRESHOLD_SECONDS = int(
+    os.getenv('AI_STALE_JOB_THRESHOLD_SECONDS', max(300, AI_REQUEST_TIMEOUT * 2 + 60))
+)
+
+LOGGING = {
+    'version': 1,
+    'disable_existing_loggers': False,
+    'formatters': {
+        'verbose': {
+            'format': '{asctime} {levelname} {name} {message}',
+            'style': '{',
+        },
+    },
+    'handlers': {
+        'console': {
+            'class': 'logging.StreamHandler',
+            'formatter': 'verbose',
+        },
+    },
+    'root': {
+        'handlers': ['console'],
+        'level': 'WARNING',
+    },
+    'loggers': {
+        'django': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+        'ai_courses': {
+            'handlers': ['console'],
+            'level': 'INFO',
+            'propagate': False,
+        },
+    },
+}
 
 # Production security hardening (active when DEBUG is False)
 if not DEBUG:

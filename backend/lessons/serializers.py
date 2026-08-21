@@ -42,6 +42,7 @@ class LessonSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "content_type",
+            "content_data",
             "video_url",
             "file",
             "duration_minutes",
@@ -66,6 +67,7 @@ class LessonWriteSerializer(serializers.ModelSerializer):
             "title",
             "description",
             "content_type",
+            "content_data",
             "video_url",
             "file",
             "duration_minutes",
@@ -130,6 +132,29 @@ class LessonWriteSerializer(serializers.ModelSerializer):
             if video_url_sent or file_sent:
                 attrs["video_url"] = video_url or None
                 attrs["file"] = file or None
+        elif content_type == Lesson.ContentType.TEXT:
+            content_data = attrs.get("content_data", getattr(self.instance, "content_data", None))
+            file = attrs.get("file", getattr(self.instance, "file", None))
+            video_url = attrs.get("video_url", getattr(self.instance, "video_url", None))
+
+            if not content_data or not content_data.strip():
+                raise serializers.ValidationError(
+                    {"content_data": "Content is required for text lessons."}
+                )
+            if file:
+                raise serializers.ValidationError(
+                    {"file": "A file should not be provided for text lessons."}
+                )
+            if video_url:
+                raise serializers.ValidationError(
+                    {"video_url": "Video URL should not be provided for text lessons."}
+                )
+            if duration_minutes is not None and duration_minutes <= 0:
+                raise serializers.ValidationError(
+                    {"duration_minutes": "Duration must be greater than zero."}
+                )
+            attrs["video_url"] = None
+            attrs["file"] = None
         else:
             file = attrs.get("file", getattr(self.instance, "file", None))
             video_url = attrs.get("video_url", getattr(self.instance, "video_url", None))
