@@ -1,6 +1,10 @@
 .claude/
 .cursor/
 
+# Local planning docs — not project source
+/course-ai-plan.md
+/plan.md
+
 # Backend (Django)
 backend/env/
 backend/venv/

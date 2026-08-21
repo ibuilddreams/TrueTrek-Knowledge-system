@@ -27,6 +27,7 @@ const CONTENT_TYPES = [
   { value: "PDF", label: "PDF" },
   { value: "DOCUMENT", label: "Document" },
   { value: "IMAGE", label: "Image" },
+  { value: "TEXT", label: "Text" },
 ];
 
 const FILE_ACCEPT = {
@@ -48,6 +49,7 @@ const FILE_ICON = {
   PDF: FileText,
   DOCUMENT: FileText,
   IMAGE: ImageIcon,
+  TEXT: FileText,
 };
 
 const VIDEO_SOURCE_MODES = [
@@ -61,6 +63,7 @@ const INITIAL_FORM = {
   description: "",
   content_type: "VIDEO",
   video_url: "",
+  content_data: "",
   duration_minutes: "",
   order: "1",
 };
@@ -162,6 +165,7 @@ export default function TeacherLessonFormModal({
         description: lesson.description || "",
         content_type: lesson.content_type || "VIDEO",
         video_url: lesson.video_url || "",
+        content_data: lesson.content_data || "",
         duration_minutes: lesson.duration_minutes != null ? String(lesson.duration_minutes) : "",
         order: String(lesson.order ?? 1),
       });
@@ -191,7 +195,13 @@ export default function TeacherLessonFormModal({
   };
 
   const handleContentTypeChange = (value) => {
-    setForm((prev) => ({ ...prev, content_type: value, video_url: "", duration_minutes: "" }));
+    setForm((prev) => ({
+      ...prev,
+      content_type: value,
+      video_url: "",
+      content_data: "",
+      duration_minutes: "",
+    }));
     setVideoSourceMode("UPLOAD");
     setFile(null);
     setExistingFileUrl(null);
@@ -243,6 +253,16 @@ export default function TeacherLessonFormModal({
       } else if (!file && !hasExistingFile) {
         errors.file = "Please select a video file to upload.";
       }
+    } else if (form.content_type === "TEXT") {
+      if (!form.content_data.trim()) {
+        errors.content_data = "Content is required for text lessons.";
+      }
+      if (form.duration_minutes) {
+        const duration = Number(form.duration_minutes);
+        if (!Number.isFinite(duration) || duration <= 0) {
+          errors.duration_minutes = "Duration must be greater than zero.";
+        }
+      }
     } else {
       if (!file && !hasExistingFile) errors.file = "File is required for this lesson type.";
       const duration = Number(form.duration_minutes);
@@ -276,6 +296,11 @@ export default function TeacherLessonFormModal({
       } else if (file) {
         formData.append("file", file);
       }
+    } else if (form.content_type === "TEXT") {
+      formData.append("content_data", form.content_data.trim());
+      if (form.duration_minutes) {
+        formData.append("duration_minutes", form.duration_minutes);
+      }
     } else {
       if (file) {
         formData.append("file", file);
@@ -298,7 +323,8 @@ export default function TeacherLessonFormModal({
   };
 
   const isVideo = form.content_type === "VIDEO";
-  const requiresDuration = !isVideo;
+  const isText = form.content_type === "TEXT";
+  const requiresDuration = !isVideo && !isText;
   const trimmedVideoUrl = form.video_url.trim();
   const videoEmbedUrl = trimmedVideoUrl ? getVideoEmbedUrl(trimmedVideoUrl) : null;
 
@@ -465,6 +491,37 @@ export default function TeacherLessonFormModal({
             )}
 
             {file && <FilePreviewCard file={file} icon={Video} />}
+          </div>
+        )}
+
+        {isText && (
+          <div>
+            <label className={LABEL_CLASS}>Lesson Content</label>
+            <textarea
+              value={form.content_data}
+              onChange={updateField("content_data")}
+              disabled={isSubmitting}
+              placeholder="Write the lesson content in markdown..."
+              rows={8}
+              className={`${FIELD_CLASS} resize-none`}
+            />
+            {fieldErrors.content_data && <p className={ERROR_CLASS}>{fieldErrors.content_data}</p>}
+          </div>
+        )}
+
+        {isText && (
+          <div className="w-48">
+            <label className={LABEL_CLASS}>Duration (minutes, optional)</label>
+            <input
+              type="number"
+              min="1"
+              value={form.duration_minutes}
+              onChange={updateField("duration_minutes")}
+              disabled={isSubmitting}
+              placeholder="Estimate"
+              className={FIELD_CLASS}
+            />
+            {fieldErrors.duration_minutes && <p className={ERROR_CLASS}>{fieldErrors.duration_minutes}</p>}
           </div>
         )}
 

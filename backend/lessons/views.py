@@ -1,5 +1,5 @@
 from rest_framework import generics
-from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
 
 from common.pagination import Pagination
 from common.response import error_response, success_response
@@ -18,7 +18,7 @@ from .services import LessonReorderError, reorder_lessons
 class LessonListCreateView(generics.ListCreateAPIView):
     queryset = Lesson.objects.select_related("module", "module__course")
     pagination_class = Pagination
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_permissions(self):
         if self.request.method == "GET":
@@ -72,7 +72,7 @@ class LessonListCreateView(generics.ListCreateAPIView):
 class LessonDetailView(generics.RetrieveUpdateDestroyAPIView):
     http_method_names = ["get", "patch", "delete", "head", "options"]
     queryset = Lesson.objects.select_related("module", "module__course")
-    parser_classes = [MultiPartParser, FormParser]
+    parser_classes = [MultiPartParser, FormParser, JSONParser]
 
     def get_permissions(self):
         if self.request.method == "GET":
