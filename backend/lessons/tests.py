@@ -85,3 +85,47 @@ class LessonCompleteViewTests(APITestCase):
         response = self.client.post(url)
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class TextLessonHtmlSanitizationTests(APITestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name="Programming")
+        self.course = Course.objects.create(title="Intro to Python", category=self.category)
+        self.module = Module.objects.create(course=self.course, title="Module 1")
+        self.admin = _make_user("sanitizationadmin", UserModel.Roles.ADMIN)
+        self.url = reverse("lesson-list-create")
+        self.client.force_authenticate(user=self.admin)
+
+    def _create_html_lesson(self, content_data, order=1):
+        return self.client.post(
+            self.url,
+            {
+                "module": self.module.id,
+                "title": "Rich text lesson",
+                "description": "",
+                "content_type": "TEXT",
+                "content_format": "HTML",
+                "content_data": content_data,
+                "order": order,
+            },
+            format="multipart",
+        )
+
+    def test_script_tag_is_stripped(self):
+        response = self._create_html_lesson("<p>Hello</p><script>alert(1)</script>")
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertNotIn("<script", response.data["data"]["content_data"])
+        self.assertNotIn("alert(1)", response.data["data"]["content_data"])
+
+    def test_javascript_href_is_neutralized(self):
+        response = self._create_html_lesson('<p><a href="javascript:alert(1)">click</a></p>')
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertNotIn("javascript:", response.data["data"]["content_data"])
+
+    def test_blank_paragraph_is_rejected_as_empty(self):
+        response = self._create_html_lesson("<p></p>")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("content_data", response.data["data"])

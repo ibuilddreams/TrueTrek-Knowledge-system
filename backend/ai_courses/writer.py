@@ -89,6 +89,7 @@ def write_course_tree(normalized_plan, form_payload):
                     title=lesson_plan["title"],
                     content_type=Lesson.ContentType.TEXT,
                     content_data=lesson_plan["body"],
+                    content_format=Lesson.ContentFormat.MARKDOWN,
                     duration_minutes=minutes,
                     order=lesson_order,
                 )
