@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import dynamic from "next/dynamic";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import {
   Check,
@@ -16,11 +17,21 @@ import Modal from "@/components/ui/Modal";
 import { createLesson, updateLesson } from "@/services/lessonsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
+import { isRichTextEmpty } from "@/lib/richText";
 import {
   getVideoEmbedUrl,
   isIframeEmbedCode,
   normalizePastedVideoInput,
 } from "@/lib/videoEmbed";
+
+// TipTap's useEditor touches `document` at mount, so it can only run client-side
+// (same reasoning already used for react-pdf/mammoth in DocumentLessonViewer.jsx).
+const RichTextEditor = dynamic(() => import("@/components/ui/RichTextEditor"), {
+  ssr: false,
+  loading: () => (
+    <div className="h-40 rounded-xl border border-stone-200 bg-stone-50 animate-pulse" />
+  ),
+});
 
 const CONTENT_TYPES = [
   { value: "VIDEO", label: "Video" },
@@ -64,6 +75,7 @@ const INITIAL_FORM = {
   content_type: "VIDEO",
   video_url: "",
   content_data: "",
+  content_format: "HTML",
   duration_minutes: "",
   order: "1",
 };
@@ -157,6 +169,7 @@ export default function AddLessonModal({
         content_type: lesson.content_type || "VIDEO",
         video_url: lesson.video_url || "",
         content_data: lesson.content_data || "",
+        content_format: lesson.content_format || "MARKDOWN",
         duration_minutes:
           lesson.duration_minutes != null
             ? String(lesson.duration_minutes)
@@ -191,11 +204,21 @@ export default function AddLessonModal({
   };
 
   const handleContentTypeChange = (value) => {
+    // Editing an existing TEXT lesson keeps whatever format it was authored in
+    // (a legacy Markdown lesson never silently becomes rich text); anything
+    // else defaults to the new rich text editor.
+    const isOriginalTextLesson = isEditMode && lesson?.content_type === "TEXT";
     setForm((prev) => ({
       ...prev,
       content_type: value,
       video_url: "",
-      content_data: "",
+      content_data: value === "TEXT" && isOriginalTextLesson ? lesson.content_data || "" : "",
+      content_format:
+        value === "TEXT"
+          ? isOriginalTextLesson
+            ? lesson.content_format || "MARKDOWN"
+            : "HTML"
+          : prev.content_format,
       duration_minutes: "",
     }));
     setVideoSourceMode("UPLOAD");
@@ -251,7 +274,11 @@ export default function AddLessonModal({
         errors.file = "Please select a video file to upload.";
       }
     } else if (form.content_type === "TEXT") {
-      if (!form.content_data.trim()) {
+      const hasContent =
+        form.content_format === "HTML"
+          ? !isRichTextEmpty(form.content_data)
+          : Boolean(form.content_data.trim());
+      if (!hasContent) {
         errors.content_data = "Content is required for text lessons.";
       }
       if (form.duration_minutes) {
@@ -299,7 +326,11 @@ export default function AddLessonModal({
         formData.append("file", file);
       }
     } else if (form.content_type === "TEXT") {
-      formData.append("content_data", form.content_data.trim());
+      formData.append("content_format", form.content_format);
+      formData.append(
+        "content_data",
+        form.content_format === "HTML" ? form.content_data : form.content_data.trim()
+      );
       if (form.duration_minutes) {
         formData.append("duration_minutes", form.duration_minutes);
       }
@@ -530,14 +561,30 @@ export default function AddLessonModal({
         {isText && (
           <div>
             <label className={LABEL_CLASS}>Lesson Content</label>
-            <textarea
-              value={form.content_data}
-              onChange={updateField("content_data")}
-              disabled={isSubmitting}
-              placeholder="Write the lesson content in markdown..."
-              rows={8}
-              className={`${FIELD_CLASS} resize-none`}
-            />
+            {form.content_format === "HTML" ? (
+              <RichTextEditor
+                value={form.content_data}
+                onChange={(html) => {
+                  setForm((prev) => ({ ...prev, content_data: html }));
+                  setFieldErrors((prev) => ({ ...prev, content_data: null }));
+                }}
+                disabled={isSubmitting}
+              />
+            ) : (
+              <>
+                <textarea
+                  value={form.content_data}
+                  onChange={updateField("content_data")}
+                  disabled={isSubmitting}
+                  placeholder="Write the lesson content in markdown..."
+                  rows={8}
+                  className={`${FIELD_CLASS} resize-none`}
+                />
+                <p className="mt-1.5 text-[10px] font-mono text-stone-400">
+                  This lesson was authored in plain Markdown — edits stay in Markdown.
+                </p>
+              </>
+            )}
             {fieldErrors.content_data && (
               <p className={ERROR_CLASS}>{fieldErrors.content_data}</p>
             )}

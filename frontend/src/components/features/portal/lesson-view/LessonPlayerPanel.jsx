@@ -5,6 +5,7 @@ import { useTheme } from "@/hooks/useTheme";
 import VideoLessonPlayer from "../course-detail/VideoLessonPlayer";
 import DocumentLessonViewer from "../course-detail/DocumentLessonViewer";
 import ImageLessonViewer from "../course-detail/ImageLessonViewer";
+import TextLessonViewer from "../course-detail/TextLessonViewer";
 import LessonCompleteButton from "../course-detail/LessonCompleteButton";
 
 function LessonContent({ lesson, isVault }) {
@@ -16,6 +17,8 @@ function LessonContent({ lesson, isVault }) {
       return <DocumentLessonViewer lesson={lesson} />;
     case "IMAGE":
       return <ImageLessonViewer lesson={lesson} />;
+    case "TEXT":
+      return <TextLessonViewer lesson={lesson} />;
     default:
       return (
         <div

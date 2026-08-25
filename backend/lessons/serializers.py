@@ -1,11 +1,13 @@
 import os
 
+from django.utils.html import strip_tags
 from rest_framework import serializers
 
 from common.image import build_absolute_image_url
 from modules.models import Module
 
 from .models import Lesson
+from .sanitize import sanitize_lesson_html
 
 MAX_FILE_SIZE_MB = {
     Lesson.ContentType.VIDEO: 200,
@@ -43,6 +45,7 @@ class LessonSerializer(serializers.ModelSerializer):
             "description",
             "content_type",
             "content_data",
+            "content_format",
             "video_url",
             "file",
             "duration_minutes",
@@ -68,6 +71,7 @@ class LessonWriteSerializer(serializers.ModelSerializer):
             "description",
             "content_type",
             "content_data",
+            "content_format",
             "video_url",
             "file",
             "duration_minutes",
@@ -134,10 +138,22 @@ class LessonWriteSerializer(serializers.ModelSerializer):
                 attrs["file"] = file or None
         elif content_type == Lesson.ContentType.TEXT:
             content_data = attrs.get("content_data", getattr(self.instance, "content_data", None))
+            content_format = attrs.get(
+                "content_format", getattr(self.instance, "content_format", Lesson.ContentFormat.MARKDOWN)
+            )
             file = attrs.get("file", getattr(self.instance, "file", None))
             video_url = attrs.get("video_url", getattr(self.instance, "video_url", None))
 
-            if not content_data or not content_data.strip():
+            if content_format == Lesson.ContentFormat.HTML and content_data:
+                content_data = sanitize_lesson_html(content_data)
+                attrs["content_data"] = content_data
+
+            text_only = (
+                strip_tags(content_data)
+                if content_format == Lesson.ContentFormat.HTML and content_data
+                else content_data
+            )
+            if not text_only or not text_only.strip():
                 raise serializers.ValidationError(
                     {"content_data": "Content is required for text lessons."}
                 )
