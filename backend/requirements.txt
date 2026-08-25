@@ -10,3 +10,4 @@ google-auth
 requests
 gunicorn
 openpyxl
+nh3
