@@ -3,10 +3,11 @@
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "motion/react";
-import { User, ChevronDown, LogOut } from "lucide-react";
+import { User, ChevronDown, LogOut, MessageSquare } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLogoutFlow } from "@/hooks/useLogoutFlow";
 import { useTheme } from "@/hooks/useTheme";
+import { useUnreadMessagesCount } from "@/hooks/useUnreadMessagesCount";
 import { getProfile } from "@/services/profileService";
 
 const FALLBACK_LABEL = "My Account";
@@ -21,6 +22,7 @@ function getFirstName(name) {
 export default function AccountMenu({
   label,
   onProfile,
+  onMessages,
   variant = "light",
   className = "",
 }) {
@@ -28,6 +30,7 @@ export default function AccountMenu({
   const { isVault } = useTheme();
   const { user } = useAuth();
   const { isSigningOut, signOut } = useLogoutFlow();
+  const unreadConversations = useUnreadMessagesCount();
   const [backendProfile, setBackendProfile] = useState(null);
   const [isOpen, setIsOpen] = useState(false);
   const [menuPosition, setMenuPosition] = useState({ top: 0, left: 0 });
@@ -58,6 +61,7 @@ export default function AccountMenu({
     };
   }, []);
 
+  const avatarUrl = backendProfile?.profile?.avatar || null;
   const displayLabel =
     label || getFirstName(backendProfile?.full_name || user?.name);
   const rawRoleLabel = !label ? backendProfile?.role || undefined : undefined;
@@ -178,6 +182,14 @@ export default function AccountMenu({
       disabled: false,
     },
     {
+      key: "messages",
+      label: "Messages",
+      icon: MessageSquare,
+      onSelect: onMessages,
+      disabled: false,
+      badge: unreadConversations > 0 ? unreadConversations : null,
+    },
+    {
       key: "sign-out",
       label: isSigningOut ? "Signing Out..." : "Sign Out",
       icon: LogOut,
@@ -228,7 +240,7 @@ export default function AccountMenu({
           </div>
           {menuItems.map(
             (
-              { key, label: itemLabel, icon: Icon, onSelect, disabled, danger },
+              { key, label: itemLabel, icon: Icon, onSelect, disabled, danger, badge },
               index
             ) => (
               <button
@@ -266,7 +278,12 @@ export default function AccountMenu({
                         : "text-stone-400"
                   }`}
                 />
-                {itemLabel}
+                <span className="flex-1 text-left">{itemLabel}</span>
+                {badge ? (
+                  <span className="min-w-4.5 h-4.5 px-1 rounded-full bg-amber-600 text-white text-[9px] font-bold font-mono flex items-center justify-center shrink-0">
+                    {badge}
+                  </span>
+                ) : null}
               </button>
             )
           )}
@@ -304,13 +321,18 @@ export default function AccountMenu({
       >
         <span
           className={
-            "w-8 h-8 rounded-lg flex items-center justify-center shrink-0 " +
+            "w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0 " +
             (isDark
               ? "bg-stone-900 text-amber-500 border border-stone-700 shadow-inner"
               : "bg-amber-50 text-amber-700 border border-amber-100")
           }
         >
-          <User className="w-3.5 h-3.5" />
+          {avatarUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={avatarUrl} alt="" className="w-full h-full object-cover" />
+          ) : (
+            <User className="w-3.5 h-3.5" />
+          )}
         </span>
         <span className="flex flex-col items-start leading-tight text-left min-w-0 gap-0.5">
           <span

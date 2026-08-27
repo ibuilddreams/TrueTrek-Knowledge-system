@@ -2,6 +2,7 @@ from django.conf import settings
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
+from django.http import QueryDict
 from django.utils.encoding import force_str
 from django.utils.http import urlsafe_base64_decode
 from google.auth.exceptions import GoogleAuthError
@@ -397,9 +398,12 @@ class UserProfileSerializer(serializers.ModelSerializer):
 
 
 class UserProfileWriteSerializer(serializers.ModelSerializer):
+    avatar = serializers.ImageField(required=False, allow_null=True)
+
     class Meta:
         model = UserProfile
         fields = [
+            "avatar",
             "bio",
             "date_of_birth",
             "phone_number",
@@ -453,6 +457,27 @@ class ProfileUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
         fields = ["full_name", "email", "gender", "profile"]
+
+    def to_internal_value(self, data):
+        # A multipart request (needed for the avatar file) can't nest fields under
+        # "profile" the way JSON can, so the avatar upload is sent as flat top-level
+        # keys and folded into a "profile" dict here — same QueryDict-flattening
+        # approach as CourseWriteSerializer.to_internal_value for its nested fields.
+        if isinstance(data, QueryDict):
+            converted = {key: data.getlist(key)[-1] for key in data}
+            profile_data = {}
+            for field in UserProfileWriteSerializer().fields:
+                if field in converted:
+                    profile_data[field] = converted.pop(field)
+            # multipart has no way to send a real null — an emptied date field
+            # arrives as "", which DateField would otherwise reject as malformed.
+            if profile_data.get("date_of_birth") == "":
+                profile_data["date_of_birth"] = None
+            if profile_data:
+                converted["profile"] = profile_data
+            data = converted
+
+        return super().to_internal_value(data)
 
     def validate_email(self, value):
         email = UserModel.objects.normalize_email(value)

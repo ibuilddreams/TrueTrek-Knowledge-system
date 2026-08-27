@@ -59,6 +59,7 @@ INSTALLED_APPS = [
     'uploads',
     'audit_logs',
     'ai_courses',
+    'messaging',
 ]
 
 MIDDLEWARE = [
@@ -153,8 +154,9 @@ REST_FRAMEWORK = {
         'rest_framework.throttling.ScopedRateThrottle',
     ],
     'DEFAULT_THROTTLE_RATES': {
-        
+
         'ai-generation': '5/hour',
+        'message-send': '60/minute',
     },
 }
 

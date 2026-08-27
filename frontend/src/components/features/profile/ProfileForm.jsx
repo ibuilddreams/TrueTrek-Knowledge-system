@@ -73,6 +73,7 @@ export default function ProfileForm() {
   const [errors, setErrors] = useState({});
   const [avatarPreview, setAvatarPreview] = useState(null);
   const [initialAvatarPreview, setInitialAvatarPreview] = useState(null);
+  const [avatarFile, setAvatarFile] = useState(null);
   const [roleLabel, setRoleLabel] = useState("");
   const [username, setUsername] = useState("");
   const [isLoading, setIsLoading] = useState(true);
@@ -135,8 +136,9 @@ export default function ProfileForm() {
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
-  const handleCropSave = ({ url }) => {
+  const handleCropSave = ({ blob, url }) => {
     setAvatarPreview(url);
+    setAvatarFile(blob);
     closeCropModal();
   };
 
@@ -144,6 +146,7 @@ export default function ProfileForm() {
     setForm(initialForm);
     setErrors({});
     setAvatarPreview(initialAvatarPreview);
+    setAvatarFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
 
@@ -175,20 +178,23 @@ export default function ProfileForm() {
 
     setIsSubmitting(true);
     try {
-      const response = await updateProfile({
-        full_name: form.fullName.trim(),
-        email: form.email.trim(),
-        gender: form.gender || null,
-        profile: {
-          phone_number: form.phone.trim(),
-          date_of_birth: form.dob || null,
-        },
-      });
+      const formData = new FormData();
+      formData.append("full_name", form.fullName.trim());
+      formData.append("email", form.email.trim());
+      if (form.gender) formData.append("gender", form.gender);
+      formData.append("phone_number", form.phone.trim());
+      formData.append("date_of_birth", form.dob || "");
+      if (avatarFile) formData.append("avatar", avatarFile, "avatar.jpg");
+
+      const response = await updateProfile(formData);
       const profile = response?.data;
       const mapped = profile ? mapProfileToForm(profile) : form;
+      const nextAvatarPreview = profile?.profile?.avatar ?? avatarPreview;
       setForm(mapped);
       setInitialForm(mapped);
-      setInitialAvatarPreview(avatarPreview);
+      setAvatarPreview(nextAvatarPreview);
+      setInitialAvatarPreview(nextAvatarPreview);
+      setAvatarFile(null);
       setRoleLabel(profile?.role || roleLabel);
       updateUserName(mapped.fullName);
       toastSuccess("Profile updated successfully.");

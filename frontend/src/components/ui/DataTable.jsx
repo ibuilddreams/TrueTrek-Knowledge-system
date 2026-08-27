@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle, RefreshCw } from "lucide-react";
+import { AlertCircle, ArrowDown, ArrowUp, ArrowUpDown, RefreshCw } from "lucide-react";
 import TableSkeleton from "@/components/ui/TableSkeleton";
 import EmptyState from "@/components/ui/EmptyState";
 
@@ -13,6 +13,8 @@ export default function DataTable({
   onRetry,
   emptyLabel = "No records found.",
   onRowClick,
+  sortConfig,
+  onSortChange,
 }) {
   if (isLoading) {
     return <TableSkeleton columns={columns.length} />;
@@ -48,14 +50,38 @@ export default function DataTable({
       <table className="w-full text-left border-collapse">
         <thead>
           <tr className="border-b border-stone-200">
-            {columns.map((column) => (
-              <th
-                key={column.key}
-                className="py-3 px-3 text-[10px] font-mono uppercase tracking-wider text-stone-400 font-semibold whitespace-nowrap"
-              >
-                {column.header}
-              </th>
-            ))}
+            {columns.map((column) => {
+              const isSortable = Boolean(column.sortable && onSortChange);
+              const isActive = isSortable && sortConfig?.key === column.key;
+              return (
+                <th
+                  key={column.key}
+                  className="py-3 px-3 text-xs font-mono uppercase tracking-wider text-stone-500 font-bold whitespace-nowrap"
+                >
+                  {isSortable ? (
+                    <button
+                      type="button"
+                      onClick={() => onSortChange(column.key)}
+                      className="inline-flex items-center gap-1 hover:text-stone-800 transition-colors cursor-pointer"
+                      aria-label={`Sort by ${column.header}`}
+                    >
+                      {column.header}
+                      {isActive ? (
+                        sortConfig.direction === "asc" ? (
+                          <ArrowUp className="w-3 h-3" />
+                        ) : (
+                          <ArrowDown className="w-3 h-3" />
+                        )
+                      ) : (
+                        <ArrowUpDown className="w-3 h-3 text-stone-300" />
+                      )}
+                    </button>
+                  ) : (
+                    column.header
+                  )}
+                </th>
+              );
+            })}
           </tr>
         </thead>
         <tbody>
