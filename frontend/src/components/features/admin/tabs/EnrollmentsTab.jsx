@@ -5,6 +5,8 @@ import { Edit3, Eye, Trash2, Upload, UserPlus } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useSortConfig } from "@/hooks/useSortConfig";
+import { sortRows } from "@/lib/sorting";
 import { formatDateTime } from "@/lib/adminFormatters";
 import {
   bulkImportEnrollments,
@@ -42,6 +44,7 @@ export default function EnrollmentsTab() {
   const debouncedSearch = useDebouncedValue(searchInput, 300);
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [sortConfig, toggleSort] = useSortConfig();
 
   const [viewEnrollment, setViewEnrollment] = useState(null);
   const [editEnrollment, setEditEnrollment] = useState(null);
@@ -71,7 +74,7 @@ export default function EnrollmentsTab() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, statusFilter]);
+  }, [debouncedSearch, statusFilter, sortConfig]);
 
   const filteredEnrollments = useMemo(() => {
     const query = debouncedSearch.trim().toLowerCase();
@@ -85,13 +88,23 @@ export default function EnrollmentsTab() {
     });
   }, [items, debouncedSearch, statusFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredEnrollments.length / PAGE_SIZE));
-  const paginatedEnrollments = filteredEnrollments.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const enrollmentSortAccessors = {
+    student: (enrollment) => enrollment.student?.name || "",
+    course: (enrollment) => enrollment.course?.title || "",
+    teacher: (enrollment) => enrollment.teacher?.name || "",
+    status: (enrollment) => enrollment.status || "",
+    enrolled_at: (enrollment) => (enrollment.enrolled_at ? new Date(enrollment.enrolled_at) : null),
+  };
+  const sortedEnrollments = sortRows(filteredEnrollments, sortConfig, enrollmentSortAccessors);
+
+  const totalPages = Math.max(1, Math.ceil(sortedEnrollments.length / PAGE_SIZE));
+  const paginatedEnrollments = sortedEnrollments.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const columns = [
     {
       key: "student",
       header: "Student",
+      sortable: true,
       render: (enrollment) => (
         <div>
           <p className="font-semibold text-stone-800">{enrollment.student?.name}</p>
@@ -99,10 +112,30 @@ export default function EnrollmentsTab() {
         </div>
       ),
     },
-    { key: "course", header: "Course", render: (enrollment) => enrollment.course?.title || "—" },
-    { key: "teacher", header: "Teacher", render: (enrollment) => enrollment.teacher?.name || "Unassigned" },
-    { key: "status", header: "Status", render: (enrollment) => <StatusBadge status={enrollment.status} /> },
-    { key: "enrolled_at", header: "Enrolled", render: (enrollment) => formatDateTime(enrollment.enrolled_at) },
+    {
+      key: "course",
+      header: "Course",
+      sortable: true,
+      render: (enrollment) => enrollment.course?.title || "—",
+    },
+    {
+      key: "teacher",
+      header: "Teacher",
+      sortable: true,
+      render: (enrollment) => enrollment.teacher?.name || "Unassigned",
+    },
+    {
+      key: "status",
+      header: "Status",
+      sortable: true,
+      render: (enrollment) => <StatusBadge status={enrollment.status} />,
+    },
+    {
+      key: "enrolled_at",
+      header: "Enrolled",
+      sortable: true,
+      render: (enrollment) => formatDateTime(enrollment.enrolled_at),
+    },
     {
       key: "actions",
       header: "Actions",
@@ -171,6 +204,8 @@ export default function EnrollmentsTab() {
           error={status === "failed" ? error : null}
           onRetry={() => loadEnrollments({ force: true })}
           emptyLabel="No enrollments found."
+          sortConfig={sortConfig}
+          onSortChange={toggleSort}
         />
         <Pagination
           page={page}

@@ -115,6 +115,7 @@ export default function PortalHeader({
             variant="dark"
             className="w-full"
             onProfile={() => router.push(ROUTES.PROFILE)}
+            onMessages={() => router.push(ROUTES.MESSAGES)}
           />
         </div>
       </div>

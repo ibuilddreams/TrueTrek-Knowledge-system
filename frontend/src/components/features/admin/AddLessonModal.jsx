@@ -23,6 +23,7 @@ import {
   isIframeEmbedCode,
   normalizePastedVideoInput,
 } from "@/lib/videoEmbed";
+import { getOrdinalLabel, buildOrdinalOrderOptions } from "@/lib/ordinal";
 
 // TipTap's useEditor touches `document` at mount, so it can only run client-side
 // (same reasoning already used for react-pdf/mammoth in DocumentLessonViewer.jsx).
@@ -203,6 +204,13 @@ export default function AddLessonModal({
     setFieldErrors((prev) => ({ ...prev, [field]: null }));
   };
 
+  const handleModuleChange = (event) => {
+    // Switching modules resets the position back to 1st — the previous
+    // position may not even exist as a valid slot in the newly picked module.
+    setForm((prev) => ({ ...prev, module: event.target.value, order: "1" }));
+    setFieldErrors((prev) => ({ ...prev, module: null, order: null }));
+  };
+
   const handleContentTypeChange = (value) => {
     // Editing an existing TEXT lesson keeps whatever format it was authored in
     // (a legacy Markdown lesson never silently becomes rich text); anything
@@ -374,6 +382,18 @@ export default function AddLessonModal({
   const requiresDuration = !isVideo && !isText;
   const trimmedVideoUrl = form.video_url.trim();
   const videoEmbedUrl = trimmedVideoUrl ? getVideoEmbedUrl(trimmedVideoUrl) : null;
+  const selectedModule = modules.find((module) => String(module.id) === form.module);
+  const existingLessonsCount = selectedModule?.lessons_count ?? 0;
+  // If we're editing a lesson that already belongs to the selected module, it's
+  // already counted in lessons_count, so the valid positions are 1..count.
+  // Otherwise (new lesson, or moving an existing one to a different module) the
+  // lesson doesn't occupy a slot yet, so it can also go one past the end.
+  const isEditingWithinSameModule =
+    isEditMode && String(lesson?.module?.id ?? lesson?.module ?? "") === form.module;
+  const requiredMaxOrder = isEditingWithinSameModule
+    ? Math.max(existingLessonsCount, 1)
+    : existingLessonsCount + 1;
+  const orderOptions = buildOrdinalOrderOptions(requiredMaxOrder);
 
   return (
     <Modal
@@ -391,7 +411,7 @@ export default function AddLessonModal({
           <label className={LABEL_CLASS}>Module</label>
           <select
             value={form.module}
-            onChange={updateField("module")}
+            onChange={handleModuleChange}
             disabled={isSubmitting}
             className={FIELD_CLASS}
           >
@@ -666,23 +686,25 @@ export default function AddLessonModal({
           />
         )}
 
-        <div className="w-32">
-          <label className={LABEL_CLASS}>Order</label>
-          <input
-            type="number"
-            min="1"
-            step="1"
+        <div className="w-40">
+          <label className={LABEL_CLASS}>Class Order</label>
+          <select
             value={form.order}
             onChange={updateField("order")}
-            onKeyDown={(event) => {
-              if (event.key === "-" || event.key === "e" || event.key === "E" || event.key === "+") {
-                event.preventDefault();
-              }
-            }}
-            disabled={isSubmitting}
+            disabled={isSubmitting || !form.module}
             className={FIELD_CLASS}
-          />
-          <p className="mt-1.5 text-[10px] font-mono text-stone-400">1 = first position</p>
+          >
+            {orderOptions.map((position) => (
+              <option key={position} value={position}>
+                {getOrdinalLabel(position)}
+              </option>
+            ))}
+          </select>
+          <p className="mt-1.5 text-[10px] font-mono text-stone-400">
+            {form.module
+              ? `This module currently has ${existingLessonsCount} lesson${existingLessonsCount === 1 ? "" : "s"}.`
+              : "Select a module to choose a position."}
+          </p>
           {fieldErrors.order && (
             <p className={ERROR_CLASS}>{fieldErrors.order}</p>
           )}

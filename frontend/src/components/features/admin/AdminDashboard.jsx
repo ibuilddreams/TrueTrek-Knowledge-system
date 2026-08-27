@@ -173,7 +173,10 @@ function AdminDashboardContent() {
         </div>
 
         <div className="relative z-40 flex items-center gap-3">
-          <AccountMenu onProfile={() => router.push(ROUTES.PROFILE)} />
+          <AccountMenu
+            onProfile={() => router.push(ROUTES.PROFILE)}
+            onMessages={() => router.push(ROUTES.MESSAGES)}
+          />
         </div>
       </div>
 

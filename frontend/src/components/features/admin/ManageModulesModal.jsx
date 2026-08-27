@@ -75,6 +75,7 @@ import {
 } from "@/services/quizzesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatDate, formatDateTime } from "@/lib/adminFormatters";
+import { getOrdinalLabel, buildOrdinalOrderOptions } from "@/lib/ordinal";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 const INITIAL_FORM = { title: "", description: "", order: "1" };
@@ -984,6 +985,12 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
   }, [modules, localModuleOrderIds]);
 
   const isSubmitting = createModuleMutation.isPending || updateModuleMutation.isPending;
+  // Editing an existing module means it's already counted in modules.length,
+  // so the valid positions are 1..count; a new module can also go one past the end.
+  const requiredMaxModuleOrder = editingModule
+    ? Math.max(modules.length, 1)
+    : modules.length + 1;
+  const moduleOrderOptions = buildOrdinalOrderOptions(requiredMaxModuleOrder);
 
   const handleClose = () => {
     if (isSubmitting) return;
@@ -1204,23 +1211,23 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
             {fieldErrors.description && <p className={ERROR_CLASS}>{fieldErrors.description}</p>}
           </div>
 
-          <div className="w-32">
+          <div className="w-40">
             <label className={LABEL_CLASS}>Order</label>
-            <input
-              type="number"
-              min="1"
-              step="1"
+            <select
               value={form.order}
               onChange={updateField("order")}
-              onKeyDown={(event) => {
-                if (event.key === "-" || event.key === "e" || event.key === "E" || event.key === "+") {
-                  event.preventDefault();
-                }
-              }}
               disabled={isSubmitting}
               className={FIELD_CLASS}
-            />
-            <p className="mt-1.5 text-[10px] font-mono text-stone-400">1 = first position</p>
+            >
+              {moduleOrderOptions.map((position) => (
+                <option key={position} value={position}>
+                  {getOrdinalLabel(position)}
+                </option>
+              ))}
+            </select>
+            <p className="mt-1.5 text-[10px] font-mono text-stone-400">
+              This course currently has {modules.length} module{modules.length === 1 ? "" : "s"}.
+            </p>
             {fieldErrors.order && <p className={ERROR_CLASS}>{fieldErrors.order}</p>}
           </div>
 

@@ -25,6 +25,7 @@ import {
   retryCourseGeneration,
 } from "@/services/aiCoursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
+import { sanitizeAmountInput, formatAmountOnBlur } from "@/lib/amountInput";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 const DIFFICULTY_OPTIONS = [
@@ -260,6 +261,15 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
     const value = event.target.type === "checkbox" ? event.target.checked : event.target.value;
     setForm((prev) => ({ ...prev, [field]: value }));
     setFieldErrors((prev) => ({ ...prev, [field]: null }));
+  };
+
+  const handleAmountChange = (event) => {
+    setForm((prev) => ({ ...prev, amount: sanitizeAmountInput(event.target.value) }));
+    setFieldErrors((prev) => ({ ...prev, amount: null }));
+  };
+
+  const handleAmountBlur = (event) => {
+    setForm((prev) => ({ ...prev, amount: formatAmountOnBlur(event.target.value) }));
   };
 
   const validateStep = (targetStep) => {
@@ -502,7 +512,8 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
                   type="text"
                   inputMode="decimal"
                   value={form.amount}
-                  onChange={updateField("amount")}
+                  onChange={handleAmountChange}
+                  onBlur={handleAmountBlur}
                   placeholder="0.00"
                   className={FIELD_CLASS}
                 />
