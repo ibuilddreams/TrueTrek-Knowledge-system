@@ -14,6 +14,8 @@ import {
 import { useAdminCourses } from "@/hooks/admin/useAdminCourses";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useSortConfig } from "@/hooks/useSortConfig";
+import { sortRows } from "@/lib/sorting";
 import { deleteCourse } from "@/services/coursesService";
 import { getCategories } from "@/services/categoriesService";
 import { getTags } from "@/services/tagsService";
@@ -57,6 +59,7 @@ export default function CoursesTab() {
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
   const [page, setPage] = useState(1);
+  const [sortConfig, toggleSort] = useSortConfig();
 
   const [viewCourseId, setViewCourseId] = useState(null);
   const [enrollCourseId, setEnrollCourseId] = useState(null);
@@ -109,7 +112,7 @@ export default function CoursesTab() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, statusFilter, categoryFilter, tagFilter]);
+  }, [debouncedSearch, statusFilter, categoryFilter, tagFilter, sortConfig]);
 
   const categoryFilterOptions = [
     { value: "", label: "All Categories" },
@@ -124,8 +127,20 @@ export default function CoursesTab() {
     ...tags.map((tag) => ({ value: String(tag.id), label: tag.name })),
   ];
 
-  const totalPages = Math.max(1, Math.ceil(items.length / PAGE_SIZE));
-  const paginatedCourses = items.slice(
+  const courseSortAccessors = {
+    code: (course) => course.code || "",
+    title: (course) => course.title || "",
+    category: (course) => course.category?.name || "",
+    status: (course) => course.status || "",
+    amount: (course) => Number(course.amount) || 0,
+    instructors: (course) =>
+      course.instructors?.length ? course.instructors.map((i) => i.name).join(", ") : "",
+    created_at: (course) => (course.created_at ? new Date(course.created_at) : null),
+  };
+  const sortedCourses = sortRows(items, sortConfig, courseSortAccessors);
+
+  const totalPages = Math.max(1, Math.ceil(sortedCourses.length / PAGE_SIZE));
+  const paginatedCourses = sortedCourses.slice(
     (page - 1) * PAGE_SIZE,
     page * PAGE_SIZE,
   );
@@ -149,6 +164,7 @@ export default function CoursesTab() {
     {
       key: "code",
       header: "Code",
+      sortable: true,
       render: (course) => (
         <span className="font-mono text-stone-600">{course.code || "—"}</span>
       ),
@@ -156,6 +172,7 @@ export default function CoursesTab() {
     {
       key: "title",
       header: "Title",
+      sortable: true,
       render: (course) => (
         <span className="font-semibold text-stone-800">{course.title}</span>
       ),
@@ -163,16 +180,19 @@ export default function CoursesTab() {
     {
       key: "category",
       header: "Category",
+      sortable: true,
       render: (course) => course.category?.name || "—",
     },
     {
       key: "status",
       header: "Status",
+      sortable: true,
       render: (course) => <StatusBadge status={course.status} />,
     },
     {
       key: "amount",
       header: "Amount",
+      sortable: true,
       render: (course) => (
         <span className="font-mono text-stone-600">
           {formatAmount(course.amount)}
@@ -182,6 +202,7 @@ export default function CoursesTab() {
     {
       key: "instructors",
       header: "Instructors",
+      sortable: true,
       render: (course) =>
         course.instructors?.length
           ? course.instructors.map((i) => i.name).join(", ")
@@ -190,6 +211,7 @@ export default function CoursesTab() {
     {
       key: "created_at",
       header: "Created",
+      sortable: true,
       render: (course) => formatDate(course.created_at),
     },
     {
@@ -309,6 +331,8 @@ export default function CoursesTab() {
           onRetry={refreshCourses}
           emptyLabel="No courses found."
           onRowClick={(course) => setManagingModulesCourse(course)}
+          sortConfig={sortConfig}
+          onSortChange={toggleSort}
         />
         <Pagination
           page={page}

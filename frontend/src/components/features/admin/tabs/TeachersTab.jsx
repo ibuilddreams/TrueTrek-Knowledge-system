@@ -14,6 +14,8 @@ import { useMutation } from "@tanstack/react-query";
 import { useAdminTeachers } from "@/hooks/admin/useAdminTeachers";
 import { useAdminCourses } from "@/hooks/admin/useAdminCourses";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useSortConfig } from "@/hooks/useSortConfig";
+import { sortRows } from "@/lib/sorting";
 import {
   bulkImportTeachers,
   deleteTeacher,
@@ -53,6 +55,7 @@ export default function TeachersTab() {
   const debouncedSearch = useDebouncedValue(searchInput, 300);
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [sortConfig, toggleSort] = useSortConfig();
 
   const [viewTeacherId, setViewTeacherId] = useState(null);
   const [editingTeacher, setEditingTeacher] = useState(null);
@@ -75,7 +78,7 @@ export default function TeachersTab() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, statusFilter]);
+  }, [debouncedSearch, statusFilter, sortConfig]);
 
   const courseCountByTeacherId = useMemo(() => {
     const counts = {};
@@ -101,11 +104,20 @@ export default function TeachersTab() {
     });
   }, [items, debouncedSearch, statusFilter]);
 
+  const teacherSortAccessors = {
+    name: (teacher) => teacher.full_name || "",
+    email: (teacher) => teacher.email || "",
+    status: (teacher) => teacher.account_status || "",
+    courses: (teacher) => courseCountByTeacherId[teacher.id] || 0,
+    joined: (teacher) => (teacher.date_joined ? new Date(teacher.date_joined) : null),
+  };
+  const sortedTeachers = sortRows(filteredTeachers, sortConfig, teacherSortAccessors);
+
   const totalPages = Math.max(
     1,
-    Math.ceil(filteredTeachers.length / PAGE_SIZE),
+    Math.ceil(sortedTeachers.length / PAGE_SIZE),
   );
-  const paginatedTeachers = filteredTeachers.slice(
+  const paginatedTeachers = sortedTeachers.slice(
     (page - 1) * PAGE_SIZE,
     page * PAGE_SIZE,
   );
@@ -157,26 +169,30 @@ export default function TeachersTab() {
     {
       key: "name",
       header: "Teacher Name",
+      sortable: true,
       render: (teacher) => (
         <span className="font-semibold text-stone-800">
           {teacher.full_name}
         </span>
       ),
     },
-    { key: "email", header: "Email", render: (teacher) => teacher.email },
+    { key: "email", header: "Email", sortable: true, render: (teacher) => teacher.email },
     {
       key: "status",
       header: "Status",
+      sortable: true,
       render: (teacher) => <StatusBadge status={teacher.account_status} />,
     },
     {
       key: "courses",
       header: "Assigned Courses",
+      sortable: true,
       render: (teacher) => courseCountByTeacherId[teacher.id] || 0,
     },
     {
       key: "joined",
       header: "Joined Date",
+      sortable: true,
       render: (teacher) => formatDate(teacher.date_joined),
     },
     {
@@ -274,6 +290,8 @@ export default function TeachersTab() {
           error={status === "failed" ? error : null}
           onRetry={() => loadTeachers({ force: true })}
           emptyLabel="No teachers found."
+          sortConfig={sortConfig}
+          onSortChange={toggleSort}
         />
         <Pagination
           page={page}

@@ -11,6 +11,7 @@ import { createCategory, getCategories } from "@/services/categoriesService";
 import { createTag, getTags } from "@/services/tagsService";
 import { getTeachers } from "@/services/teachersService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
+import { sanitizeAmountInput, formatAmountOnBlur } from "@/lib/amountInput";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 const DIFFICULTY_OPTIONS = [
@@ -37,13 +38,6 @@ const LABEL_CLASS =
   "text-[10px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold";
 
 const ERROR_CLASS = "text-[10px] font-mono text-red-600 mt-1";
-
-function sanitizeAmountInput(rawValue) {
-  const digitsAndDot = rawValue.replace(/[^0-9.]/g, "");
-  const [integerPart, ...decimalParts] = digitsAndDot.split(".");
-  if (decimalParts.length === 0) return integerPart;
-  return `${integerPart}.${decimalParts.join("").slice(0, 2)}`;
-}
 
 export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) {
   const isEditMode = Boolean(course);
@@ -191,6 +185,10 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
   const handleAmountChange = (event) => {
     setForm((prev) => ({ ...prev, amount: sanitizeAmountInput(event.target.value) }));
     setFieldErrors((prev) => ({ ...prev, amount: null }));
+  };
+
+  const handleAmountBlur = (event) => {
+    setForm((prev) => ({ ...prev, amount: formatAmountOnBlur(event.target.value) }));
   };
 
   const categoryOptions = categories.map((category) => ({ value: category.id, label: category.name }));
@@ -477,6 +475,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
               inputMode="decimal"
               value={form.amount}
               onChange={handleAmountChange}
+              onBlur={handleAmountBlur}
               disabled={isBusy}
               placeholder="0.00"
               className={FIELD_CLASS}

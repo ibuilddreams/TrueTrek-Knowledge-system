@@ -6,6 +6,8 @@ import { useMutation } from "@tanstack/react-query";
 import { useAdminStudents } from "@/hooks/admin/useAdminStudents";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { useSortConfig } from "@/hooks/useSortConfig";
+import { sortRows } from "@/lib/sorting";
 import {
   bulkImportStudents,
   deleteStudent,
@@ -45,6 +47,7 @@ export default function StudentsTab() {
   const debouncedSearch = useDebouncedValue(searchInput, 300);
   const [statusFilter, setStatusFilter] = useState("");
   const [page, setPage] = useState(1);
+  const [sortConfig, toggleSort] = useSortConfig();
 
   const [viewStudentId, setViewStudentId] = useState(null);
   const [editingStudent, setEditingStudent] = useState(null);
@@ -67,7 +70,7 @@ export default function StudentsTab() {
 
   useEffect(() => {
     setPage(1);
-  }, [debouncedSearch, statusFilter]);
+  }, [debouncedSearch, statusFilter, sortConfig]);
 
   const enrollmentCountByStudentId = useMemo(() => {
     const counts = {};
@@ -89,8 +92,17 @@ export default function StudentsTab() {
     });
   }, [items, debouncedSearch, statusFilter]);
 
-  const totalPages = Math.max(1, Math.ceil(filteredStudents.length / PAGE_SIZE));
-  const paginatedStudents = filteredStudents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+  const studentSortAccessors = {
+    name: (student) => student.full_name || "",
+    email: (student) => student.email || "",
+    status: (student) => student.account_status || "",
+    enrollments: (student) => enrollmentCountByStudentId[student.id] || 0,
+    joined: (student) => (student.date_joined ? new Date(student.date_joined) : null),
+  };
+  const sortedStudents = sortRows(filteredStudents, sortConfig, studentSortAccessors);
+
+  const totalPages = Math.max(1, Math.ceil(sortedStudents.length / PAGE_SIZE));
+  const paginatedStudents = sortedStudents.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
 
   const handleDeactivateConfirm = async () => {
     if (!deactivatingStudent) return;
@@ -139,18 +151,26 @@ export default function StudentsTab() {
     {
       key: "name",
       header: "Student Name",
+      sortable: true,
       render: (student) => <span className="font-semibold text-stone-800">{student.full_name}</span>,
     },
-    { key: "email", header: "Email", render: (student) => student.email },
-    { key: "status", header: "Status", render: (student) => <StatusBadge status={student.account_status} /> },
+    { key: "email", header: "Email", sortable: true, render: (student) => student.email },
+    {
+      key: "status",
+      header: "Status",
+      sortable: true,
+      render: (student) => <StatusBadge status={student.account_status} />,
+    },
     {
       key: "enrollments",
       header: "Total Enrollments",
+      sortable: true,
       render: (student) => enrollmentCountByStudentId[student.id] || 0,
     },
     {
       key: "joined",
       header: "Joined Date",
+      sortable: true,
       render: (student) => formatDate(student.date_joined),
     },
     {
@@ -234,6 +254,8 @@ export default function StudentsTab() {
           error={status === "failed" ? error : null}
           onRetry={() => loadStudents({ force: true })}
           emptyLabel="No students found."
+          sortConfig={sortConfig}
+          onSortChange={toggleSort}
         />
         <Pagination
           page={page}

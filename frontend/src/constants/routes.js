@@ -19,6 +19,7 @@ export const ROUTES = {
   FORGOT_PASSWORD: "/forgot-password",
   RESET_PASSWORD: "/reset-password",
   PROFILE: "/profile",
+  MESSAGES: "/messages",
   DASHBOARD: "/dashboard",
   PORTAL: "/portal",
   TEACHERS: "/teachers",
@@ -73,7 +74,8 @@ export function getSectionFromPathname(pathname) {
     pathname.startsWith(ROUTES.TEACHER_PORTAL) ||
     pathname.startsWith(ROUTES.DASHBOARD) ||
     pathname.startsWith(ROUTES.TEACHERS) ||
-    pathname.startsWith(ROUTES.PROFILE)
+    pathname.startsWith(ROUTES.PROFILE) ||
+    pathname.startsWith(ROUTES.MESSAGES)
   ) {
     return ROUTE_KEYS.DASHBOARD;
   }

@@ -32,6 +32,7 @@ urlpatterns = [
     path('api/onboarding/', include('onboarding.urls')),
     path('api/future-clients/', include('future_clients.urls')),
     path('api/ai-courses/', include('ai_courses.urls')),
+    path('api/messaging/', include('messaging.urls')),
     path('api/auth/login/', CustomTokenObtainPairView.as_view()),
     path('api/auth/signup/', SignupView.as_view()),
     path('api/auth/google/', GoogleAuthView.as_view()),

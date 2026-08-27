@@ -27,6 +27,8 @@ export default function SiteShell({ children }) {
     return <LogoutOverlay stage={logoutStage} />;
   }
 
+  const hideFooter = pathname?.startsWith(ROUTES.MESSAGES);
+
   return (
     <div
       id="school-master-shell"
@@ -41,7 +43,7 @@ export default function SiteShell({ children }) {
       <main id="primary-view-wrapper" className="flex-grow pt-20">
         {children}
       </main>
-      <Footer />
+      {!hideFooter && <Footer />}
     </div>
   );
 }
