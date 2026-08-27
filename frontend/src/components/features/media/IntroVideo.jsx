@@ -23,7 +23,7 @@ const CHANNELS = [
     title: 'Orientation, Mission, and Core Philosophy',
     speaker: 'Marcus Vance Sr., Founder & Fiduciary Champion',
     durationString: '06:12',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-stars-in-space-background-1611-large.mp4',
+    videoUrl: '/welcome.mp4',
     chapters: [
       { time: 0, title: 'Introduction to TrueTrek Learning' },
       { time: 45, title: 'The 11-Tier Framework Vision' },
@@ -52,7 +52,7 @@ const CHANNELS = [
     title: 'The 11-Tier Curriculum Pathing Guide',
     speaker: 'Amanda Ross, Esq., Lead Compliance Counsel',
     durationString: '04:45',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-cozy-forest-with-sunbeams-4943-large.mp4',
+    videoUrl: '/welcome.mp4',
     chapters: [
       { time: 0, title: 'The Anatomy of the Tiers' },
       { time: 30, title: 'Athletic, Academic, and Professional Tracks' },
@@ -79,7 +79,7 @@ const CHANNELS = [
     title: 'The Student Portal & Live Drills Walkthrough',
     speaker: 'Dr. Simone Chen, Head of Neurobiology',
     durationString: '05:30',
-    videoUrl: 'https://assets.mixkit.co/videos/preview/mixkit-business-meeting-room-with-people-closing-deals-42999-large.mp4',
+    videoUrl: '/welcome.mp4',
     chapters: [
       { time: 0, title: 'The Decision Physics Sandbox' },
       { time: 40, title: 'Circadian Cycles & Rest Habit Compliance' },
@@ -108,6 +108,7 @@ export default function IntroVideo() {
   const [isPlaying, setIsPlaying] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
   const [currentTime, setCurrentTime] = useState(0); // in seconds
+  const [duration, setDuration] = useState(0); // in seconds
   const [hasLoaded, setHasLoaded] = useState(true);
 
   const videoRef = useRef(null);
@@ -120,6 +121,7 @@ export default function IntroVideo() {
   const handleSelectChannel = (id) => {
     setActiveChannelId(id);
     setCurrentTime(0);
+    setDuration(0);
     setIsPlaying(false);
     if (videoRef.current) {
       videoRef.current.currentTime = 0;
@@ -147,6 +149,12 @@ export default function IntroVideo() {
   const handleTimeUpdate = () => {
     if (!videoRef.current) return;
     setCurrentTime(videoRef.current.currentTime);
+  };
+
+  const handleLoadedMetadata = () => {
+    if (!videoRef.current) return;
+    const nextDuration = videoRef.current.duration;
+    setDuration(Number.isFinite(nextDuration) ? nextDuration : 0);
   };
 
   const handleSeek = (e) => {
@@ -230,6 +238,7 @@ export default function IntroVideo() {
               ref={videoRef}
               src={activeChannel.videoUrl}
               onTimeUpdate={handleTimeUpdate}
+              onLoadedMetadata={handleLoadedMetadata}
               onClick={togglePlay}
               loop
               muted={isMuted}
@@ -279,14 +288,14 @@ export default function IntroVideo() {
                 <input
                   type="range"
                   min="0"
-                  max={videoRef.current ? videoRef.current.duration || maxDuration : maxDuration}
+                  max={duration || maxDuration}
                   step="0.1"
                   value={currentTime}
                   onChange={handleSeek}
                   className="w-full h-1 bg-stone-800 rounded-lg appearance-auto cursor-pointer focus:outline-none accent-amber-500"
                 />
                 <span className="text-[10px] font-mono text-stone-400 w-10 shrink-0 text-right select-none">
-                  {videoRef.current ? formatTime(videoRef.current.duration) : activeChannel.durationString}
+                  {duration ? formatTime(duration) : activeChannel.durationString}
                 </span>
               </div>
 
