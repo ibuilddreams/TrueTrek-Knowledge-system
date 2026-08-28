@@ -17,14 +17,14 @@ export const NAV_LINKS = [
     mobileLabel: "Curriculum Core",
     title: "Explore the 14-Tier Incubator Life Curriculum",
   },
-  {
-    id: "nav-link-partnerships",
-    key: ROUTE_KEYS.PARTNERSHIPS,
-    href: ROUTES.PARTNERSHIPS,
-    label: "For Schools",
-    mobileLabel: "For Schools (Licenses)",
-    title: "Review academic institutional licenses and partnerships",
-  },
+  // {
+  //   id: "nav-link-partnerships",
+  //   key: ROUTE_KEYS.PARTNERSHIPS,
+  //   href: ROUTES.PARTNERSHIPS,
+  //   label: "For Schools",
+  //   mobileLabel: "For Schools (Licenses)",
+  //   title: "Review academic institutional licenses and partnerships",
+  // },
   {
     id: "nav-link-store",
     key: ROUTE_KEYS.STORE,
