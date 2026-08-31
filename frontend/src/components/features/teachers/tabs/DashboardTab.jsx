@@ -16,6 +16,46 @@ import StatCard from '@/components/ui/StatCard';
 import EmptyState from '@/components/ui/EmptyState';
 import MarkdownMiniRenderer from '@/components/ui/MarkdownMiniRenderer';
 
+function wrapAxisLabel(value, maxCharsPerLine = 16) {
+  const words = String(value).split(" ");
+  const lines = [""];
+  for (const word of words) {
+    const lineIndex = lines.length - 1;
+    const candidate = lines[lineIndex] ? `${lines[lineIndex]} ${word}` : word;
+    if (!lines[lineIndex] || candidate.length <= maxCharsPerLine) {
+      lines[lineIndex] = candidate;
+    } else if (lines.length < 2) {
+      lines.push(word);
+    } else {
+      lines[lineIndex] = `${lines[lineIndex]}…`;
+      break;
+    }
+  }
+  return lines;
+}
+
+function CourseAxisTick({ x, y, payload }) {
+  const lines = wrapAxisLabel(payload.value);
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {lines.map((line, index) => (
+        <text
+          key={index}
+          x={0}
+          y={0}
+          dy={12 + index * 13}
+          textAnchor="middle"
+          fontSize={11}
+          fontFamily="monospace"
+          fill="#78716c"
+        >
+          {line}
+        </text>
+      ))}
+    </g>
+  );
+}
+
 export default function DashboardTab({ students }) {
   const {
     data: dashboardData,
@@ -333,19 +373,14 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
                   />
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={liveStudentsPerCourse} margin={{ top: 10, right: 10, left: -20, bottom: 10 }}>
+                    <BarChart data={liveStudentsPerCourse} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
                       <XAxis
                         dataKey="name"
                         stroke="#78716c"
-                        tick={{ fontSize: 12 }}
                         interval={0}
-                        angle={-25}
-                        textAnchor="end"
-                        height={60}
-                        tickFormatter={(value) =>
-                          value.length > 16 ? `${value.slice(0, 16)}…` : value
-                        }
+                        height={42}
+                        tick={<CourseAxisTick />}
                       />
                       <YAxis allowDecimals={false} stroke="#78716c" tick={{ fontSize: 12 }} />
                       <Tooltip
@@ -384,19 +419,14 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
                   />
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={liveCompletionByCourse} margin={{ top: 10, right: 10, left: -20, bottom: 10 }}>
+                    <BarChart data={liveCompletionByCourse} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
                       <XAxis
                         dataKey="name"
                         stroke="#78716c"
-                        tick={{ fontSize: 12 }}
                         interval={0}
-                        angle={-25}
-                        textAnchor="end"
-                        height={60}
-                        tickFormatter={(value) =>
-                          value.length > 16 ? `${value.slice(0, 16)}…` : value
-                        }
+                        height={42}
+                        tick={<CourseAxisTick />}
                       />
                       <YAxis allowDecimals={false} domain={[0, 100]} stroke="#78716c" tick={{ fontSize: 12 }} />
                       <Tooltip
