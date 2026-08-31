@@ -218,7 +218,7 @@ function StatChip({ label, value, tone = "stone", isVault }) {
       className={`flex flex-col items-center rounded-xl border px-4 py-2.5 min-w-21 ${toneClasses[tone]}`}
     >
       <span className="text-base font-serif font-bold">{value}</span>
-      <span className="text-[9px] font-mono uppercase tracking-wider mt-0.5 opacity-80">
+      <span className="text-[10px] font-mono uppercase tracking-wider mt-0.5 opacity-80">
         {label}
       </span>
     </div>
@@ -230,7 +230,7 @@ function FilterButton({ active, onClick, isVault, children }) {
     <button
       type="button"
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider border transition ${
+      className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase tracking-wider border transition ${
         active
           ? isVault
             ? "bg-amber-600 border-amber-600 text-stone-950"
@@ -271,7 +271,7 @@ function QuizToDoRow({ quiz, isVault, onOpen }) {
           {quiz.title}
         </span>
         <span
-          className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-mono uppercase tracking-wider mt-1 ${
+          className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-mono uppercase tracking-wider mt-1 ${
             isVault ? "text-stone-500" : "text-stone-400"
           }`}
         >
@@ -285,19 +285,19 @@ function QuizToDoRow({ quiz, isVault, onOpen }) {
       </span>
       <span className="hidden sm:flex flex-col items-end gap-1.5 shrink-0 w-32">
         <span
-          className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${badgeClass}`}
+          className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${badgeClass}`}
         >
           {meta.label}
         </span>
         {hasScore ? (
-          <span className={`text-[11px] font-mono font-bold ${isVault ? tone.textVault : tone.text}`}>
+          <span className={`text-xs font-mono font-bold ${isVault ? tone.textVault : tone.text}`}>
             {attempt.percentage}%
           </span>
         ) : null}
       </span>
       <span className="sm:hidden flex flex-col items-end gap-1 shrink-0">
         <span
-          className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${badgeClass}`}
+          className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${badgeClass}`}
         >
           {meta.label}
         </span>
@@ -339,7 +339,7 @@ function QuizAttemptRow({ attempt, isVault, onOpen, isBest }) {
           </span>
           {isBest ? (
             <span
-              className={`flex items-center gap-1 text-[9px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md border shrink-0 ${
+              className={`flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md border shrink-0 ${
                 isVault
                   ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
                   : "text-amber-700 bg-amber-50 border-amber-100"
@@ -350,7 +350,7 @@ function QuizAttemptRow({ attempt, isVault, onOpen, isBest }) {
           ) : null}
         </span>
         <span
-          className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-mono uppercase tracking-wider mt-1 ${
+          className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-mono uppercase tracking-wider mt-1 ${
             isVault ? "text-stone-500" : "text-stone-400"
           }`}
         >
@@ -369,7 +369,7 @@ function QuizAttemptRow({ attempt, isVault, onOpen, isBest }) {
       </span>
       <span className="hidden sm:flex flex-col items-end gap-1.5 shrink-0 w-28">
         <span
-          className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${badgeClass}`}
+          className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${badgeClass}`}
         >
           {label}
         </span>
@@ -381,7 +381,7 @@ function QuizAttemptRow({ attempt, isVault, onOpen, isBest }) {
                 style={{ width: `${Math.min(100, Math.max(0, attempt.percentage))}%` }}
               />
             </span>
-            <span className={`text-[11px] font-mono font-bold ${isVault ? scoreToneValue.textVault : scoreToneValue.text}`}>
+            <span className={`text-xs font-mono font-bold ${isVault ? scoreToneValue.textVault : scoreToneValue.text}`}>
               {attempt.percentage}%
             </span>
           </span>
@@ -389,12 +389,12 @@ function QuizAttemptRow({ attempt, isVault, onOpen, isBest }) {
       </span>
       <span className="sm:hidden flex flex-col items-end gap-1 shrink-0">
         <span
-          className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${badgeClass}`}
+          className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${badgeClass}`}
         >
           {label}
         </span>
         {hasScore ? (
-          <span className={`text-[11px] font-mono ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+          <span className={`text-xs font-mono ${isVault ? "text-stone-400" : "text-stone-500"}`}>
             {attempt.score}/{attempt.total_marks} · {attempt.percentage}%
           </span>
         ) : null}
@@ -595,13 +595,13 @@ export default function QuizzesTab() {
         <h2 className={`text-xl font-serif font-bold mb-2 ${isVault ? "text-stone-50" : "text-stone-900"}`}>
           Failed to Load Quizzes
         </h2>
-        <p className={`text-xs font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+        <p className={`text-sm font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
           {getApiErrorMessage(error, "Unable to load your quizzes.")}
         </p>
         <button
           type="button"
           onClick={() => refetch()}
-          className={`inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition ${
+          className={`inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition ${
             isVault
               ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
               : "bg-stone-900 hover:bg-stone-800 text-stone-100"
@@ -623,6 +623,7 @@ export default function QuizzesTab() {
           icon={CircleHelp}
           label="No quizzes yet"
           description="Once your instructors publish quizzes in your enrolled courses, they will appear here."
+          size="lg"
         />
       </div>
     );
@@ -640,7 +641,7 @@ export default function QuizzesTab() {
           <button
             type="button"
             onClick={closeCourse}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-mono uppercase tracking-wider rounded-xl transition ${
+            className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-mono uppercase tracking-wider rounded-xl transition ${
               isVault
                 ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
                 : "bg-stone-900 hover:bg-stone-800 text-white"
@@ -664,7 +665,7 @@ export default function QuizzesTab() {
           <button
             type="button"
             onClick={closeCourse}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 border text-[11px] font-mono uppercase tracking-wider rounded-xl transition ${
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 border text-xs font-mono uppercase tracking-wider rounded-xl transition ${
               isVault
                 ? "border-stone-700 hover:border-amber-600/50 hover:text-amber-400 text-stone-400"
                 : "border-stone-200 hover:border-amber-300 hover:text-amber-800 text-stone-600"
@@ -678,7 +679,7 @@ export default function QuizzesTab() {
               <h2 className={`font-serif font-bold text-2xl ${isVault ? "text-stone-50" : "text-stone-900"}`}>
                 {selectedGroup.course.title}
               </h2>
-              <p className={`text-xs font-light mt-1 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+              <p className={`text-sm font-light mt-1 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
                 {selectedGroup.quizzes.length} quiz{selectedGroup.quizzes.length === 1 ? "" : "zes"} total
                 {!canInteractWithSelectedCourse
                   ? " · enrollment isn't active, attempts are disabled"
@@ -707,10 +708,10 @@ export default function QuizzesTab() {
           {selectedGroup.toDoQuizzes.length > 0 ? (
             <div className="space-y-2.5">
               <div className="flex items-baseline gap-2">
-                <h3 className={`text-xs font-mono font-bold uppercase tracking-wider ${isVault ? "text-stone-300" : "text-stone-600"}`}>
+                <h3 className={`text-sm font-mono font-bold uppercase tracking-wider ${isVault ? "text-stone-300" : "text-stone-600"}`}>
                   To do
                 </h3>
-                <span className={`text-[10px] font-mono ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+                <span className={`text-[11px] font-mono ${isVault ? "text-stone-500" : "text-stone-400"}`}>
                   Quizzes you can take right now
                 </span>
               </div>
@@ -729,10 +730,10 @@ export default function QuizzesTab() {
 
           <div className="space-y-2.5">
             <div className="flex items-baseline gap-2">
-              <h3 className={`text-xs font-mono font-bold uppercase tracking-wider ${isVault ? "text-stone-300" : "text-stone-600"}`}>
+              <h3 className={`text-sm font-mono font-bold uppercase tracking-wider ${isVault ? "text-stone-300" : "text-stone-600"}`}>
                 Attempt history
               </h3>
-              <span className={`text-[10px] font-mono ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+              <span className={`text-[11px] font-mono ${isVault ? "text-stone-500" : "text-stone-400"}`}>
                 Every attempt you&apos;ve made in this course
               </span>
             </div>
@@ -771,6 +772,7 @@ export default function QuizzesTab() {
                   label="Nothing here"
                   description="No attempts match this filter."
                   compact
+                  size="lg"
                 />
               </div>
             ) : (
@@ -795,7 +797,7 @@ export default function QuizzesTab() {
       <div className="space-y-6">
         <div>
           <p
-            className={`text-[10px] font-mono uppercase tracking-[0.2em] mb-2 ${
+            className={`text-[11px] font-mono uppercase tracking-[0.2em] mb-2 ${
               isVault ? "text-amber-500" : "text-amber-700/80"
             }`}
           >

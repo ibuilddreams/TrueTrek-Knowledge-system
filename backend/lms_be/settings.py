@@ -60,6 +60,7 @@ INSTALLED_APPS = [
     'audit_logs',
     'ai_courses',
     'messaging',
+    'advisor',
 ]
 
 MIDDLEWARE = [
@@ -157,6 +158,7 @@ REST_FRAMEWORK = {
 
         'ai-generation': '5/hour',
         'message-send': '60/minute',
+        'advisor-chat': '15/minute',
     },
 }
 
@@ -206,6 +208,13 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@truetrek.edu')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini')
 AI_MODEL = os.getenv('AI_MODEL', 'gemini-3.6-flash')
+# Used by the advisor app's live chat instead of AI_MODEL — AI_MODEL is a
+# "thinking" model (real-world testing showed 10-20s+ per reply, all of it
+# spent on internal reasoning tokens with nothing visible to stream), which is
+# fine for a backgrounded, polled course-generation job but far too slow for a
+# synchronous chat reply. gemini-3.1-flash-lite measured ~3s for the same kind
+# of prompt with no reasoning overhead.
+AI_CHAT_MODEL = os.getenv('AI_CHAT_MODEL', 'gemini-3.1-flash-lite')
 AI_REQUEST_TIMEOUT = int(os.getenv('AI_REQUEST_TIMEOUT', 120))
 AI_MAX_MODULES = int(os.getenv('AI_MAX_MODULES', 12))
 AI_MAX_LESSONS = int(os.getenv('AI_MAX_LESSONS', 10))

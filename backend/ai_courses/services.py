@@ -22,8 +22,8 @@ from django.utils import timezone
 
 from .models import AICourseGeneration
 from .prompts.course import PROMPT_VERSION, RESPONSE_SCHEMA, build_prompt
+from .providers import get_provider
 from .providers.base import ProviderError, ProviderTransportError
-from .providers.gemini import GeminiProvider
 from .validators import PlanValidationError, validate_and_repair
 from .writer import write_course_tree
 
@@ -43,13 +43,6 @@ class GenerationConcurrencyError(Exception):
 
 class GenerationQuotaError(Exception):
     pass
-
-
-def get_provider():
-    provider_name = settings.AI_PROVIDER
-    if provider_name == "gemini":
-        return GeminiProvider(api_key=settings.GEMINI_API_KEY, model=settings.AI_MODEL)
-    raise ProviderError(f"Unknown AI_PROVIDER '{provider_name}' — no provider implementation registered.")
 
 
 def _month_start():

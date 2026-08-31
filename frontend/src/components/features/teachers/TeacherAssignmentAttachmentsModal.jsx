@@ -93,11 +93,11 @@ function SortableTeacherAttachmentRow({ attachment, onReplace, onDelete, isRepla
           href={attachment.file}
           target="_blank"
           rel="noreferrer"
-          className="text-xs font-semibold text-stone-800 truncate hover:text-amber-700 hover:underline block"
+          className="text-sm font-semibold text-stone-800 truncate hover:text-amber-700 hover:underline block"
         >
           {attachment.original_name}
         </a>
-        <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
+        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
           {attachment.file_type || "FILE"} · {formatUploadedDate(attachment.created_at)}
         </p>
       </div>
@@ -274,6 +274,7 @@ export default function TeacherAssignmentAttachmentsModal({ isOpen, onClose, ass
               label="No attachments yet."
               description="Upload reference material for students to download."
               compact
+              size="lg"
             />
           ) : (
             <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -302,7 +303,7 @@ export default function TeacherAssignmentAttachmentsModal({ isOpen, onClose, ass
             type="button"
             onClick={handleUploadClick}
             disabled={uploadMutation.isPending}
-            className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {uploadMutation.isPending ? (
               <>
@@ -316,7 +317,7 @@ export default function TeacherAssignmentAttachmentsModal({ isOpen, onClose, ass
               </>
             )}
           </button>
-          <p className="text-[10px] font-mono text-stone-400 tracking-wider">
+          <p className="text-[11px] font-mono text-stone-400 tracking-wider">
             Allowed: PDF, DOC/DOCX, PPT/PPTX, ZIP, JPG/PNG/WEBP · up to 50MB
           </p>
         </div>
@@ -330,6 +331,7 @@ export default function TeacherAssignmentAttachmentsModal({ isOpen, onClose, ass
         title="Delete Attachment"
         message={`Are you sure you want to delete "${deletingAttachment?.original_name}"? This cannot be undone.`}
         confirmLabel="Delete"
+        size="lg"
       />
     </>
   );

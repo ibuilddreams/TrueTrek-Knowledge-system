@@ -107,7 +107,7 @@ export default function LessonViewScreen({
           <button
             type="button"
             onClick={onExit}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 border text-[11px] font-mono uppercase tracking-wider rounded-xl transition ${
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 border text-xs font-mono uppercase tracking-wider rounded-xl transition ${
               isVault
                 ? "border-stone-700 hover:border-amber-500/50 hover:text-amber-400 text-stone-400"
                 : "border-stone-200 hover:border-amber-300 hover:text-amber-800 text-stone-600"
@@ -117,7 +117,7 @@ export default function LessonViewScreen({
             Back to course
           </button>
           <p
-            className={`text-xs font-mono uppercase tracking-wider truncate max-w-[60%] text-right ${
+            className={`text-sm font-mono uppercase tracking-wider truncate max-w-[60%] text-right ${
               isVault ? "text-stone-500" : "text-stone-400"
             }`}
           >

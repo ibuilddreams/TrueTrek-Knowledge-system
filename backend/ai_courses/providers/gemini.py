@@ -21,7 +21,6 @@ class GeminiProvider(AIProvider):
         self.model = model
 
     def generate_course(self, prompt, response_schema, timeout):
-        url = f"{GEMINI_API_BASE}/models/{self.model}:generateContent"
         body = {
             "contents": [{"parts": [{"text": prompt}]}],
             "generationConfig": {
@@ -29,6 +28,18 @@ class GeminiProvider(AIProvider):
                 "responseSchema": response_schema,
             },
         }
+        return self._call(body, timeout)
+
+    def generate_text(self, prompt, system_instruction, timeout, temperature=0.7):
+        body = {
+            "contents": [{"parts": [{"text": prompt}]}],
+            "systemInstruction": {"parts": [{"text": system_instruction}]},
+            "generationConfig": {"temperature": temperature},
+        }
+        return self._call(body, timeout)
+
+    def _call(self, body, timeout):
+        url = f"{GEMINI_API_BASE}/models/{self.model}:generateContent"
 
         try:
             response = requests.post(

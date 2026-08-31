@@ -114,7 +114,7 @@ function StatChip({ label, value, tone = "stone", isVault }) {
       className={`flex flex-col items-center rounded-xl border px-4 py-2.5 min-w-21 ${toneClasses[tone]}`}
     >
       <span className="text-base font-serif font-bold">{value}</span>
-      <span className="text-[9px] font-mono uppercase tracking-wider mt-0.5 opacity-80">
+      <span className="text-[10px] font-mono uppercase tracking-wider mt-0.5 opacity-80">
         {label}
       </span>
     </div>
@@ -126,7 +126,7 @@ function FilterButton({ active, onClick, isVault, children }) {
     <button
       type="button"
       onClick={onClick}
-      className={`px-3 py-1.5 rounded-lg text-[10px] font-mono font-bold uppercase tracking-wider border transition ${
+      className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase tracking-wider border transition ${
         active
           ? isVault
             ? "bg-amber-600 border-amber-600 text-stone-950"
@@ -201,7 +201,7 @@ function AssignmentRow({ assignment, isVault, onOpen }) {
           {assignment.title}
         </span>
         <span
-          className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[10px] font-mono uppercase tracking-wider mt-1 ${
+          className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-mono uppercase tracking-wider mt-1 ${
             isVault ? "text-stone-500" : "text-stone-400"
           }`}
         >
@@ -222,7 +222,7 @@ function AssignmentRow({ assignment, isVault, onOpen }) {
       </span>
       <span className="hidden sm:flex flex-col items-end gap-1.5 shrink-0 w-28">
         <span
-          className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${statusClass}`}
+          className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${statusClass}`}
         >
           {statusLabel}
         </span>
@@ -236,7 +236,7 @@ function AssignmentRow({ assignment, isVault, onOpen }) {
                 }}
               />
             </span>
-            <span className={`text-[11px] font-mono font-bold ${isVault ? tone.textVault : tone.text}`}>
+            <span className={`text-xs font-mono font-bold ${isVault ? tone.textVault : tone.text}`}>
               {submission.marks}/{assignment.total_marks}
             </span>
           </span>
@@ -244,12 +244,12 @@ function AssignmentRow({ assignment, isVault, onOpen }) {
       </span>
       <span className="sm:hidden flex flex-col items-end gap-1 shrink-0">
         <span
-          className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${statusClass}`}
+          className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${statusClass}`}
         >
           {statusLabel}
         </span>
         {isGraded ? (
-          <span className={`text-[11px] font-mono ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+          <span className={`text-xs font-mono ${isVault ? "text-stone-400" : "text-stone-500"}`}>
             {submission.marks}/{assignment.total_marks}
             {submission.percentage !== null
               ? ` · ${submission.percentage}%`
@@ -426,13 +426,13 @@ export default function AssignmentsTab() {
         <h2 className={`text-xl font-serif font-bold mb-2 ${isVault ? "text-stone-50" : "text-stone-900"}`}>
           Failed to Load Assignments
         </h2>
-        <p className={`text-xs font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+        <p className={`text-sm font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
           {getApiErrorMessage(error, "Unable to load your assignments.")}
         </p>
         <button
           type="button"
           onClick={() => refetch()}
-          className={`inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition ${
+          className={`inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition ${
             isVault
               ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
               : "bg-stone-900 hover:bg-stone-800 text-stone-100"
@@ -454,6 +454,7 @@ export default function AssignmentsTab() {
           icon={ClipboardList}
           label="No assignments yet"
           description="Once your instructors publish assignments in your enrolled courses, they will appear here."
+          size="lg"
         />
       </div>
     );
@@ -471,7 +472,7 @@ export default function AssignmentsTab() {
           <button
             type="button"
             onClick={closeCourse}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-mono uppercase tracking-wider rounded-xl transition ${
+            className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-mono uppercase tracking-wider rounded-xl transition ${
               isVault
                 ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
                 : "bg-stone-900 hover:bg-stone-800 text-white"
@@ -489,7 +490,7 @@ export default function AssignmentsTab() {
           <button
             type="button"
             onClick={closeCourse}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 border text-[11px] font-mono uppercase tracking-wider rounded-xl transition ${
+            className={`inline-flex items-center gap-1.5 px-3.5 py-2 border text-xs font-mono uppercase tracking-wider rounded-xl transition ${
               isVault
                 ? "border-stone-700 hover:border-amber-600/50 hover:text-amber-400 text-stone-400"
                 : "border-stone-200 hover:border-amber-300 hover:text-amber-800 text-stone-600"
@@ -503,7 +504,7 @@ export default function AssignmentsTab() {
               <h2 className={`font-serif font-bold text-2xl ${isVault ? "text-stone-50" : "text-stone-900"}`}>
                 {selectedGroup.course.title}
               </h2>
-              <p className={`text-xs font-light mt-1 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+              <p className={`text-sm font-light mt-1 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
                 {selectedGroup.assignments.length} assignment
                 {selectedGroup.assignments.length === 1 ? "" : "s"} total
                 {!canInteractWithSelectedCourse
@@ -564,6 +565,7 @@ export default function AssignmentsTab() {
                 label="Nothing here"
                 description="No assignments match this filter."
                 compact
+                size="lg"
               />
             </div>
           ) : (
@@ -586,7 +588,7 @@ export default function AssignmentsTab() {
       <div className="space-y-6">
         <div>
           <p
-            className={`text-[10px] font-mono uppercase tracking-[0.2em] mb-2 ${
+            className={`text-[11px] font-mono uppercase tracking-[0.2em] mb-2 ${
               isVault ? "text-amber-500" : "text-amber-700/80"
             }`}
           >

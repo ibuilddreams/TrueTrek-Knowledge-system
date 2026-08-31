@@ -91,7 +91,7 @@ function ProgressRing({ value, tone, isVault }) {
         />
       </svg>
       <span
-        className={`absolute inset-0 flex items-center justify-center text-[11px] font-mono font-bold ${
+        className={`absolute inset-0 flex items-center justify-center text-xs font-mono font-bold ${
           isVault ? "text-stone-100" : "text-stone-800"
         }`}
       >
@@ -146,7 +146,7 @@ export default function CourseworkSummaryCard({
           </div>
           <div className="min-w-0">
             <p
-              className={`text-[10px] font-mono uppercase tracking-wider ${
+              className={`text-[11px] font-mono uppercase tracking-wider ${
                 isVault ? "text-stone-500" : "text-stone-400"
               }`}
             >
@@ -162,7 +162,7 @@ export default function CourseworkSummaryCard({
           </div>
         </div>
         <span
-          className={`shrink-0 inline-flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${
+          className={`shrink-0 inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${
             allCaughtUp
               ? isVault
                 ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
@@ -185,7 +185,7 @@ export default function CourseworkSummaryCard({
         <ProgressRing value={completionPercentage} tone={tone} isVault={isVault} />
         <div className="min-w-0 flex-1">
           <p
-            className={`text-[10px] font-mono uppercase tracking-wider ${
+            className={`text-[11px] font-mono uppercase tracking-wider ${
               isVault ? "text-stone-500" : "text-stone-400"
             }`}
           >
@@ -204,7 +204,7 @@ export default function CourseworkSummaryCard({
 
       <div className="flex items-center gap-2">
         <span
-          className={`inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg border ${
+          className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg border ${
             isVault
               ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
               : "bg-emerald-50 border-emerald-100 text-emerald-700"
@@ -214,7 +214,7 @@ export default function CourseworkSummaryCard({
           {completedCount} {completedLabel}
         </span>
         <span
-          className={`inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg border ${
+          className={`inline-flex items-center gap-1.5 text-[11px] font-mono font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-lg border ${
             isVault ? SCORE_CHIP[tone].vault : SCORE_CHIP[tone].light
           }`}
         >
@@ -224,7 +224,7 @@ export default function CourseworkSummaryCard({
       </div>
 
       <div
-        className={`flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider transition pt-1 ${
+        className={`flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider transition pt-1 ${
           isVault
             ? "text-stone-500 group-hover:text-amber-400"
             : "text-stone-400 group-hover:text-amber-700"

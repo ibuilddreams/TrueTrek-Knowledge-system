@@ -141,11 +141,11 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
           <h2 className="text-xl font-serif font-bold text-stone-900 mb-2">
             Failed to Load Dashboard
           </h2>
-          <p className="text-xs text-stone-500 font-light mb-6">{dashboardError}</p>
+          <p className="text-sm text-stone-500 font-light mb-6">{dashboardError}</p>
           <button
             type="button"
             onClick={() => loadDashboard({ force: true })}
-            className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl shadow-md transition"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition"
           >
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -159,6 +159,7 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
             icon={GraduationCap}
             label="No dashboard data yet"
             description="Once you're assigned courses and students begin enrolling, your compliance metrics and analytics will appear here."
+            size="lg"
           />
         </div>
       )}
@@ -172,10 +173,10 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[10px] font-mono uppercase tracking-widest text-stone-500 font-bold">Real-time Portal Synchronization Active</span>
+                  <span className="text-[11px] font-mono uppercase tracking-widest text-stone-500 font-bold">Real-time Portal Synchronization Active</span>
                 </div>
                 <h4 className="text-xl font-serif text-stone-900 font-bold">Scholar-Athlete Current Compliance Index</h4>
-                <p className="text-xs text-stone-600 mt-1 max-w-xl leading-relaxed font-sans">
+                <p className="text-sm text-stone-600 mt-1 max-w-xl leading-relaxed font-sans">
                   Live average course completion across every cohort you teach, refreshed straight from the faculty dashboard API.
                 </p>
               </div>
@@ -184,7 +185,7 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
                 <div className="sm:w-72 w-full bg-white border border-stone-200/80 p-4 rounded-xl shadow-xs flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[10px] font-mono text-stone-500 font-bold uppercase">Aggregate Portal Score</span>
+                      <span className="text-[11px] font-mono text-stone-500 font-bold uppercase">Aggregate Portal Score</span>
                       <span className="text-sm font-mono font-bold text-amber-850">{complianceIndex}%</span>
                     </div>
 
@@ -198,7 +199,7 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center text-[9px] font-mono text-stone-400 mt-2">
+                  <div className="flex justify-between items-center text-[10px] font-mono text-stone-400 mt-2">
                     <span>MIN: 0%</span>
                     <span className="text-amber-700 font-bold">STABILITY: EXCELLENT</span>
                     <span>MAX: 100%</span>
@@ -207,8 +208,8 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
 
                 <div className="sm:w-72 w-full bg-white border border-stone-200/80 p-4 rounded-xl shadow-xs flex flex-col justify-between">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[10px] font-mono text-stone-500 font-bold uppercase">7-Day Compliance Trend</span>
-                    <span className="text-[9px] font-mono font-bold text-emerald-600 flex items-center gap-0.5">
+                    <span className="text-[11px] font-mono text-stone-500 font-bold uppercase">7-Day Compliance Trend</span>
+                    <span className="text-[10px] font-mono font-bold text-emerald-600 flex items-center gap-0.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       LIVE
                     </span>
@@ -245,30 +246,33 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
               value={liveMyCourses}
               icon={BookOpen}
               footer={
-                <p className="text-[11px] text-stone-400 font-medium mt-1 font-mono">
+                <p className="text-xs text-stone-400 font-medium mt-1 font-mono">
                   Courses assigned to you
                 </p>
               }
+              size="lg"
             />
             <StatCard
               label="Enrolled Students"
               value={liveEnrolledStudents}
               icon={Users}
               footer={
-                <p className="text-[11px] text-emerald-600 font-medium flex items-center gap-1 mt-1 font-mono">
+                <p className="text-xs text-emerald-600 font-medium flex items-center gap-1 mt-1 font-mono">
                   <span>● Active learners across your courses</span>
                 </p>
               }
+              size="lg"
             />
             <StatCard
               label="Published Lessons"
               value={livePublishedLessons}
               icon={BookText}
               footer={
-                <p className="text-[11px] text-stone-400 font-medium mt-1 font-mono">
+                <p className="text-xs text-stone-400 font-medium mt-1 font-mono">
                   Lessons available in your courses
                 </p>
               }
+              size="lg"
             />
             <StatCard
               label="Pending Grading"
@@ -276,20 +280,22 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
               icon={ClipboardList}
               accent="rose"
               footer={
-                <p className="text-[11px] text-stone-400 font-medium mt-1 font-mono">
+                <p className="text-xs text-stone-400 font-medium mt-1 font-mono">
                   Submissions awaiting your review
                 </p>
               }
+              size="lg"
             />
             <StatCard
               label="Total Quizzes"
               value={liveTotalQuizzes}
               icon={CircleHelp}
               footer={
-                <p className="text-[11px] text-stone-400 font-medium mt-1 font-mono">
+                <p className="text-xs text-stone-400 font-medium mt-1 font-mono">
                   Quizzes across your courses
                 </p>
               }
+              size="lg"
             />
             <StatCard
               label="Average Student Progress"
@@ -301,6 +307,7 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
                   <div className="bg-emerald-600 h-full" style={{ width: `${liveAverageProgress}%` }} />
                 </div>
               }
+              size="lg"
             />
           </div>
 
@@ -310,25 +317,37 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-stone-100">
                 <div>
                   <h3 className="font-serif font-bold text-base text-stone-900">Enrolled Students by Course</h3>
-                  <p className="text-xs text-stone-400 font-light mt-0.5">Active registration load across your taught courses</p>
+                  <p className="text-sm text-stone-400 font-light mt-0.5">Active registration load across your taught courses</p>
                 </div>
-                <span className="text-[10px] font-mono uppercase px-2.5 py-1 bg-stone-50 border border-stone-200 text-stone-500 rounded-lg">{liveMyCourses} Courses</span>
+                <span className="text-[11px] font-mono uppercase px-2.5 py-1 bg-stone-50 border border-stone-200 text-stone-500 rounded-lg">{liveMyCourses} Courses</span>
               </div>
 
-              <div className="h-72 w-full text-xs font-mono">
+              <div className="h-72 w-full text-sm font-mono">
                 {liveStudentsPerCourse.length === 0 ? (
                   <EmptyState
                     icon={BookMarked}
                     label="No enrollment data yet"
                     description="Student counts per course will appear once enrollments come in."
                     compact
+                    size="lg"
                   />
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={liveStudentsPerCourse} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                    <BarChart data={liveStudentsPerCourse} margin={{ top: 10, right: 10, left: -20, bottom: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
-                      <XAxis dataKey="name" stroke="#78716c" />
-                      <YAxis allowDecimals={false} stroke="#78716c" />
+                      <XAxis
+                        dataKey="name"
+                        stroke="#78716c"
+                        tick={{ fontSize: 12 }}
+                        interval={0}
+                        angle={-25}
+                        textAnchor="end"
+                        height={60}
+                        tickFormatter={(value) =>
+                          value.length > 16 ? `${value.slice(0, 16)}…` : value
+                        }
+                      />
+                      <YAxis allowDecimals={false} stroke="#78716c" tick={{ fontSize: 12 }} />
                       <Tooltip
                         contentStyle={{ backgroundColor: '#1c1917', border: '1px solid #44403c', borderRadius: '12px' }}
                         labelStyle={{ color: '#fff', fontFamily: 'serif', fontWeight: 'bold' }}
@@ -349,25 +368,37 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
               <div className="flex items-center justify-between mb-6 pb-4 border-b border-stone-100">
                 <div>
                   <h3 className="font-serif font-bold text-base text-stone-900">Average Completion by Course</h3>
-                  <p className="text-xs text-stone-400 font-light mt-0.5">Course progress velocity across enrolled students</p>
+                  <p className="text-sm text-stone-400 font-light mt-0.5">Course progress velocity across enrolled students</p>
                 </div>
-                <span className="text-[10px] font-mono uppercase px-2.5 py-1 bg-stone-50 border border-stone-200 text-stone-500 rounded-lg">{livePublishedLessons} Lessons</span>
+                <span className="text-[11px] font-mono uppercase px-2.5 py-1 bg-stone-50 border border-stone-200 text-stone-500 rounded-lg">{livePublishedLessons} Lessons</span>
               </div>
 
-              <div className="h-72 w-full text-xs font-mono">
+              <div className="h-72 w-full text-sm font-mono">
                 {liveCompletionByCourse.length === 0 ? (
                   <EmptyState
                     icon={TrendingUp}
                     label="No progress data yet"
                     description="Course completion averages will populate as learners engage."
                     compact
+                    size="lg"
                   />
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
-                    <BarChart data={liveCompletionByCourse} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
+                    <BarChart data={liveCompletionByCourse} margin={{ top: 10, right: 10, left: -20, bottom: 10 }}>
                       <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
-                      <XAxis dataKey="name" stroke="#78716c" />
-                      <YAxis allowDecimals={false} domain={[0, 100]} stroke="#78716c" />
+                      <XAxis
+                        dataKey="name"
+                        stroke="#78716c"
+                        tick={{ fontSize: 12 }}
+                        interval={0}
+                        angle={-25}
+                        textAnchor="end"
+                        height={60}
+                        tickFormatter={(value) =>
+                          value.length > 16 ? `${value.slice(0, 16)}…` : value
+                        }
+                      />
+                      <YAxis allowDecimals={false} domain={[0, 100]} stroke="#78716c" tick={{ fontSize: 12 }} />
                       <Tooltip
                         contentStyle={{ backgroundColor: '#1c1917', border: '1px solid #44403c', borderRadius: '12px' }}
                         labelStyle={{ color: '#fff', fontFamily: 'serif', fontWeight: 'bold' }}
@@ -394,7 +425,7 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
 
         <div className="max-w-3xl">
           <div className="flex items-center gap-2 mb-4">
-            <div className="px-2.5 py-1 rounded bg-amber-600/20 border border-amber-500/20 text-amber-500 font-mono text-[9px] uppercase tracking-widest font-black">AI Advisory Council</div>
+            <div className="px-2.5 py-1 rounded bg-amber-600/20 border border-amber-500/20 text-amber-500 font-mono text-[10px] uppercase tracking-widest font-black">AI Advisory Council</div>
             <span className="flex h-2 w-2 relative">
               <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
               <span className="relative inline-flex rounded-full h-2 w-2 bg-amber-500"></span>
@@ -402,7 +433,7 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
           </div>
 
           <h3 className="text-xl md:text-2xl font-serif font-bold text-white tracking-tight mb-2">Faculty Automated Cohort Assessment</h3>
-          <p className="text-stone-400 text-xs sm:text-sm font-light leading-relaxed mb-6">
+          <p className="text-stone-400 text-sm sm:text-sm font-light leading-relaxed mb-6">
             Connect current registration and testing score logs instantly with our model engine. Frame strategic action plans on which compliance modules require classroom focus.
           </p>
 
@@ -411,13 +442,13 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
               type="text"
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
-              className="flex-grow bg-stone-900 border border-stone-800 focus:border-amber-600 focus:outline-none rounded-xl px-4 py-3 text-stone-200 text-xs font-mono placeholder:text-stone-600"
+              className="flex-grow bg-stone-900 border border-stone-800 focus:border-amber-600 focus:outline-none rounded-xl px-4 py-3 text-stone-200 text-sm font-mono placeholder:text-stone-600"
               placeholder="Specify your faculty assessment objective..."
             />
             <button
               onClick={handleGenerateClassReport}
               disabled={isGeneratingAiReport}
-              className="px-6 py-3 bg-amber-600 hover:bg-amber-700 disabled:bg-stone-800 text-stone-950 font-mono font-black text-xs uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-2"
+              className="px-6 py-3 bg-amber-600 hover:bg-amber-700 disabled:bg-stone-800 text-stone-950 font-mono font-black text-sm uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-2"
             >
               {isGeneratingAiReport ? (
                 <>
@@ -442,12 +473,12 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
               <div className="flex items-center justify-between mb-4 pb-3 border-b border-stone-850">
                 <div className="flex items-center gap-2">
                   <GraduationCap className="w-4 h-4 text-amber-500" />
-                  <span className="font-serif text-xs font-bold text-stone-200">Assessment Briefing Document</span>
+                  <span className="font-serif text-sm font-bold text-stone-200">Assessment Briefing Document</span>
                 </div>
-                <span className="text-[10px] font-mono text-stone-500">GEN DIRECTIVE: DEAN_REVIEWS_v4</span>
+                <span className="text-[11px] font-mono text-stone-500">GEN DIRECTIVE: DEAN_REVIEWS_v4</span>
               </div>
 
-              <div className="prose prose-sm prose-invert font-light leading-relaxed text-xs sm:text-sm text-stone-300 max-w-none space-y-3">
+              <div className="prose prose-sm prose-invert font-light leading-relaxed text-sm sm:text-sm text-stone-300 max-w-none space-y-3">
                 {aiReport ? (
                   <MarkdownMiniRenderer text={aiReport} className="select-text select-all" />
                 ) : (

@@ -120,7 +120,7 @@ function clearAuthCookies() {
 
 /**
  * @param {string} path
- * @param {{ method?: string, body?: any, headers?: Record<string,string>, skipAuth?: boolean, credentials?: RequestCredentials, baseUrl?: string, responseType?: "json" | "blob" }} [options]
+ * @param {{ method?: string, body?: any, headers?: Record<string,string>, skipAuth?: boolean, credentials?: RequestCredentials, baseUrl?: string, responseType?: "json" | "blob", timeoutMs?: number }} [options]
  */
 export async function apiRequest(path, options = {}) {
   const {
@@ -131,6 +131,7 @@ export async function apiRequest(path, options = {}) {
     credentials = "include",
     baseUrl = "",
     responseType = "json",
+    timeoutMs,
     _retried = false,
     ...rest
   } = options;
@@ -163,19 +164,37 @@ export async function apiRequest(path, options = {}) {
     }
   }
 
-  const response = await fetch(config.path, {
-    method: config.method,
-    headers: config.headers,
-    credentials: config.credentials,
-    body:
-      config.body !== undefined && config.body !== null
-        ? typeof config.body === "string" ||
-          (typeof FormData !== "undefined" && config.body instanceof FormData)
-          ? config.body
-          : JSON.stringify(config.body)
-        : undefined,
-    ...rest,
-  });
+  const timeoutController = timeoutMs ? new AbortController() : null;
+  const timeoutId = timeoutController
+    ? setTimeout(() => timeoutController.abort(), timeoutMs)
+    : null;
+
+  let response;
+  try {
+    response = await fetch(config.path, {
+      method: config.method,
+      headers: config.headers,
+      credentials: config.credentials,
+      body:
+        config.body !== undefined && config.body !== null
+          ? typeof config.body === "string" ||
+            (typeof FormData !== "undefined" && config.body instanceof FormData)
+            ? config.body
+            : JSON.stringify(config.body)
+          : undefined,
+      signal: timeoutController?.signal,
+      ...rest,
+    });
+  } catch (err) {
+    if (timeoutController?.signal.aborted) {
+      const timeoutError = new Error("The request timed out. Please try again.");
+      timeoutError.code = "TIMEOUT";
+      throw timeoutError;
+    }
+    throw err;
+  } finally {
+    if (timeoutId) clearTimeout(timeoutId);
+  }
 
   let data = null;
   const contentType = response.headers.get("content-type") || "";

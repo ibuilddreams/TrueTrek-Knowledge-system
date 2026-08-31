@@ -44,7 +44,7 @@ export default function MyPathwaysSummary() {
       <div className="flex items-center justify-between gap-3 mb-5">
         <div>
           <p
-            className={`text-[10px] font-mono uppercase tracking-[0.16em] mb-1 ${
+            className={`text-[11px] font-mono uppercase tracking-[0.16em] mb-1 ${
               isVault ? "text-amber-500" : "text-amber-700/80"
             }`}
           >
@@ -54,7 +54,7 @@ export default function MyPathwaysSummary() {
             My Pathways
           </h3>
         </div>
-        <span className={`text-xs font-light ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+        <span className={`text-sm font-light ${isVault ? "text-stone-500" : "text-stone-400"}`}>
           {pathwayEnrollments.length} active
         </span>
       </div>
@@ -79,13 +79,13 @@ export default function MyPathwaysSummary() {
               </div>
               <div className="min-w-0">
                 <p
-                  className={`text-xs font-bold truncate ${isVault ? "text-stone-100" : "text-stone-900"}`}
+                  className={`text-sm font-bold truncate ${isVault ? "text-stone-100" : "text-stone-900"}`}
                 >
                   {pathway.name}
                 </p>
                 {pathway.summary && (
                   <p
-                    className={`text-[11px] mt-0.5 line-clamp-2 font-light ${
+                    className={`text-xs mt-0.5 line-clamp-2 font-light ${
                       isVault ? "text-stone-400" : "text-stone-500"
                     }`}
                   >
@@ -94,7 +94,7 @@ export default function MyPathwaysSummary() {
                 )}
                 {enrolledSince && (
                   <p
-                    className={`text-[10px] font-mono uppercase tracking-wide mt-1.5 ${
+                    className={`text-[11px] font-mono uppercase tracking-wide mt-1.5 ${
                       isVault ? "text-stone-500" : "text-stone-400"
                     }`}
                   >

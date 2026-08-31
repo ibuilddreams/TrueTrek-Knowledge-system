@@ -17,7 +17,7 @@ export default function TeacherCourseProgressScreen({ courseId, course, onBack }
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-stone-500 hover:text-amber-700 transition-colors cursor-pointer"
+        className="inline-flex items-center gap-1.5 text-sm font-mono font-semibold text-stone-500 hover:text-amber-700 transition-colors cursor-pointer"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to Courses
@@ -30,7 +30,7 @@ export default function TeacherCourseProgressScreen({ courseId, course, onBack }
             <LineChart className="w-5 h-5" />
           </div>
           <div className="min-w-0">
-            <span className="text-amber-600 font-mono text-[10px] uppercase tracking-widest font-bold block mb-1">
+            <span className="text-amber-600 font-mono text-[11px] uppercase tracking-widest font-bold block mb-1">
               Student Progress
             </span>
             <h2 className="text-2xl font-serif font-black text-stone-900 truncate">
@@ -40,7 +40,13 @@ export default function TeacherCourseProgressScreen({ courseId, course, onBack }
         </div>
       </div>
 
-      <TabNav tabs={SUB_TABS} activeTab={activeSubTab} onChange={setActiveSubTab} ariaLabel="Progress sections" />
+      <TabNav
+        tabs={SUB_TABS}
+        activeTab={activeSubTab}
+        onChange={setActiveSubTab}
+        ariaLabel="Progress sections"
+        size="lg"
+      />
 
       <TabTransition activeKey={activeSubTab}>
         {activeSubTab === "lessons" && <LessonProgressPanel courseId={courseId} />}

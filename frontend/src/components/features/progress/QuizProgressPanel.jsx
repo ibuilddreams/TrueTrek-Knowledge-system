@@ -95,13 +95,13 @@ export default function QuizProgressPanel({ courseId }) {
       header: "Student",
       render: (row) => (
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-stone-800 truncate">{row.student.name}</p>
-          <p className="text-[10px] font-mono text-stone-400 truncate">{row.student.email}</p>
+          <p className="text-sm font-semibold text-stone-800 truncate">{row.student.name}</p>
+          <p className="text-[11px] font-mono text-stone-400 truncate">{row.student.email}</p>
         </div>
       ),
     },
     { key: "quiz", header: "Quiz", render: (row) => row.quiz.title },
-    { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
+    { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} size="lg" /> },
     {
       key: "score",
       header: "Score",
@@ -131,12 +131,12 @@ export default function QuizProgressPanel({ courseId }) {
                 label: `${row.student.name} · ${row.quiz.title}`,
               })
             }
-            className="text-[11px] font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer"
+            className="text-xs font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer"
           >
             History
           </button>
         ) : (
-          <span className="text-[11px] font-mono text-stone-300">—</span>
+          <span className="text-xs font-mono text-stone-300">—</span>
         ),
     },
   ];
@@ -144,15 +144,34 @@ export default function QuizProgressPanel({ courseId }) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard label="Average Score" value={`${stats?.average_score ?? 0}%`} icon={Target} />
-        <StatCard label="Pass Rate" value={`${stats?.pass_rate ?? 0}%`} icon={Trophy} accent="emerald" />
-        <StatCard label="Total Attempts" value={stats?.total_attempts ?? "—"} icon={ListChecks} accent="stone" />
-        <StatCard label="Completed Quizzes" value={stats?.completed_quizzes ?? "—"} icon={CheckCircle2} accent="rose" />
+        <StatCard label="Average Score" value={`${stats?.average_score ?? 0}%`} icon={Target} size="lg" />
+        <StatCard
+          label="Pass Rate"
+          value={`${stats?.pass_rate ?? 0}%`}
+          icon={Trophy}
+          accent="emerald"
+          size="lg"
+        />
+        <StatCard
+          label="Total Attempts"
+          value={stats?.total_attempts ?? "—"}
+          icon={ListChecks}
+          accent="stone"
+          size="lg"
+        />
+        <StatCard
+          label="Completed Quizzes"
+          value={stats?.completed_quizzes ?? "—"}
+          icon={CheckCircle2}
+          accent="rose"
+          size="lg"
+        />
         <StatCard
           label="Abandoned/Expired"
           value={stats?.abandoned_attempts ?? "—"}
           icon={AlertTriangle}
           accent="amber"
+          size="lg"
         />
       </div>
 
@@ -164,6 +183,7 @@ export default function QuizProgressPanel({ courseId }) {
             setPage(1);
           }}
           placeholder="Search students by name or email..."
+          size="lg"
         />
         <div className="w-full sm:w-56 shrink-0">
           <SearchableSelect
@@ -174,6 +194,7 @@ export default function QuizProgressPanel({ courseId }) {
               setPage(1);
             }}
             placeholder="All Quizzes"
+            size="lg"
           />
         </div>
         <div className="w-full sm:w-48 shrink-0">
@@ -185,6 +206,7 @@ export default function QuizProgressPanel({ courseId }) {
               setPage(1);
             }}
             placeholder="All Statuses"
+            size="lg"
           />
         </div>
       </div>
@@ -202,12 +224,14 @@ export default function QuizProgressPanel({ courseId }) {
           }
           onRetry={() => progressQuery.refetch()}
           emptyLabel="No quizzes or attempts found."
+          size="lg"
         />
         <Pagination
           page={safePage}
           totalPages={totalPages}
           onPageChange={setPage}
           totalLabel={`${filteredRows.length} record${filteredRows.length === 1 ? "" : "s"}`}
+          size="lg"
         />
       </div>
 
@@ -218,7 +242,7 @@ export default function QuizProgressPanel({ courseId }) {
         title="Attempt History"
         subtitle={attemptHistory?.label}
       >
-        {attemptsQuery.isLoading && <p className="text-xs text-stone-400">Loading...</p>}
+        {attemptsQuery.isLoading && <p className="text-sm text-stone-400">Loading...</p>}
         <ul className="space-y-2">
           {(attemptsQuery.data || []).map((attempt) => (
             <li
@@ -226,26 +250,26 @@ export default function QuizProgressPanel({ courseId }) {
               className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-stone-100 bg-stone-50/60"
             >
               <div>
-                <p className="text-xs font-semibold text-stone-800">Attempt {attempt.attempt_number}</p>
-                <p className="text-[10px] font-mono text-stone-400 mt-0.5">
+                <p className="text-sm font-semibold text-stone-800">Attempt {attempt.attempt_number}</p>
+                <p className="text-[11px] font-mono text-stone-400 mt-0.5">
                   {formatDateTime(attempt.started_at)} · {formatSeconds(attempt.time_taken_seconds)}
                 </p>
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
                   <p
-                    className={`text-xs font-mono font-bold ${
+                    className={`text-sm font-mono font-bold ${
                       attempt.is_passed ? "text-emerald-700" : "text-rose-600"
                     }`}
                   >
                     {attempt.percentage !== null ? `${attempt.percentage}%` : "—"}
                   </p>
-                  <p className="text-[10px] font-mono uppercase text-stone-400">{attempt.status}</p>
+                  <p className="text-[11px] font-mono uppercase text-stone-400">{attempt.status}</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setViewingAttemptId(attempt.attempt_id)}
-                  className="text-[11px] font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer shrink-0"
+                  className="text-xs font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer shrink-0"
                 >
                   View
                 </button>

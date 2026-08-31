@@ -131,14 +131,14 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
       render: (student) => (
         <div className="flex items-center gap-3 min-w-0">
           <div
-            className={`w-9 h-9 rounded-full ${student.avatarColor} text-white flex items-center justify-center font-bold text-[11px] shrink-0`}
+            className={`w-9 h-9 rounded-full ${student.avatarColor} text-white flex items-center justify-center font-bold text-xs shrink-0`}
           >
             {initialsFor(student.name)}
           </div>
           <div className="min-w-0">
-            <p className="text-xs font-semibold text-stone-800 truncate">{student.name}</p>
+            <p className="text-sm font-semibold text-stone-800 truncate">{student.name}</p>
             {student.email && (
-              <p className="text-[10px] font-mono text-stone-400 truncate">{student.email}</p>
+              <p className="text-[11px] font-mono text-stone-400 truncate">{student.email}</p>
             )}
           </div>
         </div>
@@ -155,7 +155,7 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
       render: (student) => (
         <div className="min-w-[7rem]">
           <span
-            className={`text-xs font-mono font-bold ${
+            className={`text-sm font-mono font-bold ${
               student.progress >= 75 ? "text-emerald-700" : "text-amber-700"
             }`}
           >
@@ -179,7 +179,7 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
       header: "Quiz Avg",
       render: (student) => (
         <span
-          className={`text-xs font-mono font-bold ${
+          className={`text-sm font-mono font-bold ${
             student.quizAvg >= 70 ? "text-emerald-700" : "text-amber-700"
           }`}
         >
@@ -190,7 +190,7 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
     {
       key: "status",
       header: "Status",
-      render: (student) => <StatusBadge status={student.status} />,
+      render: (student) => <StatusBadge status={student.status} size="lg" />,
     },
     {
       key: "actions",
@@ -213,7 +213,7 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-stone-500 hover:text-amber-700 transition-colors cursor-pointer"
+        className="inline-flex items-center gap-1.5 text-sm font-mono font-semibold text-stone-500 hover:text-amber-700 transition-colors cursor-pointer"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to Courses
@@ -227,7 +227,7 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
               <Users className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <span className="text-amber-600 font-mono text-[10px] uppercase tracking-widest font-bold block mb-1">
+              <span className="text-amber-600 font-mono text-[11px] uppercase tracking-widest font-bold block mb-1">
                 Enrolled Students
               </span>
               <h2 className="text-2xl font-serif font-black text-stone-900 truncate">
@@ -239,18 +239,18 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
           <div className="flex items-center gap-3 shrink-0">
             <div className="text-center px-4 py-2.5 rounded-xl border border-stone-100 bg-stone-50/80">
               <p className="text-lg font-serif font-bold text-stone-900">{enrolledCount}</p>
-              <p className="text-[9px] font-mono uppercase tracking-widest text-stone-400">Enrolled</p>
+              <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400">Enrolled</p>
             </div>
             <div className="text-center px-4 py-2.5 rounded-xl border border-stone-100 bg-stone-50/80">
               <p className="text-lg font-serif font-bold text-emerald-700">{activeCount}</p>
-              <p className="text-[9px] font-mono uppercase tracking-widest text-stone-400">Active</p>
+              <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400">Active</p>
             </div>
             <div className="text-center px-4 py-2.5 rounded-xl border border-stone-100 bg-stone-50/80">
               <p className="text-lg font-serif font-bold text-amber-700 flex items-center gap-1 justify-center">
                 <TrendingUp className="w-3.5 h-3.5" />
                 {avgProgress}%
               </p>
-              <p className="text-[9px] font-mono uppercase tracking-widest text-stone-400">Avg Progress</p>
+              <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400">Avg Progress</p>
             </div>
           </div>
         </div>
@@ -265,6 +265,7 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
               setPage(1);
             }}
             placeholder="Search by name or email..."
+            size="lg"
           />
         </div>
 
@@ -277,7 +278,7 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
                 setStatusFilter(filter.value);
                 setPage(1);
               }}
-              className={`px-3 py-1.5 text-[11px] font-mono font-semibold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
+              className={`px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
                 statusFilter === filter.value
                   ? "bg-white text-amber-800 shadow-xs border border-amber-200"
                   : "text-stone-500 hover:text-stone-700"
@@ -289,28 +290,28 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
         </div>
 
         <div className="w-full sm:w-52 shrink-0">
-          <SearchableSelect options={SORT_OPTIONS} value={sortOption} onChange={setSortOption} />
+          <SearchableSelect options={SORT_OPTIONS} value={sortOption} onChange={setSortOption} size="lg" />
         </div>
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
         {isLoading ? (
           <div className="py-10 text-center">
-            <p className="text-xs font-medium text-stone-500">Loading students...</p>
+            <p className="text-sm font-medium text-stone-500">Loading students...</p>
           </div>
         ) : paginatedStudents.length === 0 ? (
           <div className="py-10 text-center">
             <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-stone-50 border border-stone-100 text-stone-400 flex items-center justify-center">
               <Search className="w-5 h-5" />
             </div>
-            <p className="text-xs font-medium text-stone-500">
+            <p className="text-sm font-medium text-stone-500">
               {students.length === 0
                 ? "No students are enrolled in this course yet."
                 : "No students match your filters."}
             </p>
           </div>
         ) : (
-          <DataTable columns={columns} rows={paginatedStudents} keyField="id" />
+          <DataTable columns={columns} rows={paginatedStudents} keyField="id" size="lg" />
         )}
         {!isLoading && (
           <Pagination
@@ -321,6 +322,7 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
               page * PAGE_SIZE,
               filteredStudents.length,
             )} of ${filteredStudents.length}`}
+            size="lg"
           />
         )}
       </div>

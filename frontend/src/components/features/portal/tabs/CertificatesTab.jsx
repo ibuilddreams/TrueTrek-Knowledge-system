@@ -21,7 +21,7 @@ function CertificateCard({ certificate, onOpen }) {
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
+          <p className="text-[11px] font-mono uppercase tracking-wider text-stone-400">
             {course.category || "Course"}
           </p>
           <h3 className="font-serif font-bold text-stone-900 mt-0.5 truncate">
@@ -32,7 +32,7 @@ function CertificateCard({ certificate, onOpen }) {
           <Award className="w-4 h-4" />
         </span>
       </div>
-      <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-stone-400">
+      <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-stone-400">
         <span className="flex items-center gap-1">
           <CalendarCheck className="w-3.5 h-3.5" />
           {formatDate(certificate.completed_at)}
@@ -41,7 +41,7 @@ function CertificateCard({ certificate, onOpen }) {
           {Math.round(certificate.completion_percentage)}%
         </span>
       </div>
-      <span className="block text-center text-[11px] font-mono uppercase tracking-wider text-stone-600 border border-stone-200 rounded-xl py-2 group-hover:border-amber-300">
+      <span className="block text-center text-xs font-mono uppercase tracking-wider text-stone-600 border border-stone-200 rounded-xl py-2 group-hover:border-amber-300">
         View Certificate
       </span>
     </button>
@@ -78,13 +78,13 @@ export default function CertificatesTab({ studentName }) {
         <h2 className="text-xl font-serif font-bold text-stone-900 mb-2">
           Failed to Load Certificates
         </h2>
-        <p className="text-xs text-stone-500 font-light mb-6">
+        <p className="text-sm text-stone-500 font-light mb-6">
           {getApiErrorMessage(error, "Unable to load your certificates.")}
         </p>
         <button
           type="button"
           onClick={() => refetch()}
-          className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition"
         >
           <RefreshCw className="w-4 h-4" />
           Retry
@@ -98,6 +98,7 @@ export default function CertificatesTab({ studentName }) {
           icon={Award}
           label="No certificates yet"
           description="Complete every lesson and quiz in a course to earn its certificate."
+          size="lg"
         />
       </div>
     );
@@ -123,7 +124,7 @@ export default function CertificatesTab({ studentName }) {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-700/80 mb-2">
+        <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-amber-700/80 mb-2">
           Completed courses
         </p>
         <h2 className="font-serif font-bold text-2xl sm:text-3xl text-stone-900">

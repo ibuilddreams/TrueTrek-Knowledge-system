@@ -63,12 +63,12 @@ function SortableTeacherQuestionRow({ question, onEdit, onDelete, onManageChoice
         >
           <GripVertical className="w-4 h-4" />
         </span>
-        <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0 text-xs font-bold font-mono">
+        <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0 text-sm font-bold font-mono">
           {question.order ?? "—"}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-xs font-semibold text-stone-800">{question.text}</p>
-          <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-1 flex items-center gap-1.5 flex-wrap">
+          <p className="text-sm font-semibold text-stone-800">{question.text}</p>
+          <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-1 flex items-center gap-1.5 flex-wrap">
             <span>{QUESTION_TYPE_LABELS[question.question_type] || question.question_type}</span>
             <span className="text-stone-200">·</span>
             <span>{question.marks} mark{question.marks === 1 ? "" : "s"}</span>
@@ -224,6 +224,7 @@ export default function TeacherQuizQuestionsModal({ isOpen, onClose, quiz }) {
               label="No questions yet."
               description="Add questions for students to answer in this quiz."
               compact
+              size="lg"
             />
           ) : (
             <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleDragEnd}>
@@ -249,7 +250,7 @@ export default function TeacherQuizQuestionsModal({ isOpen, onClose, quiz }) {
           <button
             type="button"
             onClick={openAddQuestion}
-            className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Question
@@ -280,6 +281,7 @@ export default function TeacherQuizQuestionsModal({ isOpen, onClose, quiz }) {
         title="Delete Question"
         message="Are you sure you want to delete this question? This cannot be undone."
         confirmLabel="Delete"
+        size="lg"
       />
     </>
   );

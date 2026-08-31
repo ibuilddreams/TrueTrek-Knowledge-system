@@ -281,7 +281,7 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-stone-500 hover:text-amber-700 transition-colors cursor-pointer"
+        className="inline-flex items-center gap-1.5 text-sm font-mono font-semibold text-stone-500 hover:text-amber-700 transition-colors cursor-pointer"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to Courses
@@ -295,14 +295,14 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
               <Layers className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <span className="text-amber-600 font-mono text-[10px] uppercase tracking-widest font-bold block mb-1">
+              <span className="text-amber-600 font-mono text-[11px] uppercase tracking-widest font-bold block mb-1">
                 Course Content
               </span>
               <div className="flex items-center gap-2.5 flex-wrap">
                 <h2 className="text-2xl font-serif font-black text-stone-900 truncate">
                   {course?.title || "Course"}
                 </h2>
-                {course?.status && <StatusBadge status={course.status} />}
+                {course?.status && <StatusBadge status={course.status} size="lg" />}
               </div>
             </div>
           </div>
@@ -310,7 +310,7 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
           <button
             type="button"
             onClick={openCreateModuleForm}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0 cursor-pointer"
           >
             <ListPlus className="w-4 h-4" />
             NEW MODULE
@@ -325,7 +325,7 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
               </div>
               <div>
                 <p className="text-lg font-serif font-bold text-stone-900">{stat.value}</p>
-                <p className="text-[9px] font-mono uppercase tracking-widest text-stone-400">{stat.label}</p>
+                <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400">{stat.label}</p>
               </div>
             </div>
           ))}
@@ -336,13 +336,13 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
             <h3 className="font-serif font-bold text-lg text-stone-900">Modules</h3>
-            <p className="text-xs text-stone-400 font-light">
+            <p className="text-sm text-stone-400 font-light">
               {modules.length} module{modules.length === 1 ? "" : "s"}
             </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-stone-400">
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-stone-400">
               <MoveVertical className="w-3.5 h-3.5" />
               Drag the handle to reorder
             </span>
@@ -350,7 +350,7 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
               <button
                 type="button"
                 onClick={toggleExpandAll}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-stone-50 text-stone-700 text-[11px] font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all cursor-pointer"
               >
                 {areAllExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
                 {areAllExpanded ? "Collapse All" : "Expand All"}
@@ -371,6 +371,7 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
               icon={Layers}
               label="No modules yet."
               description="Create your first module to start organizing this course's content."
+              size="lg"
             />
           </div>
         ) : (
@@ -418,6 +419,7 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         title="Delete Module"
         message={`Are you sure you want to delete "${deletingModule?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
+        size="lg"
       />
 
       <ConfirmDialog
@@ -428,6 +430,7 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         title="Delete Lesson"
         message={`Are you sure you want to delete "${deletingLesson?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
+        size="lg"
       />
 
       <ConfirmDialog
@@ -438,6 +441,7 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         title="Delete Assignment"
         message={`Are you sure you want to delete "${deletingAssignment?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
+        size="lg"
       />
 
       <ConfirmDialog
@@ -448,6 +452,7 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         title="Delete Quiz"
         message={`Are you sure you want to delete "${deletingQuiz?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
+        size="lg"
       />
 
       <TeacherLessonFormModal

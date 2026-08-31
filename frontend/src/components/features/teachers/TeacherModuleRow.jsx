@@ -107,8 +107,8 @@ function SortableTeacherLessonItem({ lesson, moduleId, onEditLesson, onDeleteLes
         <LessonIcon className="w-4 h-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-stone-800 truncate">{lesson.title}</p>
-        <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
+        <p className="text-sm font-semibold text-stone-800 truncate">{lesson.title}</p>
+        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
           {lesson.content_type}
           {lesson.duration_minutes ? ` · ${lesson.duration_minutes} min` : ""} ·{" "}
           {formatLessonDate(lesson.created_at)}
@@ -220,7 +220,7 @@ function TeacherLessonsPanel({ moduleId, onAddLesson, onEditLesson, onDeleteLess
       <button
         type="button"
         onClick={() => onAddLesson(moduleId)}
-        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
+        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
       >
         <Plus className="w-3.5 h-3.5" />
         Add Lesson
@@ -271,10 +271,10 @@ function SortableTeacherAssignmentItem({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-xs font-semibold text-stone-800 truncate">{assignment.title}</p>
-          <StatusBadge status={assignment.status} />
+          <p className="text-sm font-semibold text-stone-800 truncate">{assignment.title}</p>
+          <StatusBadge status={assignment.status} size="lg" />
         </div>
-        <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5 flex items-center gap-1 flex-wrap">
+        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5 flex items-center gap-1 flex-wrap">
           <Calendar className="w-2.5 h-2.5" />
           <span className={overdue ? "text-rose-500" : ""}>{formatDueDate(assignment.due_date)}</span>
           <span className="text-stone-200">·</span>
@@ -291,7 +291,7 @@ function SortableTeacherAssignmentItem({
         >
           <Paperclip className="w-3.5 h-3.5" />
           {assignment.attachments?.length > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-amber-600 text-white text-[9px] font-mono font-bold flex items-center justify-center">
+            <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-amber-600 text-white text-[10px] font-mono font-bold flex items-center justify-center">
               {assignment.attachments.length}
             </span>
           )}
@@ -410,6 +410,7 @@ function TeacherAssignmentsPanel({ moduleId, onAddAssignment, onEditAssignment, 
           label="No assignments in this module yet."
           description="Create an assignment for students to submit work against."
           compact
+          size="lg"
         />
       ) : (
         <DndContext
@@ -442,7 +443,7 @@ function TeacherAssignmentsPanel({ moduleId, onAddAssignment, onEditAssignment, 
       <button
         type="button"
         onClick={() => onAddAssignment(moduleId)}
-        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
+        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
       >
         <Plus className="w-3.5 h-3.5" />
         Add Assignment
@@ -498,10 +499,10 @@ function SortableTeacherQuizItem({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-xs font-semibold text-stone-800 truncate">{quiz.title}</p>
-          <StatusBadge status={quiz.status} />
+          <p className="text-sm font-semibold text-stone-800 truncate">{quiz.title}</p>
+          <StatusBadge status={quiz.status} size="lg" />
         </div>
-        <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5 flex items-center gap-1 flex-wrap">
+        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5 flex items-center gap-1 flex-wrap">
           <span>{quiz.total_marks} marks</span>
           <span className="text-stone-200">·</span>
           <span>{quiz.passing_score}% to pass</span>
@@ -633,6 +634,7 @@ function TeacherQuizzesPanel({ moduleId, onAddQuiz, onEditQuiz, onDeleteQuiz }) 
           label="No quizzes in this module yet."
           description="Create a quiz to assess what students have learned."
           compact
+          size="lg"
         />
       ) : (
         <DndContext sensors={dndSensors} collisionDetection={closestCenter} onDragEnd={handleQuizDragEnd}>
@@ -658,7 +660,7 @@ function TeacherQuizzesPanel({ moduleId, onAddQuiz, onEditQuiz, onDeleteQuiz }) 
       <button
         type="button"
         onClick={() => onAddQuiz(moduleId)}
-        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
+        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
       >
         <Plus className="w-3.5 h-3.5" />
         Add Quiz
@@ -719,7 +721,7 @@ export default function TeacherModuleRow({
           <GripVertical className="w-4 h-4" />
         </span>
 
-        <div className="w-8 h-8 rounded-full bg-stone-900 text-white flex items-center justify-center shrink-0 text-xs font-bold">
+        <div className="w-8 h-8 rounded-full bg-stone-900 text-white flex items-center justify-center shrink-0 text-sm font-bold">
           {module.order ?? 1}
         </div>
 
@@ -729,7 +731,7 @@ export default function TeacherModuleRow({
           className="min-w-0 flex-1 text-left cursor-pointer"
         >
           <p className="font-serif text-base font-bold text-stone-900 truncate">{module.title}</p>
-          <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-1">
+          <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-1">
             {module.lessons_count ?? 0} Lessons · {module.assignments_count ?? 0} Assignments ·{" "}
             {module.quizzes_count ?? 0} Quizzes
           </p>
@@ -773,7 +775,7 @@ export default function TeacherModuleRow({
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono font-semibold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
                   activeTab === tab.key
                     ? "bg-amber-50 text-amber-800 border border-amber-200"
                     : "text-stone-500 hover:text-stone-700"
