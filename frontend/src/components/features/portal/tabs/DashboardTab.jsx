@@ -156,6 +156,45 @@ function ActionMetric({ label, value, icon: Icon, tone = "stone", delay = 0, isV
   );
 }
 
+function wrapAxisLabel(value, maxCharsPerLine = 16) {
+  const words = String(value).split(" ");
+  const lines = [""];
+  for (const word of words) {
+    const lineIndex = lines.length - 1;
+    const candidate = lines[lineIndex] ? `${lines[lineIndex]} ${word}` : word;
+    if (!lines[lineIndex] || candidate.length <= maxCharsPerLine) {
+      lines[lineIndex] = candidate;
+    } else if (lines.length < 2) {
+      lines.push(word);
+    } else {
+      lines[lineIndex] = `${lines[lineIndex]}…`;
+      break;
+    }
+  }
+  return lines;
+}
+
+function CourseAxisTick({ x, y, payload }) {
+  const lines = wrapAxisLabel(payload.value);
+  return (
+    <g transform={`translate(${x},${y})`}>
+      {lines.map((line, index) => (
+        <text
+          key={index}
+          x={0}
+          y={0}
+          dy={12 + index * 13}
+          textAnchor="middle"
+          fontSize={11}
+          fill="#78716c"
+        >
+          {line}
+        </text>
+      ))}
+    </g>
+  );
+}
+
 export default function DashboardTab() {
   const { isVault } = useTheme();
   const {
@@ -424,22 +463,16 @@ export default function DashboardTab() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={progressByCourse}
-                margin={{ top: 8, right: 8, left: -16, bottom: 10 }}
+                margin={{ top: 8, right: 8, left: -16, bottom: 5 }}
               >
                 <XAxis
                   dataKey="name"
                   stroke="#a8a29e"
-                  fontSize={11}
                   tickLine={false}
                   axisLine={false}
                   interval={0}
-                  angle={-25}
-                  textAnchor="end"
-                  height={50}
-                  tick={{ fill: "#78716c" }}
-                  tickFormatter={(value) =>
-                    value.length > 16 ? `${value.slice(0, 16)}…` : value
-                  }
+                  height={42}
+                  tick={<CourseAxisTick />}
                 />
                 <YAxis
                   stroke="#a8a29e"
