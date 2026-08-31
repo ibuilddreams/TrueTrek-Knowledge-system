@@ -4,7 +4,7 @@ export default function PresetPromptPills({
   idPrefix,
   prompts,
   onSelect,
-  className = "bg-stone-900 hover:bg-stone-800 border border-stone-850 text-stone-300 rounded px-2.5 py-1 text-[9px] font-mono uppercase tracking-wide shrink-0 cursor-pointer",
+  className = "bg-stone-900 hover:bg-stone-800 border border-stone-850 text-stone-300 rounded px-2.5 py-1 text-[10px] font-mono uppercase tracking-wide shrink-0 cursor-pointer",
 }) {
   return (
     <>

@@ -36,13 +36,14 @@ function parseInline(text) {
   return nodes;
 }
 
-export default function MarkdownMiniRenderer({ text, className = "" }) {
+export default function MarkdownMiniRenderer({ text, className = "", size = "base" }) {
   if (!text) return null;
   const lines = text.split("\n");
+  const isLg = size === "lg";
 
   return (
     <div
-      className={`space-y-2.5 font-sans text-xs text-stone-300 leading-relaxed text-left ${className}`}
+      className={`space-y-2.5 font-sans ${isLg ? "text-sm" : "text-xs"} text-stone-300 leading-relaxed text-left ${className}`}
     >
       {lines.map((line, idx) => {
         const trimmed = line.trim();
@@ -57,7 +58,7 @@ export default function MarkdownMiniRenderer({ text, className = "" }) {
           return (
             <h4
               key={idx}
-              className="text-xs md:text-sm font-bold text-amber-500 font-serif mt-3 mb-1.5 tracking-wide uppercase"
+              className={`${isLg ? "text-sm md:text-base" : "text-xs md:text-sm"} font-bold text-amber-500 font-serif mt-3 mb-1.5 tracking-wide uppercase`}
             >
               {parseInline(headerText)}
             </h4>
@@ -68,7 +69,9 @@ export default function MarkdownMiniRenderer({ text, className = "" }) {
         if (numberedMatch) {
           return (
             <div key={idx} className="flex items-start gap-2.5 pl-1 select-text">
-              <span className="w-4.5 h-4.5 shrink-0 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 text-[9px] font-mono font-bold flex items-center justify-center mt-0.5">
+              <span
+                className={`w-4.5 h-4.5 shrink-0 rounded-full bg-amber-500/10 border border-amber-500/30 text-amber-400 ${isLg ? "text-[10px]" : "text-[9px]"} font-mono font-bold flex items-center justify-center mt-0.5`}
+              >
                 {numberedMatch[1]}
               </span>
               <span className="flex-1">{parseInline(numberedMatch[2])}</span>
