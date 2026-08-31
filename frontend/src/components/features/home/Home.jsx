@@ -860,11 +860,11 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                 <div className="flex items-center gap-2.5">
                   <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shrink-0"></div>
                   <div className="text-left min-w-0">
-                    <p className="text-xs font-extrabold text-white font-serif uppercase tracking-wider flex items-center gap-1.5 truncate">
+                    <p className="text-sm font-extrabold text-white font-serif uppercase tracking-wider flex items-center gap-1.5 truncate">
                       <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
                       Academy AI Desk
                     </p>
-                    <p className="text-[9px] font-mono text-stone-500 uppercase tracking-wide truncate">
+                    <p className="text-[10px] font-mono text-stone-500 uppercase tracking-wide truncate">
                       Live dispatch connection
                     </p>
                   </div>
@@ -908,7 +908,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     id={`chat-strip-btn-${adv.id}`}
                     key={adv.id}
                     onClick={() => setSelectedChatAdvisorId(adv.id)}
-                    className={`px-2 py-1 rounded-lg text-[9px] font-mono uppercase tracking-wider shrink-0 transition flex items-center gap-1 cursor-pointer ${
+                    className={`px-2 py-1 rounded-lg text-[10px] font-mono uppercase tracking-wider shrink-0 transition flex items-center gap-1 cursor-pointer ${
                       selectedChatAdvisorId === adv.id
                         ? "bg-amber-600/15 border border-amber-500/20 text-amber-500"
                         : "bg-stone-950/40 border border-stone-850 text-stone-400 hover:text-stone-200"
@@ -948,8 +948,8 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     <div
                       className={`max-w-[85%] rounded-xl px-3.5 py-2.5 flex flex-col gap-1 shadow-sm text-left ${
                         msg.sender === "user"
-                          ? "bg-amber-600 text-stone-950 rounded-tr-none text-xs font-sans font-semibold leading-relaxed"
-                          : "bg-stone-900 border border-stone-850 text-stone-200 rounded-tl-none font-sans text-xs leading-relaxed"
+                          ? "bg-amber-600 text-stone-950 rounded-tr-none text-sm font-sans font-semibold leading-relaxed"
+                          : "bg-stone-900 border border-stone-850 text-stone-200 rounded-tl-none font-sans text-sm leading-relaxed"
                       }`}
                     >
                       {msg.sender === "user" ? (
@@ -957,7 +957,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                           {msg.text}
                         </p>
                       ) : (
-                        <MarkdownMiniRenderer text={msg.text} />
+                        <MarkdownMiniRenderer text={msg.text} size="lg" />
                       )}
                     </div>
                   </div>
@@ -975,12 +975,12 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       className="w-7 h-7 rounded-full object-cover shrink-0 border border-stone-850 bg-stone-950 animate-pulse"
                       referrerPolicy="no-referrer"
                     />
-                    <div className="bg-stone-900 text-stone-400 text-xs py-2 px-3.5 rounded-xl border border-stone-850 flex items-center gap-2">
+                    <div className="bg-stone-900 text-stone-400 text-sm py-2 px-3.5 rounded-xl border border-stone-850 flex items-center gap-2">
                       <span className="flex h-1.5 w-1.5 relative">
                         <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
                         <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-600"></span>
                       </span>
-                      <p className="font-mono text-[10px] animate-pulse">
+                      <p className="font-mono text-[11px] animate-pulse">
                         {isChatReplySlow
                           ? "STILL CONNECTING TO THE DESK..."
                           : "FORMULATING RECOMMENDATIONS..."}
@@ -1057,7 +1057,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       }
                     }}
                     placeholder={`Query ${ADVISOR_PERSONAS.find((a) => a.id === selectedChatAdvisorId)?.name}...`}
-                    className="flex-1 bg-stone-900 border border-stone-800 rounded-lg py-2 px-3 text-xs font-mono text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 focus:bg-stone-950"
+                    className="flex-1 bg-stone-900 border border-stone-800 rounded-lg py-2 px-3 text-sm font-mono text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 focus:bg-stone-950"
                   />
                   <button
                     id="floating-chat-send-btn"
@@ -1088,14 +1088,14 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           ) : (
             <>
               <MessageSquare className="w-6 h-6" />
-              <div className="absolute -top-1 -right-1 bg-amber-500 text-stone-950 font-bold text-[8.5px] px-1.5 py-0.5 rounded-full border border-stone-950 uppercase tracking-widest animate-bounce">
+              <div className="absolute -top-1 -right-1 bg-amber-500 text-stone-950 font-bold text-[9.5px] px-1.5 py-0.5 rounded-full border border-stone-950 uppercase tracking-widest animate-bounce">
                 live
               </div>
             </>
           )}
 
           {/* on hover tooltip detail */}
-          <span className="absolute right-16 bg-[#141211]/95 text-stone-300 border border-stone-850 px-3.5 py-2 rounded-xl text-[10.5px] uppercase tracking-widest font-mono font-bold shrink-0 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl select-none">
+          <span className="absolute right-16 bg-[#141211]/95 text-stone-300 border border-stone-850 px-3.5 py-2 rounded-xl text-[11.5px] uppercase tracking-widest font-mono font-bold shrink-0 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl select-none">
             Live Academy Concierge
           </span>
         </button>
