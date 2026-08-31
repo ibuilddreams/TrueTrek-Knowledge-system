@@ -81,12 +81,12 @@ const INITIAL_FORM = {
 };
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60";
+  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-[10px] font-mono text-stone-450 block uppercase tracking-wider mb-1.5 font-semibold";
+  "text-[11px] font-mono text-stone-450 block uppercase tracking-wider mb-1.5 font-semibold";
 
-const ERROR_CLASS = "text-[10px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
 
 function formatFileSize(bytes) {
   if (!bytes) return "0 KB";
@@ -112,8 +112,8 @@ function FilePreviewCard({ file, icon: Icon }) {
         <Icon className="w-5 h-5" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-stone-800 truncate">{file.name}</p>
-        <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
+        <p className="text-sm font-semibold text-stone-800 truncate">{file.name}</p>
+        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
           {getFileExtension(file.name)} · {formatFileSize(file.size)}
         </p>
       </div>
@@ -426,7 +426,7 @@ export default function TeacherLessonFormModal({
                   type="button"
                   onClick={() => handleContentTypeChange(option.value)}
                   disabled={isSubmitting}
-                  className={`px-3 py-2.5 rounded-xl text-[11px] font-semibold font-mono tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
+                  className={`px-3 py-2.5 rounded-xl text-xs font-semibold font-mono tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
                     isActive
                       ? "bg-stone-900 text-white border-stone-900"
                       : "bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100"
@@ -450,7 +450,7 @@ export default function TeacherLessonFormModal({
                   type="button"
                   onClick={() => handleVideoSourceModeChange(mode.value)}
                   disabled={isSubmitting}
-                  className={`flex-1 px-3 py-2.5 rounded-xl text-[11px] font-semibold font-mono tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
+                  className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-semibold font-mono tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
                     videoSourceMode === mode.value
                       ? "bg-stone-900 text-white border-stone-900"
                       : "bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100"
@@ -476,7 +476,7 @@ export default function TeacherLessonFormModal({
               className={FIELD_CLASS}
               autoComplete="off"
             />
-            <p className="mt-1.5 text-[10px] font-mono text-stone-400">
+            <p className="mt-1.5 text-[11px] font-mono text-stone-400">
               Paste a video link, or the full &lt;iframe&gt; embed code — we&apos;ll extract the link automatically.
             </p>
             {fieldErrors.video_url && <p className={ERROR_CLASS}>{fieldErrors.video_url}</p>}
@@ -512,7 +512,7 @@ export default function TeacherLessonFormModal({
             {fieldErrors.file && <p className={ERROR_CLASS}>{fieldErrors.file}</p>}
 
             {!file && existingFileUrl && (
-              <p className="text-[10px] font-mono text-stone-500 mt-2">
+              <p className="text-[11px] font-mono text-stone-500 mt-2">
                 Current file:{" "}
                 <a href={existingFileUrl} target="_blank" rel="noreferrer" className="text-amber-700 underline">
                   view
@@ -547,7 +547,7 @@ export default function TeacherLessonFormModal({
                   rows={8}
                   className={`${FIELD_CLASS} resize-none`}
                 />
-                <p className="mt-1.5 text-[10px] font-mono text-stone-400">
+                <p className="mt-1.5 text-[11px] font-mono text-stone-400">
                   This lesson was authored in plain Markdown — edits stay in Markdown.
                 </p>
               </>
@@ -586,7 +586,7 @@ export default function TeacherLessonFormModal({
               {fieldErrors.file && <p className={ERROR_CLASS}>{fieldErrors.file}</p>}
 
               {!file && existingFileUrl && (
-                <p className="text-[10px] font-mono text-stone-500 mt-2">
+                <p className="text-[11px] font-mono text-stone-500 mt-2">
                   Current file:{" "}
                   <a href={existingFileUrl} target="_blank" rel="noreferrer" className="text-amber-700 underline">
                     view
@@ -629,7 +629,7 @@ export default function TeacherLessonFormModal({
             disabled={isSubmitting}
             className={FIELD_CLASS}
           />
-          <p className="mt-1.5 text-[10px] font-mono text-stone-400">1 = first position</p>
+          <p className="mt-1.5 text-[11px] font-mono text-stone-400">1 = first position</p>
           {fieldErrors.order && <p className={ERROR_CLASS}>{fieldErrors.order}</p>}
         </div>
 
@@ -638,7 +638,7 @@ export default function TeacherLessonFormModal({
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-sm font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -646,7 +646,7 @@ export default function TeacherLessonFormModal({
           <button
             type="submit"
             disabled={isSubmitting || modules.length === 0}
-            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>
@@ -663,7 +663,7 @@ export default function TeacherLessonFormModal({
         </div>
 
         {modules.length === 0 && (
-          <p className="text-[10px] font-mono text-amber-700 flex items-center gap-1.5">
+          <p className="text-[11px] font-mono text-amber-700 flex items-center gap-1.5">
             <FilePlus2 className="w-3 h-3" />
             Create a module first before adding a lesson.
           </p>

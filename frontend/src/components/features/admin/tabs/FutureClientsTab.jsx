@@ -99,7 +99,7 @@ export default function FutureClientsTab() {
     {
       key: "status",
       header: "Status",
-      render: (application) => <StatusBadge status={application.status} />,
+      render: (application) => <StatusBadge size="lg" status={application.status} />,
     },
     {
       key: "submitted",
@@ -141,13 +141,13 @@ export default function FutureClientsTab() {
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 min-w-0">
-          <SearchBar
+          <SearchBar size="lg"
             value={searchInput}
             onChange={setSearchInput}
             placeholder="Search applicants by name or email..."
           />
           <div className="w-full sm:w-56 shrink-0">
-            <SearchableSelect
+            <SearchableSelect size="lg"
               placeholder="All Statuses"
               options={STATUS_FILTER_OPTIONS}
               value={statusFilter}
@@ -158,7 +158,7 @@ export default function FutureClientsTab() {
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
-        <DataTable
+        <DataTable size="lg"
           columns={columns}
           rows={paginatedApplications}
           isLoading={status === "loading" || status === "idle"}
@@ -166,7 +166,7 @@ export default function FutureClientsTab() {
           onRetry={() => loadFutureClients({ force: true })}
           emptyLabel="No applications found."
         />
-        <Pagination
+        <Pagination size="lg"
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
@@ -182,7 +182,7 @@ export default function FutureClientsTab() {
         applicationId={viewApplicationId}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(approvingApplication)}
         onClose={() => setApprovingApplication(null)}
         onConfirm={handleApproveConfirm}

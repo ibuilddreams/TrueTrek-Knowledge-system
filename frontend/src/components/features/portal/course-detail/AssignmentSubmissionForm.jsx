@@ -25,7 +25,7 @@ export default function AssignmentSubmissionForm({
   if (!canSubmit) {
     return (
       <div
-        className={`rounded-xl border border-dashed px-4 py-4 text-xs ${
+        className={`rounded-xl border border-dashed px-4 py-4 text-sm ${
           isVault
             ? "border-stone-700 bg-white/5 text-stone-400"
             : "border-stone-200 bg-stone-50 text-stone-500"
@@ -76,7 +76,7 @@ export default function AssignmentSubmissionForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <h5
-        className={`text-xs font-mono uppercase tracking-wider ${
+        className={`text-sm font-mono uppercase tracking-wider ${
           isVault ? "text-stone-500" : "text-stone-400"
         }`}
       >
@@ -85,7 +85,7 @@ export default function AssignmentSubmissionForm({
 
       <div className="space-y-2">
         <label
-          className={`inline-flex items-center gap-2 px-3.5 py-2 border border-dashed rounded-xl text-[11px] font-mono uppercase tracking-wider cursor-pointer transition ${
+          className={`inline-flex items-center gap-2 px-3.5 py-2 border border-dashed rounded-xl text-xs font-mono uppercase tracking-wider cursor-pointer transition ${
             isVault
               ? "border-stone-700 hover:border-amber-500/60 text-stone-400 hover:text-amber-400"
               : "border-stone-300 hover:border-amber-400 text-stone-500 hover:text-amber-700"
@@ -102,7 +102,7 @@ export default function AssignmentSubmissionForm({
             className="hidden"
           />
         </label>
-        <p className={`text-[10px] ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+        <p className={`text-[11px] ${isVault ? "text-stone-500" : "text-stone-400"}`}>
           Allowed: {ALL_ALLOWED_ASSIGNMENT_EXTENSIONS.join(", ")} · up to {MAX_ASSIGNMENT_FILE_SIZE_MB}
           MB each
         </p>
@@ -144,7 +144,7 @@ export default function AssignmentSubmissionForm({
       <button
         type="submit"
         disabled={submitMutation.isPending || files.length === 0}
-        className={`inline-flex items-center gap-2 px-4 py-2.5 disabled:opacity-50 text-[11px] font-mono uppercase tracking-wider rounded-xl transition ${
+        className={`inline-flex items-center gap-2 px-4 py-2.5 disabled:opacity-50 text-xs font-mono uppercase tracking-wider rounded-xl transition ${
           isVault
             ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
             : "bg-stone-900 hover:bg-stone-800 text-white"

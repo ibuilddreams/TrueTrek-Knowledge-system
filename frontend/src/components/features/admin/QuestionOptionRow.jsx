@@ -10,11 +10,11 @@ import SearchableSelect from "@/components/ui/SearchableSelect";
 // previously made the weight input silently claim the full row and squeeze
 // the pathway dropdown next to it down to ~0px.
 const FIELD_CLASS =
-  "px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60";
+  "px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60";
 
-const LABEL_CLASS = "text-[10px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold";
+const LABEL_CLASS = "text-[11px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold";
 
-const ERROR_CLASS = "text-[10px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
 
 export default function QuestionOptionRow({
   option,
@@ -90,7 +90,7 @@ export default function QuestionOptionRow({
           {option.pathwayWeights.map((weight) => (
             <div key={weight.uid} className="flex items-center gap-2">
               <div className="flex-1 min-w-0">
-                <SearchableSelect
+                <SearchableSelect size="lg"
                   placeholder="Select a pathway"
                   searchPlaceholder="Search pathways..."
                   options={pathwayOptions}
@@ -130,7 +130,7 @@ export default function QuestionOptionRow({
           type="button"
           onClick={addWeight}
           disabled={disabled}
-          className="mt-2 w-full flex items-center justify-center gap-2 py-2 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          className="mt-2 w-full flex items-center justify-center gap-2 py-2 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <Plus className="w-3.5 h-3.5" />
           Add Pathway Weight

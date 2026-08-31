@@ -27,7 +27,7 @@ export default function ConversationListItem({ conversation, isSelected, onSelec
           isSelected ? "bg-amber-50" : "hover:bg-stone-50"
         }`}
       >
-        <span className="w-10 h-10 rounded-full bg-stone-100 border border-stone-200 text-stone-600 flex items-center justify-center shrink-0 text-xs font-bold font-mono overflow-hidden">
+        <span className="w-10 h-10 rounded-full bg-stone-100 border border-stone-200 text-stone-600 flex items-center justify-center shrink-0 text-sm font-bold font-mono overflow-hidden">
           {other?.avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={other.avatar} alt="" className="w-full h-full object-cover" />
@@ -38,26 +38,26 @@ export default function ConversationListItem({ conversation, isSelected, onSelec
         <span className="min-w-0 flex-1">
           <span className="flex items-center justify-between gap-2">
             <span
-              className={`text-xs truncate ${
+              className={`text-sm truncate ${
                 hasUnread ? "font-bold text-stone-900" : "font-semibold text-stone-800"
               }`}
             >
               {other?.name || "Unknown"}
             </span>
-            <span className="text-[10px] font-mono text-stone-400 shrink-0">
+            <span className="text-[11px] font-mono text-stone-400 shrink-0">
               {formatTimestamp(lastMessage?.created_at || conversation.created_at)}
             </span>
           </span>
           <span className="flex items-center justify-between gap-2 mt-0.5">
             <span
-              className={`text-[11px] truncate ${
+              className={`text-xs truncate ${
                 hasUnread ? "text-stone-700 font-medium" : "text-stone-400 font-light"
               }`}
             >
               {lastMessage?.body || "No messages yet"}
             </span>
             {hasUnread && (
-              <span className="min-w-4.5 h-4.5 px-1 rounded-full bg-amber-600 text-white text-[9px] font-bold font-mono flex items-center justify-center shrink-0">
+              <span className="min-w-4.5 h-4.5 px-1 rounded-full bg-amber-600 text-white text-[10px] font-bold font-mono flex items-center justify-center shrink-0">
                 {conversation.unread_count}
               </span>
             )}

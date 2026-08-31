@@ -198,7 +198,7 @@ export default function ManageTierPathwaysModal({ isOpen, onClose, tier }) {
       <div className="space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-end gap-3">
           <div className="flex-1 min-w-0">
-            <SearchableSelect
+            <SearchableSelect size="lg"
               label="Add a Pathway"
               placeholder="Select a pathway to attach"
               searchPlaceholder="Search pathways..."
@@ -214,7 +214,7 @@ export default function ManageTierPathwaysModal({ isOpen, onClose, tier }) {
             type="button"
             onClick={handleAttach}
             disabled={!selectedPathwayId || attachMutation.isPending}
-            className="px-4 py-3 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 disabled:opacity-60 disabled:cursor-not-allowed text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 shrink-0"
+            className="px-4 py-3 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 disabled:opacity-60 disabled:cursor-not-allowed text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 shrink-0"
           >
             <Plus className="w-4 h-4" />
             {attachMutation.isPending ? "Attaching..." : "Attach"}
@@ -222,14 +222,14 @@ export default function ManageTierPathwaysModal({ isOpen, onClose, tier }) {
         </div>
 
         <div>
-          <p className="text-[10px] font-mono text-stone-450 uppercase tracking-wider mb-2 font-semibold">
+          <p className="text-[11px] font-mono text-stone-450 uppercase tracking-wider mb-2 font-semibold">
             Attached Pathways
           </p>
 
           {isLoading ? (
             <Loader fullScreen={false} label="Loading pathways..." />
           ) : displayPathways.length === 0 ? (
-            <EmptyState
+            <EmptyState size="lg"
               icon={Route}
               label="No pathways attached yet."
               description="Use the picker above to attach a pathway to this tier."
@@ -255,7 +255,7 @@ export default function ManageTierPathwaysModal({ isOpen, onClose, tier }) {
         </div>
       </div>
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(detachingPathway)}
         onClose={() => setDetachingPathway(null)}
         onConfirm={handleDetachConfirm}

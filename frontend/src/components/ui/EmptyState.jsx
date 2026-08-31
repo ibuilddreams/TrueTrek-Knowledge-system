@@ -8,6 +8,7 @@ export default function EmptyState({
   description,
   action,
   compact = false,
+  size = "base",
 }) {
   return (
     <div
@@ -18,9 +19,11 @@ export default function EmptyState({
       <div className="w-12 h-12 rounded-2xl bg-stone-50 border border-stone-100 text-stone-400 flex items-center justify-center mb-1">
         <Icon className="w-5 h-5" />
       </div>
-      <p className="text-xs font-medium text-stone-500">{label}</p>
+      <p className={`${size === "lg" ? "text-sm" : "text-xs"} font-medium text-stone-500`}>{label}</p>
       {description && (
-        <p className="text-[11px] font-light text-stone-400 max-w-[220px] leading-relaxed">
+        <p
+          className={`${size === "lg" ? "text-xs" : "text-[11px]"} font-light text-stone-400 max-w-[220px] leading-relaxed`}
+        >
           {description}
         </p>
       )}

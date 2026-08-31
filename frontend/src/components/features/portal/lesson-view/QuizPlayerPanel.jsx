@@ -60,7 +60,7 @@ export default function QuizPlayerPanel({ quiz, canInteract }) {
         </span>
         <div className="min-w-0">
           <p
-            className={`text-[10px] font-mono uppercase tracking-[0.16em] mb-1 ${
+            className={`text-[11px] font-mono uppercase tracking-[0.16em] mb-1 ${
               isVault ? "text-amber-500" : "text-amber-700/80"
             }`}
           >
@@ -74,7 +74,7 @@ export default function QuizPlayerPanel({ quiz, canInteract }) {
             {quiz.title}
           </h2>
           {phase === "in_progress" ? (
-            <p className={`text-xs mt-1 ${isVault ? "text-amber-400" : "text-amber-700"}`}>
+            <p className={`text-sm mt-1 ${isVault ? "text-amber-400" : "text-amber-700"}`}>
               Attempt in progress
             </p>
           ) : null}

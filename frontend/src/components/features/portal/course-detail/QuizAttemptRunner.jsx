@@ -125,7 +125,7 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
     <div className="space-y-5">
       {attempt.resumed ? (
         <div
-          className={`rounded-xl border px-3.5 py-2.5 text-xs ${
+          className={`rounded-xl border px-3.5 py-2.5 text-sm ${
             isVault
               ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
               : "border-amber-100 bg-amber-50 text-amber-800"
@@ -135,12 +135,12 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
         </div>
       ) : null}
       <div className="flex items-center justify-between gap-3">
-        <p className={`text-[11px] font-mono uppercase tracking-wider ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+        <p className={`text-xs font-mono uppercase tracking-wider ${isVault ? "text-stone-500" : "text-stone-400"}`}>
           Question {currentIndex + 1} of {questions.length} · {answeredCount} answered
         </p>
         {secondsLeft !== null ? (
           <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-[11px] font-mono font-bold ${
+            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-mono font-bold ${
               secondsLeft <= 30
                 ? isVault
                   ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
@@ -162,7 +162,7 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
             key={question.id}
             type="button"
             onClick={() => setCurrentIndex(index)}
-            className={`w-7 h-7 rounded-lg text-[11px] font-mono font-bold border transition ${
+            className={`w-7 h-7 rounded-lg text-xs font-mono font-bold border transition ${
               index === currentIndex
                 ? isVault
                   ? "bg-amber-600 text-stone-950 border-amber-600"
@@ -236,7 +236,7 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
           type="button"
           onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))}
           disabled={currentIndex === 0}
-          className={`px-4 py-2 border disabled:opacity-40 text-[11px] font-mono uppercase tracking-wider rounded-xl transition ${
+          className={`px-4 py-2 border disabled:opacity-40 text-xs font-mono uppercase tracking-wider rounded-xl transition ${
             isVault
               ? "border-stone-700 text-stone-400 hover:border-stone-600"
               : "border-stone-200 text-stone-600"
@@ -249,7 +249,7 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
           <button
             type="button"
             onClick={() => setCurrentIndex((index) => Math.min(questions.length - 1, index + 1))}
-            className={`px-4 py-2 text-[11px] font-mono uppercase tracking-wider rounded-xl transition ${
+            className={`px-4 py-2 text-xs font-mono uppercase tracking-wider rounded-xl transition ${
               isVault
                 ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
                 : "bg-stone-900 hover:bg-stone-800 text-white"
@@ -262,7 +262,7 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
             type="button"
             onClick={() => onSubmit(buildPayload())}
             disabled={isSubmitting}
-            className={`inline-flex items-center gap-2 px-4 py-2 disabled:opacity-50 text-[11px] font-mono uppercase tracking-wider rounded-xl transition ${
+            className={`inline-flex items-center gap-2 px-4 py-2 disabled:opacity-50 text-xs font-mono uppercase tracking-wider rounded-xl transition ${
               isVault
                 ? "bg-emerald-600 hover:bg-emerald-500 text-stone-950"
                 : "bg-emerald-700 hover:bg-emerald-800 text-white"

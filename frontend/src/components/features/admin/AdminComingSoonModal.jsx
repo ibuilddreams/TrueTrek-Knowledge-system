@@ -10,7 +10,7 @@ export default function AdminComingSoonModal({ isOpen, onClose, title, descripti
         <button
           type="button"
           onClick={onClose}
-          className="px-6 py-3 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all cursor-pointer"
+          className="px-6 py-3 bg-stone-900 hover:bg-stone-800 text-white text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-all cursor-pointer"
         >
           Got It
         </button>

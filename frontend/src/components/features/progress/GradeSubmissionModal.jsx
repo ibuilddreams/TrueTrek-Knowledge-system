@@ -75,7 +75,7 @@ export default function GradeSubmissionModal({ row, onClose, courseId }) {
         >
           {row.files?.length > 0 && (
             <div>
-              <label className="text-[10px] font-mono uppercase tracking-wider text-stone-450 font-semibold mb-1.5 block">
+              <label className="text-[11px] font-mono uppercase tracking-wider text-stone-450 font-semibold mb-1.5 block">
                 Attachments
               </label>
               <ul className="space-y-2">
@@ -95,11 +95,11 @@ export default function GradeSubmissionModal({ row, onClose, courseId }) {
                           <Icon className="w-4 h-4" />
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block text-xs font-mono font-semibold text-stone-800 truncate">
+                          <span className="block text-sm font-mono font-semibold text-stone-800 truncate">
                             {name}
                           </span>
                           {extension && (
-                            <span className="block text-[10px] font-mono text-stone-400 mt-0.5">
+                            <span className="block text-[11px] font-mono text-stone-400 mt-0.5">
                               {extension} file
                             </span>
                           )}
@@ -114,7 +114,7 @@ export default function GradeSubmissionModal({ row, onClose, courseId }) {
           )}
 
           <div>
-            <label className="text-[10px] font-mono uppercase tracking-wider text-stone-450 font-semibold mb-1.5 block">
+            <label className="text-[11px] font-mono uppercase tracking-wider text-stone-450 font-semibold mb-1.5 block">
               Marks (out of {row.assignment.total_marks})
             </label>
             <input
@@ -124,19 +124,19 @@ export default function GradeSubmissionModal({ row, onClose, courseId }) {
               value={marks}
               onChange={(event) => setMarks(event.target.value)}
               required
-              className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-850 transition"
+              className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-850 transition"
             />
           </div>
 
           <div>
-            <label className="text-[10px] font-mono uppercase tracking-wider text-stone-450 font-semibold mb-1.5 block">
+            <label className="text-[11px] font-mono uppercase tracking-wider text-stone-450 font-semibold mb-1.5 block">
               Feedback
             </label>
             <textarea
               rows={3}
               value={feedback}
               onChange={(event) => setFeedback(event.target.value)}
-              className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-850 transition resize-none"
+              className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-850 transition resize-none"
               placeholder="Optional feedback for the student..."
             />
           </div>
@@ -145,14 +145,14 @@ export default function GradeSubmissionModal({ row, onClose, courseId }) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 text-xs font-mono font-semibold uppercase tracking-wider text-stone-500 hover:text-stone-700 transition-colors cursor-pointer"
+              className="px-4 py-2.5 text-sm font-mono font-semibold uppercase tracking-wider text-stone-500 hover:text-stone-700 transition-colors cursor-pointer"
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={gradeMutation.isPending}
-              className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-mono font-semibold uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+              className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-mono font-semibold uppercase tracking-wider rounded-xl transition-all cursor-pointer"
             >
               {gradeMutation.isPending ? "Saving..." : "Save Grade"}
             </button>

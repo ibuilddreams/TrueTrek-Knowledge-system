@@ -68,7 +68,7 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
                 <h3 className="font-serif font-black text-lg text-stone-950">
                   {editingStudent ? 'Adjust Scholar-Athlete Metrics' : 'Enroll Candidate into Registry'}
                 </h3>
-                <p className="text-[11px] text-stone-450 mt-0.5">TrueTrek Cohort validation slot allocation</p>
+                <p className="text-xs text-stone-450 mt-0.5">TrueTrek Cohort validation slot allocation</p>
               </div>
               <CloseButton
                 onClick={onClose}
@@ -77,11 +77,11 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
               />
             </div>
 
-            <div className="space-y-4 text-xs font-mono">
+            <div className="space-y-4 text-sm font-mono">
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] text-stone-450 uppercase mb-1.5 font-bold">Candidate Name *</label>
+                  <label className="block text-[11px] text-stone-450 uppercase mb-1.5 font-bold">Candidate Name *</label>
                   <input
                     type="text"
                     required
@@ -92,7 +92,7 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] text-stone-450 uppercase mb-1.5 font-bold">Advisor Notification Email *</label>
+                  <label className="block text-[11px] text-stone-450 uppercase mb-1.5 font-bold">Advisor Notification Email *</label>
                   <input
                     type="email"
                     required
@@ -106,7 +106,7 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] text-stone-450 uppercase mb-1.5 font-bold">Institution / Affiliated Academy *</label>
+                  <label className="block text-[11px] text-stone-450 uppercase mb-1.5 font-bold">Institution / Affiliated Academy *</label>
                   <input
                     type="text"
                     required
@@ -117,7 +117,7 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] text-stone-450 uppercase mb-1.5 font-bold">Specialty Focus Tract</label>
+                  <label className="block text-[11px] text-stone-450 uppercase mb-1.5 font-bold">Specialty Focus Tract</label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
@@ -133,7 +133,7 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[10px] text-stone-450 uppercase mb-1.5 font-bold">Curriculum Placement Tier</label>
+                  <label className="block text-[11px] text-stone-450 uppercase mb-1.5 font-bold">Curriculum Placement Tier</label>
                   <select
                     value={formData.activeTierId}
                     onChange={(e) => setFormData({ ...formData, activeTierId: e.target.value })}
@@ -145,7 +145,7 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] text-stone-450 uppercase mb-1.5 font-bold">Enrollment Standing Status</label>
+                  <label className="block text-[11px] text-stone-450 uppercase mb-1.5 font-bold">Enrollment Standing Status</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
@@ -160,7 +160,7 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
 
               <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 gap-4 space-y-3.5">
                 <div>
-                  <div className="flex justify-between items-center text-[10px] text-stone-500 font-bold mb-1">
+                  <div className="flex justify-between items-center text-[11px] text-stone-500 font-bold mb-1">
                     <span>VERIFIED COMPLIANCE DRILL SCORE</span>
                     <span className="text-amber-800 font-mono">{formData.averageScore} / 100</span>
                   </div>
@@ -172,11 +172,11 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
                     onChange={(e) => setFormData({ ...formData, averageScore: Number(e.target.value) })}
                     className="w-full accent-amber-600 cursor-pointer"
                   />
-                  <p className="text-[9px] text-stone-400 font-sans tracking-tight">Updates the aggregate test score on the active database profile</p>
+                  <p className="text-[10px] text-stone-400 font-sans tracking-tight">Updates the aggregate test score on the active database profile</p>
                 </div>
 
                 <div>
-                  <div className="flex justify-between items-center text-[10px] text-stone-500 font-bold mb-1">
+                  <div className="flex justify-between items-center text-[11px] text-stone-500 font-bold mb-1">
                     <span>CURRICULUM MODULES PROGRESS PROGRESSION</span>
                     <span className="text-amber-800 font-mono">{formData.progressPercent}%</span>
                   </div>
@@ -191,7 +191,7 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
                 </div>
 
                 <div>
-                  <label className="block text-[10px] text-stone-450 uppercase mb-1 font-bold">Continuous Learning Streak (Days)</label>
+                  <label className="block text-[11px] text-stone-450 uppercase mb-1 font-bold">Continuous Learning Streak (Days)</label>
                   <input
                     type="number"
                     min="0"
@@ -204,7 +204,7 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
 
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-stone-200 font-mono text-xs">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-stone-200 font-mono text-sm">
               <button
                 type="button"
                 onClick={onClose}

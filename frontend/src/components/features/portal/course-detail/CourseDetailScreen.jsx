@@ -68,7 +68,7 @@ function ProgressBar({ value }) {
   const progress = Math.round(value || 0);
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-[10px] font-mono uppercase tracking-wider text-stone-400">
+      <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-stone-400">
         <span>Overall progress</span>
         <span className="text-amber-800 font-bold">{progress}%</span>
       </div>
@@ -89,7 +89,7 @@ function ProgressBar({ value }) {
 function StatChip({ label, value }) {
   return (
     <div className="rounded-xl border border-stone-100 bg-stone-50/80 px-3 py-2.5">
-      <p className="text-[9px] font-mono uppercase tracking-wider text-stone-400">
+      <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
         {label}
       </p>
       <p className="text-base font-serif font-bold text-stone-900 mt-0.5">{value}</p>
@@ -122,7 +122,7 @@ function InstructorAvatar({ name, avatar }) {
     );
   }
   return (
-    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-600 text-white font-bold text-[10px] shrink-0">
+    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-600 text-white font-bold text-[11px] shrink-0">
       {instructorInitials(name)}
     </span>
   );
@@ -181,7 +181,7 @@ function LessonRow({ lesson, onOpen, disabled }) {
         <span className="block text-[12.5px] font-medium text-stone-700 group-hover:text-amber-800 truncate transition-colors">
           {lesson.title}
         </span>
-        <span className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
+        <span className="flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
           <span>{meta.label}</span>
           {lesson.duration_minutes ? (
             <>
@@ -214,14 +214,14 @@ function AssignmentRow({ assignment, onOpen }) {
           {assignment.title}
         </span>
         {assignment.due_date ? (
-          <span className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
+          <span className="flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
             <CalendarClock className="w-3 h-3 shrink-0" />
             Due {formatDateTime(assignment.due_date)}
           </span>
         ) : null}
       </span>
       <span
-        className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border shrink-0 ${className}`}
+        className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border shrink-0 ${className}`}
       >
         {label}
       </span>
@@ -242,13 +242,13 @@ function QuizRow({ quiz, onOpen }) {
         <span className="block text-[12.5px] font-medium text-stone-700 group-hover:text-amber-800 truncate transition-colors">
           {quiz.title}
         </span>
-        <span className="flex items-center gap-1 text-[10px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
+        <span className="flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
           <Repeat className="w-3 h-3 shrink-0" />
           {quiz.attempts_used}/{quiz.attempts_allowed} attempts
         </span>
       </span>
       <span
-        className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border shrink-0 ${className}`}
+        className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border shrink-0 ${className}`}
       >
         {label}
       </span>
@@ -300,7 +300,7 @@ function ModuleAccordionItem({
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
+            <p className="text-[11px] font-mono uppercase tracking-wider text-stone-400">
               Module {module.order}
             </p>
             <h5 className="font-serif font-bold text-stone-900 mt-0.5 truncate">
@@ -309,7 +309,7 @@ function ModuleAccordionItem({
           </div>
           <div className="flex items-center gap-2 shrink-0">
             <span
-              className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${
+              className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${
                 module.is_completed
                   ? "bg-emerald-50 text-emerald-700 border-emerald-100"
                   : "bg-stone-50 text-stone-500 border-stone-200"
@@ -328,12 +328,12 @@ function ModuleAccordionItem({
         </div>
 
         {module.description ? (
-          <p className="text-[11px] text-stone-500 font-light leading-relaxed line-clamp-2">
+          <p className="text-xs text-stone-500 font-light leading-relaxed line-clamp-2">
             {module.description}
           </p>
         ) : null}
 
-        <div className="flex flex-wrap gap-2 text-[10px] font-mono uppercase tracking-wider text-stone-400">
+        <div className="flex flex-wrap gap-2 text-[11px] font-mono uppercase tracking-wider text-stone-400">
           <span className="inline-flex items-center gap-1">
             <BookOpen className="w-3 h-3" />
             {module.stats?.completed_lessons || 0}/
@@ -362,7 +362,7 @@ function ModuleAccordionItem({
             <div className="px-4 sm:px-5 pb-4 sm:pb-5 space-y-4">
               {(module.lessons || []).length > 0 && (
                 <div className="space-y-0.5 pt-2 border-t border-stone-100">
-                  <p className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-wider text-stone-400 px-2 pb-1">
+                  <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 px-2 pb-1">
                     <BookOpen className="w-3 h-3" />
                     Lessons
                   </p>
@@ -385,7 +385,7 @@ function ModuleAccordionItem({
 
               {moduleAssignments.length > 0 && (
                 <div className="space-y-0.5 pt-2 border-t border-stone-100">
-                  <p className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-wider text-stone-400 px-2 pb-1">
+                  <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 px-2 pb-1">
                     <ClipboardList className="w-3 h-3" />
                     Assignments
                   </p>
@@ -401,7 +401,7 @@ function ModuleAccordionItem({
 
               {moduleQuizzes.length > 0 && (
                 <div className="space-y-0.5 pt-2 border-t border-stone-100">
-                  <p className="flex items-center gap-1.5 text-[9px] font-mono font-bold uppercase tracking-wider text-stone-400 px-2 pb-1">
+                  <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 px-2 pb-1">
                     <HelpCircle className="w-3 h-3" />
                     Quizzes
                   </p>
@@ -412,7 +412,7 @@ function ModuleAccordionItem({
               )}
 
               {!canInteract ? (
-                <p className="flex items-center gap-1.5 text-[10px] text-stone-400 pt-1">
+                <p className="flex items-center gap-1.5 text-[11px] text-stone-400 pt-1">
                   <Lock className="w-3 h-3" />
                   Actions are disabled while this enrollment isn&apos;t active.
                 </p>
@@ -558,7 +558,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-stone-200 hover:border-amber-300 hover:text-amber-800 text-stone-600 text-[11px] font-mono uppercase tracking-wider rounded-xl transition"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-stone-200 hover:border-amber-300 hover:text-amber-800 text-stone-600 text-xs font-mono uppercase tracking-wider rounded-xl transition"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Back to My Courses
@@ -586,13 +586,13 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
             <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <AlertCircle className="w-6 h-6" />
             </div>
-            <p className="text-xs text-rose-600 mb-4">
+            <p className="text-sm text-rose-600 mb-4">
               {getApiErrorMessage(error, "Unable to load course details.")}
             </p>
             <button
               type="button"
               onClick={() => refetch()}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-xs font-mono uppercase rounded-lg"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-sm font-mono uppercase rounded-lg"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Retry
@@ -627,18 +627,18 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[10px] font-mono uppercase tracking-[0.16em] text-amber-700/80 mb-1">
+              <p className="text-[11px] font-mono uppercase tracking-[0.16em] text-amber-700/80 mb-1">
                 Course dossier
               </p>
               <h2 className="font-serif font-bold text-2xl sm:text-3xl text-stone-900 leading-tight">
                 {course.title || "Course details"}
               </h2>
-              <p className="text-xs text-stone-500 font-light mt-1.5">
+              <p className="text-sm text-stone-500 font-light mt-1.5">
                 {course.category?.name || "General"}
                 {course.code ? ` · ${course.code}` : ""}
               </p>
             </div>
-            <StatusBadge status={detailEnrollment.status} />
+            <StatusBadge status={detailEnrollment.status} size="lg" />
           </div>
 
           <CourseThumbnail image={course.image} title={course.title} />
@@ -651,7 +651,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
                 </p>
 
                 {!canInteract ? (
-                  <div className="flex items-start gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-3 text-xs text-stone-500">
+                  <div className="flex items-start gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-3 text-sm text-stone-500">
                     <Lock className="w-4 h-4 shrink-0 mt-0.5" />
                     <span>
                       This enrollment is {detailEnrollment.status?.toLowerCase()} — lessons,
@@ -687,7 +687,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
               <div className="space-y-3">
                 <div>
                   <h4 className="font-serif font-bold text-stone-900">Modules & lessons</h4>
-                  <p className="text-xs text-stone-500 font-light mt-0.5">
+                  <p className="text-sm text-stone-500 font-light mt-0.5">
                     Your learning path inside this enrolled course.
                   </p>
                 </div>
@@ -695,7 +695,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
                 {modules.length === 0 ? (
                   <div className="rounded-2xl border border-dashed border-stone-200 bg-white px-4 py-8 text-center">
                     <Layers className="w-5 h-5 text-stone-300 mx-auto mb-2" />
-                    <p className="text-xs text-stone-500">
+                    <p className="text-sm text-stone-500">
                       No modules have been published for this course yet.
                     </p>
                   </div>
@@ -754,7 +754,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
 
                 <div className="pt-3 border-t border-stone-100 space-y-3">
                   <div className="space-y-2">
-                    <p className="text-[9px] font-mono uppercase tracking-wider text-stone-400">
+                    <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
                       Instructor
                     </p>
                     {assignedInstructor ? (
@@ -768,7 +768,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
                             {assignedInstructor.name}
                           </p>
                           {assignedInstructor.email ? (
-                            <p className="text-[10px] text-stone-400 font-mono truncate">
+                            <p className="text-[11px] text-stone-400 font-mono truncate">
                               {assignedInstructor.email}
                             </p>
                           ) : null}

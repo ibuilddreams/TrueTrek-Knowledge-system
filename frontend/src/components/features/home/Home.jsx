@@ -35,6 +35,23 @@ import SectionHeading from "@/components/ui/SectionHeading";
 import PingDotSpinner from "@/components/ui/PingDotSpinner";
 import PresetPromptPills from "@/components/ui/PresetPromptPills";
 
+// True once `active` has stayed true for longer than delayMs — used to swap in
+// a "taking longer than usual" message so a slow AI response doesn't look frozen.
+function useDelayedFlag(active, delayMs) {
+  const [isSlow, setIsSlow] = useState(false);
+
+  useEffect(() => {
+    if (!active) {
+      setIsSlow(false);
+      return;
+    }
+    const timer = setTimeout(() => setIsSlow(true), delayMs);
+    return () => clearTimeout(timer);
+  }, [active, delayMs]);
+
+  return isSlow;
+}
+
 export default function Home() {
   const router = useRouter();
   const onExploreTiers = () => router.push(ROUTES.CURRICULUM);
@@ -53,6 +70,7 @@ export default function Home() {
   const [consultQuery, setConsultQuery] = useState("");
   const [consultAdvice, setConsultAdvice] = useState("");
   const [isConsulting, setIsConsulting] = useState(false);
+  const isConsultReplySlow = useDelayedFlag(isConsulting, 6000);
 
   // Floating chatbot states
   const [isChatOpen, setIsChatOpen] = useState(false);
@@ -61,6 +79,7 @@ export default function Home() {
   const [chatMessages, setChatMessages] = useState([]);
   const [chatInput, setChatInput] = useState("");
   const [isChatLoading, setIsChatLoading] = useState(false);
+  const isChatReplySlow = useDelayedFlag(isChatLoading, 6000);
   const messagesEndRef = useRef(null);
 
   // Hot reset welcome message for selected chat advisor
@@ -103,7 +122,7 @@ How can I help you map out your high-compliance curriculum track or resolve spec
       ADVISOR_PERSONAS.find((a) => a.id === selectedConsultAdvisorId) ||
       ADVISOR_PERSONAS[0];
     const systemPrompt = `${advisor.systemPrompt}
-    
+
 You are serving as the Senior Advisor on the TrueTrek Learning LLC Academy Home Screen.
 Your goal is to guide prospective or active students, parents, and partners.
 Analyze their query, provide a professional, specific analysis report, and recommend:
@@ -153,8 +172,8 @@ Formatting: Keep your response elegant, structured with crystal-clear headers, a
       ADVISOR_PERSONAS.find((a) => a.id === selectedChatAdvisorId) ||
       ADVISOR_PERSONAS[0];
     const systemPrompt = `${advisor.systemPrompt}
-    
-You are speaking on our live floating Concierge desk on the Academy Home page. 
+
+You are speaking on our live floating Concierge desk on the Academy Home page.
 Keep your response concise but highly tailored and strategic (approx 150-250 words is optimal. Use clean line breaks).
 Always remain strictly in character as **${advisor.name}**, **${advisor.title}**.
 Guide them, explain how the curriculum tiers relate to their query, and propose concrete physical/mental/legal protocols.`;
@@ -663,7 +682,9 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       <div className="flex flex-col items-center justify-center py-10 space-y-3">
                         <PingDotSpinner />
                         <p className="text-xs font-mono text-stone-500 animate-pulse tracking-wider">
-                          SECURE LINK PIPELINE CONFIGURED...
+                          {isConsultReplySlow
+                            ? "STILL CONNECTING TO THE DESK..."
+                            : "SECURE LINK PIPELINE CONFIGURED..."}
                         </p>
                       </div>
                     ) : (
@@ -960,7 +981,9 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                         <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-600"></span>
                       </span>
                       <p className="font-mono text-[10px] animate-pulse">
-                        FORMULATING RECOMMENDATIONS...
+                        {isChatReplySlow
+                          ? "STILL CONNECTING TO THE DESK..."
+                          : "FORMULATING RECOMMENDATIONS..."}
                       </p>
                     </div>
                   </div>
@@ -977,8 +1000,8 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       idPrefix="chat-preset-legal"
                       prompts={[
                         "What NIL traps exist in contracts?",
-                        "How to file single-member LLC?",
-                        "Protecting my brand assets",
+                        "How do I protect my trademark?",
+                        "What should I redline in a non-compete?",
                       ]}
                       onSelect={handleSendChatMessage}
                     />
@@ -989,8 +1012,8 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       idPrefix="chat-preset-recruiter"
                       prompts={[
                         "What do D1 scouts look for?",
-                        "Auditing highlight videos",
-                        "Coach communications syntax",
+                        "How do I get more scout exposure?",
+                        "How do I audit my team culture fit?",
                       ]}
                       onSelect={handleSendChatMessage}
                     />
@@ -1000,9 +1023,9 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     <PresetPromptPills
                       idPrefix="chat-preset-psych"
                       prompts={[
-                        "Daily Circadian checklist",
-                        "How sleep impacts focus?",
-                        "Lower exam stress drills",
+                        "How do I stabilize my sleep cycle?",
+                        "How does sleep impact my focus?",
+                        "How do I lower stress before exams?",
                       ]}
                       onSelect={handleSendChatMessage}
                     />
@@ -1012,9 +1035,9 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     <PresetPromptPills
                       idPrefix="chat-preset-legacy"
                       prompts={[
-                        "How family offices build trusts?",
-                        "Axiological family charters",
-                        "Stewardship of venture reserves",
+                        "How do family offices structure trusts?",
+                        "What is a family values charter?",
+                        "How do I steward my venture reserves?",
                       ]}
                       onSelect={handleSendChatMessage}
                     />

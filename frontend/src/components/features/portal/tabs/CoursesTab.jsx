@@ -160,14 +160,14 @@ export default function CoursesTab() {
           Failed to Load Courses
         </h2>
         <p
-          className={`text-xs font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}
+          className={`text-sm font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}
         >
           {getApiErrorMessage(error, "Unable to load your enrolled courses.")}
         </p>
         <button
           type="button"
           onClick={() => refetch()}
-          className={`inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition ${
+          className={`inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition ${
             isVault
               ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
               : "bg-stone-900 hover:bg-stone-800 text-stone-100"
@@ -211,7 +211,7 @@ export default function CoursesTab() {
           <button
             type="button"
             onClick={closeCourse}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-mono uppercase tracking-wider rounded-xl transition ${
+            className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-mono uppercase tracking-wider rounded-xl transition ${
               isVault
                 ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
                 : "bg-stone-900 hover:bg-stone-800 text-white"
@@ -244,6 +244,7 @@ export default function CoursesTab() {
           icon={BookMarked}
           label="No courses yet"
           description="Once you are enrolled in a course, it will appear here with your live progress."
+          size="lg"
         />
       </div>
     );
@@ -278,7 +279,7 @@ export default function CoursesTab() {
           <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-8">
             <div className="max-w-xl min-w-0">
               <p
-                className={`text-[10px] font-mono uppercase tracking-[0.2em] mb-3 ${
+                className={`text-[11px] font-mono uppercase tracking-[0.2em] mb-3 ${
                   isVault ? "text-amber-500" : "text-amber-700/80"
                 }`}
               >
@@ -305,7 +306,7 @@ export default function CoursesTab() {
               <div className="flex items-end justify-between gap-4 mb-3">
                 <div>
                   <p
-                    className={`text-[10px] font-mono uppercase tracking-[0.14em] mb-1 ${
+                    className={`text-[11px] font-mono uppercase tracking-[0.14em] mb-1 ${
                       isVault ? "text-stone-500" : "text-stone-400"
                     }`}
                   >
@@ -325,7 +326,7 @@ export default function CoursesTab() {
                   </p>
                 </div>
                 <p
-                  className={`text-[11px] font-light pb-1 ${
+                  className={`text-xs font-light pb-1 ${
                     isVault ? "text-stone-500" : "text-stone-400"
                   }`}
                 >
@@ -361,7 +362,7 @@ export default function CoursesTab() {
           >
             <div className="sm:pr-6">
               <p
-                className={`text-[10px] font-mono uppercase tracking-[0.14em] ${
+                className={`text-[11px] font-mono uppercase tracking-[0.14em] ${
                   isVault ? "text-stone-500" : "text-stone-400"
                 }`}
               >
@@ -375,7 +376,7 @@ export default function CoursesTab() {
                 {enrollments.length}
               </p>
               <p
-                className={`text-[11px] mt-1.5 font-light ${
+                className={`text-xs mt-1.5 font-light ${
                   isVault ? "text-stone-500" : "text-stone-400"
                 }`}
               >
@@ -384,7 +385,7 @@ export default function CoursesTab() {
             </div>
             <div className="sm:px-6">
               <p
-                className={`text-[10px] font-mono uppercase tracking-[0.14em] ${
+                className={`text-[11px] font-mono uppercase tracking-[0.14em] ${
                   isVault ? "text-stone-500" : "text-stone-400"
                 }`}
               >
@@ -398,7 +399,7 @@ export default function CoursesTab() {
                 {activeCount}
               </p>
               <p
-                className={`text-[11px] mt-1.5 font-light ${
+                className={`text-xs mt-1.5 font-light ${
                   isVault ? "text-stone-500" : "text-stone-400"
                 }`}
               >
@@ -407,7 +408,7 @@ export default function CoursesTab() {
             </div>
             <div className="sm:pl-6">
               <p
-                className={`text-[10px] font-mono uppercase tracking-[0.14em] ${
+                className={`text-[11px] font-mono uppercase tracking-[0.14em] ${
                   isVault ? "text-stone-500" : "text-stone-400"
                 }`}
               >
@@ -421,7 +422,7 @@ export default function CoursesTab() {
                 {completedCount}
               </p>
               <p
-                className={`text-[11px] mt-1.5 font-light ${
+                className={`text-xs mt-1.5 font-light ${
                   isVault ? "text-stone-500" : "text-stone-400"
                 }`}
               >
@@ -486,7 +487,7 @@ export default function CoursesTab() {
                     key={option.value || "all"}
                     type="button"
                     onClick={() => setStatusFilter(option.value)}
-                    className={`px-3 py-1.5 rounded-lg text-[11px] font-mono uppercase tracking-wider transition border ${
+                    className={`px-3 py-1.5 rounded-lg text-xs font-mono uppercase tracking-wider transition border ${
                       isActive
                         ? isVault
                           ? "bg-amber-600 text-stone-950 border-amber-600 shadow-sm font-semibold"
@@ -502,7 +503,7 @@ export default function CoursesTab() {
               })}
             </div>
             <p
-              className={`text-xs sm:text-right shrink-0 ${isVault ? "text-stone-400" : "text-stone-500"}`}
+              className={`text-sm sm:text-right shrink-0 ${isVault ? "text-stone-400" : "text-stone-500"}`}
             >
               <span
                 className={`font-serif font-bold ${isVault ? "text-stone-50" : "text-stone-900"}`}
@@ -534,6 +535,7 @@ export default function CoursesTab() {
             label="No matching courses"
             description="Try adjusting your search or status filter."
             compact
+            size="lg"
           />
         </div>
       ) : (
@@ -562,6 +564,7 @@ export default function CoursesTab() {
             page={page}
             totalPages={totalPages}
             onPageChange={setPage}
+            size="lg"
           />
         </>
       )}

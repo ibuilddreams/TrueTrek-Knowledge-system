@@ -24,10 +24,10 @@ export default function PortalToast({ notification, onDismiss }) {
         )}
       </div>
       <div className="flex-grow space-y-1 min-w-0">
-        <h5 className="text-xs font-mono font-bold uppercase tracking-wider text-amber-400">
+        <h5 className="text-sm font-mono font-bold uppercase tracking-wider text-amber-400">
           {notification.title}
         </h5>
-        <p className="text-[11px] text-stone-300 font-light leading-normal">
+        <p className="text-xs text-stone-300 font-light leading-normal">
           {notification.desc}
         </p>
       </div>

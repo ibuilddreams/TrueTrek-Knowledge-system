@@ -63,7 +63,7 @@ export default function AssignmentDetailModal({
               {assignment.description ||
                 "No instructions have been added for this assignment."}
             </p>
-            <div className="flex flex-wrap gap-2 text-[10px] font-mono uppercase tracking-wider">
+            <div className="flex flex-wrap gap-2 text-[11px] font-mono uppercase tracking-wider">
               <span
                 className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border ${
                   isPastDue
@@ -95,7 +95,7 @@ export default function AssignmentDetailModal({
           {attachments.length > 0 && (
             <div className="space-y-2">
               <h5
-                className={`text-xs font-mono uppercase tracking-wider ${
+                className={`text-sm font-mono uppercase tracking-wider ${
                   isVault ? "text-stone-500" : "text-stone-400"
                 }`}
               >
@@ -122,7 +122,7 @@ export default function AssignmentDetailModal({
                     <a
                       href={attachment.file}
                       download={attachment.original_name || true}
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 border text-[10px] font-mono uppercase tracking-wider rounded-md transition shrink-0 ${
+                      className={`inline-flex items-center gap-1 px-2.5 py-1 border text-[11px] font-mono uppercase tracking-wider rounded-md transition shrink-0 ${
                         isVault
                           ? "border-stone-700 hover:border-amber-500/50 hover:bg-white/10 text-stone-400 hover:text-amber-400"
                           : "border-stone-200 hover:border-amber-300 hover:bg-white text-stone-500 hover:text-amber-800"

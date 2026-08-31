@@ -91,11 +91,11 @@ export default function TeacherCourseCard({
         />
 
         <div className="relative h-full px-5 pt-4 flex items-start justify-between gap-2">
-          <span className="inline-flex items-center bg-white/95 text-amber-800 text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-full shadow-sm truncate max-w-[45%]">
+          <span className="inline-flex items-center bg-white/95 text-amber-800 text-[11px] font-mono font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-full shadow-sm truncate max-w-[45%]">
             {course.category?.name || "Uncategorized"}
           </span>
           <span
-            className={`shrink-0 inline-flex items-center gap-1.5 bg-white/95 text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-full shadow-sm ${statusTextClass}`}
+            className={`shrink-0 inline-flex items-center gap-1.5 bg-white/95 text-[11px] font-mono font-bold uppercase tracking-wider px-2.5 py-1.5 rounded-full shadow-sm ${statusTextClass}`}
           >
             <span className={`w-1.5 h-1.5 rounded-full ${statusDotClass}`} />
             {course.status}
@@ -134,7 +134,7 @@ export default function TeacherCourseCard({
           <button
             type="button"
             onClick={onViewCourse}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-[11px] font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer"
             title="View course details"
             aria-label="View course details"
           >
@@ -144,7 +144,7 @@ export default function TeacherCourseCard({
           <button
             type="button"
             onClick={onViewStudents}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-amber-50 border border-stone-200 hover:border-amber-200 text-stone-700 hover:text-amber-800 text-[11px] font-semibold font-mono rounded-xl tracking-wider shadow-xs transition-colors cursor-pointer"
+            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-amber-50 border border-stone-200 hover:border-amber-200 text-stone-700 hover:text-amber-800 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-xs transition-colors cursor-pointer"
             title="View enrolled students"
             aria-label="View enrolled students"
           >

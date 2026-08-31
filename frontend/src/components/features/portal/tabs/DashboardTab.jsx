@@ -62,7 +62,7 @@ function ProgressRing({ value, size = 128, stroke = 10 }) {
         <span className="text-3xl font-serif font-bold text-white leading-none">
           {value}%
         </span>
-        <span className="text-[9px] font-mono uppercase tracking-[0.16em] text-stone-400 mt-1.5">
+        <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-stone-400 mt-1.5">
           Progress
         </span>
       </div>
@@ -87,7 +87,7 @@ function CourseStat({ label, value, icon: Icon, delay = 0, isVault }) {
       </div>
       <div className="min-w-0">
         <p
-          className={`text-[10px] font-mono uppercase tracking-[0.14em] truncate ${
+          className={`text-[11px] font-mono uppercase tracking-[0.14em] truncate ${
             isVault ? "text-stone-500" : "text-stone-400"
           }`}
         >
@@ -132,7 +132,7 @@ function ActionMetric({ label, value, icon: Icon, tone = "stone", delay = 0, isV
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
           <p
-            className={`text-[10px] font-mono uppercase tracking-[0.14em] ${
+            className={`text-[11px] font-mono uppercase tracking-[0.14em] ${
               isVault ? "text-stone-500" : "text-stone-400"
             }`}
           >
@@ -199,13 +199,13 @@ export default function DashboardTab() {
         <h2 className={`text-xl font-serif font-bold mb-2 ${isVault ? "text-stone-50" : "text-stone-900"}`}>
           Failed to Load Dashboard
         </h2>
-        <p className={`text-xs font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+        <p className={`text-sm font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
           {getApiErrorMessage(error, "Unable to load your dashboard.")}
         </p>
         <button
           type="button"
           onClick={() => refetch()}
-          className={`inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition ${
+          className={`inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition ${
             isVault
               ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
               : "bg-stone-900 hover:bg-stone-800 text-stone-100"
@@ -244,6 +244,7 @@ export default function DashboardTab() {
           icon={BookMarked}
           label="No dashboard data yet"
           description="Once you are enrolled in courses, your progress, grades, and learning stats will appear here."
+          size="lg"
         />
       </div>
     );
@@ -265,7 +266,7 @@ export default function DashboardTab() {
         <div className="relative z-10 p-6 sm:p-8 lg:p-10">
           <div className="flex flex-col lg:flex-row lg:items-center gap-8 lg:gap-12">
             <div className="flex-1 min-w-0">
-              <p className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-400/90 mb-3">
+              <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-amber-400/90 mb-3">
                 Learning pulse
               </p>
               <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-white leading-[1.1]">
@@ -278,7 +279,7 @@ export default function DashboardTab() {
 
               <div className="mt-7 flex flex-wrap gap-8">
                 <div>
-                  <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                  <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-stone-500 mb-1.5">
                     Average grade
                   </p>
                   <p className="text-3xl font-serif font-bold text-amber-400 leading-none">
@@ -288,7 +289,7 @@ export default function DashboardTab() {
                 </div>
                 <div className="w-px bg-stone-700/80 self-stretch hidden sm:block" />
                 <div>
-                  <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                  <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-stone-500 mb-1.5">
                     Certificates
                   </p>
                   <p className="text-3xl font-serif font-bold text-white leading-none">
@@ -297,7 +298,7 @@ export default function DashboardTab() {
                 </div>
                 <div className="w-px bg-stone-700/80 self-stretch hidden sm:block" />
                 <div>
-                  <p className="text-[10px] font-mono uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                  <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-stone-500 mb-1.5">
                     Active now
                   </p>
                   <p className="text-3xl font-serif font-bold text-white leading-none">
@@ -394,7 +395,7 @@ export default function DashboardTab() {
         <div className="relative mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
             <p
-              className={`text-[10px] font-mono uppercase tracking-[0.16em] mb-1 ${
+              className={`text-[11px] font-mono uppercase tracking-[0.16em] mb-1 ${
                 isVault ? "text-amber-500" : "text-amber-700/80"
               }`}
             >
@@ -404,7 +405,7 @@ export default function DashboardTab() {
               Progress by enrolled course
             </h3>
           </div>
-          <p className={`text-xs font-light ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+          <p className={`text-sm font-light ${isVault ? "text-stone-500" : "text-stone-400"}`}>
             {progressByCourse.length} course
             {progressByCourse.length === 1 ? "" : "s"} tracked
           </p>
@@ -416,13 +417,14 @@ export default function DashboardTab() {
             label="No progress recorded yet"
             description="Start a lesson to see your course progress chart here."
             compact
+            size="lg"
           />
         ) : (
           <div className="h-72 w-full relative">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={progressByCourse}
-                margin={{ top: 8, right: 8, left: -16, bottom: 0 }}
+                margin={{ top: 8, right: 8, left: -16, bottom: 10 }}
               >
                 <XAxis
                   dataKey="name"
@@ -431,7 +433,13 @@ export default function DashboardTab() {
                   tickLine={false}
                   axisLine={false}
                   interval={0}
+                  angle={-25}
+                  textAnchor="end"
+                  height={50}
                   tick={{ fill: "#78716c" }}
+                  tickFormatter={(value) =>
+                    value.length > 16 ? `${value.slice(0, 16)}…` : value
+                  }
                 />
                 <YAxis
                   stroke="#a8a29e"

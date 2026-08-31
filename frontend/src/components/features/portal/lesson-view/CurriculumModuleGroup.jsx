@@ -41,7 +41,7 @@ export default function CurriculumModuleGroup({
       >
         <div className="min-w-0">
           <p
-            className={`text-[9px] font-mono uppercase tracking-wider ${
+            className={`text-[10px] font-mono uppercase tracking-wider ${
               isVault ? "text-stone-500" : "text-stone-400"
             }`}
           >

@@ -53,7 +53,7 @@ export default function RejectApplicationModal({ isOpen, onClose, application, o
     >
       <form onSubmit={handleSubmit} className="space-y-4">
         <div>
-          <label className="text-[10px] font-mono text-stone-450 block uppercase tracking-wider mb-1.5 font-semibold">
+          <label className="text-[11px] font-mono text-stone-450 block uppercase tracking-wider mb-1.5 font-semibold">
             Rejection Reason
           </label>
           <textarea
@@ -62,7 +62,7 @@ export default function RejectApplicationModal({ isOpen, onClose, application, o
             disabled={isSubmitting}
             rows={4}
             placeholder="Let the applicant know why this application isn't moving forward..."
-            className="w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60 resize-none"
+            className="w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60 resize-none"
           />
         </div>
 
@@ -71,7 +71,7 @@ export default function RejectApplicationModal({ isOpen, onClose, application, o
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-sm font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -80,7 +80,7 @@ export default function RejectApplicationModal({ isOpen, onClose, application, o
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-3 bg-rose-600 hover:bg-rose-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2"
+            className="px-6 py-3 bg-rose-600 hover:bg-rose-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>

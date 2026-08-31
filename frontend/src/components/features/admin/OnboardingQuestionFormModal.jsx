@@ -11,12 +11,12 @@ import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60";
+  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-[10px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold";
+  "text-[11px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold";
 
-const ERROR_CLASS = "text-[10px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
 
 const INITIAL_FORM = { text: "", order: "1", is_multi_select: false, is_active: true };
 
@@ -226,7 +226,7 @@ export default function OnboardingQuestionFormModal({ isOpen, onClose, onSaved, 
             {fieldErrors.order && <p className={ERROR_CLASS}>{fieldErrors.order}</p>}
           </div>
 
-          <label className="flex items-center gap-2 text-xs font-mono text-stone-600 mt-6 sm:mt-0 sm:self-end sm:pb-3.5">
+          <label className="flex items-center gap-2 text-sm font-mono text-stone-600 mt-6 sm:mt-0 sm:self-end sm:pb-3.5">
             <input
               type="checkbox"
               checked={form.is_multi_select}
@@ -236,7 +236,7 @@ export default function OnboardingQuestionFormModal({ isOpen, onClose, onSaved, 
             Multi-select
           </label>
 
-          <label className="flex items-center gap-2 text-xs font-mono text-stone-600 sm:self-end sm:pb-3.5">
+          <label className="flex items-center gap-2 text-sm font-mono text-stone-600 sm:self-end sm:pb-3.5">
             <input
               type="checkbox"
               checked={form.is_active}
@@ -272,7 +272,7 @@ export default function OnboardingQuestionFormModal({ isOpen, onClose, onSaved, 
             type="button"
             onClick={addOption}
             disabled={isSubmitting}
-            className="mt-3 w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            className="mt-3 w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Option
@@ -284,7 +284,7 @@ export default function OnboardingQuestionFormModal({ isOpen, onClose, onSaved, 
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-sm font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -293,7 +293,7 @@ export default function OnboardingQuestionFormModal({ isOpen, onClose, onSaved, 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
+            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>

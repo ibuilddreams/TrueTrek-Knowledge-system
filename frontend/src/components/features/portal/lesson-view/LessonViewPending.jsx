@@ -29,7 +29,7 @@ export default function LessonViewPending({ isError, errorMessage, onRetry }) {
               <button
                 type="button"
                 onClick={onRetry}
-                className={`inline-flex items-center gap-2 px-4 py-2.5 text-[11px] font-mono uppercase tracking-wider rounded-xl transition ${
+                className={`inline-flex items-center gap-2 px-4 py-2.5 text-xs font-mono uppercase tracking-wider rounded-xl transition ${
                   isVault
                     ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
                     : "bg-stone-900 hover:bg-stone-800 text-white"

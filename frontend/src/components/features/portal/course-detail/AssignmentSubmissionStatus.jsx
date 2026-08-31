@@ -36,14 +36,14 @@ export default function AssignmentSubmissionStatus({ submission }) {
     >
       <div className="flex items-center justify-between gap-3">
         <h5
-          className={`text-xs font-mono uppercase tracking-wider ${
+          className={`text-sm font-mono uppercase tracking-wider ${
             isVault ? "text-stone-500" : "text-stone-400"
           }`}
         >
           Your submission
         </h5>
         <span
-          className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${statusClass}`}
+          className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${statusClass}`}
         >
           {submission.status}
         </span>
@@ -74,7 +74,7 @@ export default function AssignmentSubmissionStatus({ submission }) {
 
       {submission.submitted_at ? (
         <div
-          className={`flex items-center gap-1.5 text-[11px] ${
+          className={`flex items-center gap-1.5 text-xs ${
             isVault ? "text-stone-500" : "text-stone-400"
           }`}
         >
@@ -98,7 +98,7 @@ export default function AssignmentSubmissionStatus({ submission }) {
             {submission.marks} / {submission.assignment?.total_marks ?? "—"} marks
             {submission.percentage !== null && submission.percentage !== undefined ? (
               <span
-                className={`font-mono text-xs font-normal ${
+                className={`font-mono text-sm font-normal ${
                   isVault ? "text-emerald-400/80" : "text-emerald-600/80"
                 }`}
               >
@@ -107,7 +107,7 @@ export default function AssignmentSubmissionStatus({ submission }) {
             ) : null}
           </div>
           {submission.feedback ? (
-            <p className={`text-xs font-light ${isVault ? "text-stone-300" : "text-stone-600"}`}>
+            <p className={`text-sm font-light ${isVault ? "text-stone-300" : "text-stone-600"}`}>
               {submission.feedback}
             </p>
           ) : null}
