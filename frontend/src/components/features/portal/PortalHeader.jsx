@@ -40,7 +40,7 @@ export default function PortalHeader({
           <div className="min-w-0 pt-0.5">
             <div className="inline-flex items-center gap-2 mb-1.5">
               <span className="h-px w-4 bg-amber-500/70" />
-              <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-400">
+              <span className="text-xs font-mono uppercase tracking-[0.2em] text-amber-400">
                 Student Portal
               </span>
             </div>
@@ -51,7 +51,7 @@ export default function PortalHeader({
                 {displayName}
               </h1>
             )}
-            <p className="text-[13px] text-stone-400 font-light mt-2 leading-snug max-w-md">
+            <p className="text-sm text-stone-400 font-light mt-2 leading-snug max-w-md">
               Courses, certificates, daily drills, war room, and progress — in
               one place.
             </p>
@@ -64,10 +64,10 @@ export default function PortalHeader({
               <Award className="w-4 h-4 text-amber-400" />
             </div>
             <div className="min-w-0">
-              <p className="text-[9px] font-mono uppercase text-stone-100 tracking-wider">
+              <p className="text-[10px] font-mono uppercase text-stone-100 tracking-wider">
                 XP / Level
               </p>
-              <p className="text-xs font-mono font-bold text-stone-100 mt-0.5 truncate">
+              <p className="text-sm font-mono font-bold text-stone-100 mt-0.5 truncate">
                 {points} · Lvl {levelInfo.level}
               </p>
             </div>
@@ -78,10 +78,10 @@ export default function PortalHeader({
               <Flame className="w-4 h-4 text-amber-400" />
             </div>
             <div className="min-w-0">
-              <p className="text-[9px] font-mono uppercase text-stone-100 tracking-wider">
+              <p className="text-[10px] font-mono uppercase text-stone-100 tracking-wider">
                 Streak
               </p>
-              <p className="text-xs font-mono font-bold text-stone-100 mt-0.5">
+              <p className="text-sm font-mono font-bold text-stone-100 mt-0.5">
                 {streakDays} Days
               </p>
             </div>
@@ -92,11 +92,11 @@ export default function PortalHeader({
               <Medal className="w-4 h-4 text-amber-400" />
             </div>
             <div className="min-w-0 w-full">
-              <p className="text-[9px] font-mono uppercase text-stone-100 tracking-wider">
+              <p className="text-[10px] font-mono uppercase text-stone-100 tracking-wider">
                 Score
               </p>
               <div className="flex items-center gap-2 mt-0.5">
-                <p className="text-xs font-mono font-bold text-stone-100 shrink-0">
+                <p className="text-sm font-mono font-bold text-stone-100 shrink-0">
                   {aggregateScore}%
                 </p>
                 <div className="w-14 bg-stone-800 h-1.5 rounded-full overflow-hidden shrink-0">
@@ -116,6 +116,7 @@ export default function PortalHeader({
             className="w-full"
             onProfile={() => router.push(ROUTES.PROFILE)}
             onMessages={() => router.push(ROUTES.MESSAGES)}
+            size="lg"
           />
         </div>
       </div>

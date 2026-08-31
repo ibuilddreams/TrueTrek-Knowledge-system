@@ -7,6 +7,7 @@ export default function StatCard({
   footer,
   hint,
   accent = "amber",
+  size = "base",
 }) {
   const accents = {
     amber: {
@@ -42,14 +43,18 @@ export default function StatCard({
       />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-semibold">
+          <p
+            className={`${size === "lg" ? "text-[11px]" : "text-[10px]"} font-mono uppercase tracking-widest text-stone-400 font-semibold`}
+          >
             {label}
           </p>
           <p className="text-3xl sm:text-4xl font-serif font-bold text-stone-900 mt-2 tracking-tight truncate">
             {value}
           </p>
           {hint && (
-            <p className="text-[11px] text-stone-400 font-light mt-2 leading-snug">
+            <p
+              className={`${size === "lg" ? "text-sm" : "text-[11px]"} text-stone-400 font-light mt-2 leading-snug`}
+            >
               {hint}
             </p>
           )}

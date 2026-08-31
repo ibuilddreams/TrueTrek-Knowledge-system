@@ -81,11 +81,11 @@ function buildComponents(isVault) {
       </blockquote>
     ),
     code: ({ children }) => (
-      <code className={`px-1.5 py-0.5 rounded border text-xs font-mono ${code}`}>{children}</code>
+      <code className={`px-1.5 py-0.5 rounded border text-sm font-mono ${code}`}>{children}</code>
     ),
     pre: ({ children }) => (
       <pre
-        className={`rounded-lg border p-3 mb-3 overflow-x-auto text-xs font-mono ${code}`}
+        className={`rounded-lg border p-3 mb-3 overflow-x-auto text-sm font-mono ${code}`}
       >
         {children}
       </pre>
@@ -132,7 +132,7 @@ export default function TextLessonViewer({ lesson }) {
           isVault ? "border-stone-700 bg-white/5" : "border-stone-200 bg-stone-50"
         }`}
       >
-        <p className={`text-xs ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+        <p className={`text-sm ${isVault ? "text-stone-400" : "text-stone-500"}`}>
           This lesson doesn&apos;t have any content yet.
         </p>
       </div>

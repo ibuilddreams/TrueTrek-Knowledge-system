@@ -35,6 +35,7 @@ export default function ConversationList({ selectedConversationId, onSelectConve
           label="No conversations yet."
           description="Start a new message to begin a conversation."
           compact
+          size="lg"
         />
       </div>
     );

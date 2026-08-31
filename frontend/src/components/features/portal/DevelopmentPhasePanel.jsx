@@ -20,7 +20,7 @@ export default function DevelopmentPhasePanel({
       <div className="relative px-6 py-16 sm:px-10 sm:py-20 text-center max-w-xl mx-auto">
         <div className="inline-flex items-center gap-2 rounded-full border border-amber-200 bg-white/80 px-3 py-1 mb-5">
           <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-          <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-amber-800">
+          <span className="text-[11px] font-mono uppercase tracking-[0.16em] text-amber-800">
             Development phase
           </span>
         </div>

@@ -60,7 +60,7 @@ export default function DocxLessonViewer({ fileUrl, title }) {
         }`}
       >
         <p
-          className={`text-[11px] font-mono uppercase tracking-wider truncate ${
+          className={`text-xs font-mono uppercase tracking-wider truncate ${
             isVault ? "text-stone-400" : "text-stone-500"
           }`}
         >
@@ -70,7 +70,7 @@ export default function DocxLessonViewer({ fileUrl, title }) {
           type="button"
           onClick={() => download(fileUrl, filename)}
           disabled={isDownloading}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 border disabled:opacity-50 text-[10px] font-mono uppercase tracking-wider rounded-lg transition ${
+          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 border disabled:opacity-50 text-[11px] font-mono uppercase tracking-wider rounded-lg transition ${
             isVault
               ? "border-stone-700 hover:border-amber-500/50 hover:bg-white/10 text-stone-300 hover:text-amber-400"
               : "border-stone-200 hover:border-amber-300 hover:bg-white text-stone-600 hover:text-amber-800"
@@ -95,7 +95,7 @@ export default function DocxLessonViewer({ fileUrl, title }) {
             <FileWarning
               className={`w-6 h-6 mx-auto ${isVault ? "text-rose-400" : "text-rose-500"}`}
             />
-            <p className={`text-xs ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+            <p className={`text-sm ${isVault ? "text-stone-400" : "text-stone-500"}`}>
               This document couldn&apos;t be loaded for preview — try downloading it instead.
             </p>
           </div>

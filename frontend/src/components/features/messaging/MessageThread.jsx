@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useRef } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import Loader from "@/components/ui/Loader";
@@ -14,6 +14,7 @@ export default function MessageThread({ conversation, onBack }) {
   const queryClient = useQueryClient();
   const conversationId = conversation.id;
   const bottomRef = useRef(null);
+  const [editingMessage, setEditingMessage] = useState(null);
 
   const messagesQuery = useQuery({
     queryKey: ["conversations", conversationId, "messages"],
@@ -49,6 +50,21 @@ export default function MessageThread({ conversation, onBack }) {
     bottomRef.current?.scrollIntoView({ block: "end" });
   }, [messages.length]);
 
+  // Switching conversations should always drop any in-progress edit rather
+  // than leaving the composer pointed at a message from the previous thread.
+  useEffect(() => {
+    setEditingMessage(null);
+  }, [conversationId]);
+
+  // If the message currently being edited disappears (e.g. deleted from
+  // another session, or dropped by a refetch), close the edit composer
+  // instead of letting it keep pointing at a message that no longer exists.
+  useEffect(() => {
+    if (editingMessage && !messages.some((message) => message.id === editingMessage.id)) {
+      setEditingMessage(null);
+    }
+  }, [messages, editingMessage]);
+
   const other = conversation.other_participant;
 
   return (
@@ -64,7 +80,7 @@ export default function MessageThread({ conversation, onBack }) {
             <ArrowLeft className="w-4 h-4" />
           </button>
         )}
-        <span className="w-9 h-9 rounded-full bg-stone-100 border border-stone-200 text-stone-600 flex items-center justify-center shrink-0 text-[11px] font-bold font-mono overflow-hidden">
+        <span className="w-9 h-9 rounded-full bg-stone-100 border border-stone-200 text-stone-600 flex items-center justify-center shrink-0 text-xs font-bold font-mono overflow-hidden">
           {other?.avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={other.avatar} alt="" className="w-full h-full object-cover" />
@@ -73,8 +89,8 @@ export default function MessageThread({ conversation, onBack }) {
           )}
         </span>
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-stone-800 truncate">{other?.name || "Unknown"}</p>
-          <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">{other?.role}</p>
+          <p className="text-sm font-semibold text-stone-800 truncate">{other?.name || "Unknown"}</p>
+          <p className="text-[11px] font-mono uppercase tracking-wider text-stone-400">{other?.role}</p>
         </div>
       </div>
 
@@ -87,18 +103,29 @@ export default function MessageThread({ conversation, onBack }) {
             label="No messages yet."
             description="Send the first message below."
             compact
+            size="lg"
           />
         ) : (
           <>
             {messages.map((message) => (
-              <MessageBubble key={message.id} conversationId={conversationId} message={message} />
+              <MessageBubble
+                key={message.id}
+                conversationId={conversationId}
+                message={message}
+                isBeingEdited={editingMessage?.id === message.id}
+                onStartEdit={setEditingMessage}
+              />
             ))}
             <div ref={bottomRef} />
           </>
         )}
       </div>
 
-      <MessageComposer conversationId={conversationId} />
+      <MessageComposer
+        conversationId={conversationId}
+        editingMessage={editingMessage}
+        onFinishEditing={() => setEditingMessage(null)}
+      />
     </div>
   );
 }

@@ -40,8 +40,8 @@ function LessonRow({ lesson }) {
         <Icon className="w-3.5 h-3.5" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-stone-800 truncate">{lesson.title}</p>
-        <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono uppercase text-stone-400 tracking-wider">
+        <p className="text-sm font-semibold text-stone-800 truncate">{lesson.title}</p>
+        <div className="flex items-center gap-2 mt-0.5 text-[11px] font-mono uppercase text-stone-400 tracking-wider">
           <span>{lesson.content_type}</span>
           {lesson.duration_minutes != null && (
             <>
@@ -67,10 +67,10 @@ function AssignmentRow({ assignment }) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-xs font-semibold text-stone-800 truncate">{assignment.title}</p>
-          <StatusBadge status={assignment.status} />
+          <p className="text-sm font-semibold text-stone-800 truncate">{assignment.title}</p>
+          <StatusBadge size="lg" status={assignment.status} />
         </div>
-        <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono uppercase text-stone-400 tracking-wider">
+        <div className="flex items-center gap-2 mt-0.5 text-[11px] font-mono uppercase text-stone-400 tracking-wider">
           <span className="flex items-center gap-1">
             <Calendar className="w-2.5 h-2.5" />
             {formatDate(assignment.due_date)}
@@ -94,10 +94,10 @@ function QuizRow({ quiz }) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-xs font-semibold text-stone-800 truncate">{quiz.title}</p>
-          <StatusBadge status={quiz.status} />
+          <p className="text-sm font-semibold text-stone-800 truncate">{quiz.title}</p>
+          <StatusBadge size="lg" status={quiz.status} />
         </div>
-        <div className="flex items-center gap-2 mt-0.5 text-[10px] font-mono uppercase text-stone-400 tracking-wider">
+        <div className="flex items-center gap-2 mt-0.5 text-[11px] font-mono uppercase text-stone-400 tracking-wider">
           <span>Pass {quiz.passing_score}%</span>
           {quiz.time_limit_minutes ? (
             <>
@@ -117,14 +117,14 @@ function QuizRow({ quiz }) {
 function ModuleContentSection({ title, icon: Icon, items, renderItem, emptyLabel }) {
   return (
     <div className="border-t border-stone-100">
-      <p className="flex items-center gap-1.5 text-[10px] font-mono uppercase text-stone-400 tracking-wider px-3 pt-3">
+      <p className="flex items-center gap-1.5 text-[11px] font-mono uppercase text-stone-400 tracking-wider px-3 pt-3">
         <Icon className="w-3 h-3" />
         {title} · {items.length}
       </p>
       {items.length ? (
         <ul className="divide-y divide-stone-100">{items.map(renderItem)}</ul>
       ) : (
-        <p className="text-[11px] text-stone-400 font-light px-3 py-3">{emptyLabel}</p>
+        <p className="text-xs text-stone-400 font-light px-3 py-3">{emptyLabel}</p>
       )}
     </div>
   );
@@ -144,12 +144,12 @@ function ModuleAccordion({ module, defaultOpen }) {
         className="w-full flex items-center justify-between gap-3 p-3 bg-stone-50/60 hover:bg-stone-50 transition"
       >
         <div className="flex items-center gap-2.5 min-w-0">
-          <span className="shrink-0 w-6 h-6 rounded-lg bg-amber-600/10 text-amber-700 text-[10px] font-mono font-bold flex items-center justify-center">
+          <span className="shrink-0 w-6 h-6 rounded-lg bg-amber-600/10 text-amber-700 text-[11px] font-mono font-bold flex items-center justify-center">
             {module.order ?? 1}
           </span>
           <div className="min-w-0 text-left">
-            <p className="text-xs font-semibold text-stone-800 truncate">{module.title}</p>
-            <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
+            <p className="text-sm font-semibold text-stone-800 truncate">{module.title}</p>
+            <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
               {lessons.length} {lessons.length === 1 ? "Lesson" : "Lessons"} · {assignments.length}{" "}
               {assignments.length === 1 ? "Assignment" : "Assignments"} · {quizzes.length}{" "}
               {quizzes.length === 1 ? "Quiz" : "Quizzes"}
@@ -164,7 +164,7 @@ function ModuleAccordion({ module, defaultOpen }) {
       {isOpen && (
         <div>
           {module.description && (
-            <p className="text-xs text-stone-500 font-light leading-relaxed px-3 pt-3">{module.description}</p>
+            <p className="text-sm text-stone-500 font-light leading-relaxed px-3 pt-3">{module.description}</p>
           )}
 
           <ModuleContentSection
@@ -239,32 +239,32 @@ export default function CourseDetailModal({ isOpen, onClose, courseId }) {
             )}
             <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 via-black/30 to-transparent p-3 flex items-center justify-between gap-3">
               <h4 className="text-base font-serif font-bold text-white">{course.title}</h4>
-              <StatusBadge status={course.status} />
+              <StatusBadge size="lg" status={course.status} />
             </div>
           </div>
           {course.description && (
-            <p className="text-xs text-stone-500 font-light leading-relaxed">{course.description}</p>
+            <p className="text-sm text-stone-500 font-light leading-relaxed">{course.description}</p>
           )}
-          <div className="grid grid-cols-2 gap-3 text-xs">
+          <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mb-1">Category</p>
+              <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mb-1">Category</p>
               <p className="text-stone-700 font-semibold">{course.category?.name || "—"}</p>
             </div>
             <div>
-              <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mb-1">Tags</p>
+              <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mb-1">Tags</p>
               <p className="text-stone-700 font-semibold">
                 {course.tags?.length ? course.tags.map((tag) => tag.name).join(", ") : "—"}
               </p>
             </div>
           </div>
           <div>
-            <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mb-2">Instructors</p>
+            <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mb-2">Instructors</p>
             {course.instructors?.length ? (
               <ul className="space-y-2">
                 {course.instructors.map((instructor) => (
                   <li
                     key={instructor.id}
-                    className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-stone-100 bg-stone-50/60 text-xs"
+                    className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-stone-100 bg-stone-50/60 text-sm"
                   >
                     <span className="font-semibold text-stone-800">{instructor.name}</span>
                     <span className="text-stone-400 font-mono">{instructor.email}</span>
@@ -272,11 +272,11 @@ export default function CourseDetailModal({ isOpen, onClose, courseId }) {
                 ))}
               </ul>
             ) : (
-              <p className="text-xs text-stone-400 font-light">No instructors assigned.</p>
+              <p className="text-sm text-stone-400 font-light">No instructors assigned.</p>
             )}
           </div>
           <div>
-            <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mb-2">Modules &amp; Content</p>
+            <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mb-2">Modules &amp; Content</p>
             {course.modules?.length ? (
               <div className="space-y-2">
                 {course.modules.map((module, index) => (
@@ -284,12 +284,12 @@ export default function CourseDetailModal({ isOpen, onClose, courseId }) {
                 ))}
               </div>
             ) : (
-              <EmptyState icon={Layers} label="No modules yet." compact />
+              <EmptyState size="lg" icon={Layers} label="No modules yet." compact />
             )}
           </div>
         </div>
       ) : (
-        <p className="text-xs text-stone-400 font-light">Course details unavailable.</p>
+        <p className="text-sm text-stone-400 font-light">Course details unavailable.</p>
       )}
     </Modal>
   );

@@ -6,6 +6,7 @@ export default function TabNav({
   onChange,
   ariaLabel = "Sections",
   variant = "bar",
+  size = "base",
 }) {
   if (variant === "sidebar") {
     return (
@@ -44,11 +45,15 @@ export default function TabNav({
                 />
               )}
               <span className="min-w-0">
-                <span className="block text-xs font-mono font-semibold tracking-wide uppercase">
+                <span
+                  className={`block ${size === "lg" ? "text-sm" : "text-xs"} font-mono font-semibold tracking-wide uppercase`}
+                >
                   {tab.label}
                 </span>
                 {tab.title && (
-                  <span className="tabnav-sidebar-desc block text-[11px] text-stone-500 mt-0.5 leading-tight font-sans font-light">
+                  <span
+                    className={`tabnav-sidebar-desc block ${size === "lg" ? "text-xs" : "text-[11px]"} text-stone-500 mt-0.5 leading-tight font-sans font-light`}
+                  >
                     {tab.title}
                   </span>
                 )}
@@ -64,7 +69,7 @@ export default function TabNav({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className="flex border-b border-stone-200/80 overflow-x-auto whitespace-nowrap scrollbar-none gap-2 sm:gap-4 font-mono text-[11px] sm:text-xs font-semibold tracking-wider uppercase text-stone-500"
+      className={`flex border-b border-stone-200/80 overflow-x-auto whitespace-nowrap scrollbar-none gap-2 sm:gap-4 font-mono ${size === "lg" ? "text-xs sm:text-sm" : "text-[11px] sm:text-xs"} font-semibold tracking-wider uppercase text-stone-500`}
     >
       {tabs.map((tab) => {
         const TabIcon = tab.icon;

@@ -11,7 +11,7 @@ function InfoChip({ label, value, isVault }) {
         isVault ? "border-stone-800 bg-white/5" : "border-stone-100 bg-stone-50/80"
       }`}
     >
-      <p className={`text-[9px] font-mono uppercase tracking-wider ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+      <p className={`text-[10px] font-mono uppercase tracking-wider ${isVault ? "text-stone-500" : "text-stone-400"}`}>
         {label}
       </p>
       <p className={`text-sm font-serif font-bold mt-0.5 ${isVault ? "text-stone-50" : "text-stone-900"}`}>
@@ -58,7 +58,7 @@ export default function QuizIntroPanel({ quiz, canInteract, isStarting, onStart 
 
       {hasInProgress && !isExhausted ? (
         <div
-          className={`flex items-start gap-2 rounded-xl border px-3.5 py-3 text-xs ${
+          className={`flex items-start gap-2 rounded-xl border px-3.5 py-3 text-sm ${
             isVault
               ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
               : "border-amber-100 bg-amber-50 text-amber-800"
@@ -73,14 +73,14 @@ export default function QuizIntroPanel({ quiz, canInteract, isStarting, onStart 
       ) : null}
 
       {disabledReason ? (
-        <p className={`text-xs ${isVault ? "text-rose-400" : "text-rose-600"}`}>{disabledReason}</p>
+        <p className={`text-sm ${isVault ? "text-rose-400" : "text-rose-600"}`}>{disabledReason}</p>
       ) : null}
 
       <button
         type="button"
         onClick={onStart}
         disabled={Boolean(disabledReason) || isStarting}
-        className={`inline-flex items-center gap-2 px-4 py-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-mono uppercase tracking-wider rounded-xl transition ${
+        className={`inline-flex items-center gap-2 px-4 py-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-mono uppercase tracking-wider rounded-xl transition ${
           isVault
             ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
             : "bg-stone-900 hover:bg-stone-800 text-white"

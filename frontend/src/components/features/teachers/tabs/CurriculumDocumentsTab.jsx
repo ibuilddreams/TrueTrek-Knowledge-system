@@ -51,10 +51,10 @@ export default function CurriculumDocumentsTab() {
         <div className="flex flex-col sm:flex-row justify-between sm:items-center pb-6 border-b border-stone-100 gap-4 mb-6">
           <div>
             <h3 className="font-serif font-black text-xl text-stone-900">Document Locker & Credentials Assets</h3>
-            <p className="text-xs text-stone-500 font-light mt-0.5">Deploy licensed publications directly with classrooms, students, and legal guardians.</p>
+            <p className="text-sm text-stone-500 font-light mt-0.5">Deploy licensed publications directly with classrooms, students, and legal guardians.</p>
           </div>
 
-          <span className="text-xs font-mono bg-amber-50 text-amber-700 px-3 py-1.5 border border-amber-200/50 rounded-xl font-bold">
+          <span className="text-sm font-mono bg-amber-50 text-amber-700 px-3 py-1.5 border border-amber-200/50 rounded-xl font-bold">
             4 LICID REPOSITORY ASSETS ACTIVE
           </span>
         </div>
@@ -67,18 +67,18 @@ export default function CurriculumDocumentsTab() {
             >
               <div className="space-y-1.5 max-w-2xl">
                 <div className="flex items-center gap-2">
-                  <span className="font-mono text-[9px] uppercase font-bold text-amber-700 bg-amber-50 px-2 py-0.5 border border-amber-200/50 rounded">
+                  <span className="font-mono text-[10px] uppercase font-bold text-amber-700 bg-amber-50 px-2 py-0.5 border border-amber-200/50 rounded">
                     {doc.category}
                   </span>
-                  <span className="text-[10px] font-mono text-stone-400">Version {doc.version}</span>
+                  <span className="text-[11px] font-mono text-stone-400">Version {doc.version}</span>
                 </div>
                 <h4 className="font-serif font-bold text-stone-900 text-base leading-snug">
                   {doc.title}
                 </h4>
-                <p className="text-xs text-stone-550 leading-relaxed font-light">
+                <p className="text-sm text-stone-550 leading-relaxed font-light">
                   {doc.description}
                 </p>
-                <div className="flex items-center gap-4 text-[11px] font-mono text-stone-400 pt-1">
+                <div className="flex items-center gap-4 text-xs font-mono text-stone-400 pt-1">
                   <span className="flex items-center gap-1">
                     <Clock className="w-3.5 h-3.5 stroke-2" />
                     Compiled: {doc.lastUpdated}
@@ -90,14 +90,14 @@ export default function CurriculumDocumentsTab() {
               <div className="shrink-0 flex items-center gap-2">
                 <button
                   onClick={() => window.alert(`Syllabus framework preview for "${doc.title}" initiated. Contact licensing representatve for physical prints.`)}
-                  className="px-4 py-2 bg-stone-50 border border-stone-200 hover:bg-stone-100 rounded-xl text-stone-700 text-xs font-mono font-semibold flex items-center gap-1.5 transition"
+                  className="px-4 py-2 bg-stone-50 border border-stone-200 hover:bg-stone-100 rounded-xl text-stone-700 text-sm font-mono font-semibold flex items-center gap-1.5 transition"
                 >
                   <Eye className="w-3.5 h-3.5" />
                   PREVIEW
                 </button>
                 <button
                   onClick={() => window.alert(`Licensing Verified. Download of "${doc.title}" formatted for institutional use has begun. Check your browser downloads directory.`)}
-                  className="px-4 py-2 bg-stone-900 hover:bg-stone-850 rounded-xl text-stone-100 text-xs font-mono font-bold flex items-center gap-1.5 transition"
+                  className="px-4 py-2 bg-stone-900 hover:bg-stone-850 rounded-xl text-stone-100 text-sm font-mono font-bold flex items-center gap-1.5 transition"
                 >
                   <Download className="w-3.5 h-3.5" />
                   DOWNLOAD PDF

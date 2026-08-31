@@ -76,7 +76,7 @@ export default function ProgressTab() {
   const columns = [
     { key: "title", header: "Course", render: (course) => course.title },
     { key: "category", header: "Category", render: (course) => course.category?.name || "—" },
-    { key: "status", header: "Status", render: (course) => <StatusBadge status={course.status} /> },
+    { key: "status", header: "Status", render: (course) => <StatusBadge status={course.status} size="lg" /> },
     { key: "total_students", header: "Students", render: (course) => course.total_students ?? 0 },
     {
       key: "actions",
@@ -85,7 +85,7 @@ export default function ProgressTab() {
         <button
           type="button"
           onClick={() => handleSelectCourse(course)}
-          className="inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer"
         >
           <LineChart className="w-3.5 h-3.5" />
           View Progress
@@ -103,6 +103,7 @@ export default function ProgressTab() {
           setPage(1);
         }}
         placeholder="Search courses by title..."
+        size="lg"
       />
 
       {!isLoading && isError && (
@@ -110,13 +111,13 @@ export default function ProgressTab() {
           <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <p className="text-xs text-stone-500 font-light mb-6">
+          <p className="text-sm text-stone-500 font-light mb-6">
             {getApiErrorMessage(error, "Unable to load your assigned courses.")}
           </p>
           <button
             type="button"
             onClick={() => refetch()}
-            className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl shadow-md transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -132,12 +133,14 @@ export default function ProgressTab() {
             keyField="id"
             isLoading={isLoading}
             emptyLabel="No assigned courses found."
+            size="lg"
           />
           <Pagination
             page={page}
             totalPages={totalPages}
             onPageChange={setPage}
             totalLabel={`${courses.length} course${courses.length === 1 ? "" : "s"}`}
+            size="lg"
           />
         </div>
       )}

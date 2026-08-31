@@ -72,6 +72,7 @@ export default function AdminStatGrid({ statistics = {} }) {
           icon={card.icon}
           accent={card.accent}
           hint={card.hint}
+          size="lg"
         />
       ))}
     </div>

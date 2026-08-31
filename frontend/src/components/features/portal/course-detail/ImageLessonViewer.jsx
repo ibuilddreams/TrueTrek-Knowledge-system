@@ -17,7 +17,7 @@ export default function ImageLessonViewer({ lesson }) {
           isVault ? "border-stone-700 bg-white/5" : "border-stone-200 bg-stone-50"
         }`}
       >
-        <p className={`text-xs ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+        <p className={`text-sm ${isVault ? "text-stone-400" : "text-stone-500"}`}>
           No image is attached to this lesson.
         </p>
       </div>
@@ -40,7 +40,7 @@ export default function ImageLessonViewer({ lesson }) {
         type="button"
         onClick={() => download(fileUrl, filename)}
         disabled={isDownloading}
-        className={`inline-flex items-center gap-1.5 px-3.5 py-2 disabled:opacity-50 text-[11px] font-mono uppercase tracking-wider rounded-lg transition ${
+        className={`inline-flex items-center gap-1.5 px-3.5 py-2 disabled:opacity-50 text-xs font-mono uppercase tracking-wider rounded-lg transition ${
           isVault
             ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
             : "bg-stone-900 hover:bg-stone-800 text-white"

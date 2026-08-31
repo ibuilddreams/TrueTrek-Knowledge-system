@@ -61,7 +61,7 @@ export default function StudentCourseCard({ enrollment, onClick }) {
         >
           <div className="flex items-center gap-2 min-w-0">
             <span
-              className={`font-mono text-xs font-bold px-2.5 py-1 rounded-md shrink-0 ${
+              className={`font-mono text-sm font-bold px-2.5 py-1 rounded-md shrink-0 ${
                 isVault
                   ? "text-amber-500 bg-amber-600/15"
                   : "text-amber-750 bg-amber-50"
@@ -70,7 +70,7 @@ export default function StudentCourseCard({ enrollment, onClick }) {
               {course.code || getInitials(course.title)}
             </span>
             <span
-              className={`text-[10px] uppercase font-mono tracking-wider px-2 py-0.5 rounded-full border truncate ${
+              className={`text-[11px] uppercase font-mono tracking-wider px-2 py-0.5 rounded-full border truncate ${
                 isVault
                   ? "bg-stone-900 text-stone-300 border-stone-700"
                   : "bg-stone-50 text-stone-700 border-stone-200"
@@ -91,7 +91,7 @@ export default function StudentCourseCard({ enrollment, onClick }) {
               >
                 {isCompleted || statusLabel === "COMPLETED" ? (
                   <span
-                    className={`flex items-center gap-1 text-[10px] font-mono font-bold border px-2.5 py-1 rounded-full shadow-2xs ${
+                    className={`flex items-center gap-1 text-[11px] font-mono font-bold border px-2.5 py-1 rounded-full shadow-2xs ${
                       isVault
                         ? "bg-emerald-900/30 text-emerald-300 border-emerald-700/40"
                         : "bg-emerald-50 text-emerald-700 border-emerald-200"
@@ -102,7 +102,7 @@ export default function StudentCourseCard({ enrollment, onClick }) {
                   </span>
                 ) : statusLabel === "ACTIVE" ? (
                   <span
-                    className={`flex items-center gap-1 text-[10px] font-mono font-bold border px-2.5 py-1 rounded-full animate-pulse ${
+                    className={`flex items-center gap-1 text-[11px] font-mono font-bold border px-2.5 py-1 rounded-full animate-pulse ${
                       isVault
                         ? "bg-amber-900/30 text-amber-300 border-amber-700/40"
                         : "bg-amber-50 text-amber-700 border-amber-200"
@@ -113,7 +113,7 @@ export default function StudentCourseCard({ enrollment, onClick }) {
                   </span>
                 ) : (
                   <span
-                    className={`flex items-center gap-1 text-[10px] font-mono font-medium border px-2.5 py-1 rounded-full ${
+                    className={`flex items-center gap-1 text-[11px] font-mono font-medium border px-2.5 py-1 rounded-full ${
                       isVault
                         ? "bg-stone-800/60 text-stone-500 border-stone-700/50"
                         : "bg-stone-100 text-stone-400 border-stone-200/60"
@@ -137,7 +137,7 @@ export default function StudentCourseCard({ enrollment, onClick }) {
         >
           {course.title}
         </h3>
-        <p className="text-xs font-mono text-stone-400 mb-3 tracking-tight truncate">
+        <p className="text-sm font-mono text-stone-400 mb-3 tracking-tight truncate">
           Instructor: {assignedInstructor}
         </p>
         <p
@@ -154,12 +154,12 @@ export default function StudentCourseCard({ enrollment, onClick }) {
           isVault ? "border-stone-800" : "border-stone-100"
         }`}
       >
-        <span className="flex items-center gap-1.5 text-[11px] font-mono min-w-0 text-stone-400">
+        <span className="flex items-center gap-1.5 text-xs font-mono min-w-0 text-stone-400">
           <Calendar className="w-3.5 h-3.5 shrink-0" />
           <span className="truncate">Enrolled {formatDate(enrollment.enrolled_at)}</span>
         </span>
         <span
-          className={`shrink-0 text-xs font-semibold flex items-center gap-0.5 group-hover:gap-1.5 transition-all ${
+          className={`shrink-0 text-sm font-semibold flex items-center gap-0.5 group-hover:gap-1.5 transition-all ${
             isVault ? "text-amber-500" : "text-amber-700"
           }`}
         >

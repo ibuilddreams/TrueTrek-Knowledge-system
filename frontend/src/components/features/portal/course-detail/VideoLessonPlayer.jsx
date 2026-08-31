@@ -35,7 +35,7 @@ function OverlaySkipButton({ seconds, onSkip }) {
       title={`${isForward ? "Forward" : "Back"} ${Math.abs(seconds)}s`}
     >
       <Icon className="w-4 h-4" />
-      <span className="text-[10px] font-mono hidden sm:inline">
+      <span className="text-[11px] font-mono hidden sm:inline">
         {isForward ? "+" : "-"}
         {Math.abs(seconds)}s
       </span>
@@ -145,7 +145,7 @@ function NativeVideoPlayer({ src }) {
         className="absolute inset-x-0 bottom-0 p-3 sm:p-4 bg-linear-to-t from-black/90 via-black/60 to-transparent flex flex-col gap-2.5"
       >
         <div className="flex items-center gap-3">
-          <span className="text-[10px] font-mono font-bold text-white/90 w-9 shrink-0 select-none">
+          <span className="text-[11px] font-mono font-bold text-white/90 w-9 shrink-0 select-none">
             {formatTime(currentTime)}
           </span>
           <input
@@ -157,7 +157,7 @@ function NativeVideoPlayer({ src }) {
             onChange={handleSeek}
             className="w-full h-1 rounded-lg appearance-auto cursor-pointer accent-amber-500 bg-white/20"
           />
-          <span className="text-[10px] font-mono text-white/60 w-9 shrink-0 text-right select-none">
+          <span className="text-[11px] font-mono text-white/60 w-9 shrink-0 text-right select-none">
             {formatTime(duration)}
           </span>
         </div>
@@ -233,7 +233,7 @@ export default function VideoLessonPlayer({ lesson }) {
         isVault ? "border-stone-700 bg-white/5" : "border-stone-200 bg-stone-50"
       }`}
     >
-      <p className={`text-xs ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+      <p className={`text-sm ${isVault ? "text-stone-400" : "text-stone-500"}`}>
         No video source is attached to this lesson.
       </p>
     </div>

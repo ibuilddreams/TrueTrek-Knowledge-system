@@ -49,14 +49,14 @@ export default function CurriculumPanel({
     >
       <div className={`px-4 py-3.5 border-b ${isVault ? "border-stone-800" : "border-stone-100"}`}>
         <p
-          className={`flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider ${
+          className={`flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider ${
             isVault ? "text-stone-500" : "text-stone-400"
           }`}
         >
           <ListVideo className="w-3.5 h-3.5 text-amber-500" />
           Course curriculum
         </p>
-        <p className={`text-xs mt-1 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+        <p className={`text-sm mt-1 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
           {modules.length} module{modules.length === 1 ? "" : "s"} · {totalLessons} lesson
           {totalLessons === 1 ? "" : "s"}
         </p>
@@ -70,7 +70,7 @@ export default function CurriculumPanel({
             }`}
           >
             <p
-              className={`text-[9px] font-mono uppercase tracking-wider px-1 pb-1 ${
+              className={`text-[10px] font-mono uppercase tracking-wider px-1 pb-1 ${
                 isVault ? "text-stone-500" : "text-stone-400"
               }`}
             >
@@ -122,7 +122,7 @@ export default function CurriculumPanel({
         {modules.length === 0 ? (
           <div className="text-center py-10">
             <Layers className={`w-5 h-5 mx-auto mb-2 ${isVault ? "text-stone-700" : "text-stone-300"}`} />
-            <p className={`text-xs ${isVault ? "text-stone-500" : "text-stone-500"}`}>
+            <p className={`text-sm ${isVault ? "text-stone-500" : "text-stone-500"}`}>
               No modules have been published for this course yet.
             </p>
           </div>

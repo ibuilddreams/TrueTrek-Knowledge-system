@@ -31,12 +31,12 @@ const INITIAL_FORM = {
 };
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60";
+  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-[10px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold";
+  "text-[11px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold";
 
-const ERROR_CLASS = "text-[10px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
 
 function extractFieldErrors(error) {
   const apiFieldErrors = error?.data?.data;
@@ -241,7 +241,7 @@ export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
             accept="image/*"
             onChange={(event) => setThumbnailFile(event.target.files?.[0] || null)}
             disabled={isSubmitting}
-            className={`${FIELD_CLASS} file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-stone-200 file:text-stone-700 file:text-[10px] file:font-mono file:uppercase file:tracking-wider`}
+            className={`${FIELD_CLASS} file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-stone-200 file:text-stone-700 file:text-[11px] file:font-mono file:uppercase file:tracking-wider`}
           />
           {fieldErrors.thumbnail && <p className={ERROR_CLASS}>{fieldErrors.thumbnail}</p>}
         </div>
@@ -261,6 +261,7 @@ export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
               loading={isLoadingOptions}
               disabled={isSubmitting}
               emptyLabel="No categories found."
+              size="lg"
             />
             {fieldErrors.category && <p className={ERROR_CLASS}>{fieldErrors.category}</p>}
           </div>
@@ -276,6 +277,7 @@ export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
               loading={isLoadingOptions}
               disabled={isSubmitting}
               emptyLabel="No tags found."
+              size="lg"
             />
             {fieldErrors.tags && <p className={ERROR_CLASS}>{fieldErrors.tags}</p>}
           </div>
@@ -350,7 +352,7 @@ export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-sm font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -359,7 +361,7 @@ export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
+            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>

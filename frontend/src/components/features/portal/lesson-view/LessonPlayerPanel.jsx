@@ -29,7 +29,7 @@ function LessonContent({ lesson, isVault }) {
           <FileQuestion
             className={`w-6 h-6 mx-auto mb-2 ${isVault ? "text-stone-600" : "text-stone-300"}`}
           />
-          <p className={`text-xs ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+          <p className={`text-sm ${isVault ? "text-stone-400" : "text-stone-500"}`}>
             This lesson&apos;s content type isn&apos;t supported for in-app viewing yet.
           </p>
         </div>
@@ -44,7 +44,7 @@ export default function LessonPlayerPanel({ lesson, courseId, canInteract }) {
     <div className="space-y-5">
       <div>
         <p
-          className={`text-[10px] font-mono uppercase tracking-[0.16em] mb-1.5 ${
+          className={`text-[11px] font-mono uppercase tracking-[0.16em] mb-1.5 ${
             isVault ? "text-amber-500" : "text-amber-700/80"
           }`}
         >
@@ -77,7 +77,7 @@ export default function LessonPlayerPanel({ lesson, courseId, canInteract }) {
         }`}
       >
         <p
-          className={`text-[11px] font-mono uppercase tracking-wider ${
+          className={`text-xs font-mono uppercase tracking-wider ${
             isVault ? "text-stone-500" : "text-stone-400"
           }`}
         >

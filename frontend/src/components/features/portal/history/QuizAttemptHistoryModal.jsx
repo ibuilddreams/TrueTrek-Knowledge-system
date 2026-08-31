@@ -33,7 +33,7 @@ function SummaryTile({ label, value, tone = "neutral", isVault }) {
         isVault ? "border-stone-800 bg-white/5" : "border-stone-100 bg-stone-50/80"
       }`}
     >
-      <p className={`text-[9px] font-mono uppercase tracking-wider ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+      <p className={`text-[10px] font-mono uppercase tracking-wider ${isVault ? "text-stone-500" : "text-stone-400"}`}>
         {label}
       </p>
       <p className={`text-base font-serif font-bold mt-0.5 ${toneClass}`}>{value}</p>
@@ -84,7 +84,7 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
             />
           </div>
 
-          <p className={`text-[11px] font-mono uppercase tracking-wider ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+          <p className={`text-xs font-mono uppercase tracking-wider ${isVault ? "text-stone-500" : "text-stone-400"}`}>
             Submitted {formatDateTime(data.ended_at)}
           </p>
 
@@ -95,11 +95,11 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
                 className={`rounded-xl border p-4 ${isVault ? "border-stone-800" : "border-stone-200"}`}
               >
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <p className={`text-xs font-semibold ${isVault ? "text-stone-200" : "text-stone-800"}`}>
+                  <p className={`text-sm font-semibold ${isVault ? "text-stone-200" : "text-stone-800"}`}>
                     {index + 1}. {question.text}
                   </p>
                   <span
-                    className={`text-[10px] font-mono uppercase shrink-0 ${
+                    className={`text-[11px] font-mono uppercase shrink-0 ${
                       isVault ? "text-stone-500" : "text-stone-400"
                     }`}
                   >
@@ -112,7 +112,7 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
                 {question.question_type === "SHORT_ANSWER" ? (
                   <div className="space-y-2">
                     <p
-                      className={`text-xs border rounded-lg p-3 whitespace-pre-wrap ${
+                      className={`text-sm border rounded-lg p-3 whitespace-pre-wrap ${
                         isVault
                           ? "text-stone-300 bg-white/5 border-stone-800"
                           : "text-stone-600 bg-stone-50 border-stone-100"
@@ -121,7 +121,7 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
                       {question.text_answer || "No answer provided."}
                     </p>
                     <span
-                      className={`inline-block text-[10px] font-mono uppercase tracking-wider ${
+                      className={`inline-block text-[11px] font-mono uppercase tracking-wider ${
                         question.grading_status === "PENDING_GRADING"
                           ? isVault
                             ? "text-amber-400"
@@ -136,7 +136,7 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
                         : "Graded"}
                     </span>
                     {question.feedback ? (
-                      <p className={`text-[11px] font-light ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+                      <p className={`text-xs font-light ${isVault ? "text-stone-400" : "text-stone-500"}`}>
                         {question.feedback}
                       </p>
                     ) : null}
@@ -146,7 +146,7 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
                     {question.choices.map((choice) => (
                       <li
                         key={choice.id}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs border ${
+                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border ${
                           choice.is_correct
                             ? isVault
                               ? "border-emerald-500/30 bg-emerald-500/10 text-emerald-300"
@@ -166,7 +166,7 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
                         )}
                         <span className="flex-1">{choice.text}</span>
                         {choice.is_selected && (
-                          <span className="text-[9px] font-mono uppercase tracking-wider shrink-0">
+                          <span className="text-[10px] font-mono uppercase tracking-wider shrink-0">
                             Selected
                           </span>
                         )}

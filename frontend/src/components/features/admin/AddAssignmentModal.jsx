@@ -45,12 +45,12 @@ const GRADING_MODE_OPTIONS = [
 ];
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60";
+  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-[10px] font-mono text-stone-450 block uppercase tracking-wider mb-1.5 font-semibold";
+  "text-[11px] font-mono text-stone-450 block uppercase tracking-wider mb-1.5 font-semibold";
 
-const ERROR_CLASS = "text-[10px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
 
 function toDatetimeLocalValue(isoString) {
   if (!isoString) return "";
@@ -371,7 +371,7 @@ export default function AddAssignmentModal({
               disabled={isSubmitting}
               className={FIELD_CLASS}
             />
-            <p className="mt-1.5 text-[10px] font-mono text-stone-400">1 = first position</p>
+            <p className="mt-1.5 text-[11px] font-mono text-stone-400">1 = first position</p>
             {fieldErrors.order && <p className={ERROR_CLASS}>{fieldErrors.order}</p>}
           </div>
         </div>
@@ -386,7 +386,7 @@ export default function AddAssignmentModal({
                 onClick={() => setForm((prev) => ({ ...prev, grading_mode: option.value }))}
                 disabled={isSubmitting}
                 title={option.description}
-                className={`flex-1 px-3 py-2.5 rounded-xl text-[11px] font-semibold font-mono tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
+                className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-semibold font-mono tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
                   form.grading_mode === option.value
                     ? "bg-stone-900 text-white border-stone-900"
                     : "bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100"
@@ -396,15 +396,15 @@ export default function AddAssignmentModal({
               </button>
             ))}
           </div>
-          <p className="text-[10px] font-mono text-stone-400 tracking-wider mt-1.5">
+          <p className="text-[11px] font-mono text-stone-400 tracking-wider mt-1.5">
             {GRADING_MODE_OPTIONS.find((option) => option.value === form.grading_mode)?.description}
           </p>
         </div>
 
         <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-stone-200 bg-stone-50/60">
           <div>
-            <p className="text-xs font-semibold text-stone-800">Allow Resubmission</p>
-            <p className="text-[10px] font-mono text-stone-400 tracking-wider mt-0.5">
+            <p className="text-sm font-semibold text-stone-800">Allow Resubmission</p>
+            <p className="text-[11px] font-mono text-stone-400 tracking-wider mt-0.5">
               Let students resubmit after the due date
             </p>
           </div>
@@ -423,7 +423,7 @@ export default function AddAssignmentModal({
             <button
               type="button"
               onClick={() => setIsAttachmentsModalOpen(true)}
-              className="w-full flex items-center justify-center gap-2 py-3 border border-stone-200 rounded-xl text-[11px] font-mono uppercase tracking-wider text-stone-600 bg-stone-50/60 hover:bg-stone-100 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-3 border border-stone-200 rounded-xl text-xs font-mono uppercase tracking-wider text-stone-600 bg-stone-50/60 hover:bg-stone-100 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
             >
               <Paperclip className="w-3.5 h-3.5" />
               Manage Attachments
@@ -441,8 +441,8 @@ export default function AddAssignmentModal({
                         <FileText className="w-3.5 h-3.5" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-semibold text-stone-800 truncate">{file.name}</p>
-                        <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
+                        <p className="text-sm font-semibold text-stone-800 truncate">{file.name}</p>
+                        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
                           {formatFileSize(file.size)}
                         </p>
                       </div>
@@ -471,12 +471,12 @@ export default function AddAssignmentModal({
                 type="button"
                 onClick={() => pendingAttachmentInputRef.current?.click()}
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Upload className="w-3.5 h-3.5" />
                 Add Attachment
               </button>
-              <p className="text-[10px] font-mono text-stone-400 tracking-wider">
+              <p className="text-[11px] font-mono text-stone-400 tracking-wider">
                 Files upload once the assignment is created · PDF, DOC/DOCX, PPT/PPTX, ZIP, JPG/PNG/WEBP · up to
                 50MB
               </p>
@@ -489,7 +489,7 @@ export default function AddAssignmentModal({
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-sm font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -497,7 +497,7 @@ export default function AddAssignmentModal({
           <button
             type="submit"
             disabled={isSubmitting || modules.length === 0}
-            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>
@@ -514,7 +514,7 @@ export default function AddAssignmentModal({
         </div>
 
         {modules.length === 0 && (
-          <p className="text-[10px] font-mono text-amber-700 flex items-center gap-1.5">
+          <p className="text-[11px] font-mono text-amber-700 flex items-center gap-1.5">
             Create a module first before adding an assignment.
           </p>
         )}

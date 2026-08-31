@@ -76,12 +76,12 @@ export default function TagsTab() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search tags by name..." />
+        <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search tags by name..." />
 
         <button
           type="button"
           onClick={() => setIsFormOpen(true)}
-          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
+          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
           title="Create a new tag"
           aria-label="Create a new tag"
         >
@@ -111,20 +111,20 @@ export default function TagsTab() {
             <div className="w-10 h-10 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl flex items-center justify-center">
               <AlertCircle className="w-5 h-5" />
             </div>
-            <p className="text-xs text-stone-500 font-light">
+            <p className="text-sm text-stone-500 font-light">
               {getApiErrorMessage(error, "Unable to load tags.")}
             </p>
             <button
               type="button"
               onClick={refetch}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-[11px] uppercase tracking-wider rounded-lg transition"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-lg transition"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Retry
             </button>
           </div>
         ) : paginatedTags.length === 0 ? (
-          <EmptyState icon={TagIcon} label="No tags found." />
+          <EmptyState size="lg" icon={TagIcon} label="No tags found." />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {paginatedTags.map((tag) => (
@@ -140,7 +140,7 @@ export default function TagsTab() {
                 />
                 <div className="min-w-0 flex-1">
                   <p className="text-sm font-semibold text-stone-800 truncate">{tag.name}</p>
-                  <p className="text-[11px] font-mono text-stone-400 truncate">/{tag.slug}</p>
+                  <p className="text-xs font-mono text-stone-400 truncate">/{tag.slug}</p>
                 </div>
                 <ActionMenu
                   actions={[
@@ -164,7 +164,7 @@ export default function TagsTab() {
           </div>
         )}
 
-        <Pagination
+        <Pagination size="lg"
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
@@ -181,7 +181,7 @@ export default function TagsTab() {
         }}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(deletingTag)}
         onClose={() => setDeletingTag(null)}
         onConfirm={handleDeleteConfirm}

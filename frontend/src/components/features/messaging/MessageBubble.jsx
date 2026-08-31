@@ -2,10 +2,10 @@
 
 import { useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, MoreHorizontal, Smile, X } from "lucide-react";
+import { MoreHorizontal, Smile } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import { deleteMessage, editMessage, reactToMessage } from "@/services/messagingService";
+import { deleteMessage, reactToMessage } from "@/services/messagingService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 import EmojiPicker from "./EmojiPicker";
@@ -18,13 +18,11 @@ function formatTime(isoString) {
   return new Date(isoString).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 }
 
-export default function MessageBubble({ conversationId, message }) {
+export default function MessageBubble({ conversationId, message, isBeingEdited, onStartEdit }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const isMine = message.sender_id === user?.id;
 
-  const [isEditing, setIsEditing] = useState(false);
-  const [editBody, setEditBody] = useState(message.body);
   const [isConfirmingDelete, setIsConfirmingDelete] = useState(false);
   const [isReactionPickerOpen, setIsReactionPickerOpen] = useState(false);
   const [isActionsMenuOpen, setIsActionsMenuOpen] = useState(false);
@@ -36,19 +34,10 @@ export default function MessageBubble({ conversationId, message }) {
 
   const invalidateMessages = () => {
     queryClient.invalidateQueries({ queryKey: messagesQueryKey });
-    // Editing/deleting can change what the conversation list shows as its
+    // Deleting can change what the conversation list shows as its
     // last-message preview, so that query needs refreshing too.
     queryClient.invalidateQueries({ queryKey: ["conversations"] });
   };
-
-  const editMutation = useMutation({
-    mutationFn: (body) => editMessage(conversationId, message.id, body),
-    onSuccess: () => {
-      setIsEditing(false);
-      invalidateMessages();
-    },
-    onError: (error) => toastError(getApiErrorMessage(error, "Unable to edit message.")),
-  });
 
   const deleteMutation = useMutation({
     mutationFn: () => deleteMessage(conversationId, message.id),
@@ -74,20 +63,10 @@ export default function MessageBubble({ conversationId, message }) {
     }
   };
 
-  const handleEditSubmit = (event) => {
-    event.preventDefault();
-    const trimmed = editBody.trim();
-    if (!trimmed || trimmed === message.body) {
-      setIsEditing(false);
-      return;
-    }
-    editMutation.mutate(trimmed);
-  };
-
   if (message.is_deleted) {
     return (
       <div data-message-id={message.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-        <div className="max-w-[75%] rounded-2xl px-3.5 py-2.5 text-xs italic text-stone-400 bg-stone-50 border border-stone-100">
+        <div className="max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm italic text-stone-400 bg-stone-50 border border-stone-100">
           This message was deleted
         </div>
       </div>
@@ -124,58 +103,20 @@ export default function MessageBubble({ conversationId, message }) {
         </div>
 
         <div className="min-w-0">
-          {isEditing ? (
-            <form
-              onSubmit={handleEditSubmit}
-              className="rounded-2xl px-3 py-2 bg-stone-100 border border-stone-200 space-y-2"
-            >
-              <textarea
-                autoFocus
-                value={editBody}
-                onChange={(event) => setEditBody(event.target.value)}
-                rows={2}
-                disabled={editMutation.isPending}
-                className="w-full resize-none bg-transparent text-xs text-stone-800 focus:outline-none disabled:opacity-60"
-              />
-              <div className="flex items-center justify-end gap-1.5">
-                <button
-                  type="button"
-                  onClick={() => {
-                    setIsEditing(false);
-                    setEditBody(message.body);
-                  }}
-                  disabled={editMutation.isPending}
-                  className="w-6 h-6 flex items-center justify-center rounded-full text-stone-400 hover:bg-stone-200 transition cursor-pointer"
-                  aria-label="Cancel edit"
-                >
-                  <X className="w-3.5 h-3.5" />
-                </button>
-                <button
-                  type="submit"
-                  disabled={editMutation.isPending}
-                  className="w-6 h-6 flex items-center justify-center rounded-full bg-stone-900 text-white hover:bg-stone-800 transition cursor-pointer disabled:opacity-60"
-                  aria-label="Save edit"
-                >
-                  <Check className="w-3.5 h-3.5" />
-                </button>
-              </div>
-            </form>
-          ) : (
-            <div
-              className={`rounded-2xl px-3.5 py-2.5 text-xs leading-relaxed space-y-1.5 ${
-                isMine
-                  ? "bg-stone-900 text-stone-100 rounded-br-sm"
-                  : "bg-stone-100 text-stone-800 rounded-bl-sm"
-              }`}
-            >
-              <MessageAttachment message={message} />
-              {message.body && <p className="whitespace-pre-wrap wrap-break-word">{message.body}</p>}
-              <p className="text-[9px] font-mono text-stone-400 flex items-center gap-1">
-                {message.is_edited && <span>edited ·</span>}
-                {formatTime(message.created_at)}
-              </p>
-            </div>
-          )}
+          <div
+            className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed space-y-1.5 transition-shadow ${
+              isMine
+                ? "bg-stone-900 text-stone-100 rounded-br-sm"
+                : "bg-stone-100 text-stone-800 rounded-bl-sm"
+            } ${isBeingEdited ? "ring-2 ring-amber-500 ring-offset-2 ring-offset-white" : ""}`}
+          >
+            <MessageAttachment message={message} />
+            {message.body && <p className="whitespace-pre-wrap wrap-break-word">{message.body}</p>}
+            <p className="text-[10px] font-mono text-stone-400 flex items-center gap-1">
+              {message.is_edited && <span>edited ·</span>}
+              {formatTime(message.created_at)}
+            </p>
+          </div>
 
           <MessageReactions
             reactions={message.reactions}
@@ -199,7 +140,7 @@ export default function MessageBubble({ conversationId, message }) {
         anchorRef={actionsButtonRef}
         isMine={isMine}
         onCopy={handleCopy}
-        onEdit={() => setIsEditing(true)}
+        onEdit={() => onStartEdit(message)}
         onDelete={() => setIsConfirmingDelete(true)}
       />
 
@@ -211,6 +152,7 @@ export default function MessageBubble({ conversationId, message }) {
         title="Delete Message"
         message="Are you sure you want to delete this message? This cannot be undone."
         confirmLabel="Delete"
+        size="lg"
       />
     </div>
   );

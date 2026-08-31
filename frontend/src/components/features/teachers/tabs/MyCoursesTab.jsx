@@ -199,6 +199,7 @@ export default function MyCoursesTab() {
             value={searchInput}
             onChange={setSearchInput}
             placeholder="Search courses by title..."
+            size="lg"
           />
           <div className="w-full sm:w-48 shrink-0">
             <SearchableSelect
@@ -206,6 +207,7 @@ export default function MyCoursesTab() {
               options={STATUS_FILTER_OPTIONS}
               value={statusFilter}
               onChange={setStatusFilter}
+              size="lg"
             />
           </div>
           <div className="w-full sm:w-48 shrink-0">
@@ -214,6 +216,7 @@ export default function MyCoursesTab() {
               options={categoryFilterOptions}
               value={categoryFilter}
               onChange={setCategoryFilter}
+              size="lg"
             />
           </div>
           <div className="w-full sm:w-48 shrink-0">
@@ -222,6 +225,7 @@ export default function MyCoursesTab() {
               options={tagFilterOptions}
               value={tagFilter}
               onChange={setTagFilter}
+              size="lg"
             />
           </div>
         </div>
@@ -229,7 +233,7 @@ export default function MyCoursesTab() {
         <button
           type="button"
           onClick={() => setIsAddCourseModalOpen(true)}
-          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0 cursor-pointer"
           title="Add a new course"
           aria-label="Add a new course"
         >
@@ -264,13 +268,13 @@ export default function MyCoursesTab() {
           <h2 className="text-xl font-serif font-bold text-stone-900 mb-2">
             Failed to Load Your Courses
           </h2>
-          <p className="text-xs text-stone-500 font-light mb-6">
+          <p className="text-sm text-stone-500 font-light mb-6">
             {getApiErrorMessage(coursesError, "Unable to load your assigned courses.")}
           </p>
           <button
             type="button"
             onClick={() => refetchCourses()}
-            className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl shadow-md transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -284,6 +288,7 @@ export default function MyCoursesTab() {
             icon={BookMarked}
             label="No assigned courses found."
             description="Courses you've been assigned to teach will appear here."
+            size="lg"
           />
         </div>
       )}
@@ -306,6 +311,7 @@ export default function MyCoursesTab() {
         totalPages={totalPages}
         onPageChange={setPage}
         totalLabel={`${filteredCourses.length} course${filteredCourses.length === 1 ? "" : "s"}`}
+        size="lg"
       />
     </div>
   );

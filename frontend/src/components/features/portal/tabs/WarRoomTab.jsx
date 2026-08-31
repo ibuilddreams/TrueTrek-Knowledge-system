@@ -58,13 +58,13 @@ export default function WarRoomTab({
   return (
     <div className="bg-white border border-stone-200 rounded-2xl p-6 space-y-6 shadow-sm">
       <div>
-        <span className="text-amber-700 text-xs font-mono uppercase tracking-wider block mb-0.5">
+        <span className="text-amber-700 text-sm font-mono uppercase tracking-wider block mb-0.5">
           Strategic Command
         </span>
         <h4 className="text-xl font-serif font-bold text-stone-900">
           Mentor Advisory Council
         </h4>
-        <p className="text-stone-500 text-xs font-light mt-1">
+        <p className="text-stone-500 text-sm font-light mt-1">
           Select an expert and present your dilemma for regulatory, legal, or
           psychological feedback.
         </p>
@@ -92,10 +92,10 @@ export default function WarRoomTab({
               referrerPolicy="no-referrer"
             />
             <div>
-              <p className="text-xs font-bold leading-tight text-stone-900">
+              <p className="text-sm font-bold leading-tight text-stone-900">
                 {advisor.name}
               </p>
-              <p className="text-[9px] uppercase font-mono tracking-widest text-stone-500 mt-1">
+              <p className="text-[10px] uppercase font-mono tracking-widest text-stone-500 mt-1">
                 {advisor.id}
               </p>
             </div>
@@ -107,25 +107,25 @@ export default function WarRoomTab({
         <div className="flex items-start gap-3">
           <CheckCircle className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
           <div>
-            <h5 className="text-xs font-mono font-bold text-amber-800 uppercase tracking-widest">
+            <h5 className="text-sm font-mono font-bold text-amber-800 uppercase tracking-widest">
               Active Advisor
             </h5>
             <p className="text-sm font-semibold text-stone-850 mt-1">
               {selectedAdvisor.name} — {selectedAdvisor.title}
             </p>
-            <p className="text-xs text-stone-600 italic mt-1 font-light">
+            <p className="text-sm text-stone-600 italic mt-1 font-light">
               &quot;{selectedAdvisor.quote}&quot;
             </p>
           </div>
         </div>
-        <span className="bg-stone-100 text-stone-700 text-[10px] font-mono uppercase tracking-widest px-2.5 py-1.5 rounded border border-stone-200">
+        <span className="bg-stone-100 text-stone-700 text-[11px] font-mono uppercase tracking-widest px-2.5 py-1.5 rounded border border-stone-200">
           {selectedAdvisor.specialty.split(",")[0]}
         </span>
       </div>
 
       <div className="space-y-4">
         <div>
-          <label className="text-xs font-mono text-stone-400 block uppercase tracking-wider mb-2">
+          <label className="text-sm font-mono text-stone-400 block uppercase tracking-wider mb-2">
             Strategic Dilemma
           </label>
           <textarea
@@ -133,12 +133,12 @@ export default function WarRoomTab({
             value={customScenario}
             onChange={(e) => setCustomScenario(e.target.value)}
             placeholder="Describe your scenario for advisory review..."
-            className="w-full border border-stone-200 p-3.5 rounded-xl bg-stone-50 text-xs font-mono text-stone-800 focus:outline-none focus:border-amber-600 leading-relaxed"
+            className="w-full border border-stone-200 p-3.5 rounded-xl bg-stone-50 text-sm font-mono text-stone-800 focus:outline-none focus:border-amber-600 leading-relaxed"
           />
         </div>
 
         <div>
-          <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mb-2">
+          <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mb-2">
             Quick Prompts
           </p>
           <div className="flex flex-wrap gap-2">
@@ -147,7 +147,7 @@ export default function WarRoomTab({
                 key={index}
                 type="button"
                 onClick={() => setCustomScenario(preset)}
-                className="bg-stone-100 hover:bg-stone-200 border border-stone-200 max-w-full text-left truncate text-[10px] text-stone-600 py-1.5 px-3 rounded-lg"
+                className="bg-stone-100 hover:bg-stone-200 border border-stone-200 max-w-full text-left truncate text-[11px] text-stone-600 py-1.5 px-3 rounded-lg"
               >
                 {preset}
               </button>
@@ -160,7 +160,7 @@ export default function WarRoomTab({
             type="button"
             onClick={handleQueryAdvisor}
             disabled={isGenerating || !customScenario.trim()}
-            className="bg-stone-900 hover:bg-stone-800 text-white font-semibold text-xs tracking-wider uppercase py-3 px-6 rounded-xl inline-flex items-center gap-2 transition disabled:opacity-40"
+            className="bg-stone-900 hover:bg-stone-800 text-white font-semibold text-sm tracking-wider uppercase py-3 px-6 rounded-xl inline-flex items-center gap-2 transition disabled:opacity-40"
           >
             {isGenerating ? "Consulting..." : "Submit to Council"}
             <Send className="w-3.5 h-3.5" />
@@ -174,7 +174,7 @@ export default function WarRoomTab({
           <div className="flex justify-between items-center border-b border-stone-200 pb-3.5">
             <div className="flex items-center gap-2">
               <Sparkles className="text-amber-700 w-4 h-4" />
-              <span className="text-xs font-mono font-bold text-stone-800 uppercase tracking-widest">
+              <span className="text-sm font-mono font-bold text-stone-800 uppercase tracking-widest">
                 Council Response
               </span>
             </div>
@@ -182,12 +182,12 @@ export default function WarRoomTab({
           {isGenerating ? (
             <div className="flex flex-col items-center justify-center py-10 space-y-3">
               <div className="w-8 h-8 border-4 border-amber-600 border-t-transparent rounded-full animate-spin" />
-              <p className="text-xs text-stone-500 font-mono">
+              <p className="text-sm text-stone-500 font-mono">
                 Consulting mastermind schemas...
               </p>
             </div>
           ) : (
-            <div className="whitespace-pre-line text-stone-700 text-xs md:text-sm leading-relaxed space-y-4">
+            <div className="whitespace-pre-line text-stone-700 text-sm md:text-sm leading-relaxed space-y-4">
               {advisorAdvice}
             </div>
           )}

@@ -29,3 +29,9 @@ class AIProvider:
         the model. Raises ProviderTransportError for a retryable transport failure,
         ProviderError for anything else."""
         raise NotImplementedError
+
+    def generate_text(self, prompt, system_instruction, timeout, temperature=0.7):
+        """Returns a ProviderResult whose .text is a plain Markdown/text reply for a
+        single free-form turn (no response schema/JSON mode). Same
+        ProviderTransportError/ProviderError contract as generate_course."""
+        raise NotImplementedError

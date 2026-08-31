@@ -44,10 +44,10 @@ export default function SortablePathwayCourseItem({ pathwayCourse, onDetach }) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-xs font-semibold text-stone-800 truncate">{course?.title}</p>
-          {course?.status && <StatusBadge status={course.status} />}
+          <p className="text-sm font-semibold text-stone-800 truncate">{course?.title}</p>
+          {course?.status && <StatusBadge size="lg" status={course.status} />}
         </div>
-        <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
+        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
           {course?.code ? `${course.code} · ` : ""}
           {formatAmount(course?.amount)} · Order {pathwayCourse.order}
         </p>

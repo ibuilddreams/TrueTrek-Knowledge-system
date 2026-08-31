@@ -50,7 +50,7 @@ export default function CurriculumItemRow({
         </span>
         {meta ? (
           <span
-            className={`flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider mt-0.5 ${
+            className={`flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider mt-0.5 ${
               isVault ? "text-stone-500" : "text-stone-400"
             }`}
           >
@@ -60,7 +60,7 @@ export default function CurriculumItemRow({
       </span>
       {statusLabel ? (
         <span
-          className={`text-[9px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border shrink-0 ${statusClassName}`}
+          className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border shrink-0 ${statusClassName}`}
         >
           {statusLabel}
         </span>

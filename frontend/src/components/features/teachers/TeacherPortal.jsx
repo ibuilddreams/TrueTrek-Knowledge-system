@@ -139,13 +139,13 @@ function TeacherPortalContent() {
           <h2 className="text-2xl font-serif font-bold text-stone-900 mb-1.5">
             Faculty Access Required
           </h2>
-          <p className="text-xs text-stone-500 font-light mb-6">
+          <p className="text-sm text-stone-500 font-light mb-6">
             Sign in with a teacher account to open the Faculty Suite.
           </p>
           <button
             type="button"
             onClick={() => router.push(ROUTES.LOGIN)}
-            className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl shadow-md transition"
+            className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition"
           >
             Go to Sign In
           </button>
@@ -174,14 +174,14 @@ function TeacherPortalContent() {
           <div className="min-w-0 pt-0.5">
             <div className="inline-flex items-center gap-2 mb-1.5">
               <span className="h-px w-4 bg-amber-500/70" />
-              <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-700/90">
+              <span className="text-xs font-mono uppercase tracking-[0.2em] text-amber-700/90">
                 Faculty Portal
               </span>
             </div>
             <h1 className="text-2xl sm:text-[2rem] font-serif font-bold tracking-tight text-stone-900 leading-none">
               Teacher & Faculty Suite
             </h1>
-            <p className="text-[13px] text-stone-500 font-light mt-2 leading-snug max-w-md">
+            <p className="text-sm text-stone-500 font-light mt-2 leading-snug max-w-md">
               Courses, students, scores, manuals, and enrollment — in one place.
             </p>
           </div>
@@ -191,6 +191,7 @@ function TeacherPortalContent() {
           <AccountMenu
             onProfile={() => router.push(ROUTES.PROFILE)}
             onMessages={() => router.push(ROUTES.MESSAGES)}
+            size="lg"
           />
         </div>
       </div>
@@ -201,6 +202,7 @@ function TeacherPortalContent() {
           activeTab={activeTab}
           onChange={setActiveTab}
           ariaLabel="Teacher sections"
+          size="lg"
         />
       </div>
 

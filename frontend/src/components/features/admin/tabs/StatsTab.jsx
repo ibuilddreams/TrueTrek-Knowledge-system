@@ -25,11 +25,11 @@ export default function StatsTab() {
           <AlertCircle className="w-6 h-6" />
         </div>
         <h2 className="text-xl font-serif font-bold text-stone-900 mb-2">Failed to Load Statistics</h2>
-        <p className="text-xs text-stone-500 font-light mb-6">{error}</p>
+        <p className="text-sm text-stone-500 font-light mb-6">{error}</p>
         <button
           type="button"
           onClick={() => loadOverview({ force: true })}
-          className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl shadow-md transition"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition"
         >
           <RefreshCw className="w-4 h-4" />
           Retry

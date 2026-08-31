@@ -50,7 +50,7 @@ export default function InstructionalManualsTab() {
         <ShieldAlert className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
         <div>
           <h4 className="font-serif font-bold text-stone-900 text-sm">Faculty Operational Integrity Protocols</h4>
-          <p className="text-xs text-stone-605 leading-relaxed font-light mt-0.5">
+          <p className="text-sm text-stone-605 leading-relaxed font-light mt-0.5">
             Under standard covenants, these teaching manuals contain proprietary cognitive behavioral and contract evaluation scripts licensed to registered educational networks. All classroom assignments must respect federal FERPA protections. Hide individual student performance records during external audits.
           </p>
         </div>
@@ -66,7 +66,7 @@ export default function InstructionalManualsTab() {
           >
             <div>
               <div className="flex items-center justify-between mb-4">
-                <span className="font-mono text-[9px] uppercase tracking-widest bg-stone-100 text-stone-600 px-2.5 py-1 rounded-md font-bold">
+                <span className="font-mono text-[10px] uppercase tracking-widest bg-stone-100 text-stone-600 px-2.5 py-1 rounded-md font-bold">
                   MODULE 0{idx + 1}
                 </span>
                 <BookOpenCheck className="w-5 h-5 text-amber-600" />
@@ -75,24 +75,24 @@ export default function InstructionalManualsTab() {
               <h4 className="font-serif font-bold text-stone-900 text-base leading-snug mb-1">
                 {manual.title}
               </h4>
-              <p className="text-[10px] font-mono text-amber-800 font-bold uppercase tracking-tight mb-4">
+              <p className="text-[11px] font-mono text-amber-800 font-bold uppercase tracking-tight mb-4">
                 {manual.subtitle}
               </p>
 
-              <div className="space-y-3.5 text-xs text-stone-650 font-light leading-relaxed">
+              <div className="space-y-3.5 text-sm text-stone-650 font-light leading-relaxed">
                 <div className="p-3 bg-[#faf9f6] rounded-xl border border-stone-200/50">
-                  <p className="font-mono text-[9px] uppercase text-stone-400 font-bold mb-1">Instructional Objective</p>
+                  <p className="font-mono text-[10px] uppercase text-stone-400 font-bold mb-1">Instructional Objective</p>
                   <p className="text-stone-700">{manual.objective}</p>
                 </div>
 
                 <div className="p-3 bg-[#faf9f6] rounded-xl border border-stone-200/50">
-                  <p className="font-mono text-[9px] uppercase text-stone-400 font-bold mb-1">Suggested Method Flow</p>
+                  <p className="font-mono text-[10px] uppercase text-stone-400 font-bold mb-1">Suggested Method Flow</p>
                   <p className="text-stone-700">{manual.method}</p>
                 </div>
 
                 <div>
-                  <p className="font-mono text-[9px] uppercase text-stone-400 font-bold mb-2">Evaluation Checklist</p>
-                  <ul className="space-y-1.5 text-stone-600 text-[11px]">
+                  <p className="font-mono text-[10px] uppercase text-stone-400 font-bold mb-2">Evaluation Checklist</p>
+                  <ul className="space-y-1.5 text-stone-600 text-xs">
                     {manual.checklist.map((item, idy) => (
                       <li key={idy} className="flex items-start gap-1 w-full text-left">
                         <span className="text-amber-500 font-mono mt-0.5 shrink-0">✓</span>
@@ -104,7 +104,7 @@ export default function InstructionalManualsTab() {
               </div>
             </div>
 
-            <div className="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between text-[11px] font-mono text-stone-450">
+            <div className="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between text-xs font-mono text-stone-450">
               <span>Ref ID: {manual.id}</span>
               <button
                 className="text-amber-700 hover:text-amber-905 font-bold flex items-center gap-1 hover:underline"

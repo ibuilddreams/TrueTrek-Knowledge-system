@@ -84,13 +84,13 @@ export default function AssignmentProgressPanel({ courseId }) {
       header: "Student",
       render: (row) => (
         <div className="min-w-0">
-          <p className="text-xs font-semibold text-stone-800 truncate">{row.student.name}</p>
-          <p className="text-[10px] font-mono text-stone-400 truncate">{row.student.email}</p>
+          <p className="text-sm font-semibold text-stone-800 truncate">{row.student.name}</p>
+          <p className="text-[11px] font-mono text-stone-400 truncate">{row.student.email}</p>
         </div>
       ),
     },
     { key: "assignment", header: "Assignment", render: (row) => row.assignment.title },
-    { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} /> },
+    { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} size="lg" /> },
     { key: "submitted_at", header: "Submitted", render: (row) => formatDateTime(row.submitted_at) || "—" },
     {
       key: "marks",
@@ -105,12 +105,12 @@ export default function AssignmentProgressPanel({ courseId }) {
           <button
             type="button"
             onClick={() => setGradingRow(row)}
-            className="text-[11px] font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer"
+            className="text-xs font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer"
           >
             {row.status === "GRADED" ? "Edit Grade" : "Grade"}
           </button>
         ) : (
-          <span className="text-[11px] font-mono text-stone-300">—</span>
+          <span className="text-xs font-mono text-stone-300">—</span>
         ),
     },
   ];
@@ -118,15 +118,27 @@ export default function AssignmentProgressPanel({ courseId }) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Assignments" value={stats?.total_assignments ?? "—"} icon={ClipboardCheck} />
+        <StatCard
+          label="Total Assignments"
+          value={stats?.total_assignments ?? "—"}
+          icon={ClipboardCheck}
+          size="lg"
+        />
         <StatCard
           label="Total Submissions"
           value={stats?.total_submissions ?? "—"}
           icon={CheckCircle2}
           accent="emerald"
+          size="lg"
         />
-        <StatCard label="Pending Reviews" value={stats?.pending_reviews ?? "—"} icon={Clock} accent="rose" />
-        <StatCard label="Graded" value={stats?.graded ?? "—"} icon={Trophy} accent="stone" />
+        <StatCard
+          label="Pending Reviews"
+          value={stats?.pending_reviews ?? "—"}
+          icon={Clock}
+          accent="rose"
+          size="lg"
+        />
+        <StatCard label="Graded" value={stats?.graded ?? "—"} icon={Trophy} accent="stone" size="lg" />
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
@@ -137,6 +149,7 @@ export default function AssignmentProgressPanel({ courseId }) {
             setPage(1);
           }}
           placeholder="Search students by name or email..."
+          size="lg"
         />
         <div className="w-full sm:w-56 shrink-0">
           <SearchableSelect
@@ -147,6 +160,7 @@ export default function AssignmentProgressPanel({ courseId }) {
               setPage(1);
             }}
             placeholder="All Assignments"
+            size="lg"
           />
         </div>
         <div className="w-full sm:w-48 shrink-0">
@@ -158,6 +172,7 @@ export default function AssignmentProgressPanel({ courseId }) {
               setPage(1);
             }}
             placeholder="All Statuses"
+            size="lg"
           />
         </div>
       </div>
@@ -175,12 +190,14 @@ export default function AssignmentProgressPanel({ courseId }) {
           }
           onRetry={() => progressQuery.refetch()}
           emptyLabel="No assignments or submissions found."
+          size="lg"
         />
         <Pagination
           page={safePage}
           totalPages={totalPages}
           onPageChange={setPage}
           totalLabel={`${filteredRows.length} record${filteredRows.length === 1 ? "" : "s"}`}
+          size="lg"
         />
       </div>
 

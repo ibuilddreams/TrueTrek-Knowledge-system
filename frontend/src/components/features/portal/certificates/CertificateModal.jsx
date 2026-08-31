@@ -26,29 +26,29 @@ export default function CertificateModal({ certificate, studentName, onClose }) 
             </div>
 
             <div className="space-y-1.5">
-              <p className="text-[10px] font-mono uppercase tracking-[0.25em] text-amber-700/80">
+              <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-amber-700/80">
                 Certificate of Completion
               </p>
               <h2 className="font-serif font-black text-2xl sm:text-3xl text-stone-900">
                 {course.title}
               </h2>
               {course.code ? (
-                <p className="text-xs font-mono text-stone-400 uppercase tracking-wider">
+                <p className="text-sm font-mono text-stone-400 uppercase tracking-wider">
                   {course.code}
                 </p>
               ) : null}
             </div>
 
             <div className="space-y-1">
-              <p className="text-xs text-stone-500 font-light">This certifies that</p>
+              <p className="text-sm text-stone-500 font-light">This certifies that</p>
               <p className="font-serif font-bold text-xl text-stone-900">{studentName}</p>
-              <p className="text-xs text-stone-500 font-light">
+              <p className="text-sm text-stone-500 font-light">
                 has successfully completed all coursework
                 {course.category ? ` in ${course.category}` : ""}.
               </p>
             </div>
 
-            <div className="pt-4 border-t border-amber-200/50 flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-1 text-[11px] font-mono text-stone-500 uppercase tracking-wider">
+            <div className="pt-4 border-t border-amber-200/50 flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-1 text-xs font-mono text-stone-500 uppercase tracking-wider">
               <span>Completed {formatDate(certificate.completed_at)}</span>
               <span>Score {Math.round(certificate.completion_percentage)}%</span>
             </div>
@@ -58,7 +58,7 @@ export default function CertificateModal({ certificate, studentName, onClose }) 
             <button
               type="button"
               onClick={() => window.print()}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition"
+              className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition"
             >
               <Printer className="w-4 h-4" />
               Print / Save as PDF

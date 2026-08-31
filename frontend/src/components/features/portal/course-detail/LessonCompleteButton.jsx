@@ -12,7 +12,7 @@ export default function LessonCompleteButton({ lesson, courseId, canInteract }) 
   if (isCompleted) {
     return (
       <span
-        className={`inline-flex items-center gap-1.5 px-3.5 py-2 border text-[11px] font-mono uppercase tracking-wider rounded-lg ${
+        className={`inline-flex items-center gap-1.5 px-3.5 py-2 border text-xs font-mono uppercase tracking-wider rounded-lg ${
           isVault
             ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
             : "bg-emerald-50 border-emerald-100 text-emerald-700"
@@ -30,7 +30,7 @@ export default function LessonCompleteButton({ lesson, courseId, canInteract }) 
       disabled={!canInteract || completeLessonMutation.isPending}
       onClick={() => completeLessonMutation.mutate(lesson.id)}
       title={canInteract ? undefined : "Your enrollment must be active to mark lessons complete"}
-      className={`inline-flex items-center gap-1.5 px-3.5 py-2 disabled:opacity-40 disabled:cursor-not-allowed text-[11px] font-mono uppercase tracking-wider rounded-lg transition ${
+      className={`inline-flex items-center gap-1.5 px-3.5 py-2 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-mono uppercase tracking-wider rounded-lg transition ${
         isVault
           ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
           : "bg-stone-900 hover:bg-stone-800 text-white"

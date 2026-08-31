@@ -103,14 +103,14 @@ function StudentPortalContent() {
           <h2 className="text-2xl font-serif font-bold text-stone-900 mb-1.5">
             Student Access Required
           </h2>
-          <p className="text-xs text-stone-500 font-light mb-6">
+          <p className="text-sm text-stone-500 font-light mb-6">
             Sign in with a student account to open your courses, drills, and
             progress suite.
           </p>
           <button
             type="button"
             onClick={() => router.push(ROUTES.LOGIN)}
-            className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl shadow-md transition"
+            className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition"
           >
             Go to Sign In
           </button>
@@ -149,6 +149,7 @@ function StudentPortalContent() {
             activeTab={activeTab}
             onChange={setActiveTab}
             ariaLabel="Student portal sections"
+            size="lg"
           />
         </div>
 
