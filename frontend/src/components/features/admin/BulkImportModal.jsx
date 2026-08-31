@@ -121,7 +121,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped, isVa
           <p className={`text-sm font-serif font-bold leading-tight ${outcomeMeta.labelClass}`}>
             {outcomeMeta.label}
           </p>
-          <p className={`text-xs mt-1 leading-relaxed ${outcomeMeta.detailClass}`}>
+          <p className={`text-sm mt-1 leading-relaxed ${outcomeMeta.detailClass}`}>
             {outcomeMeta.detail}
           </p>
         </div>
@@ -129,7 +129,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped, isVa
 
       <div className="grid grid-cols-4 gap-2.5">
         <div className={`rounded-2xl border p-3.5 ${cardWrap}`}>
-          <p className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${mutedLabel}`}>
+          <p className={`text-[11px] font-mono uppercase tracking-wider font-semibold ${mutedLabel}`}>
             Total
           </p>
           <p className={`text-2xl font-serif font-bold mt-1 tabular-nums ${isVault ? "text-stone-50" : "text-stone-900"}`}>
@@ -142,7 +142,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped, isVa
           }`}
         >
           <p
-            className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${
+            className={`text-[11px] font-mono uppercase tracking-wider font-semibold ${
               isVault ? "text-emerald-400" : "text-emerald-700"
             }`}
           >
@@ -162,7 +162,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped, isVa
           }`}
         >
           <p
-            className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${
+            className={`text-[11px] font-mono uppercase tracking-wider font-semibold ${
               isVault ? "text-amber-400" : "text-amber-700"
             }`}
           >
@@ -182,7 +182,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped, isVa
           }`}
         >
           <p
-            className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${
+            className={`text-[11px] font-mono uppercase tracking-wider font-semibold ${
               isVault ? "text-rose-400" : "text-rose-700"
             }`}
           >
@@ -200,10 +200,10 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped, isVa
 
       <div className={`rounded-2xl border p-3.5 space-y-2 ${cardWrap}`}>
         <div className="flex items-center justify-between gap-2">
-          <p className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+          <p className={`text-[11px] font-mono uppercase tracking-wider font-semibold ${isVault ? "text-stone-400" : "text-stone-500"}`}>
             Success rate
           </p>
-          <p className={`text-xs font-mono font-semibold tabular-nums ${isVault ? "text-stone-300" : "text-stone-700"}`}>
+          <p className={`text-sm font-mono font-semibold tabular-nums ${isVault ? "text-stone-300" : "text-stone-700"}`}>
             {successRate}%
           </p>
         </div>
@@ -225,10 +225,10 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped, isVa
         <div className={`rounded-2xl border overflow-hidden ${cardWrap}`}>
           <div className={`px-4 py-3 border-b flex items-center justify-between gap-3 ${cardHeaderWrap}`}>
             <div>
-              <p className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${mutedLabel}`}>
+              <p className={`text-[11px] font-mono uppercase tracking-wider font-semibold ${mutedLabel}`}>
                 Skipped duplicates
               </p>
-              <p className={`text-[11px] mt-0.5 ${mutedText}`}>
+              <p className={`text-xs mt-0.5 ${mutedText}`}>
                 {skippedRows.length} row{skippedRows.length === 1 ? "" : "s"} already existed and{" "}
                 {skippedRows.length === 1 ? "was" : "were"} left unchanged.
               </p>
@@ -237,7 +237,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped, isVa
               <button
                 type="button"
                 onClick={onDownloadSkipped}
-                className={`shrink-0 px-3 py-2 rounded-lg border text-[10px] font-mono uppercase tracking-wider font-semibold transition flex items-center gap-1.5 ${
+                className={`shrink-0 px-3 py-2 rounded-lg border text-[11px] font-mono uppercase tracking-wider font-semibold transition flex items-center gap-1.5 ${
                   isVault
                     ? "border-amber-500/20 bg-amber-500/10 hover:bg-amber-500/15 text-amber-400"
                     : "border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900"
@@ -268,18 +268,18 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped, isVa
                   </div>
                   <div className="min-w-0 flex-1 flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className={`text-xs font-medium truncate ${isVault ? "text-stone-100" : "text-stone-800"}`}>
+                      <p className={`text-sm font-medium truncate ${isVault ? "text-stone-100" : "text-stone-800"}`}>
                         {display.title}
                       </p>
-                      <p className={`text-[11px] mt-0.5 truncate ${isVault ? "text-stone-500" : "text-stone-500"}`}>
+                      <p className={`text-xs mt-0.5 truncate ${isVault ? "text-stone-500" : "text-stone-500"}`}>
                         {display.subtitle}
                       </p>
-                      <p className={`text-[11px] mt-0.5 truncate ${isVault ? "text-amber-400" : "text-amber-700"}`}>
+                      <p className={`text-xs mt-0.5 truncate ${isVault ? "text-amber-400" : "text-amber-700"}`}>
                         {entry.reason}
                       </p>
                     </div>
                     <span
-                      className={`shrink-0 text-[10px] font-mono font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md ${
+                      className={`shrink-0 text-[11px] font-mono font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md ${
                         isVault
                           ? "bg-amber-500/10 border border-amber-500/20 text-amber-400"
                           : "bg-amber-50 border border-amber-100 text-amber-700"
@@ -299,10 +299,10 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped, isVa
         <div className={`rounded-2xl border overflow-hidden ${cardWrap}`}>
           <div className={`px-4 py-3 border-b flex items-center justify-between gap-3 ${cardHeaderWrap}`}>
             <div>
-              <p className={`text-[10px] font-mono uppercase tracking-wider font-semibold ${mutedLabel}`}>
+              <p className={`text-[11px] font-mono uppercase tracking-wider font-semibold ${mutedLabel}`}>
                 Row errors
               </p>
-              <p className={`text-[11px] mt-0.5 ${mutedText}`}>
+              <p className={`text-xs mt-0.5 ${mutedText}`}>
                 {errors.length} failed row{errors.length === 1 ? "" : "s"} · {groupedErrors.length}{" "}
                 issue type{groupedErrors.length === 1 ? "" : "s"}
               </p>
@@ -310,7 +310,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped, isVa
             <button
               type="button"
               onClick={onDownloadErrors}
-              className={`shrink-0 px-3 py-2 rounded-lg border text-[10px] font-mono uppercase tracking-wider font-semibold transition flex items-center gap-1.5 ${
+              className={`shrink-0 px-3 py-2 rounded-lg border text-[11px] font-mono uppercase tracking-wider font-semibold transition flex items-center gap-1.5 ${
                 isVault
                   ? "border-amber-500/20 bg-amber-500/10 hover:bg-amber-500/15 text-amber-400"
                   : "border-amber-200 bg-amber-50 hover:bg-amber-100 text-amber-900"
@@ -336,11 +336,11 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped, isVa
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <p className={`text-xs font-medium leading-relaxed ${isVault ? "text-rose-300" : "text-rose-800"}`}>
+                      <p className={`text-sm font-medium leading-relaxed ${isVault ? "text-rose-300" : "text-rose-800"}`}>
                         {group.message}
                       </p>
                       <span
-                        className={`shrink-0 text-[10px] font-mono font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md ${
+                        className={`shrink-0 text-[11px] font-mono font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md ${
                           isVault
                             ? "bg-rose-500/10 border border-rose-500/20 text-rose-400"
                             : "bg-rose-50 border border-rose-100 text-rose-600"
@@ -358,7 +358,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped, isVa
                         return (
                           <span
                             key={`${entry.row}-${email}-${course}`}
-                            className={`inline-flex items-center gap-1.5 max-w-full px-2 py-1 rounded-lg border text-[10px] font-mono ${chipWrap}`}
+                            className={`inline-flex items-center gap-1.5 max-w-full px-2 py-1 rounded-lg border text-[11px] font-mono ${chipWrap}`}
                             title={[email, course].filter(Boolean).join(" · ")}
                           >
                             <span className={isVault ? "font-semibold text-stone-100" : "font-semibold text-stone-800"}>
@@ -374,7 +374,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped, isVa
                       })}
                       {group.rows.length > 8 && (
                         <span
-                          className={`inline-flex items-center px-2 py-1 rounded-lg text-[10px] font-mono ${
+                          className={`inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-mono ${
                             isVault ? "bg-white/10 text-stone-500" : "bg-stone-100 text-stone-500"
                           }`}
                         >
@@ -391,7 +391,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped, isVa
       )}
 
       {errors.length === 0 && type === "enrollments" && (
-        <p className={`text-[11px] font-mono text-center ${isVault ? "text-stone-500" : "text-stone-500"}`}>
+        <p className={`text-xs font-mono text-center ${isVault ? "text-stone-500" : "text-stone-500"}`}>
           All enrollment rows were processed successfully.
         </p>
       )}
@@ -575,7 +575,7 @@ export default function BulkImportModal({
               }`}
             >
               <p
-                className={`text-[10px] font-mono uppercase tracking-wider font-semibold mb-2 ${
+                className={`text-[11px] font-mono uppercase tracking-wider font-semibold mb-2 ${
                   isVault ? "text-amber-400" : "text-amber-800"
                 }`}
               >
@@ -585,7 +585,7 @@ export default function BulkImportModal({
                 {config.instructions.map((item) => (
                   <li
                     key={item}
-                    className={`text-xs font-light leading-relaxed pl-3 relative before:content-[''] before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-amber-600 ${
+                    className={`text-sm font-light leading-relaxed pl-3 relative before:content-[''] before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-amber-600 ${
                       isVault ? "text-stone-400" : "text-stone-600"
                     }`}
                   >
@@ -600,7 +600,7 @@ export default function BulkImportModal({
                 type="button"
                 onClick={() => handleDownloadSample("csv")}
                 disabled={isDownloading || isUploading}
-                className={`flex-1 px-4 py-3 text-xs font-semibold font-mono rounded-xl tracking-wider transition-all flex items-center justify-center gap-2 border shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${
+                className={`flex-1 px-4 py-3 text-sm font-semibold font-mono rounded-xl tracking-wider transition-all flex items-center justify-center gap-2 border shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${
                   isVault
                     ? "bg-white/5 hover:bg-white/10 text-stone-300 border-stone-700/60"
                     : "bg-stone-50 hover:bg-stone-100 text-stone-700 border-stone-200"
@@ -613,7 +613,7 @@ export default function BulkImportModal({
                 type="button"
                 onClick={() => handleDownloadSample("xlsx")}
                 disabled={isDownloading || isUploading}
-                className={`flex-1 px-4 py-3 text-xs font-semibold font-mono rounded-xl tracking-wider transition-all flex items-center justify-center gap-2 border shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${
+                className={`flex-1 px-4 py-3 text-sm font-semibold font-mono rounded-xl tracking-wider transition-all flex items-center justify-center gap-2 border shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${
                   isVault
                     ? "bg-white/5 hover:bg-white/10 text-stone-300 border-stone-700/60"
                     : "bg-stone-50 hover:bg-stone-100 text-stone-700 border-stone-200"
@@ -626,7 +626,7 @@ export default function BulkImportModal({
 
             <div>
               <label
-                className={`text-[10px] font-mono block uppercase tracking-wider mb-1.5 font-semibold ${
+                className={`text-[11px] font-mono block uppercase tracking-wider mb-1.5 font-semibold ${
                   isVault ? "text-stone-500" : "text-stone-450"
                 }`}
               >
@@ -644,10 +644,10 @@ export default function BulkImportModal({
                 }`}
               >
                 <FileUp className={`w-6 h-6 ${isVault ? "text-amber-400" : "text-amber-700"}`} />
-                <span className={`text-xs font-mono text-center ${isVault ? "text-stone-300" : "text-stone-600"}`}>
+                <span className={`text-sm font-mono text-center ${isVault ? "text-stone-300" : "text-stone-600"}`}>
                   {file ? file.name : "Choose CSV or XLSX file"}
                 </span>
-                <span className={`text-[10px] font-mono uppercase tracking-wider ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+                <span className={`text-[11px] font-mono uppercase tracking-wider ${isVault ? "text-stone-500" : "text-stone-400"}`}>
                   Max 5MB
                 </span>
                 <input
@@ -663,7 +663,7 @@ export default function BulkImportModal({
 
             {validationError && (
               <div
-                className={`flex items-start gap-2 rounded-xl border px-3.5 py-3 text-xs ${
+                className={`flex items-start gap-2 rounded-xl border px-3.5 py-3 text-sm ${
                   isVault ? "border-rose-500/20 bg-rose-500/10 text-rose-400" : "border-rose-200 bg-rose-50 text-rose-700"
                 }`}
               >
@@ -675,7 +675,7 @@ export default function BulkImportModal({
             {(isUploading || uploadProgress > 0) && (
               <div className="space-y-2">
                 <div
-                  className={`flex items-center justify-between text-[10px] font-mono uppercase tracking-wider ${
+                  className={`flex items-center justify-between text-[11px] font-mono uppercase tracking-wider ${
                     isVault ? "text-stone-500" : "text-stone-500"
                   }`}
                 >
@@ -702,7 +702,7 @@ export default function BulkImportModal({
             type="button"
             onClick={handleClose}
             disabled={isUploading}
-            className={`px-4 py-3 text-xs font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${
+            className={`px-4 py-3 text-sm font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${
               isVault
                 ? "bg-stone-800/60 hover:bg-stone-800 text-stone-300 border-stone-700"
                 : "bg-stone-50 hover:bg-stone-100 text-stone-700 border-stone-200"
@@ -715,7 +715,7 @@ export default function BulkImportModal({
             <button
               type="button"
               onClick={handleImportAnother}
-              className={`px-6 py-3 text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 ${
+              className={`px-6 py-3 text-white text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 ${
                 isVault ? "bg-stone-700 hover:bg-stone-600" : "bg-stone-900 hover:bg-stone-800"
               }`}
             >
@@ -727,7 +727,7 @@ export default function BulkImportModal({
               type="button"
               onClick={handleUpload}
               disabled={!file || isUploading || Boolean(validationError)}
-              className={`px-6 py-3 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 ${
+              className={`px-6 py-3 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 ${
                 isVault ? "bg-stone-700 hover:bg-stone-600" : "bg-stone-900 hover:bg-stone-800"
               }`}
             >

@@ -118,12 +118,12 @@ export default function CategoriesTab() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search categories by name..." />
+        <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search categories by name..." />
 
         <button
           type="button"
           onClick={() => setIsFormOpen(true)}
-          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
+          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
           title="Create a new category"
           aria-label="Create a new category"
         >
@@ -133,7 +133,7 @@ export default function CategoriesTab() {
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
-        <DataTable
+        <DataTable size="lg"
           columns={columns}
           rows={paginatedCategories}
           isLoading={isLoading}
@@ -141,7 +141,7 @@ export default function CategoriesTab() {
           onRetry={refetch}
           emptyLabel="No categories found."
         />
-        <Pagination
+        <Pagination size="lg"
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
@@ -158,7 +158,7 @@ export default function CategoriesTab() {
         }}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(deletingCategory)}
         onClose={() => setDeletingCategory(null)}
         onConfirm={handleDeleteConfirm}

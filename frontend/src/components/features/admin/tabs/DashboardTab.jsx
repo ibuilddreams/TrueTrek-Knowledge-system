@@ -20,7 +20,7 @@ function Panel({ title, icon: Icon, children, action }) {
   return (
     <div className="bg-white border border-stone-200/90 rounded-2xl shadow-sm overflow-hidden min-h-[280px] flex flex-col">
       <div className="px-5 pt-5 pb-3 flex items-center justify-between gap-3 border-b border-stone-100">
-        <h3 className="text-[11px] font-mono font-bold uppercase tracking-widest text-stone-700 flex items-center gap-2">
+        <h3 className="text-sm font-mono font-bold uppercase tracking-widest text-stone-700 flex items-center gap-2">
           <span className="w-7 h-7 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center">
             <Icon className="w-3.5 h-3.5" />
           </span>
@@ -57,11 +57,11 @@ export default function DashboardTab() {
         <h2 className="text-xl font-serif font-bold text-stone-900 mb-2">
           Failed to Load Dashboard
         </h2>
-        <p className="text-xs text-stone-500 font-light mb-6">{error}</p>
+        <p className="text-sm text-stone-500 font-light mb-6">{error}</p>
         <button
           type="button"
           onClick={() => loadOverview({ force: true })}
-          className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl shadow-md transition"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition"
         >
           <RefreshCw className="w-4 h-4" />
           Retry
@@ -80,7 +80,7 @@ export default function DashboardTab() {
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <p className="text-[10px] font-mono uppercase tracking-widest text-amber-700 font-bold">
+            <p className="text-xs font-mono uppercase tracking-widest text-amber-700 font-bold">
               Live Snapshot
             </p>
             <h2 className="text-lg font-serif font-bold text-stone-900">
@@ -90,7 +90,7 @@ export default function DashboardTab() {
           <button
             type="button"
             onClick={() => loadOverview({ force: true })}
-            className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider font-semibold text-stone-500 hover:text-amber-800 transition"
+            className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider font-semibold text-stone-500 hover:text-amber-800 transition"
           >
             <RefreshCw className="w-3 h-3" />
             Refresh
@@ -101,7 +101,7 @@ export default function DashboardTab() {
 
       <section className="space-y-3">
         <div>
-          <p className="text-[10px] font-mono uppercase tracking-widest text-amber-700 font-bold">
+          <p className="text-[11px] font-mono uppercase tracking-widest text-amber-700 font-bold">
             Distribution
           </p>
           <h2 className="text-lg font-serif font-bold text-stone-900">
@@ -132,7 +132,7 @@ export default function DashboardTab() {
 
       <section className="space-y-3">
         <div>
-          <p className="text-[10px] font-mono uppercase tracking-widest text-amber-700 font-bold">
+          <p className="text-[11px] font-mono uppercase tracking-widest text-amber-700 font-bold">
             Operations
           </p>
           <h2 className="text-lg font-serif font-bold text-stone-900">
@@ -145,14 +145,14 @@ export default function DashboardTab() {
             icon={Activity}
             action={
               recentActivities.length > 0 && (
-                <span className="text-[10px] font-mono font-semibold text-stone-400">
+                <span className="text-xs font-mono font-semibold text-stone-400">
                   {recentActivities.length} total
                 </span>
               )
             }
           >
             {recentActivities.length === 0 ? (
-              <EmptyState
+              <EmptyState size="lg"
                 icon={Sparkles}
                 label="No recent activity"
                 description="New enrollments, completions, and admin actions will show up here."
@@ -169,10 +169,10 @@ export default function DashboardTab() {
                       <Clock3 className="w-3.5 h-3.5" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-xs font-semibold text-stone-800 truncate">
+                      <p className="text-sm font-semibold text-stone-800 truncate">
                         {formatActivityType(activity.activity_type)}
                       </p>
-                      <p className="text-[11px] font-mono text-stone-400 mt-1">
+                      <p className="text-sm font-mono text-stone-400 mt-1">
                         {formatDateTime(activity.created_at)}
                       </p>
                     </div>
@@ -187,14 +187,14 @@ export default function DashboardTab() {
             icon={TrendingUp}
             action={
               progressSummary.length > 0 && (
-                <span className="text-[10px] font-mono font-semibold text-stone-400">
+                <span className="text-xs font-mono font-semibold text-stone-400">
                   {progressSummary.length} total
                 </span>
               )
             }
           >
             {progressSummary.length === 0 ? (
-              <EmptyState
+              <EmptyState size="lg"
                 icon={TrendingUp}
                 label="No progress data yet"
                 description="Course completion averages will populate as learners engage."
@@ -219,12 +219,12 @@ export default function DashboardTab() {
                       className="p-3.5 rounded-xl border border-stone-100 bg-stone-50/50 hover:bg-white hover:border-amber-200/60 transition"
                     >
                       <div className="flex items-center justify-between gap-3 mb-2">
-                        <span className="text-xs font-semibold text-stone-800 truncate">
+                        <span className="text-sm font-semibold text-stone-800 truncate">
                           {entry.course_title ||
                             entry.title ||
                             `Entry ${index + 1}`}
                         </span>
-                        <span className="text-[11px] font-mono font-bold text-amber-800 shrink-0">
+                        <span className="text-sm font-mono font-bold text-amber-800 shrink-0">
                           {percent}%
                         </span>
                       </div>

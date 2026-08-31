@@ -25,6 +25,7 @@ export default function AccountMenu({
   onMessages,
   variant = "light",
   className = "",
+  size = "base",
 }) {
   const isDark = variant === "dark";
   const { isVault } = useTheme();
@@ -227,11 +228,13 @@ export default function AccountMenu({
               isVault ? "border-stone-800" : "border-stone-100"
             }`}
           >
-            <p className="text-[10px] uppercase tracking-widest text-stone-400 font-semibold">
+            <p
+              className={`${size === "lg" ? "text-[11px]" : "text-[10px]"} uppercase tracking-widest text-stone-400 font-semibold`}
+            >
               Account
             </p>
             <p
-              className={`text-xs font-semibold truncate mt-0.5 ${
+              className={`${size === "lg" ? "text-sm" : "text-xs"} font-semibold truncate mt-0.5 ${
                 isVault ? "text-stone-100" : "text-stone-800"
               }`}
             >
@@ -259,7 +262,7 @@ export default function AccountMenu({
                   handleItemKeyDown(event, index, menuItems.length)
                 }
                 className={
-                  "w-full flex items-center gap-2.5 px-3.5 py-2.5 text-xs font-semibold focus:outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-transparent " +
+                  `w-full flex items-center gap-2.5 px-3.5 py-2.5 ${size === "lg" ? "text-sm" : "text-xs"} font-semibold focus:outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-transparent ` +
                   (danger
                     ? isVault
                       ? "text-rose-400 hover:bg-rose-500/10 focus:bg-rose-500/10"
@@ -280,7 +283,9 @@ export default function AccountMenu({
                 />
                 <span className="flex-1 text-left">{itemLabel}</span>
                 {badge ? (
-                  <span className="min-w-4.5 h-4.5 px-1 rounded-full bg-amber-600 text-white text-[9px] font-bold font-mono flex items-center justify-center shrink-0">
+                  <span
+                    className={`min-w-4.5 h-4.5 px-1 rounded-full bg-amber-600 text-white ${size === "lg" ? "text-[10px]" : "text-[9px]"} font-bold font-mono flex items-center justify-center shrink-0`}
+                  >
                     {badge}
                   </span>
                 ) : null}
@@ -307,7 +312,7 @@ export default function AccountMenu({
         aria-haspopup="menu"
         aria-expanded={isOpen}
         className={
-          "w-full px-3.5 py-2.5 text-xs font-semibold font-mono rounded-xl tracking-wider transition-all duration-200 flex items-center gap-2 border shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed " +
+          `w-full px-3.5 py-2.5 ${size === "lg" ? "text-sm" : "text-xs"} font-semibold font-mono rounded-xl tracking-wider transition-all duration-200 flex items-center gap-2 border shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed ` +
           (isOpen
             ? isDark
               ? "bg-stone-800 border-stone-700 shadow-md"
@@ -344,7 +349,7 @@ export default function AccountMenu({
           </span>
           {roleLabel && (
             <span
-              className={`text-[10px] font-normal tracking-normal normal-case truncate max-w-36 ${
+              className={`${size === "lg" ? "text-[11px]" : "text-[10px]"} font-normal tracking-normal normal-case truncate max-w-36 ${
                 isDark ? "text-stone-500" : "text-stone-400"
               }`}
             >

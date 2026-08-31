@@ -187,7 +187,7 @@ export default function CoursesTab() {
       key: "status",
       header: "Status",
       sortable: true,
-      render: (course) => <StatusBadge status={course.status} />,
+      render: (course) => <StatusBadge size="lg" status={course.status} />,
     },
     {
       key: "amount",
@@ -267,13 +267,13 @@ export default function CoursesTab() {
     <div className="space-y-5">
       <div className="flex flex-col lg:flex-row lg:items-center gap-3 justify-between">
         <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 flex-1 min-w-0">
-          <SearchBar
+          <SearchBar size="lg"
             value={searchInput}
             onChange={setSearchInput}
             placeholder="Search courses by title..."
           />
           <div className="w-full sm:w-48 shrink-0">
-            <SearchableSelect
+            <SearchableSelect size="lg"
               placeholder="All Statuses"
               options={STATUS_FILTER_OPTIONS}
               value={statusFilter}
@@ -281,7 +281,7 @@ export default function CoursesTab() {
             />
           </div>
           <div className="w-full sm:w-48 shrink-0">
-            <SearchableSelect
+            <SearchableSelect size="lg"
               placeholder="All Categories"
               options={categoryFilterOptions}
               value={categoryFilter}
@@ -289,7 +289,7 @@ export default function CoursesTab() {
             />
           </div>
           <div className="w-full sm:w-48 shrink-0">
-            <SearchableSelect
+            <SearchableSelect size="lg"
               placeholder="All Tags"
               options={tagFilterOptions}
               value={tagFilter}
@@ -302,7 +302,7 @@ export default function CoursesTab() {
           <button
             type="button"
             onClick={() => setIsAiModalOpen(true)}
-            className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-700 text-sm font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-2"
             title="Generate a complete draft course with AI"
             aria-label="Generate a complete draft course with AI"
           >
@@ -312,7 +312,7 @@ export default function CoursesTab() {
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2"
             title="Create a new course"
             aria-label="Create a new course"
           >
@@ -323,7 +323,7 @@ export default function CoursesTab() {
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
-        <DataTable
+        <DataTable size="lg"
           columns={columns}
           rows={paginatedCourses}
           isLoading={status === "loading" || status === "idle"}
@@ -334,7 +334,7 @@ export default function CoursesTab() {
           sortConfig={sortConfig}
           onSortChange={toggleSort}
         />
-        <Pagination
+        <Pagination size="lg"
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
@@ -355,7 +355,7 @@ export default function CoursesTab() {
         onEnrolled={() => loadEnrollments({ force: true })}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(deletingCourse)}
         onClose={() => setDeletingCourse(null)}
         onConfirm={handleDeleteConfirm}

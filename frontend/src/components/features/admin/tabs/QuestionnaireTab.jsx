@@ -99,7 +99,7 @@ export default function QuestionnaireTab() {
     {
       key: "is_active",
       header: "Status",
-      render: (question) => <StatusBadge status={question.is_active ? "ACTIVE" : "DRAFT"} />,
+      render: (question) => <StatusBadge size="lg" status={question.is_active ? "ACTIVE" : "DRAFT"} />,
     },
     {
       key: "actions",
@@ -129,12 +129,12 @@ export default function QuestionnaireTab() {
   return (
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search questions by text..." />
+        <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search questions by text..." />
 
         <button
           type="button"
           onClick={() => setIsFormOpen(true)}
-          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
+          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
           title="Create a new question"
           aria-label="Create a new question"
         >
@@ -144,7 +144,7 @@ export default function QuestionnaireTab() {
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
-        <DataTable
+        <DataTable size="lg"
           columns={columns}
           rows={paginatedQuestions}
           isLoading={isLoading}
@@ -152,7 +152,7 @@ export default function QuestionnaireTab() {
           onRetry={refetch}
           emptyLabel="No questions found."
         />
-        <Pagination
+        <Pagination size="lg"
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
@@ -169,7 +169,7 @@ export default function QuestionnaireTab() {
         }}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(deletingQuestion)}
         onClose={() => setDeletingQuestion(null)}
         onConfirm={handleDeleteConfirm}

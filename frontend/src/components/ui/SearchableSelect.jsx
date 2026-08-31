@@ -18,7 +18,10 @@ export default function SearchableSelect({
   emptyLabel = "No results found.",
   onCreate,
   createLabel = "Add New",
+  size = "base",
 }) {
+  const smallSize = size === "lg" ? "text-[11px]" : "text-[10px]";
+  const bodySize = size === "lg" ? "text-sm" : "text-xs";
   const [isOpen, setIsOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [isCreating, setIsCreating] = useState(false);
@@ -119,7 +122,9 @@ export default function SearchableSelect({
   return (
     <div ref={containerRef} className="relative">
       {label && (
-        <label className="text-[10px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold">
+        <label
+          className={`${smallSize} font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold`}
+        >
           {label}
         </label>
       )}
@@ -129,7 +134,7 @@ export default function SearchableSelect({
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
         disabled={disabled || loading}
-        className="w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-800 flex items-center justify-between gap-2 transition disabled:opacity-60 disabled:cursor-not-allowed"
+        className={`w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl ${bodySize} font-mono text-stone-800 flex items-center justify-between gap-2 transition disabled:opacity-60 disabled:cursor-not-allowed`}
       >
         <span className={`min-w-0 truncate ${selectedOption ? "text-stone-800" : "text-stone-400"}`}>
           {loading ? "Loading..." : selectedOption ? selectedOption.label : placeholder}
@@ -155,20 +160,20 @@ export default function SearchableSelect({
               value={query}
               onChange={(event) => setQuery(event.target.value)}
               placeholder={searchPlaceholder}
-              className="w-full text-xs font-mono text-stone-800 placeholder:text-stone-400 focus:outline-none"
+              className={`w-full ${bodySize} font-mono text-stone-800 placeholder:text-stone-400 focus:outline-none`}
             />
           </div>
 
           <ul className="max-h-56 overflow-y-auto py-1">
             {filteredOptions.length === 0 ? (
-              <li className="px-4 py-3 text-xs text-stone-400 font-light">{emptyLabel}</li>
+              <li className={`px-4 py-3 ${bodySize} text-stone-400 font-light`}>{emptyLabel}</li>
             ) : (
               filteredOptions.map((option) => (
                 <li key={option.value}>
                   <button
                     type="button"
                     onClick={() => handleSelect(option)}
-                    className="w-full flex items-center justify-between gap-2 px-4 py-2.5 text-xs font-mono text-stone-700 hover:bg-stone-50 transition-colors text-left"
+                    className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 ${bodySize} font-mono text-stone-700 hover:bg-stone-50 transition-colors text-left`}
                   >
                     <span className="min-w-0 truncate">{option.label}</span>
                     {option.value === value && <Check className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
@@ -195,9 +200,11 @@ export default function SearchableSelect({
                     }}
                     disabled={isSubmittingCreate}
                     placeholder={`${createLabel} name`}
-                    className="w-full px-3 py-2 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-lg text-xs font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60"
+                    className={`w-full px-3 py-2 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-lg ${bodySize} font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60`}
                   />
-                  {createError && <p className="text-[10px] font-mono text-red-600">{createError}</p>}
+                  {createError && (
+                    <p className={`${smallSize} font-mono text-red-600`}>{createError}</p>
+                  )}
                   <div className="flex items-center justify-end gap-2 pt-1">
                     <button
                       type="button"
@@ -207,7 +214,7 @@ export default function SearchableSelect({
                         setCreateError("");
                       }}
                       disabled={isSubmittingCreate}
-                      className="px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-stone-500 hover:text-stone-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors"
+                      className={`px-3 py-1.5 ${smallSize} font-mono uppercase tracking-wider text-stone-500 hover:text-stone-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors`}
                     >
                       Cancel
                     </button>
@@ -215,7 +222,7 @@ export default function SearchableSelect({
                       type="button"
                       onClick={handleCreateSubmit}
                       disabled={isSubmittingCreate}
-                      className="px-3 py-1.5 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-[10px] font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5"
+                      className={`px-3 py-1.5 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white ${smallSize} font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5`}
                     >
                       {isSubmittingCreate ? (
                         <>
@@ -232,7 +239,7 @@ export default function SearchableSelect({
                 <button
                   type="button"
                   onClick={() => setIsCreating(true)}
-                  className="w-full flex items-center gap-2 px-4 py-2.5 text-xs font-mono font-semibold text-amber-700 hover:bg-amber-50 transition-colors text-left"
+                  className={`w-full flex items-center gap-2 px-4 py-2.5 ${bodySize} font-mono font-semibold text-amber-700 hover:bg-amber-50 transition-colors text-left`}
                 >
                   <Plus className="w-3.5 h-3.5" />
                   {createLabel}

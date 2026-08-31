@@ -124,11 +124,12 @@ function AdminDashboardContent() {
         icon={Lock}
         title="Admin Access Required"
         subtitle="Sign in with an administrator account to view system-wide statistics and activity."
+        size="lg"
       >
         <button
           type="button"
           onClick={() => router.push(ROUTES.LOGIN)}
-          className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl shadow-md transition"
+          className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition"
         >
           Go to Sign In
         </button>
@@ -158,14 +159,14 @@ function AdminDashboardContent() {
           <div className="min-w-0 pt-0.5">
             <div className="inline-flex items-center gap-2 mb-1.5">
               <span className="h-px w-4 bg-amber-500/70" />
-              <span className="text-[10px] font-mono uppercase tracking-[0.2em] text-amber-700/90">
+              <span className="text-xs font-mono uppercase tracking-[0.2em] text-amber-700/90">
                 Admin Portal
               </span>
             </div>
             <h1 className="text-2xl sm:text-[2rem] font-serif font-bold tracking-tight text-stone-900 leading-none">
               Control Center
             </h1>
-            <p className="text-[13px] text-stone-500 font-light mt-2 leading-snug max-w-md">
+            <p className="text-sm text-stone-500 font-light mt-2 leading-snug max-w-md">
               Courses, enrollments, users, and platform health — in one place
               {user?.name ? ` · ${user.name}` : ""}.
             </p>
@@ -176,12 +177,13 @@ function AdminDashboardContent() {
           <AccountMenu
             onProfile={() => router.push(ROUTES.PROFILE)}
             onMessages={() => router.push(ROUTES.MESSAGES)}
+            size="lg"
           />
         </div>
       </div>
 
       <div className="mb-8">
-        <TabNav tabs={TABS} activeTab={activeTab} onChange={setActiveTab} ariaLabel="Admin sections" />
+        <TabNav tabs={TABS} activeTab={activeTab} onChange={setActiveTab} ariaLabel="Admin sections" size="lg" />
       </div>
 
       <TabTransition activeKey={activeTab}>

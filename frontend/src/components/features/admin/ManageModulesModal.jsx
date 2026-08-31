@@ -81,11 +81,11 @@ import { toastError, toastSuccess } from "@/lib/toast";
 const INITIAL_FORM = { title: "", description: "", order: "1" };
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60";
+  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60";
 
-const LABEL_CLASS = "text-[10px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold";
+const LABEL_CLASS = "text-[11px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold";
 
-const ERROR_CLASS = "text-[10px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
 
 const TABS = [
   { key: "lessons", label: "Lessons", icon: PlayCircle },
@@ -152,8 +152,8 @@ function SortableLessonItem({ lesson, moduleId, onEditLesson, onDeleteLesson }) 
         <LessonIcon className="w-4 h-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-stone-800 truncate">{lesson.title}</p>
-        <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
+        <p className="text-sm font-semibold text-stone-800 truncate">{lesson.title}</p>
+        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
           {lesson.content_type}
           {lesson.duration_minutes ? ` · ${lesson.duration_minutes} min` : ""} ·{" "}
           {formatLessonDate(lesson.created_at)}
@@ -268,7 +268,7 @@ function ModuleLessonsList({ moduleId, onAddLesson, onEditLesson, onDeleteLesson
       <button
         type="button"
         onClick={() => onAddLesson(moduleId)}
-        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
+        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
       >
         <Plus className="w-3.5 h-3.5" />
         Add Lesson
@@ -319,10 +319,10 @@ function SortableAssignmentItem({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-xs font-semibold text-stone-800 truncate">{assignment.title}</p>
-          <StatusBadge status={assignment.status} />
+          <p className="text-sm font-semibold text-stone-800 truncate">{assignment.title}</p>
+          <StatusBadge size="lg" status={assignment.status} />
         </div>
-        <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5 flex items-center gap-1 flex-wrap">
+        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5 flex items-center gap-1 flex-wrap">
           <Calendar className="w-2.5 h-2.5" />
           <span className={overdue ? "text-rose-500" : ""}>{formatDueDate(assignment.due_date)}</span>
           <span className="text-stone-200">·</span>
@@ -339,7 +339,7 @@ function SortableAssignmentItem({
         >
           <Paperclip className="w-3.5 h-3.5" />
           {assignment.attachments?.length > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-amber-600 text-white text-[9px] font-mono font-bold flex items-center justify-center">
+            <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-amber-600 text-white text-[10px] font-mono font-bold flex items-center justify-center">
               {assignment.attachments.length}
             </span>
           )}
@@ -453,7 +453,7 @@ function ModuleAssignmentsList({ moduleId, onAddAssignment, onEditAssignment, on
   return (
     <div className="space-y-2">
       {displayAssignments.length === 0 ? (
-        <EmptyState
+        <EmptyState size="lg"
           icon={ClipboardCheck}
           label="No assignments in this module yet."
           description="Create an assignment for students to submit work against."
@@ -490,7 +490,7 @@ function ModuleAssignmentsList({ moduleId, onAddAssignment, onEditAssignment, on
       <button
         type="button"
         onClick={() => onAddAssignment(moduleId)}
-        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
+        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
       >
         <Plus className="w-3.5 h-3.5" />
         Add Assignment
@@ -546,10 +546,10 @@ function SortableQuizItem({
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-xs font-semibold text-stone-800 truncate">{quiz.title}</p>
-          <StatusBadge status={quiz.status} />
+          <p className="text-sm font-semibold text-stone-800 truncate">{quiz.title}</p>
+          <StatusBadge size="lg" status={quiz.status} />
         </div>
-        <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5 flex items-center gap-1 flex-wrap">
+        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5 flex items-center gap-1 flex-wrap">
           <span>{quiz.total_marks} marks</span>
           <span className="text-stone-200">·</span>
           <span>{quiz.passing_score}% to pass</span>
@@ -676,7 +676,7 @@ function ModuleQuizzesList({ moduleId, onAddQuiz, onEditQuiz, onDeleteQuiz }) {
   return (
     <div className="space-y-2">
       {displayQuizzes.length === 0 ? (
-        <EmptyState
+        <EmptyState size="lg"
           icon={HelpCircle}
           label="No quizzes in this module yet."
           description="Create a quiz to assess what students have learned."
@@ -706,7 +706,7 @@ function ModuleQuizzesList({ moduleId, onAddQuiz, onEditQuiz, onDeleteQuiz }) {
       <button
         type="button"
         onClick={() => onAddQuiz(moduleId)}
-        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-[11px] font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
+        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
       >
         <Plus className="w-3.5 h-3.5" />
         Add Quiz
@@ -776,7 +776,7 @@ function SortableModuleItem({
         </button>
         <div className="min-w-0 flex-1">
           <p className="font-serif text-lg font-bold text-stone-900 truncate">{module.title}</p>
-          <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-1">
+          <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-1">
             Order {module.order} · {module.lessons_count} lesson
             {module.lessons_count === 1 ? "" : "s"} · {module.total_duration_minutes} min
           </p>
@@ -785,7 +785,7 @@ function SortableModuleItem({
           <button
             type="button"
             onClick={() => openAddLesson(module.id)}
-            className="px-3.5 py-2 bg-white hover:bg-stone-50 text-stone-700 text-[11px] font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             Lesson
@@ -819,7 +819,7 @@ function SortableModuleItem({
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-mono font-semibold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
                   activeTab === tab.key
                     ? "bg-amber-50 text-amber-800 border border-amber-200"
                     : "text-stone-500 hover:text-stone-700"
@@ -1225,7 +1225,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
                 </option>
               ))}
             </select>
-            <p className="mt-1.5 text-[10px] font-mono text-stone-400">
+            <p className="mt-1.5 text-[11px] font-mono text-stone-400">
               This course currently has {modules.length} module{modules.length === 1 ? "" : "s"}.
             </p>
             {fieldErrors.order && <p className={ERROR_CLASS}>{fieldErrors.order}</p>}
@@ -1239,7 +1239,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
                 setEditingModule(null);
               }}
               disabled={isSubmitting}
-              className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+              className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-sm font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
               Cancel
@@ -1247,7 +1247,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
+              className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
@@ -1270,7 +1270,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
               <button
                 type="button"
                 onClick={toggleExpandAll}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-stone-50 text-stone-700 text-[11px] font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all cursor-pointer"
               >
                 {areAllExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
                 {areAllExpanded ? "Collapse All" : "Expand All"}
@@ -1281,7 +1281,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
             <button
               type="button"
               onClick={openCreateForm}
-              className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
             >
               <ListPlus className="w-4 h-4" />
               Add Module
@@ -1291,7 +1291,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
           {modulesQuery.isLoading ? (
             <Loader fullScreen={false} label="Loading modules..." />
           ) : modules.length === 0 ? (
-            <EmptyState label="No modules found." />
+            <EmptyState size="lg" label="No modules found." />
           ) : (
             <DndContext
               sensors={dndSensors}
@@ -1329,7 +1329,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
         </div>
       )}
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(deletingModule)}
         onClose={() => setDeletingModule(null)}
         onConfirm={handleDeleteConfirm}
@@ -1339,7 +1339,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
         confirmLabel="Delete"
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(deletingLesson)}
         onClose={() => setDeletingLesson(null)}
         onConfirm={handleDeleteLessonConfirm}
@@ -1349,7 +1349,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
         confirmLabel="Delete"
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(deletingAssignment)}
         onClose={() => setDeletingAssignment(null)}
         onConfirm={handleDeleteAssignmentConfirm}
@@ -1359,7 +1359,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
         confirmLabel="Delete"
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(deletingQuiz)}
         onClose={() => setDeletingQuiz(null)}
         onConfirm={handleDeleteQuizConfirm}

@@ -3,7 +3,7 @@
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
-export default function Pagination({ page, totalPages, onPageChange, totalLabel }) {
+export default function Pagination({ page, totalPages, onPageChange, totalLabel, size = "base" }) {
   const { isVault } = useTheme();
 
   if (totalPages <= 1 && !totalLabel) return null;
@@ -15,7 +15,9 @@ export default function Pagination({ page, totalPages, onPageChange, totalLabel 
       }`}
     >
       {totalLabel && (
-        <p className={`text-[11px] font-mono ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+        <p
+          className={`${size === "lg" ? "text-xs" : "text-[11px]"} font-mono ${isVault ? "text-stone-500" : "text-stone-400"}`}
+        >
           {totalLabel}
         </p>
       )}
@@ -36,7 +38,7 @@ export default function Pagination({ page, totalPages, onPageChange, totalLabel 
             <ChevronLeft className="w-4 h-4" />
           </button>
           <span
-            className={`text-xs font-mono font-semibold min-w-[3.5rem] text-center ${
+            className={`${size === "lg" ? "text-sm" : "text-xs"} font-mono font-semibold min-w-[3.5rem] text-center ${
               isVault ? "text-stone-300" : "text-stone-700"
             }`}
           >

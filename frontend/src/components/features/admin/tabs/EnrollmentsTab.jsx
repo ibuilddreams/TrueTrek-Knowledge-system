@@ -108,7 +108,7 @@ export default function EnrollmentsTab() {
       render: (enrollment) => (
         <div>
           <p className="font-semibold text-stone-800">{enrollment.student?.name}</p>
-          <p className="text-[11px] text-stone-400 font-mono">{enrollment.student?.email}</p>
+          <p className="text-xs text-stone-400 font-mono">{enrollment.student?.email}</p>
         </div>
       ),
     },
@@ -128,7 +128,7 @@ export default function EnrollmentsTab() {
       key: "status",
       header: "Status",
       sortable: true,
-      render: (enrollment) => <StatusBadge status={enrollment.status} />,
+      render: (enrollment) => <StatusBadge size="lg" status={enrollment.status} />,
     },
     {
       key: "enrolled_at",
@@ -161,9 +161,9 @@ export default function EnrollmentsTab() {
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1">
-          <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search by student or course..." />
+          <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search by student or course..." />
           <div className="w-full sm:w-56">
-            <SearchableSelect
+            <SearchableSelect size="lg"
               placeholder="All Statuses"
               options={STATUS_FILTER_OPTIONS}
               value={statusFilter}
@@ -176,7 +176,7 @@ export default function EnrollmentsTab() {
           <button
             type="button"
             onClick={() => setIsBulkImportOpen(true)}
-            className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-700 text-sm font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-2"
             title="Bulk enroll students from CSV or XLSX"
             aria-label="Bulk enroll students from CSV or XLSX"
           >
@@ -186,7 +186,7 @@ export default function EnrollmentsTab() {
           <button
             type="button"
             onClick={() => setIsEnrollModalOpen(true)}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2"
             title="Enroll a student into a course"
             aria-label="Enroll a student into a course"
           >
@@ -197,7 +197,7 @@ export default function EnrollmentsTab() {
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
-        <DataTable
+        <DataTable size="lg"
           columns={columns}
           rows={paginatedEnrollments}
           isLoading={status === "loading" || status === "idle"}
@@ -207,7 +207,7 @@ export default function EnrollmentsTab() {
           sortConfig={sortConfig}
           onSortChange={toggleSort}
         />
-        <Pagination
+        <Pagination size="lg"
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
@@ -228,7 +228,7 @@ export default function EnrollmentsTab() {
         onUpdated={() => loadEnrollments({ force: true })}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(removingEnrollment)}
         onClose={() => setRemovingEnrollment(null)}
         onConfirm={handleRemoveConfirm}

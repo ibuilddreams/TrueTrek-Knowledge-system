@@ -29,7 +29,7 @@ export default function MessagesScreen() {
         <button
           type="button"
           onClick={() => router.push(ROUTES.LOGIN)}
-          className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-xl shadow-md transition"
+          className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition"
         >
           Go to Sign In
         </button>
@@ -46,7 +46,7 @@ export default function MessagesScreen() {
     <div className="py-8 px-4 sm:px-6 md:px-10 max-w-[1600px] mx-auto h-[calc(100vh-5rem)] flex flex-col overflow-hidden font-sans">
       <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 shrink-0">
         <div>
-          <span className="text-amber-600 font-mono text-xs uppercase tracking-widest font-bold block mb-1">
+          <span className="text-amber-600 font-mono text-sm uppercase tracking-widest font-bold block mb-1">
             Communication
           </span>
           <h1 className="text-3xl font-serif font-black tracking-tight text-stone-900">Messages</h1>

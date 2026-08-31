@@ -64,7 +64,7 @@ export default function EnrollmentStatusModal({ isOpen, onClose, enrollment, onU
       subtitle={`${enrollment.student?.name} · ${enrollment.course?.title}`}
     >
       <form onSubmit={handleSubmit} className="space-y-4">
-        <SearchableSelect
+        <SearchableSelect size="lg"
           label="Status"
           placeholder="Select a status"
           options={STATUS_OPTIONS}
@@ -74,7 +74,7 @@ export default function EnrollmentStatusModal({ isOpen, onClose, enrollment, onU
         />
 
         <div>
-          <label className="text-[10px] font-mono text-stone-450 block uppercase tracking-wider mb-1.5 font-semibold">
+          <label className="text-[11px] font-mono text-stone-450 block uppercase tracking-wider mb-1.5 font-semibold">
             Note
           </label>
           <textarea
@@ -83,7 +83,7 @@ export default function EnrollmentStatusModal({ isOpen, onClose, enrollment, onU
             disabled={isSubmitting}
             rows={3}
             placeholder="Reason for this status change"
-            className="w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-xs font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60"
+            className="w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60"
           />
         </div>
 
@@ -92,14 +92,14 @@ export default function EnrollmentStatusModal({ isOpen, onClose, enrollment, onU
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-sm font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2"
+            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>

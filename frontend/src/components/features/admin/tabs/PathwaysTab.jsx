@@ -117,7 +117,7 @@ export default function PathwaysTab() {
     {
       key: "status",
       header: "Status",
-      render: (pathway) => <StatusBadge status={pathway.status} />,
+      render: (pathway) => <StatusBadge size="lg" status={pathway.status} />,
     },
     {
       key: "base_price",
@@ -135,14 +135,14 @@ export default function PathwaysTab() {
             {pathway.tiers.map((tier) => (
               <span
                 key={tier.id}
-                className="text-[10px] font-mono uppercase tracking-wider text-stone-600 bg-stone-100 border border-stone-200 rounded-md px-2 py-1"
+                className="text-[11px] font-mono uppercase tracking-wider text-stone-600 bg-stone-100 border border-stone-200 rounded-md px-2 py-1"
               >
                 #{tier.level} {tier.name}
               </span>
             ))}
           </div>
         ) : (
-          <span className="text-[10px] font-mono uppercase tracking-wider text-stone-400">Unassigned</span>
+          <span className="text-[11px] font-mono uppercase tracking-wider text-stone-400">Unassigned</span>
         ),
     },
     {
@@ -226,12 +226,12 @@ export default function PathwaysTab() {
     <div className="space-y-6">
       <div className="space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-          <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search pathways by name..." />
+          <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search pathways by name..." />
 
           <button
             type="button"
             onClick={() => setIsFormOpen(true)}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
+            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
             title="Create a new pathway"
             aria-label="Create a new pathway"
           >
@@ -241,7 +241,7 @@ export default function PathwaysTab() {
         </div>
 
         <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
-          <DataTable
+          <DataTable size="lg"
             columns={columns}
             rows={paginatedPathways}
             isLoading={isLoading}
@@ -249,7 +249,7 @@ export default function PathwaysTab() {
             onRetry={refetch}
             emptyLabel="No pathways found."
           />
-          <Pagination
+          <Pagination size="lg"
             page={page}
             totalPages={totalPages}
             onPageChange={setPage}
@@ -266,7 +266,7 @@ export default function PathwaysTab() {
             </div>
             <div>
               <h3 className="text-sm font-serif font-bold text-stone-900 leading-tight">Bundle Pricing</h3>
-              <p className="text-[11px] text-stone-450 font-light">
+              <p className="text-xs text-stone-450 font-light">
                 Discount rules applied when students bundle multiple pathways.
               </p>
             </div>
@@ -274,7 +274,7 @@ export default function PathwaysTab() {
           <button
             type="button"
             onClick={() => setIsRuleFormOpen(true)}
-            className="px-3.5 py-2 bg-white hover:bg-stone-50 text-stone-700 text-[11px] font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-1.5 shrink-0"
+            className="px-3.5 py-2 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-1.5 shrink-0"
             title="Add a bundle pricing rule"
             aria-label="Add a bundle pricing rule"
           >
@@ -283,7 +283,7 @@ export default function PathwaysTab() {
           </button>
         </div>
 
-        <DataTable
+        <DataTable size="lg"
           columns={ruleColumns}
           rows={bundleRules}
           isLoading={bundleRulesQuery.isLoading}
@@ -321,7 +321,7 @@ export default function PathwaysTab() {
         }}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(deletingPathway)}
         onClose={() => setDeletingPathway(null)}
         onConfirm={handleDeleteConfirm}
@@ -331,7 +331,7 @@ export default function PathwaysTab() {
         confirmLabel="Delete"
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(deletingRule)}
         onClose={() => setDeletingRule(null)}
         onConfirm={handleDeleteRuleConfirm}

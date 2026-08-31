@@ -159,7 +159,7 @@ export default function StudentsTab() {
       key: "status",
       header: "Status",
       sortable: true,
-      render: (student) => <StatusBadge status={student.account_status} />,
+      render: (student) => <StatusBadge size="lg" status={student.account_status} />,
     },
     {
       key: "enrollments",
@@ -211,9 +211,9 @@ export default function StudentsTab() {
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 min-w-0">
-          <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search students by name or email..." />
+          <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search students by name or email..." />
           <div className="w-full sm:w-56 shrink-0">
-            <SearchableSelect
+            <SearchableSelect size="lg"
               placeholder="All Statuses"
               options={STATUS_FILTER_OPTIONS}
               value={statusFilter}
@@ -226,7 +226,7 @@ export default function StudentsTab() {
           <button
             type="button"
             onClick={() => setIsBulkImportOpen(true)}
-            className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-700 text-sm font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-2"
             title="Bulk add students from a CSV or XLSX file"
             aria-label="Bulk add students from a CSV or XLSX file"
           >
@@ -236,7 +236,7 @@ export default function StudentsTab() {
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2"
             title="Create a new student account"
             aria-label="Create a new student account"
           >
@@ -247,7 +247,7 @@ export default function StudentsTab() {
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
-        <DataTable
+        <DataTable size="lg"
           columns={columns}
           rows={paginatedStudents}
           isLoading={status === "loading" || status === "idle"}
@@ -257,7 +257,7 @@ export default function StudentsTab() {
           sortConfig={sortConfig}
           onSortChange={toggleSort}
         />
-        <Pagination
+        <Pagination size="lg"
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
@@ -272,7 +272,7 @@ export default function StudentsTab() {
         enrollmentCount={enrollmentCountByStudentId[viewStudentId] || 0}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(deactivatingStudent)}
         onClose={() => setDeactivatingStudent(null)}
         onConfirm={handleDeactivateConfirm}
@@ -282,7 +282,7 @@ export default function StudentsTab() {
         confirmLabel="Deactivate"
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(activatingStudent)}
         onClose={() => setActivatingStudent(null)}
         onConfirm={handleActivateConfirm}
@@ -292,7 +292,7 @@ export default function StudentsTab() {
         confirmLabel="Activate"
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(deletingStudent)}
         onClose={() => setDeletingStudent(null)}
         onConfirm={handleDeleteConfirm}

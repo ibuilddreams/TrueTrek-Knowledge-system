@@ -35,8 +35,8 @@ export default function SortableTierPathwayItem({ pathway, onDetach }) {
         <Route className="w-4 h-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-xs font-semibold text-stone-800 truncate">{pathway.name}</p>
-        <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
+        <p className="text-sm font-semibold text-stone-800 truncate">{pathway.name}</p>
+        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
           {pathway.course_count ?? 0} course{pathway.course_count === 1 ? "" : "s"} · Order {pathway.order}
         </p>
       </div>

@@ -95,7 +95,7 @@ export default function TiersTab() {
     {
       key: "status",
       header: "Status",
-      render: (tier) => <StatusBadge status={tier.status} />,
+      render: (tier) => <StatusBadge size="lg" status={tier.status} />,
     },
     {
       key: "pathway_count",
@@ -142,12 +142,12 @@ export default function TiersTab() {
     <div className="space-y-6">
       <div className="space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-          <SearchBar value={searchInput} onChange={setSearchInput} placeholder="Search tiers by name..." />
+          <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search tiers by name..." />
 
           <button
             type="button"
             onClick={() => setIsFormOpen(true)}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
+            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
             title="Create a new tier"
             aria-label="Create a new tier"
           >
@@ -157,7 +157,7 @@ export default function TiersTab() {
         </div>
 
         <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
-          <DataTable
+          <DataTable size="lg"
             columns={columns}
             rows={paginatedTiers}
             isLoading={isLoading}
@@ -165,7 +165,7 @@ export default function TiersTab() {
             onRetry={refetch}
             emptyLabel="No tiers found."
           />
-          <Pagination
+          <Pagination size="lg"
             page={page}
             totalPages={totalPages}
             onPageChange={setPage}
@@ -189,7 +189,7 @@ export default function TiersTab() {
         onClose={() => setManagingPathwaysTier(null)}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(deletingTier)}
         onClose={() => setDeletingTier(null)}
         onConfirm={handleDeleteConfirm}

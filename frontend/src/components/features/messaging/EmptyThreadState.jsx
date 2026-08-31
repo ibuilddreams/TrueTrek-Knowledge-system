@@ -10,6 +10,7 @@ export default function EmptyThreadState() {
         icon={MessageSquare}
         label="Select a conversation"
         description="Choose a conversation from the list, or start a new message."
+        size="lg"
       />
     </div>
   );

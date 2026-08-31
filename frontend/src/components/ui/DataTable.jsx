@@ -15,6 +15,7 @@ export default function DataTable({
   onRowClick,
   sortConfig,
   onSortChange,
+  size = "base",
 }) {
   if (isLoading) {
     return <TableSkeleton columns={columns.length} />;
@@ -26,12 +27,12 @@ export default function DataTable({
         <div className="w-10 h-10 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl flex items-center justify-center">
           <AlertCircle className="w-5 h-5" />
         </div>
-        <p className="text-xs text-stone-500 font-light">{error}</p>
+        <p className={`${size === "lg" ? "text-sm" : "text-xs"} text-stone-500 font-light`}>{error}</p>
         {onRetry && (
           <button
             type="button"
             onClick={onRetry}
-            className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-[11px] uppercase tracking-wider rounded-lg transition"
+            className={`inline-flex items-center gap-2 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono ${size === "lg" ? "text-xs" : "text-[11px]"} uppercase tracking-wider rounded-lg transition`}
           >
             <RefreshCw className="w-3.5 h-3.5" />
             Retry
@@ -42,7 +43,7 @@ export default function DataTable({
   }
 
   if (!rows || rows.length === 0) {
-    return <EmptyState label={emptyLabel} />;
+    return <EmptyState label={emptyLabel} size={size} />;
   }
 
   return (
@@ -56,7 +57,7 @@ export default function DataTable({
               return (
                 <th
                   key={column.key}
-                  className="py-3 px-3 text-xs font-mono uppercase tracking-wider text-stone-500 font-bold whitespace-nowrap"
+                  className={`py-3 px-3 ${size === "lg" ? "text-sm" : "text-xs"} font-mono uppercase tracking-wider text-stone-500 font-bold whitespace-nowrap`}
                 >
                   {isSortable ? (
                     <button
@@ -94,7 +95,10 @@ export default function DataTable({
               }`}
             >
               {columns.map((column) => (
-                <td key={column.key} className="py-3 px-3 text-xs text-stone-700 align-middle">
+                <td
+                  key={column.key}
+                  className={`py-3 px-3 ${size === "lg" ? "text-sm" : "text-xs"} text-stone-700 align-middle`}
+                >
                   {column.render ? column.render(row) : row[column.key]}
                 </td>
               ))}

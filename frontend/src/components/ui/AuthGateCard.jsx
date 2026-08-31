@@ -3,7 +3,7 @@
 import IconBadge from "@/components/ui/IconBadge";
 import { useTheme } from "@/hooks/useTheme";
 
-export default function AuthGateCard({ id, icon, title, subtitle, children }) {
+export default function AuthGateCard({ id, icon, title, subtitle, children, size = "base" }) {
   const { isVault } = useTheme();
 
   return (
@@ -40,7 +40,7 @@ export default function AuthGateCard({ id, icon, title, subtitle, children }) {
             {title}
           </h2>
           <p
-            className={`text-xs font-light leading-relaxed ${
+            className={`${size === "lg" ? "text-sm" : "text-xs"} font-light leading-relaxed ${
               isVault ? "text-stone-400" : "text-stone-500"
             }`}
           >

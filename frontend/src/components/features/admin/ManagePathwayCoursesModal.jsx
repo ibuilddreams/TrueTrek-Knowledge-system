@@ -175,7 +175,7 @@ export default function ManagePathwayCoursesModal({ isOpen, onClose, pathway }) 
       <div className="space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-end gap-3">
           <div className="flex-1 min-w-0">
-            <SearchableSelect
+            <SearchableSelect size="lg"
               label="Add a Course"
               placeholder="Select a course to attach"
               searchPlaceholder="Search courses..."
@@ -191,7 +191,7 @@ export default function ManagePathwayCoursesModal({ isOpen, onClose, pathway }) 
             type="button"
             onClick={handleAttach}
             disabled={!selectedCourseId || attachMutation.isPending}
-            className="px-4 py-3 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 disabled:opacity-60 disabled:cursor-not-allowed text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 shrink-0"
+            className="px-4 py-3 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 disabled:opacity-60 disabled:cursor-not-allowed text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 shrink-0"
           >
             <Plus className="w-4 h-4" />
             {attachMutation.isPending ? "Attaching..." : "Attach"}
@@ -199,14 +199,14 @@ export default function ManagePathwayCoursesModal({ isOpen, onClose, pathway }) 
         </div>
 
         <div>
-          <p className="text-[10px] font-mono text-stone-450 uppercase tracking-wider mb-2 font-semibold">
+          <p className="text-[11px] font-mono text-stone-450 uppercase tracking-wider mb-2 font-semibold">
             Attached Courses
           </p>
 
           {isLoading ? (
             <Loader fullScreen={false} label="Loading courses..." />
           ) : displayCourses.length === 0 ? (
-            <EmptyState
+            <EmptyState size="lg"
               icon={BookOpen}
               label="No courses attached yet."
               description="Use the picker above to attach a course to this pathway."
@@ -240,6 +240,7 @@ export default function ManagePathwayCoursesModal({ isOpen, onClose, pathway }) 
         title="Detach Course"
         message={`Are you sure you want to detach "${detachingCourse?.course?.title}" from this pathway?`}
         confirmLabel="Detach"
+        size="lg"
       />
     </Modal>
   );

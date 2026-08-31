@@ -181,7 +181,7 @@ export default function TeachersTab() {
       key: "status",
       header: "Status",
       sortable: true,
-      render: (teacher) => <StatusBadge status={teacher.account_status} />,
+      render: (teacher) => <StatusBadge size="lg" status={teacher.account_status} />,
     },
     {
       key: "courses",
@@ -243,13 +243,13 @@ export default function TeachersTab() {
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 min-w-0">
-          <SearchBar
+          <SearchBar size="lg"
             value={searchInput}
             onChange={setSearchInput}
             placeholder="Search teachers by name or email..."
           />
           <div className="w-full sm:w-56 shrink-0">
-            <SearchableSelect
+            <SearchableSelect size="lg"
               placeholder="All Statuses"
               options={STATUS_FILTER_OPTIONS}
               value={statusFilter}
@@ -262,7 +262,7 @@ export default function TeachersTab() {
           <button
             type="button"
             onClick={() => setIsBulkImportOpen(true)}
-            className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-700 text-sm font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-2"
             title="Bulk add teachers from a CSV or XLSX file"
             aria-label="Bulk add teachers from a CSV or XLSX file"
           >
@@ -272,7 +272,7 @@ export default function TeachersTab() {
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2"
             title="Create a new teacher account"
             aria-label="Create a new teacher account"
           >
@@ -283,7 +283,7 @@ export default function TeachersTab() {
       </div>
 
       <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
-        <DataTable
+        <DataTable size="lg"
           columns={columns}
           rows={paginatedTeachers}
           isLoading={status === "loading" || status === "idle"}
@@ -293,7 +293,7 @@ export default function TeachersTab() {
           sortConfig={sortConfig}
           onSortChange={toggleSort}
         />
-        <Pagination
+        <Pagination size="lg"
           page={page}
           totalPages={totalPages}
           onPageChange={setPage}
@@ -308,7 +308,7 @@ export default function TeachersTab() {
         courseCount={courseCountByTeacherId[viewTeacherId] || 0}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(deactivatingTeacher)}
         onClose={() => setDeactivatingTeacher(null)}
         onConfirm={handleDeactivateConfirm}
@@ -318,7 +318,7 @@ export default function TeachersTab() {
         confirmLabel="Deactivate"
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(activatingTeacher)}
         onClose={() => setActivatingTeacher(null)}
         onConfirm={handleActivateConfirm}
@@ -328,7 +328,7 @@ export default function TeachersTab() {
         confirmLabel="Activate"
       />
 
-      <ConfirmDialog
+      <ConfirmDialog size="lg"
         isOpen={Boolean(deletingTeacher)}
         onClose={() => setDeletingTeacher(null)}
         onConfirm={handleDeleteConfirm}

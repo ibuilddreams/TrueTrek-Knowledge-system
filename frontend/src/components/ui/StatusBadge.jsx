@@ -22,13 +22,13 @@ const STATUS_COLORS = {
   REJECTED: "bg-rose-50 text-rose-700 border-rose-200",
 };
 
-export default function StatusBadge({ status }) {
+export default function StatusBadge({ status, size = "base" }) {
   const normalized = (status || "").toUpperCase();
   const colorClass = STATUS_COLORS[normalized] || "bg-stone-100 text-stone-600 border-stone-200";
 
   return (
     <span
-      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest border shrink-0 ${colorClass}`}
+      className={`inline-flex items-center px-2 py-0.5 rounded ${size === "lg" ? "text-[11px]" : "text-[10px]"} font-mono uppercase tracking-widest border shrink-0 ${colorClass}`}
     >
       {status || "Unknown"}
     </span>
