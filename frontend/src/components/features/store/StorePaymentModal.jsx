@@ -17,16 +17,18 @@ function formatExpiry(value) {
   return `${digits.slice(0, 2)}/${digits.slice(2)}`;
 }
 
-const FIELD_CLASS =
-  "w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 focus:border-amber-600 rounded-xl text-xs font-mono text-stone-800 placeholder:text-stone-400 focus:outline-none focus:bg-white transition";
-
-function Field({ label, ...inputProps }) {
+function Field({ label, isLg, ...inputProps }) {
+  const fieldClass = `w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 focus:border-amber-600 rounded-xl ${
+    isLg ? "text-sm" : "text-xs"
+  } font-mono text-stone-800 placeholder:text-stone-400 focus:outline-none focus:bg-white transition`;
   return (
     <div>
-      <label className="text-[9px] font-mono uppercase tracking-wider text-stone-400 block mb-1.5">
+      <label
+        className={`${isLg ? "text-[10px]" : "text-[9px]"} font-mono uppercase tracking-wider text-stone-400 block mb-1.5`}
+      >
         {label}
       </label>
-      <input {...inputProps} className={FIELD_CLASS} />
+      <input {...inputProps} className={fieldClass} />
     </div>
   );
 }
@@ -37,7 +39,9 @@ export default function StorePaymentModal({
   isSubmitting = false,
   onClose,
   onConfirm,
+  size = "base",
 }) {
+  const isLg = size === "lg";
   const [form, setForm] = useState({ cardholderName: "", cardNumber: "", expiry: "", cvv: "" });
 
   const subtotal = items.reduce((sum, course) => sum + (Number(course.amount) || 0), 0);
@@ -88,7 +92,9 @@ export default function StorePaymentModal({
                 </div>
                 <div>
                   <h3 className="font-serif font-bold text-stone-900">Checkout</h3>
-                  <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
+                  <p
+                    className={`${isLg ? "text-[11px]" : "text-[10px]"} font-mono uppercase tracking-wider text-stone-400`}
+                  >
                     Simulated payment — no real charge
                   </p>
                 </div>
@@ -96,14 +102,19 @@ export default function StorePaymentModal({
 
               <div className="rounded-xl border border-stone-200 bg-stone-50/80 p-3.5 space-y-2">
                 {items.map((course) => (
-                  <div key={course.id} className="flex items-center justify-between gap-3 text-xs">
+                  <div
+                    key={course.id}
+                    className={`flex items-center justify-between gap-3 ${isLg ? "text-sm" : "text-xs"}`}
+                  >
                     <span className="text-stone-600 truncate">{course.title}</span>
                     <span className="font-mono text-stone-800 shrink-0">
                       {formatCoursePrice(course.amount)}
                     </span>
                   </div>
                 ))}
-                <div className="flex items-center justify-between pt-2 border-t border-stone-200 text-xs font-bold">
+                <div
+                  className={`flex items-center justify-between pt-2 border-t border-stone-200 font-bold ${isLg ? "text-sm" : "text-xs"}`}
+                >
                   <span className="text-stone-900">Total</span>
                   <span className="font-mono text-amber-800">{formatCoursePrice(subtotal)}</span>
                 </div>
@@ -116,6 +127,7 @@ export default function StorePaymentModal({
                   value={form.cardholderName}
                   onChange={updateField("cardholderName")}
                   autoComplete="off"
+                  isLg={isLg}
                 />
                 <Field
                   label="Card Number"
@@ -124,6 +136,7 @@ export default function StorePaymentModal({
                   value={form.cardNumber}
                   onChange={updateField("cardNumber", formatCardNumber)}
                   autoComplete="off"
+                  isLg={isLg}
                 />
                 <div className="grid grid-cols-2 gap-3.5">
                   <Field
@@ -133,6 +146,7 @@ export default function StorePaymentModal({
                     value={form.expiry}
                     onChange={updateField("expiry", formatExpiry)}
                     autoComplete="off"
+                    isLg={isLg}
                   />
                   <Field
                     label="CVV"
@@ -142,10 +156,13 @@ export default function StorePaymentModal({
                     value={form.cvv}
                     onChange={updateField("cvv", (v) => v.replace(/\D/g, "").slice(0, 4))}
                     autoComplete="off"
+                    isLg={isLg}
                   />
                 </div>
 
-                <p className="flex items-center gap-1.5 text-[10px] text-stone-400">
+                <p
+                  className={`flex items-center gap-1.5 ${isLg ? "text-[11px]" : "text-[10px]"} text-stone-400`}
+                >
                   <Lock className="w-3 h-3 shrink-0" />
                   This is a demo checkout. Card details are never sent or stored.
                 </p>
@@ -153,7 +170,7 @@ export default function StorePaymentModal({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-mono text-xs font-extrabold uppercase tracking-wider py-3.5 rounded-xl shadow-md transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+                  className={`w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-mono ${isLg ? "text-sm" : "text-xs"} font-extrabold uppercase tracking-wider py-3.5 rounded-xl shadow-md transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed`}
                 >
                   <ShieldCheck className="w-4 h-4" />
                   {isSubmitting ? "Processing..." : "Confirm Payment"}

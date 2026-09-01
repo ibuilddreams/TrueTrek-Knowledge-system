@@ -21,7 +21,7 @@ export default function Footer() {
                 TrueTrek Learning LLC
               </h4>
             </div>
-            <p className="text-xs text-stone-400 font-light leading-relaxed max-w-sm">
+            <p className="text-sm text-stone-400 font-light leading-relaxed max-w-sm">
               Licensing the world&apos;s leading high-performance administrative
               software covenants. We deploy regulatory, legal, and
               neurobiological support systems to selectively elite partners.
@@ -29,10 +29,10 @@ export default function Footer() {
           </div>
 
           <div className="space-y-3">
-            <h5 className="text-xs uppercase font-mono tracking-widest text-[#faece1]">
+            <h5 className="text-sm uppercase font-mono tracking-widest text-[#faece1]">
               Incubator Core
             </h5>
-            <ul className="space-y-1.5 text-xs text-left">
+            <ul className="space-y-1.5 text-sm text-left">
               {FOOTER_LINKS.map((link) => (
                 <li key={link.href + link.label}>
                   <Link
@@ -49,10 +49,10 @@ export default function Footer() {
           </div>
 
           <div className="space-y-3">
-            <h5 className="text-xs uppercase font-mono tracking-widest text-[#faece1]">
+            <h5 className="text-sm uppercase font-mono tracking-widest text-[#faece1]">
               Governance & Auditing
             </h5>
-            <ul className="space-y-1.5 text-xs">
+            <ul className="space-y-1.5 text-sm">
               {GOVERNANCE_BADGES.map((badge) => (
                 <li
                   key={badge}
@@ -66,7 +66,7 @@ export default function Footer() {
           </div>
         </div>
 
-        <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-[11px] text-stone-500 font-mono">
+        <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-stone-500 font-mono">
           <p>
             &copy; {new Date().getFullYear()} TrueTrek Learning LLC. All rights
             or covenants reserved. Developed with Google AI Studio.

@@ -190,13 +190,13 @@ Instructions:
             <Brain className="w-6 h-6 animate-pulse" />
           </div>
           <div className="space-y-1 text-left">
-            <span className="text-amber-500 font-mono text-[9px] font-bold tracking-widest uppercase block">
+            <span className="text-amber-500 font-mono text-[10px] font-bold tracking-widest uppercase block">
               Intellectual Telemetry Analysis
             </span>
             <h3 className="text-xl md:text-2xl font-serif font-black tracking-tight text-white">
               Advisory Procurement Suite
             </h3>
-            <p className="text-xs text-stone-400 font-light leading-relaxed">
+            <p className="text-sm text-stone-400 font-light leading-relaxed">
               Connect your personal scenarios directly with council advisors to formulate
               targeted pathway acquisitions. Get professional feedback on compliance rules and
               purchase-ready materials.
@@ -205,7 +205,7 @@ Instructions:
         </div>
 
         <div className="space-y-3">
-          <label className="text-[10px] font-mono text-stone-400 uppercase tracking-widest block text-left">
+          <label className="text-[11px] font-mono text-stone-400 uppercase tracking-widest block text-left">
             Select Your Strategic Advisor
           </label>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
@@ -232,13 +232,13 @@ Instructions:
                     referrerPolicy="no-referrer"
                   />
                   <div className="min-w-0">
-                    <p className="text-xs font-bold text-stone-100 truncate">{advisor.name}</p>
-                    <p className="text-[9px] font-mono text-stone-450 truncate uppercase mt-0.5">
+                    <p className="text-sm font-bold text-stone-100 truncate">{advisor.name}</p>
+                    <p className="text-[10px] font-mono text-stone-450 truncate uppercase mt-0.5">
                       {advisor.title.split("&")[0]}
                     </p>
                   </div>
                 </div>
-                <p className="text-[9.5px] text-stone-400 font-light line-clamp-2 italic leading-normal">
+                <p className="text-[10.5px] text-stone-400 font-light line-clamp-2 italic leading-normal">
                   &quot;{advisor.quote}&quot;
                 </p>
               </button>
@@ -248,7 +248,7 @@ Instructions:
 
         <div className="bg-stone-950 rounded-2xl p-6 border border-stone-850 space-y-4">
           <div className="text-left">
-            <label className="text-[10px] font-mono text-[#faece1] uppercase tracking-widest block mb-2 font-bold">
+            <label className="text-[11px] font-mono text-[#faece1] uppercase tracking-widest block mb-2 font-bold">
               Configure Your Growth Goals / Scenario
             </label>
             <div className="relative">
@@ -258,16 +258,16 @@ Instructions:
                 value={userQuery}
                 onChange={(e) => setUserQuery(e.target.value)}
                 placeholder="e.g., I am a high school varsity athlete navigating college recruitment and NIL options. I want to build a compliant media presence and avoid contract traps. What do I need?"
-                className="w-full bg-stone-900/60 border border-stone-800 rounded-xl p-4 pr-12 text-xs font-mono text-stone-100 placeholder-stone-550 focus:outline-none focus:border-amber-600 focus:bg-stone-900 leading-relaxed"
+                className="w-full bg-stone-900/60 border border-stone-800 rounded-xl p-4 pr-12 text-sm font-mono text-stone-100 placeholder-stone-550 focus:outline-none focus:border-amber-600 focus:bg-stone-900 leading-relaxed"
               />
-              <div className="absolute bottom-3.5 right-3.5 text-stone-500 text-[10px] font-mono select-none">
+              <div className="absolute bottom-3.5 right-3.5 text-stone-500 text-[11px] font-mono select-none">
                 {userQuery.length} chars
               </div>
             </div>
           </div>
 
           <div className="space-y-1.5 text-left">
-            <p className="text-[9px] font-mono text-stone-550 uppercase tracking-wider font-semibold">
+            <p className="text-[10px] font-mono text-stone-550 uppercase tracking-wider font-semibold">
               Quick Inquiries
             </p>
             <div className="flex flex-wrap gap-2">
@@ -280,7 +280,7 @@ Instructions:
                   id={`preset-store-query-${idx}`}
                   key={idx}
                   onClick={() => setUserQuery(preset)}
-                  className="bg-[#141211] hover:bg-stone-800 border border-stone-800 text-stone-300 text-[10px] px-3.5 py-1.5 rounded-lg transition text-left cursor-pointer"
+                  className="bg-[#141211] hover:bg-stone-800 border border-stone-800 text-stone-300 text-[11px] px-3.5 py-1.5 rounded-lg transition text-left cursor-pointer"
                 >
                   {preset}
                 </button>
@@ -289,7 +289,7 @@ Instructions:
           </div>
 
           <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-2">
-            <p className="text-[10px] font-mono text-stone-400 uppercase flex items-center gap-1.5">
+            <p className="text-[11px] font-mono text-stone-400 uppercase flex items-center gap-1.5">
               <Lightbulb className="w-3.5 h-3.5 text-amber-500 shrink-0" />
               Advisor recommendations appear below instantly
             </p>
@@ -297,7 +297,7 @@ Instructions:
               id="query-store-advisor-btn"
               onClick={handleConsultAdvisor}
               disabled={isAIRecommending || !userQuery.trim()}
-              className="w-full sm:w-auto bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-stone-950 text-xs font-mono font-extrabold uppercase tracking-widest py-3 px-6 rounded-xl transition flex items-center justify-center gap-2 shadow-md shadow-amber-970/15 cursor-pointer"
+              className="w-full sm:w-auto bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-stone-950 text-sm font-mono font-extrabold uppercase tracking-widest py-3 px-6 rounded-xl transition flex items-center justify-center gap-2 shadow-md shadow-amber-970/15 cursor-pointer"
             >
               {isAIRecommending ? "Compiling Parameters..." : "Ask AI Advisor"}
               <Send className="w-3.5 h-3.5" />
@@ -319,12 +319,12 @@ Instructions:
               <div className="flex justify-between items-center border-b border-stone-850 pb-4">
                 <div className="flex items-center gap-2">
                   <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
-                  <span className="text-xs font-mono font-bold uppercase tracking-wider text-stone-205">
+                  <span className="text-sm font-mono font-bold uppercase tracking-wider text-stone-205">
                     Analysis Report from{" "}
                     {ADVISOR_PERSONAS.find((a) => a.id === selectedAIAdvisorId)?.name}
                   </span>
                 </div>
-                <span className="text-[9px] font-mono uppercase bg-stone-850 px-2 py-0.5 rounded text-stone-400">
+                <span className="text-[10px] font-mono uppercase bg-stone-850 px-2 py-0.5 rounded text-stone-400">
                   Clearance Protocol Active
                 </span>
               </div>
@@ -332,19 +332,19 @@ Instructions:
               {isAIRecommending ? (
                 <div className="flex flex-col items-center justify-center py-12 space-y-4">
                   <PingDotSpinner />
-                  <p className="text-xs font-mono text-stone-450 animate-pulse uppercase tracking-wider">
+                  <p className="text-sm font-mono text-stone-450 animate-pulse uppercase tracking-wider">
                     Retrieving Council Match Intelligence...
                   </p>
                 </div>
               ) : (
                 <div className="space-y-6">
-                  <MarkdownMiniRenderer text={advisorFeedback} />
+                  <MarkdownMiniRenderer text={advisorFeedback} size="lg" />
 
                   {matchedProducts.length > 0 && (
                     <div className="border-t border-stone-850 pt-5 mt-4 space-y-4">
                       <div className="flex items-center gap-2 text-left">
                         <Package className="w-4.5 h-4.5 text-amber-500" />
-                        <h4 className="text-xs font-mono font-bold uppercase tracking-wider text-amber-500">
+                        <h4 className="text-sm font-mono font-bold uppercase tracking-wider text-amber-500">
                           RECOMMENDED ACQUISITION PATHWAY ASSETS ({matchedProducts.length})
                         </h4>
                       </div>
@@ -364,8 +364,8 @@ Instructions:
                                 referrerPolicy="no-referrer"
                               />
                               <div className="min-w-0 text-left">
-                                <p className="text-xs font-bold text-white truncate">{p.name}</p>
-                                <p className="text-[10px] font-mono text-amber-500 mt-0.5">
+                                <p className="text-sm font-bold text-white truncate">{p.name}</p>
+                                <p className="text-[11px] font-mono text-amber-500 mt-0.5">
                                   ${p.price.toLocaleString()}
                                 </p>
                               </div>
@@ -374,7 +374,7 @@ Instructions:
                             <button
                               id={`add-matched-to-cart-${p.id}`}
                               onClick={() => onAcquireAsset(p)}
-                              className="bg-amber-600 hover:bg-amber-500 text-stone-950 font-mono text-[10px] uppercase font-bold py-2 px-3.5 rounded-lg shrink-0 transition cursor-pointer flex items-center gap-1"
+                              className="bg-amber-600 hover:bg-amber-500 text-stone-950 font-mono text-[11px] uppercase font-bold py-2 px-3.5 rounded-lg shrink-0 transition cursor-pointer flex items-center gap-1"
                             >
                               <Plus className="w-3 h-3" />
                               Acquire Asset

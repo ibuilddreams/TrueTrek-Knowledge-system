@@ -27,6 +27,7 @@ import SectionHeading from "@/components/ui/SectionHeading";
 import CloseButton from "@/components/ui/CloseButton";
 import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
+import TierPathwayAccordion from "./TierPathwayAccordion";
 
 const STATUS_META = {
   LOCKED: { label: "LOCKED", icon: Lock, pulse: false },
@@ -95,7 +96,7 @@ function StatusPill({ status, vault }) {
   const Icon = meta.icon;
   return (
     <span
-      className={`flex items-center gap-1 text-[10px] font-mono font-bold border px-2.5 py-1 rounded-full shrink-0 ${
+      className={`flex items-center gap-1 text-[11px] font-mono font-bold border px-2.5 py-1 rounded-full shrink-0 ${
         meta.pulse ? "animate-pulse" : ""
       } ${getStatusColor(status, vault)}`}
     >
@@ -193,9 +194,10 @@ export default function Curriculum() {
             isVault ? "text-stone-100" : "text-stone-900"
           }`}
           subtitle="Nine tiers, each built around a stage of the journey — from foundational readiness through elite and executive mastery. Explore what's inside before you commit to a pathway."
-          subtitleClassName={`text-sm max-w-2xl mx-auto font-light leading-relaxed mb-4 ${
+          subtitleClassName={`text-base max-w-2xl mx-auto font-light leading-relaxed mb-4 ${
             isVault ? "text-stone-400" : "text-stone-600"
           }`}
+          size="lg"
         />
 
         {isAuthenticated ? (
@@ -215,14 +217,14 @@ export default function Curriculum() {
               </div>
               <div>
                 <p
-                  className={`text-xs font-mono font-bold uppercase tracking-wide ${
+                  className={`text-sm font-mono font-bold uppercase tracking-wide ${
                     isVault ? "text-emerald-300" : "text-emerald-800"
                   }`}
                 >
                   Signed In
                 </p>
                 <p
-                  className={`text-[11px] font-light mt-0.5 ${
+                  className={`text-xs font-light mt-0.5 ${
                     isVault ? "text-emerald-400" : "text-emerald-700"
                   }`}
                 >
@@ -233,7 +235,7 @@ export default function Curriculum() {
             <button
               id="goto-portal-btn"
               onClick={onNavigateToPortal}
-              className="text-[10px] font-mono font-semibold uppercase bg-emerald-700 hover:bg-emerald-850 text-white px-4 py-2 rounded-lg transition duration-200 shadow-sm self-start sm:self-auto shrink-0"
+              className="text-[11px] font-mono font-semibold uppercase bg-emerald-700 hover:bg-emerald-850 text-white px-4 py-2 rounded-lg transition duration-200 shadow-sm self-start sm:self-auto shrink-0"
             >
               Open My Portal →
             </button>
@@ -255,14 +257,14 @@ export default function Curriculum() {
               </div>
               <div>
                 <p
-                  className={`text-xs font-mono font-bold uppercase tracking-wide ${
+                  className={`text-sm font-mono font-bold uppercase tracking-wide ${
                     isVault ? "text-amber-400" : "text-amber-900"
                   }`}
                 >
                   Browsing as Guest
                 </p>
                 <p
-                  className={`text-[11px] font-light mt-0.5 ${
+                  className={`text-xs font-light mt-0.5 ${
                     isVault ? "text-stone-400" : "text-stone-500"
                   }`}
                 >
@@ -273,7 +275,7 @@ export default function Curriculum() {
             <button
               id="goto-login-btn"
               onClick={() => router.push(ROUTES.LOGIN)}
-              className={`text-[10px] font-mono font-semibold uppercase px-4 py-2 rounded-lg transition duration-200 shadow-sm self-start sm:self-auto shrink-0 ${
+              className={`text-[11px] font-mono font-semibold uppercase px-4 py-2 rounded-lg transition duration-200 shadow-sm self-start sm:self-auto shrink-0 ${
                 isVault
                   ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
                   : "bg-stone-900 hover:bg-stone-800 text-white"
@@ -290,7 +292,7 @@ export default function Curriculum() {
           }`}
         >
           <span
-            className={`mr-2 font-mono text-xs flex items-center gap-1 ${
+            className={`mr-2 font-mono text-sm flex items-center gap-1 ${
               isVault ? "text-stone-400" : "text-stone-500"
             }`}
           >
@@ -301,7 +303,7 @@ export default function Curriculum() {
               id={`filter-tag-${filter.replace(/\s+/g, "-").toLowerCase()}`}
               key={filter}
               onClick={() => setSelectedFilter(filter)}
-              className={`px-4 py-2 rounded-full text-xs font-mono tracking-wide transition duration-300 border ${
+              className={`px-4 py-2 rounded-full text-sm font-mono tracking-wide transition duration-300 border ${
                 selectedFilter === filter
                   ? isVault
                     ? "bg-amber-600 text-stone-950 border-amber-600 font-semibold"
@@ -340,13 +342,13 @@ export default function Curriculum() {
             <h2 className={`text-xl font-serif font-bold mb-2 ${isVault ? "text-stone-50" : "text-stone-900"}`}>
               Failed to Load Curriculum
             </h2>
-            <p className={`text-xs font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+            <p className={`text-sm font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
               {getApiErrorMessage(error, "Unable to load the curriculum right now.")}
             </p>
             <button
               type="button"
               onClick={() => refetch()}
-              className={`inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition ${
+              className={`inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition ${
                 isVault
                   ? "bg-amber-600 hover:bg-amber-500 text-stone-100"
                   : "bg-stone-900 hover:bg-stone-800 text-stone-100"
@@ -368,6 +370,7 @@ export default function Curriculum() {
               icon={Layers3}
               label="No tiers in this category yet"
               description="Try a different filter, or check back soon."
+              size="lg"
             />
           </div>
         )}
@@ -399,14 +402,14 @@ export default function Curriculum() {
                     >
                       <div className="flex items-center gap-2 min-w-0">
                         <span
-                          className={`font-mono text-xs font-bold px-2.5 py-1 rounded-md shrink-0 ${
+                          className={`font-mono text-sm font-bold px-2.5 py-1 rounded-md shrink-0 ${
                             isVault ? "text-amber-500 bg-amber-600/15" : "text-amber-750 bg-amber-50"
                           }`}
                         >
                           Tier {tier.level}
                         </span>
                         <span
-                          className={`text-[10px] uppercase font-mono tracking-wider px-2 py-0.5 rounded-full border truncate ${getCategoryColor(
+                          className={`text-[11px] uppercase font-mono tracking-wider px-2 py-0.5 rounded-full border truncate ${getCategoryColor(
                             tier.category?.name,
                             isVault
                           )}`}
@@ -427,11 +430,11 @@ export default function Curriculum() {
                       {tier.name}
                     </h3>
                     {tier.audience && (
-                      <p className="text-xs font-mono text-stone-400 mb-3 tracking-tight">
+                      <p className="text-sm font-mono text-stone-400 mb-3 tracking-tight">
                         Focus: {tier.audience}
                       </p>
                     )}
-                    <p className="text-[11px] font-mono uppercase tracking-wider text-stone-400 mb-3">
+                    <p className="text-xs font-mono uppercase tracking-wider text-stone-400 mb-3">
                       {tier.pathway_count} pathway{tier.pathway_count === 1 ? "" : "s"}
                     </p>
                   </div>
@@ -441,11 +444,11 @@ export default function Curriculum() {
                       isVault ? "border-stone-800" : "border-stone-100"
                     }`}
                   >
-                    <span className="text-stone-400 text-[11px] font-mono">
+                    <span className="text-stone-400 text-xs font-mono">
                       {tier.estimated_duration || "Self-paced"}
                     </span>
                     <span
-                      className={`text-xs font-semibold flex items-center gap-0.5 group-hover:gap-1.5 transition-all ${
+                      className={`text-sm font-semibold flex items-center gap-0.5 group-hover:gap-1.5 transition-all ${
                         isVault ? "text-amber-500" : "text-amber-700"
                       }`}
                     >
@@ -501,7 +504,7 @@ export default function Curriculum() {
                             Tier {activeTier.level}
                           </span>
                           <span
-                            className={`text-xs uppercase font-mono tracking-widest px-3 py-1 rounded-full border ${getCategoryColor(
+                            className={`text-sm uppercase font-mono tracking-widest px-3 py-1 rounded-full border ${getCategoryColor(
                               activeTier.category?.name,
                               isVault
                             )}`}
@@ -524,7 +527,7 @@ export default function Curriculum() {
                       </h3>
                       {activeTier.audience && (
                         <p
-                          className={`font-mono text-xs tracking-wider uppercase mb-4 ${
+                          className={`font-mono text-sm tracking-wider uppercase mb-4 ${
                             isVault ? "text-stone-400" : "text-stone-500"
                           }`}
                         >
@@ -538,7 +541,7 @@ export default function Curriculum() {
                             isVault ? "bg-stone-900/40 border-stone-800" : "bg-stone-50 border-stone-200/60"
                           }`}
                         >
-                          <p className="text-stone-400 text-[10px] font-mono uppercase tracking-wider mb-1">
+                          <p className="text-stone-400 text-[11px] font-mono uppercase tracking-wider mb-1">
                             AUDIENCE SCOPE
                           </p>
                           <p className={`text-sm font-medium ${isVault ? "text-stone-200" : "text-stone-800"}`}>
@@ -559,7 +562,7 @@ export default function Curriculum() {
                         <div className="flex items-center gap-2 mb-3">
                           <Compass className="w-4 h-4 text-amber-700" />
                           <h4
-                            className={`text-xs font-mono uppercase tracking-wider ${
+                            className={`text-sm font-mono uppercase tracking-wider ${
                               isVault ? "text-stone-100" : "text-stone-900"
                             }`}
                           >
@@ -567,22 +570,9 @@ export default function Curriculum() {
                           </h4>
                         </div>
                         {activeTier.pathways?.length ? (
-                          <div className="flex flex-wrap gap-2">
-                            {activeTier.pathways.map((tierPathway) => (
-                              <span
-                                key={tierPathway.id}
-                                className={`px-3.5 py-2 rounded-xl text-xs font-medium border ${
-                                  isVault
-                                    ? "bg-stone-800/60 text-stone-300 border-stone-700/50"
-                                    : "bg-stone-100 text-stone-800 border-stone-200/40"
-                                }`}
-                              >
-                                {tierPathway.pathway.name}
-                              </span>
-                            ))}
-                          </div>
+                          <TierPathwayAccordion pathways={activeTier.pathways} />
                         ) : (
-                          <p className={`text-xs font-light ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+                          <p className={`text-sm font-light ${isVault ? "text-stone-500" : "text-stone-400"}`}>
                             Pathways for this tier are being finalized.
                           </p>
                         )}
@@ -592,7 +582,7 @@ export default function Curriculum() {
                         <div className="flex items-center gap-2 mb-3">
                           <GraduationCap className="w-4 h-4 text-amber-700" />
                           <h4
-                            className={`text-xs font-mono uppercase tracking-wider ${
+                            className={`text-sm font-mono uppercase tracking-wider ${
                               isVault ? "text-stone-100" : "text-stone-900"
                             }`}
                           >
@@ -604,7 +594,7 @@ export default function Curriculum() {
                             {activeTier.pathways.map((tierPathway) => (
                               <li
                                 key={tierPathway.id}
-                                className={`flex items-start gap-2.5 text-xs leading-relaxed ${
+                                className={`flex items-start gap-2.5 text-sm leading-relaxed ${
                                   isVault ? "text-stone-400" : "text-stone-650"
                                 }`}
                               >
@@ -618,7 +608,7 @@ export default function Curriculum() {
                             ))}
                           </ul>
                         ) : (
-                          <p className={`text-xs font-light ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+                          <p className={`text-sm font-light ${isVault ? "text-stone-500" : "text-stone-400"}`}>
                             Outcomes will appear once pathways are attached to this tier.
                           </p>
                         )}
@@ -631,7 +621,7 @@ export default function Curriculum() {
                       }`}
                     >
                       <div
-                        className={`flex items-center gap-2 font-mono text-xs ${
+                        className={`flex items-center gap-2 font-mono text-sm ${
                           isVault ? "text-stone-400" : "text-stone-500"
                         }`}
                       >
@@ -646,7 +636,7 @@ export default function Curriculum() {
                       <button
                         id="drawer-select-pathway-btn"
                         onClick={handleSelectPathway}
-                        className={`font-semibold text-xs px-5 py-2.5 rounded-lg tracking-wide transition flex items-center gap-1.5 ${
+                        className={`font-semibold text-sm px-5 py-2.5 rounded-lg tracking-wide transition flex items-center gap-1.5 ${
                           isVault
                             ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
                             : "bg-stone-900 hover:bg-stone-800 text-white"
