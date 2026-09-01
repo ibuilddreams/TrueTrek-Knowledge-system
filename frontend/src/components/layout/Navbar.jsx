@@ -53,7 +53,7 @@ export default function Navbar() {
 
       <div
         id="desktop-nav-links"
-        className="hidden md:flex gap-8 font-mono text-xs tracking-wider capitalize font-semibold"
+        className="hidden md:flex gap-8 font-mono text-sm tracking-wider capitalize font-semibold"
       >
         {NAV_LINKS.map((link) => (
           <Link
@@ -94,7 +94,7 @@ export default function Navbar() {
         <Link
           id="nav-portal-login-btn"
           href={ROUTES.LOGIN}
-          className={`font-mono text-xs uppercase tracking-wider px-6 py-2.5 rounded-full font-bold transition duration-250 shadow-sm flex items-center gap-2 select-none ${
+          className={`font-mono text-sm uppercase tracking-wider px-6 py-2.5 rounded-full font-bold transition duration-250 shadow-sm flex items-center gap-2 select-none ${
             isVault
               ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
               : "bg-stone-900 hover:bg-stone-800 text-stone-100"
@@ -119,7 +119,7 @@ export default function Navbar() {
           aria-label="Toggle mobile navigation menu"
           aria-expanded={mobileMenuOpen}
         >
-          <span className="font-sans font-semibold text-xs">☰</span>
+          <span className="font-sans font-semibold text-sm">☰</span>
         </button>
       </div>
     </nav>
