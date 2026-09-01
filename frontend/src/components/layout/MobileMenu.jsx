@@ -26,7 +26,7 @@ export default function MobileMenu() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className={`md:hidden fixed top-20 left-0 w-full border-b z-40 p-6 flex flex-col gap-4 font-mono text-xs font-bold uppercase transition-colors duration-300 ${
+          className={`md:hidden fixed top-20 left-0 w-full border-b z-40 p-6 flex flex-col gap-4 font-mono text-sm font-bold uppercase transition-colors duration-300 ${
             isVault
               ? "bg-[#161412] border-stone-800 text-stone-300"
               : "bg-white border-stone-200 text-stone-500"
@@ -56,7 +56,7 @@ export default function MobileMenu() {
               id="mobile-theme-toggle"
               type="button"
               onClick={toggleTheme}
-              className={`px-3 py-1.5 rounded-full border text-[10px] font-mono tracking-wider transition duration-200 ${
+              className={`px-3 py-1.5 rounded-full border text-[11px] font-mono tracking-wider transition duration-200 ${
                 isVault
                   ? "bg-amber-950/40 border-amber-500/50 text-amber-500"
                   : "bg-stone-100 border-stone-300 text-stone-600"
