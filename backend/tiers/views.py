@@ -52,7 +52,7 @@ class PublicTierDetailView(generics.GenericAPIView):
         except Tier.DoesNotExist:
             return error_response(message="Tier with the given id does not exist.", status_code=404)
 
-        serializer = TierDetailSerializer(tier, context={"request": request})
+        serializer = TierDetailSerializer(tier, context={"request": request, "public_only": True})
         return success_response(serializer.data, message="Tier fetched successfully")
 
 

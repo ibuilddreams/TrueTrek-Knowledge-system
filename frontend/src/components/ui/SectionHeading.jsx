@@ -9,11 +9,18 @@ export default function SectionHeading({
   eyebrowClassName = "text-amber-500",
   headingClassName = "text-3xl md:text-4xl font-serif font-semibold tracking-tight text-white",
   subtitleClassName = "text-stone-400 text-sm max-w-xl mx-auto font-light leading-relaxed",
+  size = "base",
 }) {
+  const isLg = size === "lg";
   return (
     <div className={[align === "center" ? "text-center" : "", className].filter(Boolean).join(" ")}>
       {eyebrow && (
-        <span className={[eyebrowClassName, "text-xs font-mono uppercase tracking-widest block mb-3"].join(" ")}>
+        <span
+          className={[
+            eyebrowClassName,
+            `${isLg ? "text-sm" : "text-xs"} font-mono uppercase tracking-widest block mb-3`,
+          ].join(" ")}
+        >
           {eyebrow}
         </span>
       )}

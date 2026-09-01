@@ -56,7 +56,7 @@ export default function StoreCourseDetailModal({
               )}
               <div className="absolute inset-0 bg-gradient-to-t from-stone-950/60 to-transparent"></div>
               <div className="absolute bottom-6 left-6 text-white text-left">
-                <span className="text-[9px] font-mono tracking-wider font-extrabold uppercase bg-amber-600 text-white px-2 py-0.5 rounded-md mb-2 inline-block">
+                <span className="text-[10px] font-mono tracking-wider font-extrabold uppercase bg-amber-600 text-white px-2 py-0.5 rounded-md mb-2 inline-block">
                   {course.category?.name || "General"}
                 </span>
                 <h3 className="text-2xl font-serif font-bold tracking-tight text-white leading-tight">
@@ -67,11 +67,11 @@ export default function StoreCourseDetailModal({
 
             <div className="p-6 space-y-4">
               <div className="flex items-center justify-between">
-                <span className="text-xs font-mono font-bold text-[#faece1] bg-[#1c1917] px-3 py-1.5 rounded-lg capitalize">
+                <span className="text-sm font-mono font-bold text-[#faece1] bg-[#1c1917] px-3 py-1.5 rounded-lg capitalize">
                   {(course.difficulty || "beginner").toLowerCase()}
                 </span>
                 <div className="text-right">
-                  <span className="text-[9px] font-mono font-semibold text-stone-400 block uppercase tracking-wider">
+                  <span className="text-[10px] font-mono font-semibold text-stone-400 block uppercase tracking-wider">
                     Unit Investment
                   </span>
                   <span className="text-2xl font-mono font-bold text-stone-900">
@@ -81,25 +81,25 @@ export default function StoreCourseDetailModal({
               </div>
 
               <div className="space-y-2 border-t border-stone-100 pt-4">
-                <p className="text-xs font-mono uppercase text-amber-800 tracking-wider font-bold">
+                <p className="text-sm font-mono uppercase text-amber-800 tracking-wider font-bold">
                   Course Overview
                 </p>
-                <p className="text-xs text-stone-600 leading-relaxed font-light">
+                <p className="text-sm text-stone-600 leading-relaxed font-light">
                   {course.description || "No description has been added for this course yet."}
                 </p>
               </div>
 
-              <div className="space-y-2 bg-stone-50 p-4 border border-stone-200 rounded-xl text-xs">
+              <div className="space-y-2 bg-stone-50 p-4 border border-stone-200 rounded-xl text-sm">
                 <p className="font-bold flex items-center gap-1.5 text-stone-850">
                   <ShieldCheck className="w-4 h-4 text-emerald-600" />
                   Course Details
                 </p>
-                <div className="flex items-center gap-1.5 text-[11px] text-stone-500 leading-relaxed">
+                <div className="flex items-center gap-1.5 text-xs text-stone-500 leading-relaxed">
                   <Clock className="w-3.5 h-3.5 text-amber-700 shrink-0" />
                   {formatDurationMinutes(course.duration_minutes)}
                 </div>
                 {course.tags?.length > 0 && (
-                  <div className="flex items-center gap-1.5 text-[11px] text-stone-500 leading-relaxed">
+                  <div className="flex items-center gap-1.5 text-xs text-stone-500 leading-relaxed">
                     <Layers className="w-3.5 h-3.5 text-amber-700 shrink-0" />
                     {course.tags.map((tag) => tag.name).join(", ")}
                   </div>
@@ -111,7 +111,7 @@ export default function StoreCourseDetailModal({
               <button
                 type="button"
                 onClick={onClose}
-                className="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-700 font-mono text-xs uppercase font-extrabold py-3 rounded-xl transition"
+                className="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-700 font-mono text-sm uppercase font-extrabold py-3 rounded-xl transition"
               >
                 Return to Catalog
               </button>
@@ -123,7 +123,7 @@ export default function StoreCourseDetailModal({
                     onClose();
                   }}
                   disabled={isPending}
-                  className={`flex-1 font-mono text-xs uppercase font-extrabold py-3 rounded-xl transition flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed ${
+                  className={`flex-1 font-mono text-sm uppercase font-extrabold py-3 rounded-xl transition flex items-center justify-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed ${
                     isInCart
                       ? "bg-stone-100 hover:bg-red-100 text-stone-700 hover:text-red-700"
                       : "bg-[#141211] hover:bg-amber-600 hover:text-white text-white"
@@ -141,7 +141,7 @@ export default function StoreCourseDetailModal({
                 </button>
               ) : (
                 <span
-                  className="flex-1 font-mono text-[11px] uppercase font-bold py-3 rounded-xl flex items-center justify-center gap-1.5 bg-stone-100 text-stone-400"
+                  className="flex-1 font-mono text-xs uppercase font-bold py-3 rounded-xl flex items-center justify-center gap-1.5 bg-stone-100 text-stone-400"
                   title="Only student accounts can add courses to their cart"
                 >
                   <GraduationCap className="w-4 h-4" />

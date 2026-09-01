@@ -212,22 +212,22 @@ export default function IntroVideo() {
         <div className="lg:col-span-8 flex-1 space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-stone-850 pb-4">
             <div className="space-y-1">
-              <span className="text-amber-500 font-mono text-[10px] font-bold tracking-widest uppercase flex items-center gap-1.5 leading-none">
+              <span className="text-amber-500 font-mono text-[11px] font-bold tracking-widest uppercase flex items-center gap-1.5 leading-none">
                 <Clock className="w-3.5 h-3.5 animate-pulse" />
                 Active Orientation Broadcast
               </span>
               <h3 className="text-lg md:text-xl font-serif font-black text-stone-105">
                 {activeChannel.title}
               </h3>
-              <p className="text-[11px] text-stone-400 font-mono">
+              <p className="text-xs text-stone-400 font-mono">
                 Mastermind Narrator: <strong className="text-amber-100">{activeChannel.speaker}</strong>
               </p>
             </div>
             
             {/* Playback Chapter Pill */}
-            <div className="bg-stone-850 border border-stone-750 px-3.5 py-1.5 rounded-xl font-mono text-[10.5px] text-stone-300 self-start sm:self-center flex items-center gap-1.5 shrink-0">
+            <div className="bg-stone-850 border border-stone-750 px-3.5 py-1.5 rounded-xl font-mono text-[11.5px] text-stone-300 self-start sm:self-center flex items-center gap-1.5 shrink-0">
               <span className="w-1.5 h-1.5 bg-emerald-500 rounded-full animate-ping"></span>
-              CHAPTER: <span className="text-white font-bold uppercase tracking-wider truncate max-w-[140px]">{currentChapter?.title || 'Intro'}</span>
+              CHAPTER: <span className="text-white font-bold uppercase tracking-wider truncate max-w-[170px]">{currentChapter?.title || 'Intro'}</span>
             </div>
           </div>
 
@@ -247,7 +247,7 @@ export default function IntroVideo() {
             />
 
             {/* Inner Video Telemetry Hud */}
-            <div className="absolute inset-x-0 top-0 p-4 bg-gradient-to-b from-black/80 to-transparent pointer-events-none flex justify-between text-[9px] font-mono opacity-80 select-none">
+            <div className="absolute inset-x-0 top-0 p-4 bg-gradient-to-b from-black/80 to-transparent pointer-events-none flex justify-between text-[10px] font-mono opacity-80 select-none">
               <div className="flex gap-4">
                 <span>CHANNEL STATUS: SECURED FEED</span>
                 <span className="text-amber-400">FPS: 60.00 // 1080P CLOUD</span>
@@ -275,7 +275,7 @@ export default function IntroVideo() {
             )}
 
             {/* Floating Sound State Pill */}
-            <div className="absolute bottom-16 right-4 pointer-events-none bg-stone-900/80 backdrop-blur-xs px-2.5 py-1 rounded-md text-[9px] font-mono text-stone-300 border border-stone-750 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+            <div className="absolute bottom-16 right-4 pointer-events-none bg-stone-900/80 backdrop-blur-xs px-2.5 py-1 rounded-md text-[10px] font-mono text-stone-300 border border-stone-750 flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
               {isMuted ? 'UNMUTE FOR ADVISOR AUDIO BROADCAST' : 'SYSTEM BALANCED AUDIO'}
             </div>
 
@@ -284,7 +284,7 @@ export default function IntroVideo() {
               
               {/* Scrub line track */}
               <div className="flex items-center gap-3">
-                <span className="text-[10px] font-mono font-bold text-stone-300 w-10 shrink-0 select-none">{formatTime(currentTime)}</span>
+                <span className="text-[11px] font-mono font-bold text-stone-300 w-10 shrink-0 select-none">{formatTime(currentTime)}</span>
                 <input
                   type="range"
                   min="0"
@@ -294,7 +294,7 @@ export default function IntroVideo() {
                   onChange={handleSeek}
                   className="w-full h-1 bg-stone-800 rounded-lg appearance-auto cursor-pointer focus:outline-none accent-amber-500"
                 />
-                <span className="text-[10px] font-mono text-stone-400 w-10 shrink-0 text-right select-none">
+                <span className="text-[11px] font-mono text-stone-400 w-10 shrink-0 text-right select-none">
                   {duration ? formatTime(duration) : activeChannel.durationString}
                 </span>
               </div>
@@ -318,7 +318,7 @@ export default function IntroVideo() {
                     {isMuted ? <VolumeX className="w-5 h-5 text-amber-500" /> : <Volume2 className="w-5 h-5 text-white" />}
                   </button>
 
-                  <div className="hidden sm:flex items-center gap-2 border-l border-stone-800 pl-3.5 text-[9.5px] font-mono text-stone-400">
+                  <div className="hidden sm:flex items-center gap-2 border-l border-stone-800 pl-3.5 text-[10.5px] font-mono text-stone-400">
                     <span className="text-amber-500">DYNAMIC DECODER ACTIVE:</span>
                     <span>H.264 CODES MATRIFIED</span>
                   </div>
@@ -326,12 +326,12 @@ export default function IntroVideo() {
 
                 {/* Chapter Ticks quick shortcuts shortcuts */}
                 <div className="flex items-center gap-1 bg-[#141211]/60 px-2 py-1 rounded border border-stone-800/80">
-                  <span className="text-[8px] font-mono tracking-widest text-stone-500 mr-2 uppercase">Jump Chapter</span>
+                  <span className="text-[9px] font-mono tracking-widest text-stone-500 mr-2 uppercase">Jump Chapter</span>
                   {activeChannel.chapters.map((ch, idx) => (
                     <button
                       key={idx}
                       onClick={() => handleChapterClick(ch.time)}
-                      className={`w-5 h-5 rounded flex items-center justify-center font-mono text-[9px] font-bold border transition ${
+                      className={`w-5 h-5 rounded flex items-center justify-center font-mono text-[10px] font-bold border transition ${
                         currentTime >= ch.time 
                           ? 'bg-amber-600/25 border-amber-500 text-white' 
                           : 'bg-stone-850 hover:bg-stone-800 border-stone-700 text-stone-400'
@@ -346,7 +346,7 @@ export default function IntroVideo() {
             </div>
           </div>
 
-          <div className="bg-stone-850 border border-stone-800/60 rounded-xl p-4 flex gap-3 text-xs leading-relaxed text-stone-300">
+          <div className="bg-stone-850 border border-stone-800/60 rounded-xl p-4 flex gap-3 text-sm leading-relaxed text-stone-300">
             <Info className="w-4 h-4 text-amber-500 shrink-0 mt-0.5" />
             <p>
               <strong>Interactive Orientation Guide:</strong> Click any of the digital timeline indices or select from the right-hand Channels to adjust Amanda Ross, Esq. and Coach Vance’s dynamic feeds programmatically.
@@ -359,7 +359,7 @@ export default function IntroVideo() {
           
           {/* channels card list */}
           <div className="space-y-3">
-            <div className="flex items-center gap-1.5 text-xs font-mono font-bold uppercase tracking-wider text-stone-400">
+            <div className="flex items-center gap-1.5 text-sm font-mono font-bold uppercase tracking-wider text-stone-400">
               <Tv className="w-4 h-4 text-amber-500" />
               ORIENTATION FEED CHANNELS
             </div>
@@ -384,10 +384,10 @@ export default function IntroVideo() {
                   </div>
 
                   <div className="min-w-0 flex-1 space-y-1">
-                    <p className="text-xs font-bold leading-tight line-clamp-1">{ch.title}</p>
-                    <div className="flex justify-between items-center text-[10px] font-mono text-stone-400">
+                    <p className="text-sm font-bold leading-snug line-clamp-2">{ch.title}</p>
+                    <div className="flex justify-between items-center text-[11px] font-mono text-stone-400">
                       <span>{ch.id === 'ch-philosophy' ? 'CH-01' : ch.id === 'ch-curriculum' ? 'CH-02' : 'CH-03'}</span>
-                      <span className="bg-stone-900 px-1.5 py-0.5 rounded text-[9px] text-[#faece1]">{ch.durationString}</span>
+                      <span className="bg-stone-900 px-1.5 py-0.5 rounded text-[10px] text-[#faece1]">{ch.durationString}</span>
                     </div>
                   </div>
                 </button>
@@ -397,7 +397,7 @@ export default function IntroVideo() {
 
           {/* live scrolling transcripts box */}
           <div className="border border-stone-800 bg-[#141211] rounded-2xl p-4 flex flex-col h-[280px]">
-            <span className="text-[9px] font-mono tracking-widest text-[#faece1] uppercase block mb-3 border-b border-stone-850 pb-2">
+            <span className="text-[10px] font-mono tracking-widest text-[#faece1] uppercase block mb-3 border-b border-stone-850 pb-2">
               AUTO-TRACK TRANSCRIPT DECODER
             </span>
 
@@ -413,13 +413,13 @@ export default function IntroVideo() {
                     id={`tr-text-${tr.time}`}
                     key={index}
                     onClick={() => handleChapterClick(tr.time)}
-                    className={`p-2.5 rounded-lg border text-[11px] font-sans leading-relaxed transition-all cursor-pointer ${
+                    className={`p-2.5 rounded-lg border text-xs font-sans leading-relaxed transition-all cursor-pointer ${
                       isActive 
                         ? 'bg-amber-600/15 border-amber-600/30 text-white font-medium shadow-2xs' 
                         : 'border-transparent text-stone-400 hover:bg-stone-850/40 hover:text-stone-200'
                     }`}
                   >
-                    <span className={`font-mono text-[9px] block mb-0.5 ${isActive ? 'text-amber-400' : 'text-stone-500'}`}>
+                    <span className={`font-mono text-[10px] block mb-0.5 ${isActive ? 'text-amber-400' : 'text-stone-500'}`}>
                       [{formatTime(tr.time)}]
                     </span>
                     {tr.text}

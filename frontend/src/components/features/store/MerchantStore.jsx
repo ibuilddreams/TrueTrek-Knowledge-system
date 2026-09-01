@@ -269,14 +269,14 @@ export default function MerchantStore() {
         ></div>
         <div className="max-w-6xl mx-auto relative z-10 text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-6">
           <div className="space-y-3">
-            <span className="inline-flex items-center gap-1.5 bg-stone-850 border border-stone-750 px-3.5 py-1.5 rounded-full text-amber-500 font-mono text-xs uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1.5 bg-stone-850 border border-stone-750 px-3.5 py-1.5 rounded-full text-amber-500 font-mono text-sm uppercase tracking-wider">
               <ShoppingBag className="w-3.5 h-3.5" />
               Licensed Course Depository
             </span>
             <h2 className="text-4xl md:text-5xl font-serif font-semibold tracking-tight text-white">
               The Strategic Store
             </h2>
-            <p className="text-stone-450 text-xs md:text-sm font-light max-w-xl leading-relaxed">
+            <p className="text-stone-450 text-sm md:text-sm font-light max-w-xl leading-relaxed">
               Browse every course on TrueTrek Learning, add it to your cart,
               and check out to enroll instantly.
             </p>
@@ -291,10 +291,10 @@ export default function MerchantStore() {
                 className="relative bg-amber-600 hover:bg-amber-500 text-white p-4 rounded-2xl flex items-center gap-3 transition-all duration-200 shadow-md transform hover:scale-[1.02]"
               >
                 <ShoppingCart className="w-5 h-5" />
-                <span className="font-mono text-xs font-bold uppercase tracking-wider hidden sm:inline">
+                <span className="font-mono text-sm font-bold uppercase tracking-wider hidden sm:inline">
                   Active Ledger
                 </span>
-                <span className="bg-white text-stone-900 text-[11px] font-bold w-6 h-6 rounded-full flex items-center justify-center font-mono">
+                <span className="bg-white text-stone-900 text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center font-mono">
                   {cart.length}
                 </span>
               </button>
@@ -308,7 +308,7 @@ export default function MerchantStore() {
         <div className="bg-stone-100 border border-stone-200 rounded-2xl p-4 mb-10 flex flex-col md:flex-row items-center justify-between gap-4">
           {isAuthenticated ? (
             <>
-              <p className="text-xs text-stone-700 font-sans leading-relaxed">
+              <p className="text-sm text-stone-700 font-sans leading-relaxed">
                 <span className="font-mono font-bold text-emerald-800 uppercase tracking-widest mr-2">
                   [SIGNED IN]
                 </span>
@@ -320,14 +320,14 @@ export default function MerchantStore() {
               <button
                 type="button"
                 onClick={onNavigateToPortal}
-                className="text-[10px] font-mono font-semibold uppercase bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-lg transition duration-200 shadow-sm shrink-0"
+                className="text-[11px] font-mono font-semibold uppercase bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-lg transition duration-200 shadow-sm shrink-0"
               >
                 Open My Portal →
               </button>
             </>
           ) : (
             <>
-              <p className="text-xs text-stone-700 font-sans leading-relaxed">
+              <p className="text-sm text-stone-700 font-sans leading-relaxed">
                 <span className="font-mono font-bold text-amber-800 uppercase tracking-widest mr-2">
                   [BROWSING AS GUEST]
                 </span>
@@ -337,7 +337,7 @@ export default function MerchantStore() {
               <button
                 type="button"
                 onClick={() => router.push(ROUTES.LOGIN)}
-                className="text-[10px] font-mono font-semibold uppercase bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-lg transition duration-200 shadow-sm shrink-0 flex items-center gap-1.5"
+                className="text-[11px] font-mono font-semibold uppercase bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-lg transition duration-200 shadow-sm shrink-0 flex items-center gap-1.5"
               >
                 <LogIn className="w-3 h-3" />
                 Sign In
@@ -354,7 +354,7 @@ export default function MerchantStore() {
             id="store-cat-btn-all"
             type="button"
             onClick={() => handleSelectCategory(null)}
-            className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all ${
+            className={`px-4 py-2 rounded-xl text-sm font-mono font-bold transition-all ${
               selectedCategoryId === null
                 ? isVault
                   ? "bg-amber-600 text-stone-950"
@@ -370,7 +370,7 @@ export default function MerchantStore() {
               key={category.id}
               type="button"
               onClick={() => handleSelectCategory(category.id)}
-              className={`px-4 py-2 rounded-xl text-xs font-mono font-bold transition-all ${
+              className={`px-4 py-2 rounded-xl text-sm font-mono font-bold transition-all ${
                 selectedCategoryId === category.id
                   ? isVault
                     ? "bg-amber-600 text-stone-950"
@@ -400,13 +400,13 @@ export default function MerchantStore() {
             <h2 className="text-xl font-serif font-bold mb-2 text-stone-900">
               Failed to Load Store
             </h2>
-            <p className="text-xs font-light mb-6 text-stone-500">
+            <p className="text-sm font-light mb-6 text-stone-500">
               {getApiErrorMessage(error, "Unable to load the store right now.")}
             </p>
             <button
               type="button"
               onClick={() => refetch()}
-              className="inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition bg-stone-900 hover:bg-stone-800 text-stone-100"
+              className="inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition bg-stone-900 hover:bg-stone-800 text-stone-100"
             >
               <RefreshCw className="w-4 h-4" />
               Retry
@@ -428,6 +428,7 @@ export default function MerchantStore() {
                   ? "Check back soon — new courses are added regularly."
                   : "Try selecting a different category filter."
               }
+              size="lg"
             />
           </div>
         )}
@@ -461,6 +462,7 @@ export default function MerchantStore() {
               totalPages={totalPages}
               onPageChange={setPage}
               totalLabel={`${totalCourses} course${totalCourses === 1 ? "" : "s"}`}
+              size="lg"
             />
           </>
         )}
@@ -497,6 +499,7 @@ export default function MerchantStore() {
         isSubmitting={checkoutMutation.isPending}
         onClose={() => setIsPaymentModalOpen(false)}
         onConfirm={handleConfirmPayment}
+        size="lg"
       />
     </div>
   );
