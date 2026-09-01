@@ -194,7 +194,7 @@ export default function FutureClients() {
 
         {/* HERO BANNER SECTION */}
         <header id="fc-hero-section" className="text-center space-y-4 max-w-3xl mx-auto pt-4 animate-fade-in text-left sm:text-center">
-          <div className="inline-flex items-center gap-1.5 bg-amber-150/60 border border-amber-300 px-3 py-1 rounded-full text-amber-850 text-[10px] font-mono uppercase tracking-widest font-semibold mx-auto sm:mx-0">
+          <div className="inline-flex items-center gap-1.5 bg-amber-150/60 border border-amber-300 px-3 py-1 rounded-full text-amber-850 text-[11px] font-mono uppercase tracking-widest font-semibold mx-auto sm:mx-0">
             <Sparkles className="w-3.5 h-3.5 text-amber-700 shrink-0" />
             Elite Student-Athlete Placement Hub
           </div>
@@ -212,11 +212,11 @@ export default function FutureClients() {
             <div className="absolute -right-24 -top-24 w-72 h-72 bg-amber-600/10 rounded-full blur-3xl pointer-events-none" />
 
             <div className="space-y-6 relative z-10">
-              <span className="text-amber-500 font-mono text-[10px] uppercase tracking-widest font-bold">PORTFOLIO PLACEMENT PATHWAYS</span>
+              <span className="text-amber-500 font-mono text-[11px] uppercase tracking-widest font-bold">PORTFOLIO PLACEMENT PATHWAYS</span>
               <h3 className="text-2xl sm:text-3xl font-serif font-black tracking-tight leading-snug">
                 Why Submit Credentials For TrueTrek Learning Evaluation?
               </h3>
-              <p className="text-stone-300 text-xs sm:text-sm font-light leading-relaxed">
+              <p className="text-stone-300 text-sm sm:text-sm font-light leading-relaxed">
                 TrueTrek Learning represents the premier administrative and legal compliance portal for selective high-performance scholar-athletes. Because platform placement is protected by strict scholastic quotas and regional compliance caps, we require prospective student-athletes to submit formal intake dossiers.
               </p>
 
@@ -224,9 +224,9 @@ export default function FutureClients() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-amber-400">
                     <ShieldCheck className="w-4 h-4 shrink-0" />
-                    <span className="font-mono text-[10px] uppercase font-bold tracking-wider">FERPA-SAFE DATA LOCKS</span>
+                    <span className="font-mono text-[11px] uppercase font-bold tracking-wider">FERPA-SAFE DATA LOCKS</span>
                   </div>
-                  <p className="text-stone-400 text-[11px] font-light leading-normal">
+                  <p className="text-stone-400 text-xs font-light leading-normal">
                     Secure scholastic clearinghouse processes protect collegiate admissions standing and high-school eligibility.
                   </p>
                 </div>
@@ -234,16 +234,16 @@ export default function FutureClients() {
                 <div className="space-y-2">
                   <div className="flex items-center gap-2 text-amber-400">
                     <BookOpen className="w-4 h-4 shrink-0" />
-                    <span className="font-mono text-[10px] uppercase font-bold tracking-wider font-semibold">11-TIER TRANSITION AUDIT</span>
+                    <span className="font-mono text-[11px] uppercase font-bold tracking-wider font-semibold">11-TIER TRANSITION AUDIT</span>
                   </div>
-                  <p className="text-stone-400 text-[11px] font-light leading-normal">
+                  <p className="text-stone-400 text-xs font-light leading-normal">
                     Successful intakes receive a complete diagnostic report reviewing the high-integrity framework pathways.
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="mt-8 pt-6 border-t border-stone-800/80 flex flex-wrap items-center justify-between gap-4 text-xs font-mono text-stone-400 relative z-10">
+            <div className="mt-8 pt-6 border-t border-stone-800/80 flex flex-wrap items-center justify-between gap-4 text-sm font-mono text-stone-400 relative z-10">
               <span className="flex items-center gap-1.5 font-bold">
                 <Trophy className="w-4 h-4 text-amber-500" /> 1600+ Scholars Placed
               </span>
@@ -260,7 +260,7 @@ export default function FutureClients() {
                 <Award className="w-5 h-5" />
               </div>
               <h4 className="font-serif font-black text-lg text-stone-900">Selective Onboarding Standard</h4>
-              <p className="text-stone-500 text-xs font-light leading-relaxed">
+              <p className="text-stone-500 text-sm font-light leading-relaxed">
                 Rather than deploying standard public interfaces, we maintain premium state-aligned cohorts to satisfy the legal licensing agreements designed directly for our partnered institutions.
               </p>
             </div>
@@ -270,7 +270,7 @@ export default function FutureClients() {
                 <Handshake className="w-5 h-5" />
               </div>
               <h4 className="font-serif font-black text-lg text-stone-900">Direct Compliance Routing</h4>
-              <p className="text-stone-500 text-xs font-light leading-relaxed">
+              <p className="text-stone-500 text-sm font-light leading-relaxed">
                 All uploaded student files are routed autonomously through vetted sports agency lawyers and trust administrators to verify NIL licensing pathways are flawless before actual cohort matching.
               </p>
             </div>
@@ -289,14 +289,14 @@ export default function FutureClients() {
                   </div>
                   <div>
                     <h3 className="text-base sm:text-lg font-serif font-black text-stone-900">Future Client Application</h3>
-                    <p className="text-stone-500 text-xs font-light">Tell us about yourself and pick the course(s) you&apos;d like to enroll in.</p>
+                    <p className="text-stone-500 text-sm font-light">Tell us about yourself and pick the course(s) you&apos;d like to enroll in.</p>
                   </div>
                 </div>
 
                 <form onSubmit={handleApplicationSubmit} className="space-y-4">
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-mono uppercase text-stone-450 tracking-wider block font-bold">First Name *</label>
+                      <label className="text-[11px] font-mono uppercase text-stone-450 tracking-wider block font-bold">First Name *</label>
                       <input
                         id="application-form-first-name"
                         type="text"
@@ -305,12 +305,12 @@ export default function FutureClients() {
                         placeholder="Marcus"
                         required
                         disabled={isSubmitting}
-                        className="w-full bg-stone-50 border border-stone-200/80 rounded-xl p-3 text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none focus:bg-white transition disabled:opacity-60"
+                        className="w-full bg-stone-50 border border-stone-200/80 rounded-xl p-3 text-sm focus:ring-1 focus:ring-amber-500 focus:outline-none focus:bg-white transition disabled:opacity-60"
                       />
                     </div>
 
                     <div className="space-y-1.5">
-                      <label className="text-[10px] font-mono uppercase text-stone-455 tracking-wider block font-bold">Last Name *</label>
+                      <label className="text-[11px] font-mono uppercase text-stone-455 tracking-wider block font-bold">Last Name *</label>
                       <input
                         id="application-form-last-name"
                         type="text"
@@ -319,13 +319,13 @@ export default function FutureClients() {
                         placeholder="Vance"
                         required
                         disabled={isSubmitting}
-                        className="w-full bg-stone-50 border border-stone-200/80 rounded-xl p-3 text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none focus:bg-white transition disabled:opacity-60"
+                        className="w-full bg-stone-50 border border-stone-200/80 rounded-xl p-3 text-sm focus:ring-1 focus:ring-amber-500 focus:outline-none focus:bg-white transition disabled:opacity-60"
                       />
                     </div>
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono uppercase text-stone-455 tracking-wider block font-bold">Email Address *</label>
+                    <label className="text-[11px] font-mono uppercase text-stone-455 tracking-wider block font-bold">Email Address *</label>
                     <input
                       id="application-form-email"
                       type="email"
@@ -334,12 +334,12 @@ export default function FutureClients() {
                       placeholder="marcusvance@gmail.com"
                       required
                       disabled={isSubmitting}
-                      className="w-full bg-stone-50 border border-stone-200/80 rounded-xl p-3 text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none focus:bg-white transition disabled:opacity-60"
+                      className="w-full bg-stone-50 border border-stone-200/80 rounded-xl p-3 text-sm focus:ring-1 focus:ring-amber-500 focus:outline-none focus:bg-white transition disabled:opacity-60"
                     />
                   </div>
 
                   <div className="space-y-1.5">
-                    <label className="text-[10px] font-mono uppercase text-stone-455 tracking-wider block font-bold">Password *</label>
+                    <label className="text-[11px] font-mono uppercase text-stone-455 tracking-wider block font-bold">Password *</label>
                     <div className="relative">
                       <input
                         id="application-form-password"
@@ -350,7 +350,7 @@ export default function FutureClients() {
                         required
                         disabled={isSubmitting}
                         autoComplete="new-password"
-                        className="w-full bg-stone-50 border border-stone-200/80 rounded-xl p-3 pr-11 text-xs focus:ring-1 focus:ring-amber-500 focus:outline-none focus:bg-white transition disabled:opacity-60"
+                        className="w-full bg-stone-50 border border-stone-200/80 rounded-xl p-3 pr-11 text-sm focus:ring-1 focus:ring-amber-500 focus:outline-none focus:bg-white transition disabled:opacity-60"
                       />
                       <button
                         type="button"
@@ -363,7 +363,7 @@ export default function FutureClients() {
                         {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                       </button>
                     </div>
-                    <p className="text-[10px] text-stone-400 font-light">This becomes your student portal login once your application is approved.</p>
+                    <p className="text-[11px] text-stone-400 font-light">This becomes your student portal login once your application is approved.</p>
                   </div>
 
                   <MultiSelect
@@ -376,9 +376,10 @@ export default function FutureClients() {
                     loading={isLoadingCourses}
                     disabled={isSubmitting}
                     emptyLabel="No courses available right now."
+                    size="lg"
                   />
 
-                  <div className="p-3 bg-amber-50/40 border border-amber-200/40 rounded-xl flex items-start gap-2.5 text-[11px] text-stone-605 leading-relaxed font-light">
+                  <div className="p-3 bg-amber-50/40 border border-amber-200/40 rounded-xl flex items-start gap-2.5 text-xs text-stone-605 leading-relaxed font-light">
                     <ShieldAlert className="w-4 h-4 text-amber-700 mt-0.5 shrink-0" />
                     <span>
                       By submitting this application, you authorize TrueTrek Learning to review your information for admission. Your student account is created only once an administrator approves your application.
@@ -389,7 +390,7 @@ export default function FutureClients() {
                     id="btn-submit-application"
                     type="submit"
                     disabled={isSubmitting}
-                    className="w-full bg-stone-950 hover:bg-stone-850 disabled:opacity-60 disabled:cursor-not-allowed text-white font-serif font-bold text-xs uppercase tracking-wider py-4 px-4 rounded-xl transition duration-150 flex items-center justify-center gap-2 shadow-md mt-2"
+                    className="w-full bg-stone-950 hover:bg-stone-850 disabled:opacity-60 disabled:cursor-not-allowed text-white font-serif font-bold text-sm uppercase tracking-wider py-4 px-4 rounded-xl transition duration-150 flex items-center justify-center gap-2 shadow-md mt-2"
                   >
                     {isSubmitting ? (
                       <>
@@ -412,7 +413,7 @@ export default function FutureClients() {
                   </div>
                   <div>
                     <h3 className="text-base font-serif font-black text-stone-900">Sanctioned Affiliations</h3>
-                    <p className="text-stone-500 text-xs font-light">Direct legal integrations and secure brand match paths.</p>
+                    <p className="text-stone-500 text-sm font-light">Direct legal integrations and secure brand match paths.</p>
                   </div>
                 </div>
 
@@ -425,20 +426,20 @@ export default function FutureClients() {
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="space-y-0.5">
-                          <span className="text-amber-800 text-[9px] font-mono uppercase font-bold tracking-widest">{partner.badge}</span>
-                          <h4 className="text-xs font-serif font-black text-stone-900 leading-tight">{partner.name}</h4>
-                          <p className="text-[10px] text-stone-500 font-semibold">{partner.role}</p>
+                          <span className="text-amber-800 text-[10px] font-mono uppercase font-bold tracking-widest">{partner.badge}</span>
+                          <h4 className="text-sm font-serif font-black text-stone-900 leading-tight">{partner.name}</h4>
+                          <p className="text-[11px] text-stone-500 font-semibold">{partner.role}</p>
                         </div>
-                        <span className="bg-emerald-50 text-emerald-800 border border-emerald-100 text-[8px] uppercase tracking-wider font-mono px-1.5 py-0.5 rounded shrink-0 font-bold">
+                        <span className="bg-emerald-50 text-emerald-800 border border-emerald-100 text-[9px] uppercase tracking-wider font-mono px-1.5 py-0.5 rounded shrink-0 font-bold">
                           {partner.status}
                         </span>
                       </div>
 
-                      <p className="text-[10px] text-stone-600 font-light leading-relaxed pt-1.5 border-t border-stone-100">
+                      <p className="text-[11px] text-stone-600 font-light leading-relaxed pt-1.5 border-t border-stone-100">
                         {partner.desc}
                       </p>
 
-                      <div className="flex items-center justify-between text-[9px] text-stone-400 font-mono pt-1">
+                      <div className="flex items-center justify-between text-[10px] text-stone-400 font-mono pt-1">
                         <span className="flex items-center gap-1">
                           <MapPin className="w-2.5 h-2.5 text-stone-400" />
                           {partner.location}
@@ -467,9 +468,9 @@ export default function FutureClients() {
 
               {submittedApplication?.courses?.length > 0 && (
                 <div className="text-left bg-stone-50 border border-stone-200 rounded-2xl p-5 space-y-2">
-                  <p className="text-[10px] font-mono uppercase text-stone-400 tracking-wider font-bold">Requested Courses</p>
+                  <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider font-bold">Requested Courses</p>
                   {submittedApplication.courses.map((course) => (
-                    <div key={course.id} className="flex items-center justify-between text-xs">
+                    <div key={course.id} className="flex items-center justify-between text-sm">
                       <span className="font-semibold text-stone-800">{course.title}</span>
                       <span className="font-mono text-stone-500">${course.amount}</span>
                     </div>
@@ -481,7 +482,7 @@ export default function FutureClients() {
                 id="btn-reset-application"
                 type="button"
                 onClick={handleResetApplication}
-                className="bg-white hover:bg-stone-50 border border-stone-250 text-stone-750 font-serif font-bold text-xs py-3.5 px-6 rounded-xl transition shadow-xs"
+                className="bg-white hover:bg-stone-50 border border-stone-250 text-stone-750 font-serif font-bold text-sm py-3.5 px-6 rounded-xl transition shadow-xs"
               >
                 Submit Another Application
               </button>
@@ -493,13 +494,13 @@ export default function FutureClients() {
         {/* SECTION: PREVIOUS CUSTOMERS FEEDBACK */}
         <section id="fc-feedback-section" className="space-y-6 pt-4 text-left">
           <div className="border-b border-stone-200 pb-4">
-            <span className="text-amber-700 font-mono text-[10px] uppercase tracking-widest font-bold">ALUMNI REFLECTIONS</span>
+            <span className="text-amber-700 font-mono text-[11px] uppercase tracking-widest font-bold">ALUMNI REFLECTIONS</span>
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mt-1">
               <div>
                 <h3 className="text-2xl font-serif font-black text-stone-950 tracking-tight">Previous Customers &amp; Feedback</h3>
-                <p className="text-stone-500 text-xs font-light">Real athletic portfolios, family advisors, and academic councils tracking outstanding outcomes.</p>
+                <p className="text-stone-500 text-sm font-light">Real athletic portfolios, family advisors, and academic councils tracking outstanding outcomes.</p>
               </div>
-              <div className="flex items-center gap-1 bg-white border border-stone-200 px-3 py-1.5 rounded-xl font-mono text-xs text-stone-750">
+              <div className="flex items-center gap-1 bg-white border border-stone-200 px-3 py-1.5 rounded-xl font-mono text-sm text-stone-750">
                 <span className="w-2 h-2 rounded-full bg-emerald-500 shrink-0" />
                 <span className="font-bold">100% Client Satisfaction</span>
               </div>
@@ -527,32 +528,32 @@ export default function FutureClients() {
                   </div>
 
                   {/* Testimonial Quote */}
-                  <blockquote className="text-[11.5px] sm:text-xs text-stone-600 font-light italic leading-relaxed py-1">
+                  <blockquote className="text-xs sm:text-sm text-stone-600 font-light italic leading-relaxed py-1">
                     &ldquo;{feedback.quote}&rdquo;
                   </blockquote>
                 </div>
 
                 {/* Writer Identity Details */}
                 <div className="flex items-center gap-3.5 border-t border-stone-100 pt-4 mt-4 relative z-10">
-                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-600 to-amber-800 text-white flex items-center justify-center font-serif font-bold text-xs shadow-sm shadow-amber-900/10 shrink-0">
+                  <div className="w-10 h-10 rounded-full bg-gradient-to-br from-amber-600 to-amber-800 text-white flex items-center justify-center font-serif font-bold text-sm shadow-sm shadow-amber-900/10 shrink-0">
                     {feedback.avatarText}
                   </div>
                   <div className="min-w-0 flex-grow">
                     <div className="flex items-center justify-between gap-1">
-                      <cite className="not-italic text-xs font-serif font-black text-stone-900 truncate block">
+                      <cite className="not-italic text-sm font-serif font-black text-stone-900 truncate block">
                         {feedback.name}
                       </cite>
                     </div>
-                    <span className="text-[10px] text-amber-900 font-mono font-medium block truncate">
+                    <span className="text-[11px] text-amber-900 font-mono font-medium block truncate">
                       {feedback.role}
                     </span>
-                    <span className="text-[9px] text-stone-400 font-mono block uppercase tracking-wider block">
+                    <span className="text-[10px] text-stone-400 font-mono block uppercase tracking-wider block">
                       {feedback.school} &bull; {feedback.sport}
                     </span>
                   </div>
                 </div>
 
-                <div className="absolute top-3 left-4 bg-amber-50 border border-amber-200/60 font-mono text-[8px] uppercase tracking-wider px-1.5 py-0.5 rounded text-amber-850 scale-0 group-hover:scale-100 duration-150 transform transition">
+                <div className="absolute top-3 left-4 bg-amber-50 border border-amber-200/60 font-mono text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded text-amber-850 scale-0 group-hover:scale-100 duration-150 transform transition">
                   {feedback.verifiedBadge}
                 </div>
               </div>

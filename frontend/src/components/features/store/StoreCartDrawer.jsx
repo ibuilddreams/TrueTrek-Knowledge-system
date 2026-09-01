@@ -44,7 +44,7 @@ export default function StoreCartDrawer({
                     <h3 className="font-serif font-bold tracking-tight text-sm text-stone-900">
                       Course Cart
                     </h3>
-                    <p className="text-[10px] font-mono text-stone-500 uppercase tracking-wide">
+                    <p className="text-[11px] font-mono text-stone-500 uppercase tracking-wide">
                       Selected Courses
                     </p>
                   </div>
@@ -67,22 +67,22 @@ export default function StoreCartDrawer({
                       <ShoppingBag className="w-6 h-6 animate-pulse" />
                     </div>
                     <div>
-                      <p className="text-xs font-bold text-stone-800">Your cart is empty</p>
-                      <p className="text-[11px] text-stone-500 mt-1 max-w-60 leading-relaxed mx-auto">
+                      <p className="text-sm font-bold text-stone-800">Your cart is empty</p>
+                      <p className="text-xs text-stone-500 mt-1 max-w-60 leading-relaxed mx-auto">
                         Browse the store and acquire a course to add it here.
                       </p>
                     </div>
                     <button
                       type="button"
                       onClick={onClose}
-                      className="bg-stone-950 hover:bg-stone-800 text-white text-[10px] font-mono uppercase tracking-wider px-5 py-2.5 rounded-full font-bold transition"
+                      className="bg-stone-950 hover:bg-stone-800 text-white text-[11px] font-mono uppercase tracking-wider px-5 py-2.5 rounded-full font-bold transition"
                     >
                       Browse Courses
                     </button>
                   </div>
                 ) : (
                   <>
-                    <p className="text-xs uppercase font-mono text-stone-400 tracking-wider">
+                    <p className="text-sm uppercase font-mono text-stone-400 tracking-wider">
                       Courses In Your Cart
                     </p>
 
@@ -109,10 +109,10 @@ export default function StoreCartDrawer({
                           </div>
                           <div className="flex-1 min-w-0 flex flex-col justify-between">
                             <div>
-                              <p className="text-xs font-bold text-stone-900 truncate">
+                              <p className="text-sm font-bold text-stone-900 truncate">
                                 {course.title}
                               </p>
-                              <p className="text-[10px] font-mono text-amber-800 mt-0.5">
+                              <p className="text-[11px] font-mono text-amber-800 mt-0.5">
                                 {formatCoursePrice(course.amount)}
                               </p>
                             </div>
@@ -121,7 +121,7 @@ export default function StoreCartDrawer({
                               type="button"
                               onClick={() => onRemove(course.id)}
                               disabled={isRemoving}
-                              className="self-start text-stone-400 hover:text-red-700 font-mono text-[10px] uppercase font-bold flex items-center gap-1 mt-2 disabled:cursor-not-allowed disabled:hover:text-stone-400"
+                              className="self-start text-stone-400 hover:text-red-700 font-mono text-[11px] uppercase font-bold flex items-center gap-1 mt-2 disabled:cursor-not-allowed disabled:hover:text-stone-400"
                             >
                               <Trash2 className="w-3 h-3" />
                               {isRemoving ? "Removing..." : "Remove"}
@@ -143,7 +143,7 @@ export default function StoreCartDrawer({
                   <button
                     type="button"
                     onClick={onPurchase}
-                    className="w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-mono text-xs font-extrabold uppercase tracking-wider py-3.5 rounded-xl shadow-md transition-all duration-200 transform hover:scale-[1.01]"
+                    className="w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-mono text-sm font-extrabold uppercase tracking-wider py-3.5 rounded-xl shadow-md transition-all duration-200 transform hover:scale-[1.01]"
                   >
                     <CreditCard className="w-4 h-4" />
                     Purchase

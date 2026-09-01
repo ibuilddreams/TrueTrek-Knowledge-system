@@ -1,18 +1,31 @@
 from rest_framework import serializers
 
+from common.models import Status
 from courses.serializers import CourseCategorySerializer
 from pathways.models import Pathway
+from pathways.serializers import PathwayCourseCourseSerializer
 
 from .models import Tier, TierPathway, TierProgress
 
 
 class TierPathwayPathwaySerializer(serializers.ModelSerializer):
     course_count = serializers.IntegerField(source="pathway_courses.count", read_only=True)
+    courses = serializers.SerializerMethodField()
 
     class Meta:
         model = Pathway
-        fields = ["id", "name", "slug", "status", "base_price", "course_count"]
+        fields = ["id", "name", "slug", "status", "base_price", "course_count", "courses"]
         read_only_fields = fields
+
+    def get_courses(self, obj):
+        pathway_courses = obj.pathway_courses.select_related("course").order_by("order")
+        # PublicTierDetailView marks its context "public_only" so anonymous
+        # curriculum browsing never leaks unpublished course titles — the
+        # authenticated/admin tier detail view still shows every course.
+        if self.context.get("public_only"):
+            pathway_courses = pathway_courses.filter(course__status=Status.PUBLISHED)
+        courses = [pathway_course.course for pathway_course in pathway_courses]
+        return PathwayCourseCourseSerializer(courses, many=True, context=self.context).data
 
 
 class TierPathwaySerializer(serializers.ModelSerializer):
