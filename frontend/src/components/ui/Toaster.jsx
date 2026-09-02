@@ -1,11 +1,8 @@
 "use client";
 
 import { Toaster as SonnerToaster } from "sonner";
-import { useTheme } from "@/hooks/useTheme";
 
 export default function Toaster() {
-  const { isVault } = useTheme();
-
   return (
     <>
       <style>{`
@@ -41,7 +38,7 @@ export default function Toaster() {
       <SonnerToaster
         position="bottom-right"
         visibleToasts={1}
-        theme={isVault ? "dark" : "light"}
+        theme="light"
         duration={4000}
         closeButton
         style={{
@@ -51,21 +48,14 @@ export default function Toaster() {
         }}
         toastOptions={{
           classNames: {
-            toast:
-              "rounded-2xl border font-sans shadow-lg " +
-              (isVault
-                ? "bg-[#141211] border-stone-800 text-stone-200"
-                : "bg-white border-stone-250 text-stone-900"),
-            title: "font-serif font-bold",
-            description: isVault ? "text-stone-400" : "text-stone-500",
-            actionButton: "bg-amber-600 text-white",
-            cancelButton: isVault
-              ? "bg-stone-850 text-stone-300"
-              : "bg-stone-100 text-stone-700",
-            closeButton: isVault
-              ? "!bg-stone-900 !border-stone-700 !text-stone-300 hover:!text-white"
-              : "!bg-white !border-stone-250 !text-stone-400 hover:!text-stone-900",
-            warning: "!border-2 !border-amber-500",
+            toast: "rounded-2xl border font-sans shadow-lg bg-paper border-line text-ink",
+            title: "font-serif font-light",
+            description: "text-muted",
+            actionButton: "bg-pine text-paper",
+            cancelButton: "bg-porcelain text-ink",
+            closeButton:
+              "!bg-white !border-line !text-muted hover:!text-ink",
+            warning: "!border-2 !border-gold",
           },
         }}
       />

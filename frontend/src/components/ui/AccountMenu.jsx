@@ -6,7 +6,6 @@ import { motion, AnimatePresence } from "motion/react";
 import { User, ChevronDown, LogOut, MessageSquare } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLogoutFlow } from "@/hooks/useLogoutFlow";
-import { useTheme } from "@/hooks/useTheme";
 import { useUnreadMessagesCount } from "@/hooks/useUnreadMessagesCount";
 import { getProfile } from "@/services/profileService";
 
@@ -28,7 +27,6 @@ export default function AccountMenu({
   size = "base",
 }) {
   const isDark = variant === "dark";
-  const { isVault } = useTheme();
   const { user } = useAuth();
   const { isSigningOut, signOut } = useLogoutFlow();
   const unreadConversations = useUnreadMessagesCount();
@@ -217,26 +215,16 @@ export default function AccountMenu({
             left: menuPosition.left,
             width: MENU_WIDTH,
           }}
-          className={`max-w-[calc(100vw-2rem)] font-mono border rounded-xl shadow-2xl py-1.5 z-40 ${
-            isVault
-              ? "bg-stone-900 border-stone-800"
-              : "bg-white border-stone-200"
-          }`}
+          className="max-w-[calc(100vw-2rem)] font-sans border rounded-xl shadow-elevated py-1.5 z-40 bg-paper border-line"
         >
-          <div
-            className={`px-3.5 py-2 mb-1 border-b ${
-              isVault ? "border-stone-800" : "border-stone-100"
-            }`}
-          >
+          <div className="px-3.5 py-2 mb-1 border-b border-line">
             <p
-              className={`${size === "lg" ? "text-[11px]" : "text-[10px]"} uppercase tracking-widest text-stone-400 font-semibold`}
+              className={`${size === "lg" ? "text-[11px]" : "text-[10px]"} uppercase tracking-widest text-muted font-semibold`}
             >
               Account
             </p>
             <p
-              className={`${size === "lg" ? "text-sm" : "text-xs"} font-semibold truncate mt-0.5 ${
-                isVault ? "text-stone-100" : "text-stone-800"
-              }`}
+              className={`${size === "lg" ? "text-sm" : "text-xs"} font-semibold truncate mt-0.5 text-ink`}
             >
               {displayLabel}
             </p>
@@ -264,27 +252,17 @@ export default function AccountMenu({
                 className={
                   `w-full flex items-center gap-2.5 px-3.5 py-2.5 ${size === "lg" ? "text-sm" : "text-xs"} font-semibold focus:outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-transparent ` +
                   (danger
-                    ? isVault
-                      ? "text-rose-400 hover:bg-rose-500/10 focus:bg-rose-500/10"
-                      : "text-rose-700 hover:bg-rose-50 focus:bg-rose-50"
-                    : isVault
-                      ? "text-stone-200 hover:bg-stone-800 focus:bg-stone-800"
-                      : "text-stone-700 hover:bg-stone-50 focus:bg-stone-50")
+                    ? "text-rose-700 hover:bg-rose-50 focus:bg-rose-50"
+                    : "text-ink hover:bg-porcelain focus:bg-porcelain")
                 }
               >
                 <Icon
-                  className={`w-4 h-4 ${
-                    danger
-                      ? "text-rose-500"
-                      : isVault
-                        ? "text-stone-500"
-                        : "text-stone-400"
-                  }`}
+                  className={`w-4 h-4 ${danger ? "text-rose-500" : "text-muted"}`}
                 />
                 <span className="flex-1 text-left">{itemLabel}</span>
                 {badge ? (
                   <span
-                    className={`min-w-4.5 h-4.5 px-1 rounded-full bg-amber-600 text-white ${size === "lg" ? "text-[10px]" : "text-[9px]"} font-bold font-mono flex items-center justify-center shrink-0`}
+                    className={`min-w-4.5 h-4.5 px-1 rounded-full bg-gold text-ink ${size === "lg" ? "text-[10px]" : "text-[9px]"} font-bold font-sans flex items-center justify-center shrink-0`}
                   >
                     {badge}
                   </span>
@@ -312,14 +290,14 @@ export default function AccountMenu({
         aria-haspopup="menu"
         aria-expanded={isOpen}
         className={
-          `w-full px-3.5 py-2.5 ${size === "lg" ? "text-sm" : "text-xs"} font-semibold font-mono rounded-xl tracking-wider transition-all duration-200 flex items-center gap-2 border shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-600 focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed ` +
+          `w-full px-3.5 py-2.5 ${size === "lg" ? "text-sm" : "text-xs"} font-semibold font-sans rounded-xl tracking-wide transition-all duration-200 flex items-center gap-2 border shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-pine focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed ` +
           (isOpen
             ? isDark
-              ? "bg-stone-800 border-stone-700 shadow-md"
-              : "bg-white border-amber-200 ring-2 ring-amber-600/15"
+              ? "bg-white/10 border-white/15 shadow-md"
+              : "bg-white border-pine/25 ring-2 ring-pine/15"
             : isDark
-              ? "bg-stone-950 hover:bg-stone-800 border-stone-800 hover:border-stone-700 hover:shadow-md"
-              : "bg-stone-50 hover:bg-white border-stone-200 hover:border-stone-300")
+              ? "bg-ink/40 hover:bg-ink/60 border-white/10 hover:border-white/20 hover:shadow-md"
+              : "bg-porcelain hover:bg-white border-line hover:border-pine/25")
         }
         title="Open account menu"
         aria-label="Open account menu"
@@ -328,8 +306,8 @@ export default function AccountMenu({
           className={
             "w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0 " +
             (isDark
-              ? "bg-stone-900 text-amber-500 border border-stone-700 shadow-inner"
-              : "bg-amber-50 text-amber-700 border border-amber-100")
+              ? "bg-ink/60 text-gold border border-white/15 shadow-inner"
+              : "bg-gold/15 text-[#8a6f2e] border border-gold/25")
           }
         >
           {avatarUrl ? (
@@ -342,7 +320,7 @@ export default function AccountMenu({
         <span className="flex flex-col items-start leading-tight text-left min-w-0 gap-0.5">
           <span
             className={`font-semibold truncate max-w-36 ${
-              isDark ? "text-stone-100" : "text-stone-800"
+              isDark ? "text-paper" : "text-ink"
             }`}
           >
             {displayLabel}
@@ -350,7 +328,7 @@ export default function AccountMenu({
           {roleLabel && (
             <span
               className={`${size === "lg" ? "text-[11px]" : "text-[10px]"} font-normal tracking-normal normal-case truncate max-w-36 ${
-                isDark ? "text-stone-500" : "text-stone-400"
+                isDark ? "text-sage/60" : "text-muted"
               }`}
             >
               {roleLabel}
@@ -358,10 +336,10 @@ export default function AccountMenu({
           )}
         </span>
         <span
-          className={`w-px h-6 shrink-0 ${isDark ? "bg-stone-700" : "bg-stone-200"}`}
+          className={`w-px h-6 shrink-0 ${isDark ? "bg-white/15" : "bg-line"}`}
         />
         <ChevronDown
-          className={`w-3.5 h-3.5 text-stone-400 transition-transform duration-200 shrink-0 ${
+          className={`w-3.5 h-3.5 text-muted transition-transform duration-200 shrink-0 ${
             isOpen ? "rotate-180" : ""
           }`}
         />

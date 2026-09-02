@@ -212,13 +212,13 @@ export default function ProfileForm() {
   return (
     <div className="py-10 px-4 sm:px-6 md:px-10 max-w-3xl mx-auto min-h-[85vh] font-sans">
       <div className="mb-8">
-        <span className="text-amber-600 font-mono text-xs uppercase tracking-widest font-bold block mb-1">
+        <span className="text-moss font-sans text-xs uppercase tracking-widest font-medium block mb-1">
           Account Settings
         </span>
-        <h1 className="text-3xl font-serif font-black tracking-tight text-stone-900">
+        <h1 className="text-3xl font-serif font-light tracking-tight text-ink">
           Profile
         </h1>
-        <p className="text-sm text-stone-500 font-light mt-0.5">
+        <p className="text-sm text-muted font-light mt-0.5">
           Manage your personal details and how they appear across the platform.
         </p>
       </div>
@@ -227,14 +227,14 @@ export default function ProfileForm() {
         initial={{ opacity: 0, y: 14 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.35, ease: "easeOut" }}
-        className="bg-white border border-stone-200/95 rounded-2xl shadow-xl overflow-hidden relative"
+        className="bg-paper border border-line rounded-panel shadow-elevated overflow-hidden relative"
       >
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-600 to-amber-800" />
+        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-pine via-moss to-gold" />
 
         <form onSubmit={handleSubmit} className="p-6 sm:p-8">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8 pb-8 border-b border-stone-100">
+          <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8 pb-8 border-b border-line">
             <div className="relative shrink-0 mx-auto sm:mx-0">
-              <div className="w-28 h-28 rounded-full bg-stone-100 ring-4 ring-amber-500/10 border border-stone-200 flex items-center justify-center overflow-hidden shadow-inner">
+              <div className="w-28 h-28 rounded-full bg-porcelain ring-4 ring-gold/20 border border-line flex items-center justify-center overflow-hidden shadow-inner">
                 {avatarPreview ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
@@ -243,7 +243,7 @@ export default function ProfileForm() {
                     className="w-full h-full object-cover"
                   />
                 ) : (
-                  <User className="w-11 h-11 text-stone-400" />
+                  <User className="w-11 h-11 text-muted" />
                 )}
               </div>
               <input

@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import { Eye, EyeOff } from "lucide-react";
-import { useTheme } from "@/hooks/useTheme";
 
 export default function AuthField({
   id,
@@ -18,7 +17,6 @@ export default function AuthField({
   inputClassName,
   ...rest
 }) {
-  const { isVault } = useTheme();
   const [showPassword, setShowPassword] = useState(false);
 
   const isPasswordField = type === "password";
@@ -28,37 +26,23 @@ export default function AuthField({
   const resolvedInputClassName =
     inputClassName ||
     [
-      "w-full p-3 rounded-lg border text-xs font-mono focus:outline-none transition",
+      "w-full p-3 rounded-xl border text-xs font-sans focus:outline-none transition",
       Icon ? "pl-10" : "",
       showPasswordToggle && isPasswordField ? "pr-11" : "",
-      isVault
-        ? "bg-[#0c0b0a] text-stone-200 placeholder:text-stone-600"
-        : "bg-white text-stone-800 placeholder:text-stone-400",
-      error
-        ? "border-red-300 focus:border-red-500"
-        : isVault
-          ? "border-stone-700 focus:border-amber-600"
-          : "border-stone-200 focus:border-amber-600",
+      "bg-paper text-ink placeholder:text-muted",
+      error ? "border-red-300 focus:border-red-500" : "border-line focus:border-pine",
     ]
       .filter(Boolean)
       .join(" ");
 
   return (
     <div>
-      <label
-        className={`text-[10px] font-mono block uppercase tracking-wider mb-1.5 ${
-          isVault ? "text-stone-500" : "text-stone-400"
-        }`}
-      >
+      <label className="text-[10px] font-sans uppercase tracking-widest font-medium block mb-1.5 text-muted">
         {label}
       </label>
       <div className="relative">
         {Icon && (
-          <Icon
-            className={`w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none ${
-              isVault ? "text-stone-500" : "text-stone-400"
-            }`}
-          />
+          <Icon className="w-3.5 h-3.5 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none text-muted" />
         )}
         <input
           id={id}
@@ -74,11 +58,7 @@ export default function AuthField({
           <button
             type="button"
             onClick={() => setShowPassword((prev) => !prev)}
-            className={`absolute inset-y-0 right-0 pr-3.5 flex items-center transition ${
-              isVault
-                ? "text-stone-500 hover:text-stone-300"
-                : "text-stone-400 hover:text-stone-600"
-            }`}
+            className="absolute inset-y-0 right-0 pr-3.5 flex items-center transition text-muted hover:text-ink"
             title={showPassword ? "Hide password" : "Show password"}
             aria-label={showPassword ? "Hide password" : "Show password"}
           >
@@ -91,7 +71,7 @@ export default function AuthField({
         )}
       </div>
       {error && (
-        <p className="text-[11px] text-red-600 font-mono mt-1.5">{error}</p>
+        <p className="text-[11px] text-red-600 font-sans uppercase tracking-widest font-medium mt-1.5">{error}</p>
       )}
     </div>
   );

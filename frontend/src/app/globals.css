@@ -2,10 +2,59 @@
 
 @theme {
   --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-serif: "Playfair Display", Georgia, serif;
+  --font-serif: "Cambon Light", "Cambon", "Iowan Old Style", Georgia, serif;
   --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
     "Liberation Mono", "Courier New", monospace;
-  --font-display: "Space Grotesk", sans-serif;
+
+  /* CoolNerdz design system tokens (design.md) — used across every public
+     (site) page: Home, Curriculum, Store, Future Clients, Pathways, Tiers,
+     Partnerships, and the auth forms. Admin/Teacher/Portal screens are out
+     of scope and keep using stone/amber utilities untouched. */
+  --color-porcelain: #f8f1e8;
+  --color-paper: #fffaf1;
+  --color-ink: #101615;
+  --color-moss: #21483f;
+  --color-pine: #092d29;
+  --color-sage: #d9e9d1;
+  --color-mint: #bee8d4;
+  --color-sky: #dcecf7;
+  --color-blue: #275bd8;
+  --color-clay: #d96f5f;
+  --color-rose: #ffc7b8;
+  --color-lavender: #e8def4;
+  --color-gold: #c7a85b;
+  --color-muted: #62706a;
+  --color-line: rgba(22, 33, 29, 0.12);
+
+  --radius-nav: 22px;
+  --radius-card: 22px;
+  --radius-panel: 32px;
+  --radius-theatre: 40px;
+
+  --shadow-elevated: 0 28px 90px rgba(20, 35, 31, 0.16);
+  --shadow-soft: 0 12px 36px rgba(20, 35, 31, 0.08);
+}
+
+/* CoolNerdz page background recipes — applied by SiteShell to the root
+   wrapper. Light is design.md's layered porcelain gradient; vault reuses
+   design.md's own dark-green "Platform Section" recipe so both states share
+   one design language instead of inventing a separate dark palette. */
+.cn-page-bg {
+  background:
+    linear-gradient(112deg, rgba(220, 236, 247, 0.76), transparent 34%),
+    linear-gradient(248deg, rgba(255, 199, 184, 0.62), transparent 32%),
+    linear-gradient(
+      180deg,
+      rgba(255, 250, 241, 0.7),
+      rgba(248, 241, 232, 1) 58%
+    ),
+    var(--color-porcelain);
+}
+
+.cn-page-bg-vault {
+  background:
+    linear-gradient(135deg, rgba(217, 111, 95, 0.18), transparent 44%),
+    linear-gradient(135deg, #081f1c, #173f37 62%, #315747);
 }
 
 button:not(:disabled),
@@ -35,308 +84,6 @@ select:disabled {
 
 .scrollbar-hide::-webkit-scrollbar {
   display: none;
-}
-
-/* ==========================================================================
-   Vault dark-mode overrides.
-   SiteShell puts a `vault-dark` class on the page wrapper when the user
-   toggles dark/vault theme. These rules remap common light-theme utility
-   classes to dark equivalents for any descendant, so most pages get a
-   working dark mode without needing per-element isVault conditionals.
-   ========================================================================== */
-
-.vault-dark .bg-white,
-.vault-dark .bg-white\/90 {
-  background-color: #161412 !important;
-}
-
-.vault-dark .bg-stone-50,
-.vault-dark .bg-\[\#faf9f6\] {
-  background-color: #0f0e0d !important;
-}
-
-.vault-dark .bg-stone-100 {
-  background-color: #1c1917 !important;
-}
-
-.vault-dark .bg-stone-200 {
-  background-color: #2b2622 !important;
-}
-
-.vault-dark .bg-amber-50 {
-  background-color: #261e14 !important;
-  color: #fbbf24 !important;
-}
-
-.vault-dark .bg-amber-600\/10 {
-  background-color: rgba(245, 158, 11, 0.12) !important;
-}
-
-.vault-dark .bg-orange-50 {
-  background-color: #2a1b12 !important;
-  color: #f97316 !important;
-}
-
-.vault-dark .bg-emerald-50 {
-  background-color: #10241c !important;
-  color: #34d399 !important;
-}
-
-.vault-dark .bg-blue-50 {
-  background-color: #101f2e !important;
-  color: #60a5fa !important;
-}
-
-.vault-dark .bg-stone-900 {
-  background-color: #2e2a27 !important;
-  color: #faf9f6 !important;
-  border-color: #443e38 !important;
-}
-
-.vault-dark .text-stone-900,
-.vault-dark .text-stone-800 {
-  color: #f5f5f4 !important;
-}
-
-.vault-dark .text-stone-700,
-.vault-dark .text-stone-600 {
-  color: #a8a29e !important;
-}
-
-.vault-dark .text-stone-500,
-.vault-dark .text-stone-400 {
-  color: #78716c !important;
-}
-
-.vault-dark .text-stone-300 {
-  color: #d6d3d1 !important;
-}
-
-.vault-dark .text-amber-900,
-.vault-dark .text-amber-800,
-.vault-dark .text-amber-750,
-.vault-dark .text-amber-700 {
-  color: #f59e0b !important;
-}
-
-.vault-dark .text-orange-700 {
-  color: #f97316 !important;
-}
-
-.vault-dark .text-emerald-700 {
-  color: #34d399 !important;
-}
-
-.vault-dark .text-blue-700 {
-  color: #60a5fa !important;
-}
-
-.vault-dark .border-stone-100,
-.vault-dark .border-stone-200,
-.vault-dark .border-stone-200\/80 {
-  border-color: #24211e !important;
-}
-
-.vault-dark .border-amber-200,
-.vault-dark .border-amber-100 {
-  border-color: rgba(245, 158, 11, 0.25) !important;
-}
-
-.vault-dark .border-orange-100 {
-  border-color: rgba(249, 115, 22, 0.25) !important;
-}
-
-.vault-dark .border-emerald-100 {
-  border-color: rgba(52, 211, 153, 0.25) !important;
-}
-
-.vault-dark .border-blue-100 {
-  border-color: rgba(96, 165, 250, 0.25) !important;
-}
-
-/* TabNav sidebar variant: text-stone-400/500 both map to the same dim
-   #78716c above, which is too low-contrast for icon/description text
-   sitting directly on a near-black vault card. Brighten just these. */
-.vault-dark .tabnav-sidebar-icon,
-.vault-dark .tabnav-sidebar-desc {
-  color: #a8a29e !important;
-}
-
-/* Table row hover/selected states use opacity-modifier utilities
-   (hover:bg-stone-50/60, bg-amber-50/20, ...) which are their own distinct
-   class names — the plain bg-stone-50/bg-amber-50 overrides above don't
-   match them, so left alone they'd paint a light-theme highlight straight
-   onto a dark row. Give the exact classes used by DataTable and
-   EnrollmentScoresTab a dark-safe equivalent. */
-.vault-dark .hover\:bg-stone-50\/60:hover {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-.vault-dark .hover\:bg-amber-50\/10:hover {
-  background-color: rgba(245, 158, 11, 0.08) !important;
-}
-
-.vault-dark .bg-amber-50\/20 {
-  background-color: rgba(245, 158, 11, 0.14) !important;
-}
-
-/* ==========================================================================
-   Extended coverage for the Admin/Teacher Courses screens: hover/focus
-   variants, opacity-modifier utilities, and color families that the base
-   rules above don't touch. Same descendant-override approach as above —
-   these are separate literal class names, not additional specificity on
-   existing rules.
-   ========================================================================== */
-
-.vault-dark .hover\:bg-stone-50:hover {
-  background-color: rgba(255, 255, 255, 0.06) !important;
-}
-
-.vault-dark .hover\:bg-stone-100:hover {
-  background-color: #2b2622 !important;
-}
-
-.vault-dark .hover\:bg-stone-800:hover {
-  background-color: #443e38 !important;
-}
-
-.vault-dark .focus\:bg-white:focus {
-  background-color: #1c1917 !important;
-}
-
-.vault-dark .bg-white\/95 {
-  background-color: rgba(22, 20, 18, 0.95) !important;
-}
-
-.vault-dark .bg-stone-50\/60 {
-  background-color: rgba(255, 255, 255, 0.03) !important;
-}
-
-.vault-dark .bg-stone-50\/80 {
-  background-color: rgba(255, 255, 255, 0.04) !important;
-}
-
-.vault-dark .bg-stone-100\/70 {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-.vault-dark .border-stone-200\/90,
-.vault-dark .border-stone-200\/80 {
-  border-color: #2b2622 !important;
-}
-
-.vault-dark .bg-rose-50 {
-  background-color: #2a1418 !important;
-  color: #fb7185 !important;
-}
-
-.vault-dark .hover\:bg-rose-50:hover {
-  background-color: rgba(244, 63, 94, 0.12) !important;
-}
-
-.vault-dark .text-rose-600,
-.vault-dark .text-rose-500 {
-  color: #fb7185 !important;
-}
-
-.vault-dark .border-rose-100,
-.vault-dark .border-rose-200 {
-  border-color: rgba(244, 63, 94, 0.25) !important;
-}
-
-.vault-dark .hover\:bg-emerald-50:hover {
-  background-color: rgba(52, 211, 153, 0.12) !important;
-}
-
-.vault-dark .hover\:bg-amber-50:hover {
-  background-color: rgba(245, 158, 11, 0.1) !important;
-}
-
-.vault-dark .hover\:text-amber-800:hover {
-  color: #fbbf24 !important;
-}
-
-.vault-dark .hover\:border-amber-200:hover {
-  border-color: rgba(245, 158, 11, 0.3) !important;
-}
-
-.vault-dark .hover\:text-stone-700:hover,
-.vault-dark .hover\:text-stone-800:hover {
-  color: #e7e5e4 !important;
-}
-
-.vault-dark .text-sky-600 {
-  color: #38bdf8 !important;
-}
-
-.vault-dark .text-violet-600 {
-  color: #a78bfa !important;
-}
-
-.vault-dark .bg-stone-200\/70,
-.vault-dark .bg-stone-300 {
-  background-color: #3a3532 !important;
-}
-
-.vault-dark .divide-stone-100 > :not(:last-child) {
-  border-color: #24211e !important;
-}
-
-.vault-dark .hover\:text-amber-700:hover {
-  color: #fbbf24 !important;
-}
-
-.vault-dark .hover\:border-amber-500:hover,
-.vault-dark .hover\:border-amber-200\/80:hover {
-  border-color: rgba(245, 158, 11, 0.3) !important;
-}
-
-.vault-dark .text-amber-600 {
-  color: #fbbf24 !important;
-}
-
-.vault-dark .text-emerald-600 {
-  color: #34d399 !important;
-}
-
-.vault-dark .text-rose-700 {
-  color: #fb7185 !important;
-}
-
-.vault-dark .text-red-600 {
-  color: #f87171 !important;
-}
-
-.vault-dark .text-stone-200 {
-  color: #57534e !important;
-}
-
-.vault-dark .border-stone-300 {
-  border-color: #3a3532 !important;
-}
-
-.vault-dark .border-emerald-200 {
-  border-color: rgba(52, 211, 153, 0.25) !important;
-}
-
-.vault-dark .border-rose-200 {
-  border-color: rgba(244, 63, 94, 0.25) !important;
-}
-
-.vault-dark .border-blue-200 {
-  border-color: rgba(96, 165, 250, 0.25) !important;
-}
-
-.vault-dark .border-orange-200 {
-  border-color: rgba(249, 115, 22, 0.25) !important;
-}
-
-.vault-dark .border-amber-200\/40 {
-  border-color: rgba(245, 158, 11, 0.2) !important;
-}
-
-.vault-dark .hover\:text-amber-950:hover {
-  color: #fde68a !important;
 }
 
 /* ==========================================================================

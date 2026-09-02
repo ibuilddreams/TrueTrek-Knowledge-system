@@ -2,7 +2,6 @@
 
 import { AlertTriangle } from "lucide-react";
 import Modal from "@/components/ui/Modal";
-import { useTheme } from "@/hooks/useTheme";
 
 export default function ConfirmDialog({
   isOpen,
@@ -15,8 +14,6 @@ export default function ConfirmDialog({
   tone = "danger",
   size = "base",
 }) {
-  const { isVault } = useTheme();
-
   return (
     <Modal
       isOpen={isOpen}
@@ -31,11 +28,7 @@ export default function ConfirmDialog({
           type="button"
           onClick={onClose}
           disabled={isConfirming}
-          className={`px-4 py-3 ${size === "lg" ? "text-sm" : "text-xs"} font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 flex items-center justify-center gap-2 border shadow-sm disabled:opacity-60 disabled:cursor-not-allowed ${
-            isVault
-              ? "bg-stone-800/60 hover:bg-stone-800 text-stone-300 border-stone-700"
-              : "bg-stone-50 hover:bg-stone-100 text-stone-700 border-stone-200"
-          }`}
+          className={`px-4 py-3 ${size === "lg" ? "text-sm" : "text-xs"} font-semibold font-sans rounded-lg tracking-wider transition-colors duration-150 flex items-center justify-center gap-2 border shadow-sm disabled:opacity-60 disabled:cursor-not-allowed bg-porcelain hover:bg-white text-ink border-line`}
         >
           Cancel
         </button>
@@ -43,12 +36,10 @@ export default function ConfirmDialog({
           type="button"
           onClick={onConfirm}
           disabled={isConfirming}
-          className={`px-6 py-3 disabled:opacity-60 disabled:cursor-not-allowed text-white ${size === "lg" ? "text-sm" : "text-xs"} font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2 ${
+          className={`px-6 py-3 disabled:opacity-60 disabled:cursor-not-allowed text-paper ${size === "lg" ? "text-sm" : "text-xs"} font-semibold font-sans rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2 ${
             tone === "danger"
               ? "bg-rose-600 hover:bg-rose-700"
-              : isVault
-                ? "bg-stone-700 hover:bg-stone-600"
-                : "bg-stone-900 hover:bg-stone-800"
+              : "bg-pine hover:bg-moss"
           }`}
         >
           {isConfirming ? (

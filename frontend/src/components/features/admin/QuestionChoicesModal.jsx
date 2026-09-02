@@ -12,7 +12,7 @@ import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 const FIELD_CLASS =
-  "w-full px-3 py-2 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-lg text-sm font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60";
+  "w-full px-3 py-2 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-lg text-sm text-ink placeholder:text-muted transition disabled:opacity-60";
 
 function ChoiceRow({ choice, onMarkCorrect, onEdit, onDelete, isMutating }) {
   const [isEditing, setIsEditing] = useState(false);
@@ -27,7 +27,7 @@ function ChoiceRow({ choice, onMarkCorrect, onEdit, onDelete, isMutating }) {
 
   if (isEditing) {
     return (
-      <li className="flex items-center gap-2 p-2.5 rounded-xl border border-amber-200 bg-amber-50/40">
+      <li className="flex items-center gap-2 p-2.5 rounded-card border border-gold/40 bg-gold/12">
         <input
           type="text"
           value={text}
@@ -41,7 +41,7 @@ function ChoiceRow({ choice, onMarkCorrect, onEdit, onDelete, isMutating }) {
           disabled={isMutating}
           title="Save"
           aria-label="Save choice"
-          className="w-7 h-7 flex items-center justify-center rounded-lg bg-stone-900 text-white hover:bg-stone-800 transition cursor-pointer disabled:opacity-60"
+          className="w-7 h-7 flex items-center justify-center rounded-full bg-pine text-paper hover:bg-moss transition cursor-pointer disabled:opacity-60"
         >
           <Check className="w-3.5 h-3.5" />
         </button>
@@ -53,7 +53,7 @@ function ChoiceRow({ choice, onMarkCorrect, onEdit, onDelete, isMutating }) {
           }}
           title="Cancel"
           aria-label="Cancel edit"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-full border border-line text-ink hover:bg-porcelain transition cursor-pointer"
         >
           <X className="w-3.5 h-3.5" />
         </button>
@@ -62,7 +62,7 @@ function ChoiceRow({ choice, onMarkCorrect, onEdit, onDelete, isMutating }) {
   }
 
   return (
-    <li className="flex items-center gap-3 p-2.5 rounded-xl border border-stone-200 bg-white">
+    <li className="flex items-center gap-3 p-2.5 rounded-card border border-line bg-paper">
       <button
         type="button"
         onClick={() => onMarkCorrect(choice)}
@@ -70,19 +70,19 @@ function ChoiceRow({ choice, onMarkCorrect, onEdit, onDelete, isMutating }) {
         title={choice.is_correct ? "Correct answer" : "Mark as correct"}
         aria-label={choice.is_correct ? "Correct answer" : "Mark as correct"}
         className={`w-6 h-6 flex items-center justify-center rounded-full shrink-0 transition cursor-pointer disabled:cursor-not-allowed ${
-          choice.is_correct ? "text-emerald-600" : "text-stone-300 hover:text-emerald-500"
+          choice.is_correct ? "text-moss" : "text-muted hover:text-moss"
         }`}
       >
         {choice.is_correct ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
       </button>
-      <p className="min-w-0 flex-1 text-sm font-semibold text-stone-800 truncate">{choice.text}</p>
+      <p className="min-w-0 flex-1 text-sm font-semibold text-ink truncate">{choice.text}</p>
       <div className="flex items-center gap-1.5 shrink-0">
         <button
           type="button"
           onClick={() => setIsEditing(true)}
           title="Edit choice"
           aria-label="Edit choice"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-full border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
         >
           <Pencil className="w-3.5 h-3.5" />
         </button>
@@ -91,7 +91,7 @@ function ChoiceRow({ choice, onMarkCorrect, onEdit, onDelete, isMutating }) {
           onClick={() => onDelete(choice)}
           title="Delete choice"
           aria-label="Delete choice"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-full border border-line text-rose-600 hover:bg-rose-50 transition cursor-pointer"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -217,13 +217,13 @@ export default function QuestionChoicesModal({ isOpen, onClose, question, quizId
             <button
               type="submit"
               disabled={createMutation.isPending || !newChoiceText.trim()}
-              className="shrink-0 px-3.5 py-2 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center gap-1.5 cursor-pointer"
+              className="shrink-0 px-3.5 py-2 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-xs font-semibold rounded-full tracking-wider uppercase transition-all flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-3.5 h-3.5" />
               Add
             </button>
           </form>
-          <p className="text-[11px] font-mono text-stone-400 tracking-wider">
+          <p className="text-[11px] text-muted tracking-wider">
             Click the circle to mark a choice as the correct answer.
           </p>
         </div>

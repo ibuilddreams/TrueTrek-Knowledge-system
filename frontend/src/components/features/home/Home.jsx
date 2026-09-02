@@ -246,16 +246,16 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
   return (
     <div
       id="home-container"
-      className="relative overflow-hidden w-full bg-[#1c1917] text-white"
+      className="relative overflow-hidden w-full bg-transparent text-ink"
     >
       {/* Decorative ambient background */}
       <div
         id="ambient-sphere-1"
-        className="absolute top-10 left-10 w-96 h-96 rounded-full bg-amber-600/15 blur-[120px] animate-pulse"
+        className="absolute top-10 left-10 w-96 h-96 rounded-full bg-gold/10 blur-[120px] animate-pulse"
       ></div>
       <div
         id="ambient-sphere-2"
-        className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-stone-500/15 blur-[120px] animate-pulse"
+        className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-sky/20 blur-[120px] animate-pulse"
       ></div>
 
       {/* Hero Header Section */}
@@ -268,9 +268,9 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 bg-stone-800/80 border border-stone-700/60 px-4 py-2 rounded-full text-stone-300 text-sm font-mono mb-8 tracking-wide uppercase"
+          className="inline-flex items-center gap-2 bg-pine/10 border border-pine/15 px-4 py-2 rounded-full text-pine font-sans uppercase tracking-widest text-xs font-medium mb-8"
         >
-          <Flame className="w-3.5 h-3.5 text-amber-500" />
+          <Flame className="w-3.5 h-3.5 text-gold" />
           Incubator for Elite Pathfinders & Scholars
         </motion.div>
 
@@ -279,10 +279,10 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.15 }}
-          className="text-5xl md:text-7xl lg:text-8xl font-serif text-white tracking-tight leading-[1.08] max-w-4xl font-semibold mb-6"
+          className="text-5xl md:text-7xl lg:text-8xl font-serif text-ink tracking-tight leading-[0.88] max-w-4xl font-light mb-6"
         >
           Build Your{" "}
-          <span className="italic text-stone-100 font-normal">Legacy</span>.
+          <span className="italic text-pine font-light">Legacy</span>.
         </motion.h1>
 
         <motion.p
@@ -290,7 +290,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.8, delay: 0.3 }}
-          className="text-stone-300 text-lg md:text-xl font-sans max-w-2xl font-light mb-10 leading-relaxed"
+          className="text-muted text-lg md:text-xl font-sans max-w-2xl font-light mb-10 leading-relaxed"
         >
           The premier 9-tier educational roadmap and strategic incubator
           helping high-potential athletes, world-class scholars, and
@@ -308,7 +308,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           <button
             id="btn-explore-curriculum"
             onClick={onExploreTiers}
-            className="w-full sm:w-auto bg-amber-600 hover:bg-amber-500 text-white font-semibold px-8 py-3.5 rounded-full flex items-center justify-center gap-2 transition duration-300 shadow-lg shadow-amber-950/40 text-sm tracking-wide"
+            className="w-full sm:w-auto bg-pine hover:bg-moss text-paper font-semibold px-8 py-3.5 rounded-full flex items-center justify-center gap-2 transition duration-300 shadow-elevated text-sm tracking-wide"
           >
             Explore 9-Tier Curriculum
             <ArrowRight className="w-4 h-4" />
@@ -316,7 +316,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           <button
             id="btn-portal-access"
             onClick={onNavigateToPortal}
-            className="w-full sm:w-auto bg-stone-850 hover:bg-stone-800 text-stone-200 border border-stone-850 px-8 py-3.5 rounded-full text-sm font-semibold transition duration-300 tracking-wide"
+            className="w-full sm:w-auto bg-paper hover:bg-porcelain text-ink border border-line px-8 py-3.5 rounded-full text-sm font-semibold transition duration-300 tracking-wide"
           >
             Enter Student Portal
           </button>
@@ -325,32 +325,32 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
         {/* Global Impact Dashboard Section */}
         <div
           id="stats-dashboard"
-          className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl mt-24 border-t border-stone-800/80 pt-16"
+          className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl mt-24 border-t border-line pt-16"
         >
           <div id="stat-students" className="text-center md:text-left">
-            <p className="text-4xl md:text-5xl font-[family-name:var(--font-display)] font-bold text-amber-500 tracking-tight">
+            <p className="text-4xl md:text-5xl font-serif font-light text-pine tracking-tight">
               12,400+
             </p>
-            <p className="text-stone-400 text-sm font-mono uppercase mt-2 tracking-wider">
+            <p className="text-muted font-sans uppercase tracking-widest text-xs font-medium mt-2">
               Active Global Pathfinders
             </p>
           </div>
           <div
             id="stat-admissions"
-            className="text-center md:text-left border-y md:border-y-0 md:border-x border-stone-800/80 py-6 md:py-0 md:px-8"
+            className="text-center md:text-left border-y md:border-y-0 md:border-x border-line py-6 md:py-0 md:px-8"
           >
-            <p className="text-4xl md:text-5xl font-[family-name:var(--font-display)] font-bold text-white tracking-tight">
+            <p className="text-4xl md:text-5xl font-serif font-light text-ink tracking-tight">
               98.4%
             </p>
-            <p className="text-stone-400 text-sm font-mono uppercase mt-2 tracking-wider">
+            <p className="text-muted font-sans uppercase tracking-widest text-xs font-medium mt-2">
               Collegiate Selection Rate
             </p>
           </div>
           <div id="stat-capital" className="text-center md:text-right">
-            <p className="text-4xl md:text-5xl font-[family-name:var(--font-display)] font-bold text-stone-200 tracking-tight">
+            <p className="text-4xl md:text-5xl font-serif font-light text-ink tracking-tight">
               $145M+
             </p>
-            <p className="text-stone-400 text-sm font-mono uppercase mt-2 tracking-wider">
+            <p className="text-muted font-sans uppercase tracking-widest text-xs font-medium mt-2">
               Aggregate Venture Valuation
             </p>
           </div>
@@ -360,7 +360,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       {/* Cinematic Walkthrough Broadcast Section */}
       <section
         id="cinematic-walkthrough-section"
-        className="bg-[#141211] border-t border-stone-800/85 py-20 px-6 relative z-10"
+        className="bg-transparent border-t border-line py-20 px-6 relative z-10"
       >
         <div className="max-w-6xl mx-auto">
           <SectionHeading
@@ -377,7 +377,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       {/* Profile Discovery Segment (Bento Panel) */}
       <section
         id="pathway-audit-section"
-        className="bg-[#141211] border-t border-stone-800/60 py-20 px-6"
+        className="bg-transparent border-t border-line py-20 px-6"
       >
         <div className="max-w-6xl mx-auto">
           <SectionHeading
@@ -388,13 +388,13 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           />
 
           {isPathwaysLoading && (
-            <div className="flex items-center justify-center min-h-[200px] text-stone-500 text-sm font-mono uppercase tracking-wider">
+            <div className="flex items-center justify-center min-h-[200px] text-muted font-sans uppercase tracking-widest text-xs font-medium">
               Loading pathways...
             </div>
           )}
 
           {!isPathwaysLoading && pathways.length === 0 && (
-            <div className="flex items-center justify-center min-h-[200px] text-stone-500 text-sm font-mono uppercase tracking-wider">
+            <div className="flex items-center justify-center min-h-[200px] text-muted font-sans uppercase tracking-widest text-xs font-medium">
               No pathways published yet — check back soon.
             </div>
           )}
@@ -411,20 +411,20 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     id={`audit-profile-btn-${pathway.id}`}
                     key={pathway.id}
                     onClick={() => setSelectedPathwayId(pathway.id)}
-                    className={`w-full text-left p-4 rounded-xl border transition-all duration-300 flex flex-col gap-1 ${
+                    className={`w-full text-left p-4 rounded-card border transition-all duration-300 flex flex-col gap-1 ${
                       selectedPathwayId === pathway.id
-                        ? "bg-amber-600/10 border-amber-500/80 text-white shadow-md"
-                        : "bg-stone-900/60 border-stone-800/40 text-stone-400 hover:bg-stone-900 hover:border-stone-800"
+                        ? "bg-pine/10 border-pine/60 text-ink shadow-soft"
+                        : "bg-paper border-line text-muted hover:bg-porcelain hover:border-pine/30"
                     }`}
                   >
-                    <span className="font-medium text-sm text-stone-200">
+                    <span className="font-medium text-sm text-ink">
                       {pathway.name}
                     </span>
                     <span
-                      className={`text-sm font-mono uppercase tracking-wider ${
+                      className={`font-sans uppercase tracking-widest text-xs font-medium ${
                         selectedPathwayId === pathway.id
-                          ? "text-amber-500"
-                          : "text-stone-500"
+                          ? "text-pine"
+                          : "text-muted"
                       }`}
                     >
                       {pathway.course_count} Course
@@ -437,36 +437,36 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
               {/* Right Audit Recommendation Container */}
               <div
                 id="audit-results-container"
-                className="lg:col-span-8 bg-stone-900 border border-stone-800/80 rounded-2xl p-6 md:p-8 relative min-h-[380px] flex flex-col justify-between"
+                className="lg:col-span-8 bg-paper border border-line rounded-panel p-6 md:p-8 relative min-h-[380px] flex flex-col justify-between"
               >
                 <div>
-                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-stone-800 pb-4 mb-6">
+                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4 mb-6">
                     <div>
-                      <span className="text-amber-500 text-sm font-mono tracking-widest uppercase block mb-1">
+                      <span className="text-gold font-sans uppercase tracking-widest text-xs font-medium block mb-1">
                         RECOMMENDED PATHWAY
                       </span>
-                      <h3 className="text-xl md:text-2xl font-serif font-semibold tracking-tight text-white">
+                      <h3 className="text-xl md:text-2xl font-serif font-light tracking-tight text-ink">
                         {selectedPathway?.name || "..."}
                       </h3>
                     </div>
-                    <div className="bg-amber-600/15 border border-amber-500/20 px-3 py-1.5 rounded-lg text-amber-500 font-mono text-sm font-semibold">
+                    <div className="bg-gold/15 border border-gold/20 px-3 py-1.5 rounded-lg text-gold font-sans text-sm font-semibold">
                       {formatCoursePrice(selectedPathway?.base_price)} Bundle
                     </div>
                   </div>
 
                   <div className="mb-6">
-                    <p className="text-stone-300 text-sm leading-relaxed mb-6">
-                      <span className="font-semibold text-stone-200">
+                    <p className="text-muted text-sm leading-relaxed mb-6">
+                      <span className="font-semibold text-ink">
                         Objective Profile Target:
                       </span>{" "}
                       {selectedPathway?.description ||
                         selectedPathway?.summary ||
                         "Loading pathway details..."}
                     </p>
-                    <div className="bg-stone-950 p-3 rounded-lg border border-stone-850 mb-6 flex gap-2.5 items-center">
-                      <Target className="text-amber-500 w-5 h-5 shrink-0" />
-                      <p className="text-sm text-stone-300">
-                        <span className="font-mono font-medium text-amber-500 block uppercase tracking-wider text-[11px]">
+                    <div className="bg-porcelain p-3 rounded-lg border border-line mb-6 flex gap-2.5 items-center">
+                      <Target className="text-pine w-5 h-5 shrink-0" />
+                      <p className="text-sm text-muted">
+                        <span className="font-sans font-medium text-pine block uppercase tracking-widest text-[11px]">
                           Primary Core Curriculum Licensing
                         </span>
                         {pathwayCourses.length > 0
@@ -477,22 +477,22 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       </p>
                     </div>
 
-                    <p className="text-sm font-mono uppercase text-stone-400 tracking-wider mb-3">
+                    <p className="font-sans uppercase text-muted tracking-widest text-xs font-medium mb-3">
                       Included In This Pathway
                     </p>
                     <ul className="space-y-2.5">
                       {pathwayCourses.map(({ course }) => (
                         <li
                           key={course.id}
-                          className="flex items-start gap-2.5 text-stone-300 text-sm leading-relaxed"
+                          className="flex items-start gap-2.5 text-muted text-sm leading-relaxed"
                         >
-                          <ShieldCheck className="w-4 h-4 text-amber-500 mt-0.5 shrink-0" />
+                          <ShieldCheck className="w-4 h-4 text-pine mt-0.5 shrink-0" />
                           <span>{course.title}</span>
                         </li>
                       ))}
                       {pathwayCourses.length === 0 && (
-                        <li className="flex items-start gap-2.5 text-stone-500 text-sm leading-relaxed">
-                          <BookOpen className="w-4 h-4 text-stone-600 mt-0.5 shrink-0" />
+                        <li className="flex items-start gap-2.5 text-muted text-sm leading-relaxed">
+                          <BookOpen className="w-4 h-4 text-muted/70 mt-0.5 shrink-0" />
                           <span>No courses attached to this pathway yet.</span>
                         </li>
                       )}
@@ -500,18 +500,18 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                   </div>
                 </div>
 
-                <div className="border-t border-stone-800 text-right pt-6 mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <span className="text-stone-400 text-sm font-light text-left">
+                <div className="border-t border-line text-right pt-6 mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
+                  <span className="text-muted text-sm font-light text-left">
                     Licensed across 40+ educational administrations. Verified
                     athletic and academic compliance.
                   </span>
                   <button
                     id="btn-recommendation-cta"
                     onClick={onStartOnboarding}
-                    className="bg-white hover:bg-stone-50 text-stone-950 text-sm font-semibold px-5 py-2.5 rounded-full flex items-center gap-1.5 transition duration-350 shrink-0 shadow-sm"
+                    className="bg-pine hover:bg-moss text-paper text-sm font-semibold px-5 py-2.5 rounded-full flex items-center gap-1.5 transition duration-350 shrink-0 shadow-sm"
                   >
                     Explore {selectedPathway?.name || "This Pathway"}
-                    <Zap className="w-3.5 h-3.5 text-amber-600" />
+                    <Zap className="w-3.5 h-3.5 text-gold" />
                   </button>
                 </div>
               </div>
@@ -523,24 +523,24 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       {/* Inline Academy live advisor interactive board */}
       <section
         id="live-advisors-consultation-section"
-        className="bg-[#141211] border-t border-stone-800/60 py-20 px-6 relative overflow-hidden z-10"
+        className="bg-transparent border-t border-line py-20 px-6 relative overflow-hidden z-10"
       >
         <div
           id="inline-consult-glow"
-          className="absolute -top-12 -left-12 w-80 h-80 rounded-full bg-amber-600/5 blur-[100px] pointer-events-none"
+          className="absolute -top-12 -left-12 w-80 h-80 rounded-full bg-gold/10 blur-[100px] pointer-events-none"
         ></div>
         <div className="max-w-6xl mx-auto space-y-12 relative z-10">
           <SectionHeading
             eyebrow="Live Consulting Board"
             heading="Connect With the Senior Advisory Council"
-            headingClassName="text-3xl md:text-4xl font-serif font-black tracking-tight text-white"
+            headingClassName="text-3xl md:text-4xl font-serif font-light leading-[0.92] tracking-tight text-ink"
             subtitle="Formulate a custom strategic curriculum roadmap in real-time. Describe your targets and get advice back from our leading advisors immediately."
           />
 
           <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
             {/* Advisor Avatars selector */}
             <div className="lg:col-span-5 space-y-4">
-              <label className="text-xs font-mono text-stone-500 uppercase tracking-widest block text-left">
+              <label className="text-xs font-sans uppercase text-muted tracking-widest block text-left font-medium">
                 Choose Direct Session Advisor
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -552,29 +552,29 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       setSelectedConsultAdvisorId(advisor.id);
                       setConsultAdvice("");
                     }}
-                    className={`p-4 rounded-2xl text-left border transition-all duration-300 flex flex-col gap-3 cursor-pointer ${
+                    className={`p-4 rounded-card text-left border transition-all duration-300 flex flex-col gap-3 cursor-pointer ${
                       selectedConsultAdvisorId === advisor.id
-                        ? "bg-amber-600/10 border-amber-500 text-white shadow-xl shadow-amber-950/10"
-                        : "bg-stone-904 border-stone-800/80 text-stone-400 hover:bg-stone-900 hover:border-stone-700"
+                        ? "bg-pine/10 border-pine text-ink shadow-elevated"
+                        : "bg-paper border-line text-muted hover:bg-porcelain hover:border-pine/30"
                     }`}
                   >
                     <div className="flex items-start gap-3">
                       <img
                         src={advisor.avatar}
                         alt={advisor.name}
-                        className="w-11 h-11 rounded-full border border-stone-700 object-cover bg-stone-950 shrink-0"
+                        className="w-11 h-11 rounded-full border border-line object-cover bg-porcelain shrink-0"
                         referrerPolicy="no-referrer"
                       />
                       <div className="min-w-0">
-                        <p className="text-base font-black text-stone-100 leading-tight">
+                        <p className="text-base font-black text-ink leading-tight">
                           {advisor.name}
                         </p>
-                        <p className="text-[11px] font-mono text-stone-500 mt-0.5 uppercase tracking-wider leading-snug">
+                        <p className="text-[11px] font-sans uppercase text-muted mt-0.5 tracking-widest leading-snug font-medium">
                           {advisor.title.split("&")[0]}
                         </p>
                       </div>
                     </div>
-                    <p className="text-xs text-stone-400 italic leading-relaxed line-clamp-2">
+                    <p className="text-xs text-muted italic leading-relaxed line-clamp-2">
                       &quot;{advisor.quote}&quot;
                     </p>
                   </button>
@@ -583,13 +583,13 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
             </div>
 
             {/* Consultation Panel & Feedback Reports */}
-            <div className="lg:col-span-7 bg-stone-900/40 border border-stone-800/80 rounded-2xl p-6 md:p-8 space-y-6">
+            <div className="lg:col-span-7 bg-ink border border-white/10 rounded-panel p-6 md:p-8 space-y-6">
               <div className="space-y-2 text-left">
-                <div className="flex justify-between items-center bg-[#141211]/30 p-1 rounded-md">
-                  <span className="text-xs font-mono text-stone-300 uppercase tracking-wider block font-bold">
+                <div className="flex justify-between items-center bg-white/5 p-1 rounded-md">
+                  <span className="text-xs font-sans uppercase text-sage/70 tracking-widest block font-bold">
                     Configure Your Custom Scenario
                   </span>
-                  <span className="text-xs font-mono text-amber-500 uppercase font-semibold">
+                  <span className="text-xs font-sans uppercase text-gold font-semibold tracking-widest">
                     Active Session
                   </span>
                 </div>
@@ -601,9 +601,9 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     value={consultQuery}
                     onChange={(e) => setConsultQuery(e.target.value)}
                     placeholder={`e.g., I am an aspiring independent developer looking to structure simple seed-funding parameters. Which core tiers and steps do I need to prevent venture dilution?`}
-                    className="w-full bg-stone-950/70 border border-stone-800 rounded-xl p-4 text-base font-mono text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 focus:bg-stone-950 leading-relaxed resize-none"
+                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-base font-sans text-paper placeholder-sage/40 focus:outline-none focus:border-gold focus:bg-white/10 leading-relaxed resize-none"
                   />
-                  <div className="absolute bottom-3 right-3 text-[11px] font-mono text-stone-500 select-none">
+                  <div className="absolute bottom-3 right-3 text-[11px] font-sans text-sage/50 select-none">
                     {consultQuery.length} chars
                   </div>
                 </div>
@@ -611,7 +611,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
 
               {/* Suggestions pills */}
               <div className="space-y-2 text-left">
-                <span className="text-[11px] font-mono text-stone-500 uppercase tracking-wide block font-semibold">
+                <span className="text-[11px] font-sans uppercase text-sage/60 tracking-widest block font-semibold">
                   Suggested Inquiries:
                 </span>
                 <div className="flex flex-wrap gap-2">
@@ -624,7 +624,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       id={`consult-preset-btn-${pIdx}`}
                       key={pIdx}
                       onClick={() => setConsultQuery(preset)}
-                      className="bg-stone-950/90 hover:bg-stone-800 text-stone-400 hover:text-stone-200 border border-stone-800/80 hover:border-stone-700 text-xs px-3.5 py-1.5 rounded-lg transition text-left cursor-pointer"
+                      className="bg-white/5 hover:bg-white/10 text-sage/70 hover:text-paper border border-white/10 hover:border-white/20 text-xs px-3.5 py-1.5 rounded-lg transition text-left cursor-pointer"
                     >
                       {preset}
                     </button>
@@ -633,16 +633,16 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
               </div>
 
               {/* Submit trigger */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-2 border-t border-stone-800/80">
-                <div className="flex items-center gap-2 text-left text-stone-500 text-xs">
-                  <Sparkles className="w-4 h-4 text-amber-500 shrink-0 select-none" />
+              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-2 border-t border-white/10">
+                <div className="flex items-center gap-2 text-left text-sage/60 text-xs">
+                  <Sparkles className="w-4 h-4 text-gold shrink-0 select-none" />
                   <span>Secure satellite routing active</span>
                 </div>
                 <button
                   id="consult-submit-query-btn"
                   onClick={handleSpeakToConsultAdvisor}
                   disabled={isConsulting || !consultQuery.trim()}
-                  className="w-full sm:w-auto bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-stone-950 text-base font-mono font-extrabold uppercase tracking-widest py-3 px-6 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-amber-950/20"
+                  className="w-full sm:w-auto bg-gold hover:brightness-95 disabled:opacity-40 text-ink text-base font-sans font-extrabold uppercase tracking-widest py-3 px-6 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
                 >
                   {isConsulting
                     ? "Analyzing Parameters..."
@@ -659,13 +659,13 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 12 }}
                     id="consult-output-result"
-                    className="bg-stone-950 border border-stone-800/80 rounded-xl p-5 relative overflow-hidden text-left shadow-inner"
+                    className="bg-white/5 border border-white/10 rounded-xl p-5 relative overflow-hidden text-left shadow-inner"
                   >
-                    <div className="absolute top-0 left-0 w-1 bg-amber-500 h-full"></div>
+                    <div className="absolute top-0 left-0 w-1 bg-gold h-full"></div>
 
-                    <div className="flex justify-between items-center border-b border-stone-850 pb-3 mb-4">
-                      <p className="text-xs font-mono uppercase tracking-wide text-stone-400 flex items-center gap-2">
-                        <Award className="w-4 h-4 text-amber-500" />
+                    <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
+                      <p className="text-xs font-sans uppercase tracking-widest text-sage/60 flex items-center gap-2">
+                        <Award className="w-4 h-4 text-gold" />
                         Formal analysis by{" "}
                         {
                           ADVISOR_PERSONAS.find(
@@ -673,7 +673,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                           )?.name
                         }
                       </p>
-                      <span className="text-[11px] font-mono bg-stone-900 text-amber-500 border border-amber-500/10 px-2 py-0.5 rounded uppercase">
+                      <span className="text-[11px] font-sans uppercase bg-white/10 text-gold border border-gold/20 px-2 py-0.5 rounded tracking-widest">
                         REPORT ACTIVE
                       </span>
                     </div>
@@ -681,7 +681,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     {isConsulting ? (
                       <div className="flex flex-col items-center justify-center py-10 space-y-3">
                         <PingDotSpinner />
-                        <p className="text-base font-mono text-stone-500 animate-pulse tracking-wider">
+                        <p className="text-base font-sans text-sage/60 animate-pulse tracking-wide">
                           {isConsultReplySlow
                             ? "STILL CONNECTING TO THE DESK..."
                             : "SECURE LINK PIPELINE CONFIGURED..."}
@@ -692,17 +692,17 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                         <MarkdownMiniRenderer text={consultAdvice} size="lg" />
 
                         {/* Interactive dynamic matching callback anchors inside advisor response */}
-                        <div className="border-t border-stone-850 pt-4 mt-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-stone-450 text-sm">
-                          <span className="font-mono text-stone-500">
+                        <div className="border-t border-white/10 pt-4 mt-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-sage/60 text-sm">
+                          <span className="font-sans text-sage/60">
                             Need immediate execution? Visit our syllabus tier
                             files.
                           </span>
                           <button
                             onClick={onExploreTiers}
-                            className="bg-white/95 text-stone-950 hover:bg-stone-100 font-mono text-xs uppercase font-bold py-1.5 px-4 rounded-md transition flex items-center gap-1.5 cursor-pointer"
+                            className="bg-gold text-ink hover:brightness-95 font-sans text-xs uppercase font-bold py-1.5 px-4 rounded-md transition flex items-center gap-1.5 cursor-pointer tracking-widest"
                           >
                             Browse Curriculum File Tiers
-                            <ArrowRight className="w-3 h-3 text-amber-600" />
+                            <ArrowRight className="w-3 h-3 text-ink" />
                           </button>
                         </div>
                       </div>
@@ -721,38 +721,38 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
         className="py-20 px-6 max-w-6xl mx-auto"
       >
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="p-6 border border-stone-800 bg-[#1c1917] rounded-xl text-left">
-            <span className="w-10 h-10 rounded-lg bg-amber-600/10 text-amber-500 flex items-center justify-center font-[family-name:var(--font-display)] font-black text-lg mb-4">
+          <div className="p-6 border border-line bg-paper rounded-card text-left">
+            <span className="w-10 h-10 rounded-lg bg-gold/10 text-gold flex items-center justify-center font-serif font-light text-lg mb-4">
               I
             </span>
-            <h4 className="text-lg font-serif font-semibold tracking-tight text-white mb-2">
+            <h4 className="text-lg font-serif font-light leading-[0.92] tracking-tight text-ink mb-2">
               Architectural Integrity
             </h4>
-            <p className="text-stone-400 text-sm leading-relaxed">
+            <p className="text-muted text-sm leading-relaxed">
               We provide real tactical metrics, redline contract examples, and
               legal codes. No placeholders or shallow advice blocks.
             </p>
           </div>
-          <div className="p-6 border border-stone-800 bg-[#1c1917] rounded-xl text-left">
-            <span className="w-10 h-10 rounded-lg bg-amber-600/10 text-amber-500 flex items-center justify-center font-[family-name:var(--font-display)] font-black text-lg mb-4">
+          <div className="p-6 border border-line bg-paper rounded-card text-left">
+            <span className="w-10 h-10 rounded-lg bg-gold/10 text-gold flex items-center justify-center font-serif font-light text-lg mb-4">
               II
             </span>
-            <h4 className="text-lg font-serif font-semibold tracking-tight text-white mb-2">
+            <h4 className="text-lg font-serif font-light leading-[0.92] tracking-tight text-ink mb-2">
               Cognitive Science First
             </h4>
-            <p className="text-stone-400 text-sm leading-relaxed">
+            <p className="text-muted text-sm leading-relaxed">
               Mental capacity, diagnostic evaluation scores, and nervous system
               recovery habits drive genuine career longevity.
             </p>
           </div>
-          <div className="p-6 border border-stone-800 bg-[#1c1917] rounded-xl text-left">
-            <span className="w-10 h-10 rounded-lg bg-amber-600/10 text-amber-500 flex items-center justify-center font-[family-name:var(--font-display)] font-black text-lg mb-4">
+          <div className="p-6 border border-line bg-paper rounded-card text-left">
+            <span className="w-10 h-10 rounded-lg bg-gold/10 text-gold flex items-center justify-center font-serif font-light text-lg mb-4">
               III
             </span>
-            <h4 className="text-lg font-serif font-semibold tracking-tight text-white mb-2">
+            <h4 className="text-lg font-serif font-light leading-[0.92] tracking-tight text-ink mb-2">
               Multi-Generation Focus
             </h4>
-            <p className="text-stone-400 text-sm leading-relaxed">
+            <p className="text-muted text-sm leading-relaxed">
               NIL deals and admission spikes are merely entry gates. We prepare
               you to build robust, generational wealth offices.
             </p>
@@ -763,31 +763,31 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       {/* FAQ Section */}
       <section
         id="faq-section"
-        className="py-24 px-6 border-t border-stone-800/60 bg-[#141211]/30 relative z-10"
+        className="py-24 px-6 border-t border-line bg-transparent relative z-10"
       >
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           {/* Left Column: Heading and Badge */}
           <div className="lg:col-span-5 space-y-4 lg:sticky lg:top-24">
-            <span className="text-amber-500 text-sm font-mono uppercase tracking-widest block">
+            <span className="text-gold font-sans uppercase tracking-widest text-xs font-medium block">
               Institutional FAQ
             </span>
-            <h2 className="text-3xl md:text-4xl font-serif font-black tracking-tight text-white mb-2">
+            <h2 className="text-3xl md:text-4xl font-serif font-light leading-[0.92] tracking-tight text-ink mb-2">
               Syllabus & Partnership Intelligence
             </h2>
-            <p className="text-stone-400 text-sm font-light leading-relaxed">
+            <p className="text-muted text-sm font-light leading-relaxed">
               Have specific inquiries regarding TrueTrek Learning&apos;s
               curriculum modules, security compliance pathways, and school
               licensing structures? Review our comprehensive advisory dossier.
             </p>
-            <div className="pt-6 border-t border-stone-800/80 flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-amber-600/10 flex items-center justify-center text-amber-500 shrink-0">
+            <div className="pt-6 border-t border-line flex items-center gap-3">
+              <div className="w-9 h-9 rounded-full bg-gold/10 flex items-center justify-center text-gold shrink-0">
                 <HelpCircle className="w-5 h-5" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-mono text-stone-300 font-bold uppercase tracking-wider">
+                <p className="text-sm font-sans text-ink font-bold uppercase tracking-widest">
                   Direct Consultation Portal
                 </p>
-                <p className="text-xs text-stone-500 font-light mt-0.5">
+                <p className="text-xs text-muted font-light mt-0.5">
                   Need customized criteria evaluations? Utilize our live
                   advisors or our virtual concierge chat desk below.
                 </p>
@@ -803,18 +803,18 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                 <div
                   key={idx}
                   id={`faq-item-${idx}`}
-                  className="bg-stone-900/40 border border-stone-800/80 rounded-2xl overflow-hidden transition-all duration-300 hover:border-stone-700"
+                  className="bg-paper border border-line rounded-panel overflow-hidden transition-all duration-300 hover:border-pine/30"
                 >
                   <button
                     id={`faq-trigger-${idx}`}
                     onClick={() => setActiveFaqIndex(isOpen ? null : idx)}
-                    className="w-full py-5 px-6 flex items-center justify-between text-left gap-4 transition-colors hover:text-white"
+                    className="w-full py-5 px-6 flex items-center justify-between text-left gap-4 transition-colors hover:text-pine"
                   >
-                    <span className="font-serif text-sm md:text-base font-semibold tracking-tight text-stone-200">
+                    <span className="font-serif text-sm md:text-base font-light tracking-tight text-ink">
                       {item.question}
                     </span>
                     <span
-                      className={`w-8 h-8 rounded-full bg-stone-950 border border-stone-800 flex items-center justify-center shrink-0 text-stone-400 transition-transform duration-300 ${isOpen ? "rotate-180 text-amber-500 border-amber-500/20 bg-amber-600/5" : ""}`}
+                      className={`w-8 h-8 rounded-full bg-porcelain border border-line flex items-center justify-center shrink-0 text-muted transition-transform duration-300 ${isOpen ? "rotate-180 text-gold border-gold/20 bg-gold/5" : ""}`}
                     >
                       <ChevronDown className="w-4 h-4" />
                     </span>
@@ -828,7 +828,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.25, ease: "easeInOut" }}
                       >
-                        <div className="pb-6 px-6 font-sans text-sm md:text-sm text-stone-400 leading-relaxed border-t border-stone-850/65 pt-4 bg-[#141211]/25 select-text">
+                        <div className="pb-6 px-6 font-sans text-sm md:text-sm text-muted leading-relaxed border-t border-line pt-4 bg-porcelain/40 select-text">
                           {item.answer}
                         </div>
                       </motion.div>
@@ -853,18 +853,18 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 35 }}
               id="concierge-chat-panel"
-              className="w-[320px] sm:w-[380px] md:w-[410px] h-[520px] bg-stone-950 border border-stone-850 shadow-2xl rounded-2xl flex flex-col justify-between overflow-hidden relative mb-4"
+              className="w-[320px] sm:w-[380px] md:w-[410px] h-[520px] bg-ink border border-white/10 shadow-2xl rounded-panel flex flex-col justify-between overflow-hidden relative mb-4"
             >
               {/* Header block with selected advisor */}
-              <div className="bg-[#141211] border-b border-stone-850 px-4 py-3 flex items-center justify-between shrink-0">
+              <div className="bg-black/20 border-b border-white/10 px-4 py-3 flex items-center justify-between shrink-0">
                 <div className="flex items-center gap-2.5">
                   <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shrink-0"></div>
                   <div className="text-left min-w-0">
-                    <p className="text-sm font-extrabold text-white font-serif uppercase tracking-wider flex items-center gap-1.5 truncate">
-                      <Sparkles className="w-3.5 h-3.5 text-amber-500 shrink-0" />
+                    <p className="text-sm font-extrabold text-paper font-serif uppercase tracking-wider flex items-center gap-1.5 truncate">
+                      <Sparkles className="w-3.5 h-3.5 text-gold shrink-0" />
                       Academy AI Desk
                     </p>
-                    <p className="text-[10px] font-mono text-stone-500 uppercase tracking-wide truncate">
+                    <p className="text-[10px] font-sans uppercase text-sage/50 tracking-wide truncate">
                       Live dispatch connection
                     </p>
                   </div>
@@ -887,14 +887,14 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       ]);
                     }}
                     title="Reset advisor briefing channel"
-                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-stone-900 border border-stone-800 text-stone-400 hover:text-white hover:bg-stone-800 cursor-pointer transition"
+                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-sage/60 hover:text-paper hover:bg-white/10 cursor-pointer transition"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                   </button>
                   <button
                     id="close-concierge-chat-btn"
                     onClick={() => setIsChatOpen(false)}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-stone-900 border border-stone-800 text-stone-400 hover:text-white hover:bg-stone-800 cursor-pointer transition"
+                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-sage/60 hover:text-paper hover:bg-white/10 cursor-pointer transition"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -902,16 +902,16 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
               </div>
 
               {/* Chat Advisor Tab strip selector */}
-              <div className="bg-stone-900 border-b border-stone-850 p-2 flex gap-1.5 overflow-x-auto shrink-0 scrollbar-none items-center justify-start">
+              <div className="bg-white/5 border-b border-white/10 p-2 flex gap-1.5 overflow-x-auto shrink-0 scrollbar-none items-center justify-start">
                 {ADVISOR_PERSONAS.map((adv) => (
                   <button
                     id={`chat-strip-btn-${adv.id}`}
                     key={adv.id}
                     onClick={() => setSelectedChatAdvisorId(adv.id)}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-mono uppercase tracking-wider shrink-0 transition flex items-center gap-1 cursor-pointer ${
+                    className={`px-2 py-1 rounded-lg text-[10px] font-sans uppercase tracking-widest shrink-0 transition flex items-center gap-1 cursor-pointer ${
                       selectedChatAdvisorId === adv.id
-                        ? "bg-amber-600/15 border border-amber-500/20 text-amber-500"
-                        : "bg-stone-950/40 border border-stone-850 text-stone-400 hover:text-stone-200"
+                        ? "bg-gold/15 border border-gold/20 text-gold"
+                        : "bg-black/20 border border-white/10 text-sage/60 hover:text-paper"
                     }`}
                   >
                     <img
@@ -926,7 +926,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
               </div>
 
               {/* Message scroll area pane */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-stone-950/30 select-text">
+              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black/10 select-text">
                 {chatMessages.map((msg) => (
                   <div
                     key={msg.id}
@@ -940,7 +940,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                           )?.avatar
                         }
                         alt="Advisor"
-                        className="w-7 h-7 rounded-full object-cover shrink-0 border border-stone-850 bg-stone-950 mt-1"
+                        className="w-7 h-7 rounded-full object-cover shrink-0 border border-white/10 bg-ink mt-1"
                         referrerPolicy="no-referrer"
                       />
                     )}
@@ -948,8 +948,8 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     <div
                       className={`max-w-[85%] rounded-xl px-3.5 py-2.5 flex flex-col gap-1 shadow-sm text-left ${
                         msg.sender === "user"
-                          ? "bg-amber-600 text-stone-950 rounded-tr-none text-sm font-sans font-semibold leading-relaxed"
-                          : "bg-stone-900 border border-stone-850 text-stone-200 rounded-tl-none font-sans text-sm leading-relaxed"
+                          ? "bg-gold text-ink rounded-tr-none text-sm font-sans font-semibold leading-relaxed"
+                          : "bg-white/5 border border-white/10 text-paper rounded-tl-none font-sans text-sm leading-relaxed"
                       }`}
                     >
                       {msg.sender === "user" ? (
@@ -972,15 +972,15 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                         )?.avatar
                       }
                       alt="Advisor"
-                      className="w-7 h-7 rounded-full object-cover shrink-0 border border-stone-850 bg-stone-950 animate-pulse"
+                      className="w-7 h-7 rounded-full object-cover shrink-0 border border-white/10 bg-ink animate-pulse"
                       referrerPolicy="no-referrer"
                     />
-                    <div className="bg-stone-900 text-stone-400 text-sm py-2 px-3.5 rounded-xl border border-stone-850 flex items-center gap-2">
+                    <div className="bg-white/5 text-sage/70 text-sm py-2 px-3.5 rounded-xl border border-white/10 flex items-center gap-2">
                       <span className="flex h-1.5 w-1.5 relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-amber-600"></span>
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75"></span>
+                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-gold"></span>
                       </span>
-                      <p className="font-mono text-[11px] animate-pulse">
+                      <p className="font-sans uppercase tracking-widest text-[11px] animate-pulse">
                         {isChatReplySlow
                           ? "STILL CONNECTING TO THE DESK..."
                           : "FORMULATING RECOMMENDATIONS..."}
@@ -992,7 +992,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
               </div>
 
               {/* Chat footer layout */}
-              <div className="p-3 bg-[#141211] border-t border-stone-850 shrink-0 space-y-2.5 text-left">
+              <div className="p-3 bg-black/20 border-t border-white/10 shrink-0 space-y-2.5 text-left">
                 {/* suggested pills shortcut */}
                 <div className="flex gap-1.5 overflow-x-auto scrollbar-none py-0.5 items-center justify-start">
                   {selectedChatAdvisorId === "legal" && (
@@ -1057,13 +1057,13 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       }
                     }}
                     placeholder={`Query ${ADVISOR_PERSONAS.find((a) => a.id === selectedChatAdvisorId)?.name}...`}
-                    className="flex-1 bg-stone-900 border border-stone-800 rounded-lg py-2 px-3 text-sm font-mono text-stone-100 placeholder-stone-600 focus:outline-none focus:border-amber-500 focus:bg-stone-950"
+                    className="flex-1 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-sm font-sans text-paper placeholder-sage/40 focus:outline-none focus:border-gold focus:bg-white/10"
                   />
                   <button
                     id="floating-chat-send-btn"
                     onClick={() => handleSendChatMessage()}
                     disabled={isChatLoading || !chatInput.trim()}
-                    className="w-9 h-9 bg-amber-600 hover:bg-amber-500 disabled:opacity-40 text-stone-950 rounded-lg flex items-center justify-center shrink-0 transition cursor-pointer"
+                    className="w-9 h-9 bg-gold hover:brightness-95 disabled:opacity-40 text-ink rounded-lg flex items-center justify-center shrink-0 transition cursor-pointer"
                   >
                     <Send className="w-4 h-4" />
                   </button>
@@ -1077,25 +1077,23 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
         <button
           id="toggle-concierge-chat-btn"
           onClick={() => setIsChatOpen(!isChatOpen)}
-          className={`w-14 h-14 bg-gradient-to-tr from-amber-600 to-amber-800 text-white rounded-full flex items-center justify-center cursor-pointer shadow-2xl shadow-amber-950/50 hover:scale-105 active:scale-95 border-2 border-stone-900 transition-transform duration-200 select-none relative group ${
-            isChatOpen
-              ? "bg-stone-900 from-stone-900 to-stone-950 border-stone-800"
-              : ""
+          className={`w-14 h-14 bg-gradient-to-tr from-pine to-moss text-paper rounded-full flex items-center justify-center cursor-pointer shadow-2xl hover:scale-105 active:scale-95 border-2 border-ink transition-transform duration-200 select-none relative group ${
+            isChatOpen ? "bg-ink from-ink to-ink border-white/10" : ""
           }`}
         >
           {isChatOpen ? (
-            <X className="w-6 h-6 text-stone-300" />
+            <X className="w-6 h-6 text-sage/70" />
           ) : (
             <>
               <MessageSquare className="w-6 h-6" />
-              <div className="absolute -top-1 -right-1 bg-amber-500 text-stone-950 font-bold text-[9.5px] px-1.5 py-0.5 rounded-full border border-stone-950 uppercase tracking-widest animate-bounce">
+              <div className="absolute -top-1 -right-1 bg-gold text-ink font-bold text-[9.5px] px-1.5 py-0.5 rounded-full border border-ink uppercase tracking-widest animate-bounce">
                 live
               </div>
             </>
           )}
 
           {/* on hover tooltip detail */}
-          <span className="absolute right-16 bg-[#141211]/95 text-stone-300 border border-stone-850 px-3.5 py-2 rounded-xl text-[11.5px] uppercase tracking-widest font-mono font-bold shrink-0 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl select-none">
+          <span className="absolute right-16 bg-ink/95 text-sage/70 border border-white/10 px-3.5 py-2 rounded-xl text-[11.5px] uppercase tracking-widest font-sans font-bold shrink-0 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl select-none">
             Live Academy Concierge
           </span>
         </button>

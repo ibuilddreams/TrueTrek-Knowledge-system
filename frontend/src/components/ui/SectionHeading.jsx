@@ -6,9 +6,9 @@ export default function SectionHeading({
   subtitle,
   align = "center",
   className = "",
-  eyebrowClassName = "text-amber-500",
-  headingClassName = "text-3xl md:text-4xl font-serif font-semibold tracking-tight text-white",
-  subtitleClassName = "text-stone-400 text-sm max-w-xl mx-auto font-light leading-relaxed",
+  eyebrowClassName = "text-gold",
+  headingClassName = "text-3xl md:text-4xl font-serif font-light leading-[0.95] tracking-tight text-ink",
+  subtitleClassName = "text-muted text-sm max-w-xl mx-auto font-light leading-relaxed",
   size = "base",
 }) {
   const isLg = size === "lg";
@@ -18,7 +18,7 @@ export default function SectionHeading({
         <span
           className={[
             eyebrowClassName,
-            `${isLg ? "text-sm" : "text-xs"} font-mono uppercase tracking-widest block mb-3`,
+            `${isLg ? "text-sm" : "text-xs"} font-sans font-medium uppercase tracking-widest block mb-3`,
           ].join(" ")}
         >
           {eyebrow}

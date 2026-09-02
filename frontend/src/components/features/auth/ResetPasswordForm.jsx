@@ -6,7 +6,6 @@ import Link from "next/link";
 import { AlertCircle, CheckCircle2, KeyRound } from "lucide-react";
 import { resetPassword } from "@/services/authService";
 import { useGuestOnlyRoute } from "@/hooks/useGuestOnlyRoute";
-import { useTheme } from "@/hooks/useTheme";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { ROUTES } from "@/constants/routes";
 import AuthGateCard from "@/components/ui/AuthGateCard";
@@ -35,7 +34,6 @@ export default function ResetPasswordForm() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { shouldBlock, isAuthenticated } = useGuestOnlyRoute();
-  const { isVault } = useTheme();
   const uid = searchParams.get("uid");
   const token = searchParams.get("token");
 
@@ -93,18 +91,10 @@ export default function ResetPasswordForm() {
         title="Invalid Reset Link"
         subtitle="This password reset link is invalid or has expired."
       >
-        <p
-          className={`text-center text-xs font-light ${
-            isVault ? "text-stone-400" : "text-stone-500"
-          }`}
-        >
+        <p className="text-center text-xs font-light text-muted">
           <Link
             href={ROUTES.FORGOT_PASSWORD}
-            className={`font-semibold transition ${
-              isVault
-                ? "text-stone-200 hover:text-amber-500"
-                : "text-stone-700 hover:text-amber-800"
-            }`}
+            className="font-semibold transition text-pine hover:text-moss"
           >
             Request a new reset link
           </Link>
@@ -120,13 +110,7 @@ export default function ResetPasswordForm() {
       subtitle="Choose a new password for your account."
     >
       {isSuccess ? (
-        <div
-          className={`p-3.5 rounded-xl flex items-start gap-2.5 text-xs font-medium ${
-            isVault
-              ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
-              : "bg-emerald-50 border border-emerald-100 text-emerald-700"
-          }`}
-        >
+        <div className="p-3.5 rounded-xl flex items-start gap-2.5 text-xs font-medium bg-sage/40 border border-sage text-moss">
           <CheckCircle2 className="w-4 h-4 shrink-0 mt-0.5" />
           <span>
             Your password has been reset successfully. Redirecting to Sign

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { AlertCircle, UserPlus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuestOnlyRoute } from "@/hooks/useGuestOnlyRoute";
-import { useTheme } from "@/hooks/useTheme";
 import { ROUTES } from "@/constants/routes";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -37,7 +36,6 @@ function generateUsername(email) {
 export default function SignupForm() {
   const { signup } = useAuth();
   const { shouldBlock, isAuthenticated } = useGuestOnlyRoute();
-  const { isVault } = useTheme();
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -92,18 +90,8 @@ export default function SignupForm() {
     }
   }
 
-  const selectClassName = `w-full p-3 rounded-lg border text-xs font-mono focus:outline-none transition ${
-    isVault
-      ? "bg-[#0c0b0a] border-stone-700 focus:border-amber-600"
-      : "bg-white border-stone-200 focus:border-amber-600"
-  } ${
-    form.gender
-      ? isVault
-        ? "text-stone-200"
-        : "text-stone-800"
-      : isVault
-        ? "text-stone-600"
-        : "text-stone-400"
+  const selectClassName = `w-full p-3 rounded-xl border text-xs font-sans focus:outline-none transition bg-paper border-line focus:border-pine ${
+    form.gender ? "text-ink" : "text-muted"
   }`;
 
   return (
@@ -156,9 +144,7 @@ export default function SignupForm() {
         <div>
           <label
             htmlFor="input-signup-gender"
-            className={`text-[10px] font-mono block uppercase tracking-wider mb-1.5 ${
-              isVault ? "text-stone-500" : "text-stone-400"
-            }`}
+            className="text-[10px] font-sans block uppercase tracking-widest font-medium mb-1.5 text-muted"
           >
             Gender
           </label>
@@ -181,13 +167,7 @@ export default function SignupForm() {
         </div>
 
         {formError && (
-          <div
-            className={`p-3.5 rounded-xl flex items-start gap-2.5 text-xs font-mono ${
-              isVault
-                ? "bg-red-500/10 border border-red-500/20 text-red-400"
-                : "bg-red-50 border border-red-100 text-red-600"
-            }`}
-          >
+          <div className="p-3.5 rounded-xl flex items-start gap-2.5 text-xs font-sans uppercase tracking-widest font-medium bg-red-50 border border-red-100 text-red-600">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{formError}</span>
           </div>
@@ -201,19 +181,11 @@ export default function SignupForm() {
           icon={UserPlus}
         />
 
-        <p
-          className={`text-center text-xs font-light ${
-            isVault ? "text-stone-400" : "text-stone-500"
-          }`}
-        >
+        <p className="text-center text-xs font-light text-muted">
           Already have an account?{" "}
           <Link
             href={ROUTES.LOGIN}
-            className={`font-semibold transition ${
-              isVault
-                ? "text-stone-200 hover:text-amber-500"
-                : "text-stone-700 hover:text-amber-800"
-            }`}
+            className="font-semibold transition text-pine hover:text-moss"
           >
             Sign In
           </Link>

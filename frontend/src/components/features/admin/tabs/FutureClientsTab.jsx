@@ -84,7 +84,7 @@ export default function FutureClientsTab() {
       key: "applicant",
       header: "Applicant",
       render: (application) => (
-        <span className="font-semibold text-stone-800">{application.full_name}</span>
+        <span className="font-semibold text-ink">{application.full_name}</span>
       ),
     },
     { key: "email", header: "Email", render: (application) => application.email },
@@ -157,7 +157,7 @@ export default function FutureClientsTab() {
         </div>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
         <DataTable size="lg"
           columns={columns}
           rows={paginatedApplications}

@@ -4,6 +4,7 @@
 # Local planning docs — not project source
 /course-ai-plan.md
 /plan.md
+/design.md
 
 # Backend (Django)
 backend/env/

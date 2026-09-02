@@ -6,7 +6,6 @@ import confetti from "canvas-confetti";
 import { AlertCircle, Lock, LogIn } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuestOnlyRoute } from "@/hooks/useGuestOnlyRoute";
-import { useTheme } from "@/hooks/useTheme";
 import { ROUTES } from "@/constants/routes";
 import { toastError, toastSuccess } from "@/lib/toast";
 import AuthGateCard from "@/components/ui/AuthGateCard";
@@ -18,7 +17,6 @@ import GoogleSignInButton from "@/components/features/auth/GoogleSignInButton";
 export default function LoginForm() {
   const { login } = useAuth();
   const { shouldBlock, isAuthenticated } = useGuestOnlyRoute();
-  const { isVault } = useTheme();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -41,7 +39,7 @@ export default function LoginForm() {
       particleCount: 80,
       spread: 60,
       origin: { y: 0.8 },
-      colors: ["#d97706", "#b45309", "#1c1917"],
+      colors: ["#c7a85b", "#d96f5f", "#092d29"],
     });
   }
 
@@ -96,11 +94,7 @@ export default function LoginForm() {
           <div className="flex justify-end">
             <Link
               href={ROUTES.FORGOT_PASSWORD}
-              className={`text-[11px] font-mono font-semibold uppercase tracking-wider transition ${
-                isVault
-                  ? "text-stone-500 hover:text-amber-500"
-                  : "text-stone-500 hover:text-amber-800"
-              }`}
+              className="text-[11px] font-sans font-semibold uppercase tracking-widest transition text-pine hover:text-moss"
             >
               Forgot Password?
             </Link>
@@ -108,13 +102,7 @@ export default function LoginForm() {
         </div>
 
         {formError && (
-          <div
-            className={`p-3.5 rounded-xl flex items-start gap-2.5 text-xs font-mono ${
-              isVault
-                ? "bg-red-500/10 border border-red-500/20 text-red-400"
-                : "bg-red-50 border border-red-100 text-red-600"
-            }`}
-          >
+          <div className="p-3.5 rounded-xl flex items-start gap-2.5 text-xs font-sans uppercase tracking-widest font-medium bg-red-50 border border-red-100 text-red-600">
             <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{formError}</span>
           </div>
@@ -129,36 +117,20 @@ export default function LoginForm() {
         />
 
         <div className="relative flex items-center py-1">
-          <div
-            className={`flex-1 h-px ${isVault ? "bg-stone-800" : "bg-stone-200"}`}
-          />
-          <span
-            className={`px-3 text-[10px] font-mono uppercase tracking-wider ${
-              isVault ? "text-stone-600" : "text-stone-400"
-            }`}
-          >
+          <div className="flex-1 h-px bg-line" />
+          <span className="px-3 text-[10px] font-sans uppercase tracking-widest font-medium text-muted">
             Or
           </span>
-          <div
-            className={`flex-1 h-px ${isVault ? "bg-stone-800" : "bg-stone-200"}`}
-          />
+          <div className="flex-1 h-px bg-line" />
         </div>
 
         <GoogleSignInButton onSuccess={handleGoogleSuccess} disabled={isSubmitting} />
 
-        <p
-          className={`text-center text-xs font-light ${
-            isVault ? "text-stone-400" : "text-stone-500"
-          }`}
-        >
+        <p className="text-center text-xs font-light text-muted">
           New to TrueTrek?{" "}
           <Link
             href={ROUTES.SIGNUP}
-            className={`font-semibold transition ${
-              isVault
-                ? "text-stone-200 hover:text-amber-500"
-                : "text-stone-700 hover:text-amber-800"
-            }`}
+            className="font-semibold transition text-pine hover:text-moss"
           >
             Create an Account
           </Link>

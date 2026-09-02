@@ -175,27 +175,27 @@ export default function PathwaysStore() {
   return (
     <div
       id="pathways-store-container"
-      className="min-h-screen bg-[#faf9f6] text-stone-900 pb-32"
+      className="min-h-screen cn-page-bg text-ink pb-32"
     >
       {/* Dynamic Header */}
       <div
         id="pathways-banner-layout"
-        className="bg-[#1c1917] text-white py-16 px-6 border-b border-stone-800 relative overflow-hidden"
+        className="bg-pine text-paper py-16 px-6 border-b border-white/10 relative overflow-hidden"
       >
         <div
           id="ambient-dot-pathways"
-          className="absolute top-1/2 left-1/4 w-96 h-96 rounded-full bg-amber-600/10 blur-[130px] -translate-y-1/2"
+          className="absolute top-1/2 left-1/4 w-96 h-96 rounded-full bg-gold/12 blur-[130px] -translate-y-1/2"
         ></div>
         <div className="max-w-6xl mx-auto relative z-10 text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-6">
           <div className="space-y-3">
-            <span className="inline-flex items-center gap-1.5 bg-stone-850 border border-stone-750 px-3.5 py-1.5 rounded-full text-amber-500 font-mono text-xs uppercase tracking-wider">
+            <span className="inline-flex items-center gap-1.5 bg-white/10 border border-white/15 px-3.5 py-1.5 rounded-full text-gold font-sans text-xs uppercase tracking-widest font-medium">
               <Route className="w-3.5 h-3.5" />
               Bundled Learning Pathways
             </span>
-            <h2 className="text-4xl md:text-5xl font-serif font-semibold tracking-tight text-white">
+            <h2 className="text-4xl md:text-5xl font-serif font-light leading-[0.92] tracking-tight text-paper">
               Explore the Pathways
             </h2>
-            <p className="text-stone-450 text-xs md:text-sm font-light max-w-xl leading-relaxed">
+            <p className="text-paper/70 text-xs md:text-sm font-light max-w-xl leading-relaxed">
               Each pathway bundles several courses into a single purchase and
               auto-enrolls you in every course it contains.
             </p>
@@ -205,11 +205,11 @@ export default function PathwaysStore() {
 
       <div className="max-w-6xl mx-auto px-6 mt-12">
         {/* Role-aware status banner */}
-        <div className="bg-stone-100 border border-stone-200 rounded-2xl p-4 mb-10 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className="bg-porcelain border border-line rounded-2xl p-4 mb-10 flex flex-col md:flex-row items-center justify-between gap-4">
           {isAuthenticated ? (
             <>
-              <p className="text-xs text-stone-700 font-sans leading-relaxed">
-                <span className="font-mono font-bold text-emerald-800 uppercase tracking-widest mr-2">
+              <p className="text-xs text-ink font-sans leading-relaxed">
+                <span className="font-sans font-medium text-moss uppercase tracking-widest mr-2">
                   [SIGNED IN]
                 </span>
                 Signed in as {user?.name || user?.email}.{" "}
@@ -220,15 +220,15 @@ export default function PathwaysStore() {
               <button
                 type="button"
                 onClick={onNavigateToPortal}
-                className="text-[10px] font-mono font-semibold uppercase bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-lg transition duration-200 shadow-sm shrink-0"
+                className="text-xs font-sans font-medium uppercase tracking-widest bg-pine hover:bg-moss text-paper px-4 py-2 rounded-full transition duration-200 shadow-sm shrink-0"
               >
                 Open My Portal →
               </button>
             </>
           ) : (
             <>
-              <p className="text-xs text-stone-700 font-sans leading-relaxed">
-                <span className="font-mono font-bold text-amber-800 uppercase tracking-widest mr-2">
+              <p className="text-xs text-ink font-sans leading-relaxed">
+                <span className="font-sans font-medium text-gold uppercase tracking-widest mr-2">
                   [BROWSING AS GUEST]
                 </span>
                 Pathways are visible to everyone. Sign in as a student to
@@ -237,7 +237,7 @@ export default function PathwaysStore() {
               <button
                 type="button"
                 onClick={() => router.push(ROUTES.LOGIN)}
-                className="text-[10px] font-mono font-semibold uppercase bg-stone-900 hover:bg-stone-800 text-white px-4 py-2 rounded-lg transition duration-200 shadow-sm shrink-0 flex items-center gap-1.5"
+                className="text-xs font-sans font-medium uppercase tracking-widest bg-pine hover:bg-moss text-paper px-4 py-2 rounded-full transition duration-200 shadow-sm shrink-0 flex items-center gap-1.5"
               >
                 <LogIn className="w-3 h-3" />
                 Sign In
@@ -256,20 +256,20 @@ export default function PathwaysStore() {
         )}
 
         {isError && (
-          <div className="border border-stone-200 bg-white rounded-2xl p-8 text-center max-w-lg mx-auto">
+          <div className="border border-line bg-paper rounded-2xl p-8 text-center max-w-lg mx-auto">
             <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
               <AlertCircle className="w-6 h-6" />
             </div>
-            <h2 className="text-xl font-serif font-bold mb-2 text-stone-900">
+            <h2 className="text-xl font-serif font-light mb-2 text-ink">
               Failed to Load Pathways
             </h2>
-            <p className="text-xs font-light mb-6 text-stone-500">
+            <p className="text-xs font-light mb-6 text-muted">
               {getApiErrorMessage(error, "Unable to load pathways right now.")}
             </p>
             <button
               type="button"
               onClick={() => refetch()}
-              className="inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition bg-stone-900 hover:bg-stone-800 text-stone-100"
+              className="inline-flex items-center gap-2 px-5 py-3 font-sans font-medium text-xs uppercase tracking-widest rounded-full transition border border-line text-ink hover:bg-porcelain"
             >
               <RefreshCw className="w-4 h-4" />
               Retry
@@ -278,7 +278,7 @@ export default function PathwaysStore() {
         )}
 
         {!isLoading && !isError && pathways.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-stone-200 bg-white/70">
+          <div className="rounded-2xl border border-dashed border-line bg-paper/70">
             <EmptyState
               icon={Route}
               label="No pathways published yet"
@@ -330,13 +330,13 @@ export default function PathwaysStore() {
             transition={{ type: "spring", damping: 26, stiffness: 260 }}
             className="fixed bottom-0 inset-x-0 z-40 flex justify-center px-6 pb-6 pointer-events-none"
           >
-            <div className="pointer-events-auto bg-stone-950 border border-stone-800 rounded-2xl shadow-2xl px-5 py-4 flex items-center gap-5 max-w-lg w-full sm:w-auto">
+            <div className="pointer-events-auto bg-pine border border-white/10 rounded-2xl shadow-2xl px-5 py-4 flex items-center gap-5 max-w-lg w-full sm:w-auto">
               <div className="min-w-0">
-                <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
+                <p className="text-xs font-sans uppercase tracking-widest font-medium text-paper/60">
                   {selectedPathways.length} pathway
                   {selectedPathways.length === 1 ? "" : "s"} selected
                 </p>
-                <p className="text-sm font-mono font-bold text-white">
+                <p className="text-sm font-sans font-semibold text-paper">
                   {formatCoursePrice(selectedTotal)}
                 </p>
               </div>
@@ -344,7 +344,7 @@ export default function PathwaysStore() {
                 id="pathways-checkout-trigger-btn"
                 type="button"
                 onClick={handleOpenCheckout}
-                className="ml-auto shrink-0 bg-amber-600 hover:bg-amber-500 text-white font-mono text-xs font-extrabold uppercase tracking-wider px-5 py-3 rounded-xl shadow-md transition-all duration-200 flex items-center gap-2"
+                className="ml-auto shrink-0 bg-gold hover:brightness-95 text-ink font-sans text-xs font-semibold uppercase tracking-widest px-5 py-3 rounded-full shadow-md transition-all duration-200 flex items-center gap-2"
               >
                 Checkout
                 <ArrowRight className="w-3.5 h-3.5" />

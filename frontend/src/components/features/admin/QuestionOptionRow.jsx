@@ -10,11 +10,11 @@ import SearchableSelect from "@/components/ui/SearchableSelect";
 // previously made the weight input silently claim the full row and squeeze
 // the pathway dropdown next to it down to ~0px.
 const FIELD_CLASS =
-  "px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60";
+  "px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm text-ink placeholder:text-muted transition disabled:opacity-60";
 
-const LABEL_CLASS = "text-[11px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold";
+const LABEL_CLASS = "text-xs font-sans uppercase tracking-widest font-medium text-muted block mb-1.5";
 
-const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-[11px] text-red-600 mt-1";
 
 export default function QuestionOptionRow({
   option,
@@ -57,7 +57,7 @@ export default function QuestionOptionRow({
   };
 
   return (
-    <div className="p-4 rounded-xl border border-stone-200 bg-stone-50/60 space-y-3">
+    <div className="p-4 rounded-card border border-line bg-paper space-y-3">
       <div className="flex items-start gap-3">
         <div className="flex-1 min-w-0">
           <label className={LABEL_CLASS}>Option {optionIndex + 1} Text</label>
@@ -78,7 +78,7 @@ export default function QuestionOptionRow({
           disabled={disabled}
           title="Remove option"
           aria-label="Remove option"
-          className="mt-6 w-8 h-8 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-rose-600 hover:bg-rose-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shrink-0"
+          className="mt-6 w-8 h-8 flex items-center justify-center rounded-lg border border-line bg-paper text-rose-600 hover:bg-rose-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shrink-0"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -117,7 +117,7 @@ export default function QuestionOptionRow({
                 disabled={disabled}
                 title="Remove pathway weight"
                 aria-label="Remove pathway weight"
-                className="w-8 h-8 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-rose-600 hover:bg-rose-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shrink-0"
+                className="w-8 h-8 flex items-center justify-center rounded-lg border border-line bg-paper text-rose-600 hover:bg-rose-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed shrink-0"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -130,7 +130,7 @@ export default function QuestionOptionRow({
           type="button"
           onClick={addWeight}
           disabled={disabled}
-          className="mt-2 w-full flex items-center justify-center gap-2 py-2 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          className="mt-2 w-full flex items-center justify-center gap-2 py-2 border border-dashed border-line rounded-lg text-xs font-sans uppercase tracking-widest font-medium text-muted hover:border-pine hover:text-pine transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <Plus className="w-3.5 h-3.5" />
           Add Pathway Weight

@@ -18,10 +18,10 @@ import { formatActivityType, formatDateTime } from "@/lib/adminFormatters";
 
 function Panel({ title, icon: Icon, children, action }) {
   return (
-    <div className="bg-white border border-stone-200/90 rounded-2xl shadow-sm overflow-hidden min-h-[280px] flex flex-col">
-      <div className="px-5 pt-5 pb-3 flex items-center justify-between gap-3 border-b border-stone-100">
-        <h3 className="text-sm font-mono font-bold uppercase tracking-widest text-stone-700 flex items-center gap-2">
-          <span className="w-7 h-7 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center">
+    <div className="bg-paper border border-line rounded-card shadow-soft overflow-hidden min-h-[280px] flex flex-col">
+      <div className="px-5 pt-5 pb-3 flex items-center justify-between gap-3 border-b border-line">
+        <h3 className="text-xs font-sans font-medium uppercase tracking-widest text-ink flex items-center gap-2">
+          <span className="w-7 h-7 rounded-lg bg-gold/12 border border-gold/20 text-gold flex items-center justify-center">
             <Icon className="w-3.5 h-3.5" />
           </span>
           {title}
@@ -50,18 +50,18 @@ export default function DashboardTab() {
 
   if (status === "failed") {
     return (
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-xl p-8 text-center max-w-lg mx-auto">
-        <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+      <div className="bg-paper border border-line rounded-card shadow-elevated p-8 text-center max-w-lg mx-auto">
+        <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-card flex items-center justify-center mx-auto mb-4">
           <AlertCircle className="w-6 h-6" />
         </div>
-        <h2 className="text-xl font-serif font-bold text-stone-900 mb-2">
+        <h2 className="text-xl font-serif font-light leading-[0.92] text-ink mb-2">
           Failed to Load Dashboard
         </h2>
-        <p className="text-sm text-stone-500 font-light mb-6">{error}</p>
+        <p className="text-sm text-muted font-light mb-6">{error}</p>
         <button
           type="button"
           onClick={() => loadOverview({ force: true })}
-          className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-pine hover:bg-moss text-paper font-semibold text-sm uppercase tracking-wider rounded-full shadow-md transition"
         >
           <RefreshCw className="w-4 h-4" />
           Retry
@@ -80,17 +80,17 @@ export default function DashboardTab() {
       <section className="space-y-3">
         <div className="flex items-end justify-between gap-3">
           <div>
-            <p className="text-xs font-mono uppercase tracking-widest text-amber-700 font-bold">
+            <p className="text-xs font-sans uppercase tracking-widest text-gold font-medium">
               Live Snapshot
             </p>
-            <h2 className="text-lg font-serif font-bold text-stone-900">
+            <h2 className="text-lg font-serif font-light leading-[0.92] text-ink">
               Platform Metrics
             </h2>
           </div>
           <button
             type="button"
             onClick={() => loadOverview({ force: true })}
-            className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider font-semibold text-stone-500 hover:text-amber-800 transition"
+            className="inline-flex items-center gap-1.5 text-xs font-sans uppercase tracking-widest font-medium text-muted hover:text-pine transition"
           >
             <RefreshCw className="w-3 h-3" />
             Refresh
@@ -101,10 +101,10 @@ export default function DashboardTab() {
 
       <section className="space-y-3">
         <div>
-          <p className="text-[11px] font-mono uppercase tracking-widest text-amber-700 font-bold">
+          <p className="text-[11px] font-sans uppercase tracking-widest text-gold font-medium">
             Distribution
           </p>
-          <h2 className="text-lg font-serif font-bold text-stone-900">
+          <h2 className="text-lg font-serif font-light leading-[0.92] text-ink">
             Analytics Overview
           </h2>
         </div>
@@ -132,10 +132,10 @@ export default function DashboardTab() {
 
       <section className="space-y-3">
         <div>
-          <p className="text-[11px] font-mono uppercase tracking-widest text-amber-700 font-bold">
+          <p className="text-[11px] font-sans uppercase tracking-widest text-gold font-medium">
             Operations
           </p>
-          <h2 className="text-lg font-serif font-bold text-stone-900">
+          <h2 className="text-lg font-serif font-light leading-[0.92] text-ink">
             Activity & Progress
           </h2>
         </div>
@@ -145,7 +145,7 @@ export default function DashboardTab() {
             icon={Activity}
             action={
               recentActivities.length > 0 && (
-                <span className="text-xs font-mono font-semibold text-stone-400">
+                <span className="text-xs font-sans font-medium text-muted">
                   {recentActivities.length} total
                 </span>
               )
@@ -163,16 +163,16 @@ export default function DashboardTab() {
                 {recentActivities.map((activity) => (
                   <li
                     key={activity.id}
-                    className="flex items-start gap-3 p-3 rounded-xl border border-stone-100 bg-stone-50/60 hover:bg-white hover:border-amber-200/60 hover:shadow-sm transition"
+                    className="flex items-start gap-3 p-3 rounded-card border border-line bg-porcelain/60 hover:bg-paper hover:border-gold/30 hover:shadow-soft transition"
                   >
-                    <span className="mt-0.5 w-8 h-8 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+                    <span className="mt-0.5 w-8 h-8 rounded-card bg-gold/12 border border-gold/20 text-gold flex items-center justify-center shrink-0">
                       <Clock3 className="w-3.5 h-3.5" />
                     </span>
                     <div className="min-w-0 flex-1">
-                      <p className="text-sm font-semibold text-stone-800 truncate">
+                      <p className="text-sm font-semibold text-ink truncate">
                         {formatActivityType(activity.activity_type)}
                       </p>
-                      <p className="text-sm font-mono text-stone-400 mt-1">
+                      <p className="text-sm font-mono text-muted mt-1">
                         {formatDateTime(activity.created_at)}
                       </p>
                     </div>
@@ -187,7 +187,7 @@ export default function DashboardTab() {
             icon={TrendingUp}
             action={
               progressSummary.length > 0 && (
-                <span className="text-xs font-mono font-semibold text-stone-400">
+                <span className="text-xs font-sans font-medium text-muted">
                   {progressSummary.length} total
                 </span>
               )
@@ -209,26 +209,26 @@ export default function DashboardTab() {
                   const clampedPercent = Math.min(Math.max(percent, 0), 100);
                   const barColorClass =
                     clampedPercent >= 75
-                      ? "from-emerald-500 to-emerald-700"
+                      ? "from-mint to-moss"
                       : clampedPercent >= 40
-                      ? "from-amber-500 to-amber-700"
+                      ? "from-gold to-pine"
                       : "from-rose-400 to-rose-600";
                   return (
                     <li
                       key={entry.id ?? index}
-                      className="p-3.5 rounded-xl border border-stone-100 bg-stone-50/50 hover:bg-white hover:border-amber-200/60 transition"
+                      className="p-3.5 rounded-card border border-line bg-porcelain/50 hover:bg-paper hover:border-gold/30 transition"
                     >
                       <div className="flex items-center justify-between gap-3 mb-2">
-                        <span className="text-sm font-semibold text-stone-800 truncate">
+                        <span className="text-sm font-semibold text-ink truncate">
                           {entry.course_title ||
                             entry.title ||
                             `Entry ${index + 1}`}
                         </span>
-                        <span className="text-sm font-mono font-bold text-amber-800 shrink-0">
+                        <span className="text-sm font-mono font-bold text-pine shrink-0">
                           {percent}%
                         </span>
                       </div>
-                      <div className="h-1.5 rounded-full bg-stone-200 overflow-hidden">
+                      <div className="h-1.5 rounded-full bg-porcelain overflow-hidden">
                         <div
                           className={`h-full rounded-full bg-gradient-to-r ${barColorClass} transition-all duration-500`}
                           style={{ width: `${clampedPercent}%` }}

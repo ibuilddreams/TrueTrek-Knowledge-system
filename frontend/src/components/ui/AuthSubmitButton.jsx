@@ -18,7 +18,7 @@ export default function AuthSubmitButton({
       disabled={isSubmitting}
       aria-busy={isSubmitting}
       className={[
-        "w-full bg-stone-900 hover:bg-stone-800 text-white font-semibold py-3.5 px-4 rounded-xl text-xs uppercase tracking-wider transition disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2",
+        "w-full bg-pine hover:bg-moss text-paper font-sans font-semibold py-3.5 px-4 rounded-full text-xs uppercase tracking-wider transition disabled:cursor-not-allowed disabled:opacity-50 flex items-center justify-center gap-2",
         className,
       ]
         .filter(Boolean)
