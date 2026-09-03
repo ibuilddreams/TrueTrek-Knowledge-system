@@ -7,6 +7,7 @@ import {
   Calendar,
   ClipboardList,
   Coins,
+  FileWarning,
   Folder,
   Gift,
   GraduationCap,
@@ -43,6 +44,7 @@ import PathwaysTab from "@/components/features/admin/tabs/PathwaysTab";
 import TiersTab from "@/components/features/admin/tabs/TiersTab";
 import QuestionnaireTab from "@/components/features/admin/tabs/QuestionnaireTab";
 import FutureClientsTab from "@/components/features/admin/tabs/FutureClientsTab";
+import TeacherRequestsTab from "@/components/features/admin/tabs/TeacherRequestsTab";
 import RewardsTab from "@/components/features/admin/tabs/RewardsTab";
 import RedemptionsTab from "@/components/features/admin/tabs/RedemptionsTab";
 import StudentPointsTab from "@/components/features/admin/tabs/StudentPointsTab";
@@ -55,6 +57,7 @@ const TABS = [
   { id: "students", label: "Students", icon: GraduationCap },
   { id: "future-clients", label: "Future Clients", icon: UserPlus },
   { id: "teachers", label: "Teachers", icon: Users },
+  { id: "teacher-requests", label: "Teacher Requests", icon: FileWarning },
   { id: "progress", label: "Progress", icon: LineChart },
   { id: "tags", label: "Tags", icon: Tag },
   { id: "categories", label: "Categories", icon: Folder },
@@ -75,6 +78,7 @@ const TAB_COMPONENTS = {
   students: StudentsTab,
   "future-clients": FutureClientsTab,
   teachers: TeachersTab,
+  "teacher-requests": TeacherRequestsTab,
   progress: ProgressTab,
   tags: TagsTab,
   categories: CategoriesTab,

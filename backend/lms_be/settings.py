@@ -62,6 +62,7 @@ INSTALLED_APPS = [
     'messaging',
     'advisor',
     'rewards',
+    'teacher_requests',
 ]
 
 MIDDLEWARE = [

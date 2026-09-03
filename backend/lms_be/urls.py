@@ -35,6 +35,7 @@ urlpatterns = [
     path('api/messaging/', include('messaging.urls')),
     path('api/advisor/', include('advisor.urls')),
     path('api/rewards/', include('rewards.urls')),
+    path('api/teacher-requests/', include('teacher_requests.urls')),
     path('api/auth/login/', CustomTokenObtainPairView.as_view()),
     path('api/auth/signup/', SignupView.as_view()),
     path('api/auth/google/', GoogleAuthView.as_view()),
