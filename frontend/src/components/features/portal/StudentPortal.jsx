@@ -24,6 +24,7 @@ import AssignmentsTab from "./tabs/AssignmentsTab";
 import QuizzesTab from "./tabs/QuizzesTab";
 import CertificatesTab from "./tabs/CertificatesTab";
 import DrillTab from "./tabs/DrillTab";
+import RewardsTab from "./tabs/RewardsTab";
 import WarRoomTab from "./tabs/WarRoomTab";
 
 function StudentPortalContent() {
@@ -170,6 +171,7 @@ function StudentPortalContent() {
                 onNotify={setLastNotification}
               />
             )}
+            {activeTab === "rewards" && <RewardsTab />}
             {activeTab === "warroom" && (
               <WarRoomTab
                 setConsultationCount={setConsultationCount}

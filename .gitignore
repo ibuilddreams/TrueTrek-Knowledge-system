@@ -4,6 +4,11 @@
 # Local planning docs — not project source
 /course-ai-plan.md
 /plan.md
+/PROJECT.md
+/modifyrewardfeature.txt
+/client-requirements.md
+/prompt.txt
+
 
 # Backend (Django)
 backend/env/
