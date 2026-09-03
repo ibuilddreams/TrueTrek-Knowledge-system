@@ -4,8 +4,12 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   BookOpen,
+  Calendar,
   ClipboardList,
+  Coins,
+  FileWarning,
   Folder,
+  Gift,
   GraduationCap,
   HelpCircle,
   LayoutDashboard,
@@ -40,6 +44,11 @@ import PathwaysTab from "@/components/features/admin/tabs/PathwaysTab";
 import TiersTab from "@/components/features/admin/tabs/TiersTab";
 import QuestionnaireTab from "@/components/features/admin/tabs/QuestionnaireTab";
 import FutureClientsTab from "@/components/features/admin/tabs/FutureClientsTab";
+import TeacherRequestsTab from "@/components/features/admin/tabs/TeacherRequestsTab";
+import RewardsTab from "@/components/features/admin/tabs/RewardsTab";
+import RedemptionsTab from "@/components/features/admin/tabs/RedemptionsTab";
+import StudentPointsTab from "@/components/features/admin/tabs/StudentPointsTab";
+import DailyDrillsTab from "@/components/features/admin/tabs/DailyDrillsTab";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -48,12 +57,17 @@ const TABS = [
   { id: "students", label: "Students", icon: GraduationCap },
   { id: "future-clients", label: "Future Clients", icon: UserPlus },
   { id: "teachers", label: "Teachers", icon: Users },
+  { id: "teacher-requests", label: "Teacher Requests", icon: FileWarning },
   { id: "progress", label: "Progress", icon: LineChart },
   { id: "tags", label: "Tags", icon: Tag },
   { id: "categories", label: "Categories", icon: Folder },
   { id: "tiers", label: "Tiers", icon: Layers3 },
   { id: "pathways", label: "Pathways", icon: Route },
   { id: "questionnaire", label: "Questionnaire", icon: HelpCircle },
+  { id: "daily-drills", label: "Daily Drills", icon: Calendar },
+  { id: "rewards", label: "Rewards", icon: Gift },
+  { id: "redemptions", label: "Redemptions", icon: ClipboardList },
+  { id: "student-points", label: "Student Points", icon: Coins },
 ];
 
 const TAB_COMPONENTS = {
@@ -64,12 +78,17 @@ const TAB_COMPONENTS = {
   students: StudentsTab,
   "future-clients": FutureClientsTab,
   teachers: TeachersTab,
+  "teacher-requests": TeacherRequestsTab,
   progress: ProgressTab,
   tags: TagsTab,
   categories: CategoriesTab,
   tiers: TiersTab,
   pathways: PathwaysTab,
   questionnaire: QuestionnaireTab,
+  "daily-drills": DailyDrillsTab,
+  rewards: RewardsTab,
+  redemptions: RedemptionsTab,
+  "student-points": StudentPointsTab,
 };
 
 const VALID_TABS = new Set(TABS.map((tab) => tab.id));

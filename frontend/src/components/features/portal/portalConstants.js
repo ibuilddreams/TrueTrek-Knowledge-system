@@ -5,6 +5,7 @@ import {
   Brain,
   CircleHelp,
   ClipboardList,
+  Gift,
   Scale,
 } from "lucide-react";
 
@@ -44,6 +45,12 @@ export const PORTAL_TABS = [
     label: "Daily Drill",
     icon: Brain,
     title: "Situational intelligence training drills",
+  },
+  {
+    id: "rewards",
+    label: "Rewards",
+    icon: Gift,
+    title: "Points balance, transaction history, and rewards catalog",
   },
   {
     id: "warroom",

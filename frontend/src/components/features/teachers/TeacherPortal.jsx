@@ -10,6 +10,7 @@ import {
   Users,
   BookOpenCheck,
   FileText,
+  FileWarning,
   LineChart,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -26,6 +27,7 @@ import EnrollmentScoresTab from "./tabs/EnrollmentScoresTab";
 import ProgressTab from "./tabs/ProgressTab";
 import InstructionalManualsTab from "./tabs/InstructionalManualsTab";
 import CurriculumDocumentsTab from "./tabs/CurriculumDocumentsTab";
+import RequestsTab from "./tabs/RequestsTab";
 
 const TEACHER_TABS = [
   {
@@ -33,6 +35,12 @@ const TEACHER_TABS = [
     label: "Analytics Dashboard",
     icon: TrendingUp,
     title: "Switch tab to Faculty Analytics Dashboard",
+  },
+  {
+    id: "requests",
+    label: "Requests",
+    icon: FileWarning,
+    title: "Request a Change / Report an Error",
   },
   {
     id: "courses",
@@ -79,8 +87,11 @@ function TeacherPortalContent() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { items: students, total: studentsTotal, loadEnrolledStudents } =
-    useTeacherEnrolledStudents();
+  const {
+    items: students,
+    total: studentsTotal,
+    loadEnrolledStudents,
+  } = useTeacherEnrolledStudents();
 
   const { isAuthenticated, role } = useAuth();
   const isFacultyLoggedIn = isAuthenticated && role === AUTH_ROLES.FACULTY;
@@ -213,6 +224,7 @@ function TeacherPortalContent() {
         {activeTab === "progress" && <ProgressTab />}
         {activeTab === "manuals" && <InstructionalManualsTab />}
         {activeTab === "documents" && <CurriculumDocumentsTab />}
+        {activeTab === "requests" && <RequestsTab />}
       </TabTransition>
     </div>
   );
