@@ -4,8 +4,11 @@ import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   BookOpen,
+  Calendar,
   ClipboardList,
+  Coins,
   Folder,
+  Gift,
   GraduationCap,
   HelpCircle,
   LayoutDashboard,
@@ -40,6 +43,10 @@ import PathwaysTab from "@/components/features/admin/tabs/PathwaysTab";
 import TiersTab from "@/components/features/admin/tabs/TiersTab";
 import QuestionnaireTab from "@/components/features/admin/tabs/QuestionnaireTab";
 import FutureClientsTab from "@/components/features/admin/tabs/FutureClientsTab";
+import RewardsTab from "@/components/features/admin/tabs/RewardsTab";
+import RedemptionsTab from "@/components/features/admin/tabs/RedemptionsTab";
+import StudentPointsTab from "@/components/features/admin/tabs/StudentPointsTab";
+import DailyDrillsTab from "@/components/features/admin/tabs/DailyDrillsTab";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -54,6 +61,10 @@ const TABS = [
   { id: "tiers", label: "Tiers", icon: Layers3 },
   { id: "pathways", label: "Pathways", icon: Route },
   { id: "questionnaire", label: "Questionnaire", icon: HelpCircle },
+  { id: "daily-drills", label: "Daily Drills", icon: Calendar },
+  { id: "rewards", label: "Rewards", icon: Gift },
+  { id: "redemptions", label: "Redemptions", icon: ClipboardList },
+  { id: "student-points", label: "Student Points", icon: Coins },
 ];
 
 const TAB_COMPONENTS = {
@@ -70,6 +81,10 @@ const TAB_COMPONENTS = {
   tiers: TiersTab,
   pathways: PathwaysTab,
   questionnaire: QuestionnaireTab,
+  "daily-drills": DailyDrillsTab,
+  rewards: RewardsTab,
+  redemptions: RedemptionsTab,
+  "student-points": StudentPointsTab,
 };
 
 const VALID_TABS = new Set(TABS.map((tab) => tab.id));

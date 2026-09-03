@@ -61,6 +61,7 @@ INSTALLED_APPS = [
     'ai_courses',
     'messaging',
     'advisor',
+    'rewards',
 ]
 
 MIDDLEWARE = [
@@ -224,6 +225,28 @@ AI_MAX_CONCURRENT_GENERATIONS = int(os.getenv('AI_MAX_CONCURRENT_GENERATIONS', 3
 
 AI_STALE_JOB_THRESHOLD_SECONDS = int(
     os.getenv('AI_STALE_JOB_THRESHOLD_SECONDS', max(300, AI_REQUEST_TIMEOUT * 2 + 60))
+)
+
+# Daily Drill AI generation — a single small MCQ question, not a full course,
+# so it's generated synchronously (same pattern as advisor's live chat) on the
+# fast AI_CHAT_MODEL rather than the slower "thinking" AI_MODEL used for
+# ai_courses' backgrounded/polled generation.
+DAILY_DRILL_AI_TIMEOUT_SECONDS = int(os.getenv('DAILY_DRILL_AI_TIMEOUT_SECONDS', 15))
+# Flat, backend-controlled reward amount for a *correct* AI-generated drill
+# answer (0 for an incorrect one) — the amount itself is never derived from
+# the AI's own output, so Gemini never decides how many points a correct
+# answer is worth; only the student's own correctness decides whether this
+# amount is paid out at all.
+DAILY_DRILL_DEFAULT_AI_REWARD_POINTS = int(os.getenv('DAILY_DRILL_DEFAULT_AI_REWARD_POINTS', 100))
+# How many of the student's most recent AI-generated drills are checked
+# against a new generation's content fingerprint before accepting it, so the
+# same student doesn't see near-identical drills day after day.
+DAILY_DRILL_VARIATION_LOOKBACK_DAYS = int(os.getenv('DAILY_DRILL_VARIATION_LOOKBACK_DAYS', 7))
+# Minimum watched percentage of an admin-scheduled Daily Drill video before
+# its quiz can be submitted — enforced server-side on quiz submit, not just
+# hidden/disabled client-side.
+DAILY_DRILL_VIDEO_WATCH_THRESHOLD_PERCENT = int(
+    os.getenv('DAILY_DRILL_VIDEO_WATCH_THRESHOLD_PERCENT', 80)
 )
 
 LOGGING = {

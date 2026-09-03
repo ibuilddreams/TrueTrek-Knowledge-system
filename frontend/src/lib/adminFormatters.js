@@ -38,6 +38,32 @@ export function formatDateTime(isoString) {
   return `${parts.month}/${parts.day}/${parts.year}, ${hour12}:${parts.minutes} ${meridiem}`;
 }
 
+// For a plain "YYYY-MM-DD" date (no time/timezone component — e.g. a
+// scheduled session's calendar day), never round-trip through `new Date()`:
+// a bare date string is parsed as UTC midnight, and formatting it back out
+// via local-time getters (as formatDate/formatDateTime do, correctly, for
+// real datetime instants) can shift it a day in timezones behind UTC. This
+// formats the string's own digits directly instead.
+export function formatPlainDate(isoDate) {
+  if (!isoDate) return "—";
+  const match = /^(\d{4})-(\d{2})-(\d{2})/.exec(isoDate);
+  if (!match) return "—";
+  const [, year, month, day] = match;
+  return `${month}/${day}/${year}`;
+}
+
+// For a plain "HH:MM[:SS]" time (no date/timezone component).
+export function formatPlainTime(isoTime) {
+  if (!isoTime) return "";
+  const match = /^(\d{2}):(\d{2})/.exec(isoTime);
+  if (!match) return "";
+  const hours = Number(match[1]);
+  const minutes = match[2];
+  const hour12 = hours % 12 || 12;
+  const meridiem = hours >= 12 ? "PM" : "AM";
+  return `${hour12}:${minutes} ${meridiem}`;
+}
+
 export function formatAmount(amount) {
   const value = Number(amount);
   if (!Number.isFinite(value)) return "—";
