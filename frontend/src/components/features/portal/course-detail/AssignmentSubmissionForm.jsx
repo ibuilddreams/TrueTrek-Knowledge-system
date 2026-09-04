@@ -21,6 +21,7 @@ export default function AssignmentSubmissionForm({
   const { isVault } = useTheme();
   const [files, setFiles] = useState([]);
   const submitMutation = useSubmitAssignment(assignment.id);
+  const isAiGraded = assignment.grading_mode === "AI";
 
   if (!canSubmit) {
     return (
@@ -151,8 +152,17 @@ export default function AssignmentSubmissionForm({
         }`}
       >
         {submitMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-        {hasSubmission ? "Resubmit assignment" : "Submit assignment"}
+        {submitMutation.isPending && isAiGraded
+          ? "Elite Coach is reviewing your submission…"
+          : hasSubmission
+            ? "Resubmit assignment"
+            : "Submit assignment"}
       </button>
+      {submitMutation.isPending && isAiGraded ? (
+        <p className={`text-[11px] ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+          Your work has been saved. This can take up to a minute — please don&apos;t close this window.
+        </p>
+      ) : null}
     </form>
   );
 }

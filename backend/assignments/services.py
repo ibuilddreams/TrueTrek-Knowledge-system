@@ -7,6 +7,7 @@ from common.image import build_absolute_image_url
 from common.models import Status
 from enrollments.models import Enrollment
 
+from .ai_review.presenters import latest_review_summary
 from .models import Assignment, AssignmentAttachment, AssignmentSubmission, AssignmentSubmissionFile
 from .validators import get_file_category
 
@@ -45,7 +46,7 @@ def get_student_assignments(student, request=None):
         row.assignment_id: row
         for row in AssignmentSubmission.objects.filter(
             student=student, assignment_id__in=assignment_ids
-        ).prefetch_related("files")
+        ).prefetch_related("files", "ai_reviews")
     }
 
     now = timezone.now()
@@ -66,6 +67,7 @@ def get_student_assignments(student, request=None):
                 "description": assignment.description,
                 "due_date": assignment.due_date,
                 "total_marks": assignment.total_marks,
+                "grading_mode": assignment.grading_mode,
                 "allow_resubmission": assignment.allow_resubmission,
                 "is_overdue": is_overdue,
                 "course": {
@@ -99,6 +101,9 @@ def get_student_assignments(student, request=None):
                         }
                         for file in submission.files.all()
                     ],
+                    "ai_review": latest_review_summary(submission)
+                    if assignment.grading_mode == Assignment.GradingMode.AI
+                    else None,
                 }
                 if submission
                 else None,
@@ -115,6 +120,19 @@ def publish_assignment(assignment):
 
     if assignment.total_marks <= 0:
         raise AssignmentPublishError("Total marks must be greater than zero before publishing.")
+
+    if assignment.grading_mode == Assignment.GradingMode.AI:
+        rubric = getattr(assignment, "rubric", None)
+        criteria_max_sum = sum(rubric.criteria.values_list("max_marks", flat=True)) if rubric else 0
+        if rubric is None or criteria_max_sum == 0:
+            raise AssignmentPublishError(
+                "An AI-graded assignment needs at least one grading rubric criterion/question before publishing."
+            )
+        if criteria_max_sum != assignment.total_marks:
+            raise AssignmentPublishError(
+                f"The grading items' marks must add up to exactly the assignment's total "
+                f"marks before publishing (currently {criteria_max_sum} of {assignment.total_marks})."
+            )
 
     assignment.status = Status.PUBLISHED
     assignment.save(update_fields=["status"])
@@ -156,13 +174,6 @@ def submit_assignment(student, assignment, files=None):
             )
 
         submission.submitted_at = now
-
-        if assignment.grading_mode == Assignment.GradingMode.AUTO:
-            submission.marks = assignment.total_marks
-            submission.feedback = ""
-            submission.status = AssignmentSubmission.SubmissionStatus.GRADED
-            submission.graded_by = None
-            submission.graded_at = now
 
         submission.save()
 

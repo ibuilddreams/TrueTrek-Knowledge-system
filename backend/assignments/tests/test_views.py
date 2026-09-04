@@ -9,7 +9,7 @@ from common.models import Status
 from courses.models import Category, Course, CourseInstructor
 from enrollments.models import Enrollment
 
-from .models import Assignment, AssignmentSubmission, AssignmentSubmissionFile
+from ..models import Assignment, AssignmentSubmission, AssignmentSubmissionFile
 
 UserModel = get_user_model()
 

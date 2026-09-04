@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Check, ClipboardCheck, FileText, Paperclip, Trash2, Upload, X } from "lucide-react";
+import { Check, ClipboardCheck, FileText, Paperclip, Plus, Trash2, Upload, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import AssignmentAttachmentsModal from "@/components/features/admin/AssignmentAttachmentsModal";
 import {
@@ -23,7 +23,10 @@ const INITIAL_FORM = {
   grading_mode: "MANUAL",
   allow_resubmission: false,
   order: "1",
+  grading_method: "RUBRIC",
 };
+
+const EMPTY_CRITERION = { name: "", description: "", max_marks: "10" };
 
 const STATUS_OPTIONS = [
   { value: "DRAFT", label: "Draft" },
@@ -38,9 +41,22 @@ const GRADING_MODE_OPTIONS = [
     description: "A teacher grades each submission by hand.",
   },
   {
-    value: "AUTO",
-    label: "Auto-Check on Submit",
-    description: "Submissions are automatically marked complete with full marks.",
+    value: "AI",
+    label: "AI Grading",
+    description: "Elite Coach AI grades each submission and assigns academic marks — see below.",
+  },
+];
+
+const GRADING_METHOD_OPTIONS = [
+  {
+    value: "RUBRIC",
+    label: "Rubric / Criteria Based",
+    description: "Grade the whole submission holistically against named criteria (e.g. Understanding, Accuracy).",
+  },
+  {
+    value: "QUESTION_BASED",
+    label: "Question Based",
+    description: "Grade each question separately — use when the assignment has clearly identifiable questions with their own marks.",
   },
 ];
 
@@ -100,6 +116,7 @@ export default function AddAssignmentModal({
 
   const [form, setForm] = useState(INITIAL_FORM);
   const [fieldErrors, setFieldErrors] = useState({});
+  const [rubricCriteria, setRubricCriteria] = useState([]);
   const [isAttachmentsModalOpen, setIsAttachmentsModalOpen] = useState(false);
   const [pendingAttachments, setPendingAttachments] = useState([]);
   const pendingAttachmentInputRef = useRef(null);
@@ -133,7 +150,15 @@ export default function AddAssignmentModal({
         grading_mode: assignment.grading_mode || "MANUAL",
         allow_resubmission: Boolean(assignment.allow_resubmission),
         order: String(assignment.order ?? 1),
+        grading_method: assignment.rubric?.grading_method || "RUBRIC",
       });
+      setRubricCriteria(
+        (assignment.rubric?.criteria || []).map((criterion) => ({
+          name: criterion.name || "",
+          description: criterion.description || "",
+          max_marks: String(criterion.max_marks ?? 10),
+        }))
+      );
     } else {
       const initialModuleId = defaultModuleId ? String(defaultModuleId) : String(modules[0]?.id || "");
       const initialModule = modules.find((module) => String(module.id) === initialModuleId);
@@ -142,10 +167,19 @@ export default function AddAssignmentModal({
         module: initialModuleId,
         order: String((initialModule?.assignments_count ?? 0) + 1),
       });
+      setRubricCriteria([]);
     }
     setFieldErrors({});
     setPendingAttachments([]);
   }, [isOpen, defaultModuleId, assignment, modules]);
+
+  const addCriterion = () => setRubricCriteria((prev) => [...prev, { ...EMPTY_CRITERION }]);
+  const removeCriterion = (index) =>
+    setRubricCriteria((prev) => prev.filter((_, i) => i !== index));
+  const updateCriterion = (index, field, value) =>
+    setRubricCriteria((prev) =>
+      prev.map((criterion, i) => (i === index ? { ...criterion, [field]: value } : criterion))
+    );
 
   const handleClose = () => {
     if (isSubmitting) return;
@@ -223,6 +257,19 @@ export default function AddAssignmentModal({
       order: Number(form.order),
     };
 
+    if (form.grading_mode === "AI") {
+      payload.rubric = {
+        grading_method: form.grading_method,
+        criteria: rubricCriteria
+          .filter((criterion) => criterion.name.trim())
+          .map((criterion) => ({
+            name: criterion.name.trim(),
+            description: criterion.description.trim(),
+            max_marks: Number(criterion.max_marks) || 10,
+          })),
+      };
+    }
+
     try {
       const response = isEditMode
         ? await updateAssignmentMutation.mutateAsync({ id: assignment.id, payload })
@@ -256,6 +303,15 @@ export default function AddAssignmentModal({
       );
     }
   };
+
+  const isQuestionBased = form.grading_method === "QUESTION_BASED";
+  const itemNoun = isQuestionBased ? "Question" : "Criterion";
+  const criteriaMarksSum = rubricCriteria.reduce(
+    (sum, criterion) => sum + (Number(criterion.max_marks) || 0),
+    0
+  );
+  const totalMarksNumber = Number(form.total_marks) || 0;
+  const marksSumMismatch = form.grading_mode === "AI" && criteriaMarksSum !== totalMarksNumber;
 
   return (
     <Modal
@@ -400,6 +456,109 @@ export default function AddAssignmentModal({
             {GRADING_MODE_OPTIONS.find((option) => option.value === form.grading_mode)?.description}
           </p>
         </div>
+
+        {form.grading_mode === "AI" && (
+          <div className="space-y-4 p-3 rounded-xl border border-amber-200 bg-amber-50/40">
+            <div>
+              <label className={LABEL_CLASS}>Grading Method</label>
+              <div className="flex gap-2">
+                {GRADING_METHOD_OPTIONS.map((option) => (
+                  <button
+                    key={option.value}
+                    type="button"
+                    onClick={() => setForm((prev) => ({ ...prev, grading_method: option.value }))}
+                    disabled={isSubmitting}
+                    title={option.description}
+                    className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-semibold font-mono tracking-wider uppercase transition-all border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
+                      form.grading_method === option.value
+                        ? "bg-stone-900 text-white border-stone-900"
+                        : "bg-white text-stone-500 border-stone-200 hover:bg-stone-50"
+                    }`}
+                  >
+                    {option.label}
+                  </button>
+                ))}
+              </div>
+              <p className="text-[11px] font-mono text-stone-400 tracking-wider mt-1.5">
+                {GRADING_METHOD_OPTIONS.find((option) => option.value === form.grading_method)?.description}
+              </p>
+            </div>
+
+            <div>
+              <label className={LABEL_CLASS}>
+                {isQuestionBased ? "Questions" : "Grading Rubric Criteria"}
+              </label>
+              <div className="space-y-2">
+                {rubricCriteria.map((criterion, index) => (
+                  <div
+                    key={index}
+                    className="flex gap-2 items-start p-2.5 rounded-xl border border-stone-200 bg-white"
+                  >
+                    <div className="flex-1 space-y-1.5">
+                      <input
+                        type="text"
+                        placeholder={isQuestionBased ? "Question label (e.g. Question 1)" : "Criterion name"}
+                        value={criterion.name}
+                        onChange={(event) => updateCriterion(index, "name", event.target.value)}
+                        disabled={isSubmitting}
+                        className={FIELD_CLASS}
+                      />
+                      <textarea
+                        placeholder={isQuestionBased ? "The actual question text" : "Description (optional)"}
+                        value={criterion.description}
+                        onChange={(event) =>
+                          updateCriterion(index, "description", event.target.value)
+                        }
+                        disabled={isSubmitting}
+                        rows={2}
+                        className={`${FIELD_CLASS} resize-none`}
+                      />
+                    </div>
+                    <div className="w-24">
+                      <input
+                        type="number"
+                        min="1"
+                        placeholder="Marks"
+                        value={criterion.max_marks}
+                        onChange={(event) => updateCriterion(index, "max_marks", event.target.value)}
+                        disabled={isSubmitting}
+                        className={FIELD_CLASS}
+                      />
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => removeCriterion(index)}
+                      disabled={isSubmitting}
+                      title={`Remove ${itemNoun.toLowerCase()}`}
+                      aria-label={`Remove ${itemNoun.toLowerCase()}`}
+                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-stone-200 text-rose-600 hover:bg-rose-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+              <button
+                type="button"
+                onClick={addCriterion}
+                disabled={isSubmitting}
+                className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+              >
+                <Plus className="w-3.5 h-3.5" />
+                Add {itemNoun}
+              </button>
+              <p
+                className={`mt-1.5 text-[11px] font-mono tracking-wider ${
+                  marksSumMismatch ? "text-amber-700 font-semibold" : "text-stone-400"
+                }`}
+              >
+                {itemNoun} marks total: {criteriaMarksSum} / {totalMarksNumber || "—"}
+                {marksSumMismatch ? " — must match Total Marks exactly before publishing." : ""}
+              </p>
+              {fieldErrors.rubric && <p className={ERROR_CLASS}>{fieldErrors.rubric}</p>}
+            </div>
+          </div>
+        )}
 
         <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-stone-200 bg-stone-50/60">
           <div>

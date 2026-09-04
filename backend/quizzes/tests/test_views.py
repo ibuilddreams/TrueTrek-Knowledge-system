@@ -11,8 +11,8 @@ from common.models import Status
 from courses.models import Category, Course, CourseInstructor
 from enrollments.models import Enrollment
 
-from .models import Choice, Question, Quiz, QuizAnswer, QuizAttempt, QuizResult
-from .services import (
+from ..models import Choice, Question, Quiz, QuizAnswer, QuizAttempt, QuizResult
+from ..services import (
     autosave_quiz_attempt,
     finalize_stale_attempts,
     grade_quiz_answer,

@@ -10,6 +10,10 @@ from modules.models import Module
 
 
 class Quiz(BaseModel):
+    class ShortAnswerGradingMode(models.TextChoices):
+        MANUAL = "MANUAL", "Manual Review"
+        AI = "AI", "AI Grading"
+
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="quizzes")
     module = models.ForeignKey(
         Module, on_delete=models.CASCADE, related_name="quizzes", null=True, blank=True
@@ -23,6 +27,14 @@ class Quiz(BaseModel):
     available_from = models.DateTimeField(null=True, blank=True)
     available_until = models.DateTimeField(null=True, blank=True)
     order = models.PositiveIntegerField(default=0)
+    # Deterministic MCQ/TRUE_FALSE grading is always backend-computed and
+    # completely unaffected by this field — it only governs SHORT_ANSWER
+    # questions. MANUAL (default) preserves today's behavior for every
+    # existing quiz (answers sit PENDING_GRADING for a teacher); AI is an
+    # explicit per-quiz opt-in. See quizzes/ai_grading.py.
+    short_answer_grading_mode = models.CharField(
+        max_length=20, choices=ShortAnswerGradingMode.choices, default=ShortAnswerGradingMode.MANUAL
+    )
 
     class Meta:
         ordering = ["module", "order"]
@@ -49,6 +61,10 @@ class Question(BaseModel):
     question_type = models.CharField(max_length=20, choices=QuestionType.choices, default=QuestionType.MCQ)
     marks = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
     order = models.PositiveIntegerField(default=0)
+    # Only meaningful for SHORT_ANSWER questions on an AI-graded quiz —
+    # optional trusted grading guidance/expected-answer hint shown to the AI
+    # (the quiz equivalent of an assignment rubric criterion's description).
+    grading_notes = models.TextField(blank=True)
 
     class Meta:
         ordering = ["quiz", "order"]
@@ -100,6 +116,7 @@ class QuizAnswer(BaseModel):
         AUTO_GRADED = "AUTO_GRADED", "Auto Graded"
         PENDING_GRADING = "PENDING_GRADING", "Pending Grading"
         MANUALLY_GRADED = "MANUALLY_GRADED", "Manually Graded"
+        AI_GRADED = "AI_GRADED", "AI Graded"
 
     attempt = models.ForeignKey(QuizAttempt, on_delete=models.CASCADE, related_name="answers")
     question = models.ForeignKey(Question, on_delete=models.CASCADE, related_name="answers")

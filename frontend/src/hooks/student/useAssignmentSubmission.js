@@ -1,7 +1,11 @@
 "use client";
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { getMyAssignmentSubmission, submitAssignment } from "@/services/assignmentsService";
+import {
+  getMyAssignmentSubmission,
+  retryAiReview,
+  submitAssignment,
+} from "@/services/assignmentsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
@@ -33,6 +37,22 @@ export function useSubmitAssignment(assignmentId) {
     },
     onError: (error) => {
       toastError(getApiErrorMessage(error, "Unable to submit this assignment."));
+    },
+  });
+}
+
+export function useRetryAiReview(assignmentId) {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: () => retryAiReview(assignmentId),
+    onSuccess: (response) => {
+      toastSuccess(response?.message || "AI review retried");
+      queryClient.invalidateQueries({ queryKey: ["studentAssignments"] });
+      queryClient.invalidateQueries({ queryKey: ["myAssignmentSubmission", assignmentId] });
+    },
+    onError: (error) => {
+      toastError(getApiErrorMessage(error, "Unable to retry the AI review right now."));
     },
   });
 }

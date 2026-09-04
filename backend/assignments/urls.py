@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    AssignmentAIReviewRetryView,
     AssignmentAttachmentDetailView,
     AssignmentAttachmentListCreateView,
     AssignmentAttachmentOrderView,
@@ -51,6 +52,11 @@ urlpatterns = [
         "<int:assignment_id>/my-submission/",
         AssignmentMySubmissionView.as_view(),
         name="assignment-my-submission",
+    ),
+    path(
+        "<int:assignment_id>/ai-review/retry/",
+        AssignmentAIReviewRetryView.as_view(),
+        name="assignment-ai-review-retry",
     ),
     path(
         "submissions/<int:pk>/grade/",

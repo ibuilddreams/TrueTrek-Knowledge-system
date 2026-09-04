@@ -20,7 +20,21 @@ const INITIAL_FORM = {
   available_from: "",
   available_until: "",
   order: "1",
+  short_answer_grading_mode: "MANUAL",
 };
+
+const SHORT_ANSWER_GRADING_MODE_OPTIONS = [
+  {
+    value: "MANUAL",
+    label: "Manual Review",
+    description: "Short-answer responses queue for a teacher to grade by hand.",
+  },
+  {
+    value: "AI",
+    label: "AI Grading",
+    description: "AI grades short-answer responses automatically, with partial credit. MCQ/True-False are always graded deterministically either way.",
+  },
+];
 
 const FIELD_CLASS =
   "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60";
@@ -94,6 +108,7 @@ export default function AddQuizModal({ isOpen, onClose, modules = [], defaultMod
         available_from: toDatetimeLocalValue(quiz.available_from),
         available_until: toDatetimeLocalValue(quiz.available_until),
         order: String(quiz.order ?? 1),
+        short_answer_grading_mode: quiz.short_answer_grading_mode || "MANUAL",
       });
     } else {
       const initialModuleId = defaultModuleId ? String(defaultModuleId) : String(modules[0]?.id || "");
@@ -185,6 +200,7 @@ export default function AddQuizModal({ isOpen, onClose, modules = [], defaultMod
       available_from: toIsoString(form.available_from),
       available_until: toIsoString(form.available_until),
       order: Number(form.order),
+      short_answer_grading_mode: form.short_answer_grading_mode,
     };
 
     try {
@@ -336,6 +352,37 @@ export default function AddQuizModal({ isOpen, onClose, modules = [], defaultMod
               />
               {fieldErrors.available_until && <p className={ERROR_CLASS}>{fieldErrors.available_until}</p>}
             </div>
+          </div>
+
+          <div>
+            <label className={LABEL_CLASS}>Short-Answer Grading</label>
+            <div className="flex gap-2">
+              {SHORT_ANSWER_GRADING_MODE_OPTIONS.map((option) => (
+                <button
+                  key={option.value}
+                  type="button"
+                  onClick={() =>
+                    setForm((prev) => ({ ...prev, short_answer_grading_mode: option.value }))
+                  }
+                  disabled={isSubmitting}
+                  title={option.description}
+                  className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-semibold font-mono tracking-wider uppercase transition-all border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
+                    form.short_answer_grading_mode === option.value
+                      ? "bg-stone-900 text-white border-stone-900"
+                      : "bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100"
+                  }`}
+                >
+                  {option.label}
+                </button>
+              ))}
+            </div>
+            <p className="text-[11px] font-mono text-stone-400 tracking-wider mt-1.5">
+              {
+                SHORT_ANSWER_GRADING_MODE_OPTIONS.find(
+                  (option) => option.value === form.short_answer_grading_mode
+                )?.description
+              }
+            </p>
           </div>
 
           <div className="w-32">

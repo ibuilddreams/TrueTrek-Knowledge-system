@@ -1,6 +1,7 @@
 from django.db.models import Count, Q
 from rest_framework import filters, generics
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.throttling import ScopedRateThrottle
 
 from common.models import Status
 from common.pagination import Pagination
@@ -12,6 +13,7 @@ from enrollments.services import can_view_student_in_course, get_visible_enrollm
 from modules.models import Module
 from users.permissions import IsStudent
 
+from .ai_grading import grade_pending_short_answers, grade_short_answer_with_ai
 from .models import Choice, Question, Quiz, QuizAnswer, QuizAttempt, QuizResult
 from .permissions import IsCourseInstructorOrAdmin
 from .serializers import (
@@ -481,6 +483,7 @@ class StartQuizAttemptView(generics.GenericAPIView):
                 "id": quiz.id,
                 "title": quiz.title,
                 "time_limit_minutes": quiz.time_limit_minutes,
+                "short_answer_grading_mode": quiz.short_answer_grading_mode,
             },
             "questions": StudentQuestionSerializer(questions, many=True).data,
         }
@@ -557,6 +560,22 @@ class SubmitQuizAttemptView(generics.GenericAPIView):
             result = submit_quiz_attempt(attempt, serializer.validated_data["answers"])
         except InvalidAnswerError as exc:
             return error_response(message=str(exc), status_code=400)
+
+        # Deterministic MCQ/TRUE_FALSE grading above is already final. Only
+        # SHORT_ANSWER answers can still be PENDING_GRADING at this point —
+        # AI-grade them now (if this quiz opted in) so the response already
+        # reflects the final result, same "commit first, then AI-evaluate"
+        # ordering as assignments: the attempt/answers are already saved
+        # regardless of what happens next.
+        if attempt.quiz.short_answer_grading_mode == Quiz.ShortAnswerGradingMode.AI:
+            grade_pending_short_answers(attempt)
+            # `attempt.result` (the reverse o2o descriptor) would return a
+            # stale cached value here — the same gotcha documented on
+            # auto_finalize_attempt above: grading each answer touches its
+            # own separately-fetched `answer.attempt` instance, not this
+            # `attempt` object, so Django's per-instance cache on THIS
+            # `attempt` object was never invalidated. Re-fetch explicitly.
+            result = QuizResult.objects.get(attempt=attempt)
 
         return success_response(
             QuizResultSerializer(result).data, message="Quiz submitted successfully"
@@ -643,6 +662,59 @@ class QuizAnswerGradeView(generics.GenericAPIView):
         except QuizGradingError as exc:
             return error_response(message=str(exc), status_code=400)
 
+        return success_response(QuizResultSerializer(result).data, message="Answer graded successfully")
+
+
+class QuizAnswerAIRetryView(generics.GenericAPIView):
+    """Re-runs AI grading for one still-PENDING_GRADING short answer on an
+    AI-mode quiz — the teacher/admin-facing counterpart to
+    AssignmentAIReviewRetryView, for the same "the AI was unavailable, just
+    try again" case. Manual grading (QuizAnswerGradeView) always remains
+    available as the fallback if AI grading keeps failing."""
+
+    permission_classes = [IsAuthenticated]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "ai-grading"
+
+    def post(self, request, pk):
+        try:
+            answer = QuizAnswer.objects.select_related(
+                "attempt", "attempt__quiz__course", "question"
+            ).get(pk=pk)
+        except QuizAnswer.DoesNotExist:
+            return error_response(message="Answer with the given id does not exist.", status_code=404)
+
+        if not (
+            request.user.is_admin or is_course_instructor(request.user, answer.attempt.quiz.course)
+        ):
+            return error_response(
+                message="You do not have permission to perform this action.", status_code=403
+            )
+
+        if answer.attempt.quiz.short_answer_grading_mode != Quiz.ShortAnswerGradingMode.AI:
+            return error_response(
+                message="This quiz is not configured for AI grading.", status_code=400
+            )
+
+        if answer.question.question_type != Question.QuestionType.SHORT_ANSWER:
+            return error_response(message="This answer is not a short answer.", status_code=400)
+
+        if answer.grading_status != QuizAnswer.GradingStatus.PENDING_GRADING:
+            return error_response(
+                message="This answer has already been graded.", status_code=400
+            )
+
+        grade_short_answer_with_ai(answer)
+        answer.refresh_from_db()
+
+        if answer.grading_status == QuizAnswer.GradingStatus.PENDING_GRADING:
+            return error_response(
+                message="The AI grading is taking longer than expected or is temporarily "
+                "unavailable. Please try again shortly, or grade this answer manually.",
+                status_code=503,
+            )
+
+        result = QuizResult.objects.get(attempt=answer.attempt)
         return success_response(QuizResultSerializer(result).data, message="Answer graded successfully")
 
 

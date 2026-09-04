@@ -89,6 +89,7 @@ def get_student_quizzes(student):
                 "time_limit_minutes": quiz.time_limit_minutes,
                 "attempts_allowed": quiz.attempts_allowed,
                 "attempts_used": attempt_count_map.get(quiz.id, 0),
+                "short_answer_grading_mode": quiz.short_answer_grading_mode,
                 "available_from": quiz.available_from,
                 "available_until": quiz.available_until,
                 "is_available": available,
@@ -223,6 +224,7 @@ def get_quiz_attempt_detail(attempt):
             "id": attempt.quiz_id,
             "title": attempt.quiz.title,
             "passing_score": attempt.quiz.passing_score,
+            "short_answer_grading_mode": attempt.quiz.short_answer_grading_mode,
         },
         "started_at": attempt.started_at,
         "ended_at": attempt.ended_at,
@@ -627,7 +629,7 @@ def get_pending_grading_answers(quiz, teacher=None):
     return answers
 
 
-def grade_quiz_answer(answer, marks_awarded, feedback=""):
+def grade_quiz_answer(answer, marks_awarded, feedback="", grading_status=QuizAnswer.GradingStatus.MANUALLY_GRADED):
     if marks_awarded < 0 or marks_awarded > answer.question.marks:
         raise QuizGradingError(
             f"Marks awarded must be between 0 and {answer.question.marks}."
@@ -635,7 +637,7 @@ def grade_quiz_answer(answer, marks_awarded, feedback=""):
 
     answer.marks_awarded = marks_awarded
     answer.feedback = feedback
-    answer.grading_status = QuizAnswer.GradingStatus.MANUALLY_GRADED
+    answer.grading_status = grading_status
     answer.save(update_fields=["marks_awarded", "feedback", "grading_status"])
 
     return _recompute_quiz_result(answer.attempt)

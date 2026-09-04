@@ -2,6 +2,7 @@ from rest_framework import filters, generics
 from rest_framework.exceptions import ValidationError
 from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.throttling import ScopedRateThrottle
 
 from common.models import Status
 from common.pagination import Pagination
@@ -13,6 +14,9 @@ from enrollments.services import can_view_student_in_course, get_visible_enrollm
 from modules.models import Module
 from users.permissions import IsStudent
 
+from .ai_review.exceptions import AIReviewAlreadyProcessingError
+from .ai_review.presenters import latest_review_summary
+from .ai_review.services import submit_for_ai_review
 from .models import Assignment, AssignmentAttachment, AssignmentSubmission
 from .permissions import IsCourseInstructorOrAdmin, IsEnrolledStudentOrAdmin
 from .serializers import (
@@ -398,7 +402,7 @@ class AssignmentSubmissionListView(generics.ListAPIView):
     def get_queryset(self):
         queryset = AssignmentSubmission.objects.filter(
             assignment_id=self.kwargs["assignment_id"]
-        ).select_related("assignment", "student").prefetch_related("files")
+        ).select_related("assignment", "student").prefetch_related("files", "ai_reviews")
         if not self.request.user.is_admin:
             visible_student_ids = get_visible_enrollments(
                 self.assignment.course, self.request.user
@@ -458,6 +462,24 @@ class AssignmentSubmitView(generics.GenericAPIView):
         except AssignmentSubmissionError as exc:
             return error_response(message=str(exc), status_code=400)
 
+        # The submission is already committed at this point — an AI review
+        # failure below can never lose or roll back the student's work
+        # (Task 15: "AI failure != submission failure"). submit_for_ai_review
+        # never raises for a provider/validation failure; the only exception
+        # it can raise is AIReviewAlreadyProcessingError, for the genuine
+        # double-click/duplicate-request case (two near-simultaneous submits
+        # can both reach this point since submit_assignment's get_or_create
+        # isn't itself locked) — that's a real race, not "can't happen", so
+        # it's handled the same "submission still saved" way: just skip
+        # re-triggering a second attempt and report whatever the in-flight
+        # one has produced by the time we serialize the response.
+        if assignment.grading_mode == Assignment.GradingMode.AI:
+            try:
+                submit_for_ai_review(submission)
+            except AIReviewAlreadyProcessingError:
+                pass
+            submission.refresh_from_db()
+
         return success_response(
             AssignmentSubmissionSerializer(submission, context={"request": request}).data,
             message="Assignment submitted successfully",
@@ -472,7 +494,7 @@ class AssignmentMySubmissionView(generics.GenericAPIView):
         try:
             submission = (
                 AssignmentSubmission.objects.select_related("assignment", "student")
-                .prefetch_related("files")
+                .prefetch_related("files", "ai_reviews")
                 .get(assignment_id=assignment_id, student=request.user)
             )
         except AssignmentSubmission.DoesNotExist:
@@ -483,6 +505,63 @@ class AssignmentMySubmissionView(generics.GenericAPIView):
         return success_response(
             AssignmentSubmissionSerializer(submission, context={"request": request}).data,
             message="Submission fetched successfully",
+        )
+
+
+class AssignmentAIReviewRetryView(generics.GenericAPIView):
+    """Re-runs AI review for the student's existing submission without
+    requiring a new file upload — for the specific "the AI was unavailable,
+    just try again" case. Revising and resubmitting different work still
+    goes through AssignmentSubmitView (POST .../submit/), which already
+    triggers a fresh AI review as part of that request."""
+
+    permission_classes = [IsStudent]
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "ai-grading"
+
+    def post(self, request, assignment_id):
+        try:
+            assignment = Assignment.objects.select_related("course").get(pk=assignment_id)
+        except Assignment.DoesNotExist:
+            return error_response(
+                message="Assignment with the given id does not exist.", status_code=404
+            )
+
+        if assignment.grading_mode != Assignment.GradingMode.AI:
+            return error_response(
+                message="This assignment is not configured for AI review.", status_code=400
+            )
+
+        try:
+            submission = AssignmentSubmission.objects.get(
+                assignment_id=assignment_id, student=request.user
+            )
+        except AssignmentSubmission.DoesNotExist:
+            return error_response(
+                message="You have not submitted this assignment yet.", status_code=404
+            )
+
+        if submission.graded_by is not None:
+            # A teacher/admin has manually graded (or overridden) this
+            # submission — a fresh AI pass would call grade_submission(...,
+            # grader=None, ...) on a PASS result, silently overwriting the
+            # human's marks/feedback and resetting graded_by back to None
+            # with no audit trail. Mirrors QuizAnswerAIRetryView's equivalent
+            # "already graded, don't let AI retry clobber it" guard.
+            return error_response(
+                message="This submission has already been graded by a teacher or admin and cannot be re-reviewed by AI.",
+                status_code=400,
+            )
+
+        try:
+            submit_for_ai_review(submission)
+        except AIReviewAlreadyProcessingError as exc:
+            return error_response(message=str(exc), status_code=409)
+
+        submission.refresh_from_db()
+        return success_response(
+            AssignmentSubmissionSerializer(submission, context={"request": request}).data,
+            message="AI review retried",
         )
 
 
@@ -571,7 +650,7 @@ class AssignmentCourseProgressListView(generics.GenericAPIView):
             )
             .exclude(status=AssignmentSubmission.SubmissionStatus.DRAFT)
             .select_related("student")
-            .prefetch_related("files")
+            .prefetch_related("files", "ai_reviews")
         )
         submission_map = {(s.assignment_id, s.student_id): s for s in submissions}
 
@@ -586,6 +665,7 @@ class AssignmentCourseProgressListView(generics.GenericAPIView):
                             "title": assignment.title,
                             "total_marks": assignment.total_marks,
                             "due_date": assignment.due_date,
+                            "grading_mode": assignment.grading_mode,
                         },
                         "student": {
                             "id": enrollment.student_id,
@@ -604,6 +684,11 @@ class AssignmentCourseProgressListView(generics.GenericAPIView):
                             ).data
                             if submission
                             else []
+                        ),
+                        "ai_review": (
+                            latest_review_summary(submission)
+                            if submission and assignment.grading_mode == Assignment.GradingMode.AI
+                            else None
                         ),
                     }
                 )

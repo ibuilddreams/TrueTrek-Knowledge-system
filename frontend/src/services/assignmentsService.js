@@ -78,3 +78,7 @@ export async function submitAssignment(assignmentId, { files = [] } = {}) {
 export async function getMyAssignmentSubmission(assignmentId) {
   return backendClient.get(`/assignments/${assignmentId}/my-submission/`);
 }
+
+export async function retryAiReview(assignmentId) {
+  return backendClient.post(`/assignments/${assignmentId}/ai-review/retry/`);
+}

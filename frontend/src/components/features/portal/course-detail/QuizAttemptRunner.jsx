@@ -49,6 +49,9 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
 
   const currentQuestion = questions[currentIndex];
   const answeredCount = Object.keys(answers).length;
+  const isAiGradedShortAnswer =
+    attempt.quiz?.short_answer_grading_mode === "AI" &&
+    questions.some((question) => question.question_type === "SHORT_ANSWER");
 
   const autosaveMutation = useAutosaveQuizAttempt();
   const answersRef = useRef(answers);
@@ -269,10 +272,19 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
             }`}
           >
             {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
-            Submit quiz
+            {isSubmitting && isAiGradedShortAnswer ? "Evaluating your answer…" : "Submit quiz"}
           </button>
         )}
       </div>
+
+      {isSubmitting && isAiGradedShortAnswer ? (
+        <p
+          className={`text-xs text-center ${isVault ? "text-stone-500" : "text-stone-400"}`}
+        >
+          The Elite Coach is reviewing your short-answer response — this can take up to a
+          minute. Please don&apos;t close this window.
+        </p>
+      ) : null}
     </div>
   );
 }
