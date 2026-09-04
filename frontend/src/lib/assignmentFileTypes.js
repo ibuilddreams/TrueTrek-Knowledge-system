@@ -3,6 +3,13 @@ export const ALLOWED_ASSIGNMENT_FILE_EXTENSIONS = {
   PRESENTATION: [".ppt", ".pptx"],
   ARCHIVE: [".zip"],
   IMAGE: [".jpg", ".jpeg", ".png", ".webp"],
+  // Source/plain-text files — needed for programming assignments (e.g.
+  // "submit your .cpp file") where the answer itself is code, not a document.
+  CODE: [
+    ".txt", ".md",
+    ".c", ".h", ".cpp", ".cc", ".cxx", ".hpp",
+    ".py", ".java", ".js", ".ts", ".cs",
+  ],
 };
 
 export const MAX_ASSIGNMENT_FILE_SIZE_MB = 50;

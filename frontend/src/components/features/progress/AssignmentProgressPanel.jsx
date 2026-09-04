@@ -89,7 +89,20 @@ export default function AssignmentProgressPanel({ courseId }) {
         </div>
       ),
     },
-    { key: "assignment", header: "Assignment", render: (row) => row.assignment.title },
+    {
+      key: "assignment",
+      header: "Assignment",
+      render: (row) => (
+        <span className="inline-flex items-center gap-1.5">
+          {row.assignment.title}
+          {row.assignment.grading_mode === "AI" && (
+            <span className="text-[10px] font-mono font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200">
+              AI
+            </span>
+          )}
+        </span>
+      ),
+    },
     { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} size="lg" /> },
     { key: "submitted_at", header: "Submitted", render: (row) => formatDateTime(row.submitted_at) || "—" },
     {

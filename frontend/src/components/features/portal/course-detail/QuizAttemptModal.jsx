@@ -54,10 +54,6 @@ export default function QuizAttemptModal({ quiz, canInteract, onClose }) {
     );
   }
 
-  const hasPendingGrading = (attempt?.questions || []).some(
-    (question) => question.question_type === "SHORT_ANSWER"
-  );
-
   return (
     <Modal
       isOpen={isOpen}
@@ -83,11 +79,7 @@ export default function QuizAttemptModal({ quiz, canInteract, onClose }) {
         />
       )}
       {quiz && phase === "result" && attempt && (
-        <QuizResultPanel
-          attemptId={attempt.attempt_id}
-          hasPendingGrading={hasPendingGrading}
-          onClose={resetAndClose}
-        />
+        <QuizResultPanel attemptId={attempt.attempt_id} onClose={resetAndClose} />
       )}
     </Modal>
   );

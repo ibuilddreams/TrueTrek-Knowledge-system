@@ -5,9 +5,15 @@ import Loader from "@/components/ui/Loader";
 import { useQuizAttemptResult } from "@/hooks/student/useQuizAttempt";
 import { useTheme } from "@/hooks/useTheme";
 
-export default function QuizResultPanel({ attemptId, hasPendingGrading, onClose }) {
+export default function QuizResultPanel({ attemptId, onClose }) {
   const { isVault } = useTheme();
   const { data: result, isLoading, isError } = useQuizAttemptResult(attemptId);
+  // `attempt_status` is the backend's own authoritative signal
+  // (_recompute_quiz_result sets SUBMITTED while any answer is still
+  // PENDING_GRADING, GRADED once every answer — including AI-graded short
+  // answers — has a final mark) rather than guessing from question types,
+  // which can't tell a still-pending answer apart from one AI already graded.
+  const hasPendingGrading = result?.attempt_status === "SUBMITTED";
 
   if (isLoading) {
     return (

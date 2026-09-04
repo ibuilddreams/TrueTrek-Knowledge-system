@@ -20,9 +20,14 @@ class GeminiProvider(AIProvider):
         self.api_key = api_key
         self.model = model
 
-    def generate_course(self, prompt, response_schema, timeout):
+    def generate_course(self, prompt, response_schema, timeout, files=None):
+        parts = [{"text": prompt}]
+        for file in files or []:
+            parts.append(
+                {"inlineData": {"mimeType": file["mime_type"], "data": file["data_base64"]}}
+            )
         body = {
-            "contents": [{"parts": [{"text": prompt}]}],
+            "contents": [{"parts": parts}],
             "generationConfig": {
                 "responseMimeType": "application/json",
                 "responseSchema": response_schema,

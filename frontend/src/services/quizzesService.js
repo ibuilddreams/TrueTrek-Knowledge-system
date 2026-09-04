@@ -96,6 +96,10 @@ export async function gradeQuizAnswer(answerId, payload) {
   return backendClient.post(`/quizzes/answers/${answerId}/grade/`, payload);
 }
 
+export async function retryQuizAnswerAiGrading(answerId) {
+  return backendClient.post(`/quizzes/answers/${answerId}/ai-retry/`);
+}
+
 export async function startQuizAttempt(quizId) {
   return backendClient.post(`/quizzes/${quizId}/attempts/`);
 }

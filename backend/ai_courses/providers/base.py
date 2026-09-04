@@ -24,10 +24,17 @@ class AIProvider:
     provider is chosen entirely by settings.AI_PROVIDER, never hardcoded at a call
     site."""
 
-    def generate_course(self, prompt, response_schema, timeout):
+    def generate_course(self, prompt, response_schema, timeout, files=None):
         """Returns a ProviderResult whose .text is the raw JSON string produced by
         the model. Raises ProviderTransportError for a retryable transport failure,
-        ProviderError for anything else."""
+        ProviderError for anything else.
+
+        `files` is an optional list of {"mime_type": str, "data_base64": str} dicts
+        sent alongside `prompt` as additional multimodal parts (e.g. a submitted PDF
+        or image) — added for assignments' AI grading (see
+        assignments/ai_review/services.py) so the model can read the actual
+        submitted document rather than a text transcription of it. Every existing
+        caller omits this and is unaffected."""
         raise NotImplementedError
 
     def generate_text(self, prompt, system_instruction, timeout, temperature=0.7):

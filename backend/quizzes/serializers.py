@@ -43,6 +43,7 @@ class QuizSerializer(serializers.ModelSerializer):
             "available_until",
             "order",
             "total_marks",
+            "short_answer_grading_mode",
             "created_at",
             "updated_at",
         ]
@@ -74,6 +75,7 @@ class QuizWriteSerializer(serializers.ModelSerializer):
             "available_from",
             "available_until",
             "order",
+            "short_answer_grading_mode",
         ]
         read_only_fields = ["id", "status"]
         # The model's conditional UniqueConstraint on (module, order) would otherwise make
@@ -147,6 +149,7 @@ class QuestionSerializer(serializers.ModelSerializer):
             "question_type",
             "marks",
             "order",
+            "grading_notes",
             "choices",
             "created_at",
             "updated_at",
@@ -159,7 +162,7 @@ class QuestionWriteSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Question
-        fields = ["id", "text", "question_type", "marks", "order", "choices"]
+        fields = ["id", "text", "question_type", "marks", "order", "grading_notes", "choices"]
         read_only_fields = ["id"]
 
     def create(self, validated_data):
