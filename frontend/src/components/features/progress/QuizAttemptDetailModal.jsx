@@ -5,7 +5,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { CheckCircle2, ListChecks, XCircle } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import StatusBadge from "@/components/ui/StatusBadge";
-import { getQuizAttemptDetail, gradeQuizAnswer } from "@/services/quizzesService";
+import { getQuizAttemptDetail, gradeQuizAnswer, retryQuizAnswerAiGrading } from "@/services/quizzesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
@@ -45,6 +45,22 @@ export default function QuizAttemptDetailModal({ attemptId, onClose, courseId })
     onError: (error) => {
       toastError(getApiErrorMessage(error, "Unable to grade answer."));
     },
+  });
+
+  const [retryingAnswerId, setRetryingAnswerId] = useState(null);
+  const retryAiMutation = useMutation({
+    mutationFn: (answerId) => retryQuizAnswerAiGrading(answerId),
+    onMutate: (answerId) => setRetryingAnswerId(answerId),
+    onSuccess: (response) => {
+      queryClient.invalidateQueries({ queryKey: ["quiz-attempt-detail", attemptId] });
+      queryClient.invalidateQueries({ queryKey: ["quiz-course-progress", courseId] });
+      queryClient.invalidateQueries({ queryKey: ["quiz-student-attempts"] });
+      toastSuccess(response?.message || "Answer graded successfully.");
+    },
+    onError: (error) => {
+      toastError(getApiErrorMessage(error, "AI grading is still unavailable — try again shortly or grade manually."));
+    },
+    onSettled: () => setRetryingAnswerId(null),
   });
 
   const data = detailQuery.data;
@@ -159,17 +175,30 @@ export default function QuizAttemptDetailModal({ attemptId, onClose, courseId })
                             : "Pending grading"}
                         </span>
                         {question.answer_id !== null ? (
-                          <button
-                            type="button"
-                            onClick={() => {
-                              setGradingAnswerId(question.answer_id);
-                              setMarksAwarded(question.marks_awarded ?? "");
-                              setAnswerFeedback(question.feedback || "");
-                            }}
-                            className="text-xs font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer"
-                          >
-                            {question.marks_awarded !== null ? "Edit Grade" : "Grade"}
-                          </button>
+                          <div className="flex items-center gap-3">
+                            {question.grading_status === "PENDING_GRADING" &&
+                            data.quiz.short_answer_grading_mode === "AI" ? (
+                              <button
+                                type="button"
+                                onClick={() => retryAiMutation.mutate(question.answer_id)}
+                                disabled={retryingAnswerId === question.answer_id}
+                                className="text-xs font-mono font-semibold text-sky-700 hover:text-sky-900 disabled:opacity-50 transition cursor-pointer"
+                              >
+                                {retryingAnswerId === question.answer_id ? "Retrying…" : "Retry with AI"}
+                              </button>
+                            ) : null}
+                            <button
+                              type="button"
+                              onClick={() => {
+                                setGradingAnswerId(question.answer_id);
+                                setMarksAwarded(question.marks_awarded ?? "");
+                                setAnswerFeedback(question.feedback || "");
+                              }}
+                              className="text-xs font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer"
+                            >
+                              {question.marks_awarded !== null ? "Edit Grade" : "Grade"}
+                            </button>
+                          </div>
                         ) : (
                           <span className="text-[11px] font-mono text-stone-300">No answer recorded</span>
                         )}

@@ -11,3 +11,4 @@ requests
 gunicorn
 openpyxl
 nh3
+python-docx

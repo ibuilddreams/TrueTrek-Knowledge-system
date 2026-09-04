@@ -7,6 +7,7 @@ from .views import (
     QuestionDetailView,
     QuestionListCreateView,
     QuestionOrderView,
+    QuizAnswerAIRetryView,
     QuizAnswerGradeView,
     QuizAttemptAutosaveView,
     QuizAttemptDetailView,
@@ -81,5 +82,10 @@ urlpatterns = [
         name="quiz-attempt-my-detail",
     ),
     path("answers/<int:pk>/grade/", QuizAnswerGradeView.as_view(), name="quiz-answer-grade"),
+    path(
+        "answers/<int:pk>/ai-retry/",
+        QuizAnswerAIRetryView.as_view(),
+        name="quiz-answer-ai-retry",
+    ),
     path("order/<int:module_id>/", QuizOrderView.as_view(), name="quiz-order"),
 ]

@@ -161,6 +161,7 @@ REST_FRAMEWORK = {
         'ai-generation': '5/hour',
         'message-send': '60/minute',
         'advisor-chat': '15/minute',
+        'ai-grading': '20/hour',
     },
 }
 
@@ -249,6 +250,18 @@ DAILY_DRILL_VARIATION_LOOKBACK_DAYS = int(os.getenv('DAILY_DRILL_VARIATION_LOOKB
 DAILY_DRILL_VIDEO_WATCH_THRESHOLD_PERCENT = int(
     os.getenv('DAILY_DRILL_VIDEO_WATCH_THRESHOLD_PERCENT', 80)
 )
+
+# AI-graded assignment review (assignments/ai_review/) and quiz short-answer
+# grading (quizzes/ai_grading.py) — reuses AI_CHAT_MODEL (the fast path), same
+# rationale as DAILY_DRILL_AI_TIMEOUT_SECONDS above, but a submission can
+# include a multi-page PDF/image evaluated multimodally rather than a single
+# MCQ question, so it gets its own, larger timeout rather than sharing the
+# drill's 15s. Raised from 45s after real-world testing showed the Gemini API
+# occasionally stalling past 45s on both workloads (including on the small,
+# text-only quiz-answer prompt) — 75s gives more headroom before either path
+# gives up and falls back (assignments: FAILED + retry button; quizzes: stays
+# PENDING_GRADING for manual grading).
+AI_GRADING_TIMEOUT_SECONDS = int(os.getenv('AI_GRADING_TIMEOUT_SECONDS', 75))
 
 LOGGING = {
     'version': 1,

@@ -8,7 +8,7 @@ import { createChoice, createQuestion, updateChoice, updateQuestion } from "@/se
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
-const INITIAL_FORM = { text: "", question_type: "MCQ", marks: "1", order: "1" };
+const INITIAL_FORM = { text: "", question_type: "MCQ", marks: "1", order: "1", grading_notes: "" };
 
 const QUESTION_TYPE_OPTIONS = [
   { value: "MCQ", label: "Multiple Choice" },
@@ -110,6 +110,7 @@ export default function QuestionFormModal({ isOpen, onClose, quizId, question, n
         question_type: question.question_type || "MCQ",
         marks: String(question.marks ?? 1),
         order: String(question.order ?? 1),
+        grading_notes: question.grading_notes || "",
       });
       setPendingChoices(choicesFromQuestion(question));
     } else {
@@ -188,6 +189,7 @@ export default function QuestionFormModal({ isOpen, onClose, quizId, question, n
       question_type: form.question_type,
       marks: Number(form.marks),
       order: Number(form.order),
+      grading_notes: form.grading_notes.trim(),
     };
 
     if (!isEditMode && form.question_type !== "SHORT_ANSWER") {
@@ -307,6 +309,23 @@ export default function QuestionFormModal({ isOpen, onClose, quizId, question, n
           <p className="text-[11px] font-mono text-stone-400 tracking-wider">
             Question type can&apos;t change after creation.
           </p>
+        )}
+
+        {form.question_type === "SHORT_ANSWER" && (
+          <div>
+            <label className={LABEL_CLASS}>Grading Notes (optional)</label>
+            <textarea
+              value={form.grading_notes}
+              onChange={updateField("grading_notes")}
+              disabled={isSubmitting}
+              placeholder="Trusted guidance for the grader — e.g. the expected answer or key points it must cover."
+              rows={2}
+              className={`${FIELD_CLASS} resize-none`}
+            />
+            <p className="mt-1.5 text-[11px] font-mono text-stone-400">
+              Used by AI grading (if enabled for this quiz) and visible to teachers grading manually.
+            </p>
+          </div>
         )}
 
         {showChoiceBuilder && (

@@ -2,7 +2,15 @@
 
 import { useEffect, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { Archive, ClipboardCheck, Download, FileText, Image as ImageIcon, Presentation } from "lucide-react";
+import {
+  Archive,
+  ClipboardCheck,
+  Download,
+  FileText,
+  Image as ImageIcon,
+  Presentation,
+  Sparkles,
+} from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { gradeAssignmentSubmission } from "@/services/assignmentsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
@@ -110,6 +118,24 @@ export default function GradeSubmissionModal({ row, onClose, courseId }) {
                   );
                 })}
               </ul>
+            </div>
+          )}
+
+          {row.assignment.grading_mode === "AI" && row.ai_review && (
+            <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-3 space-y-1.5">
+              <p className="flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-amber-700 font-semibold">
+                <Sparkles className="w-3.5 h-3.5" />
+                AI Grading — {row.ai_review.status}
+                {row.ai_review.score !== null && row.ai_review.score !== undefined
+                  ? ` (${Math.round(Number(row.ai_review.score))}%)`
+                  : ""}
+              </p>
+              {row.ai_review.feedback && (
+                <p className="text-sm text-stone-700">{row.ai_review.feedback}</p>
+              )}
+              <p className="text-[11px] font-mono text-stone-400">
+                This is a read-only AI evaluation. You can still override the marks/feedback below.
+              </p>
             </div>
           )}
 

@@ -42,10 +42,6 @@ export default function QuizPlayerPanel({ quiz, canInteract }) {
     setAttempt(null);
   }
 
-  const hasPendingGrading = (attempt?.questions || []).some(
-    (question) => question.question_type === "SHORT_ANSWER"
-  );
-
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-3">
@@ -97,11 +93,7 @@ export default function QuizPlayerPanel({ quiz, canInteract }) {
         />
       )}
       {phase === "result" && attempt && (
-        <QuizResultPanel
-          attemptId={attempt.attempt_id}
-          hasPendingGrading={hasPendingGrading}
-          onClose={handleResultClose}
-        />
+        <QuizResultPanel attemptId={attempt.attempt_id} onClose={handleResultClose} />
       )}
     </div>
   );
