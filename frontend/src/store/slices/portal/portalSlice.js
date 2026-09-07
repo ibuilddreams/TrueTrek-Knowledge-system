@@ -16,7 +16,6 @@ const initialState = {
   streakDetail: null,
   aggregateScore: 0,
   points: 0,
-  consultationCount: 0,
 };
 
 const portalSlice = createSlice({
@@ -38,9 +37,6 @@ const portalSlice = createSlice({
     setPoints(state, action) {
       state.points = action.payload;
     },
-    setConsultationCount(state, action) {
-      state.consultationCount = action.payload;
-    },
     resetPortalProgress(state) {
       Object.assign(state, initialState);
     },
@@ -53,7 +49,6 @@ export const {
   setStreakDetail,
   setAggregateScore,
   setPoints,
-  setConsultationCount,
   resetPortalProgress,
 } = portalSlice.actions;
 

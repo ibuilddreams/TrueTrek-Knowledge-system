@@ -56,18 +56,12 @@ export const PORTAL_TABS = [
     id: "warroom",
     label: "War Room",
     icon: Scale,
-    title: "AI mastermind advisor console",
+    title: "Course group chat with your instructor and classmates",
   },
 ];
 
 export const VALID_PORTAL_TABS = new Set(PORTAL_TABS.map((tab) => tab.id));
 export const DEFAULT_PORTAL_TAB = "dashboard";
-
-export const WAR_ROOM_PRESETS = [
-  "A wealthy booster offered $25,000 to fund my podcast but demands licensing royalties on all adjacent merchandise designs.",
-  "D1 coaching staff is demanding I skip organic recovery days to run scout exhibitions, triggering muscle fatigue alerts.",
-  'A regional venture group wants me to license my trademark "MJ-Prime" for 10 years for $10k cash upfront.',
-];
 
 export function getInitials(name) {
   const initials = name

@@ -4,15 +4,18 @@ from django.contrib.auth.tokens import default_token_generator
 from django.core.mail import send_mail
 from django.db import transaction
 from django.db.models import Avg, Count, Max, Q
+from django.utils import timezone
 from django.utils.encoding import force_bytes
 from django.utils.http import urlsafe_base64_encode
 
+from assignments.models import Assignment, AssignmentSubmission
 from common.import_files import (
     ImportFileError,
     build_sample_csv,
     build_sample_workbook,
     parse_tabular_file,
 )
+from common.models import Status
 from courses.models import Course, CourseInstructor
 from courses.serializers import CourseListSerializer
 from enrollments.models import Enrollment
@@ -23,6 +26,13 @@ from quizzes.models import QuizResult
 from .serializers import StudentSerializer
 
 UserModel = get_user_model()
+
+# Task 19 (Teacher Student Progress Dashboard) thresholds — kept in sync with
+# the values the frontend used to compute client-side before this became a
+# server-side field.
+STRUGGLING_PROGRESS_THRESHOLD = 40
+STRUGGLING_QUIZ_SCORE_THRESHOLD = 50
+DISENGAGED_INACTIVITY_DAYS = 3
 
 
 class DuplicateRecordError(Exception):
@@ -192,6 +202,49 @@ def get_teacher_enrolled_student_detail(teacher, student_id):
     }
 
 
+def _get_overdue_assignment_counts(enrollments, student_ids, taught_course_ids):
+    """Count published assignments past their due date that a student has not
+    yet submitted, restricted to (student, course) pairs the student is
+    actually enrolled in with this teacher — so a student isn't penalized for
+    an overdue assignment in a course they're not part of."""
+    if not student_ids or not taught_course_ids:
+        return {}
+
+    student_course_pairs = {
+        (enrollment.student_id, enrollment.course_id) for enrollment in enrollments
+    }
+
+    course_by_assignment_id = dict(
+        Assignment.objects.filter(
+            course_id__in=taught_course_ids,
+            status=Status.PUBLISHED,
+            due_date__lt=timezone.now(),
+        ).values_list("id", "course_id")
+    )
+    if not course_by_assignment_id:
+        return {}
+
+    submitted_pairs = set(
+        AssignmentSubmission.objects.filter(
+            student_id__in=student_ids,
+            assignment_id__in=course_by_assignment_id.keys(),
+        )
+        .exclude(status=AssignmentSubmission.SubmissionStatus.DRAFT)
+        .values_list("student_id", "assignment_id")
+    )
+
+    overdue_counts = {}
+    for assignment_id, course_id in course_by_assignment_id.items():
+        for student_id in student_ids:
+            if (student_id, course_id) not in student_course_pairs:
+                continue
+            if (student_id, assignment_id) in submitted_pairs:
+                continue
+            overdue_counts[student_id] = overdue_counts.get(student_id, 0) + 1
+
+    return overdue_counts
+
+
 def get_teacher_enrolled_students_roster(teacher):
     enrollments = (
         Enrollment.objects.filter(teacher=teacher)
@@ -229,6 +282,11 @@ def get_teacher_enrolled_students_roster(teacher):
         .values("student_id")
         .annotate(last_activity=Max("created_at"))
     }
+
+    overdue_counts_by_student = _get_overdue_assignment_counts(
+        enrollments, student_ids, taught_course_ids
+    )
+    now = timezone.now()
 
     students_map = {}
     for enrollment in enrollments:
@@ -273,7 +331,32 @@ def get_teacher_enrolled_students_roster(teacher):
         )[0]["status"]
         average_progress = round(float(progress_by_student.get(student_id, 0)), 2)
         average_score = round(float(quiz_by_student.get(student_id, 0)), 2)
+        has_quiz_history = student_id in quiz_by_student
         last_activity_at = last_activity_by_student.get(student_id)
+        overdue_assignments_count = overdue_counts_by_student.get(student_id, 0)
+
+        days_since_last_activity = (now - last_activity_at).days if last_activity_at else None
+        is_disengaged = last_activity_at is None or days_since_last_activity > DISENGAGED_INACTIVITY_DAYS
+        is_low_progress = average_progress < STRUGGLING_PROGRESS_THRESHOLD
+        is_low_quiz_score = has_quiz_history and average_score < STRUGGLING_QUIZ_SCORE_THRESHOLD
+        is_struggling = is_low_progress or is_low_quiz_score
+        needs_attention = is_struggling or is_disengaged or overdue_assignments_count > 0
+
+        risk_reasons = []
+        if last_activity_at is None:
+            risk_reasons.append("No recorded activity yet")
+        elif is_disengaged:
+            risk_reasons.append(f"Inactive for {days_since_last_activity} day(s)")
+        if is_low_progress:
+            risk_reasons.append(
+                f"Average course progress {average_progress:.0f}% is below {STRUGGLING_PROGRESS_THRESHOLD}%"
+            )
+        if is_low_quiz_score:
+            risk_reasons.append(
+                f"Average quiz score {average_score:.0f}% is below {STRUGGLING_QUIZ_SCORE_THRESHOLD}%"
+            )
+        if overdue_assignments_count > 0:
+            risk_reasons.append(f"{overdue_assignments_count} assignment(s) overdue")
 
         roster.append(
             {
@@ -288,6 +371,12 @@ def get_teacher_enrolled_students_roster(teacher):
                 "average_progress": average_progress,
                 "average_score": average_score,
                 "last_activity_at": last_activity_at,
+                "days_since_last_activity": days_since_last_activity,
+                "overdue_assignments_count": overdue_assignments_count,
+                "is_struggling": is_struggling,
+                "is_disengaged": is_disengaged,
+                "needs_attention": needs_attention,
+                "risk_reasons": risk_reasons,
             }
         )
 

@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
 import Loader from "@/components/ui/Loader";
@@ -7,7 +8,11 @@ import EmptyState from "@/components/ui/EmptyState";
 import { getConversations } from "@/services/messagingService";
 import ConversationListItem from "./ConversationListItem";
 
-export default function ConversationList({ selectedConversationId, onSelectConversation }) {
+export default function ConversationList({
+  selectedConversationId,
+  onSelectConversation,
+  autoSelectConversationId,
+}) {
   const conversationsQuery = useQuery({
     queryKey: ["conversations"],
     queryFn: async () => {
@@ -18,6 +23,16 @@ export default function ConversationList({ selectedConversationId, onSelectConve
   });
 
   const conversations = conversationsQuery.data || [];
+
+  // Deep-linked from elsewhere (e.g. a teacher's "Message Student" action) —
+  // select it as soon as it shows up in the loaded list.
+  useEffect(() => {
+    if (!autoSelectConversationId) return;
+    const match = conversations.find(
+      (conversation) => String(conversation.id) === String(autoSelectConversationId)
+    );
+    if (match) onSelectConversation(match);
+  }, [autoSelectConversationId, conversations, onSelectConversation]);
 
   if (conversationsQuery.isLoading) {
     return (

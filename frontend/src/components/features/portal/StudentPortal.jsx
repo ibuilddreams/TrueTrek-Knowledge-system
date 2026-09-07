@@ -26,7 +26,7 @@ import QuizzesTab from "./tabs/QuizzesTab";
 import CertificatesTab from "./tabs/CertificatesTab";
 import DrillTab from "./tabs/DrillTab";
 import RewardsTab from "./tabs/RewardsTab";
-import WarRoomTab from "./tabs/WarRoomTab";
+import WarRoomScreen from "@/components/features/warroom/WarRoomScreen";
 
 function StudentPortalContent() {
   const router = useRouter();
@@ -44,7 +44,6 @@ function StudentPortalContent() {
     setAggregateScore,
     points,
     setPoints,
-    setConsultationCount,
   } = session;
 
   const { displayName, status: profileStatus } = useStudentProfile(isLoggedIn);
@@ -188,13 +187,7 @@ function StudentPortalContent() {
             )}
             {activeTab === "drill" && <DrillTab onNotify={setLastNotification} />}
             {activeTab === "rewards" && <RewardsTab />}
-            {activeTab === "warroom" && (
-              <WarRoomTab
-                setConsultationCount={setConsultationCount}
-                setPoints={setPoints}
-                onNotify={setLastNotification}
-              />
-            )}
+            {activeTab === "warroom" && <WarRoomScreen />}
           </TabTransition>
         </div>
       </div>

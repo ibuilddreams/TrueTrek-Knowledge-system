@@ -12,6 +12,8 @@ import {
   FileText,
   FileWarning,
   LineChart,
+  Scale,
+  ShieldAlert,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTeacherEnrolledStudents } from "@/hooks/useTeacherEnrolledStudents";
@@ -21,6 +23,7 @@ import AccountMenu from "@/components/ui/AccountMenu";
 import Loader from "@/components/ui/Loader";
 import TabNav from "@/components/ui/TabNav";
 import TabTransition from "@/components/ui/TabTransition";
+import WarRoomScreen from "@/components/features/warroom/WarRoomScreen";
 import DashboardTab from "./tabs/DashboardTab";
 import MyCoursesTab from "./tabs/MyCoursesTab";
 import EnrollmentScoresTab from "./tabs/EnrollmentScoresTab";
@@ -28,6 +31,7 @@ import ProgressTab from "./tabs/ProgressTab";
 import InstructionalManualsTab from "./tabs/InstructionalManualsTab";
 import CurriculumDocumentsTab from "./tabs/CurriculumDocumentsTab";
 import RequestsTab from "./tabs/RequestsTab";
+import StudentConcernsTab from "./tabs/StudentConcernsTab";
 
 const TEACHER_TABS = [
   {
@@ -43,6 +47,12 @@ const TEACHER_TABS = [
     title: "Request a Change / Report an Error",
   },
   {
+    id: "concerns",
+    label: "Student Concerns",
+    icon: ShieldAlert,
+    title: "Concerns you've flagged about a student",
+  },
+  {
     id: "courses",
     label: "My Courses",
     icon: BookMarked,
@@ -54,6 +64,12 @@ const TEACHER_TABS = [
     icon: Users,
     title:
       "Switch tab to Scholar-Athlete Enrollment Slots and Compliance Scores",
+  },
+  {
+    id: "warroom",
+    label: "War Room",
+    icon: Scale,
+    title: "Course group chat with your students",
   },
   {
     id: "progress",
@@ -221,10 +237,12 @@ function TeacherPortalContent() {
         {activeTab === "dashboard" && <DashboardTab students={students} />}
         {activeTab === "courses" && <MyCoursesTab />}
         {activeTab === "students" && <EnrollmentScoresTab />}
+        {activeTab === "warroom" && <WarRoomScreen />}
         {activeTab === "progress" && <ProgressTab />}
         {activeTab === "manuals" && <InstructionalManualsTab />}
         {activeTab === "documents" && <CurriculumDocumentsTab />}
         {activeTab === "requests" && <RequestsTab />}
+        {activeTab === "concerns" && <StudentConcernsTab />}
       </TabTransition>
     </div>
   );

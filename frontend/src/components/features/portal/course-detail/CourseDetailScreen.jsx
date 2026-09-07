@@ -28,6 +28,7 @@ import {
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { getStudentEnrolledCourseDetail } from "@/services/studentCoursesService";
+import CourseFeedSection from "@/components/features/portal/course-detail/CourseFeedSection";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatDate, formatDateTime } from "@/lib/adminFormatters";
 import { useModuleLessons } from "@/hooks/student/useModuleLessons";
@@ -707,6 +708,8 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
                   ))}
                 </div>
               )}
+
+              <CourseFeedSection courseId={courseId} />
 
               <div className="space-y-3">
                 <div>

@@ -466,8 +466,14 @@ class TeacherEnrolledStudentsRosterView(generics.GenericAPIView):
 
     def get(self, request):
         students = get_teacher_enrolled_students_roster(request.user)
+        summary = {
+            "struggling_count": sum(1 for student in students if student["is_struggling"]),
+            "disengaged_count": sum(1 for student in students if student["is_disengaged"]),
+            "needs_attention_count": sum(1 for student in students if student["needs_attention"]),
+        }
         data = {
             "total_students": len(students),
+            "summary": summary,
             "students": students,
         }
         return success_response(data, message="Enrolled students roster fetched successfully")

@@ -63,6 +63,10 @@ INSTALLED_APPS = [
     'advisor',
     'rewards',
     'teacher_requests',
+    'class_feed',
+    'warroom',
+    'notifications',
+    'student_concerns',
 ]
 
 MIDDLEWARE = [
@@ -162,6 +166,7 @@ REST_FRAMEWORK = {
         'message-send': '60/minute',
         'advisor-chat': '15/minute',
         'ai-grading': '20/hour',
+        'room-message-send': '60/minute',
     },
 }
 

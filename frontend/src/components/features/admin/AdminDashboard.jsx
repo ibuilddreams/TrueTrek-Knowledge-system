@@ -18,6 +18,7 @@ import {
   Lock,
   Route,
   Shield,
+  ShieldAlert,
   Tag,
   UserPlus,
   Users,
@@ -27,6 +28,7 @@ import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { ROUTES } from "@/constants/routes";
 import AuthGateCard from "@/components/ui/AuthGateCard";
 import AccountMenu from "@/components/ui/AccountMenu";
+import NotificationBell from "@/components/ui/NotificationBell";
 import TabNav from "@/components/ui/TabNav";
 import TabTransition from "@/components/ui/TabTransition";
 import Loader from "@/components/ui/Loader";
@@ -45,6 +47,7 @@ import TiersTab from "@/components/features/admin/tabs/TiersTab";
 import QuestionnaireTab from "@/components/features/admin/tabs/QuestionnaireTab";
 import FutureClientsTab from "@/components/features/admin/tabs/FutureClientsTab";
 import TeacherRequestsTab from "@/components/features/admin/tabs/TeacherRequestsTab";
+import StudentConcernsTab from "@/components/features/admin/tabs/StudentConcernsTab";
 import RewardsTab from "@/components/features/admin/tabs/RewardsTab";
 import RedemptionsTab from "@/components/features/admin/tabs/RedemptionsTab";
 import StudentPointsTab from "@/components/features/admin/tabs/StudentPointsTab";
@@ -58,6 +61,7 @@ const TABS = [
   { id: "future-clients", label: "Future Clients", icon: UserPlus },
   { id: "teachers", label: "Teachers", icon: Users },
   { id: "teacher-requests", label: "Teacher Requests", icon: FileWarning },
+  { id: "student-concerns", label: "Student Concerns", icon: ShieldAlert },
   { id: "progress", label: "Progress", icon: LineChart },
   { id: "tags", label: "Tags", icon: Tag },
   { id: "categories", label: "Categories", icon: Folder },
@@ -79,6 +83,7 @@ const TAB_COMPONENTS = {
   "future-clients": FutureClientsTab,
   teachers: TeachersTab,
   "teacher-requests": TeacherRequestsTab,
+  "student-concerns": StudentConcernsTab,
   progress: ProgressTab,
   tags: TagsTab,
   categories: CategoriesTab,
@@ -132,6 +137,18 @@ function AdminDashboardContent() {
 
       const query = params.toString();
       router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    },
+    [pathname, router, searchParams]
+  );
+
+  const handleSelectNotification = useCallback(
+    (notification) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("tab", "student-concerns");
+      if (notification.related_object_type === "student_concern" && notification.related_object_id) {
+        params.set("concern", String(notification.related_object_id));
+      }
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },
     [pathname, router, searchParams]
   );
@@ -193,6 +210,7 @@ function AdminDashboardContent() {
         </div>
 
         <div className="relative z-40 flex items-center gap-3">
+          <NotificationBell onSelectNotification={handleSelectNotification} />
           <AccountMenu
             onProfile={() => router.push(ROUTES.PROFILE)}
             onMessages={() => router.push(ROUTES.MESSAGES)}
