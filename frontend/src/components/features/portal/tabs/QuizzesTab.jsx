@@ -12,6 +12,7 @@ import {
   ChevronRight,
   CircleHelp,
   Clock,
+  Lock,
   RefreshCw,
   Repeat,
   Trophy,
@@ -155,6 +156,11 @@ function isToDoQuiz(quiz) {
 }
 
 function toDoPriority(quiz) {
+  // Task 18 — a locked quiz (progress.services.get_module_lock_map) is never
+  // actionable right now, regardless of its own attempt/availability state,
+  // so it always sorts to the bottom of "To do" rather than competing with
+  // quizzes the student can actually take.
+  if (quiz.is_locked) return 5;
   if (quiz.latest_attempt?.status === "IN_PROGRESS") return 0;
   if (!quiz.latest_attempt) {
     if (quiz.is_available) return 1;
@@ -170,6 +176,16 @@ function sortToDoQuizzes(list) {
 
 function quizToDoMeta(quiz) {
   const attempt = quiz.latest_attempt;
+
+  if (quiz.is_locked) {
+    const blockingTitle = quiz.lock_info?.blocking_quiz_title;
+    return {
+      label: "LOCKED",
+      tone: "stone",
+      icon: Lock,
+      note: blockingTitle ? `Pass "${blockingTitle}" first` : "Locked — an earlier module isn't complete",
+    };
+  }
 
   if (attempt?.status === "IN_PROGRESS") {
     return { label: "IN PROGRESS", tone: "amber", icon: Clock, note: "Continue where you left off" };
@@ -252,15 +268,18 @@ function QuizToDoRow({ quiz, isVault, onOpen }) {
   const attempt = quiz.latest_attempt;
   const hasScore = attempt && attempt.percentage !== null && attempt.percentage !== undefined;
   const tone = hasScore ? scoreTone(attempt.percentage) : null;
+  const isLocked = Boolean(quiz.is_locked);
 
   return (
     <button
       type="button"
-      onClick={onOpen}
-      className={`group w-full flex items-center gap-3 rounded-xl border transition p-3.5 text-left ${
+      onClick={isLocked ? undefined : onOpen}
+      disabled={isLocked}
+      title={isLocked ? quiz.lock_info?.reason : undefined}
+      className={`group w-full flex items-center gap-3 rounded-xl border transition p-3.5 text-left disabled:cursor-default disabled:opacity-70 ${
         isVault
-          ? "border-stone-800 bg-[#161412] hover:border-amber-700/50 hover:shadow-[0_8px_24px_-18px_rgba(0,0,0,0.6)]"
-          : "border-stone-200 bg-white hover:border-amber-300 hover:shadow-[0_8px_24px_-18px_rgba(28,25,23,0.35)]"
+          ? "border-stone-800 bg-[#161412] enabled:hover:border-amber-700/50 enabled:hover:shadow-[0_8px_24px_-18px_rgba(0,0,0,0.6)]"
+          : "border-stone-200 bg-white enabled:hover:border-amber-300 enabled:hover:shadow-[0_8px_24px_-18px_rgba(28,25,23,0.35)]"
       }`}
     >
       <span className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 border ${badgeClass}`}>
@@ -302,11 +321,15 @@ function QuizToDoRow({ quiz, isVault, onOpen }) {
           {meta.label}
         </span>
       </span>
-      <ChevronRight
-        className={`w-4 h-4 transition shrink-0 ${
-          isVault ? "text-stone-600 group-hover:text-amber-500" : "text-stone-300 group-hover:text-amber-600"
-        }`}
-      />
+      {isLocked ? (
+        <span className="w-4 h-4 shrink-0" />
+      ) : (
+        <ChevronRight
+          className={`w-4 h-4 transition shrink-0 ${
+            isVault ? "text-stone-600 group-hover:text-amber-500" : "text-stone-300 group-hover:text-amber-600"
+          }`}
+        />
+      )}
     </button>
   );
 }
@@ -419,7 +442,11 @@ export default function QuizzesTab() {
   const searchParams = useSearchParams();
   const selectedCourseId = searchParams.get("quizCourse");
   const [detailAttemptId, setDetailAttemptId] = useState(null);
-  const [selectedQuiz, setSelectedQuiz] = useState(null);
+  // Tracked by id, not the quiz object itself, so the open modal always
+  // reflects the live `quizzes` query — e.g. requesting a self-service
+  // retry (Task 18) updates attempts_allowed and the modal picks it up
+  // immediately instead of showing a stale snapshot from when it was opened.
+  const [selectedQuizId, setSelectedQuizId] = useState(null);
   const [statusFilter, setStatusFilter] = useState("ALL");
 
   const {
@@ -429,6 +456,11 @@ export default function QuizzesTab() {
     error: quizzesError,
     refetch: refetchQuizzes,
   } = useStudentQuizzes();
+
+  const selectedQuiz = useMemo(
+    () => (selectedQuizId ? quizzes.find((quiz) => quiz.id === selectedQuizId) || null : null),
+    [quizzes, selectedQuizId]
+  );
 
   const {
     data: attempts = [],
@@ -476,7 +508,11 @@ export default function QuizzesTab() {
     });
     return Array.from(map.values()).map((group) => {
       const toDoQuizzes = sortToDoQuizzes(group.quizzes.filter(isToDoQuiz));
-      const pendingCount = group.quizzes.filter(isPendingQuiz).length;
+      // Locked quizzes stay visible in the "To do" list above (so nothing
+      // looks like it vanished) but aren't actually actionable right now,
+      // so they're excluded from this count — matches the "To do" chip's
+      // "quizzes you can take right now" framing.
+      const pendingCount = group.quizzes.filter((quiz) => isPendingQuiz(quiz) && !quiz.is_locked).length;
       const passedCount = group.quizzes.filter((quiz) => quiz.latest_attempt?.is_passed === true).length;
       const percentages = group.quizzes
         .map((quiz) => quiz.latest_attempt?.percentage)
@@ -721,7 +757,7 @@ export default function QuizzesTab() {
                     key={quiz.id}
                     quiz={quiz}
                     isVault={isVault}
-                    onOpen={() => setSelectedQuiz(quiz)}
+                    onOpen={() => setSelectedQuizId(quiz.id)}
                   />
                 ))}
               </div>
@@ -843,7 +879,7 @@ export default function QuizzesTab() {
       <QuizAttemptModal
         quiz={selectedQuiz}
         canInteract={Boolean(canInteractWithSelectedCourse)}
-        onClose={() => setSelectedQuiz(null)}
+        onClose={() => setSelectedQuizId(null)}
       />
       <QuizAttemptHistoryModal attemptId={detailAttemptId} onClose={() => setDetailAttemptId(null)} />
     </>

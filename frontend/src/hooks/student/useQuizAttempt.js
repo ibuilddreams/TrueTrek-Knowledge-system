@@ -5,6 +5,7 @@ import {
   autosaveQuizAttempt,
   getQuizAttemptMyDetail,
   getQuizAttemptResult,
+  requestQuizSelfRetry,
   startQuizAttempt,
   submitQuizAttempt,
 } from "@/services/quizzesService";
@@ -22,6 +23,25 @@ export function useStartQuizAttempt() {
     },
     onError: (error) => {
       toastError(getApiErrorMessage(error, "Unable to start this quiz attempt."));
+    },
+  });
+}
+
+// Task 18 (Phase 5) follow-up — the student's self-service path once every
+// attempt on a quiz is used up without passing: request one more directly
+// instead of the only option being to wait on a teacher/admin grant.
+export function useRequestQuizSelfRetry() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (quizId) => requestQuizSelfRetry(quizId),
+    onSuccess: (response) => {
+      toastSuccess(response?.message || "You have another attempt — good luck!");
+      queryClient.invalidateQueries({ queryKey: ["studentQuizzes"] });
+      queryClient.invalidateQueries({ queryKey: ["studentQuizAttempts"] });
+    },
+    onError: (error) => {
+      toastError(getApiErrorMessage(error, "Unable to request another attempt."));
     },
   });
 }

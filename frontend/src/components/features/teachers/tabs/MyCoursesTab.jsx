@@ -17,6 +17,7 @@ import TeacherCourseCard from "@/components/features/teachers/TeacherCourseCard"
 import TeacherCourseFormModal from "@/components/features/teachers/TeacherCourseFormModal";
 import CourseStudentsScreen from "./CourseStudentsScreen";
 import CourseContentScreen from "./CourseContentScreen";
+import CourseFeedScreen from "./CourseFeedScreen";
 
 const PAGE_SIZE = 10;
 
@@ -32,7 +33,8 @@ export default function MyCoursesTab() {
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const activeCourseId = searchParams.get("courseId");
-  const activeView = searchParams.get("view") === "content" ? "content" : "students";
+  const rawView = searchParams.get("view");
+  const activeView = rawView === "content" || rawView === "feed" ? rawView : "students";
 
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, 300);
@@ -109,6 +111,16 @@ export default function MyCoursesTab() {
     [pathname, router, searchParams],
   );
 
+  const handleViewFeed = useCallback(
+    (course) => {
+      const params = new URLSearchParams(searchParams.toString());
+      params.set("courseId", String(course.id));
+      params.set("view", "feed");
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    },
+    [pathname, router, searchParams],
+  );
+
   const handleBackToCourses = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
     params.delete("courseId");
@@ -175,6 +187,16 @@ export default function MyCoursesTab() {
     if (activeView === "content") {
       return (
         <CourseContentScreen
+          courseId={activeCourseId}
+          course={activeCourse}
+          onBack={handleBackToCourses}
+        />
+      );
+    }
+
+    if (activeView === "feed") {
+      return (
+        <CourseFeedScreen
           courseId={activeCourseId}
           course={activeCourse}
           onBack={handleBackToCourses}
@@ -301,6 +323,7 @@ export default function MyCoursesTab() {
               course={course}
               onViewCourse={() => handleViewCourse(course)}
               onViewStudents={() => handleViewStudents(course)}
+              onViewFeed={() => handleViewFeed(course)}
             />
           ))}
         </div>

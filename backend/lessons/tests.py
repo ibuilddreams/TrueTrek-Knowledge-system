@@ -1,12 +1,17 @@
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from common.models import Status
 from courses.models import Category, Course
 from enrollments.models import Enrollment
 from modules.models import Module
 from progress.models import CourseProgress, LessonProgress, ModuleProgress
+from quizzes.models import Quiz, QuizAttempt, QuizResult
 
 from .models import Lesson
 
@@ -85,6 +90,57 @@ class LessonCompleteViewTests(APITestCase):
         response = self.client.post(url)
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class ModuleLockLessonAccessTests(APITestCase):
+    """Task 18 (Phase 5) — a locked module (2 failures on a prior module's
+    quiz) blocks both viewing lesson detail and marking it complete."""
+
+    def setUp(self):
+        self.category = Category.objects.create(name="Programming")
+        self.course = Course.objects.create(title="Intro to Python", category=self.category)
+        self.module_1 = Module.objects.create(course=self.course, title="Module 1", order=1)
+        self.module_2 = Module.objects.create(course=self.course, title="Module 2", order=2)
+        self.blocking_quiz = Quiz.objects.create(
+            course=self.course,
+            module=self.module_1,
+            title="Quiz 1",
+            passing_score=40,
+            status=Status.PUBLISHED,
+        )
+        self.lesson = Lesson.objects.create(
+            module=self.module_2, title="Lesson in module 2", content_type="TEXT"
+        )
+        self.student = _make_user("lockedlessonstudent", UserModel.Roles.STUDENT)
+        Enrollment.objects.create(student=self.student, course=self.course)
+
+        for attempt_number in (1, 2):
+            attempt = QuizAttempt.objects.create(
+                quiz=self.blocking_quiz,
+                student=self.student,
+                attempt_number=attempt_number,
+                status=QuizAttempt.AttemptStatus.GRADED,
+                ended_at=timezone.now(),
+            )
+            QuizResult.objects.create(
+                attempt=attempt, score=Decimal("0"), percentage=Decimal("0.00"), is_passed=False
+            )
+
+        self.client.force_authenticate(user=self.student)
+
+    def test_lesson_detail_is_blocked_when_module_is_locked(self):
+        response = self.client.get(reverse("lesson-detail", kwargs={"pk": self.lesson.id}))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("blocking_quiz_id", response.data["data"])
+
+    def test_lesson_complete_is_blocked_when_module_is_locked(self):
+        response = self.client.post(reverse("lesson-complete", kwargs={"pk": self.lesson.id}))
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertFalse(
+            LessonProgress.objects.filter(student=self.student, lesson=self.lesson).exists()
+        )
 
 
 class TextLessonHtmlSanitizationTests(APITestCase):

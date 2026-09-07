@@ -6,7 +6,7 @@ from common.response import error_response, success_response
 from courses.services import is_course_instructor
 from enrollments.models import Enrollment
 from modules.models import Module
-from progress.services import mark_lesson_complete
+from progress.services import get_module_lock_info, mark_lesson_complete
 from users.permissions import IsStudent
 
 from .models import Lesson
@@ -92,6 +92,11 @@ class LessonDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         self.check_object_permissions(request, lesson)
 
+        if request.user.is_student:
+            lock_info = get_module_lock_info(request.user, lesson.module)
+            if lock_info:
+                return error_response(message=lock_info["reason"], status_code=403, data=lock_info)
+
         serializer = self.get_serializer(lesson, context={"request": request})
         return success_response(serializer.data, message="Lesson fetched successfully")
 
@@ -174,6 +179,10 @@ class LessonCompleteView(generics.GenericAPIView):
             status=Enrollment.EnrollmentStatus.ACTIVE,
         ).exists():
             return error_response(message="You are not enrolled in this course.", status_code=403)
+
+        lock_info = get_module_lock_info(request.user, lesson.module)
+        if lock_info:
+            return error_response(message=lock_info["reason"], status_code=403, data=lock_info)
 
         lesson_progress = mark_lesson_complete(request.user, lesson)
 

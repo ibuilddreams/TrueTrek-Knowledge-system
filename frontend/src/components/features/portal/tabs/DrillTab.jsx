@@ -1,10 +1,10 @@
 "use client";
 
-import { useEffect } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { AlertCircle, Swords } from "lucide-react";
 import confetti from "canvas-confetti";
-import { getTodaysDrill, submitDrillAttempt } from "@/services/dailyDrillService";
+import { submitDrillAttempt } from "@/services/dailyDrillService";
+import { useDailyDrillToday } from "@/hooks/student/useDailyDrillToday";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError } from "@/lib/toast";
 import Loader from "@/components/ui/Loader";
@@ -12,35 +12,19 @@ import EmptyState from "@/components/ui/EmptyState";
 import LegacyQuestionDrillCard from "../drill/LegacyQuestionDrillCard";
 import AIQuestionDrillCard from "../drill/AIQuestionDrillCard";
 import AdminVideoDrillCard from "../drill/AdminVideoDrillCard";
+import StreakReengagementBanner from "../drill/StreakReengagementBanner";
 
-export default function DrillTab({
-  setPoints,
-  setStreakDays,
-  setAggregateScore,
-  onNotify,
-}) {
+// Points/streak/score are synced into the portal header from StudentPortal.jsx
+// instead of from here — that fetch runs once on portal load regardless of
+// which tab is active, so the header never shows stale/placeholder numbers
+// before a student happens to open the Drill tab. This component reads the
+// same cached query (see useDailyDrillToday) purely to render the drill itself.
+export default function DrillTab({ onNotify }) {
   const queryClient = useQueryClient();
 
-  const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ["daily-drill", "today"],
-    queryFn: async () => {
-      const response = await getTodaysDrill();
-      return response?.data || null;
-    },
-  });
+  const { data, isLoading, isError, error, refetch } = useDailyDrillToday();
 
   const stats = data?.stats;
-
-  useEffect(() => {
-    if (!stats) return;
-    setPoints(stats.points);
-    setStreakDays(stats.streak);
-    setAggregateScore(stats.aggregate_score);
-    // setPoints/setStreakDays/setAggregateScore identities change with the
-    // values they set (see usePortalSession) — depending on the raw stat
-    // values here, not the setters, avoids re-firing this effect forever.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [stats?.points, stats?.streak, stats?.aggregate_score]);
 
   // Shared by AI_QUESTION and LEGACY_QUESTION — both submit through the same
   // single-question endpoint (see daily_drill.services.submit_single_question_answer).
@@ -131,13 +115,16 @@ export default function DrillTab({
     submitMutation.mutate(answerKey);
   };
 
-  if (data.type === "ADMIN_VIDEO") {
-    return <AdminVideoDrillCard data={data} onNotify={onNotify} />;
-  }
-
-  if (data.type === "AI_QUESTION") {
-    return <AIQuestionDrillCard data={data} onSubmit={handleSubmit} isSubmitting={isSubmitting} />;
-  }
-
-  return <LegacyQuestionDrillCard data={data} onSubmit={handleSubmit} isSubmitting={isSubmitting} />;
+  return (
+    <div className="space-y-4">
+      <StreakReengagementBanner streakDetail={stats?.streak_detail} />
+      {data.type === "ADMIN_VIDEO" && <AdminVideoDrillCard data={data} onNotify={onNotify} />}
+      {data.type === "AI_QUESTION" && (
+        <AIQuestionDrillCard data={data} onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+      )}
+      {data.type === "LEGACY_QUESTION" && (
+        <LegacyQuestionDrillCard data={data} onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+      )}
+    </div>
+  );
 }

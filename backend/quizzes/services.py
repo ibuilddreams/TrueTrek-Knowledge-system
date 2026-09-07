@@ -2,13 +2,14 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import Sum
 from django.utils import timezone
 
 from assignments.models import AssignmentSubmission
 from common.models import Status
 from enrollments.models import Enrollment
 
-from .models import Choice, Question, Quiz, QuizAnswer, QuizAttempt, QuizResult
+from .models import Choice, Question, Quiz, QuizAnswer, QuizAttempt, QuizAttemptGrant, QuizResult
 
 # Grace window after a timed quiz's deadline before an untouched IN_PROGRESS attempt is
 # auto-finalized as EXPIRED — covers the last autosave/submit round-trip landing late.
@@ -42,6 +43,78 @@ class QuestionReorderError(Exception):
     pass
 
 
+class QuizAttemptGrantError(Exception):
+    pass
+
+
+def get_extra_attempts_map(quiz_ids, student_ids=None):
+    """{(quiz_id, student_id): total_extra_attempts} for every
+    QuizAttemptGrant matching the given quizzes (optionally scoped to
+    specific students) — see QuizAttemptGrant. One query for a whole page
+    of rows rather than one per (quiz, student) pair."""
+    queryset = QuizAttemptGrant.objects.filter(quiz_id__in=quiz_ids)
+    if student_ids is not None:
+        queryset = queryset.filter(student_id__in=student_ids)
+    rows = queryset.values("quiz_id", "student_id").annotate(total=Sum("extra_attempts"))
+    return {(row["quiz_id"], row["student_id"]): row["total"] for row in rows}
+
+
+def get_total_attempts_allowed(quiz, student):
+    """`Quiz.attempts_allowed` plus any extra attempts a teacher/admin has
+    granted this specific student on this specific quiz — the effective cap
+    `start_quiz_attempt` enforces and every student/teacher-facing view
+    displays."""
+    extra = get_extra_attempts_map([quiz.id], [student.id]).get((quiz.id, student.id), 0)
+    return quiz.attempts_allowed + extra
+
+
+def grant_extra_quiz_attempt(quiz, student, actor, extra_attempts=1, reason=""):
+    reason = (reason or "").strip()
+    if not reason:
+        raise QuizAttemptGrantError("A reason is required to grant an extra attempt.")
+    return QuizAttemptGrant.objects.create(
+        quiz=quiz, student=student, extra_attempts=extra_attempts, granted_by=actor, reason=reason
+    )
+
+
+# Task 18 (Phase 5) follow-up — the student's own self-service counterpart to
+# grant_extra_quiz_attempt (which needs a teacher/admin). Reused as the fixed,
+# system-authored `reason` on a self-requested QuizAttemptGrant, so the
+# resulting audit-trail row still reads sensibly next to a teacher's
+# hand-written one — the two are told apart by `granted_by == student`.
+SELF_SERVICE_RETRY_REASON = (
+    "Self-service retry — student requested another attempt after exhausting "
+    "attempts_allowed without passing."
+)
+
+
+def request_self_service_retry(quiz, student):
+    """A student who has used every attempt on `quiz` without passing can
+    request exactly one more themselves, instead of waiting on a teacher —
+    the "review the module's lessons, then retry and pass to unlock the
+    next module" loop the client asked for is only possible if the student
+    can actually get a new attempt on their own once attempts_allowed runs
+    out. Deliberately uncapped (no "only N self-retries ever" limit): the
+    eligibility check below already self-throttles it, since granting raises
+    the effective total by exactly 1, so an immediate second call fails
+    until the student actually spends that attempt (i.e. really re-attempts
+    the quiz) — there is no way to bank up free attempts without attempting."""
+    attempts_used = QuizAttempt.objects.filter(student=student, quiz=quiz).count()
+    total_attempts_allowed = get_total_attempts_allowed(quiz, student)
+
+    if attempts_used < total_attempts_allowed:
+        raise QuizAttemptError("You still have attempts remaining on this quiz — use those first.")
+
+    if QuizResult.objects.filter(
+        attempt__student=student, attempt__quiz=quiz, is_passed=True
+    ).exists():
+        raise QuizAttemptError("You've already passed this quiz.")
+
+    return grant_extra_quiz_attempt(
+        quiz, student, actor=student, extra_attempts=1, reason=SELF_SERVICE_RETRY_REASON
+    )
+
+
 def get_student_quizzes(student):
     course_ids = list(
         Enrollment.objects.filter(student=student).values_list("course_id", flat=True)
@@ -69,6 +142,8 @@ def get_student_quizzes(student):
         if attempt.quiz_id not in latest_attempt_map:
             latest_attempt_map[attempt.quiz_id] = attempt
 
+    extra_attempts_map = get_extra_attempts_map(quiz_ids, [student.id])
+
     now = timezone.now()
     results = []
     for quiz in quizzes:
@@ -87,7 +162,7 @@ def get_student_quizzes(student):
                 "description": quiz.description,
                 "passing_score": quiz.passing_score,
                 "time_limit_minutes": quiz.time_limit_minutes,
-                "attempts_allowed": quiz.attempts_allowed,
+                "attempts_allowed": quiz.attempts_allowed + extra_attempts_map.get((quiz.id, student.id), 0),
                 "attempts_used": attempt_count_map.get(quiz.id, 0),
                 "short_answer_grading_mode": quiz.short_answer_grading_mode,
                 "available_from": quiz.available_from,
@@ -130,6 +205,10 @@ def get_student_quiz_attempts(student):
     )
     finalize_stale_attempts(attempts)
 
+    extra_attempts_map = get_extra_attempts_map(
+        list({attempt.quiz_id for attempt in attempts}), [student.id]
+    )
+
     results = []
     for attempt in attempts:
         quiz = attempt.quiz
@@ -158,7 +237,7 @@ def get_student_quiz_attempts(student):
                 if quiz.module_id
                 else None,
                 "attempt_number": attempt.attempt_number,
-                "attempts_allowed": quiz.attempts_allowed,
+                "attempts_allowed": quiz.attempts_allowed + extra_attempts_map.get((quiz.id, student.id), 0),
                 "status": attempt.status,
                 "started_at": attempt.started_at,
                 "ended_at": attempt.ended_at,
@@ -458,9 +537,10 @@ def start_quiz_attempt(student, quiz):
         return in_progress, False
 
     attempts_used = len(existing_attempts)
-    if attempts_used >= quiz.attempts_allowed:
+    total_attempts_allowed = get_total_attempts_allowed(quiz, student)
+    if attempts_used >= total_attempts_allowed:
         raise QuizAttemptError(
-            f"You have used all {quiz.attempts_allowed} allowed attempts for this quiz."
+            f"You have used all {total_attempts_allowed} allowed attempts for this quiz."
         )
 
     attempt = QuizAttempt.objects.create(

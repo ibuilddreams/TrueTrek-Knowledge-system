@@ -30,6 +30,7 @@ export function useTeacherEnrolledStudents() {
           teacherEnrolledStudentsFetchSucceeded({
             students: response?.data?.students || [],
             total_students: response?.data?.total_students || 0,
+            summary: response?.data?.summary || null,
           })
         );
       } catch (error) {

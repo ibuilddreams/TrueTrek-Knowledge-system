@@ -279,3 +279,20 @@ class QuizPendingAnswerSerializer(serializers.ModelSerializer):
 class QuizAnswerGradeSerializer(serializers.Serializer):
     marks_awarded = serializers.DecimalField(max_digits=6, decimal_places=2, min_value=0)
     feedback = serializers.CharField(required=False, allow_blank=True, default="")
+
+
+class QuizAttemptGrantSerializer(serializers.Serializer):
+    """Task 18 (Phase 5) — a teacher/admin granting one student an extra
+    attempt on a quiz they've exhausted attempts_allowed on. `reason` is
+    required (not just recommended) so there's always an audit trail for
+    why a specific student got extra chances, matching the same
+    non-blank-reason convention as rewards.adjust_points."""
+
+    extra_attempts = serializers.IntegerField(required=False, default=1, min_value=1, max_value=10)
+    reason = serializers.CharField(max_length=1000)
+
+    def validate_reason(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("A reason is required.")
+        return value

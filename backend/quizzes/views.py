@@ -1,3 +1,4 @@
+from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
 from rest_framework import filters, generics
 from rest_framework.permissions import IsAuthenticated
@@ -11,6 +12,7 @@ from courses.services import is_course_instructor
 from enrollments.models import Enrollment
 from enrollments.services import can_view_student_in_course, get_visible_enrollments
 from modules.models import Module
+from progress.services import get_module_lock_info, get_module_lock_map
 from users.permissions import IsStudent
 
 from .ai_grading import grade_pending_short_answers, grade_short_answer_with_ai
@@ -24,6 +26,7 @@ from .serializers import (
     QuestionWriteSerializer,
     QuizAnswerGradeSerializer,
     QuizAttemptAutosaveSerializer,
+    QuizAttemptGrantSerializer,
     QuizAvailableSerializer,
     QuizOrderEntrySerializer,
     QuizPendingAnswerSerializer,
@@ -37,6 +40,7 @@ from .services import (
     InvalidAnswerError,
     QuestionReorderError,
     QuizAttemptError,
+    QuizAttemptGrantError,
     QuizGradingError,
     QuizPublishError,
     QuizReorderError,
@@ -44,15 +48,19 @@ from .services import (
     finalize_stale_attempts,
     get_attempt_saved_answers,
     get_attempt_seconds_remaining,
+    get_extra_attempts_map,
     get_pending_grading_answers,
     get_quiz_attempt_detail,
     get_student_grades,
     get_student_quiz_attempts,
     get_student_quizzes,
+    get_total_attempts_allowed,
     grade_quiz_answer,
+    grant_extra_quiz_attempt,
     publish_quiz,
     reorder_questions,
     reorder_quizzes,
+    request_self_service_retry,
     start_quiz_attempt,
     submit_quiz_attempt,
 )
@@ -63,6 +71,27 @@ class StudentQuizListView(generics.GenericAPIView):
 
     def get(self, request):
         data = get_student_quizzes(request.user)
+
+        # Task 18 — get_student_quizzes() itself never touches progress.services
+        # (quizzes/services.py intentionally never imports from progress, same
+        # rule progress.services.get_module_lock_map's own module respects in
+        # reverse), so the lock is annotated here at the view layer instead —
+        # same pattern as StartQuizAttemptView/AssignmentSubmitView. Computed
+        # once per course, not once per quiz, to avoid recomputing the same
+        # course's lock map for every quiz in it.
+        course_ids = {row["course"]["id"] for row in data if row["course"]["id"]}
+        courses_by_id = Course.objects.in_bulk(course_ids)
+        lock_map_by_course = {
+            course_id: get_module_lock_map(request.user, course)
+            for course_id, course in courses_by_id.items()
+        }
+        for row in data:
+            module = row.get("module")
+            lock_map = lock_map_by_course.get(row["course"]["id"], {})
+            lock_info = lock_map.get(module["id"]) if module else None
+            row["is_locked"] = lock_info is not None
+            row["lock_info"] = lock_info
+
         return success_response(data, message="Student quizzes fetched successfully")
 
 
@@ -458,7 +487,7 @@ class StartQuizAttemptView(generics.GenericAPIView):
 
     def post(self, request, quiz_id):
         try:
-            quiz = Quiz.objects.select_related("course").get(pk=quiz_id)
+            quiz = Quiz.objects.select_related("course", "module").get(pk=quiz_id)
         except Quiz.DoesNotExist:
             return error_response(message="Quiz with the given id does not exist.", status_code=404)
 
@@ -466,6 +495,14 @@ class StartQuizAttemptView(generics.GenericAPIView):
             student=request.user, course_id=quiz.course_id, status=Enrollment.EnrollmentStatus.ACTIVE
         ).exists():
             return error_response(message="You are not enrolled in this course.", status_code=403)
+
+        # Task 18 — a module beyond a repeatedly-failed quiz is locked, but
+        # the blocking quiz itself never is (the student must be able to
+        # keep retrying it — see progress.services.get_module_lock_map).
+        if quiz.module_id:
+            lock_info = get_module_lock_info(request.user, quiz.module)
+            if lock_info:
+                return error_response(message=lock_info["reason"], status_code=403, data=lock_info)
 
         try:
             attempt, is_new = start_quiz_attempt(request.user, quiz)
@@ -489,6 +526,45 @@ class StartQuizAttemptView(generics.GenericAPIView):
         }
         message = "Quiz attempt started" if is_new else "Resuming your in-progress attempt"
         return success_response(data, message=message, status_code=201 if is_new else 200)
+
+
+class QuizSelfRetryView(generics.GenericAPIView):
+    """Task 18 (Phase 5) follow-up — the student's self-service path once
+    every attempt on a quiz is used up without passing: request one more
+    attempt directly, instead of the only option being to wait on a
+    teacher/admin (QuizGrantAttemptView, still available as a fallback).
+    See quizzes.services.request_self_service_retry for the eligibility
+    rules and why no extra rate-limit/cap is needed on top of them."""
+
+    permission_classes = [IsStudent]
+
+    def post(self, request, quiz_id):
+        try:
+            quiz = Quiz.objects.select_related("course").get(pk=quiz_id)
+        except Quiz.DoesNotExist:
+            return error_response(message="Quiz with the given id does not exist.", status_code=404)
+
+        if not Enrollment.objects.filter(
+            student=request.user, course_id=quiz.course_id, status=Enrollment.EnrollmentStatus.ACTIVE
+        ).exists():
+            return error_response(message="You are not enrolled in this course.", status_code=403)
+
+        try:
+            request_self_service_retry(quiz, request.user)
+        except QuizAttemptError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        attempts_used = QuizAttempt.objects.filter(quiz=quiz, student=request.user).count()
+        total_attempts_allowed = get_total_attempts_allowed(quiz, request.user)
+        return success_response(
+            {
+                "attempts_used": attempts_used,
+                "attempts_allowed": total_attempts_allowed,
+                "attempts_remaining": max(0, total_attempts_allowed - attempts_used),
+            },
+            message="You've been given another attempt on this quiz — good luck!",
+            status_code=201,
+        )
 
 
 class QuizAttemptAutosaveView(generics.GenericAPIView):
@@ -801,6 +877,10 @@ class QuizCourseProgressListView(generics.GenericAPIView):
             if key not in latest_attempt_map:
                 latest_attempt_map[key] = attempt
 
+        # Task 18 — the per-student extra attempts a teacher/admin has granted
+        # (see QuizGrantAttemptView) on top of the quiz's own attempts_allowed.
+        extra_attempts_map = get_extra_attempts_map(quiz_ids, student_ids)
+
         all_rows = []
         for quiz in quizzes:
             for enrollment in enrollments:
@@ -839,7 +919,8 @@ class QuizCourseProgressListView(generics.GenericAPIView):
                         },
                         "status": effective_status,
                         "attempts_count": attempts_count_map.get(key, 0),
-                        "attempts_allowed": quiz.attempts_allowed,
+                        "attempts_allowed": quiz.attempts_allowed + extra_attempts_map.get(key, 0),
+                        "attempts_granted": extra_attempts_map.get(key, 0),
                         "score": float(result.score) if result else None,
                         "percentage": float(result.percentage) if result else None,
                         "is_passed": result.is_passed if result else None,
@@ -937,6 +1018,68 @@ class QuizStudentAttemptListView(generics.GenericAPIView):
             )
 
         return success_response(data, message="Quiz attempt history fetched successfully")
+
+
+class QuizGrantAttemptView(generics.GenericAPIView):
+    """Task 18 (Phase 5) — "path to continue improving" once a student has
+    exhausted `attempts_allowed` on a quiz without passing (and, if that
+    quiz is module-linked, is locked out of the rest of the course by
+    progress.services.get_module_lock_map). A teacher/admin grants this one
+    student one or more extra attempts on this one quiz; it does not touch
+    the quiz's `attempts_allowed` field, so no other student is affected."""
+
+    serializer_class = QuizAttemptGrantSerializer
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, quiz_id, student_id):
+        try:
+            quiz = Quiz.objects.select_related("course").get(pk=quiz_id)
+        except Quiz.DoesNotExist:
+            return error_response(message="Quiz with the given id does not exist.", status_code=404)
+
+        if not (request.user.is_admin or is_course_instructor(request.user, quiz.course)):
+            return error_response(
+                message="You do not have permission to perform this action.", status_code=403
+            )
+
+        if not request.user.is_admin and not can_view_student_in_course(
+            request.user, student_id, quiz.course
+        ):
+            return error_response(
+                message="You do not have permission to perform this action.", status_code=403
+            )
+
+        UserModel = get_user_model()
+        try:
+            student = UserModel.objects.get(pk=student_id, role=UserModel.Roles.STUDENT)
+        except UserModel.DoesNotExist:
+            return error_response(message="Student with the given id does not exist.", status_code=404)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            grant_extra_quiz_attempt(
+                quiz,
+                student,
+                actor=request.user,
+                extra_attempts=serializer.validated_data["extra_attempts"],
+                reason=serializer.validated_data["reason"],
+            )
+        except QuizAttemptGrantError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        attempts_used = QuizAttempt.objects.filter(quiz=quiz, student=student).count()
+        total_attempts_allowed = get_total_attempts_allowed(quiz, student)
+        return success_response(
+            {
+                "attempts_used": attempts_used,
+                "attempts_allowed": total_attempts_allowed,
+                "attempts_remaining": max(0, total_attempts_allowed - attempts_used),
+            },
+            message=f"Granted {student.name} an extra attempt on \"{quiz.title}\".",
+            status_code=201,
+        )
 
 
 class QuizAttemptDetailView(generics.GenericAPIView):
