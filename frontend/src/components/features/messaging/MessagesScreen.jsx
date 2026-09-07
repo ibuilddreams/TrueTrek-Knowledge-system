@@ -1,22 +1,28 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { Suspense, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/constants/routes";
 import AuthGateCard from "@/components/ui/AuthGateCard";
+import Loader from "@/components/ui/Loader";
 import ConversationList from "./ConversationList";
 import MessageThread from "./MessageThread";
 import EmptyThreadState from "./EmptyThreadState";
 import NewMessageButton from "./NewMessageButton";
 import NewMessageModal from "./NewMessageModal";
 
-export default function MessagesScreen() {
+function MessagesScreenContent() {
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { isAuthenticated } = useAuth();
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
+
+  // Deep-linked from elsewhere (e.g. a teacher's "Message Student" action on
+  // the Enrollment & Scores drawer) — ConversationList selects it once loaded.
+  const autoSelectConversationId = searchParams.get("conversation");
 
   if (!isAuthenticated) {
     return (
@@ -69,6 +75,7 @@ export default function MessagesScreen() {
           <ConversationList
             selectedConversationId={selectedConversation?.id}
             onSelectConversation={setSelectedConversation}
+            autoSelectConversationId={!selectedConversation ? autoSelectConversationId : null}
           />
         </div>
 
@@ -90,5 +97,13 @@ export default function MessagesScreen() {
         onConversationStarted={handleConversationStarted}
       />
     </div>
+  );
+}
+
+export default function MessagesScreen() {
+  return (
+    <Suspense fallback={<Loader label="Loading Messages..." />}>
+      <MessagesScreenContent />
+    </Suspense>
   );
 }

@@ -11,6 +11,7 @@ from .views import (
     DailyDrillSubmitQuizView,
     DailyDrillTodayView,
     DailyDrillVideoProgressView,
+    InactiveStudentsListView,
 )
 
 urlpatterns = [
@@ -46,5 +47,12 @@ urlpatterns = [
         "admin/schedules/<int:pk>/performance/",
         AdminDrillSchedulePerformanceView.as_view(),
         name="daily-drill-admin-schedule-performance",
+    ),
+
+    # Admin — Task 17 inactivity visibility
+    path(
+        "admin/engagement/inactive-students/",
+        InactiveStudentsListView.as_view(),
+        name="daily-drill-admin-inactive-students",
     ),
 ]

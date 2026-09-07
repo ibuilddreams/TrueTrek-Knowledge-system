@@ -88,6 +88,10 @@ export async function getQuizStudentAttempts(quizId, studentId) {
   return backendClient.get(`/quizzes/${quizId}/students/${studentId}/attempts/`);
 }
 
+export async function grantQuizAttempt(quizId, studentId, payload) {
+  return backendClient.post(`/quizzes/${quizId}/students/${studentId}/grant-attempt/`, payload);
+}
+
 export async function getQuizAttemptDetail(attemptId) {
   return backendClient.get(`/quizzes/attempts/${attemptId}/detail/`);
 }
@@ -102,6 +106,10 @@ export async function retryQuizAnswerAiGrading(answerId) {
 
 export async function startQuizAttempt(quizId) {
   return backendClient.post(`/quizzes/${quizId}/attempts/`);
+}
+
+export async function requestQuizSelfRetry(quizId) {
+  return backendClient.post(`/quizzes/${quizId}/self-retry/`);
 }
 
 export async function submitQuizAttempt(attemptId, payload) {

@@ -3,6 +3,7 @@ import { createSlice } from "@reduxjs/toolkit";
 const initialState = {
   items: [],
   total: 0,
+  summary: { struggling_count: 0, disengaged_count: 0, needs_attention_count: 0 },
   status: "idle",
   error: null,
 };
@@ -18,6 +19,7 @@ const teacherEnrolledStudentsSlice = createSlice({
     teacherEnrolledStudentsFetchSucceeded(state, action) {
       state.items = action.payload.students || [];
       state.total = action.payload.total_students || 0;
+      state.summary = action.payload.summary || initialState.summary;
       state.status = "succeeded";
       state.error = null;
     },

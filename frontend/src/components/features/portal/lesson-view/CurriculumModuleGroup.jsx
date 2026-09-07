@@ -1,6 +1,6 @@
 "use client";
 
-import { ChevronDown, ChevronUp, ClipboardList, HelpCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, ClipboardList, HelpCircle, Lock } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import Loader from "@/components/ui/Loader";
 import { getAssignmentStatusMeta, getLessonTypeMeta, getQuizStatusMeta } from "@/lib/curriculumMeta";
@@ -24,6 +24,8 @@ export default function CurriculumModuleGroup({
   const hasDetails =
     (module.lessons || []).length > 0 || moduleAssignments.length > 0 || moduleQuizzes.length > 0;
   const isItemActive = (type, id) => activeItem?.type === type && activeItem?.id === id;
+  // Task 18 (Phase 5) — computed server-side (progress.services.get_module_lock_map).
+  const isLocked = Boolean(module.is_locked);
 
   return (
     <div
@@ -48,11 +50,16 @@ export default function CurriculumModuleGroup({
             Module {module.order}
           </p>
           <h5
-            className={`text-[13px] font-serif font-bold mt-0.5 truncate ${
+            className={`text-[13px] font-serif font-bold mt-0.5 truncate flex items-center gap-1.5 ${
               isVault ? "text-stone-100" : "text-stone-900"
             }`}
           >
             {module.title}
+            {isLocked && (
+              <Lock
+                className={`w-3 h-3 shrink-0 ${isVault ? "text-stone-500" : "text-stone-400"}`}
+              />
+            )}
           </h5>
         </div>
         {hasDetails ? (
@@ -107,6 +114,7 @@ export default function CurriculumModuleGroup({
                           isCompleted={lesson.is_completed}
                           isActive={isItemActive("LESSON", lesson.id)}
                           isVault={isVault}
+                          disabled={isLocked}
                           onClick={() => onSelectItem("LESSON", lesson.id)}
                         />
                       );
@@ -129,10 +137,17 @@ export default function CurriculumModuleGroup({
                             : "bg-amber-50 text-amber-600 border-amber-100"
                         }
                         title={assignment.title}
-                        statusLabel={label}
-                        statusClassName={className}
+                        statusLabel={isLocked ? "Locked" : label}
+                        statusClassName={
+                          isLocked
+                            ? isVault
+                              ? "bg-white/5 text-stone-500 border-stone-700"
+                              : "bg-stone-50 text-stone-400 border-stone-200"
+                            : className
+                        }
                         isActive={isItemActive("ASSIGNMENT", assignment.id)}
                         isVault={isVault}
+                        disabled={isLocked}
                         onClick={() => onSelectItem("ASSIGNMENT", assignment.id)}
                       />
                     );
@@ -154,10 +169,17 @@ export default function CurriculumModuleGroup({
                             : "bg-violet-50 text-violet-600 border-violet-100"
                         }
                         title={quiz.title}
-                        statusLabel={label}
-                        statusClassName={className}
+                        statusLabel={isLocked ? "Locked" : label}
+                        statusClassName={
+                          isLocked
+                            ? isVault
+                              ? "bg-white/5 text-stone-500 border-stone-700"
+                              : "bg-stone-50 text-stone-400 border-stone-200"
+                            : className
+                        }
                         isActive={isItemActive("QUIZ", quiz.id)}
                         isVault={isVault}
+                        disabled={isLocked}
                         onClick={() => onSelectItem("QUIZ", quiz.id)}
                       />
                     );

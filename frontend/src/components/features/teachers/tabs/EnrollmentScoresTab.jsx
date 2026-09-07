@@ -1,17 +1,29 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 import {
   Search, Filter, Eye, ShieldAlert, AlertCircle, RefreshCw, BookOpen, Users,
+  TrendingDown, Clock, MessageSquare,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { useTeacherEnrolledStudents } from "@/hooks/useTeacherEnrolledStudents";
 import { useTeacherStudentDetail } from "@/hooks/useTeacherStudentDetail";
-import { getDaysSinceLastDrill } from "@/lib/dates";
 import { formatDate } from "@/lib/adminFormatters";
+import { getApiErrorMessage } from "@/lib/apiErrors";
+import { toastError } from "@/lib/toast";
+import { startConversation } from "@/services/messagingService";
+import { ROUTES } from "@/constants/routes";
 import CloseButton from "@/components/ui/CloseButton";
 import EmptyState from "@/components/ui/EmptyState";
 import StatusBadge from "@/components/ui/StatusBadge";
+import FlagConcernModal from "@/components/features/teachers/FlagConcernModal";
+
+const RISK_FILTERS = [
+  { id: "struggling", label: "Struggling", field: "is_struggling" },
+  { id: "disengaged", label: "Disengaged", field: "is_disengaged" },
+  { id: "needs_attention", label: "Needs Attention", field: "needs_attention" },
+];
 
 function initialsFor(name) {
   return (name || "?")
@@ -23,19 +35,12 @@ function initialsFor(name) {
     .toUpperCase();
 }
 
-function activityDate(value) {
-  if (!value) return null;
-  return String(value).slice(0, 10);
-}
-
-function daysSinceActivity(value) {
-  return getDaysSinceLastDrill(activityDate(value));
-}
-
 export default function EnrollmentScoresTab() {
+  const router = useRouter();
   const {
     items: students,
     total,
+    summary,
     status,
     error,
     loadEnrolledStudents,
@@ -51,8 +56,11 @@ export default function EnrollmentScoresTab() {
 
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedStatusFilter, setSelectedStatusFilter] = useState("all");
+  const [riskFilter, setRiskFilter] = useState("all");
   const [selectedStudentId, setSelectedStudentId] = useState(null);
   const [quickViewStudent, setQuickViewStudent] = useState(null);
+  const [isFlagConcernModalOpen, setIsFlagConcernModalOpen] = useState(false);
+  const [isMessagingStudentId, setIsMessagingStudentId] = useState(null);
 
   useEffect(() => {
     loadEnrolledStudents();
@@ -60,15 +68,22 @@ export default function EnrollmentScoresTab() {
 
   const filteredStudents = useMemo(() => {
     const query = searchQuery.trim().toLowerCase();
+    const activeRiskFilter = RISK_FILTERS.find((filter) => filter.id === riskFilter);
     return students.filter((student) => {
       const courseTitles = (student.courses || []).map((course) => course.title).join(" ");
       const haystack = `${student.name || ""} ${student.email || ""} ${courseTitles}`.toLowerCase();
       const matchesSearch = !query || haystack.includes(query);
       const matchesStatus =
         selectedStatusFilter === "all" || student.status === selectedStatusFilter;
-      return matchesSearch && matchesStatus;
+      const matchesRisk = !activeRiskFilter || student[activeRiskFilter.field];
+      return matchesSearch && matchesStatus && matchesRisk;
     });
-  }, [students, searchQuery, selectedStatusFilter]);
+  }, [students, searchQuery, selectedStatusFilter, riskFilter]);
+
+  const selectedStudent = useMemo(
+    () => students.find((student) => student.id === selectedStudentId) || null,
+    [students, selectedStudentId]
+  );
 
   const openStudentDrawer = (studentId) => {
     setSelectedStudentId(studentId);
@@ -78,6 +93,21 @@ export default function EnrollmentScoresTab() {
   const closeStudentDrawer = () => {
     setSelectedStudentId(null);
     clearStudentDetail();
+  };
+
+  const handleMessageStudent = async (studentId) => {
+    setIsMessagingStudentId(studentId);
+    try {
+      const response = await startConversation(studentId);
+      const conversationId = response?.data?.id;
+      if (!conversationId) {
+        throw new Error("Conversation could not be started.");
+      }
+      router.push(`${ROUTES.MESSAGES}?conversation=${conversationId}`);
+    } catch (error) {
+      toastError(getApiErrorMessage(error, "Unable to start a conversation with this student."));
+      setIsMessagingStudentId(null);
+    }
   };
 
   if (status === "loading" || status === "idle") {
@@ -126,6 +156,30 @@ export default function EnrollmentScoresTab() {
 
   return (
     <div className="space-y-6">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+        {RISK_FILTERS.map((filter) => {
+          const isActive = riskFilter === filter.id;
+          const count = summary?.[`${filter.id}_count`] ?? 0;
+          return (
+            <button
+              key={filter.id}
+              type="button"
+              onClick={() => setRiskFilter(isActive ? "all" : filter.id)}
+              className={`text-left p-4 rounded-2xl border shadow-sm transition ${
+                isActive
+                  ? "bg-amber-50 border-amber-400 ring-1 ring-amber-300"
+                  : "bg-white border-stone-200 hover:border-stone-300"
+              }`}
+            >
+              <span className="block text-2xl font-serif font-black text-stone-900">{count}</span>
+              <span className="text-[11px] font-mono uppercase tracking-wider text-stone-500">
+                {filter.label}
+              </span>
+            </button>
+          );
+        })}
+      </div>
+
       <div className="bg-white border border-stone-200 p-5 rounded-2xl shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div className="relative flex-grow max-w-md">
           <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-stone-450">
@@ -179,8 +233,7 @@ export default function EnrollmentScoresTab() {
             <tbody className="divide-y divide-stone-100 text-stone-700 text-sm">
               {filteredStudents.length > 0 ? (
                 filteredStudents.map((student) => {
-                  const daysSinceLast = daysSinceActivity(student.last_activity_at);
-                  const isAtRisk = daysSinceLast > 3;
+                  const riskReasons = (student.risk_reasons || []).join(", ");
                   const progress = Math.round(student.average_progress || 0);
                   const score = Math.round(student.average_score || 0);
                   const courseLabel =
@@ -209,10 +262,22 @@ export default function EnrollmentScoresTab() {
                               >
                                 {student.name}
                               </button>
-                              {isAtRisk && (
-                                <span className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-200/50 rounded-md px-1.5 py-0.5 text-[8.5px] font-mono font-bold">
-                                  <ShieldAlert className="w-3 h-3 text-rose-500 shrink-0" />
-                                  RISK: {daysSinceLast === 999 ? ">7" : daysSinceLast}D
+                              {student.is_struggling && (
+                                <span
+                                  title={riskReasons}
+                                  className="inline-flex items-center gap-1 bg-rose-50 text-rose-700 border border-rose-200/50 rounded-md px-1.5 py-0.5 text-[8.5px] font-mono font-bold"
+                                >
+                                  <TrendingDown className="w-3 h-3 text-rose-500 shrink-0" />
+                                  STRUGGLING
+                                </span>
+                              )}
+                              {student.is_disengaged && (
+                                <span
+                                  title={riskReasons}
+                                  className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200/50 rounded-md px-1.5 py-0.5 text-[8.5px] font-mono font-bold"
+                                >
+                                  <Clock className="w-3 h-3 text-amber-600 shrink-0" />
+                                  DISENGAGED
                                 </span>
                               )}
                             </div>
@@ -322,6 +387,43 @@ export default function EnrollmentScoresTab() {
                   iconClassName="w-4.5 h-4.5"
                 />
               </div>
+
+              <div className="flex items-center gap-2 mb-6">
+                <button
+                  type="button"
+                  onClick={() => handleMessageStudent(selectedStudentId)}
+                  disabled={isMessagingStudentId === selectedStudentId}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 text-white text-xs font-semibold font-mono uppercase tracking-wider rounded-xl transition"
+                >
+                  <MessageSquare className="w-3.5 h-3.5" />
+                  {isMessagingStudentId === selectedStudentId ? "Opening..." : "Message Student"}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setIsFlagConcernModalOpen(true)}
+                  className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 border border-rose-200 hover:bg-rose-50 text-rose-700 text-xs font-semibold font-mono uppercase tracking-wider rounded-xl transition"
+                >
+                  <ShieldAlert className="w-3.5 h-3.5" />
+                  Flag Concern
+                </button>
+              </div>
+
+              {selectedStudent?.risk_reasons?.length > 0 && (
+                <div className="rounded-xl border border-rose-200 bg-rose-50/60 p-4 mb-6 space-y-2">
+                  <h4 className="text-[11px] font-mono uppercase tracking-widest text-rose-700 font-bold flex items-center gap-1.5">
+                    <ShieldAlert className="w-3.5 h-3.5" />
+                    Flags
+                  </h4>
+                  <ul className="space-y-1.5">
+                    {selectedStudent.risk_reasons.map((reason, index) => (
+                      <li key={index} className="text-sm text-rose-800 flex items-start gap-2">
+                        <span className="mt-1.5 w-1 h-1 rounded-full bg-rose-500 shrink-0" />
+                        {reason}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              )}
 
               {(detailStatus === "loading" || detailStatus === "idle") && (
                 <div className="space-y-4" aria-busy="true">
@@ -547,6 +649,13 @@ export default function EnrollmentScoresTab() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <FlagConcernModal
+        isOpen={isFlagConcernModalOpen}
+        onClose={() => setIsFlagConcernModalOpen(false)}
+        studentId={selectedStudent?.id}
+        studentName={selectedStudent?.name}
+      />
     </div>
   );
 }

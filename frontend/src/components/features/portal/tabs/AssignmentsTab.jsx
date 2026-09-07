@@ -12,6 +12,7 @@ import {
   ChevronRight,
   Clock,
   ClipboardList,
+  Lock,
   RefreshCw,
   RotateCcw,
 } from "lucide-react";
@@ -57,6 +58,8 @@ const NOT_SUBMITTED_STYLE = "bg-stone-50 text-stone-500 border-stone-200";
 const NOT_SUBMITTED_STYLE_VAULT = "bg-stone-500/10 text-stone-400 border-stone-500/20";
 const OVERDUE_STYLE = "bg-rose-50 text-rose-600 border-rose-100";
 const OVERDUE_STYLE_VAULT = "bg-rose-500/10 text-rose-400 border-rose-500/20";
+const LOCKED_STYLE = "bg-stone-100 text-stone-400 border-stone-200";
+const LOCKED_STYLE_VAULT = "bg-white/5 text-stone-500 border-stone-700";
 
 const SCORE_TONES = {
   high: { bar: "bg-emerald-500", text: "text-emerald-700", textVault: "text-emerald-400" },
@@ -81,9 +84,12 @@ function sortAssignments(list) {
   const pending = list.filter((assignment) => !assignment.submission);
   const submitted = list.filter((assignment) => assignment.submission);
 
-  pending.sort(
-    (a, b) => new Date(a.due_date).getTime() - new Date(b.due_date).getTime(),
-  );
+  pending.sort((a, b) => {
+    // Locked-and-unsubmitted assignments aren't actionable yet, so they sort
+    // after every unlocked pending one regardless of due date.
+    if (Boolean(a.is_locked) !== Boolean(b.is_locked)) return a.is_locked ? 1 : -1;
+    return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
+  });
   submitted.sort((a, b) => {
     const at = a.submission.submitted_at
       ? new Date(a.submission.submitted_at).getTime()
@@ -146,45 +152,64 @@ function AssignmentRow({ assignment, isVault, onOpen }) {
   const hasSubmission = Boolean(submission);
   const isGraded = hasSubmission && submission.marks !== null;
   const isOverdue = !hasSubmission && assignment.is_overdue;
+  // Task 18 — the backend only blocks a *new* submission on a locked module
+  // (see assignments.views.AssignmentSubmitView); an assignment already
+  // submitted before the module locked keeps showing its real status rather
+  // than being masked as "locked".
+  const isLocked = Boolean(assignment.is_locked) && !hasSubmission;
 
-  const statusClass = hasSubmission
+  const statusClass = isLocked
     ? isVault
-      ? STATUS_STYLES_VAULT[submission.status] || STATUS_STYLES_VAULT.DRAFT
-      : STATUS_STYLES[submission.status] || STATUS_STYLES.DRAFT
-    : isOverdue
+      ? LOCKED_STYLE_VAULT
+      : LOCKED_STYLE
+    : hasSubmission
       ? isVault
-        ? OVERDUE_STYLE_VAULT
-        : OVERDUE_STYLE
-      : isVault
-        ? NOT_SUBMITTED_STYLE_VAULT
-        : NOT_SUBMITTED_STYLE;
-  const StatusIcon = hasSubmission
-    ? STATUS_ICON[submission.status] || ClipboardList
-    : isOverdue
-      ? AlertTriangle
-      : Clock;
-  const statusLabel = hasSubmission
-    ? submission.status
-    : isOverdue
-      ? "OVERDUE"
-      : "NOT SUBMITTED";
-  const gradingLabel = hasSubmission
-    ? isGraded
-      ? "Graded"
-      : "Pending review"
-    : isOverdue
-      ? "Past due"
-      : "Awaiting submission";
+        ? STATUS_STYLES_VAULT[submission.status] || STATUS_STYLES_VAULT.DRAFT
+        : STATUS_STYLES[submission.status] || STATUS_STYLES.DRAFT
+      : isOverdue
+        ? isVault
+          ? OVERDUE_STYLE_VAULT
+          : OVERDUE_STYLE
+        : isVault
+          ? NOT_SUBMITTED_STYLE_VAULT
+          : NOT_SUBMITTED_STYLE;
+  const StatusIcon = isLocked
+    ? Lock
+    : hasSubmission
+      ? STATUS_ICON[submission.status] || ClipboardList
+      : isOverdue
+        ? AlertTriangle
+        : Clock;
+  const statusLabel = isLocked
+    ? "LOCKED"
+    : hasSubmission
+      ? submission.status
+      : isOverdue
+        ? "OVERDUE"
+        : "NOT SUBMITTED";
+  const gradingLabel = isLocked
+    ? assignment.lock_info?.blocking_quiz_title
+      ? `Pass "${assignment.lock_info.blocking_quiz_title}" first`
+      : "Locked — an earlier module isn't complete"
+    : hasSubmission
+      ? isGraded
+        ? "Graded"
+        : "Pending review"
+      : isOverdue
+        ? "Past due"
+        : "Awaiting submission";
   const tone = isGraded ? scoreTone(submission.percentage) : null;
 
   return (
     <button
       type="button"
-      onClick={onOpen}
-      className={`group w-full flex items-center gap-3 rounded-xl border transition p-3.5 text-left ${
+      onClick={isLocked ? undefined : onOpen}
+      disabled={isLocked}
+      title={isLocked ? assignment.lock_info?.reason : undefined}
+      className={`group w-full flex items-center gap-3 rounded-xl border transition p-3.5 text-left disabled:cursor-default disabled:opacity-70 ${
         isVault
-          ? "border-stone-800 bg-[#161412] hover:border-amber-700/50 hover:shadow-[0_8px_24px_-18px_rgba(0,0,0,0.6)]"
-          : "border-stone-200 bg-white hover:border-amber-300 hover:shadow-[0_8px_24px_-18px_rgba(28,25,23,0.35)]"
+          ? "border-stone-800 bg-[#161412] enabled:hover:border-amber-700/50 enabled:hover:shadow-[0_8px_24px_-18px_rgba(0,0,0,0.6)]"
+          : "border-stone-200 bg-white enabled:hover:border-amber-300 enabled:hover:shadow-[0_8px_24px_-18px_rgba(28,25,23,0.35)]"
       }`}
     >
       <span
@@ -257,13 +282,17 @@ function AssignmentRow({ assignment, isVault, onOpen }) {
           </span>
         ) : null}
       </span>
-      <ChevronRight
-        className={`w-4 h-4 transition shrink-0 ${
-          isVault
-            ? "text-stone-600 group-hover:text-amber-500"
-            : "text-stone-300 group-hover:text-amber-600"
-        }`}
-      />
+      {isLocked ? (
+        <span className="w-4 h-4 shrink-0" />
+      ) : (
+        <ChevronRight
+          className={`w-4 h-4 transition shrink-0 ${
+            isVault
+              ? "text-stone-600 group-hover:text-amber-500"
+              : "text-stone-300 group-hover:text-amber-600"
+          }`}
+        />
+      )}
     </button>
   );
 }
@@ -317,8 +346,11 @@ export default function AssignmentsTab() {
     });
     return Array.from(map.values()).map((group) => {
       const assignmentsSorted = sortAssignments(group.assignments);
+      // Locked-and-unsubmitted assignments stay visible in the list (badged
+      // and disabled — see AssignmentRow) but aren't actually actionable
+      // right now, so they're excluded from the "To Do" count.
       const pendingCount = assignmentsSorted.filter(
-        (assignment) => !assignment.submission,
+        (assignment) => !assignment.submission && !assignment.is_locked,
       ).length;
       const awaitingCount = assignmentsSorted.filter(
         (assignment) =>

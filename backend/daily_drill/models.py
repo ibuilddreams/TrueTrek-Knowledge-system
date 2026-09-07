@@ -197,3 +197,36 @@ class AdminDrillProgress(BaseModel):
 
     def __str__(self):
         return f"{self.student} - {self.schedule_id} ({self.status})"
+
+
+# ---------------------------------------------------------------------------
+# Phase 5 addendum — Task 17: Inactivity & Re-engagement.
+#
+# The student-facing "is this streak currently broken/at-risk" display (Task
+# 16) is always computed live from DrillAttempt/AIDrillGeneration/
+# AdminDrillProgress (see services.py::get_streak_status) — never stored, so
+# it can never go stale. This model exists only for what a live computation
+# can't give us: a durable record of *when* a student first crossed the
+# inactivity threshold and whether they've already been emailed about it, so
+# the daily `check_student_engagement` management command doesn't re-flag or
+# re-email someone on every run while they remain inactive.
+# ---------------------------------------------------------------------------
+
+
+class StudentEngagementStatus(BaseModel):
+    student = models.OneToOneField(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="engagement_status"
+    )
+    is_inactive = models.BooleanField(default=False)
+    last_activity_date = models.DateField(null=True, blank=True)
+    # The first date of the missed streak that triggered the current
+    # inactive flag (last_activity_date + 1 day) — kept distinct from
+    # marked_inactive_at (a timestamp of when the flag was actually set,
+    # which lags a day or more behind depending on when the command runs).
+    inactive_since = models.DateField(null=True, blank=True)
+    marked_inactive_at = models.DateTimeField(null=True, blank=True)
+    last_notified_at = models.DateTimeField(null=True, blank=True)
+    reactivated_at = models.DateTimeField(null=True, blank=True)
+
+    def __str__(self):
+        return f"{self.student} - {'INACTIVE' if self.is_inactive else 'ACTIVE'}"

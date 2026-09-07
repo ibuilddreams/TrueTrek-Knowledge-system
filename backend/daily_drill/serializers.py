@@ -5,7 +5,14 @@ from rest_framework import serializers
 
 from common.image import build_absolute_image_url
 
-from .models import AdminDrillQuizChoice, AdminDrillQuizQuestion, AdminDrillSchedule, DrillOption, DrillQuestion
+from .models import (
+    AdminDrillQuizChoice,
+    AdminDrillQuizQuestion,
+    AdminDrillSchedule,
+    DrillOption,
+    DrillQuestion,
+    StudentEngagementStatus,
+)
 
 
 class DrillOptionSerializer(serializers.ModelSerializer):
@@ -270,3 +277,33 @@ class AdminDrillQuizAnswerEntrySerializer(serializers.Serializer):
 
 class AdminDrillQuizSubmitSerializer(serializers.Serializer):
     answers = AdminDrillQuizAnswerEntrySerializer(many=True)
+
+
+class InactiveStudentSerializer(serializers.ModelSerializer):
+    """Task 17 (Phase 5) admin visibility — the fuller "which students need
+    attention" dashboard is Task 19 (Phase 6); this exposes the raw data for
+    it in the meantime, plus a small admin-only list screen in this phase."""
+
+    student_id = serializers.IntegerField(source="student.id", read_only=True)
+    student_name = serializers.CharField(source="student.name", read_only=True)
+    student_email = serializers.EmailField(source="student.email", read_only=True)
+    days_inactive = serializers.SerializerMethodField()
+
+    class Meta:
+        model = StudentEngagementStatus
+        fields = [
+            "student_id",
+            "student_name",
+            "student_email",
+            "last_activity_date",
+            "inactive_since",
+            "marked_inactive_at",
+            "last_notified_at",
+            "days_inactive",
+        ]
+        read_only_fields = fields
+
+    def get_days_inactive(self, obj):
+        if not obj.last_activity_date:
+            return None
+        return (timezone.localdate() - obj.last_activity_date).days

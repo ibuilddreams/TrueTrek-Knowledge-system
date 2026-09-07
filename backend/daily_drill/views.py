@@ -15,13 +15,14 @@ from .exceptions import (
     QuizSubmissionError,
     VideoProgressError,
 )
-from .models import AdminDrillProgress, AdminDrillSchedule
+from .models import AdminDrillProgress, AdminDrillSchedule, StudentEngagementStatus
 from .serializers import (
     AdminDrillQuizSubmitSerializer,
     AdminDrillQuizWriteSerializer,
     AdminDrillScheduleSerializer,
     AdminDrillScheduleWriteSerializer,
     DrillAnswerSubmitSerializer,
+    InactiveStudentSerializer,
     VideoProgressSerializer,
 )
 from .services import build_todays_drill_payload, submit_single_question_answer
@@ -259,3 +260,30 @@ class AdminDrillSchedulePerformanceView(generics.GenericAPIView):
             },
             message="Daily Drill performance fetched successfully",
         )
+
+
+# ---------------------------------------------------------------------------
+# Admin — Task 17 inactivity visibility
+# ---------------------------------------------------------------------------
+
+
+class InactiveStudentsListView(generics.ListAPIView):
+    """Every student currently flagged inactive by `check_student_engagement`
+    (see engagement.py) — admin-only visibility for this phase; Task 19
+    (Phase 6) is expected to surface this on a fuller teacher/admin
+    engagement dashboard."""
+
+    queryset = StudentEngagementStatus.objects.filter(is_inactive=True).select_related("student")
+    serializer_class = InactiveStudentSerializer
+    permission_classes = [IsAdmin]
+    pagination_class = Pagination
+
+    def get_queryset(self):
+        return super().get_queryset().order_by("-marked_inactive_at")
+
+    def list(self, request, *args, **kwargs):
+        students = self.filter_queryset(self.get_queryset())
+        page = self.paginate_queryset(students)
+        serializer = self.get_serializer(page, many=True)
+        paginated_data = self.paginator.get_paginated_response(serializer.data).data
+        return success_response(paginated_data, message="Inactive students fetched successfully")

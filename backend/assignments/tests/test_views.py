@@ -1,3 +1,5 @@
+from decimal import Decimal
+
 from django.contrib.auth import get_user_model
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
@@ -8,6 +10,8 @@ from rest_framework.test import APITestCase
 from common.models import Status
 from courses.models import Category, Course, CourseInstructor
 from enrollments.models import Enrollment
+from modules.models import Module
+from quizzes.models import Quiz, QuizAttempt, QuizResult
 
 from ..models import Assignment, AssignmentSubmission, AssignmentSubmissionFile
 
@@ -22,6 +26,56 @@ def _make_user(username, role):
         role=role,
         gender=UserModel.Gender.MALE,
     )
+
+
+class AssignmentSubmitViewModuleLockTests(APITestCase):
+    """Task 18 (Phase 5) — submitting an assignment that belongs to a locked
+    module (2 failures on a prior module's quiz) is blocked."""
+
+    def setUp(self):
+        self.category = Category.objects.create(name="Programming")
+        self.course = Course.objects.create(title="Intro to Python", category=self.category)
+        self.module_1 = Module.objects.create(course=self.course, title="Module 1", order=1)
+        self.module_2 = Module.objects.create(course=self.course, title="Module 2", order=2)
+        self.blocking_quiz = Quiz.objects.create(
+            course=self.course,
+            module=self.module_1,
+            title="Blocking Quiz",
+            passing_score=40,
+            status=Status.PUBLISHED,
+        )
+        self.assignment = Assignment.objects.create(
+            course=self.course,
+            module=self.module_2,
+            title="Assignment in module 2",
+            due_date=timezone.now() + timezone.timedelta(days=7),
+        )
+        self.student = _make_user("lockedassignmentstudent", UserModel.Roles.STUDENT)
+        Enrollment.objects.create(student=self.student, course=self.course)
+
+        for attempt_number in (1, 2):
+            attempt = QuizAttempt.objects.create(
+                quiz=self.blocking_quiz,
+                student=self.student,
+                attempt_number=attempt_number,
+                status=QuizAttempt.AttemptStatus.GRADED,
+                ended_at=timezone.now(),
+            )
+            QuizResult.objects.create(
+                attempt=attempt, score=Decimal("0"), percentage=Decimal("0.00"), is_passed=False
+            )
+
+        self.client.force_authenticate(user=self.student)
+        self.url = reverse("assignment-submit", kwargs={"assignment_id": self.assignment.id})
+
+    def test_submit_is_blocked_when_module_is_locked(self):
+        upload = SimpleUploadedFile("work.pdf", b"content", content_type="application/pdf")
+
+        response = self.client.post(self.url, {"files": [upload]}, format="multipart")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertIn("blocking_quiz_id", response.data["data"])
+        self.assertFalse(AssignmentSubmission.objects.filter(assignment=self.assignment).exists())
 
 
 class AssignmentCourseProgressListViewTests(APITestCase):
@@ -161,3 +215,56 @@ class StudentAssignmentListViewTests(APITestCase):
         self.assertEqual(submission["percentage"], 75.0)
         self.assertEqual(len(submission["files"]), 1)
         self.assertEqual(submission["files"][0]["original_name"], "answer.pdf")
+
+
+class StudentAssignmentListViewModuleLockTests(APITestCase):
+    """Task 18 (Phase 5) — the dedicated student Assignments tab is fed by
+    StudentAssignmentListView, a separate data source from the course-detail
+    screens, and needs the same is_locked/lock_info annotation or a locked
+    assignment looks fully open there (the exact gap found live for quizzes)."""
+
+    def setUp(self):
+        self.category = Category.objects.create(name="Programming")
+        self.course = Course.objects.create(title="Intro to Python", category=self.category)
+        self.module_1 = Module.objects.create(course=self.course, title="Module 1", order=1)
+        self.module_2 = Module.objects.create(course=self.course, title="Module 2", order=2)
+        self.blocking_quiz = Quiz.objects.create(
+            course=self.course,
+            module=self.module_1,
+            title="Blocking Quiz",
+            passing_score=40,
+            status=Status.PUBLISHED,
+        )
+        self.assignment = Assignment.objects.create(
+            course=self.course,
+            module=self.module_2,
+            title="Assignment in module 2",
+            due_date=timezone.now() + timezone.timedelta(days=7),
+            total_marks=100,
+            status=Status.PUBLISHED,
+        )
+
+        self.student = _make_user("lockedassignmentliststudent", UserModel.Roles.STUDENT)
+        Enrollment.objects.create(student=self.student, course=self.course)
+
+        for attempt_number in (1, 2):
+            attempt = QuizAttempt.objects.create(
+                quiz=self.blocking_quiz,
+                student=self.student,
+                attempt_number=attempt_number,
+                status=QuizAttempt.AttemptStatus.GRADED,
+                ended_at=timezone.now(),
+            )
+            QuizResult.objects.create(
+                attempt=attempt, score=Decimal("0"), percentage=Decimal("0.00"), is_passed=False
+            )
+
+        self.client.force_authenticate(user=self.student)
+        self.url = reverse("assignment-student-list")
+
+    def test_locked_assignment_is_flagged_in_student_assignment_list(self):
+        response = self.client.get(self.url)
+
+        row = next(row for row in response.data["data"] if row["id"] == self.assignment.id)
+        self.assertTrue(row["is_locked"])
+        self.assertEqual(row["lock_info"]["blocking_quiz_id"], self.blocking_quiz.id)

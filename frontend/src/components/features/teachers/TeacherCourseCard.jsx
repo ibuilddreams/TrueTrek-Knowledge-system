@@ -6,6 +6,7 @@ import {
   ClipboardCheck,
   HelpCircle,
   Layers,
+  Megaphone,
   PlayCircle,
   Users,
 } from "lucide-react";
@@ -59,6 +60,7 @@ export default function TeacherCourseCard({
   course,
   onViewCourse,
   onViewStudents,
+  onViewFeed,
 }) {
   const [imageFailed, setImageFailed] = useState(false);
   const statusDotClass =
@@ -134,22 +136,32 @@ export default function TeacherCourseCard({
           <button
             type="button"
             onClick={onViewCourse}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all cursor-pointer"
             title="View course details"
             aria-label="View course details"
           >
             <BookOpen className="w-3.5 h-3.5" />
-            VIEW COURSE
+            COURSE
           </button>
           <button
             type="button"
             onClick={onViewStudents}
-            className="flex-1 inline-flex items-center justify-center gap-2 px-4 py-2.5 bg-white hover:bg-amber-50 border border-stone-200 hover:border-amber-200 text-stone-700 hover:text-amber-800 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-xs transition-colors cursor-pointer"
+            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 bg-white hover:bg-amber-50 border border-stone-200 hover:border-amber-200 text-stone-700 hover:text-amber-800 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-xs transition-colors cursor-pointer"
             title="View enrolled students"
             aria-label="View enrolled students"
           >
             <Users className="w-3.5 h-3.5" />
             STUDENTS
+          </button>
+          <button
+            type="button"
+            onClick={onViewFeed}
+            className="flex-1 inline-flex items-center justify-center gap-1.5 px-3 py-2.5 bg-white hover:bg-amber-50 border border-stone-200 hover:border-amber-200 text-stone-700 hover:text-amber-800 text-xs font-semibold font-mono rounded-xl tracking-wider shadow-xs transition-colors cursor-pointer"
+            title="Post to class feed"
+            aria-label="Post to class feed"
+          >
+            <Megaphone className="w-3.5 h-3.5" />
+            FEED
           </button>
         </div>
       </div>

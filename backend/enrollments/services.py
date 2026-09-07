@@ -14,6 +14,7 @@ from courses.models import Course, CourseInstructor
 from courses.serializers import CourseDetailSerializer
 from lessons.models import Lesson
 from progress.models import CourseProgress, LearningActivity, LessonProgress, ModuleProgress
+from progress.services import get_module_lock_map
 from quizzes.models import Quiz, QuizAttempt
 
 from .models import Enrollment
@@ -251,6 +252,8 @@ def get_student_enrolled_course_detail(student, course_id, request=None):
             student=student, lesson_id__in=lesson_ids, is_completed=True
         ).values_list("lesson_id", flat=True)
     )
+    # Task 18 — computed once for the whole course rather than per module.
+    module_lock_map = get_module_lock_map(student, course)
 
     modules_data = []
     for module in modules:
@@ -265,6 +268,8 @@ def get_student_enrolled_course_detail(student, course_id, request=None):
                 "title": module.title,
                 "description": module.description,
                 "order": module.order,
+                "is_locked": module.id in module_lock_map,
+                "lock_info": module_lock_map.get(module.id),
                 "completion_percentage": (
                     round(float(module_progress.completion_percentage), 2)
                     if module_progress
