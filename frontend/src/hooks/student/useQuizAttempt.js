@@ -39,6 +39,10 @@ export function useRequestQuizSelfRetry() {
       toastSuccess(response?.message || "You have another attempt — good luck!");
       queryClient.invalidateQueries({ queryKey: ["studentQuizzes"] });
       queryClient.invalidateQueries({ queryKey: ["studentQuizAttempts"] });
+      // A grant raises this quiz's effective attempts_allowed, which also
+      // changes the number a locked module's lock_info shows (see below) —
+      // same reasoning as useSubmitQuizAttempt's invalidation.
+      queryClient.invalidateQueries({ queryKey: ["studentEnrolledCourseDetail"] });
     },
     onError: (error) => {
       toastError(getApiErrorMessage(error, "Unable to request another attempt."));
@@ -55,6 +59,19 @@ export function useSubmitQuizAttempt() {
       toastSuccess(response?.message || "Quiz submitted successfully");
       queryClient.invalidateQueries({ queryKey: ["studentQuizzes"] });
       queryClient.invalidateQueries({ queryKey: ["studentQuizAttempts"] });
+      // Task 18 — a submission can flip is_passed, which can lock or unlock
+      // modules (progress.services.get_module_lock_map). The curriculum
+      // panel's module list comes from a *different* query
+      // (["studentEnrolledCourseDetail", courseId], see
+      // CourseDetailScreen.jsx) that this mutation has no other reason to
+      // know about, so without this it kept showing a stale lock state
+      // until something else happened to refetch it (e.g. a full reload).
+      // Invalidated without a specific courseId (matches every cached
+      // entry via TanStack Query's default partial key match) since this
+      // hook is shared across quiz-taking surfaces that don't all have one
+      // on hand — mirrors useCompleteLesson's exact-key invalidation for
+      // the same query, just broader because courseId isn't always known here.
+      queryClient.invalidateQueries({ queryKey: ["studentEnrolledCourseDetail"] });
     },
     onError: (error) => {
       toastError(getApiErrorMessage(error, "Unable to submit this quiz attempt."));
