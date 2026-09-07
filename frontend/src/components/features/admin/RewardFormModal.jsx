@@ -19,11 +19,6 @@ const REWARD_TYPE_OPTIONS = [
 const FULFILLMENT_TYPE_OPTIONS = [
   { value: "SCHEDULED_SESSION", label: "Scheduled Session" },
   { value: "EVENT_ACCESS", label: "Event Access" },
-  { value: "DIGITAL_CODE", label: "Digital Code" },
-  { value: "DIGITAL_ACCESS", label: "Digital Access" },
-  { value: "PHYSICAL_DELIVERY", label: "Physical Delivery" },
-  { value: "PROFILE_BADGE", label: "Profile Badge" },
-  { value: "MANUAL_FULFILLMENT", label: "Manual Fulfillment" },
 ];
 
 const SCHEDULABLE_FULFILLMENT_TYPES = new Set(["SCHEDULED_SESSION", "EVENT_ACCESS"]);
@@ -32,7 +27,7 @@ const INITIAL_FORM = {
   name: "",
   description: "",
   reward_type: "OTHER",
-  fulfillment_type: "MANUAL_FULFILLMENT",
+  fulfillment_type: "SCHEDULED_SESSION",
   duration_minutes: "",
   points_required: "",
 };
@@ -77,7 +72,7 @@ export default function RewardFormModal({ isOpen, onClose, onSaved, reward }) {
             name: reward.name || "",
             description: reward.description || "",
             reward_type: reward.reward_type || "OTHER",
-            fulfillment_type: reward.fulfillment_type || "MANUAL_FULFILLMENT",
+            fulfillment_type: reward.fulfillment_type || "SCHEDULED_SESSION",
             duration_minutes: reward.duration_minutes != null ? String(reward.duration_minutes) : "",
             points_required: String(reward.points_required ?? ""),
           }

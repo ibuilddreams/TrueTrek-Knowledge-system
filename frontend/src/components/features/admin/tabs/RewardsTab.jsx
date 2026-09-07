@@ -1,7 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Edit3, Gift, PauseCircle, PlayCircle } from "lucide-react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { activateReward, deactivateReward, getAdminRewards } from "@/services/rewardsService";
