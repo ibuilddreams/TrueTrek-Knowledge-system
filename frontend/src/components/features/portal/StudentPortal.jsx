@@ -6,6 +6,7 @@ import { Lock } from "lucide-react";
 import { usePortalSession } from "@/hooks/usePortalSession";
 import { useStudentProfile } from "@/hooks/useStudentProfile";
 import { useNeedsOnboarding } from "@/hooks/useNeedsOnboarding";
+import { useDailyDrillToday } from "@/hooks/student/useDailyDrillToday";
 import { ROUTES } from "@/constants/routes";
 import TabNav from "@/components/ui/TabNav";
 import TabTransition from "@/components/ui/TabTransition";
@@ -37,6 +38,8 @@ function StudentPortalContent() {
     isLoggedIn,
     streakDays,
     setStreakDays,
+    streakDetail,
+    setStreakDetail,
     aggregateScore,
     setAggregateScore,
     points,
@@ -55,6 +58,25 @@ function StudentPortalContent() {
   useEffect(() => {
     if (needsOnboarding) router.replace(ROUTES.ONBOARDING);
   }, [needsOnboarding, router]);
+
+  // Fetched once here (regardless of which tab is active) so the header's
+  // XP/streak/score chips reflect real data as soon as the portal loads,
+  // instead of showing portalSlice's placeholder defaults until the student
+  // happens to open the Drill tab (the only place this used to be fetched).
+  const { data: drillData } = useDailyDrillToday({ enabled: isLoggedIn });
+  const drillStats = drillData?.stats;
+
+  useEffect(() => {
+    if (!drillStats) return;
+    setPoints(drillStats.points);
+    setStreakDays(drillStats.streak);
+    setStreakDetail(drillStats.streak_detail || null);
+    setAggregateScore(drillStats.aggregate_score);
+    // The setters' identities change with the values they set (see
+    // usePortalSession) — depending on the raw stat values here, not the
+    // setters, avoids re-firing this effect forever.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drillStats?.points, drillStats?.streak, drillStats?.streak_detail, drillStats?.aggregate_score]);
 
   const activeTab = useMemo(
     () => resolvePortalTab(searchParams.get("tab")),
@@ -139,6 +161,7 @@ function StudentPortalContent() {
         profileStatus={profileStatus}
         points={points}
         streakDays={streakDays}
+        streakStatus={streakDetail?.status}
         aggregateScore={aggregateScore}
       />
 
@@ -163,14 +186,7 @@ function StudentPortalContent() {
             {activeTab === "certificates" && (
               <CertificatesTab studentName={displayName} />
             )}
-            {activeTab === "drill" && (
-              <DrillTab
-                setPoints={setPoints}
-                setStreakDays={setStreakDays}
-                setAggregateScore={setAggregateScore}
-                onNotify={setLastNotification}
-              />
-            )}
+            {activeTab === "drill" && <DrillTab onNotify={setLastNotification} />}
             {activeTab === "rewards" && <RewardsTab />}
             {activeTab === "warroom" && (
               <WarRoomTab

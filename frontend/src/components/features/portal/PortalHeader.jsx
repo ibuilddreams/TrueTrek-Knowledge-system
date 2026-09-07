@@ -8,16 +8,29 @@ import { ROUTES } from "@/constants/routes";
 import { getUserLevelDetails } from "@/lib/portalLevels";
 import { getInitials } from "./portalConstants";
 
+// Task 16 (Phase 5) — mirrors daily_drill.services.get_streak_status's
+// `status` field so the flame badge visually distinguishes a live streak
+// from one that's at risk (today not done yet) or already broken, instead
+// of always showing the same amber regardless of state.
+const STREAK_STATUS_STYLE = {
+  ACTIVE: { badge: "bg-amber-500/10 border-amber-500/20", icon: "text-amber-400" },
+  AT_RISK: { badge: "bg-orange-500/10 border-orange-500/20", icon: "text-orange-400" },
+  BROKEN: { badge: "bg-stone-800 border-stone-700", icon: "text-stone-500" },
+  NEW: { badge: "bg-amber-500/10 border-amber-500/20", icon: "text-amber-400" },
+};
+
 export default function PortalHeader({
   displayName,
   profileStatus,
   points,
   streakDays,
+  streakStatus,
   aggregateScore,
 }) {
   const router = useRouter();
   const levelInfo = getUserLevelDetails(points);
   const isLoading = profileStatus === "loading";
+  const streakStyle = STREAK_STATUS_STYLE[streakStatus] || STREAK_STATUS_STYLE.ACTIVE;
 
   return (
     <div className="relative left-1/2 -translate-x-1/2 w-screen overflow-hidden bg-stone-900 mb-8 shadow-xl shadow-stone-900/10">
@@ -74,8 +87,10 @@ export default function PortalHeader({
           </div>
 
           <div className="bg-stone-950/60 border border-stone-800 p-3 rounded-xl flex items-center gap-3">
-            <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">
-              <Flame className="w-4 h-4 text-amber-400" />
+            <div
+              className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 ${streakStyle.badge}`}
+            >
+              <Flame className={`w-4 h-4 ${streakStyle.icon}`} />
             </div>
             <div className="min-w-0">
               <p className="text-[10px] font-mono uppercase text-stone-100 tracking-wider">
@@ -83,6 +98,11 @@ export default function PortalHeader({
               </p>
               <p className="text-sm font-mono font-bold text-stone-100 mt-0.5">
                 {streakDays} Days
+                {streakStatus === "AT_RISK" && (
+                  <span className="ml-1.5 text-[10px] font-mono uppercase text-orange-400 align-middle">
+                    At risk
+                  </span>
+                )}
               </p>
             </div>
           </div>

@@ -13,20 +13,22 @@ export default function CurriculumItemRow({
   isActive,
   isVault,
   onClick,
+  disabled,
 }) {
   return (
     <button
       type="button"
-      onClick={onClick}
+      onClick={disabled ? undefined : onClick}
+      disabled={disabled}
       aria-current={isActive ? "true" : undefined}
-      className={`w-full flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors group border ${
+      className={`w-full flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors group border disabled:cursor-default disabled:opacity-50 ${
         isActive
           ? isVault
             ? "bg-amber-500/10 border-amber-500/40"
             : "bg-amber-50/80 border-amber-300"
           : isVault
-            ? "border-transparent hover:bg-white/5"
-            : "border-transparent hover:bg-stone-50"
+            ? "border-transparent hover:bg-white/5 disabled:hover:bg-transparent"
+            : "border-transparent hover:bg-stone-50 disabled:hover:bg-transparent"
       }`}
     >
       <span

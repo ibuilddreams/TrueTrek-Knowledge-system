@@ -250,6 +250,18 @@ DAILY_DRILL_VARIATION_LOOKBACK_DAYS = int(os.getenv('DAILY_DRILL_VARIATION_LOOKB
 DAILY_DRILL_VIDEO_WATCH_THRESHOLD_PERCENT = int(
     os.getenv('DAILY_DRILL_VIDEO_WATCH_THRESHOLD_PERCENT', 80)
 )
+# Task 17 (Phase 5) — a student who hasn't completed a Daily Drill in this
+# many consecutive days is flagged inactive (see daily_drill/engagement.py).
+# This reuses the same activity signal Task 16's streak is computed from,
+# rather than inventing a second notion of "activity".
+DAILY_DRILL_INACTIVITY_THRESHOLD_DAYS = int(os.getenv('DAILY_DRILL_INACTIVITY_THRESHOLD_DAYS', 3))
+# How often (in days) an already-inactive student gets a repeat re-engagement
+# email, so `check_student_engagement` doesn't email them every single day —
+# only once on the day they first cross the threshold, then at most this
+# often thereafter.
+DAILY_DRILL_REENGAGEMENT_REMINDER_INTERVAL_DAYS = int(
+    os.getenv('DAILY_DRILL_REENGAGEMENT_REMINDER_INTERVAL_DAYS', 7)
+)
 
 # AI-graded assignment review (assignments/ai_review/) and quiz short-answer
 # grading (quizzes/ai_grading.py) — reuses AI_CHAT_MODEL (the fast path), same

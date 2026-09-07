@@ -9,6 +9,7 @@ import {
   setAggregateScore,
   setDrillCompletedList,
   setStreakDays,
+  setStreakDetail,
   setPoints,
   setConsultationCount,
 } from "@/store/slices/portal/portalSlice";
@@ -35,6 +36,13 @@ export function usePortalSession() {
       dispatch(setStreakDays(resolveUpdater(value, portal.streakDays)));
     },
     [dispatch, portal.streakDays]
+  );
+
+  const updateStreakDetail = useCallback(
+    (value) => {
+      dispatch(setStreakDetail(value));
+    },
+    [dispatch]
   );
 
   const updateAggregateScore = useCallback(
@@ -65,11 +73,13 @@ export function usePortalSession() {
     logout,
     drillCompletedList: portal.drillCompletedList,
     streakDays: portal.streakDays,
+    streakDetail: portal.streakDetail,
     aggregateScore: portal.aggregateScore,
     points: portal.points,
     consultationCount: portal.consultationCount,
     setDrillCompletedList: updateDrillCompletedList,
     setStreakDays: updateStreakDays,
+    setStreakDetail: updateStreakDetail,
     setAggregateScore: updateAggregateScore,
     setPoints: updatePoints,
     setConsultationCount: updateConsultationCount,

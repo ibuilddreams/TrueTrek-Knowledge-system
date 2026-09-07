@@ -200,13 +200,14 @@ function LessonRow({ lesson, onOpen, disabled }) {
   );
 }
 
-function AssignmentRow({ assignment, onOpen }) {
+function AssignmentRow({ assignment, onOpen, disabled }) {
   const { label, className } = assignmentStatusLabel(assignment.submission);
   return (
     <button
       type="button"
       onClick={() => onOpen(assignment)}
-      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-stone-50 transition-colors group"
+      disabled={disabled}
+      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-stone-50 disabled:hover:bg-transparent disabled:cursor-default disabled:opacity-50 transition-colors group"
     >
       <RowIcon icon={ClipboardList} className="bg-amber-50 text-amber-600 border-amber-100" />
       <span className="min-w-0 flex-1">
@@ -229,13 +230,14 @@ function AssignmentRow({ assignment, onOpen }) {
   );
 }
 
-function QuizRow({ quiz, onOpen }) {
+function QuizRow({ quiz, onOpen, disabled }) {
   const { label, className } = quizStatusLabel(quiz);
   return (
     <button
       type="button"
       onClick={() => onOpen(quiz)}
-      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-stone-50 transition-colors group"
+      disabled={disabled}
+      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-stone-50 disabled:hover:bg-transparent disabled:cursor-default disabled:opacity-50 transition-colors group"
     >
       <RowIcon icon={CircleHelp} className="bg-violet-50 text-violet-600 border-violet-100" />
       <span className="min-w-0 flex-1">
@@ -290,6 +292,13 @@ function ModuleAccordionItem({
     moduleAssignments.length > 0 ||
     moduleQuizzes.length > 0;
 
+  // Task 18 (Phase 5) — computed server-side (progress.services.get_module_lock_map)
+  // from real quiz-failure history; never guessed client-side. Kept separate
+  // from the pre-existing `canInteract` gate (enrollment-active check) so
+  // this addition doesn't change that unrelated behavior.
+  const isLocked = Boolean(module.is_locked);
+  const rowsDisabled = isLocked;
+
   return (
     <div className="rounded-2xl border border-stone-200 bg-white overflow-hidden">
       <button
@@ -308,15 +317,22 @@ function ModuleAccordionItem({
             </h5>
           </div>
           <div className="flex items-center gap-2 shrink-0">
-            <span
-              className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${
-                module.is_completed
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                  : "bg-stone-50 text-stone-500 border-stone-200"
-              }`}
-            >
-              {Math.round(module.completion_percentage || 0)}%
-            </span>
+            {isLocked ? (
+              <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border bg-stone-100 text-stone-500 border-stone-200">
+                <Lock className="w-3 h-3" />
+                Locked
+              </span>
+            ) : (
+              <span
+                className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${
+                  module.is_completed
+                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                    : "bg-stone-50 text-stone-500 border-stone-200"
+                }`}
+              >
+                {Math.round(module.completion_percentage || 0)}%
+              </span>
+            )}
             {hasDetails ? (
               isExpanded ? (
                 <ChevronUp className="w-4 h-4 text-stone-500" />
@@ -376,7 +392,7 @@ function ModuleAccordionItem({
                         key={lesson.id}
                         lesson={lesson}
                         onOpen={onOpenLesson}
-                        disabled={false}
+                        disabled={rowsDisabled}
                       />
                     ))
                   )}
@@ -394,6 +410,7 @@ function ModuleAccordionItem({
                       key={assignment.id}
                       assignment={assignment}
                       onOpen={onOpenAssignment}
+                      disabled={rowsDisabled}
                     />
                   ))}
                 </div>
@@ -406,10 +423,17 @@ function ModuleAccordionItem({
                     Quizzes
                   </p>
                   {moduleQuizzes.map((quiz) => (
-                    <QuizRow key={quiz.id} quiz={quiz} onOpen={onOpenQuiz} />
+                    <QuizRow key={quiz.id} quiz={quiz} onOpen={onOpenQuiz} disabled={rowsDisabled} />
                   ))}
                 </div>
               )}
+
+              {isLocked ? (
+                <p className="flex items-start gap-1.5 text-[11px] text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-2.5 py-2 pt-1">
+                  <Lock className="w-3 h-3 mt-0.5 shrink-0" />
+                  <span>{module.lock_info?.reason || "This module is locked."}</span>
+                </p>
+              ) : null}
 
               {!canInteract ? (
                 <p className="flex items-center gap-1.5 text-[11px] text-stone-400 pt-1">

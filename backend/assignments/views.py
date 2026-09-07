@@ -12,6 +12,7 @@ from courses.services import is_course_instructor
 from enrollments.models import Enrollment
 from enrollments.services import can_view_student_in_course, get_visible_enrollments
 from modules.models import Module
+from progress.services import get_module_lock_info, get_module_lock_map
 from users.permissions import IsStudent
 
 from .ai_review.exceptions import AIReviewAlreadyProcessingError
@@ -51,6 +52,23 @@ class StudentAssignmentListView(generics.GenericAPIView):
 
     def get(self, request):
         data = get_student_assignments(request.user, request=request)
+
+        # Task 18 — annotated here at the view layer, same pattern as
+        # quizzes.StudentQuizListView (assignments/services.py has no reason
+        # to import from progress either — keep the dependency one-directional).
+        course_ids = {row["course"]["id"] for row in data if row["course"]["id"]}
+        courses_by_id = Course.objects.in_bulk(course_ids)
+        lock_map_by_course = {
+            course_id: get_module_lock_map(request.user, course)
+            for course_id, course in courses_by_id.items()
+        }
+        for row in data:
+            module = row.get("module")
+            lock_map = lock_map_by_course.get(row["course"]["id"], {})
+            lock_info = lock_map.get(module["id"]) if module else None
+            row["is_locked"] = lock_info is not None
+            row["lock_info"] = lock_info
+
         return success_response(data, message="Student assignments fetched successfully")
 
 
@@ -434,7 +452,7 @@ class AssignmentSubmitView(generics.GenericAPIView):
 
     def post(self, request, assignment_id):
         try:
-            assignment = Assignment.objects.select_related("course").get(pk=assignment_id)
+            assignment = Assignment.objects.select_related("course", "module").get(pk=assignment_id)
         except Assignment.DoesNotExist:
             return error_response(
                 message="Assignment with the given id does not exist.", status_code=404
@@ -446,6 +464,14 @@ class AssignmentSubmitView(generics.GenericAPIView):
             status=Enrollment.EnrollmentStatus.ACTIVE,
         ).exists():
             return error_response(message="You are not enrolled in this course.", status_code=403)
+
+        # Task 18 — a module locked by a repeatedly-failed quiz also blocks
+        # submitting assignments that belong to it (see
+        # progress.services.get_module_lock_map).
+        if assignment.module_id:
+            lock_info = get_module_lock_info(request.user, assignment.module)
+            if lock_info:
+                return error_response(message=lock_info["reason"], status_code=403, data=lock_info)
 
         files = request.FILES.getlist("files")
         if not files:

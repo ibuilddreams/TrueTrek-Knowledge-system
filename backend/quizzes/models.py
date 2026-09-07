@@ -142,3 +142,30 @@ class QuizResult(BaseModel):
 
     def __str__(self):
         return f"{self.attempt} result"
+
+
+class QuizAttemptGrant(BaseModel):
+    """Task 18 (Phase 5) — an explicit extra attempt a teacher/admin grants
+    to one student on one quiz, once that student has exhausted
+    `Quiz.attempts_allowed` without passing (progress.services'
+    module-lock "path to continue improving"). Deliberately per-student:
+    raising `attempts_allowed` itself would hand every enrolled student
+    more attempts, not just the one who's stuck. Additive and append-only —
+    granting again adds another row rather than editing an existing one, so
+    there's a natural audit trail of who granted what and why."""
+
+    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="attempt_grants")
+    student = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="quiz_attempt_grants"
+    )
+    extra_attempts = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
+    granted_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
+    )
+    reason = models.TextField()
+
+    class Meta:
+        ordering = ["-created_at"]
+
+    def __str__(self):
+        return f"{self.student} +{self.extra_attempts} on {self.quiz}"

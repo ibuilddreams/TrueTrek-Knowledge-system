@@ -3,12 +3,19 @@ import { createSlice } from "@reduxjs/toolkit";
 /**
  * Student portal application state (non-sensitive).
  * Progress is kept in Redux for the session — persist via API later, not localStorage.
+ *
+ * streakDays/aggregateScore/points default to 0, not a placeholder demo
+ * number — StudentPortal.jsx fetches the real values from the backend as
+ * soon as the portal loads (regardless of which tab is active) and
+ * overwrites these immediately, so 0 is only ever visible for the brief
+ * moment before that first fetch resolves.
  */
 const initialState = {
   drillCompletedList: [],
-  streakDays: 6,
-  aggregateScore: 100,
-  points: 450,
+  streakDays: 0,
+  streakDetail: null,
+  aggregateScore: 0,
+  points: 0,
   consultationCount: 0,
 };
 
@@ -21,6 +28,9 @@ const portalSlice = createSlice({
     },
     setStreakDays(state, action) {
       state.streakDays = action.payload;
+    },
+    setStreakDetail(state, action) {
+      state.streakDetail = action.payload;
     },
     setAggregateScore(state, action) {
       state.aggregateScore = action.payload;
@@ -40,6 +50,7 @@ const portalSlice = createSlice({
 export const {
   setDrillCompletedList,
   setStreakDays,
+  setStreakDetail,
   setAggregateScore,
   setPoints,
   setConsultationCount,

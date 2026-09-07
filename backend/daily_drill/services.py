@@ -22,6 +22,9 @@ __all__ = [
     "InvalidDrillOptionError",
     "get_todays_question",
     "compute_streak",
+    "compute_longest_streak",
+    "get_last_activity_date",
+    "get_streak_status",
     "get_drill_stats",
     "record_attempt",
     "resolve_todays_drill",
@@ -44,11 +47,13 @@ def get_todays_question():
     return questions[index]
 
 
-def compute_streak(student):
-    """Consecutive-day streak ending today, unioned across all three Daily
-    Drill sources a student may have completed on any given day (only one of
-    the three is ever active per day, but a student's history can span all
-    three over time as admin schedules/AI availability change)."""
+def _get_all_activity_dates(student):
+    """Every calendar date a student completed a Daily Drill, unioned across
+    all three sources (only one is ever active per day, but a student's
+    history can span all three over time as admin schedules/AI availability
+    change). This is the single activity signal both the streak (Task 16)
+    and the inactivity check (Task 17) are computed from — see
+    `daily_drill/engagement.py` for the latter."""
     legacy_dates = set(DrillAttempt.objects.filter(student=student).values_list("attempt_date", flat=True))
     ai_dates = set(
         AIDrillGeneration.objects.filter(student=student, is_completed=True).values_list(
@@ -60,7 +65,14 @@ def compute_streak(student):
             student=student, status=AdminDrillProgress.ProgressStatus.COMPLETED
         ).values_list("schedule__scheduled_date", flat=True)
     )
-    attempt_dates = legacy_dates | ai_dates | admin_dates
+    return legacy_dates | ai_dates | admin_dates
+
+
+def compute_streak(student):
+    """Consecutive-day streak ending today (or yesterday, if today's drill
+    hasn't been done yet — the streak isn't considered broken until a full
+    day passes with no activity)."""
+    attempt_dates = _get_all_activity_dates(student)
     if not attempt_dates:
         return 0
 
@@ -74,6 +86,85 @@ def compute_streak(student):
         cursor -= timedelta(days=1)
 
     return streak
+
+
+def compute_longest_streak(student):
+    """Longest historical run of consecutive active days, not just the
+    current one — used to give Task 16's streak display a "best" to compare
+    against."""
+    attempt_dates = _get_all_activity_dates(student)
+    if not attempt_dates:
+        return 0
+
+    ordered = sorted(attempt_dates)
+    longest = current = 1
+    for previous_date, current_date in zip(ordered, ordered[1:]):
+        if (current_date - previous_date).days == 1:
+            current += 1
+        else:
+            longest = max(longest, current)
+            current = 1
+    return max(longest, current)
+
+
+def get_last_activity_date(student):
+    """Most recent date this student completed a Daily Drill, or None if
+    they never have. This is the shared signal Task 17's inactivity check
+    (`daily_drill/engagement.py`) is built on."""
+    attempt_dates = _get_all_activity_dates(student)
+    return max(attempt_dates) if attempt_dates else None
+
+
+STREAK_CALENDAR_LOOKBACK_DAYS = 14
+
+
+def get_streak_status(student):
+    """Rich streak info for Task 16 — current/longest streak, a named status,
+    and a small day-by-day activity calendar so the frontend can show which
+    recent days were missed. `stats.streak` (see `get_drill_stats` below)
+    stays a plain int for backward compatibility with existing frontend code
+    (`DrillTab.jsx` reads it directly) — this lives alongside it as
+    `stats.streak_detail`, additive only."""
+    today = timezone.localdate()
+    attempt_dates = _get_all_activity_dates(student)
+    last_activity = max(attempt_dates) if attempt_dates else None
+    days_since_activity = (today - last_activity).days if last_activity else None
+
+    if last_activity is None:
+        streak_status = "NEW"
+    elif last_activity == today:
+        streak_status = "ACTIVE"
+    elif last_activity == today - timedelta(days=1):
+        # Yesterday was active but today isn't done yet — the streak is still
+        # alive until midnight, just at risk of breaking.
+        streak_status = "AT_RISK"
+    else:
+        streak_status = "BROKEN"
+
+    recent_days = [
+        {
+            "date": (today - timedelta(days=offset)).isoformat(),
+            "completed": (today - timedelta(days=offset)) in attempt_dates,
+        }
+        for offset in range(STREAK_CALENDAR_LOOKBACK_DAYS - 1, -1, -1)
+    ]
+
+    return {
+        "current_streak": compute_streak(student),
+        "longest_streak": compute_longest_streak(student),
+        "status": streak_status,
+        "last_activity_date": last_activity.isoformat() if last_activity else None,
+        "days_since_activity": days_since_activity,
+        # Mirrors settings.DAILY_DRILL_INACTIVITY_THRESHOLD_DAYS — computed live
+        # here so the student-facing display can never disagree with the
+        # persisted StudentEngagementStatus flag the daily management command
+        # maintains (see daily_drill/engagement.py).
+        "is_inactive": (
+            days_since_activity is not None
+            and days_since_activity >= settings.DAILY_DRILL_INACTIVITY_THRESHOLD_DAYS
+        ),
+        "recent_days": recent_days,
+    }
 
 
 def get_drill_stats(student):
@@ -105,9 +196,11 @@ def get_drill_stats(student):
     total_count = (legacy_agg["count"] or 0) + len(ai_completions) + (admin_agg["count"] or 0)
     total_score = (legacy_agg["score_sum"] or 0) + ai_score_sum + (admin_agg["score_sum"] or 0)
 
+    streak_detail = get_streak_status(student)
     return {
         "points": total_points,
-        "streak": compute_streak(student),
+        "streak": streak_detail["current_streak"],
+        "streak_detail": streak_detail,
         "aggregate_score": round(total_score / total_count) if total_count else 0,
         "attempts_count": total_count,
     }
