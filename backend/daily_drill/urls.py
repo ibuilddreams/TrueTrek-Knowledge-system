@@ -12,11 +12,13 @@ from .views import (
     DailyDrillTodayView,
     DailyDrillVideoProgressView,
     InactiveStudentsListView,
+    StreakCalendarView,
 )
 
 urlpatterns = [
     # Student — today's Daily Drill (backend resolves the source)
     path("today/", DailyDrillTodayView.as_view(), name="daily-drill-today"),
+    path("streak/calendar/", StreakCalendarView.as_view(), name="daily-drill-streak-calendar"),
     path("attempt/", DailyDrillAttemptView.as_view(), name="daily-drill-attempt"),
     path(
         "<int:schedule_id>/video-progress/",
