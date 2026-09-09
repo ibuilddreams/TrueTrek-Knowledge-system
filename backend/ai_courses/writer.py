@@ -14,7 +14,7 @@ from django.db import transaction
 from django.utils import timezone
 from django.utils.text import slugify
 
-from assignments.models import Assignment
+from assignments.models import Assignment, AssignmentRubric, AssignmentRubricCriterion
 from common.models import Status
 from common.ordering import get_next_order
 from courses.models import Course, CourseInstructor
@@ -71,6 +71,11 @@ def write_course_tree(normalized_plan, form_payload):
             )
 
         weeks_between_modules = form_payload["weeks_between_modules"]
+        # Opt-in (defaults True — see GenerationRequestSerializer): AI-generated
+        # quizzes/assignments default to AI grading rather than the model's usual
+        # MANUAL default, since a human never authored these items to review them
+        # against in the first place.
+        ai_grading = form_payload.get("ai_grading", True)
         total_lesson_minutes = 0
 
         for module_order, module_plan in enumerate(normalized_plan["modules"], start=1):
@@ -102,6 +107,11 @@ def write_course_tree(normalized_plan, form_payload):
                     title=f"{module_plan['title']} — Quiz",
                     status=Status.DRAFT,
                     order=get_next_order(Quiz.objects.filter(module=module)),
+                    short_answer_grading_mode=(
+                        Quiz.ShortAnswerGradingMode.AI
+                        if ai_grading
+                        else Quiz.ShortAnswerGradingMode.MANUAL
+                    ),
                 )
                 for question_order, question_plan in enumerate(quiz_plan["questions"], start=1):
                     question = Question.objects.create(
@@ -120,7 +130,7 @@ def write_course_tree(normalized_plan, form_payload):
 
             assignment_plan = module_plan.get("assignment")
             if assignment_plan:
-                Assignment.objects.create(
+                assignment = Assignment.objects.create(
                     course=course,
                     module=module,
                     title=f"{module_plan['title']} — Assignment",
@@ -129,7 +139,25 @@ def write_course_tree(normalized_plan, form_payload):
                     status=Status.DRAFT,
                     order=get_next_order(Assignment.objects.filter(module=module)),
                     created_by=form_payload["instructors"][0],
+                    grading_mode=(
+                        Assignment.GradingMode.AI if ai_grading else Assignment.GradingMode.MANUAL
+                    ),
                 )
+                if ai_grading:
+                    # publish_assignment() requires an AI-graded assignment to have
+                    # rubric criteria summing to exactly total_marks before it can be
+                    # published — the AI plan has no rubric concept (plan §9 schema
+                    # has no such field), so seed a single whole-submission criterion
+                    # covering the full total_marks; the instructor can edit/split it
+                    # later like any other rubric.
+                    rubric = AssignmentRubric.objects.create(assignment=assignment)
+                    AssignmentRubricCriterion.objects.create(
+                        rubric=rubric,
+                        name="Overall Submission Quality",
+                        description="Evaluate the submission as a whole against the assignment instructions.",
+                        max_marks=assignment.total_marks,
+                        order=1,
+                    )
 
         if total_lesson_minutes:
             course.duration_minutes = total_lesson_minutes
