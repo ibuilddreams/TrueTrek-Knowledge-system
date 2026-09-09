@@ -32,6 +32,7 @@ export default function Modal({
   subtitle,
   children,
   maxWidth = "max-w-lg",
+  titleClassName = "text-lg",
 }) {
   const { isVault } = useTheme();
 
@@ -104,7 +105,7 @@ export default function Modal({
                   <div>
                     {title && (
                       <h3
-                        className={`text-lg font-serif font-bold leading-tight ${
+                        className={`${titleClassName} font-serif font-bold leading-tight ${
                           isVault ? "text-stone-50" : "text-stone-900"
                         }`}
                       >

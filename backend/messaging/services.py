@@ -71,7 +71,15 @@ def start_conversation(sender, recipient):
     return get_or_create_conversation(sender, recipient)
 
 
-def send_message(conversation, sender, body="", attachment=None, attachment_category=None):
+def send_message(
+    conversation,
+    sender,
+    body="",
+    attachment=None,
+    attachment_category=None,
+    course=None,
+    course_progress_percentage=None,
+):
     message = Message.objects.create(
         conversation=conversation,
         sender=sender,
@@ -80,6 +88,8 @@ def send_message(conversation, sender, body="", attachment=None, attachment_cate
         attachment_original_name=attachment.name if attachment else "",
         attachment_type=attachment_category or "",
         attachment_size=attachment.size if attachment else None,
+        course=course,
+        course_progress_percentage=course_progress_percentage,
     )
     conversation.last_message_at = message.created_at
     conversation.save(update_fields=["last_message_at"])

@@ -25,6 +25,7 @@ __all__ = [
     "compute_longest_streak",
     "get_last_activity_date",
     "get_streak_status",
+    "get_streak_calendar",
     "get_drill_stats",
     "record_attempt",
     "resolve_todays_drill",
@@ -115,16 +116,14 @@ def get_last_activity_date(student):
     return max(attempt_dates) if attempt_dates else None
 
 
-STREAK_CALENDAR_LOOKBACK_DAYS = 14
-
-
 def get_streak_status(student):
-    """Rich streak info for Task 16 — current/longest streak, a named status,
-    and a small day-by-day activity calendar so the frontend can show which
-    recent days were missed. `stats.streak` (see `get_drill_stats` below)
-    stays a plain int for backward compatibility with existing frontend code
-    (`DrillTab.jsx` reads it directly) — this lives alongside it as
-    `stats.streak_detail`, additive only."""
+    """Rich streak info for Task 16 — current/longest streak plus a named
+    status. `stats.streak` (see `get_drill_stats` below) stays a plain int
+    for backward compatibility with existing frontend code (`DrillTab.jsx`
+    reads it directly) — this lives alongside it as `stats.streak_detail`,
+    additive only. The full activity calendar lives on its own endpoint —
+    see `get_streak_calendar` — rather than bloating this payload, which is
+    fetched on every single "today's drill" page load."""
     today = timezone.localdate()
     attempt_dates = _get_all_activity_dates(student)
     last_activity = max(attempt_dates) if attempt_dates else None
@@ -141,14 +140,6 @@ def get_streak_status(student):
     else:
         streak_status = "BROKEN"
 
-    recent_days = [
-        {
-            "date": (today - timedelta(days=offset)).isoformat(),
-            "completed": (today - timedelta(days=offset)) in attempt_dates,
-        }
-        for offset in range(STREAK_CALENDAR_LOOKBACK_DAYS - 1, -1, -1)
-    ]
-
     return {
         "current_streak": compute_streak(student),
         "longest_streak": compute_longest_streak(student),
@@ -163,7 +154,53 @@ def get_streak_status(student):
             days_since_activity is not None
             and days_since_activity >= settings.DAILY_DRILL_INACTIVITY_THRESHOLD_DAYS
         ),
-        "recent_days": recent_days,
+    }
+
+
+STREAK_CALENDAR_DEFAULT_DAYS = 365
+
+
+def get_streak_calendar(student, days=STREAK_CALENDAR_DEFAULT_DAYS):
+    """A full year of daily activity, shaped for a GitHub-style contribution
+    grid: the returned range always *starts* on a Sunday (padded backward
+    from `days` ago if needed) and ends today, so the frontend can lay the
+    flat `days` list out in fixed columns of 7 (one column per week, row 0 =
+    Sunday) without doing any date-of-week math of its own — `weekday`
+    (0=Sunday..6=Saturday) is included per day anyway, for the day-of-week
+    row labels down the left side of the grid.
+
+    Every "activity" concept here matches Task 16's streak/inactivity logic
+    exactly (`_get_all_activity_dates`) — a day is marked complete the same
+    way regardless of which of the three Daily Drill sources it came from.
+    """
+    today = timezone.localdate()
+    nominal_start = today - timedelta(days=days - 1)
+    # Python's Monday=0..Sunday=6 -> days to step back to reach the most
+    # recent Sunday on/before nominal_start.
+    days_since_sunday = (nominal_start.weekday() + 1) % 7
+    start_date = nominal_start - timedelta(days=days_since_sunday)
+
+    attempt_dates = _get_all_activity_dates(student)
+    total_days = (today - start_date).days + 1
+
+    calendar_days = []
+    for offset in range(total_days):
+        day = start_date + timedelta(days=offset)
+        calendar_days.append(
+            {
+                "date": day.isoformat(),
+                "completed": day in attempt_dates,
+                "weekday": (day.weekday() + 1) % 7,
+            }
+        )
+
+    return {
+        "start_date": start_date.isoformat(),
+        "end_date": today.isoformat(),
+        "total_active_days": sum(1 for day in calendar_days if day["completed"]),
+        "current_streak": compute_streak(student),
+        "longest_streak": compute_longest_streak(student),
+        "days": calendar_days,
     }
 
 

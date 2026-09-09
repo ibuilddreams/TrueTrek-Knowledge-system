@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useState } from "react";
+import { Suspense, useEffect, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,9 +20,25 @@ function MessagesScreenContent() {
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
 
+  // `isAuthenticated` comes from client-only Redux state, which is never
+  // populated during the server/prerendered HTML pass — so branching on it
+  // before mount always mismatches for an already-logged-in user (a hydration
+  // error, since this page is statically prerendered with no session).
+  // Rendering the same neutral loader on the very first pass regardless of
+  // auth state, then switching to the real branch once mounted, keeps the
+  // first paint identical on server and client.
+  const [isMounted, setIsMounted] = useState(false);
+  useEffect(() => {
+    setIsMounted(true);
+  }, []);
+
   // Deep-linked from elsewhere (e.g. a teacher's "Message Student" action on
   // the Enrollment & Scores drawer) — ConversationList selects it once loaded.
   const autoSelectConversationId = searchParams.get("conversation");
+
+  if (!isMounted) {
+    return <Loader label="Loading Messages..." />;
+  }
 
   if (!isAuthenticated) {
     return (

@@ -30,6 +30,7 @@ class MessageSerializer(serializers.ModelSerializer):
     sender_id = serializers.IntegerField(read_only=True)
     attachment = serializers.SerializerMethodField()
     reactions = serializers.SerializerMethodField()
+    course = serializers.SerializerMethodField()
 
     class Meta:
         model = Message
@@ -47,12 +48,23 @@ class MessageSerializer(serializers.ModelSerializer):
             "attachment_original_name",
             "attachment_type",
             "attachment_size",
+            "course",
             "reactions",
         ]
         read_only_fields = fields
 
     def get_attachment(self, obj):
         return build_absolute_image_url(self.context.get("request"), obj.attachment)
+
+    def get_course(self, obj):
+        if obj.is_deleted or obj.course_id is None:
+            return None
+        return {
+            "id": obj.course_id,
+            "title": obj.course.title,
+            "image": build_absolute_image_url(self.context.get("request"), obj.course.thumbnail),
+            "progress_percentage": obj.course_progress_percentage,
+        }
 
     def get_reactions(self, obj):
         request = self.context.get("request")
@@ -119,6 +131,10 @@ class StartConversationSerializer(serializers.Serializer):
 class SendMessageSerializer(serializers.Serializer):
     body = serializers.CharField(required=False, allow_blank=True, default="")
     attachment = serializers.FileField(required=False, allow_null=True)
+    # Attaches a "course card" to the message — see Message.course on the model.
+    # Permission (sender must teach this course to this recipient) is checked
+    # in the view, not here, since it needs the conversation/recipient.
+    course_id = serializers.IntegerField(required=False, allow_null=True)
 
     def validate_body(self, value):
         value = (value or "").strip()
@@ -137,7 +153,8 @@ class SendMessageSerializer(serializers.Serializer):
     def validate(self, attrs):
         body = (attrs.get("body") or "").strip()
         attachment = attrs.get("attachment")
-        if not body and not attachment:
+        course_id = attrs.get("course_id")
+        if not body and not attachment and not course_id:
             raise serializers.ValidationError("Message must include text or an attachment.")
         return attrs
 

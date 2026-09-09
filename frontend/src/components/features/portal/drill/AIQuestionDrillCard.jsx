@@ -29,7 +29,7 @@ export default function AIQuestionDrillCard({ data, onSubmit, isSubmitting }) {
           <div className="bg-amber-600 text-stone-950 font-bold px-2.5 py-1 text-[11px] font-mono tracking-widest uppercase rounded">
             {DIFFICULTY_LABELS[data.difficulty] || "Scenario"}
           </div>
-          <span className="text-xs text-stone-400 font-mono tracking-wide">{data.topic}</span>
+          <span className="text-sm text-stone-400 font-mono tracking-wide">{data.topic}</span>
         </div>
         <p className="text-sm md:text-base leading-relaxed font-medium text-stone-50 relative z-10">
           {data.question}

@@ -6,6 +6,8 @@ from rest_framework.permissions import IsAuthenticated
 
 from common.pagination import Pagination
 from common.response import error_response, success_response
+from enrollments.models import Enrollment
+from progress.models import CourseProgress
 
 from .models import Conversation, Message
 from .permissions import IsConversationParticipant
@@ -136,7 +138,9 @@ class MessageListCreateView(generics.ListCreateAPIView):
         if conversation is None:
             return error_response(message="Conversation does not exist.", status_code=404)
 
-        messages = conversation.messages.select_related("sender").prefetch_related("reactions")
+        messages = conversation.messages.select_related("sender", "course").prefetch_related(
+            "reactions"
+        )
         page = self.paginate_queryset(messages)
         serializer = self.get_serializer(page, many=True, context={"request": request})
         paginated_data = self.paginator.get_paginated_response(serializer.data).data
@@ -153,12 +157,37 @@ class MessageListCreateView(generics.ListCreateAPIView):
         attachment = serializer.validated_data.get("attachment")
         attachment_category = validate_message_attachment(attachment) if attachment else None
 
+        course_id = serializer.validated_data.get("course_id")
+        course = None
+        course_progress_percentage = None
+        if course_id:
+            if not request.user.is_teacher:
+                return error_response(
+                    message="Only teachers can share a course card.", status_code=403
+                )
+            other = conversation.other_participant(request.user)
+            enrollment = (
+                Enrollment.objects.filter(course_id=course_id, teacher=request.user, student=other)
+                .select_related("course")
+                .first()
+            )
+            if enrollment is None:
+                return error_response(
+                    message="You can only share a course you teach this student in.",
+                    status_code=403,
+                )
+            course = enrollment.course
+            progress = CourseProgress.objects.filter(student=other, course_id=course_id).first()
+            course_progress_percentage = progress.completion_percentage if progress else 0
+
         message = send_message(
             conversation,
             request.user,
             body=serializer.validated_data.get("body", ""),
             attachment=attachment,
             attachment_category=attachment_category,
+            course=course,
+            course_progress_percentage=course_progress_percentage,
         )
 
         return success_response(

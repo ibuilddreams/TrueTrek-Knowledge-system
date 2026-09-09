@@ -50,6 +50,10 @@ class GenerationRequestSerializer(serializers.Serializer):
     include_quizzes = serializers.BooleanField(default=True)
     questions_per_quiz = serializers.IntegerField(min_value=1, max_value=20, default=5)
     include_assignments = serializers.BooleanField(default=True)
+    # Whether the generated quizzes' short-answer questions and generated
+    # assignments should default to AI grading (assignments/quizzes.GradingMode.AI)
+    # instead of the usual manual-review default — see ai_courses/writer.py.
+    ai_grading = serializers.BooleanField(default=True)
     weeks_between_modules = serializers.IntegerField(min_value=1, max_value=52, default=2)
     additional_instructions = serializers.CharField(
         required=False, allow_blank=True, default="", max_length=2000

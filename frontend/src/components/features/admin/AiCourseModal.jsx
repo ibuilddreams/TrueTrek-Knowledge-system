@@ -52,6 +52,7 @@ const STEP_FIELDS = {
     "include_quizzes",
     "questions_per_quiz",
     "include_assignments",
+    "ai_grading",
     "weeks_between_modules",
     "additional_instructions",
   ],
@@ -71,6 +72,7 @@ const INITIAL_FORM = {
   include_quizzes: true,
   questions_per_quiz: "5",
   include_assignments: true,
+  ai_grading: true,
   weeks_between_modules: "2",
   additional_instructions: "",
 };
@@ -345,6 +347,7 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
     include_quizzes: form.include_quizzes,
     questions_per_quiz: Number(form.questions_per_quiz),
     include_assignments: form.include_assignments,
+    ai_grading: form.ai_grading,
     weeks_between_modules: Number(form.weeks_between_modules),
     additional_instructions: form.additional_instructions.trim(),
   });
@@ -635,6 +638,26 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
                   Include an assignment per module
                 </label>
               </div>
+
+              {(form.include_quizzes || form.include_assignments) && (
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-stone-50/60">
+                  <input
+                    type="checkbox"
+                    id="ai_grading"
+                    checked={form.ai_grading}
+                    onChange={updateField("ai_grading")}
+                  />
+                  <label htmlFor="ai_grading" className="text-sm font-mono text-stone-700 flex-1">
+                    AI-grade generated quizzes &amp; assignments
+                  </label>
+                </div>
+              )}
+              {(form.include_quizzes || form.include_assignments) && (
+                <p className="text-[11px] font-mono text-stone-400 -mt-2">
+                  When enabled, short-answer quiz questions and assignment submissions from this
+                  course are graded automatically by AI instead of waiting on manual review.
+                </p>
+              )}
 
               <div className="w-48">
                 <label className={LABEL_CLASS}>Weeks Between Modules</label>
