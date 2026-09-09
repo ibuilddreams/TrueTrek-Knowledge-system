@@ -12,7 +12,8 @@ import { useTeacherStudentDetail } from "@/hooks/useTeacherStudentDetail";
 import { formatDate } from "@/lib/adminFormatters";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError } from "@/lib/toast";
-import { startConversation } from "@/services/messagingService";
+import { sendMessage, startConversation } from "@/services/messagingService";
+import { getTeacherEnrolledStudentDetail } from "@/services/teacherCoursesService";
 import { ROUTES } from "@/constants/routes";
 import CloseButton from "@/components/ui/CloseButton";
 import EmptyState from "@/components/ui/EmptyState";
@@ -95,6 +96,27 @@ export default function EnrollmentScoresTab() {
     clearStudentDetail();
   };
 
+  // Picks which enrolled course the opening message should be about — the
+  // ACTIVE course the student has made the least progress in, since that's
+  // the one most likely to be the reason the teacher is reaching out.
+  const pickCourseForGreeting = (detail) => {
+    const courses = detail?.courses || [];
+    if (courses.length === 0) return null;
+    const active = courses.filter((entry) => entry.status === "ACTIVE");
+    const pool = active.length > 0 ? active : courses;
+    return pool.reduce((lowest, entry) =>
+      (entry.completion_percentage ?? 0) < (lowest.completion_percentage ?? 0) ? entry : lowest
+    ).course;
+  };
+
+  const buildGreeting = (student, courseTitle) => {
+    const firstName = (student?.name || "").split(" ")[0] || "there";
+    if (student?.is_struggling || student?.is_disengaged) {
+      return `Hi ${firstName}, I noticed you might be struggling in ${courseTitle} — how can I help you get back on track?`;
+    }
+    return `Hi ${firstName}, just checking in on your progress in ${courseTitle}. Let me know if you have any questions!`;
+  };
+
   const handleMessageStudent = async (studentId) => {
     setIsMessagingStudentId(studentId);
     try {
@@ -103,6 +125,29 @@ export default function EnrollmentScoresTab() {
       if (!conversationId) {
         throw new Error("Conversation could not be started.");
       }
+
+      const isNewConversation = !response?.data?.last_message;
+      if (isNewConversation) {
+        try {
+          // Fetched fresh rather than read from the (possibly still-loading,
+          // or previous-student) drawer state — this button sits above the
+          // drawer's own loading skeleton, so it's clickable before that
+          // data has necessarily arrived.
+          const detailResponse = await getTeacherEnrolledStudentDetail(studentId);
+          const course = pickCourseForGreeting(detailResponse?.data);
+          if (course) {
+            const student = students.find((entry) => entry.id === studentId) || selectedStudent;
+            await sendMessage(conversationId, {
+              body: buildGreeting(student, course.title),
+              courseId: course.id,
+            });
+          }
+        } catch {
+          // The course-card opener is a nice-to-have — don't block the
+          // teacher from reaching the conversation if it fails to send.
+        }
+      }
+
       router.push(`${ROUTES.MESSAGES}?conversation=${conversationId}`);
     } catch (error) {
       toastError(getApiErrorMessage(error, "Unable to start a conversation with this student."));

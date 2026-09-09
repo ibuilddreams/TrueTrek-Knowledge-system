@@ -27,14 +27,18 @@ export async function getConversationMessages(conversationId, { page, pageSize }
   return backendClient.get(`/messaging/${conversationId}/messages/${query ? `?${query}` : ""}`);
 }
 
-export async function sendMessage(conversationId, { body, attachment } = {}) {
+export async function sendMessage(conversationId, { body, attachment, courseId } = {}) {
   if (attachment) {
     const formData = new FormData();
     if (body) formData.append("body", body);
+    if (courseId) formData.append("course_id", courseId);
     formData.append("attachment", attachment);
     return backendClient.post(`/messaging/${conversationId}/messages/`, formData);
   }
-  return backendClient.post(`/messaging/${conversationId}/messages/`, { body });
+  return backendClient.post(`/messaging/${conversationId}/messages/`, {
+    body,
+    ...(courseId ? { course_id: courseId } : {}),
+  });
 }
 
 export async function editMessage(conversationId, messageId, body) {

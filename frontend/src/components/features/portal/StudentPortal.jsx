@@ -26,6 +26,7 @@ import QuizzesTab from "./tabs/QuizzesTab";
 import CertificatesTab from "./tabs/CertificatesTab";
 import DrillTab from "./tabs/DrillTab";
 import RewardsTab from "./tabs/RewardsTab";
+import StreakTab from "./tabs/StreakTab";
 import WarRoomScreen from "@/components/features/warroom/WarRoomScreen";
 
 function StudentPortalContent() {
@@ -162,6 +163,7 @@ function StudentPortalContent() {
         streakDays={streakDays}
         streakStatus={streakDetail?.status}
         aggregateScore={aggregateScore}
+        onStreakClick={() => setActiveTab("streak")}
       />
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6 lg:gap-8 items-start">
@@ -188,6 +190,9 @@ function StudentPortalContent() {
             {activeTab === "drill" && <DrillTab onNotify={setLastNotification} />}
             {activeTab === "rewards" && <RewardsTab />}
             {activeTab === "warroom" && <WarRoomScreen />}
+            {activeTab === "streak" && (
+              <StreakTab onBack={() => setActiveTab(DEFAULT_PORTAL_TAB)} />
+            )}
           </TabTransition>
         </div>
       </div>

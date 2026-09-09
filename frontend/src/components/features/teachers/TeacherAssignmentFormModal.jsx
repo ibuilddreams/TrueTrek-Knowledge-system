@@ -320,6 +320,7 @@ export default function TeacherAssignmentFormModal({
       icon={ClipboardCheck}
       title={isEditMode ? "Edit Assignment" : "Add Assignment"}
       subtitle={isEditMode ? assignment?.title : "Create a new assignment for this module"}
+      titleClassName="text-2xl"
       maxWidth="max-w-xl"
     >
       <form onSubmit={handleSubmit} className="space-y-4">
@@ -427,7 +428,7 @@ export default function TeacherAssignmentFormModal({
               disabled={isSubmitting}
               className={FIELD_CLASS}
             />
-            <p className="mt-1.5 text-[11px] font-mono text-stone-400">1 = first position</p>
+            <p className="mt-1.5 text-xs font-mono text-stone-400">1 = first position</p>
             {fieldErrors.order && <p className={ERROR_CLASS}>{fieldErrors.order}</p>}
           </div>
         </div>
@@ -452,7 +453,7 @@ export default function TeacherAssignmentFormModal({
               </button>
             ))}
           </div>
-          <p className="text-[11px] font-mono text-stone-400 tracking-wider mt-1.5">
+          <p className="text-xs font-mono text-stone-400 tracking-wider mt-1.5">
             {GRADING_MODE_OPTIONS.find((option) => option.value === form.grading_mode)?.description}
           </p>
         </div>
@@ -479,7 +480,7 @@ export default function TeacherAssignmentFormModal({
                   </button>
                 ))}
               </div>
-              <p className="text-[11px] font-mono text-stone-400 tracking-wider mt-1.5">
+              <p className="text-xs font-mono text-stone-400 tracking-wider mt-1.5 grading-callout-hint">
                 {GRADING_METHOD_OPTIONS.find((option) => option.value === form.grading_method)?.description}
               </p>
             </div>
@@ -542,15 +543,17 @@ export default function TeacherAssignmentFormModal({
                 type="button"
                 onClick={addCriterion}
                 disabled={isSubmitting}
-                className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 grading-callout-hint hover:border-amber-500 hover:text-amber-700 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add {itemNoun}
               </button>
               <p
-                className={`mt-1.5 text-[11px] font-mono tracking-wider ${
-                  marksSumMismatch ? "text-amber-700 font-semibold" : "text-stone-400"
-                }`}
+                className={
+                  marksSumMismatch
+                    ? "mt-1.5 text-xs font-mono tracking-wider text-amber-700 font-semibold"
+                    : "mt-1.5 text-xs font-mono tracking-wider text-stone-400 grading-callout-hint"
+                }
               >
                 {itemNoun} marks total: {criteriaMarksSum} / {totalMarksNumber || "—"}
                 {marksSumMismatch ? " — must match Total Marks exactly before publishing." : ""}
@@ -563,7 +566,7 @@ export default function TeacherAssignmentFormModal({
         <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-stone-200 bg-stone-50/60">
           <div>
             <p className="text-sm font-semibold text-stone-800">Allow Resubmission</p>
-            <p className="text-[11px] font-mono text-stone-400 tracking-wider mt-0.5">
+            <p className="text-xs font-mono text-stone-400 tracking-wider mt-0.5">
               Let students resubmit after the due date
             </p>
           </div>
@@ -601,7 +604,7 @@ export default function TeacherAssignmentFormModal({
                       </div>
                       <div className="min-w-0 flex-1">
                         <p className="text-sm font-semibold text-stone-800 truncate">{file.name}</p>
-                        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
+                        <p className="text-xs font-mono uppercase text-stone-400 tracking-wider mt-0.5">
                           {formatFileSize(file.size)}
                         </p>
                       </div>
@@ -635,7 +638,7 @@ export default function TeacherAssignmentFormModal({
                 <Upload className="w-3.5 h-3.5" />
                 Add Attachment
               </button>
-              <p className="text-[11px] font-mono text-stone-400 tracking-wider">
+              <p className="text-xs font-mono text-stone-400 tracking-wider">
                 Files upload once the assignment is created · PDF, DOC/DOCX, PPT/PPTX, ZIP, JPG/PNG/WEBP · up to
                 50MB
               </p>

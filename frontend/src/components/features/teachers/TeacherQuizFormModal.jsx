@@ -226,6 +226,7 @@ export default function TeacherQuizFormModal({ isOpen, onClose, modules = [], de
         icon={HelpCircle}
         title={isEditMode ? "Edit Quiz" : "Add Quiz"}
         subtitle={isEditMode ? quiz?.title : "Create a new quiz for this module"}
+        titleClassName="text-2xl"
         maxWidth="max-w-xl"
       >
         <form onSubmit={handleSubmit} className="space-y-4">
@@ -233,7 +234,7 @@ export default function TeacherQuizFormModal({ isOpen, onClose, modules = [], de
             <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-stone-200 bg-stone-50/60">
               <div>
                 <p className="text-sm font-semibold text-stone-800">Status</p>
-                <p className="text-[11px] font-mono text-stone-400 tracking-wider mt-0.5">
+                <p className="text-xs font-mono text-stone-400 tracking-wider mt-0.5">
                   Publish this quiz from the quizzes list once it has questions.
                 </p>
               </div>
@@ -311,7 +312,7 @@ export default function TeacherQuizFormModal({ isOpen, onClose, modules = [], de
                 disabled={isSubmitting}
                 className={FIELD_CLASS}
               />
-              <p className="mt-1.5 text-[11px] font-mono text-stone-400">0 = no limit</p>
+              <p className="mt-1.5 text-xs font-mono text-stone-400">0 = no limit</p>
               {fieldErrors.time_limit_minutes && <p className={ERROR_CLASS}>{fieldErrors.time_limit_minutes}</p>}
             </div>
             <div>
@@ -376,7 +377,7 @@ export default function TeacherQuizFormModal({ isOpen, onClose, modules = [], de
                 </button>
               ))}
             </div>
-            <p className="text-[11px] font-mono text-stone-400 tracking-wider mt-1.5">
+            <p className="text-xs font-mono text-stone-400 tracking-wider mt-1.5">
               {
                 SHORT_ANSWER_GRADING_MODE_OPTIONS.find(
                   (option) => option.value === form.short_answer_grading_mode
@@ -399,7 +400,7 @@ export default function TeacherQuizFormModal({ isOpen, onClose, modules = [], de
               disabled={isSubmitting}
               className={FIELD_CLASS}
             />
-            <p className="mt-1.5 text-[11px] font-mono text-stone-400">1 = first position</p>
+            <p className="mt-1.5 text-xs font-mono text-stone-400">1 = first position</p>
             {fieldErrors.order && <p className={ERROR_CLASS}>{fieldErrors.order}</p>}
           </div>
 

@@ -26,6 +26,7 @@ export default function PortalHeader({
   streakDays,
   streakStatus,
   aggregateScore,
+  onStreakClick,
 }) {
   const router = useRouter();
   const levelInfo = getUserLevelDetails(points);
@@ -64,7 +65,7 @@ export default function PortalHeader({
                 {displayName}
               </h1>
             )}
-            <p className="text-sm text-stone-400 font-light mt-2 leading-snug max-w-md">
+            <p className="text-base text-stone-400 font-light mt-2 leading-snug max-w-md">
               Courses, certificates, daily drills, war room, and progress — in
               one place.
             </p>
@@ -86,7 +87,12 @@ export default function PortalHeader({
             </div>
           </div>
 
-          <div className="bg-stone-950/60 border border-stone-800 p-3 rounded-xl flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onStreakClick}
+            title="View your full streak history"
+            className="bg-stone-950/60 border border-stone-800 p-3 rounded-xl flex items-center gap-3 text-left transition-colors hover:border-amber-500/40 hover:bg-stone-950/80 cursor-pointer"
+          >
             <div
               className={`w-9 h-9 rounded-lg border flex items-center justify-center shrink-0 ${streakStyle.badge}`}
             >
@@ -105,7 +111,7 @@ export default function PortalHeader({
                 )}
               </p>
             </div>
-          </div>
+          </button>
 
           <div className="bg-stone-950/60 border border-stone-800 p-3 rounded-xl flex items-center gap-3">
             <div className="w-9 h-9 rounded-lg bg-amber-500/10 border border-amber-500/20 flex items-center justify-center shrink-0">

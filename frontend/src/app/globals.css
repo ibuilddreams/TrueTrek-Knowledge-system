@@ -180,6 +180,27 @@ select:disabled {
   background-color: rgba(245, 158, 11, 0.14) !important;
 }
 
+/* AI-grading rubric/criteria callout boxes (AddAssignmentModal /
+   TeacherAssignmentFormModal / GradeSubmissionModal / QuestionChoicesModal,
+   ...) use bg-amber-50/40 — another opacity-modifier utility not covered by
+   the plain bg-amber-50 rule above. Left alone it composites the light amber
+   fill over the near-black modal and reads as a washed-out gray-brown box.
+   Given a clearly-amber tint (deliberately more saturated than the /20
+   variant above, since /40 is meant to read as the stronger fill). */
+.vault-dark .bg-amber-50\/40 {
+  background-color: rgba(245, 158, 11, 0.18) !important;
+  border-color: rgba(245, 158, 11, 0.4) !important;
+}
+
+/* Hint/description text sitting directly inside those amber callout boxes —
+   same low-contrast problem already fixed for tabnav-sidebar-desc, applied
+   here via an explicit marker class since text-stone-400 is used dimmed on
+   purpose elsewhere. Bright amber (not a muted gray) so it reads clearly
+   against the tinted card above, and matches the box's own accent color. */
+.vault-dark .grading-callout-hint {
+  color: #fcd34d !important;
+}
+
 /* ==========================================================================
    Extended coverage for the Admin/Teacher Courses screens: hover/focus
    variants, opacity-modifier utilities, and color families that the base

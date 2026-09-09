@@ -4,7 +4,7 @@ from django.contrib.auth import get_user_model
 from django.test import TestCase
 
 from ai_courses.writer import write_course_tree
-from assignments.models import Assignment
+from assignments.models import Assignment, AssignmentRubric
 from common.models import Status
 from courses.models import Category, Course, CourseInstructor
 from lessons.models import Lesson
@@ -96,6 +96,29 @@ class WriteCourseTreeTests(TestCase):
             assignment = Assignment.objects.get(module=module)
             self.assertEqual(assignment.status, Status.DRAFT)
             self.assertIsNotNone(assignment.due_date)
+
+    def test_ai_grading_defaults_on_for_generated_quizzes_and_assignments(self):
+        course = write_course_tree(_normalized_plan(1), self._form_payload())
+
+        quiz = Quiz.objects.get(course=course)
+        self.assertEqual(quiz.short_answer_grading_mode, Quiz.ShortAnswerGradingMode.AI)
+
+        assignment = Assignment.objects.get(course=course)
+        self.assertEqual(assignment.grading_mode, Assignment.GradingMode.AI)
+
+        rubric = AssignmentRubric.objects.get(assignment=assignment)
+        criteria_max_sum = sum(rubric.criteria.values_list("max_marks", flat=True))
+        self.assertEqual(criteria_max_sum, assignment.total_marks)
+
+    def test_ai_grading_false_keeps_manual_review_defaults(self):
+        course = write_course_tree(_normalized_plan(1), self._form_payload(ai_grading=False))
+
+        quiz = Quiz.objects.get(course=course)
+        self.assertEqual(quiz.short_answer_grading_mode, Quiz.ShortAnswerGradingMode.MANUAL)
+
+        assignment = Assignment.objects.get(course=course)
+        self.assertEqual(assignment.grading_mode, Assignment.GradingMode.MANUAL)
+        self.assertFalse(AssignmentRubric.objects.filter(assignment=assignment).exists())
 
     def test_duration_minutes_recomputed_from_lessons(self):
         course = write_course_tree(_normalized_plan(1), self._form_payload())

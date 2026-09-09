@@ -25,7 +25,7 @@ from .serializers import (
     InactiveStudentSerializer,
     VideoProgressSerializer,
 )
-from .services import build_todays_drill_payload, submit_single_question_answer
+from .services import build_todays_drill_payload, get_streak_calendar, submit_single_question_answer
 
 # ---------------------------------------------------------------------------
 # Student — today's Daily Drill (whichever source resolves)
@@ -40,6 +40,19 @@ class DailyDrillTodayView(generics.GenericAPIView):
         if data["type"] == "UNAVAILABLE":
             return success_response(data, message="No Daily Drill is available right now.")
         return success_response(data, message="Today's Daily Drill retrieved successfully.")
+
+
+class StreakCalendarView(generics.GenericAPIView):
+    """Task 16 (Phase 5) follow-up — the full year-long activity grid backing
+    the dedicated Streak page (moved off the Daily Drill tab, which only
+    ever needs the lightweight `stats.streak_detail`, not 365 days of data
+    on every load)."""
+
+    permission_classes = [IsStudent]
+
+    def get(self, request):
+        data = get_streak_calendar(request.user)
+        return success_response(data, message="Streak calendar fetched successfully.")
 
 
 class DailyDrillAttemptView(generics.GenericAPIView):

@@ -202,7 +202,7 @@ function AdminDashboardContent() {
             <h1 className="text-2xl sm:text-[2rem] font-serif font-bold tracking-tight text-stone-900 leading-none">
               Control Center
             </h1>
-            <p className="text-sm text-stone-500 font-light mt-2 leading-snug max-w-md">
+            <p className="text-base text-stone-500 font-light mt-2 leading-snug max-w-md">
               Courses, enrollments, users, and platform health — in one place
               {user?.name ? ` · ${user.name}` : ""}.
             </p>

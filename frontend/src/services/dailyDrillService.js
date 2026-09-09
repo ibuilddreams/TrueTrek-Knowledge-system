@@ -9,6 +9,12 @@ export async function submitDrillAttempt(answerKey) {
   return backendClient.post("/daily-drill/attempt/", { answer_key: answerKey });
 }
 
+// Task 16 (Phase 5) follow-up — the full year-long streak calendar, fetched
+// only on the dedicated Streak page, not on every Daily Drill load.
+export async function getStreakCalendar() {
+  return backendClient.get("/daily-drill/streak/calendar/");
+}
+
 export async function recordVideoProgress(scheduleId, progressPercent) {
   return backendClient.post(`/daily-drill/${scheduleId}/video-progress/`, {
     progress_percent: progressPercent,

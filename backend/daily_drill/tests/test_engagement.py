@@ -1,4 +1,4 @@
-from datetime import timedelta
+from datetime import date, timedelta
 from io import StringIO
 
 from django.contrib.auth import get_user_model
@@ -12,7 +12,7 @@ from rest_framework.test import APITestCase
 
 from ..engagement import evaluate_student_engagement, is_reminder_due
 from ..models import DrillAttempt, DrillOption, DrillQuestion, StudentEngagementStatus
-from ..services import get_streak_status
+from ..services import get_streak_calendar, get_streak_status
 
 UserModel = get_user_model()
 
@@ -93,14 +93,110 @@ class StreakStatusTests(TestCase):
         self.assertEqual(status["longest_streak"], 3)
         self.assertEqual(status["current_streak"], 1)
 
-    def test_recent_days_calendar_marks_completed_dates(self):
+
+class StreakCalendarTests(TestCase):
+    """Task 16 (Phase 5) follow-up — the full year-long, GitHub-style
+    activity grid backing the dedicated Streak page."""
+
+    def setUp(self):
+        self.student = _make_student("calendarstudent")
+        self.question = DrillQuestion.objects.create(scenario="S", guidelines="G")
+        self.option = DrillOption.objects.create(
+            question=self.question, key="A", text="T", impact="I", rationale="R", score=100
+        )
+
+    def test_grid_always_starts_on_a_sunday_and_ends_today(self):
+        calendar = get_streak_calendar(self.student, days=365)
+
+        start = date.fromisoformat(calendar["start_date"])
+        self.assertEqual(start.isoweekday() % 7, 0, "start_date must be a Sunday")
+        self.assertEqual(calendar["end_date"], timezone.localdate().isoformat())
+        self.assertEqual(calendar["days"][0]["date"], calendar["start_date"])
+        self.assertEqual(calendar["days"][-1]["date"], calendar["end_date"])
+
+    def test_every_week_column_starts_on_a_sunday(self):
+        # The grid starts on a Sunday but ends on "today" (not necessarily a
+        # Saturday), so the final 7-day chunk is naturally partial — same as
+        # GitHub's own contribution graph. What must hold is that every
+        # 7-day chunk starting at index 0 begins on a Sunday, so the
+        # frontend can lay this out in fixed weekly columns with zero
+        # date-of-week math of its own.
+        calendar = get_streak_calendar(self.student, days=365)
+
+        for week_start_index in range(0, len(calendar["days"]), 7):
+            self.assertEqual(calendar["days"][week_start_index]["weekday"], 0)
+
+    def test_completed_dates_are_marked_true(self):
         _make_attempt(self.student, self.question, self.option, days_ago=0)
+        _make_attempt(self.student, self.question, self.option, days_ago=1)
 
+        calendar = get_streak_calendar(self.student, days=365)
+        completed_by_date = {day["date"]: day["completed"] for day in calendar["days"]}
+
+        self.assertTrue(completed_by_date[timezone.localdate().isoformat()])
+        self.assertTrue(completed_by_date[(timezone.localdate() - timedelta(days=1)).isoformat()])
+        self.assertFalse(completed_by_date[(timezone.localdate() - timedelta(days=2)).isoformat()])
+
+    def test_total_active_days_counts_only_completed_days(self):
+        for days_ago in (0, 1, 2):
+            _make_attempt(self.student, self.question, self.option, days_ago=days_ago)
+
+        calendar = get_streak_calendar(self.student, days=365)
+
+        self.assertEqual(calendar["total_active_days"], 3)
+
+    def test_streak_values_match_get_streak_status(self):
+        for days_ago in (0, 1, 2):
+            _make_attempt(self.student, self.question, self.option, days_ago=days_ago)
+
+        calendar = get_streak_calendar(self.student, days=365)
         status = get_streak_status(self.student)
-        recent_by_date = {day["date"]: day["completed"] for day in status["recent_days"]}
 
-        self.assertTrue(recent_by_date[timezone.localdate().isoformat()])
-        self.assertFalse(recent_by_date[(timezone.localdate() - timedelta(days=1)).isoformat()])
+        self.assertEqual(calendar["current_streak"], status["current_streak"])
+        self.assertEqual(calendar["longest_streak"], status["longest_streak"])
+
+    def test_empty_history_still_returns_a_full_valid_grid(self):
+        calendar = get_streak_calendar(self.student, days=365)
+
+        self.assertEqual(calendar["total_active_days"], 0)
+        self.assertTrue(all(not day["completed"] for day in calendar["days"]))
+
+
+class StreakCalendarViewTests(APITestCase):
+    def setUp(self):
+        self.url = reverse("daily-drill-streak-calendar")
+        self.student = _make_student("calendarviewstudent")
+        self.teacher = UserModel.objects.create_user(
+            username="calendarviewteacher",
+            email="calendarviewteacher@example.com",
+            password="StrongPass123!",
+            role=UserModel.Roles.TEACHER,
+            gender=UserModel.Gender.MALE,
+        )
+
+    def test_requires_authentication(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, http_status.HTTP_401_UNAUTHORIZED)
+
+    def test_forbidden_for_non_student(self):
+        self.client.force_authenticate(user=self.teacher)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, http_status.HTTP_403_FORBIDDEN)
+
+    def test_returns_calendar_for_authenticated_student(self):
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, http_status.HTTP_200_OK)
+        data = response.data["data"]
+        self.assertIn("days", data)
+        self.assertIn("current_streak", data)
+        self.assertIn("longest_streak", data)
+        self.assertIn("total_active_days", data)
 
 
 class EvaluateStudentEngagementTests(TestCase):

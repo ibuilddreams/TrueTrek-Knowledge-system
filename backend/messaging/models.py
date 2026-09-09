@@ -58,6 +58,19 @@ class Message(BaseModel):
     attachment_type = models.CharField(max_length=20, choices=AttachmentType.choices, blank=True)
     attachment_size = models.PositiveIntegerField(null=True, blank=True)
 
+    # A teacher can attach a "course card" (see services.send_message /
+    # SendMessageSerializer) when messaging a student about a specific
+    # course — e.g. from the Enrollment & Scores "Student Dossier". Progress
+    # is snapshotted at send time rather than looked up live, since it keeps
+    # changing and the card should reflect the student's standing at the
+    # moment the teacher reached out.
+    course = models.ForeignKey(
+        "courses.Course", on_delete=models.SET_NULL, null=True, blank=True, related_name="+"
+    )
+    course_progress_percentage = models.DecimalField(
+        max_digits=5, decimal_places=2, null=True, blank=True
+    )
+
     class Meta:
         ordering = ["-created_at"]
         indexes = [

@@ -208,7 +208,7 @@ function TeacherPortalContent() {
             <h1 className="text-2xl sm:text-[2rem] font-serif font-bold tracking-tight text-stone-900 leading-none">
               Teacher & Faculty Suite
             </h1>
-            <p className="text-sm text-stone-500 font-light mt-2 leading-snug max-w-md">
+            <p className="text-base text-stone-500 font-light mt-2 leading-snug max-w-md">
               Courses, students, scores, manuals, and enrollment — in one place.
             </p>
           </div>

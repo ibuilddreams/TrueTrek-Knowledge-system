@@ -11,6 +11,7 @@ import { toastError, toastSuccess } from "@/lib/toast";
 import EmojiPicker from "./EmojiPicker";
 import MessageActionsMenu from "./MessageActionsMenu";
 import MessageAttachment from "./MessageAttachment";
+import MessageCourseCard from "./MessageCourseCard";
 import MessageReactions from "./MessageReactions";
 
 function formatTime(isoString) {
@@ -111,6 +112,7 @@ export default function MessageBubble({ conversationId, message, isBeingEdited, 
             } ${isBeingEdited ? "ring-2 ring-amber-500 ring-offset-2 ring-offset-white" : ""}`}
           >
             <MessageAttachment message={message} />
+            <MessageCourseCard course={message.course} />
             {message.body && <p className="whitespace-pre-wrap wrap-break-word">{message.body}</p>}
             <p className="text-[10px] font-mono text-stone-400 flex items-center gap-1">
               {message.is_edited && <span>edited ·</span>}

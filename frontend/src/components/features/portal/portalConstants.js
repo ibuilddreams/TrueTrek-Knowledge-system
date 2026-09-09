@@ -60,7 +60,16 @@ export const PORTAL_TABS = [
   },
 ];
 
-export const VALID_PORTAL_TABS = new Set(PORTAL_TABS.map((tab) => tab.id));
+// Task 16 (Phase 5) follow-up — the Streak page is reached only via the
+// header's Streak stat chip (PortalHeader.jsx), not the sidebar nav, so it's
+// a valid tab for URL/routing purposes (`resolvePortalTab` below) without
+// being listed in PORTAL_TABS.
+export const HIDDEN_PORTAL_TAB_IDS = ["streak"];
+
+export const VALID_PORTAL_TABS = new Set([
+  ...PORTAL_TABS.map((tab) => tab.id),
+  ...HIDDEN_PORTAL_TAB_IDS,
+]);
 export const DEFAULT_PORTAL_TAB = "dashboard";
 
 export function getInitials(name) {
