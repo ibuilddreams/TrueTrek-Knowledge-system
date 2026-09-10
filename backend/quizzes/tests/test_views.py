@@ -1,5 +1,7 @@
+import json
 from datetime import timedelta
 from decimal import Decimal
+from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.urls import reverse
@@ -7,6 +9,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from ai_courses.providers.base import ProviderResult
 from common.models import Status
 from courses.models import Category, Course, CourseInstructor
 from enrollments.models import Enrollment
@@ -33,6 +36,39 @@ def _make_user(username, role):
         role=role,
         gender=UserModel.Gender.MALE,
     )
+
+
+class _StubRegenerationProvider:
+    """Minimal stand-in for quizzes.ai_generation's provider dependency —
+    always returns one valid MCQ question, enough to exercise the
+    "attempt #2+ triggers regeneration" code path without a real AI call."""
+
+    def generate_course(self, prompt, response_schema, timeout, files=None):
+        return ProviderResult(
+            text=json.dumps(
+                {
+                    "questions": [
+                        {
+                            "text": "Regenerated question?",
+                            "question_type": "MCQ",
+                            "marks": 1,
+                            "choices": [
+                                {"text": "Right", "is_correct": True},
+                                {"text": "Wrong A", "is_correct": False},
+                                {"text": "Wrong B", "is_correct": False},
+                                {"text": "Wrong C", "is_correct": False},
+                            ],
+                        }
+                    ]
+                }
+            ),
+            input_tokens=5,
+            output_tokens=10,
+        )
+
+
+def _stub_regeneration_provider():
+    return _StubRegenerationProvider()
 
 
 class QuizCourseProgressListViewTests(APITestCase):
@@ -329,6 +365,10 @@ class StudentQuizAttemptsListViewTests(APITestCase):
         attempt_2 = QuizAttempt.objects.create(
             quiz=self.quiz, student=self.student, attempt_number=2, ended_at=timezone.now()
         )
+        # Attempt #2 gets its own AI-regenerated, attempt-scoped question set in the real
+        # flow (quizzes.ai_generation) — simulate that here rather than reusing the
+        # template question, since attempt_number > 1 never does.
+        Question.objects.create(quiz=self.quiz, attempt=attempt_2, text="Q1 (retry)", marks=10)
         QuizResult.objects.create(
             attempt=attempt_2, score=Decimal("2"), percentage=Decimal("20.00"), is_passed=False
         )
@@ -384,14 +424,12 @@ class QuizAttemptLifecycleServiceTests(APITestCase):
             passing_score=40,
             status=Status.PUBLISHED,
             time_limit_minutes=10,
-            attempts_allowed=3,
         )
         self.untimed_quiz = Quiz.objects.create(
             course=self.course,
             title="Untimed Quiz",
             passing_score=40,
             status=Status.PUBLISHED,
-            attempts_allowed=3,
         )
         for quiz in (self.timed_quiz, self.untimed_quiz):
             mcq = Question.objects.create(
@@ -642,7 +680,6 @@ class StartQuizAttemptViewModuleLockTests(APITestCase):
             title="Blocking Quiz",
             passing_score=40,
             status=Status.PUBLISHED,
-            attempts_allowed=5,
         )
         self.next_quiz = Quiz.objects.create(
             course=self.course,
@@ -680,7 +717,9 @@ class StartQuizAttemptViewModuleLockTests(APITestCase):
         self.assertIn("blocking_quiz_id", response.data["data"])
         self.assertFalse(QuizAttempt.objects.filter(quiz=self.next_quiz).exists())
 
-    def test_blocking_quiz_itself_stays_retryable(self):
+    @patch("quizzes.ai_generation.get_provider")
+    def test_blocking_quiz_itself_stays_retryable(self, mock_get_provider):
+        mock_get_provider.return_value = _stub_regeneration_provider()
         url = reverse("quiz-attempt-start", kwargs={"quiz_id": self.blocking_quiz.id})
 
         response = self.client.post(url)
@@ -688,112 +727,14 @@ class StartQuizAttemptViewModuleLockTests(APITestCase):
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
 
 
-class QuizGrantAttemptViewTests(APITestCase):
-    """Task 18 (Phase 5) — the "path to continue improving" once a student
-    has exhausted attempts_allowed without passing: a teacher/admin grants
-    that one student an extra attempt on that one quiz."""
-
-    def setUp(self):
-        self.category = Category.objects.create(name="Programming")
-        self.course = Course.objects.create(title="Intro to Python", category=self.category)
-        self.quiz = Quiz.objects.create(
-            course=self.course,
-            title="Exhausted Quiz",
-            passing_score=40,
-            status=Status.PUBLISHED,
-            attempts_allowed=2,
-        )
-        Question.objects.create(quiz=self.quiz, text="Q1", marks=5)
-
-        self.instructor = _make_user("grantinstructor", UserModel.Roles.TEACHER)
-        self.other_teacher = _make_user("grantotherteacher", UserModel.Roles.TEACHER)
-        self.admin = _make_user("grantadmin", UserModel.Roles.ADMIN)
-        CourseInstructor.objects.create(course=self.course, instructor=self.instructor)
-
-        self.student = _make_user("grantstudent", UserModel.Roles.STUDENT)
-        Enrollment.objects.create(student=self.student, course=self.course, teacher=self.instructor)
-
-        for attempt_number in (1, 2):
-            attempt = QuizAttempt.objects.create(
-                quiz=self.quiz,
-                student=self.student,
-                attempt_number=attempt_number,
-                status=QuizAttempt.AttemptStatus.GRADED,
-                ended_at=timezone.now(),
-            )
-            QuizResult.objects.create(
-                attempt=attempt, score=Decimal("0"), percentage=Decimal("0.00"), is_passed=False
-            )
-
-        self.grant_url = reverse(
-            "quiz-grant-attempt", kwargs={"quiz_id": self.quiz.id, "student_id": self.student.id}
-        )
-        self.start_url = reverse("quiz-attempt-start", kwargs={"quiz_id": self.quiz.id})
-
-    def test_requires_authentication(self):
-        response = self.client.post(self.grant_url, {"reason": "Struggling, wants another shot"})
-
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_forbidden_for_non_instructor_teacher(self):
-        self.client.force_authenticate(user=self.other_teacher)
-
-        response = self.client.post(self.grant_url, {"reason": "Struggling, wants another shot"})
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_reason_is_required(self):
-        self.client.force_authenticate(user=self.instructor)
-
-        response = self.client.post(self.grant_url, {"reason": "   "})
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_student_is_blocked_before_a_grant(self):
-        self.client.force_authenticate(user=self.student)
-
-        response = self.client.post(self.start_url)
-
-        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
-
-    def test_instructor_can_grant_and_student_can_then_retry(self):
-        self.client.force_authenticate(user=self.instructor)
-
-        grant_response = self.client.post(
-            self.grant_url, {"reason": "Struggling with sentence structure, deserves another shot"}
-        )
-
-        self.assertEqual(grant_response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(grant_response.data["data"]["attempts_allowed"], 3)
-        self.assertEqual(grant_response.data["data"]["attempts_remaining"], 1)
-
-        self.client.force_authenticate(user=self.student)
-        start_response = self.client.post(self.start_url)
-
-        self.assertEqual(start_response.status_code, status.HTTP_201_CREATED)
-
-    def test_admin_can_grant_for_any_course(self):
-        self.client.force_authenticate(user=self.admin)
-
-        response = self.client.post(self.grant_url, {"reason": "Admin override for a struggling student"})
-
-        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-
-    def test_grant_reflected_in_student_quiz_list(self):
-        self.client.force_authenticate(user=self.instructor)
-        self.client.post(self.grant_url, {"reason": "Struggling, wants another shot"})
-
-        self.client.force_authenticate(user=self.student)
-        response = self.client.get(reverse("quiz-student-list"))
-
-        row = next(row for row in response.data["data"] if row["id"] == self.quiz.id)
-        self.assertEqual(row["attempts_allowed"], 3)
-
-
-class QuizSelfRetryViewTests(APITestCase):
-    """Task 18 (Phase 5) follow-up — the student's own self-service path
-    once they've exhausted every attempt on a quiz without passing: request
-    another attempt directly, without waiting on a teacher/admin grant."""
+class StartQuizAttemptViewRegenerationTests(APITestCase):
+    """Attempts are unlimited — the "path to continue improving" once a
+    student has failed a quiz repeatedly is simply to click Attempt Quiz
+    again; each attempt after the first regenerates a fresh AI question set
+    (see quizzes/tests/test_ai_generation.py for the generation logic
+    itself). This covers that a student can always keep going, and that the
+    module lock the client asked for ("fail twice -> module locks") clears
+    purely by passing, with no separate grant/self-retry step involved."""
 
     def setUp(self):
         self.category = Category.objects.create(name="Programming")
@@ -806,17 +747,15 @@ class QuizSelfRetryViewTests(APITestCase):
             title="Exhausted Quiz",
             passing_score=40,
             status=Status.PUBLISHED,
-            attempts_allowed=2,
         )
         Question.objects.create(quiz=self.quiz, text="Q1", marks=5)
 
-        self.student = _make_user("selfretrystudent", UserModel.Roles.STUDENT)
+        self.student = _make_user("regenstudent", UserModel.Roles.STUDENT)
         Enrollment.objects.create(student=self.student, course=self.course)
 
-        self.retry_url = reverse("quiz-self-retry", kwargs={"quiz_id": self.quiz.id})
         self.start_url = reverse("quiz-attempt-start", kwargs={"quiz_id": self.quiz.id})
 
-    def _fail_attempt(self, attempt_number):
+    def _fail_attempt(self, attempt_number, *, question=None):
         attempt = QuizAttempt.objects.create(
             quiz=self.quiz,
             student=self.student,
@@ -824,69 +763,29 @@ class QuizSelfRetryViewTests(APITestCase):
             status=QuizAttempt.AttemptStatus.GRADED,
             ended_at=timezone.now(),
         )
+        if question is not None:
+            Question.objects.filter(pk=question.pk).update(attempt=attempt)
         QuizResult.objects.create(
             attempt=attempt, score=Decimal("0"), percentage=Decimal("0.00"), is_passed=False
         )
         return attempt
 
-    def test_requires_authentication(self):
-        response = self.client.post(self.retry_url)
-
-        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
-
-    def test_rejected_while_attempts_remain(self):
-        self._fail_attempt(1)
-        self.client.force_authenticate(user=self.student)
-
-        response = self.client.post(self.retry_url)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_grants_one_attempt_once_exhausted(self):
+    @patch("quizzes.ai_generation.get_provider")
+    def test_can_keep_retrying_after_repeated_failures(self, mock_get_provider):
+        mock_get_provider.return_value = _stub_regeneration_provider()
         self._fail_attempt(1)
         self._fail_attempt(2)
         self.client.force_authenticate(user=self.student)
 
-        response = self.client.post(self.retry_url)
+        response = self.client.post(self.start_url)
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
-        self.assertEqual(response.data["data"]["attempts_allowed"], 3)
-        self.assertEqual(response.data["data"]["attempts_remaining"], 1)
+        self.assertEqual(response.data["data"]["attempt_number"], 3)
+        self.assertTrue(mock_get_provider.called)
 
-        start_response = self.client.post(self.start_url)
-        self.assertEqual(start_response.status_code, status.HTTP_201_CREATED)
-
-    def test_cannot_self_retry_again_without_using_the_granted_attempt(self):
-        self._fail_attempt(1)
-        self._fail_attempt(2)
-        self.client.force_authenticate(user=self.student)
-        self.client.post(self.retry_url)
-
-        second_response = self.client.post(self.retry_url)
-
-        self.assertEqual(second_response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_rejected_once_already_passed(self):
-        self._fail_attempt(1)
-        passing_attempt = QuizAttempt.objects.create(
-            quiz=self.quiz,
-            student=self.student,
-            attempt_number=2,
-            status=QuizAttempt.AttemptStatus.GRADED,
-            ended_at=timezone.now(),
-        )
-        QuizResult.objects.create(
-            attempt=passing_attempt, score=Decimal("5"), percentage=Decimal("100.00"), is_passed=True
-        )
-        self.client.force_authenticate(user=self.student)
-
-        response = self.client.post(self.retry_url)
-
-        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
-
-    def test_self_retry_unlocks_next_module_after_passing(self):
+    def test_module_unlocks_purely_by_passing_no_grant_needed(self):
         """The full flow the client asked for: fail twice -> module 2 locks ->
-        self-retry -> pass -> module 2 unlocks automatically."""
+        pass on a later attempt -> module 2 unlocks automatically."""
         next_quiz = Quiz.objects.create(
             course=self.course,
             module=self.module_2,
@@ -898,9 +797,6 @@ class QuizSelfRetryViewTests(APITestCase):
         self._fail_attempt(2)
 
         self.assertTrue(is_module_locked_helper(self.student, self.module_2))
-
-        self.client.force_authenticate(user=self.student)
-        self.client.post(self.retry_url)
 
         passing_attempt = QuizAttempt.objects.create(
             quiz=self.quiz,
@@ -914,6 +810,7 @@ class QuizSelfRetryViewTests(APITestCase):
         )
 
         self.assertFalse(is_module_locked_helper(self.student, self.module_2))
+        self.client.force_authenticate(user=self.student)
         next_start_response = self.client.post(
             reverse("quiz-attempt-start", kwargs={"quiz_id": next_quiz.id})
         )

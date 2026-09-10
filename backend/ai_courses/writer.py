@@ -107,6 +107,9 @@ def write_course_tree(normalized_plan, form_payload):
                     title=f"{module_plan['title']} — Quiz",
                     status=Status.DRAFT,
                     order=get_next_order(Quiz.objects.filter(module=module)),
+                    # So every AI-regenerated retry (quizzes/ai_generation.py) produces the
+                    # same question count the admin originally asked for.
+                    number_of_questions=form_payload["questions_per_quiz"],
                     short_answer_grading_mode=(
                         Quiz.ShortAnswerGradingMode.AI
                         if ai_grading

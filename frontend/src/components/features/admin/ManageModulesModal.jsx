@@ -554,7 +554,7 @@ function SortableQuizItem({
           <span className="text-stone-200">·</span>
           <span>{quiz.passing_score}% to pass</span>
           <span className="text-stone-200">·</span>
-          <span>{quiz.attempts_allowed} attempt{quiz.attempts_allowed === 1 ? "" : "s"}</span>
+          <span>{quiz.number_of_questions} question{quiz.number_of_questions === 1 ? "" : "s"}</span>
         </p>
       </div>
       <div className="flex items-center gap-1.5 shrink-0">

@@ -7,17 +7,16 @@ from common.models import Status
 from lessons.models import Lesson
 from modules.models import Module
 from quizzes.models import Quiz, QuizAttempt, QuizResult
-from quizzes.services import get_total_attempts_allowed
 
 from .models import CourseProgress, LearningActivity, LessonProgress, ModuleProgress
 
 # Task 18 (Phase 5) — a module-linked quiz failed this many times (with no
 # later pass) locks every module ordered after it. Matches the requirement
-# literally ("if a student fails a quiz twice"); a quiz's own
-# `attempts_allowed` (default 3, plus any per-student grants — see
-# quizzes.services.get_total_attempts_allowed) still governs whether the
-# student can keep retrying — this is a separate, additional gate, not a
-# replacement for it.
+# literally ("if a student fails a quiz twice"). Attempts on the blocking
+# quiz itself are unlimited — every retry regenerates a fresh AI question
+# set (quizzes.ai_generation) — so this lock is purely about pacing progress
+# past the module, never a dead end: the student can always keep retrying
+# the blocking quiz to clear it.
 MODULE_LOCK_FAILURE_THRESHOLD = 2
 
 
@@ -180,31 +179,17 @@ def get_module_lock_map(student, course):
         return {}
 
     attempts_used = QuizAttempt.objects.filter(student=student, quiz=blocking_quiz).count()
-    total_attempts_allowed = get_total_attempts_allowed(blocking_quiz, student)
-    attempts_remaining = max(0, total_attempts_allowed - attempts_used)
-    # Once attempts are exhausted, "retry the quiz" alone would be a dead
-    # end without also surfacing that a fresh attempt is one request away —
-    # see quizzes.services.request_self_service_retry.
-    if attempts_remaining <= 0:
-        reason = (
-            f"You've used all your attempts on \"{blocking_quiz.title}\" without passing. "
-            f"Review \"{blocking_quiz.module.title}\"'s lessons, then request another attempt "
-            "to try again and unlock the rest of the course."
-        )
-    else:
-        reason = (
-            f"You've failed \"{blocking_quiz.title}\" too many times to continue past "
-            f"\"{blocking_quiz.module.title}\". Review that module's lessons and retry the "
-            "quiz to unlock the rest of the course."
-        )
+    reason = (
+        f"You've failed \"{blocking_quiz.title}\" too many times to continue past "
+        f"\"{blocking_quiz.module.title}\". Review that module's lessons, then try again — "
+        "each retry gives you a freshly generated set of questions."
+    )
     lock_info = {
         "blocking_module_id": blocking_quiz.module_id,
         "blocking_module_title": blocking_quiz.module.title,
         "blocking_quiz_id": blocking_quiz.id,
         "blocking_quiz_title": blocking_quiz.title,
         "attempts_used": attempts_used,
-        "attempts_allowed": total_attempts_allowed,
-        "attempts_remaining": attempts_remaining,
         "reason": reason,
     }
 

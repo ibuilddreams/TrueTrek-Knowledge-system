@@ -311,6 +311,23 @@ class AssignmentOrderEntrySerializer(serializers.Serializer):
     order = serializers.IntegerField(min_value=1)
 
 
+class AssignmentTitleSuggestionRequestSerializer(serializers.Serializer):
+    module = serializers.IntegerField()
+    draft_title = serializers.CharField(
+        max_length=255, required=False, allow_blank=True, default="", trim_whitespace=True
+    )
+
+
+class AssignmentDescriptionSuggestionRequestSerializer(serializers.Serializer):
+    module = serializers.IntegerField()
+    title = serializers.CharField(
+        max_length=255, required=False, allow_blank=True, default="", trim_whitespace=True
+    )
+    draft_description = serializers.CharField(
+        max_length=2000, required=False, allow_blank=True, default="", trim_whitespace=True
+    )
+
+
 class AssignmentAttachmentOrderEntrySerializer(serializers.Serializer):
     attachment_id = serializers.IntegerField()
     order = serializers.IntegerField(min_value=1)

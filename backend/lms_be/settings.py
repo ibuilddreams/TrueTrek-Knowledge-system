@@ -167,6 +167,8 @@ REST_FRAMEWORK = {
         'advisor-chat': '15/minute',
         'ai-grading': '20/hour',
         'room-message-send': '60/minute',
+        'ai-quiz-regeneration': '10/hour',
+        'ai-content-suggestions': '30/minute',
     },
 }
 
@@ -279,6 +281,24 @@ DAILY_DRILL_REENGAGEMENT_REMINDER_INTERVAL_DAYS = int(
 # gives up and falls back (assignments: FAILED + retry button; quizzes: stays
 # PENDING_GRADING for manual grading).
 AI_GRADING_TIMEOUT_SECONDS = int(os.getenv('AI_GRADING_TIMEOUT_SECONDS', 75))
+
+# Quiz question regeneration (quizzes/ai_generation.py) — every attempt after
+# a student's first on a given quiz gets a freshly AI-generated question set
+# instead of repeating the original bank. One synchronous call for up to
+# ~20 questions of structured JSON on the fast AI_CHAT_MODEL, comparable in
+# size/latency to a single AI-graded submission — but kept deliberately well
+# under nginx's proxy_read_timeout (60s, deploy/nginx/truetrek.conf) rather
+# than reusing AI_GRADING_TIMEOUT_SECONDS (75s), which already exceeds that
+# ceiling. Uses the "don't retry a slow failure" heuristic (see
+# daily_drill/ai_generation.py), not ai_grading.py's "always retry once" —
+# that pattern is only safe there because grading's timeout budget is
+# separately generous; here it would risk pushing past the proxy ceiling.
+AI_QUIZ_REGENERATION_TIMEOUT_SECONDS = int(os.getenv('AI_QUIZ_REGENERATION_TIMEOUT_SECONDS', 40))
+
+# Title/description suggestions for the Add Assignment/Add Quiz modals
+# (common/ai_content_suggestions.py) — a live-typing UI call like advisor chat, not a background
+# job, so this stays short (15s) rather than reusing the heavier AI_QUIZ_REGENERATION_TIMEOUT_SECONDS.
+AI_CONTENT_SUGGESTION_TIMEOUT_SECONDS = int(os.getenv('AI_CONTENT_SUGGESTION_TIMEOUT_SECONDS', 15))
 
 LOGGING = {
     'version': 1,

@@ -21,7 +21,7 @@ class QuizAdmin(admin.ModelAdmin):
         "course",
         "status",
         "passing_score",
-        "attempts_allowed",
+        "number_of_questions",
         "time_limit_minutes",
         "order",
         "created_at",

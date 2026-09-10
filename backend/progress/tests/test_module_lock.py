@@ -8,7 +8,6 @@ from common.models import Status
 from courses.models import Category, Course
 from modules.models import Module
 from quizzes.models import Quiz, QuizAttempt, QuizResult
-from quizzes.services import grant_extra_quiz_attempt
 
 from ..services import get_module_lock_map, get_module_lock_info, is_module_locked
 
@@ -59,7 +58,6 @@ class ModuleLockMapTests(TestCase):
             title="Quiz 1",
             passing_score=40,
             status=Status.PUBLISHED,
-            attempts_allowed=5,
         )
         self.student = _make_student("lockstudent")
 
@@ -86,7 +84,6 @@ class ModuleLockMapTests(TestCase):
         self.assertEqual(lock_info["blocking_module_id"], self.module_1.id)
         self.assertEqual(lock_info["blocking_quiz_id"], self.quiz.id)
         self.assertEqual(lock_info["attempts_used"], 2)
-        self.assertEqual(lock_info["attempts_remaining"], 3)
 
     def test_lock_clears_once_the_quiz_is_later_passed(self):
         _record_attempt(self.student, self.quiz, is_passed=False, attempt_number=1)
@@ -148,37 +145,20 @@ class ModuleLockMapTests(TestCase):
         self.assertTrue(is_module_locked(self.student, self.module_2))
         self.assertFalse(is_module_locked(other_student, self.module_2))
 
-    def test_lock_info_reflects_a_granted_extra_attempt(self):
-        """A teacher/admin grant (Task 18's "path to continue improving")
-        raises the effective attempts_allowed/attempts_remaining shown in
-        the lock reason, without clearing the lock itself — the module only
-        unlocks once the student actually passes."""
-        exhausting_quiz = Quiz.objects.create(
-            course=self.course,
-            module=self.module_1,
-            title="Exhausting Quiz",
-            passing_score=40,
-            status=Status.PUBLISHED,
-            attempts_allowed=2,
-            order=2,
-        )
-        for attempt_number in (1, 2):
-            _record_attempt(self.student, exhausting_quiz, is_passed=False, attempt_number=attempt_number)
+    def test_lock_persists_across_further_failed_attempts_until_a_pass(self):
+        """Attempts are unlimited — there's no "exhausted" state to grant
+        extra attempts against anymore. A module stays locked no matter how
+        many more times the student fails the blocking quiz; only an actual
+        pass clears it (see test_lock_clears_once_the_quiz_is_later_passed)."""
+        _record_attempt(self.student, self.quiz, is_passed=False, attempt_number=1)
+        _record_attempt(self.student, self.quiz, is_passed=False, attempt_number=2)
 
         lock_info = get_module_lock_info(self.student, self.module_2)
-        self.assertEqual(lock_info["blocking_quiz_id"], exhausting_quiz.id)
-        self.assertEqual(lock_info["attempts_remaining"], 0)
+        self.assertEqual(lock_info["blocking_quiz_id"], self.quiz.id)
+        self.assertEqual(lock_info["attempts_used"], 2)
 
-        teacher = UserModel.objects.create_user(
-            username="grantteacher",
-            email="grantteacher@example.com",
-            password="StrongPass123!",
-            role=UserModel.Roles.TEACHER,
-            gender=UserModel.Gender.MALE,
-        )
-        grant_extra_quiz_attempt(exhausting_quiz, self.student, actor=teacher, reason="Deserves another try")
+        _record_attempt(self.student, self.quiz, is_passed=False, attempt_number=3)
 
-        updated_lock_info = get_module_lock_info(self.student, self.module_2)
-        self.assertEqual(updated_lock_info["attempts_allowed"], 3)
-        self.assertEqual(updated_lock_info["attempts_remaining"], 1)
-        self.assertTrue(is_module_locked(self.student, self.module_2), "grant alone must not clear the lock")
+        still_locked_info = get_module_lock_info(self.student, self.module_2)
+        self.assertEqual(still_locked_info["attempts_used"], 3)
+        self.assertTrue(is_module_locked(self.student, self.module_2))

@@ -19,6 +19,27 @@ export async function createQuiz(payload) {
   return backendClient.post("/quizzes/", payload);
 }
 
+// A few seconds above the backend's own single-attempt Gemini timeout
+// (settings.AI_CONTENT_SUGGESTION_TIMEOUT_SECONDS = 15s) — safety net for a
+// genuinely hung connection, not the primary timeout.
+const SUGGESTION_TIMEOUT_MS = 20000;
+
+export async function getQuizTitleSuggestions({ module, draftTitle = "" }) {
+  return backendClient.post(
+    "/quizzes/suggestions/title/",
+    { module, draft_title: draftTitle },
+    { timeoutMs: SUGGESTION_TIMEOUT_MS },
+  );
+}
+
+export async function getQuizDescriptionSuggestions({ module, title = "", draftDescription = "" }) {
+  return backendClient.post(
+    "/quizzes/suggestions/description/",
+    { module, title, draft_description: draftDescription },
+    { timeoutMs: SUGGESTION_TIMEOUT_MS },
+  );
+}
+
 export async function updateQuiz(id, payload) {
   return backendClient.patch(`/quizzes/${id}/`, payload);
 }
@@ -88,10 +109,6 @@ export async function getQuizStudentAttempts(quizId, studentId) {
   return backendClient.get(`/quizzes/${quizId}/students/${studentId}/attempts/`);
 }
 
-export async function grantQuizAttempt(quizId, studentId, payload) {
-  return backendClient.post(`/quizzes/${quizId}/students/${studentId}/grant-attempt/`, payload);
-}
-
 export async function getQuizAttemptDetail(attemptId) {
   return backendClient.get(`/quizzes/attempts/${attemptId}/detail/`);
 }
@@ -106,10 +123,6 @@ export async function retryQuizAnswerAiGrading(answerId) {
 
 export async function startQuizAttempt(quizId) {
   return backendClient.post(`/quizzes/${quizId}/attempts/`);
-}
-
-export async function requestQuizSelfRetry(quizId) {
-  return backendClient.post(`/quizzes/${quizId}/self-retry/`);
 }
 
 export async function submitQuizAttempt(attemptId, payload) {

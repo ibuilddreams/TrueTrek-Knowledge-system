@@ -1,8 +1,8 @@
 "use client";
 
 import { useMemo, useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { AlertTriangle, CheckCircle2, ListChecks, RefreshCw, Target, Trophy } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { AlertTriangle, CheckCircle2, ListChecks, Target, Trophy } from "lucide-react";
 import DataTable from "@/components/ui/DataTable";
 import Pagination from "@/components/ui/Pagination";
 import SearchBar from "@/components/ui/SearchBar";
@@ -11,22 +11,14 @@ import StatCard from "@/components/ui/StatCard";
 import StatusBadge from "@/components/ui/StatusBadge";
 import Modal from "@/components/ui/Modal";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import {
-  getQuizCourseProgress,
-  getQuizStudentAttempts,
-  getQuizzes,
-  grantQuizAttempt,
-} from "@/services/quizzesService";
+import { getQuizCourseProgress, getQuizStudentAttempts, getQuizzes } from "@/services/quizzesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatDateTime } from "@/lib/adminFormatters";
-import { toastError, toastSuccess } from "@/lib/toast";
 import { QUIZ_STATUS_OPTIONS, PAGE_SIZE, BULK_FETCH_SIZE } from "./progressConstants";
 import { formatSeconds, paginate } from "./progressUtils";
 import QuizAttemptDetailModal from "./QuizAttemptDetailModal";
-import GrantQuizAttemptModal from "./GrantQuizAttemptModal";
 
 export default function QuizProgressPanel({ courseId }) {
-  const queryClient = useQueryClient();
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, 300);
   const [quizFilter, setQuizFilter] = useState("");
@@ -34,7 +26,6 @@ export default function QuizProgressPanel({ courseId }) {
   const [page, setPage] = useState(1);
   const [attemptHistory, setAttemptHistory] = useState(null);
   const [viewingAttemptId, setViewingAttemptId] = useState(null);
-  const [grantingRow, setGrantingRow] = useState(null);
 
   const { data: quizzes = [] } = useQuery({
     queryKey: ["quizzes", { courseId }],
@@ -61,19 +52,6 @@ export default function QuizProgressPanel({ courseId }) {
       return response?.data || [];
     },
     enabled: Boolean(attemptHistory),
-  });
-
-  const grantAttemptMutation = useMutation({
-    mutationFn: ({ quizId, studentId, reason }) =>
-      grantQuizAttempt(quizId, studentId, { reason }),
-    onSuccess: (response) => {
-      toastSuccess(response?.message || "Extra attempt granted");
-      queryClient.invalidateQueries({ queryKey: ["quiz-course-progress", courseId] });
-      setGrantingRow(null);
-    },
-    onError: (error) => {
-      toastError(getApiErrorMessage(error, "Unable to grant an extra attempt."));
-    },
   });
 
   const stats = progressQuery.data?.stats;
@@ -132,16 +110,7 @@ export default function QuizProgressPanel({ courseId }) {
     {
       key: "attempts_count",
       header: "Attempts",
-      render: (row) => (
-        <span>
-          {row.attempts_count}/{row.attempts_allowed}
-          {row.attempts_granted > 0 && (
-            <span className="ml-1.5 text-[10px] font-mono text-amber-600" title="Extra attempts granted">
-              (+{row.attempts_granted})
-            </span>
-          )}
-        </span>
-      ),
+      render: (row) => <span>{row.attempts_count}</span>,
     },
     {
       key: "time_taken_seconds",
@@ -153,17 +122,6 @@ export default function QuizProgressPanel({ courseId }) {
       header: "",
       render: (row) => (
         <div className="flex items-center gap-3 justify-end">
-          {row.status === "FAILED" && row.attempts_count >= row.attempts_allowed && (
-            <button
-              type="button"
-              onClick={() => setGrantingRow(row)}
-              className="inline-flex items-center gap-1 text-xs font-mono font-semibold text-rose-700 hover:text-rose-900 transition cursor-pointer"
-              title="Grant this student an extra attempt on this quiz"
-            >
-              <RefreshCw className="w-3 h-3" />
-              Grant Attempt
-            </button>
-          )}
           {row.attempts_count > 0 ? (
             <button
               type="button"
@@ -328,20 +286,6 @@ export default function QuizProgressPanel({ courseId }) {
         attemptId={viewingAttemptId}
         onClose={() => setViewingAttemptId(null)}
         courseId={courseId}
-      />
-
-      <GrantQuizAttemptModal
-        isOpen={Boolean(grantingRow)}
-        onClose={() => setGrantingRow(null)}
-        row={grantingRow}
-        isSubmitting={grantAttemptMutation.isPending}
-        onConfirm={(reason) =>
-          grantAttemptMutation.mutate({
-            quizId: grantingRow.quiz.id,
-            studentId: grantingRow.student.id,
-            reason,
-          })
-        }
       />
     </div>
   );
