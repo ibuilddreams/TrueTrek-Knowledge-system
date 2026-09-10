@@ -23,7 +23,9 @@ class Quiz(BaseModel):
     passing_score = models.PositiveIntegerField(default=40)
     time_limit_minutes = models.PositiveIntegerField(default=0)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
-    attempts_allowed = models.PositiveIntegerField(default=3)
+    # How many questions belong to a single attempt: the original quiz's authored/AI-course
+    # template set, and every AI-regenerated retry (see Question.attempt below).
+    number_of_questions = models.PositiveIntegerField(default=10, validators=[MinValueValidator(1)])
     available_from = models.DateTimeField(null=True, blank=True)
     available_until = models.DateTimeField(null=True, blank=True)
     order = models.PositiveIntegerField(default=0)
@@ -57,6 +59,13 @@ class Question(BaseModel):
         SHORT_ANSWER = "SHORT_ANSWER", "Short Answer"
 
     quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="questions")
+    # NULL = template question (authored by a teacher/admin, or written by AI course
+    # generation) — always what attempt #1 serves. Non-NULL = ephemeral, generated for and
+    # owned by exactly this one attempt (AI-regenerated retry), never reused by another
+    # attempt or student. Lazy string ref since QuizAttempt is declared later in this file.
+    attempt = models.ForeignKey(
+        "quizzes.QuizAttempt", on_delete=models.CASCADE, related_name="questions", null=True, blank=True
+    )
     text = models.TextField()
     question_type = models.CharField(max_length=20, choices=QuestionType.choices, default=QuestionType.MCQ)
     marks = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
@@ -142,30 +151,3 @@ class QuizResult(BaseModel):
 
     def __str__(self):
         return f"{self.attempt} result"
-
-
-class QuizAttemptGrant(BaseModel):
-    """Task 18 (Phase 5) — an explicit extra attempt a teacher/admin grants
-    to one student on one quiz, once that student has exhausted
-    `Quiz.attempts_allowed` without passing (progress.services'
-    module-lock "path to continue improving"). Deliberately per-student:
-    raising `attempts_allowed` itself would hand every enrolled student
-    more attempts, not just the one who's stuck. Additive and append-only —
-    granting again adds another row rather than editing an existing one, so
-    there's a natural audit trail of who granted what and why."""
-
-    quiz = models.ForeignKey(Quiz, on_delete=models.CASCADE, related_name="attempt_grants")
-    student = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="quiz_attempt_grants"
-    )
-    extra_attempts = models.PositiveIntegerField(default=1, validators=[MinValueValidator(1)])
-    granted_by = models.ForeignKey(
-        settings.AUTH_USER_MODEL, on_delete=models.SET_NULL, null=True, related_name="+"
-    )
-    reason = models.TextField()
-
-    class Meta:
-        ordering = ["-created_at"]
-
-    def __str__(self):
-        return f"{self.student} +{self.extra_attempts} on {self.quiz}"

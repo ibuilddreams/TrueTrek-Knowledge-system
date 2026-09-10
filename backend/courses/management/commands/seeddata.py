@@ -1712,7 +1712,7 @@ class Command(BaseCommand):
                 "description": f"10-question assessment covering {module_title}.",
                 "passing_score": 70,
                 "time_limit_minutes": 20,
-                "attempts_allowed": 3,
+                "number_of_questions": len(questions) or 10,
                 "status": Status.PUBLISHED,
                 "order": get_next_order(Quiz.objects.filter(module=module)),
             },

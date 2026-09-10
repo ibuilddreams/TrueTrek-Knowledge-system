@@ -1,12 +1,19 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, HelpCircle, ListChecks, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import StatusBadge from "@/components/ui/StatusBadge";
+import AiSuggestionsPanel from "@/components/ui/AiSuggestionsPanel";
 import QuizQuestionsModal from "@/components/features/admin/QuizQuestionsModal";
-import { createQuiz, updateQuiz } from "@/services/quizzesService";
+import {
+  createQuiz,
+  getQuizDescriptionSuggestions,
+  getQuizTitleSuggestions,
+  updateQuiz,
+} from "@/services/quizzesService";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
@@ -16,7 +23,7 @@ const INITIAL_FORM = {
   description: "",
   passing_score: "40",
   time_limit_minutes: "0",
-  attempts_allowed: "3",
+  number_of_questions: "10",
   available_from: "",
   available_until: "",
   order: "1",
@@ -79,6 +86,69 @@ export default function AddQuizModal({ isOpen, onClose, modules = [], defaultMod
   const [fieldErrors, setFieldErrors] = useState({});
   const [isQuestionsModalOpen, setIsQuestionsModalOpen] = useState(false);
 
+  const [titleSuggestionsDismissed, setTitleSuggestionsDismissed] = useState(false);
+  const [appliedTitleSuggestion, setAppliedTitleSuggestion] = useState(null);
+  const debouncedTitle = useDebouncedValue(form.title.trim(), 500);
+
+  useEffect(() => {
+    setTitleSuggestionsDismissed(false);
+  }, [debouncedTitle]);
+
+  const showTitleSuggestions =
+    isOpen &&
+    !isEditMode &&
+    Boolean(form.module) &&
+    debouncedTitle.length >= 3 &&
+    debouncedTitle !== appliedTitleSuggestion &&
+    !titleSuggestionsDismissed;
+
+  const titleSuggestionsQuery = useQuery({
+    queryKey: ["quiz-title-suggestions", form.module, debouncedTitle],
+    queryFn: () => getQuizTitleSuggestions({ module: Number(form.module), draftTitle: debouncedTitle }),
+    enabled: showTitleSuggestions,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const handleSelectTitleSuggestion = (suggestion) => {
+    setForm((prev) => ({ ...prev, title: suggestion }));
+    setAppliedTitleSuggestion(suggestion);
+  };
+
+  const [descriptionSuggestionsDismissed, setDescriptionSuggestionsDismissed] = useState(false);
+  const [appliedDescriptionSuggestion, setAppliedDescriptionSuggestion] = useState(null);
+  const debouncedDescription = useDebouncedValue(form.description.trim(), 500);
+
+  useEffect(() => {
+    setDescriptionSuggestionsDismissed(false);
+  }, [debouncedDescription]);
+
+  const showDescriptionSuggestions =
+    isOpen &&
+    !isEditMode &&
+    Boolean(form.module) &&
+    debouncedDescription.length >= 3 &&
+    debouncedDescription !== appliedDescriptionSuggestion &&
+    !descriptionSuggestionsDismissed;
+
+  const descriptionSuggestionsQuery = useQuery({
+    queryKey: ["quiz-description-suggestions", form.module, form.title, debouncedDescription],
+    queryFn: () =>
+      getQuizDescriptionSuggestions({
+        module: Number(form.module),
+        title: form.title.trim(),
+        draftDescription: debouncedDescription,
+      }),
+    enabled: showDescriptionSuggestions,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const handleSelectDescriptionSuggestion = (suggestion) => {
+    setForm((prev) => ({ ...prev, description: suggestion }));
+    setAppliedDescriptionSuggestion(suggestion);
+  };
+
   const createQuizMutation = useMutation({
     mutationFn: (payload) => createQuiz(payload),
     onSuccess: (_data, payload) => {
@@ -104,7 +174,7 @@ export default function AddQuizModal({ isOpen, onClose, modules = [], defaultMod
         description: quiz.description || "",
         passing_score: String(quiz.passing_score ?? 40),
         time_limit_minutes: String(quiz.time_limit_minutes ?? 0),
-        attempts_allowed: String(quiz.attempts_allowed ?? 3),
+        number_of_questions: String(quiz.number_of_questions ?? 10),
         available_from: toDatetimeLocalValue(quiz.available_from),
         available_until: toDatetimeLocalValue(quiz.available_until),
         order: String(quiz.order ?? 1),
@@ -120,6 +190,10 @@ export default function AddQuizModal({ isOpen, onClose, modules = [], defaultMod
       });
     }
     setFieldErrors({});
+    setTitleSuggestionsDismissed(false);
+    setAppliedTitleSuggestion(null);
+    setDescriptionSuggestionsDismissed(false);
+    setAppliedDescriptionSuggestion(null);
   }, [isOpen, defaultModuleId, quiz, modules]);
 
   const handleClose = () => {
@@ -160,9 +234,14 @@ export default function AddQuizModal({ isOpen, onClose, modules = [], defaultMod
       errors.time_limit_minutes = "Time limit must be 0 or a whole number of minutes.";
     }
 
-    const attemptsAllowed = Number(form.attempts_allowed);
-    if (!Number.isFinite(attemptsAllowed) || attemptsAllowed < 1 || !Number.isInteger(attemptsAllowed)) {
-      errors.attempts_allowed = "Attempts allowed must be at least 1.";
+    const numberOfQuestions = Number(form.number_of_questions);
+    if (
+      !Number.isFinite(numberOfQuestions) ||
+      numberOfQuestions < 1 ||
+      numberOfQuestions > 20 ||
+      !Number.isInteger(numberOfQuestions)
+    ) {
+      errors.number_of_questions = "Number of questions must be a whole number between 1 and 20.";
     }
 
     if (form.available_from && form.available_until) {
@@ -196,7 +275,7 @@ export default function AddQuizModal({ isOpen, onClose, modules = [], defaultMod
       description: form.description.trim(),
       passing_score: Number(form.passing_score),
       time_limit_minutes: Number(form.time_limit_minutes),
-      attempts_allowed: Number(form.attempts_allowed),
+      number_of_questions: Number(form.number_of_questions),
       available_from: toIsoString(form.available_from),
       available_until: toIsoString(form.available_until),
       order: Number(form.order),
@@ -274,6 +353,18 @@ export default function AddQuizModal({ isOpen, onClose, modules = [], defaultMod
             {fieldErrors.title && <p className={ERROR_CLASS}>{fieldErrors.title}</p>}
           </div>
 
+          {showTitleSuggestions && (
+            <AiSuggestionsPanel
+              heading="Title Suggestions"
+              suggestions={titleSuggestionsQuery.data?.data?.suggestions || []}
+              isLoading={titleSuggestionsQuery.isFetching}
+              isError={titleSuggestionsQuery.isError}
+              onRetry={() => titleSuggestionsQuery.refetch()}
+              onSelect={handleSelectTitleSuggestion}
+              onDismiss={() => setTitleSuggestionsDismissed(true)}
+            />
+          )}
+
           <div>
             <label className={LABEL_CLASS}>Description</label>
             <textarea
@@ -286,6 +377,19 @@ export default function AddQuizModal({ isOpen, onClose, modules = [], defaultMod
             />
             {fieldErrors.description && <p className={ERROR_CLASS}>{fieldErrors.description}</p>}
           </div>
+
+          {showDescriptionSuggestions && (
+            <AiSuggestionsPanel
+              heading="Description Suggestions"
+              suggestions={descriptionSuggestionsQuery.data?.data?.suggestions || []}
+              isLoading={descriptionSuggestionsQuery.isFetching}
+              isError={descriptionSuggestionsQuery.isError}
+              onRetry={() => descriptionSuggestionsQuery.refetch()}
+              onSelect={handleSelectDescriptionSuggestion}
+              onDismiss={() => setDescriptionSuggestionsDismissed(true)}
+              multiline
+            />
+          )}
 
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
             <div>
@@ -316,19 +420,26 @@ export default function AddQuizModal({ isOpen, onClose, modules = [], defaultMod
               {fieldErrors.time_limit_minutes && <p className={ERROR_CLASS}>{fieldErrors.time_limit_minutes}</p>}
             </div>
             <div>
-              <label className={LABEL_CLASS}>Attempts Allowed</label>
+              <label className={LABEL_CLASS}>Number of Questions</label>
               <input
                 type="number"
                 min="1"
+                max="20"
                 step="1"
-                value={form.attempts_allowed}
-                onChange={updateField("attempts_allowed")}
+                value={form.number_of_questions}
+                onChange={updateField("number_of_questions")}
                 disabled={isSubmitting}
                 className={FIELD_CLASS}
               />
-              {fieldErrors.attempts_allowed && <p className={ERROR_CLASS}>{fieldErrors.attempts_allowed}</p>}
+              {fieldErrors.number_of_questions && (
+                <p className={ERROR_CLASS}>{fieldErrors.number_of_questions}</p>
+              )}
             </div>
           </div>
+          <p className="-mt-2 text-xs font-mono text-stone-400 tracking-wider">
+            How many questions each attempt gets — the original quiz and every AI-regenerated retry all use this
+            count.
+          </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>

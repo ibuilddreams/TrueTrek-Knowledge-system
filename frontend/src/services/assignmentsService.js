@@ -12,6 +12,27 @@ export async function createAssignment(payload) {
   return backendClient.post("/assignments/", payload);
 }
 
+// A few seconds above the backend's own single-attempt Gemini timeout
+// (settings.AI_CONTENT_SUGGESTION_TIMEOUT_SECONDS = 15s) — safety net for a
+// genuinely hung connection, not the primary timeout.
+const SUGGESTION_TIMEOUT_MS = 20000;
+
+export async function getAssignmentTitleSuggestions({ module, draftTitle = "" }) {
+  return backendClient.post(
+    "/assignments/suggestions/title/",
+    { module, draft_title: draftTitle },
+    { timeoutMs: SUGGESTION_TIMEOUT_MS },
+  );
+}
+
+export async function getAssignmentDescriptionSuggestions({ module, title = "", draftDescription = "" }) {
+  return backendClient.post(
+    "/assignments/suggestions/description/",
+    { module, title, draft_description: draftDescription },
+    { timeoutMs: SUGGESTION_TIMEOUT_MS },
+  );
+}
+
 export async function updateAssignment(id, payload) {
   return backendClient.patch(`/assignments/${id}/`, payload);
 }

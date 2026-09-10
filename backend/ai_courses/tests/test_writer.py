@@ -68,6 +68,7 @@ class WriteCourseTreeTests(TestCase):
             "amount": Decimal("0"),
             "instructors": [self.teacher],
             "weeks_between_modules": 2,
+            "questions_per_quiz": 5,
         }
         payload.update(overrides)
         return payload

@@ -6,6 +6,7 @@ from .views import (
     AssignmentAttachmentListCreateView,
     AssignmentAttachmentOrderView,
     AssignmentCourseProgressListView,
+    AssignmentDescriptionSuggestionsView,
     AssignmentDetailView,
     AssignmentGradeSubmissionView,
     AssignmentListCreateView,
@@ -14,11 +15,22 @@ from .views import (
     AssignmentPublishView,
     AssignmentSubmissionListView,
     AssignmentSubmitView,
+    AssignmentTitleSuggestionsView,
     StudentAssignmentListView,
 )
 
 urlpatterns = [
     path("student/", StudentAssignmentListView.as_view(), name="assignment-student-list"),
+    path(
+        "suggestions/title/",
+        AssignmentTitleSuggestionsView.as_view(),
+        name="assignment-title-suggestions",
+    ),
+    path(
+        "suggestions/description/",
+        AssignmentDescriptionSuggestionsView.as_view(),
+        name="assignment-description-suggestions",
+    ),
     path(
         "course/<int:course_id>/progress/",
         AssignmentCourseProgressListView.as_view(),

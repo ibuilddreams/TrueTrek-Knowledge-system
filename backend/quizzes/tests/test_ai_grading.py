@@ -66,7 +66,6 @@ def _make_ai_quiz(course, module=None):
         title="Mixed Quiz",
         status=Status.PUBLISHED,
         passing_score=40,
-        attempts_allowed=3,
         short_answer_grading_mode=Quiz.ShortAnswerGradingMode.AI,
     )
     mcq = Question.objects.create(quiz=quiz, text="2 + 2 = ?", question_type=Question.QuestionType.MCQ, marks=5, order=1)
