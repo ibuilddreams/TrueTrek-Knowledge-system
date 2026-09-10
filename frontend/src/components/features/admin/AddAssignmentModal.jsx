@@ -1,15 +1,19 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, ClipboardCheck, FileText, Paperclip, Plus, Trash2, Upload, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
+import AiSuggestionsPanel from "@/components/ui/AiSuggestionsPanel";
 import AssignmentAttachmentsModal from "@/components/features/admin/AssignmentAttachmentsModal";
 import {
   createAssignment,
+  getAssignmentDescriptionSuggestions,
+  getAssignmentTitleSuggestions,
   updateAssignment,
   uploadAssignmentAttachment,
 } from "@/services/assignmentsService";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
@@ -121,6 +125,70 @@ export default function AddAssignmentModal({
   const [pendingAttachments, setPendingAttachments] = useState([]);
   const pendingAttachmentInputRef = useRef(null);
 
+  const [titleSuggestionsDismissed, setTitleSuggestionsDismissed] = useState(false);
+  const [appliedTitleSuggestion, setAppliedTitleSuggestion] = useState(null);
+  const debouncedTitle = useDebouncedValue(form.title.trim(), 500);
+
+  useEffect(() => {
+    setTitleSuggestionsDismissed(false);
+  }, [debouncedTitle]);
+
+  const showTitleSuggestions =
+    isOpen &&
+    !isEditMode &&
+    Boolean(form.module) &&
+    debouncedTitle.length >= 3 &&
+    debouncedTitle !== appliedTitleSuggestion &&
+    !titleSuggestionsDismissed;
+
+  const titleSuggestionsQuery = useQuery({
+    queryKey: ["assignment-title-suggestions", form.module, debouncedTitle],
+    queryFn: () =>
+      getAssignmentTitleSuggestions({ module: Number(form.module), draftTitle: debouncedTitle }),
+    enabled: showTitleSuggestions,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const handleSelectTitleSuggestion = (suggestion) => {
+    setForm((prev) => ({ ...prev, title: suggestion }));
+    setAppliedTitleSuggestion(suggestion);
+  };
+
+  const [descriptionSuggestionsDismissed, setDescriptionSuggestionsDismissed] = useState(false);
+  const [appliedDescriptionSuggestion, setAppliedDescriptionSuggestion] = useState(null);
+  const debouncedDescription = useDebouncedValue(form.description.trim(), 500);
+
+  useEffect(() => {
+    setDescriptionSuggestionsDismissed(false);
+  }, [debouncedDescription]);
+
+  const showDescriptionSuggestions =
+    isOpen &&
+    !isEditMode &&
+    Boolean(form.module) &&
+    debouncedDescription.length >= 3 &&
+    debouncedDescription !== appliedDescriptionSuggestion &&
+    !descriptionSuggestionsDismissed;
+
+  const descriptionSuggestionsQuery = useQuery({
+    queryKey: ["assignment-description-suggestions", form.module, form.title, debouncedDescription],
+    queryFn: () =>
+      getAssignmentDescriptionSuggestions({
+        module: Number(form.module),
+        title: form.title.trim(),
+        draftDescription: debouncedDescription,
+      }),
+    enabled: showDescriptionSuggestions,
+    retry: false,
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const handleSelectDescriptionSuggestion = (suggestion) => {
+    setForm((prev) => ({ ...prev, description: suggestion }));
+    setAppliedDescriptionSuggestion(suggestion);
+  };
+
   const createAssignmentMutation = useMutation({
     mutationFn: (payload) => createAssignment(payload),
     onSuccess: (_data, payload) => {
@@ -171,6 +239,10 @@ export default function AddAssignmentModal({
     }
     setFieldErrors({});
     setPendingAttachments([]);
+    setTitleSuggestionsDismissed(false);
+    setAppliedTitleSuggestion(null);
+    setDescriptionSuggestionsDismissed(false);
+    setAppliedDescriptionSuggestion(null);
   }, [isOpen, defaultModuleId, assignment, modules]);
 
   const addCriterion = () => setRubricCriteria((prev) => [...prev, { ...EMPTY_CRITERION }]);
@@ -356,6 +428,18 @@ export default function AddAssignmentModal({
           {fieldErrors.title && <p className={ERROR_CLASS}>{fieldErrors.title}</p>}
         </div>
 
+        {showTitleSuggestions && (
+          <AiSuggestionsPanel
+            heading="Title Suggestions"
+            suggestions={titleSuggestionsQuery.data?.data?.suggestions || []}
+            isLoading={titleSuggestionsQuery.isFetching}
+            isError={titleSuggestionsQuery.isError}
+            onRetry={() => titleSuggestionsQuery.refetch()}
+            onSelect={handleSelectTitleSuggestion}
+            onDismiss={() => setTitleSuggestionsDismissed(true)}
+          />
+        )}
+
         <div>
           <label className={LABEL_CLASS}>Description</label>
           <textarea
@@ -368,6 +452,19 @@ export default function AddAssignmentModal({
           />
           {fieldErrors.description && <p className={ERROR_CLASS}>{fieldErrors.description}</p>}
         </div>
+
+        {showDescriptionSuggestions && (
+          <AiSuggestionsPanel
+            heading="Description Suggestions"
+            suggestions={descriptionSuggestionsQuery.data?.data?.suggestions || []}
+            isLoading={descriptionSuggestionsQuery.isFetching}
+            isError={descriptionSuggestionsQuery.isError}
+            onRetry={() => descriptionSuggestionsQuery.refetch()}
+            onSelect={handleSelectDescriptionSuggestion}
+            onDismiss={() => setDescriptionSuggestionsDismissed(true)}
+            multiline
+          />
+        )}
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>

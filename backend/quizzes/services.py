@@ -2,14 +2,14 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.db import transaction
-from django.db.models import Sum
 from django.utils import timezone
 
 from assignments.models import AssignmentSubmission
 from common.models import Status
 from enrollments.models import Enrollment
 
-from .models import Choice, Question, Quiz, QuizAnswer, QuizAttempt, QuizAttemptGrant, QuizResult
+from .ai_generation import QuizRegenerationError, generate_quiz_questions, persist_attempt_questions
+from .models import Choice, Question, Quiz, QuizAnswer, QuizAttempt, QuizResult
 
 # Grace window after a timed quiz's deadline before an untouched IN_PROGRESS attempt is
 # auto-finalized as EXPIRED — covers the last autosave/submit round-trip landing late.
@@ -43,76 +43,17 @@ class QuestionReorderError(Exception):
     pass
 
 
-class QuizAttemptGrantError(Exception):
-    pass
-
-
-def get_extra_attempts_map(quiz_ids, student_ids=None):
-    """{(quiz_id, student_id): total_extra_attempts} for every
-    QuizAttemptGrant matching the given quizzes (optionally scoped to
-    specific students) — see QuizAttemptGrant. One query for a whole page
-    of rows rather than one per (quiz, student) pair."""
-    queryset = QuizAttemptGrant.objects.filter(quiz_id__in=quiz_ids)
-    if student_ids is not None:
-        queryset = queryset.filter(student_id__in=student_ids)
-    rows = queryset.values("quiz_id", "student_id").annotate(total=Sum("extra_attempts"))
-    return {(row["quiz_id"], row["student_id"]): row["total"] for row in rows}
-
-
-def get_total_attempts_allowed(quiz, student):
-    """`Quiz.attempts_allowed` plus any extra attempts a teacher/admin has
-    granted this specific student on this specific quiz — the effective cap
-    `start_quiz_attempt` enforces and every student/teacher-facing view
-    displays."""
-    extra = get_extra_attempts_map([quiz.id], [student.id]).get((quiz.id, student.id), 0)
-    return quiz.attempts_allowed + extra
-
-
-def grant_extra_quiz_attempt(quiz, student, actor, extra_attempts=1, reason=""):
-    reason = (reason or "").strip()
-    if not reason:
-        raise QuizAttemptGrantError("A reason is required to grant an extra attempt.")
-    return QuizAttemptGrant.objects.create(
-        quiz=quiz, student=student, extra_attempts=extra_attempts, granted_by=actor, reason=reason
-    )
-
-
-# Task 18 (Phase 5) follow-up — the student's own self-service counterpart to
-# grant_extra_quiz_attempt (which needs a teacher/admin). Reused as the fixed,
-# system-authored `reason` on a self-requested QuizAttemptGrant, so the
-# resulting audit-trail row still reads sensibly next to a teacher's
-# hand-written one — the two are told apart by `granted_by == student`.
-SELF_SERVICE_RETRY_REASON = (
-    "Self-service retry — student requested another attempt after exhausting "
-    "attempts_allowed without passing."
-)
-
-
-def request_self_service_retry(quiz, student):
-    """A student who has used every attempt on `quiz` without passing can
-    request exactly one more themselves, instead of waiting on a teacher —
-    the "review the module's lessons, then retry and pass to unlock the
-    next module" loop the client asked for is only possible if the student
-    can actually get a new attempt on their own once attempts_allowed runs
-    out. Deliberately uncapped (no "only N self-retries ever" limit): the
-    eligibility check below already self-throttles it, since granting raises
-    the effective total by exactly 1, so an immediate second call fails
-    until the student actually spends that attempt (i.e. really re-attempts
-    the quiz) — there is no way to bank up free attempts without attempting."""
-    attempts_used = QuizAttempt.objects.filter(student=student, quiz=quiz).count()
-    total_attempts_allowed = get_total_attempts_allowed(quiz, student)
-
-    if attempts_used < total_attempts_allowed:
-        raise QuizAttemptError("You still have attempts remaining on this quiz — use those first.")
-
-    if QuizResult.objects.filter(
-        attempt__student=student, attempt__quiz=quiz, is_passed=True
-    ).exists():
-        raise QuizAttemptError("You've already passed this quiz.")
-
-    return grant_extra_quiz_attempt(
-        quiz, student, actor=student, extra_attempts=1, reason=SELF_SERVICE_RETRY_REASON
-    )
+def get_attempt_questions(attempt):
+    """The exact question set this attempt was served: the shared template
+    (attempt=NULL — authored by a teacher/admin, or written by AI course
+    generation) for attempt #1, or this attempt's own AI-regenerated,
+    attempt-scoped set for attempt #2+. Relies on the invariant that
+    attempt_number == 1 iff this is the very first QuizAttempt for this
+    (student, quiz) pair — the only place attempt_number is assigned is
+    start_quiz_attempt() below, which preserves it."""
+    if attempt.attempt_number == 1:
+        return Question.objects.filter(quiz_id=attempt.quiz_id, attempt__isnull=True).order_by("order")
+    return Question.objects.filter(attempt=attempt).order_by("order")
 
 
 def get_student_quizzes(student):
@@ -142,8 +83,6 @@ def get_student_quizzes(student):
         if attempt.quiz_id not in latest_attempt_map:
             latest_attempt_map[attempt.quiz_id] = attempt
 
-    extra_attempts_map = get_extra_attempts_map(quiz_ids, [student.id])
-
     now = timezone.now()
     results = []
     for quiz in quizzes:
@@ -162,7 +101,7 @@ def get_student_quizzes(student):
                 "description": quiz.description,
                 "passing_score": quiz.passing_score,
                 "time_limit_minutes": quiz.time_limit_minutes,
-                "attempts_allowed": quiz.attempts_allowed + extra_attempts_map.get((quiz.id, student.id), 0),
+                "number_of_questions": quiz.number_of_questions,
                 "attempts_used": attempt_count_map.get(quiz.id, 0),
                 "short_answer_grading_mode": quiz.short_answer_grading_mode,
                 "available_from": quiz.available_from,
@@ -200,14 +139,9 @@ def get_student_quiz_attempts(student):
     attempts = list(
         QuizAttempt.objects.filter(student=student, quiz__course_id__in=course_ids)
         .select_related("quiz__course", "quiz__module", "result")
-        .prefetch_related("quiz__questions")
         .order_by("-started_at")
     )
     finalize_stale_attempts(attempts)
-
-    extra_attempts_map = get_extra_attempts_map(
-        list({attempt.quiz_id for attempt in attempts}), [student.id]
-    )
 
     results = []
     for attempt in attempts:
@@ -237,13 +171,12 @@ def get_student_quiz_attempts(student):
                 if quiz.module_id
                 else None,
                 "attempt_number": attempt.attempt_number,
-                "attempts_allowed": quiz.attempts_allowed + extra_attempts_map.get((quiz.id, student.id), 0),
                 "status": attempt.status,
                 "started_at": attempt.started_at,
                 "ended_at": attempt.ended_at,
                 "time_taken_seconds": time_taken_seconds,
                 "score": float(result.score) if result else None,
-                "total_marks": _quiz_total_marks(quiz),
+                "total_marks": _quiz_total_marks(attempt),
                 "percentage": float(result.percentage) if result else None,
                 "is_passed": result.is_passed if result else None,
             }
@@ -252,7 +185,7 @@ def get_student_quiz_attempts(student):
 
 
 def get_quiz_attempt_detail(attempt):
-    questions = attempt.quiz.questions.prefetch_related("choices").order_by("order")
+    questions = get_attempt_questions(attempt).prefetch_related("choices")
     answers_map = {
         answer.question_id: answer
         for answer in attempt.answers.select_related("selected_choice", "question")
@@ -313,7 +246,7 @@ def get_quiz_attempt_detail(attempt):
             else None
         ),
         "score": float(result.score) if result else None,
-        "total_marks": _quiz_total_marks(attempt.quiz),
+        "total_marks": _quiz_total_marks(attempt),
         "percentage": float(result.percentage) if result else None,
         "is_passed": result.is_passed if result else None,
         "questions": questions_data,
@@ -419,7 +352,7 @@ def publish_quiz(quiz):
     if quiz.status == Status.PUBLISHED:
         return quiz
 
-    questions = list(quiz.questions.prefetch_related("choices"))
+    questions = list(quiz.questions.filter(attempt__isnull=True).prefetch_related("choices"))
     if not questions:
         raise QuizPublishError("A quiz must have at least one question before it can be published.")
 
@@ -515,6 +448,12 @@ def get_attempt_saved_answers(attempt):
 
 
 def start_quiz_attempt(student, quiz):
+    """Attempts are unlimited. Attempt #1 always serves the quiz's template
+    question set (attempt=NULL). Every attempt after that gets a brand-new,
+    AI-regenerated question set scoped to this one attempt — generated
+    *before* the QuizAttempt row is created (see generate_quiz_questions),
+    so a failed AI call leaves zero residue: no attempt, no questions, the
+    student can simply click Attempt Quiz again."""
     if quiz.status != Status.PUBLISHED:
         raise QuizAttemptError("This quiz is not currently published.")
 
@@ -536,29 +475,32 @@ def start_quiz_attempt(student, quiz):
     if in_progress is not None:
         return in_progress, False
 
-    attempts_used = len(existing_attempts)
-    total_attempts_allowed = get_total_attempts_allowed(quiz, student)
-    if attempts_used >= total_attempts_allowed:
-        raise QuizAttemptError(
-            f"You have used all {total_attempts_allowed} allowed attempts for this quiz."
-        )
+    next_attempt_number = len(existing_attempts) + 1
 
-    attempt = QuizAttempt.objects.create(
-        student=student, quiz=quiz, attempt_number=attempts_used + 1
-    )
+    if next_attempt_number == 1:
+        attempt = QuizAttempt.objects.create(student=student, quiz=quiz, attempt_number=1)
+        return attempt, True
+
+    # May raise QuizRegenerationError — nothing persisted yet if it does.
+    question_dicts = generate_quiz_questions(quiz)
+    with transaction.atomic():
+        attempt = QuizAttempt.objects.create(
+            student=student, quiz=quiz, attempt_number=next_attempt_number
+        )
+        persist_attempt_questions(attempt, question_dicts)
     return attempt, True
 
 
-def _quiz_total_marks(quiz):
+def _quiz_total_marks(attempt):
     total = 0
-    for question in quiz.questions.all():
+    for question in get_attempt_questions(attempt):
         total += question.marks
     return total
 
 
 def _recompute_quiz_result(attempt):
     answers = attempt.answers.select_related("question")
-    total_marks = _quiz_total_marks(attempt.quiz)
+    total_marks = _quiz_total_marks(attempt)
     obtained_marks = sum(
         (answer.marks_awarded for answer in answers if answer.marks_awarded is not None),
         Decimal("0"),
@@ -594,11 +536,18 @@ def _recompute_quiz_result(attempt):
     return result
 
 
-def _resolve_answer_entry(entry):
+def _resolve_answer_entry(entry, attempt):
     try:
-        question = Question.objects.get(pk=entry["question"], quiz=entry["quiz"])
+        question = Question.objects.get(pk=entry["question"], quiz=attempt.quiz_id)
     except Question.DoesNotExist:
         raise InvalidAnswerError("One of the questions does not belong to this quiz.")
+
+    # A question is either a shared template (attempt=NULL, valid for every student's
+    # attempt #1) or scoped to exactly one attempt (an AI-regenerated retry) — without
+    # this check a student could submit a different attempt's or a different student's
+    # ephemeral question id, since every ephemeral row still shares the same `quiz`.
+    if question.attempt_id not in (None, attempt.id):
+        raise InvalidAnswerError("One of the questions does not belong to this attempt.")
 
     selected_choice = None
     choice_id = entry.get("selected_choice")
@@ -616,9 +565,7 @@ def autosave_quiz_attempt(attempt, answers_data):
     page, a dropped connection, or a lazily-detected expiry can all recover the student's
     actual work instead of losing it."""
     for entry in answers_data:
-        question, selected_choice, text_answer = _resolve_answer_entry(
-            {**entry, "quiz": attempt.quiz}
-        )
+        question, selected_choice, text_answer = _resolve_answer_entry(entry, attempt)
         QuizAnswer.objects.update_or_create(
             attempt=attempt,
             question=question,
@@ -644,7 +591,7 @@ def _fill_missing_answers(attempt):
     student never touched (abandoned attempt, or omitted from a submit payload). Without
     this, unanswered questions have no answer_id at all, which breaks the grading UI."""
     answered_question_ids = set(attempt.answers.values_list("question_id", flat=True))
-    for question in attempt.quiz.questions.all():
+    for question in get_attempt_questions(attempt):
         if question.id in answered_question_ids:
             continue
         marks_awarded, grading_status = _grade_answer_fields(question, None, "")
@@ -659,14 +606,12 @@ def _fill_missing_answers(attempt):
 def submit_quiz_attempt(attempt, answers_data):
     provided = {}
     for entry in answers_data:
-        question, selected_choice, text_answer = _resolve_answer_entry(
-            {**entry, "quiz": attempt.quiz}
-        )
+        question, selected_choice, text_answer = _resolve_answer_entry(entry, attempt)
         provided[question.id] = (question, selected_choice, text_answer)
 
     autosaved = {answer.question_id: answer for answer in attempt.answers.all()}
 
-    for question in attempt.quiz.questions.all():
+    for question in get_attempt_questions(attempt):
         if question.id in provided:
             _, selected_choice, text_answer = provided[question.id]
         elif question.id in autosaved:
@@ -767,7 +712,11 @@ def reorder_questions(quiz_id, questions_data):
     if len(orders) != len(set(orders)):
         raise QuestionReorderError("Duplicate order values are not allowed.")
 
-    existing_ids = set(Question.objects.filter(quiz_id=quiz_id).values_list("id", flat=True))
+    # Only the template question set is reorderable — attempt-scoped (AI-regenerated
+    # retry) questions never appear in this teacher/admin-facing view.
+    existing_ids = set(
+        Question.objects.filter(quiz_id=quiz_id, attempt__isnull=True).values_list("id", flat=True)
+    )
     if set(question_ids) != existing_ids:
         raise QuestionReorderError(
             "Submitted question ids must exactly match the questions belonging to this quiz."
@@ -782,5 +731,7 @@ def reorder_questions(quiz_id, questions_data):
             )
 
     return (
-        Question.objects.filter(quiz_id=quiz_id).prefetch_related("choices").order_by("order")
+        Question.objects.filter(quiz_id=quiz_id, attempt__isnull=True)
+        .prefetch_related("choices")
+        .order_by("order")
     )

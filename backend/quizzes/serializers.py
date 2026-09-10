@@ -38,7 +38,7 @@ class QuizSerializer(serializers.ModelSerializer):
             "passing_score",
             "time_limit_minutes",
             "status",
-            "attempts_allowed",
+            "number_of_questions",
             "available_from",
             "available_until",
             "order",
@@ -50,7 +50,9 @@ class QuizSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_total_marks(self, obj):
-        return obj.questions.aggregate(total=Sum("marks"))["total"] or 0
+        # Template questions only — obj.questions also includes every student's
+        # accumulated AI-regenerated retry questions once any attempt #2+ exists.
+        return obj.questions.filter(attempt__isnull=True).aggregate(total=Sum("marks"))["total"] or 0
 
 
 class QuizWriteSerializer(serializers.ModelSerializer):
@@ -59,6 +61,9 @@ class QuizWriteSerializer(serializers.ModelSerializer):
     )
     course = serializers.PrimaryKeyRelatedField(queryset=Course.objects.all(), required=False)
     order = serializers.IntegerField(min_value=1, required=False)
+    # Bound matches ai_courses' questions_per_quiz — how many questions the original
+    # quiz should have, and how many an AI-regenerated retry produces each time.
+    number_of_questions = serializers.IntegerField(min_value=1, max_value=20, required=False)
 
     class Meta:
         model = Quiz
@@ -71,7 +76,7 @@ class QuizWriteSerializer(serializers.ModelSerializer):
             "passing_score",
             "time_limit_minutes",
             "status",
-            "attempts_allowed",
+            "number_of_questions",
             "available_from",
             "available_until",
             "order",
@@ -214,7 +219,7 @@ class QuizAvailableSerializer(serializers.ModelSerializer):
             "description",
             "passing_score",
             "time_limit_minutes",
-            "attempts_allowed",
+            "number_of_questions",
             "available_from",
             "available_until",
             "question_count",
@@ -255,6 +260,23 @@ class QuizOrderEntrySerializer(serializers.Serializer):
     order = serializers.IntegerField(min_value=1)
 
 
+class QuizTitleSuggestionRequestSerializer(serializers.Serializer):
+    module = serializers.IntegerField()
+    draft_title = serializers.CharField(
+        max_length=255, required=False, allow_blank=True, default="", trim_whitespace=True
+    )
+
+
+class QuizDescriptionSuggestionRequestSerializer(serializers.Serializer):
+    module = serializers.IntegerField()
+    title = serializers.CharField(
+        max_length=255, required=False, allow_blank=True, default="", trim_whitespace=True
+    )
+    draft_description = serializers.CharField(
+        max_length=2000, required=False, allow_blank=True, default="", trim_whitespace=True
+    )
+
+
 class QuestionOrderEntrySerializer(serializers.Serializer):
     question_id = serializers.IntegerField()
     order = serializers.IntegerField(min_value=1)
@@ -279,20 +301,3 @@ class QuizPendingAnswerSerializer(serializers.ModelSerializer):
 class QuizAnswerGradeSerializer(serializers.Serializer):
     marks_awarded = serializers.DecimalField(max_digits=6, decimal_places=2, min_value=0)
     feedback = serializers.CharField(required=False, allow_blank=True, default="")
-
-
-class QuizAttemptGrantSerializer(serializers.Serializer):
-    """Task 18 (Phase 5) — a teacher/admin granting one student an extra
-    attempt on a quiz they've exhausted attempts_allowed on. `reason` is
-    required (not just recommended) so there's always an audit trail for
-    why a specific student got extra chances, matching the same
-    non-blank-reason convention as rewards.adjust_points."""
-
-    extra_attempts = serializers.IntegerField(required=False, default=1, min_value=1, max_value=10)
-    reason = serializers.CharField(max_length=1000)
-
-    def validate_reason(self, value):
-        value = value.strip()
-        if not value:
-            raise serializers.ValidationError("A reason is required.")
-        return value

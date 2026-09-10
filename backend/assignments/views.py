@@ -4,6 +4,11 @@ from rest_framework.parsers import FormParser, MultiPartParser
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.throttling import ScopedRateThrottle
 
+from common.ai_content_suggestions import (
+    SuggestionGenerationError,
+    generate_description_suggestions,
+    generate_title_suggestions,
+)
 from common.models import Status
 from common.pagination import Pagination
 from common.response import error_response, success_response
@@ -25,10 +30,12 @@ from .serializers import (
     AssignmentAttachmentSerializer,
     AssignmentAttachmentWriteSerializer,
     AssignmentGradeSerializer,
+    AssignmentDescriptionSuggestionRequestSerializer,
     AssignmentOrderEntrySerializer,
     AssignmentSerializer,
     AssignmentSubmissionFileSerializer,
     AssignmentSubmissionSerializer,
+    AssignmentTitleSuggestionRequestSerializer,
     AssignmentWriteSerializer,
 )
 from .services import (
@@ -262,6 +269,81 @@ class AssignmentOrderView(generics.GenericAPIView):
         return success_response(
             AssignmentSerializer(assignments, many=True, context={"request": request}).data,
             message="Assignments reordered successfully",
+        )
+
+
+class AssignmentTitleSuggestionsView(generics.GenericAPIView):
+    """AI title suggestions for the Add Assignment modal — fired as the teacher/admin types a
+    title, grounded in the target module's course/lesson content. See
+    common/ai_content_suggestions.py."""
+
+    http_method_names = ["post", "head", "options"]
+    serializer_class = AssignmentTitleSuggestionRequestSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "ai-content-suggestions"
+
+    def get_permissions(self):
+        return [IsCourseInstructorOrAdmin()]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            module = Module.objects.select_related("course").get(
+                pk=serializer.validated_data["module"]
+            )
+        except Module.DoesNotExist:
+            return error_response(message="Module with the given id does not exist.", status_code=404)
+
+        try:
+            suggestions = generate_title_suggestions(
+                module, "assignment", serializer.validated_data["draft_title"]
+            )
+        except SuggestionGenerationError as exc:
+            return error_response(message=str(exc), status_code=502)
+
+        return success_response(
+            {"suggestions": suggestions}, message="Title suggestions generated successfully"
+        )
+
+
+class AssignmentDescriptionSuggestionsView(generics.GenericAPIView):
+    """AI description suggestions for the Add Assignment modal — fired as the teacher/admin types
+    a description, grounded in the target module's course/lesson content and whatever title has
+    been chosen so far. See common/ai_content_suggestions.py."""
+
+    http_method_names = ["post", "head", "options"]
+    serializer_class = AssignmentDescriptionSuggestionRequestSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "ai-content-suggestions"
+
+    def get_permissions(self):
+        return [IsCourseInstructorOrAdmin()]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            module = Module.objects.select_related("course").get(
+                pk=serializer.validated_data["module"]
+            )
+        except Module.DoesNotExist:
+            return error_response(message="Module with the given id does not exist.", status_code=404)
+
+        try:
+            suggestions = generate_description_suggestions(
+                module,
+                "assignment",
+                serializer.validated_data["title"],
+                serializer.validated_data["draft_description"],
+            )
+        except SuggestionGenerationError as exc:
+            return error_response(message=str(exc), status_code=502)
+
+        return success_response(
+            {"suggestions": suggestions}, message="Description suggestions generated successfully"
         )
 
 

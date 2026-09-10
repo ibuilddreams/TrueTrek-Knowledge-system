@@ -144,11 +144,9 @@ function isPendingQuiz(quiz) {
 }
 
 function canRetakeQuiz(quiz) {
-  return (
-    Boolean(quiz.latest_attempt) &&
-    quiz.latest_attempt.status !== "IN_PROGRESS" &&
-    quiz.attempts_used < quiz.attempts_allowed
-  );
+  // Attempts are unlimited — retaking is always possible once there's no
+  // in-progress attempt to resume instead.
+  return Boolean(quiz.latest_attempt) && quiz.latest_attempt.status !== "IN_PROGRESS";
 }
 
 function isToDoQuiz(quiz) {
@@ -206,8 +204,7 @@ function quizToDoMeta(quiz) {
     return { label: "MISSED", tone: "rose", icon: AlertTriangle, note: "Availability window closed" };
   }
 
-  const remaining = Math.max(0, (quiz.attempts_allowed || 0) - (quiz.attempts_used || 0));
-  const note = `${remaining} attempt${remaining === 1 ? "" : "s"} remaining`;
+  const note = "Retry anytime — new questions each time";
   if (attempt.is_passed === true) {
     return { label: "PASSED", tone: "emerald", icon: CheckCircle2, note };
   }
@@ -297,7 +294,7 @@ function QuizToDoRow({ quiz, isVault, onOpen }) {
           {quiz.module ? <span>{quiz.module.title}</span> : null}
           <span className="flex items-center gap-1">
             <Repeat className="w-3 h-3" />
-            {quiz.attempts_used}/{quiz.attempts_allowed} attempts
+            {quiz.attempts_used || 0} attempt{quiz.attempts_used === 1 ? "" : "s"}
           </span>
           <span>{meta.note}</span>
         </span>
@@ -381,7 +378,6 @@ function QuizAttemptRow({ attempt, isVault, onOpen, isBest }) {
           <span className="flex items-center gap-1">
             <Repeat className="w-3 h-3" />
             Attempt {attempt.attempt_number}
-            {attempt.attempts_allowed ? `/${attempt.attempts_allowed}` : ""}
           </span>
           {attempt.ended_at ? (
             <span className="flex items-center gap-1">
@@ -443,9 +439,8 @@ export default function QuizzesTab() {
   const selectedCourseId = searchParams.get("quizCourse");
   const [detailAttemptId, setDetailAttemptId] = useState(null);
   // Tracked by id, not the quiz object itself, so the open modal always
-  // reflects the live `quizzes` query — e.g. requesting a self-service
-  // retry (Task 18) updates attempts_allowed and the modal picks it up
-  // immediately instead of showing a stale snapshot from when it was opened.
+  // reflects the live `quizzes` query instead of showing a stale snapshot
+  // from when it was opened.
   const [selectedQuizId, setSelectedQuizId] = useState(null);
   const [statusFilter, setStatusFilter] = useState("ALL");
 

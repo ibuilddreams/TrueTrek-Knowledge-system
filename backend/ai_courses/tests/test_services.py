@@ -186,9 +186,9 @@ class RunGenerationTests(TestCase):
             input_payload=services._serialize_input(validated_data),
         )
 
-    def test_transport_error_retries_once_and_refreshes_heartbeat(self):
-        # Regression test: a first attempt that times out must not leave
-        # heartbeat_at stale through the entire second attempt too — otherwise a
+    def test_transport_error_retries_and_refreshes_heartbeat(self):
+        # Regression test: a failed attempt that times out must not leave
+        # heartbeat_at stale through the entire next attempt too — otherwise a
         # legitimately-still-retrying job can look "stale" to the reaper before
         # it's actually had AI_STALE_JOB_THRESHOLD_SECONDS to finish.
         plan_json = json.dumps(
@@ -222,19 +222,46 @@ class RunGenerationTests(TestCase):
         self.assertEqual(provider.calls, 2)
         # The fix under test: a heartbeat touch happens between the failed first
         # attempt and the retry, not just once before the whole retry loop.
-        self.assertIn("Calling AI provider (retry)", recorded_steps)
+        self.assertTrue(any(step.startswith("Calling AI provider (retry") for step in recorded_steps))
         job.refresh_from_db()
         self.assertEqual(job.status, GenerationStatus.SUCCEEDED)
         self.assertIsNotNone(job.course)
 
-    def test_transport_error_fails_cleanly_after_exhausting_the_retry(self):
+    def test_survives_two_consecutive_transport_errors(self):
+        # Real-world testing against the live Gemini API showed two consecutive
+        # 503s before a third attempt succeeded on this prompt/schema — the whole
+        # reason MAX_TRANSPORT_ATTEMPTS was raised from 2 to 3. This is that case.
+        plan_json = json.dumps(
+            {
+                "summary": "s",
+                "objectives": [],
+                "modules": [
+                    {
+                        "title": "M1",
+                        "description": "",
+                        "items": [{"kind": "lesson", "title": "L1", "body": "content", "estimated_minutes": 10}],
+                    }
+                ],
+            }
+        )
+        job = self._create_job()
+        provider = FlakyProvider(plan_json, fail_times=2)
+        with patch("ai_courses.services.get_provider", return_value=provider):
+            with patch("ai_courses.services.time.sleep"):
+                services._run_generation(job.id)
+
+        self.assertEqual(provider.calls, 3)
+        job.refresh_from_db()
+        self.assertEqual(job.status, GenerationStatus.SUCCEEDED)
+
+    def test_transport_error_fails_cleanly_after_exhausting_all_retries(self):
         job = self._create_job()
         provider = FlakyProvider("unused", fail_times=99)
         with patch("ai_courses.services.get_provider", return_value=provider):
             with patch("ai_courses.services.time.sleep"):
                 services._run_generation(job.id)
 
-        self.assertEqual(provider.calls, 2)
+        self.assertEqual(provider.calls, services.MAX_TRANSPORT_ATTEMPTS)
         job.refresh_from_db()
         self.assertEqual(job.status, GenerationStatus.FAILED)
         self.assertIsNone(job.course)

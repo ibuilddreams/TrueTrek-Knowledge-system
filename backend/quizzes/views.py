@@ -1,9 +1,13 @@
-from django.contrib.auth import get_user_model
 from django.db.models import Count, Q
 from rest_framework import filters, generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.throttling import ScopedRateThrottle
 
+from common.ai_content_suggestions import (
+    SuggestionGenerationError,
+    generate_description_suggestions,
+    generate_title_suggestions,
+)
 from common.models import Status
 from common.pagination import Pagination
 from common.response import error_response, success_response
@@ -22,17 +26,18 @@ from .serializers import (
     ChoiceSerializer,
     ChoiceWriteSerializer,
     QuestionOrderEntrySerializer,
+    QuizDescriptionSuggestionRequestSerializer,
     QuestionSerializer,
     QuestionWriteSerializer,
     QuizAnswerGradeSerializer,
     QuizAttemptAutosaveSerializer,
-    QuizAttemptGrantSerializer,
     QuizAvailableSerializer,
     QuizOrderEntrySerializer,
     QuizPendingAnswerSerializer,
     QuizResultSerializer,
     QuizSerializer,
     QuizSubmitSerializer,
+    QuizTitleSuggestionRequestSerializer,
     QuizWriteSerializer,
     StudentQuestionSerializer,
 )
@@ -40,27 +45,24 @@ from .services import (
     InvalidAnswerError,
     QuestionReorderError,
     QuizAttemptError,
-    QuizAttemptGrantError,
     QuizGradingError,
     QuizPublishError,
     QuizReorderError,
+    QuizRegenerationError,
     autosave_quiz_attempt,
     finalize_stale_attempts,
+    get_attempt_questions,
     get_attempt_saved_answers,
     get_attempt_seconds_remaining,
-    get_extra_attempts_map,
     get_pending_grading_answers,
     get_quiz_attempt_detail,
     get_student_grades,
     get_student_quiz_attempts,
     get_student_quizzes,
-    get_total_attempts_allowed,
     grade_quiz_answer,
-    grant_extra_quiz_attempt,
     publish_quiz,
     reorder_questions,
     reorder_quizzes,
-    request_self_service_retry,
     start_quiz_attempt,
     submit_quiz_attempt,
 )
@@ -257,7 +259,12 @@ class QuestionListCreateView(generics.ListCreateAPIView):
         return [IsCourseInstructorOrAdmin()]
 
     def get_queryset(self):
-        queryset = Question.objects.filter(quiz_id=self.kwargs["quiz_id"]).prefetch_related("choices")
+        # Only the template question set is ever authored/managed here — attempt-scoped
+        # (AI-regenerated retry) questions belong to one student's one attempt and are
+        # never shown or editable through this teacher/admin "Manage Questions" view.
+        queryset = Question.objects.filter(
+            quiz_id=self.kwargs["quiz_id"], attempt__isnull=True
+        ).prefetch_related("choices")
         user = self.request.user
         if self.request.method == "GET" and user.is_teacher and not user.is_admin:
             queryset = queryset.filter(quiz__course__instructors__instructor=user)
@@ -323,6 +330,12 @@ class QuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         self.check_object_permissions(request, question)
 
+        if question.attempt_id is not None:
+            return error_response(
+                message="This question belongs to a specific student attempt and cannot be edited.",
+                status_code=400,
+            )
+
         partial = kwargs.pop("partial", False)
         serializer = self.get_serializer(question, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
@@ -336,6 +349,12 @@ class QuestionDetailView(generics.RetrieveUpdateDestroyAPIView):
             return error_response(message="Question with the given id does not exist.", status_code=404)
 
         self.check_object_permissions(request, question)
+
+        if question.attempt_id is not None:
+            return error_response(
+                message="This question belongs to a specific student attempt and cannot be deleted.",
+                status_code=400,
+            )
 
         question.delete()
         return success_response(None, message="Question deleted successfully")
@@ -409,6 +428,12 @@ class ChoiceListCreateView(generics.ListCreateAPIView):
                 message="Question with the given id does not exist.", status_code=404
             )
 
+        if question.attempt_id is not None:
+            return error_response(
+                message="This question belongs to a specific student attempt and cannot be edited.",
+                status_code=400,
+            )
+
         serializer = self.get_serializer(data=request.data)
         serializer.is_valid(raise_exception=True)
         choice = serializer.save(question=question)
@@ -448,6 +473,12 @@ class ChoiceDetailView(generics.RetrieveUpdateDestroyAPIView):
 
         self.check_object_permissions(request, choice)
 
+        if choice.question.attempt_id is not None:
+            return error_response(
+                message="This choice belongs to a specific student attempt and cannot be edited.",
+                status_code=400,
+            )
+
         partial = kwargs.pop("partial", False)
         serializer = self.get_serializer(choice, data=request.data, partial=partial)
         serializer.is_valid(raise_exception=True)
@@ -461,6 +492,12 @@ class ChoiceDetailView(generics.RetrieveUpdateDestroyAPIView):
             return error_response(message="Choice with the given id does not exist.", status_code=404)
 
         self.check_object_permissions(request, choice)
+
+        if choice.question.attempt_id is not None:
+            return error_response(
+                message="This choice belongs to a specific student attempt and cannot be deleted.",
+                status_code=400,
+            )
 
         choice.delete()
         return success_response(None, message="Choice deleted successfully")
@@ -476,13 +513,19 @@ class AvailableQuizzesView(generics.GenericAPIView):
             return error_response(message="You are not enrolled in this course.", status_code=403)
 
         quizzes = Quiz.objects.filter(course_id=course_id, status=Status.PUBLISHED).annotate(
-            question_count=Count("questions")
+            question_count=Count("questions", filter=Q(questions__attempt__isnull=True))
         )
         serializer = QuizAvailableSerializer(quizzes, many=True)
         return success_response(serializer.data, message="Available quizzes fetched successfully")
 
 
 class StartQuizAttemptView(generics.GenericAPIView):
+    """Attempts are unlimited. The first attempt serves the quiz's template
+    question set; every attempt after that generates a fresh AI question set
+    (quizzes.ai_generation) — a new trust boundary (a student, not just an
+    admin, can trigger a paid AI call), so a would-be-regenerating request is
+    throttled separately below."""
+
     permission_classes = [IsStudent]
 
     def post(self, request, quiz_id):
@@ -504,12 +547,42 @@ class StartQuizAttemptView(generics.GenericAPIView):
             if lock_info:
                 return error_response(message=lock_info["reason"], status_code=403, data=lock_info)
 
+        # A request that will call generate_quiz_questions() (any attempt after the
+        # first, when there's no attempt already IN_PROGRESS to resume) is a paid AI
+        # call — throttle it separately from ordinary attempt starts/resumes. DRF's
+        # declarative throttle_classes can't apply conditionally per-branch, hence the
+        # manual check. Best-effort like every other ScopedRateThrottle use in this
+        # codebase: a stale IN_PROGRESS attempt not yet lazily expired (finalized just
+        # below, inside start_quiz_attempt) can under-count here — acceptable, matches
+        # the "burst protection, not an authoritative cap" precedent elsewhere.
+        will_regenerate = QuizAttempt.objects.filter(student=request.user, quiz=quiz).exclude(
+            status=QuizAttempt.AttemptStatus.IN_PROGRESS
+        ).exists()
+        if will_regenerate:
+            # ScopedRateThrottle.allow_request() reads its scope off *view.throttle_scope*
+            # (getattr(view, self.scope_attr, None)) — it ignores any .scope set directly
+            # on the throttle instance beforehand and silently allows every request if the
+            # view has no throttle_scope attribute. Set it on `self` (this view instance)
+            # right before the check, exactly for this one manual, conditional call.
+            self.throttle_scope = "ai-quiz-regeneration"
+            throttle = ScopedRateThrottle()
+            if not throttle.allow_request(request, self):
+                return error_response(
+                    message="Too many attempt requests — please wait a bit before trying again.",
+                    status_code=429,
+                )
+
         try:
             attempt, is_new = start_quiz_attempt(request.user, quiz)
         except QuizAttemptError as exc:
             return error_response(message=str(exc), status_code=403)
+        except QuizRegenerationError:
+            return error_response(
+                message="We couldn't generate a fresh question set right now — please try again in a moment.",
+                status_code=503,
+            )
 
-        questions = quiz.questions.prefetch_related("choices")
+        questions = get_attempt_questions(attempt).prefetch_related("choices")
         data = {
             "attempt_id": attempt.id,
             "attempt_number": attempt.attempt_number,
@@ -526,45 +599,6 @@ class StartQuizAttemptView(generics.GenericAPIView):
         }
         message = "Quiz attempt started" if is_new else "Resuming your in-progress attempt"
         return success_response(data, message=message, status_code=201 if is_new else 200)
-
-
-class QuizSelfRetryView(generics.GenericAPIView):
-    """Task 18 (Phase 5) follow-up — the student's self-service path once
-    every attempt on a quiz is used up without passing: request one more
-    attempt directly, instead of the only option being to wait on a
-    teacher/admin (QuizGrantAttemptView, still available as a fallback).
-    See quizzes.services.request_self_service_retry for the eligibility
-    rules and why no extra rate-limit/cap is needed on top of them."""
-
-    permission_classes = [IsStudent]
-
-    def post(self, request, quiz_id):
-        try:
-            quiz = Quiz.objects.select_related("course").get(pk=quiz_id)
-        except Quiz.DoesNotExist:
-            return error_response(message="Quiz with the given id does not exist.", status_code=404)
-
-        if not Enrollment.objects.filter(
-            student=request.user, course_id=quiz.course_id, status=Enrollment.EnrollmentStatus.ACTIVE
-        ).exists():
-            return error_response(message="You are not enrolled in this course.", status_code=403)
-
-        try:
-            request_self_service_retry(quiz, request.user)
-        except QuizAttemptError as exc:
-            return error_response(message=str(exc), status_code=400)
-
-        attempts_used = QuizAttempt.objects.filter(quiz=quiz, student=request.user).count()
-        total_attempts_allowed = get_total_attempts_allowed(quiz, request.user)
-        return success_response(
-            {
-                "attempts_used": attempts_used,
-                "attempts_allowed": total_attempts_allowed,
-                "attempts_remaining": max(0, total_attempts_allowed - attempts_used),
-            },
-            message="You've been given another attempt on this quiz — good luck!",
-            status_code=201,
-        )
 
 
 class QuizAttemptAutosaveView(generics.GenericAPIView):
@@ -828,6 +862,81 @@ class QuizOrderView(generics.GenericAPIView):
         )
 
 
+class QuizTitleSuggestionsView(generics.GenericAPIView):
+    """AI title suggestions for the Add Quiz modal — fired as the teacher/admin types a title,
+    grounded in the target module's course/lesson content. See
+    common/ai_content_suggestions.py."""
+
+    http_method_names = ["post", "head", "options"]
+    serializer_class = QuizTitleSuggestionRequestSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "ai-content-suggestions"
+
+    def get_permissions(self):
+        return [IsCourseInstructorOrAdmin()]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            module = Module.objects.select_related("course").get(
+                pk=serializer.validated_data["module"]
+            )
+        except Module.DoesNotExist:
+            return error_response(message="Module with the given id does not exist.", status_code=404)
+
+        try:
+            suggestions = generate_title_suggestions(
+                module, "quiz", serializer.validated_data["draft_title"]
+            )
+        except SuggestionGenerationError as exc:
+            return error_response(message=str(exc), status_code=502)
+
+        return success_response(
+            {"suggestions": suggestions}, message="Title suggestions generated successfully"
+        )
+
+
+class QuizDescriptionSuggestionsView(generics.GenericAPIView):
+    """AI description suggestions for the Add Quiz modal — fired as the teacher/admin types a
+    description, grounded in the target module's course/lesson content and whatever title has
+    been chosen so far. See common/ai_content_suggestions.py."""
+
+    http_method_names = ["post", "head", "options"]
+    serializer_class = QuizDescriptionSuggestionRequestSerializer
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "ai-content-suggestions"
+
+    def get_permissions(self):
+        return [IsCourseInstructorOrAdmin()]
+
+    def post(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            module = Module.objects.select_related("course").get(
+                pk=serializer.validated_data["module"]
+            )
+        except Module.DoesNotExist:
+            return error_response(message="Module with the given id does not exist.", status_code=404)
+
+        try:
+            suggestions = generate_description_suggestions(
+                module,
+                "quiz",
+                serializer.validated_data["title"],
+                serializer.validated_data["draft_description"],
+            )
+        except SuggestionGenerationError as exc:
+            return error_response(message=str(exc), status_code=502)
+
+        return success_response(
+            {"suggestions": suggestions}, message="Description suggestions generated successfully"
+        )
+
+
 class QuizCourseProgressListView(generics.GenericAPIView):
     """Teacher/admin-facing quiz-results dashboard for one course."""
 
@@ -877,10 +986,6 @@ class QuizCourseProgressListView(generics.GenericAPIView):
             if key not in latest_attempt_map:
                 latest_attempt_map[key] = attempt
 
-        # Task 18 — the per-student extra attempts a teacher/admin has granted
-        # (see QuizGrantAttemptView) on top of the quiz's own attempts_allowed.
-        extra_attempts_map = get_extra_attempts_map(quiz_ids, student_ids)
-
         all_rows = []
         for quiz in quizzes:
             for enrollment in enrollments:
@@ -919,8 +1024,6 @@ class QuizCourseProgressListView(generics.GenericAPIView):
                         },
                         "status": effective_status,
                         "attempts_count": attempts_count_map.get(key, 0),
-                        "attempts_allowed": quiz.attempts_allowed + extra_attempts_map.get(key, 0),
-                        "attempts_granted": extra_attempts_map.get(key, 0),
                         "score": float(result.score) if result else None,
                         "percentage": float(result.percentage) if result else None,
                         "is_passed": result.is_passed if result else None,
@@ -1018,68 +1121,6 @@ class QuizStudentAttemptListView(generics.GenericAPIView):
             )
 
         return success_response(data, message="Quiz attempt history fetched successfully")
-
-
-class QuizGrantAttemptView(generics.GenericAPIView):
-    """Task 18 (Phase 5) — "path to continue improving" once a student has
-    exhausted `attempts_allowed` on a quiz without passing (and, if that
-    quiz is module-linked, is locked out of the rest of the course by
-    progress.services.get_module_lock_map). A teacher/admin grants this one
-    student one or more extra attempts on this one quiz; it does not touch
-    the quiz's `attempts_allowed` field, so no other student is affected."""
-
-    serializer_class = QuizAttemptGrantSerializer
-    permission_classes = [IsAuthenticated]
-
-    def post(self, request, quiz_id, student_id):
-        try:
-            quiz = Quiz.objects.select_related("course").get(pk=quiz_id)
-        except Quiz.DoesNotExist:
-            return error_response(message="Quiz with the given id does not exist.", status_code=404)
-
-        if not (request.user.is_admin or is_course_instructor(request.user, quiz.course)):
-            return error_response(
-                message="You do not have permission to perform this action.", status_code=403
-            )
-
-        if not request.user.is_admin and not can_view_student_in_course(
-            request.user, student_id, quiz.course
-        ):
-            return error_response(
-                message="You do not have permission to perform this action.", status_code=403
-            )
-
-        UserModel = get_user_model()
-        try:
-            student = UserModel.objects.get(pk=student_id, role=UserModel.Roles.STUDENT)
-        except UserModel.DoesNotExist:
-            return error_response(message="Student with the given id does not exist.", status_code=404)
-
-        serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
-
-        try:
-            grant_extra_quiz_attempt(
-                quiz,
-                student,
-                actor=request.user,
-                extra_attempts=serializer.validated_data["extra_attempts"],
-                reason=serializer.validated_data["reason"],
-            )
-        except QuizAttemptGrantError as exc:
-            return error_response(message=str(exc), status_code=400)
-
-        attempts_used = QuizAttempt.objects.filter(quiz=quiz, student=student).count()
-        total_attempts_allowed = get_total_attempts_allowed(quiz, student)
-        return success_response(
-            {
-                "attempts_used": attempts_used,
-                "attempts_allowed": total_attempts_allowed,
-                "attempts_remaining": max(0, total_attempts_allowed - attempts_used),
-            },
-            message=f"Granted {student.name} an extra attempt on \"{quiz.title}\".",
-            status_code=201,
-        )
 
 
 class QuizAttemptDetailView(generics.GenericAPIView):

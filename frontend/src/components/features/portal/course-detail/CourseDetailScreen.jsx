@@ -247,7 +247,7 @@ function QuizRow({ quiz, onOpen, disabled }) {
         </span>
         <span className="flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
           <Repeat className="w-3 h-3 shrink-0" />
-          {quiz.attempts_used}/{quiz.attempts_allowed} attempts
+          {quiz.number_of_questions} question{quiz.number_of_questions === 1 ? "" : "s"}
         </span>
       </span>
       <span

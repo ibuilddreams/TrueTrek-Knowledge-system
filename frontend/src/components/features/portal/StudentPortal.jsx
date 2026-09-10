@@ -19,6 +19,7 @@ import {
 } from "./portalConstants";
 import PortalHeader from "./PortalHeader";
 import PortalToast from "./PortalToast";
+import DailyDrillReminderModal from "./DailyDrillReminderModal";
 import DashboardTab from "./tabs/DashboardTab";
 import CoursesTab from "./tabs/CoursesTab";
 import AssignmentsTab from "./tabs/AssignmentsTab";
@@ -28,6 +29,10 @@ import DrillTab from "./tabs/DrillTab";
 import RewardsTab from "./tabs/RewardsTab";
 import StreakTab from "./tabs/StreakTab";
 import WarRoomScreen from "@/components/features/warroom/WarRoomScreen";
+
+// Shown at most once per calendar day (persisted per drill_date so a
+// refresh of the Drill tab doesn't re-nag) — see the reminder effect below.
+const DRILL_REMINDER_STORAGE_PREFIX = "ttl:dailyDrillReminderShown:";
 
 function StudentPortalContent() {
   const router = useRouter();
@@ -49,6 +54,7 @@ function StudentPortalContent() {
 
   const { displayName, status: profileStatus } = useStudentProfile(isLoggedIn);
   const [lastNotification, setLastNotification] = useState(null);
+  const [showDrillReminder, setShowDrillReminder] = useState(false);
 
   // A student with no purchased/assigned pathway yet hasn't finished
   // onboarding — send them back into it instead of showing an empty
@@ -83,6 +89,33 @@ function StudentPortalContent() {
     [searchParams],
   );
 
+  // Whether today's drill still needs the student's attention — completion is
+  // represented differently per drill source (see daily_drill.services).
+  const isDrillCompletedToday = useMemo(() => {
+    if (!drillData || drillData.type === "UNAVAILABLE") return true;
+    if (drillData.type === "ADMIN_VIDEO") return drillData.progress?.status === "COMPLETED";
+    return Boolean(drillData.attempted);
+  }, [drillData]);
+
+  // Nudge the student when they open the Daily Drill tab with today's drill
+  // still incomplete — scoped to this tab only (not the rest of the portal),
+  // and shown at most once per day via localStorage so re-opening/refreshing
+  // this tab later the same day doesn't re-show it.
+  useEffect(() => {
+    if (activeTab !== "drill" || !drillData) return;
+    if (drillData.type === "UNAVAILABLE" || isDrillCompletedToday) return;
+
+    const storageKey = `${DRILL_REMINDER_STORAGE_PREFIX}${drillData.drill_date}`;
+    try {
+      if (window.localStorage.getItem(storageKey)) return;
+      window.localStorage.setItem(storageKey, "1");
+    } catch {
+      // localStorage unavailable (private browsing, etc.) — fall through and
+      // still show the reminder rather than silently failing.
+    }
+    setShowDrillReminder(true);
+  }, [activeTab, drillData, isDrillCompletedToday]);
+
   useEffect(() => {
     const rawTab = searchParams.get("tab");
     if (rawTab && !VALID_PORTAL_TABS.has(rawTab)) {
@@ -114,6 +147,18 @@ function StudentPortalContent() {
     },
     [pathname, router, searchParams],
   );
+
+  // The reminder only ever shows while already on the Drill tab (see the
+  // effect above), so "Start Drill" just reveals the tab's content beneath
+  // it; "Later" backs out to the dashboard instead.
+  const handleStartDrillFromReminder = useCallback(() => {
+    setShowDrillReminder(false);
+  }, []);
+
+  const handleLaterFromReminder = useCallback(() => {
+    setShowDrillReminder(false);
+    setActiveTab(DEFAULT_PORTAL_TAB);
+  }, [setActiveTab]);
 
   if (!isLoggedIn) {
     return (
@@ -154,6 +199,13 @@ function StudentPortalContent() {
       <PortalToast
         notification={lastNotification}
         onDismiss={() => setLastNotification(null)}
+      />
+
+      <DailyDrillReminderModal
+        isOpen={showDrillReminder}
+        onClose={() => setShowDrillReminder(false)}
+        onLater={handleLaterFromReminder}
+        onStartDrill={handleStartDrillFromReminder}
       />
 
       <PortalHeader

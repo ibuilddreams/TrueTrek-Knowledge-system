@@ -31,9 +31,16 @@ logger = logging.getLogger("ai_courses")
 
 GenerationStatus = AICourseGeneration.GenerationStatus
 
-# One retry, short fixed backoff — a transport error is the only failure worth
-# retrying (plan §9 step 2 / §16); retrying a schema failure would just bill the
-# same broken prompt twice for the same result.
+# A transport error is the only failure worth retrying — retrying a schema
+# failure would just bill the same broken prompt twice for the same result.
+# Full-course generation gets a larger retry budget than the smaller per-answer/
+# per-drill AI calls elsewhere in the app (those use a single retry — see e.g.
+# quizzes/ai_grading.py): real-world testing against the live Gemini API showed
+# two consecutive 503 "server overloaded" responses before a third attempt
+# succeeded on this larger, schema-heavy prompt. This is a background job the
+# admin polls for, not a blocking request, so the extra attempt costs wall-clock
+# time, not a held connection or a risk of hitting a proxy timeout.
+MAX_TRANSPORT_ATTEMPTS = 3
 TRANSPORT_RETRY_BACKOFF_SECONDS = 2
 
 
@@ -190,24 +197,33 @@ def _run_generation(job_id):
     # timer, since there's no real signal of sub-progress within a single HTTP
     # call. The step label is what actually communicates "still working."
     _touch(job, step="Calling AI provider", progress_percent=15)
-    try:
-        result = provider.generate_course(prompt, RESPONSE_SCHEMA, settings.AI_REQUEST_TIMEOUT)
-    except ProviderTransportError:
-        logger.warning("Transport error calling provider for job %s — retrying once.", job_id)
-        time.sleep(TRANSPORT_RETRY_BACKOFF_SECONDS)
-        # A first attempt that timed out already consumed up to AI_REQUEST_TIMEOUT
-        # without a heartbeat update. Refresh it before the second attempt (which
-        # can itself take up to AI_REQUEST_TIMEOUT again) so the stale-job reaper
-        # — which runs on every poll — can't mistake a legitimately-still-running
-        # retry for a job orphaned by a server restart.
-        _touch(job, step="Calling AI provider (retry)")
+    result = None
+    transport_exc = None
+    for attempt in range(1, MAX_TRANSPORT_ATTEMPTS + 1):
         try:
             result = provider.generate_course(prompt, RESPONSE_SCHEMA, settings.AI_REQUEST_TIMEOUT)
-        except (ProviderTransportError, ProviderError) as exc:
+            break
+        except ProviderTransportError as exc:
+            transport_exc = exc
+            if attempt == MAX_TRANSPORT_ATTEMPTS:
+                break
+            logger.warning(
+                "Transport error calling provider for job %s (attempt %d/%d) — retrying.",
+                job_id, attempt, MAX_TRANSPORT_ATTEMPTS,
+            )
+            time.sleep(TRANSPORT_RETRY_BACKOFF_SECONDS)
+            # A failed attempt that ran close to AI_REQUEST_TIMEOUT already consumed
+            # most of it without a heartbeat update. Refresh it before the next
+            # attempt (which can itself take up to AI_REQUEST_TIMEOUT again) so the
+            # stale-job reaper — which runs on every poll — can't mistake a
+            # legitimately-still-running retry for a job orphaned by a server restart.
+            _touch(job, step=f"Calling AI provider (retry {attempt}/{MAX_TRANSPORT_ATTEMPTS - 1})")
+        except ProviderError as exc:
             _fail(job, f"AI provider request failed: {exc}")
             return
-    except ProviderError as exc:
-        _fail(job, f"AI provider request failed: {exc}")
+
+    if result is None:
+        _fail(job, f"AI provider request failed: {transport_exc}")
         return
 
     job.refresh_from_db(fields=["status"])
