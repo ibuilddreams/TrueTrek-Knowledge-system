@@ -4,7 +4,6 @@ import { useQuery } from "@tanstack/react-query";
 import { Route } from "lucide-react";
 import { getMyPathways } from "@/services/pathwaysService";
 import { useAuth } from "@/hooks/useAuth";
-import { useTheme } from "@/hooks/useTheme";
 
 function formatEnrolledDate(value) {
   if (!value) return null;
@@ -18,7 +17,6 @@ function formatEnrolledDate(value) {
 }
 
 export default function MyPathwaysSummary() {
-  const { isVault } = useTheme();
   const { isStudent } = useAuth();
 
   const { data: pathwayEnrollments = [] } = useQuery({
@@ -37,24 +35,18 @@ export default function MyPathwaysSummary() {
 
   return (
     <section
-      className={`rounded-2xl border p-5 sm:p-7 shadow-[0_10px_36px_-28px_rgba(28,25,23,0.3)] ${
-        isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200/80 bg-white"
-      }`}
+      className="rounded-2xl border p-5 sm:p-7 shadow-[0_10px_36px_-28px_rgba(28,25,23,0.3)] border-line/80 bg-paper"
     >
       <div className="flex items-center justify-between gap-3 mb-5">
         <div>
-          <p
-            className={`text-[11px] font-mono uppercase tracking-[0.16em] mb-1 ${
-              isVault ? "text-amber-500" : "text-amber-700/80"
-            }`}
-          >
+          <p className="text-[11px] font-mono uppercase tracking-[0.16em] mb-1 text-pine/80">
             Bundled Access
           </p>
-          <h3 className={`text-lg font-serif font-bold ${isVault ? "text-stone-50" : "text-stone-900"}`}>
+          <h3 className="text-lg font-serif font-bold text-ink">
             My Pathways
           </h3>
         </div>
-        <span className={`text-sm font-light ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+        <span className="text-sm font-light text-muted">
           {pathwayEnrollments.length} active
         </span>
       </div>
@@ -66,38 +58,22 @@ export default function MyPathwaysSummary() {
           return (
             <div
               key={entry.id}
-              className={`flex gap-3 p-3.5 rounded-xl border ${
-                isVault ? "border-stone-800 bg-stone-900/40" : "border-stone-200 bg-stone-50"
-              }`}
+              className="flex gap-3 p-3.5 rounded-xl border border-line bg-porcelain"
             >
-              <div
-                className={`w-11 h-11 rounded-lg border shrink-0 overflow-hidden flex items-center justify-center ${
-                  isVault ? "border-stone-700 bg-stone-950" : "border-stone-200 bg-white"
-                }`}
-              >
-                <Route className="w-4 h-4 text-amber-600" />
+              <div className="w-11 h-11 rounded-lg border shrink-0 overflow-hidden flex items-center justify-center border-line bg-paper">
+                <Route className="w-4 h-4 text-pine" />
               </div>
               <div className="min-w-0">
-                <p
-                  className={`text-sm font-bold truncate ${isVault ? "text-stone-100" : "text-stone-900"}`}
-                >
+                <p className="text-sm font-bold truncate text-ink">
                   {pathway.name}
                 </p>
                 {pathway.summary && (
-                  <p
-                    className={`text-xs mt-0.5 line-clamp-2 font-light ${
-                      isVault ? "text-stone-400" : "text-stone-500"
-                    }`}
-                  >
+                  <p className="text-xs mt-0.5 line-clamp-2 font-light text-muted">
                     {pathway.summary}
                   </p>
                 )}
                 {enrolledSince && (
-                  <p
-                    className={`text-[11px] font-mono uppercase tracking-wide mt-1.5 ${
-                      isVault ? "text-stone-500" : "text-stone-400"
-                    }`}
-                  >
+                  <p className="text-[11px] font-mono uppercase tracking-wide mt-1.5 text-muted">
                     Since {enrolledSince}
                   </p>
                 )}

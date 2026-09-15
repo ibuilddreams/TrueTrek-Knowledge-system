@@ -22,20 +22,20 @@ export default function SortablePathwayCourseItem({ pathwayCourse, onDetach }) {
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-white ${
+      className={`flex items-center gap-3 p-3 rounded-xl border border-line bg-paper ${
         isDragging ? "z-10 shadow-lg opacity-90" : ""
       }`}
     >
       <span
         {...attributes}
         {...listeners}
-        className="text-stone-300 cursor-grab shrink-0 touch-none"
+        className="text-muted cursor-grab shrink-0 touch-none"
         title="Drag to reorder"
         aria-hidden="true"
       >
         <GripVertical className="w-4 h-4" />
       </span>
-      <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0 overflow-hidden">
+      <div className="w-9 h-9 rounded-lg bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0 overflow-hidden">
         {course?.image ? (
           <img src={course.image} alt="" className="w-full h-full object-cover" />
         ) : (
@@ -44,10 +44,10 @@ export default function SortablePathwayCourseItem({ pathwayCourse, onDetach }) {
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-stone-800 truncate">{course?.title}</p>
+          <p className="text-sm font-semibold text-ink truncate">{course?.title}</p>
           {course?.status && <StatusBadge size="lg" status={course.status} />}
         </div>
-        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
+        <p className="text-[11px] font-mono uppercase text-muted tracking-wider mt-0.5">
           {course?.code ? `${course.code} · ` : ""}
           {formatAmount(course?.amount)} · Order {pathwayCourse.order}
         </p>
@@ -58,7 +58,7 @@ export default function SortablePathwayCourseItem({ pathwayCourse, onDetach }) {
           onClick={() => onDetach(pathwayCourse)}
           title="Detach course"
           aria-label="Detach course"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line text-rose-600 hover:bg-rose-50 transition cursor-pointer"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>

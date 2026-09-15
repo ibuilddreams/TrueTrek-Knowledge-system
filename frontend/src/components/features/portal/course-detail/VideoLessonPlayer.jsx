@@ -12,7 +12,6 @@ import {
   VolumeX,
 } from "lucide-react";
 import { getVideoEmbedUrl } from "@/lib/videoEmbed";
-import { useTheme } from "@/hooks/useTheme";
 
 const SKIP_AMOUNTS = [-10, -5, 5, 10];
 
@@ -31,7 +30,7 @@ function OverlaySkipButton({ seconds, onSkip }) {
     <button
       type="button"
       onClick={() => onSkip(seconds)}
-      className="inline-flex items-center gap-1 text-white/80 hover:text-white transition"
+      className="inline-flex items-center gap-1 text-paper/80 hover:text-paper transition"
       title={`${isForward ? "Forward" : "Back"} ${Math.abs(seconds)}s`}
     >
       <Icon className="w-4 h-4" />
@@ -110,7 +109,7 @@ function NativeVideoPlayer({ src }) {
   return (
     <div
       ref={containerRef}
-      className="relative rounded-2xl overflow-hidden border border-stone-800 bg-black shadow-inner"
+      className="relative rounded-2xl overflow-hidden border border-line bg-black shadow-inner"
     >
       {/* eslint-disable-next-line jsx-a11y/media-has-caption */}
       <video
@@ -134,8 +133,8 @@ function NativeVideoPlayer({ src }) {
           aria-label="Play video"
           className="absolute inset-0 flex items-center justify-center bg-black/40 hover:bg-black/30 transition-colors"
         >
-          <span className="w-16 h-16 sm:w-20 sm:h-20 bg-amber-600 hover:bg-amber-500 text-white rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-105">
-            <Play className="w-7 h-7 sm:w-8 sm:h-8 fill-white ml-1" />
+          <span className="w-16 h-16 sm:w-20 sm:h-20 bg-pine hover:bg-moss text-paper rounded-full flex items-center justify-center shadow-2xl transition-transform hover:scale-105">
+            <Play className="w-7 h-7 sm:w-8 sm:h-8 fill-paper ml-1" />
           </span>
         </button>
       )}
@@ -145,7 +144,7 @@ function NativeVideoPlayer({ src }) {
         className="absolute inset-x-0 bottom-0 p-3 sm:p-4 bg-linear-to-t from-black/90 via-black/60 to-transparent flex flex-col gap-2.5"
       >
         <div className="flex items-center gap-3">
-          <span className="text-[11px] font-mono font-bold text-white/90 w-9 shrink-0 select-none">
+          <span className="text-[11px] font-mono font-bold text-paper/90 w-9 shrink-0 select-none">
             {formatTime(currentTime)}
           </span>
           <input
@@ -155,9 +154,9 @@ function NativeVideoPlayer({ src }) {
             step="0.1"
             value={Math.min(currentTime, duration || 0)}
             onChange={handleSeek}
-            className="w-full h-1 rounded-lg appearance-auto cursor-pointer accent-amber-500 bg-white/20"
+            className="w-full h-1 rounded-lg appearance-auto cursor-pointer accent-pine bg-paper/20"
           />
-          <span className="text-[11px] font-mono text-white/60 w-9 shrink-0 text-right select-none">
+          <span className="text-[11px] font-mono text-paper/60 w-9 shrink-0 text-right select-none">
             {formatTime(duration)}
           </span>
         </div>
@@ -167,20 +166,20 @@ function NativeVideoPlayer({ src }) {
             <button
               type="button"
               onClick={togglePlay}
-              className="text-white/90 hover:text-white transition"
+              className="text-paper/90 hover:text-paper transition"
               title={isPlaying ? "Pause" : "Play"}
             >
-              {isPlaying ? <Pause className="w-5 h-5 fill-white" /> : <Play className="w-5 h-5 fill-white" />}
+              {isPlaying ? <Pause className="w-5 h-5 fill-paper" /> : <Play className="w-5 h-5 fill-paper" />}
             </button>
             <button
               type="button"
               onClick={toggleMute}
-              className="text-white/90 hover:text-white transition"
+              className="text-paper/90 hover:text-paper transition"
               title={isMuted ? "Unmute" : "Mute"}
             >
               {isMuted ? <VolumeX className="w-5 h-5" /> : <Volume2 className="w-5 h-5" />}
             </button>
-            <div className="hidden sm:flex items-center gap-3 border-l border-white/20 pl-3.5">
+            <div className="hidden sm:flex items-center gap-3 border-l border-paper/20 pl-3.5">
               {SKIP_AMOUNTS.map((seconds) => (
                 <OverlaySkipButton key={seconds} seconds={seconds} onSkip={skip} />
               ))}
@@ -189,7 +188,7 @@ function NativeVideoPlayer({ src }) {
           <button
             type="button"
             onClick={toggleFullscreen}
-            className="text-white/90 hover:text-white transition"
+            className="text-paper/90 hover:text-paper transition"
             title={isFullscreen ? "Exit fullscreen" : "Fullscreen"}
           >
             {isFullscreen ? <Minimize className="w-5 h-5" /> : <Maximize className="w-5 h-5" />}
@@ -201,8 +200,6 @@ function NativeVideoPlayer({ src }) {
 }
 
 export default function VideoLessonPlayer({ lesson }) {
-  const { isVault } = useTheme();
-
   if (lesson.file) {
     return <NativeVideoPlayer src={lesson.file} />;
   }
@@ -212,7 +209,7 @@ export default function VideoLessonPlayer({ lesson }) {
 
     if (embedUrl) {
       return (
-        <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black border border-stone-800">
+        <div className="aspect-video w-full rounded-2xl overflow-hidden bg-black border border-line">
           <iframe
             src={embedUrl}
             title={lesson.title}
@@ -229,11 +226,9 @@ export default function VideoLessonPlayer({ lesson }) {
 
   return (
     <div
-      className={`rounded-2xl border border-dashed px-4 py-10 text-center ${
-        isVault ? "border-stone-700 bg-white/5" : "border-stone-200 bg-stone-50"
-      }`}
+      className="rounded-2xl border border-dashed px-4 py-10 text-center border-line bg-porcelain"
     >
-      <p className={`text-sm ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+      <p className="text-sm text-muted">
         No video source is attached to this lesson.
       </p>
     </div>

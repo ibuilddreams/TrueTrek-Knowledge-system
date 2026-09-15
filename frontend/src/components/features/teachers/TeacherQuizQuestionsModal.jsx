@@ -49,7 +49,7 @@ function SortableTeacherQuestionRow({ question, onEdit, onDelete, onManageChoice
     <li
       ref={setNodeRef}
       style={style}
-      className={`p-3 rounded-xl border border-stone-200 bg-white ${
+      className={`p-3 rounded-xl border border-line bg-paper ${
         isDragging ? "z-10 shadow-lg opacity-90" : ""
       }`}
     >
@@ -57,24 +57,24 @@ function SortableTeacherQuestionRow({ question, onEdit, onDelete, onManageChoice
         <span
           {...attributes}
           {...listeners}
-          className="text-stone-300 cursor-grab shrink-0 touch-none mt-1.5"
+          className="text-muted cursor-grab shrink-0 touch-none mt-1.5"
           title="Drag to reorder"
           aria-hidden="true"
         >
           <GripVertical className="w-4 h-4" />
         </span>
-        <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0 text-sm font-bold font-mono">
+        <div className="w-8 h-8 rounded-lg bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0 text-sm font-bold font-mono">
           {question.order ?? "—"}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-stone-800">{question.text}</p>
-          <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-1 flex items-center gap-1.5 flex-wrap">
+          <p className="text-sm font-semibold text-ink">{question.text}</p>
+          <p className="text-[11px] font-mono uppercase text-muted tracking-wider mt-1 flex items-center gap-1.5 flex-wrap">
             <span>{QUESTION_TYPE_LABELS[question.question_type] || question.question_type}</span>
-            <span className="text-stone-200">·</span>
+            <span className="text-muted">·</span>
             <span>{question.marks} mark{question.marks === 1 ? "" : "s"}</span>
             {question.question_type !== "SHORT_ANSWER" && (
               <>
-                <span className="text-stone-200">·</span>
+                <span className="text-muted">·</span>
                 <span>{question.choices?.length || 0} choice{question.choices?.length === 1 ? "" : "s"}</span>
               </>
             )}
@@ -87,7 +87,7 @@ function SortableTeacherQuestionRow({ question, onEdit, onDelete, onManageChoice
               onClick={() => onManageChoices(question)}
               title="Manage choices"
               aria-label="Manage choices"
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
             >
               <ListChecks className="w-3.5 h-3.5" />
             </button>
@@ -97,7 +97,7 @@ function SortableTeacherQuestionRow({ question, onEdit, onDelete, onManageChoice
             onClick={() => onEdit(question)}
             title="Edit question"
             aria-label="Edit question"
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
           >
             <Edit3 className="w-3.5 h-3.5" />
           </button>
@@ -106,7 +106,7 @@ function SortableTeacherQuestionRow({ question, onEdit, onDelete, onManageChoice
             onClick={() => onDelete(question)}
             title="Delete question"
             aria-label="Delete question"
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-line text-rose-600 hover:bg-rose-50 transition cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -250,7 +250,7 @@ export default function TeacherQuizQuestionsModal({ isOpen, onClose, quiz }) {
           <button
             type="button"
             onClick={openAddQuestion}
-            className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-line rounded-lg text-xs font-mono uppercase tracking-wider text-muted hover:border-pine hover:text-pine transition cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Question

@@ -80,10 +80,10 @@ const INITIAL_FORM = {
 const TERMINAL_STATUSES = ["SUCCEEDED", "PARTIAL", "FAILED", "CANCELLED"];
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60";
+  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-[11px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold";
+  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
 
 const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
 
@@ -101,22 +101,22 @@ function StepDots({ step }) {
           <div
             className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-mono font-bold transition-colors ${
               step === item.key
-                ? "bg-amber-700 text-white"
+                ? "bg-pine text-paper"
                 : step > item.key
-                  ? "bg-amber-600/20 text-amber-800"
-                  : "bg-stone-100 text-stone-400"
+                  ? "bg-gold/12 text-gold"
+                  : "bg-porcelain text-muted"
             }`}
           >
             {item.key}
           </div>
           <span
             className={`text-[11px] font-mono uppercase tracking-wider ${
-              step === item.key ? "text-stone-800 font-semibold" : "text-stone-400"
+              step === item.key ? "text-ink font-semibold" : "text-muted"
             }`}
           >
             {item.label}
           </span>
-          {index < STEPS.length - 1 && <div className="w-6 h-px bg-stone-200" />}
+          {index < STEPS.length - 1 && <div className="w-6 h-px bg-line" />}
         </div>
       ))}
     </div>
@@ -503,7 +503,7 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
                   loading={isLoadingOptions}
                   emptyLabel="No teachers found."
                 />
-                <p className="mt-1.5 text-[11px] font-mono text-stone-400">
+                <p className="mt-1.5 text-[11px] font-mono text-muted">
                   Required — a course with no instructor can never be enrolled.
                 </p>
                 {fieldErrors.instructors && <p className={ERROR_CLASS}>{fieldErrors.instructors}</p>}
@@ -548,7 +548,7 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
                   rows={4}
                   className={`${FIELD_CLASS} resize-none`}
                 />
-                <p className="mt-1.5 text-[11px] font-mono text-stone-400">
+                <p className="mt-1.5 text-[11px] font-mono text-muted">
                   Leave blank and the AI will propose objectives itself.
                 </p>
               </div>
@@ -564,7 +564,7 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
                   loading={tiersQuery.isLoading}
                   emptyLabel="No tiers found."
                 />
-                <p className="mt-1.5 text-[11px] font-mono text-stone-400">
+                <p className="mt-1.5 text-[11px] font-mono text-muted">
                   Read-only context for tone/audience — the AI never attaches this course to a tier.
                 </p>
               </div>
@@ -602,14 +602,14 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-stone-50/60">
+              <div className="flex items-center gap-3 p-3 rounded-xl border border-line bg-porcelain/60">
                 <input
                   type="checkbox"
                   id="include_quizzes"
                   checked={form.include_quizzes}
                   onChange={updateField("include_quizzes")}
                 />
-                <label htmlFor="include_quizzes" className="text-sm font-mono text-stone-700 flex-1">
+                <label htmlFor="include_quizzes" className="text-sm font-mono text-muted flex-1">
                   Include a quiz per module
                 </label>
                 {form.include_quizzes && (
@@ -627,33 +627,33 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
               </div>
               {fieldErrors.questions_per_quiz && <p className={ERROR_CLASS}>{fieldErrors.questions_per_quiz}</p>}
 
-              <div className="flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-stone-50/60">
+              <div className="flex items-center gap-3 p-3 rounded-xl border border-line bg-porcelain/60">
                 <input
                   type="checkbox"
                   id="include_assignments"
                   checked={form.include_assignments}
                   onChange={updateField("include_assignments")}
                 />
-                <label htmlFor="include_assignments" className="text-sm font-mono text-stone-700 flex-1">
+                <label htmlFor="include_assignments" className="text-sm font-mono text-muted flex-1">
                   Include an assignment per module
                 </label>
               </div>
 
               {(form.include_quizzes || form.include_assignments) && (
-                <div className="flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-stone-50/60">
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-line bg-porcelain/60">
                   <input
                     type="checkbox"
                     id="ai_grading"
                     checked={form.ai_grading}
                     onChange={updateField("ai_grading")}
                   />
-                  <label htmlFor="ai_grading" className="text-sm font-mono text-stone-700 flex-1">
+                  <label htmlFor="ai_grading" className="text-sm font-mono text-muted flex-1">
                     AI-grade generated quizzes &amp; assignments
                   </label>
                 </div>
               )}
               {(form.include_quizzes || form.include_assignments) && (
-                <p className="text-[11px] font-mono text-stone-400 -mt-2">
+                <p className="text-[11px] font-mono text-muted -mt-2">
                   When enabled, short-answer quiz questions and assignment submissions from this
                   course are graded automatically by AI instead of waiting on manual review.
                 </p>
@@ -668,7 +668,7 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
                   onChange={updateField("weeks_between_modules")}
                   className={FIELD_CLASS}
                 />
-                <p className="mt-1.5 text-[11px] font-mono text-stone-400">
+                <p className="mt-1.5 text-[11px] font-mono text-muted">
                   Used to space out assignment due dates.
                 </p>
                 {fieldErrors.weeks_between_modules && (
@@ -689,12 +689,12 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-3 mt-6 pt-5 border-t border-stone-100">
+          <div className="flex items-center justify-between gap-3 mt-6 pt-5 border-t border-line">
             <button
               type="button"
               onClick={step === 1 ? handleClose : () => goToStep(step - 1)}
               disabled={isSubmitting}
-              className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-sm font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+              className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-all flex items-center justify-center gap-2 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >
               {step === 1 ? (
                 <>
@@ -713,7 +713,7 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
               <button
                 type="button"
                 onClick={() => goToStep(step + 1)}
-                className="px-6 py-3 bg-stone-900 hover:bg-stone-800 text-white text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="px-6 py-3 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 Next
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -723,11 +723,11 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
                 type="button"
                 onClick={handleGenerate}
                 disabled={isSubmitting}
-                className="px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 disabled:opacity-60 disabled:cursor-not-allowed text-stone-100 text-sm font-semibold font-mono rounded-lg tracking-wider uppercase shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-lg tracking-wider uppercase shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
-                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                    <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
                     Starting...
                   </>
                 ) : (
@@ -745,32 +745,32 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
       {phase === "generating" && (
         <div className="py-4">
           <div className="flex flex-col items-center text-center gap-4 py-6">
-            <div className="w-14 h-14 rounded-full border-4 border-stone-100 border-t-amber-600 animate-spin" />
+            <div className="w-14 h-14 rounded-full border-4 border-porcelain border-t-pine animate-spin" />
             <div>
-              <p className="text-sm font-semibold text-stone-800">{job?.step || "Starting..."}</p>
-              <p className="text-xs font-mono text-stone-400 mt-1">
+              <p className="text-sm font-semibold text-ink">{job?.step || "Starting..."}</p>
+              <p className="text-xs font-mono text-muted mt-1">
                 This can take up to a couple of minutes — feel free to wait, generation continues even if you close this window.
               </p>
             </div>
             <div className="w-full">
-              <div className="w-full h-2 bg-stone-100 rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-porcelain rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-gradient-to-r from-amber-600 to-amber-800 transition-all duration-500"
+                  className="h-full bg-pine transition-all duration-500"
                   style={{ width: `${displayProgress}%` }}
                 />
               </div>
               <div className="flex items-center justify-between mt-2">
-                <span className="text-[11px] font-mono text-stone-400">{displayProgress}%</span>
-                <span className="text-[11px] font-mono text-stone-400">{formatElapsed(elapsedSeconds)} elapsed</span>
+                <span className="text-[11px] font-mono text-muted">{displayProgress}%</span>
+                <span className="text-[11px] font-mono text-muted">{formatElapsed(elapsedSeconds)} elapsed</span>
               </div>
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-5 border-t border-stone-100">
+          <div className="flex justify-end gap-3 pt-5 border-t border-line">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-sm font-semibold font-mono rounded-lg tracking-wider transition-all border border-stone-200 shadow-sm cursor-pointer"
+              className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-all border border-line shadow-sm cursor-pointer"
             >
               Hide
             </button>
@@ -794,36 +794,36 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
               <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
             )}
             {job.status === "FAILED" && <XCircle className="w-6 h-6 text-red-600 shrink-0 mt-0.5" />}
-            {job.status === "CANCELLED" && <AlertTriangle className="w-6 h-6 text-stone-400 shrink-0 mt-0.5" />}
+            {job.status === "CANCELLED" && <AlertTriangle className="w-6 h-6 text-muted shrink-0 mt-0.5" />}
 
             <div className="min-w-0">
               {job.status !== "FAILED" && job.status !== "CANCELLED" && job.course && (
                 <>
-                  <p className="text-sm font-bold text-stone-900">{job.course.title}</p>
-                  <p className="text-[11px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
+                  <p className="text-sm font-bold text-ink">{job.course.title}</p>
+                  <p className="text-[11px] font-mono uppercase tracking-wider text-muted mt-0.5">
                     Status: {job.course.status}
                   </p>
                 </>
               )}
               {job.status === "FAILED" && (
                 <>
-                  <p className="text-sm font-bold text-stone-900">Generation failed</p>
-                  <p className="text-sm text-stone-600 mt-1">{job.error_message}</p>
+                  <p className="text-sm font-bold text-ink">Generation failed</p>
+                  <p className="text-sm text-muted mt-1">{job.error_message}</p>
                 </>
               )}
-              {job.status === "CANCELLED" && <p className="text-sm font-bold text-stone-900">Generation cancelled</p>}
+              {job.status === "CANCELLED" && <p className="text-sm font-bold text-ink">Generation cancelled</p>}
             </div>
           </div>
 
           {job.warnings?.length > 0 && (
-            <div className="mb-4 p-3 rounded-xl border border-amber-200 bg-amber-50">
-              <p className="text-[11px] font-mono uppercase tracking-wider text-amber-800 font-semibold mb-2 flex items-center gap-1.5">
+            <div className="mb-4 p-3 rounded-xl border border-gold/25 bg-gold/12">
+              <p className="text-[11px] font-mono uppercase tracking-wider text-gold font-semibold mb-2 flex items-center gap-1.5">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 {job.warnings.length} item{job.warnings.length === 1 ? "" : "s"} need attention
               </p>
               <ul className="space-y-1 max-h-40 overflow-y-auto">
                 {job.warnings.map((warning, index) => (
-                  <li key={index} className="text-xs font-mono text-amber-900">
+                  <li key={index} className="text-xs font-mono text-gold">
                     • {warning}
                   </li>
                 ))}
@@ -831,11 +831,11 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
             </div>
           )}
 
-          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-5 border-t border-stone-100">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-5 border-t border-line">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-sm font-semibold font-mono rounded-lg tracking-wider transition-all border border-stone-200 shadow-sm cursor-pointer"
+              className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-all border border-line shadow-sm cursor-pointer"
             >
               Close
             </button>
@@ -844,7 +844,7 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
                 type="button"
                 onClick={handleRetry}
                 disabled={retryMutation.isPending}
-                className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 text-white text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 text-paper text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
                 Try Again
@@ -854,7 +854,7 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
               <button
                 type="button"
                 onClick={handleReviewAndEdit}
-                className="px-6 py-3 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-lg tracking-wider uppercase shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="px-6 py-3 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-lg tracking-wider uppercase shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 Review &amp; Edit
                 <ArrowRight className="w-3.5 h-3.5" />

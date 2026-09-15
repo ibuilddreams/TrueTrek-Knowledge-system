@@ -6,12 +6,10 @@ import Loader from "@/components/ui/Loader";
 import { getAssignmentAttachments } from "@/services/assignmentsService";
 import { formatDateTime } from "@/lib/adminFormatters";
 import { useMyAssignmentSubmission } from "@/hooks/student/useAssignmentSubmission";
-import { useTheme } from "@/hooks/useTheme";
 import AssignmentSubmissionForm from "../course-detail/AssignmentSubmissionForm";
 import AssignmentSubmissionStatus from "../course-detail/AssignmentSubmissionStatus";
 
 export default function AssignmentPlayerPanel({ assignment, canInteract }) {
-  const { isVault } = useTheme();
   const assignmentId = assignment.id;
 
   const { data: attachments = [] } = useQuery({
@@ -34,54 +32,32 @@ export default function AssignmentPlayerPanel({ assignment, canInteract }) {
   return (
     <div className="space-y-6">
       <div className="flex items-start gap-3">
-        <span
-          className={`flex items-center justify-center w-10 h-10 rounded-xl border shrink-0 ${
-            isVault
-              ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-              : "bg-amber-600/10 text-amber-700 border-amber-200/40"
-          }`}
-        >
+        <span className="flex items-center justify-center w-10 h-10 rounded-xl border shrink-0 bg-gold/12 text-gold border-gold/25">
           <ClipboardList className="w-5 h-5" />
         </span>
         <div className="min-w-0">
-          <p
-            className={`text-[11px] font-mono uppercase tracking-[0.16em] mb-1 ${
-              isVault ? "text-amber-500" : "text-amber-700/80"
-            }`}
-          >
+          <p className="text-[11px] font-mono uppercase tracking-[0.16em] mb-1 text-gold/80">
             Assignment
           </p>
-          <h2
-            className={`font-serif font-bold text-xl sm:text-2xl leading-tight ${
-              isVault ? "text-stone-50" : "text-stone-900"
-            }`}
-          >
+          <h2 className="font-serif font-bold text-xl sm:text-2xl leading-tight text-ink">
             {assignment.title}
           </h2>
-          <p className={`text-sm mt-1 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+          <p className="text-sm mt-1 text-muted">
             Due {formatDateTime(assignment.due_date)} · {assignment.total_marks} marks
           </p>
         </div>
       </div>
 
       <div className="space-y-3">
-        <p
-          className={`text-sm font-light leading-relaxed whitespace-pre-line ${
-            isVault ? "text-stone-300" : "text-stone-600"
-          }`}
-        >
+        <p className="text-sm font-light leading-relaxed whitespace-pre-line text-muted">
           {assignment.description || "No instructions have been added for this assignment."}
         </p>
         <div className="flex flex-wrap gap-2 text-[11px] font-mono uppercase tracking-wider">
           <span
             className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border ${
               isPastDue
-                ? isVault
-                  ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                  : "bg-rose-50 text-rose-600 border-rose-100"
-                : isVault
-                  ? "bg-white/5 text-stone-400 border-stone-700"
-                  : "bg-stone-50 text-stone-500 border-stone-200"
+                ? "bg-rose-50 text-rose-600 border-rose-100"
+                : "bg-porcelain text-muted border-line"
             }`}
           >
             <Calendar className="w-3 h-3" />
@@ -89,11 +65,7 @@ export default function AssignmentPlayerPanel({ assignment, canInteract }) {
           </span>
           {assignment.allow_resubmission ? (
             <span
-              className={`inline-flex items-center px-2.5 py-1 rounded-lg border ${
-                isVault
-                  ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                  : "bg-amber-50 text-amber-700 border-amber-100"
-              }`}
+              className="inline-flex items-center px-2.5 py-1 rounded-lg border bg-gold/12 text-gold border-gold/25"
             >
               Resubmission allowed
             </span>
@@ -103,37 +75,23 @@ export default function AssignmentPlayerPanel({ assignment, canInteract }) {
 
       {attachments.length > 0 && (
         <div className="space-y-2">
-          <h5
-            className={`text-sm font-mono uppercase tracking-wider ${
-              isVault ? "text-stone-500" : "text-stone-400"
-            }`}
-          >
+          <h5 className="text-sm font-mono uppercase tracking-wider text-muted">
             Reference materials
           </h5>
           <div className="space-y-1.5">
             {attachments.map((attachment) => (
               <div
                 key={attachment.id}
-                className={`flex items-center justify-between gap-2 text-[12px] border rounded-lg px-3 py-2 ${
-                  isVault
-                    ? "text-stone-300 bg-white/5 border-stone-800"
-                    : "text-stone-600 bg-stone-50 border-stone-200"
-                }`}
+                className="flex items-center justify-between gap-2 text-[12px] border rounded-lg px-3 py-2 text-muted bg-porcelain border-line"
               >
                 <span className="inline-flex items-center gap-1.5 min-w-0 truncate">
-                  <Paperclip
-                    className={`w-3.5 h-3.5 shrink-0 ${isVault ? "text-stone-500" : "text-stone-400"}`}
-                  />
+                  <Paperclip className="w-3.5 h-3.5 shrink-0 text-muted" />
                   <span className="truncate">{attachment.original_name || attachment.file}</span>
                 </span>
                 <a
                   href={attachment.file}
                   download={attachment.original_name || true}
-                  className={`inline-flex items-center gap-1 px-2.5 py-1 border text-[11px] font-mono uppercase tracking-wider rounded-md transition shrink-0 ${
-                    isVault
-                      ? "border-stone-700 hover:border-amber-500/50 hover:bg-white/10 text-stone-400 hover:text-amber-400"
-                      : "border-stone-200 hover:border-amber-300 hover:bg-white text-stone-500 hover:text-amber-800"
-                  }`}
+                  className="inline-flex items-center gap-1 px-2.5 py-1 border text-[11px] font-mono uppercase tracking-wider rounded-md transition shrink-0 border-line hover:border-pine hover:bg-paper text-muted hover:text-pine"
                 >
                   <Download className="w-3.5 h-3.5" />
                   Download
@@ -144,7 +102,7 @@ export default function AssignmentPlayerPanel({ assignment, canInteract }) {
         </div>
       )}
 
-      <div className={`pt-4 border-t space-y-4 ${isVault ? "border-stone-800" : "border-stone-100"}`}>
+      <div className="pt-4 border-t space-y-4 border-line">
         {isLoadingSubmission ? (
           <div className="flex justify-center py-6" aria-busy="true">
             <Loader fullScreen={false} label="Loading your submission..." />

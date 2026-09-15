@@ -20,58 +20,38 @@ const ASSIGNMENT_STATUS_STYLES = {
   RESUBMITTED: "bg-amber-50 text-amber-700 border-amber-100",
 };
 
-const ASSIGNMENT_STATUS_STYLES_VAULT = {
-  SUBMITTED: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  LATE: "bg-rose-500/10 text-rose-400 border-rose-500/20",
-  GRADED: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  RETURNED: "bg-sky-500/10 text-sky-400 border-sky-500/20",
-  RESUBMITTED: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-};
-
-export function getAssignmentStatusMeta(submission, isVault) {
+export function getAssignmentStatusMeta(submission) {
   if (!submission) {
     return {
       label: "Not submitted",
-      className: isVault
-        ? "bg-white/5 text-stone-400 border-stone-700"
-        : "bg-stone-50 text-stone-500 border-stone-200",
+      className: "bg-stone-50 text-stone-500 border-stone-200",
     };
   }
-  const styles = isVault ? ASSIGNMENT_STATUS_STYLES_VAULT : ASSIGNMENT_STATUS_STYLES;
-  const fallback = isVault
-    ? "bg-white/5 text-stone-400 border-stone-700"
-    : "bg-stone-50 text-stone-500 border-stone-200";
+  const styles = ASSIGNMENT_STATUS_STYLES;
+  const fallback = "bg-stone-50 text-stone-500 border-stone-200";
   return { label: submission.status, className: styles[submission.status] || fallback };
 }
 
-export function getQuizStatusMeta(quiz, isVault) {
-  const fallback = isVault
-    ? "bg-white/5 text-stone-400 border-stone-700"
-    : "bg-stone-50 text-stone-500 border-stone-200";
+export function getQuizStatusMeta(quiz) {
+  const fallback = "bg-stone-50 text-stone-500 border-stone-200";
   const attempt = quiz.latest_attempt;
   if (!attempt) return { label: "Not attempted", className: fallback };
   if (attempt.status === "IN_PROGRESS") {
     return {
       label: "In progress",
-      className: isVault
-        ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-        : "bg-amber-50 text-amber-700 border-amber-100",
+      className: "bg-amber-50 text-amber-700 border-amber-100",
     };
   }
   if (attempt.is_passed === true) {
     return {
       label: "Passed",
-      className: isVault
-        ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-        : "bg-emerald-50 text-emerald-700 border-emerald-100",
+      className: "bg-emerald-50 text-emerald-700 border-emerald-100",
     };
   }
   if (attempt.is_passed === false) {
     return {
       label: "Failed",
-      className: isVault
-        ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-        : "bg-rose-50 text-rose-600 border-rose-100",
+      className: "bg-rose-50 text-rose-600 border-rose-100",
     };
   }
   return { label: "Submitted", className: fallback };

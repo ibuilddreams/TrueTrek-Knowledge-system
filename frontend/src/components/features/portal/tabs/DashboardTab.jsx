@@ -23,7 +23,6 @@ import {
 } from "recharts";
 import { getStudentDashboardStats } from "@/services/studentDashboardService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
-import { useTheme } from "@/hooks/useTheme";
 import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
 import MyPathwaysSummary from "../MyPathwaysSummary";
@@ -49,7 +48,7 @@ function ProgressRing({ value, size = 128, stroke = 10 }) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#f59e0b"
+          stroke="#c7a85b"
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -59,10 +58,10 @@ function ProgressRing({ value, size = 128, stroke = 10 }) {
         />
       </svg>
       <div className="absolute inset-0 flex flex-col items-center justify-center">
-        <span className="text-3xl font-serif font-bold text-white leading-none">
+        <span className="text-3xl font-serif font-bold text-paper leading-none">
           {value}%
         </span>
-        <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-stone-400 mt-1.5">
+        <span className="text-[10px] font-mono uppercase tracking-[0.16em] text-paper/60 mt-1.5">
           Progress
         </span>
       </div>
@@ -70,7 +69,7 @@ function ProgressRing({ value, size = 128, stroke = 10 }) {
   );
 }
 
-function CourseStat({ label, value, icon: Icon, delay = 0, isVault }) {
+function CourseStat({ label, value, icon: Icon, delay = 0 }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 10 }}
@@ -78,22 +77,14 @@ function CourseStat({ label, value, icon: Icon, delay = 0, isVault }) {
       transition={{ duration: 0.35, delay }}
       className="flex items-center gap-3.5 min-w-0"
     >
-      <div
-        className={`w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 ${
-          isVault ? "bg-white/5 border-white/10 text-stone-300" : "bg-stone-100 border-stone-200/80 text-stone-600"
-        }`}
-      >
+      <div className="w-10 h-10 rounded-xl border flex items-center justify-center shrink-0 bg-porcelain border-line/80 text-muted">
         <Icon className="w-4 h-4" />
       </div>
       <div className="min-w-0">
-        <p
-          className={`text-[11px] font-mono uppercase tracking-[0.14em] truncate ${
-            isVault ? "text-stone-500" : "text-stone-400"
-          }`}
-        >
+        <p className="text-[11px] font-mono uppercase tracking-[0.14em] truncate text-muted">
           {label}
         </p>
-        <p className={`text-2xl font-serif font-bold leading-none mt-1 ${isVault ? "text-stone-50" : "text-stone-900"}`}>
+        <p className="text-2xl font-serif font-bold leading-none mt-1 text-ink">
           {value}
         </p>
       </div>
@@ -101,20 +92,12 @@ function CourseStat({ label, value, icon: Icon, delay = 0, isVault }) {
   );
 }
 
-function ActionMetric({ label, value, icon: Icon, tone = "stone", delay = 0, isVault }) {
+function ActionMetric({ label, value, icon: Icon, tone = "stone", delay = 0 }) {
   const tones = {
-    stone: isVault
-      ? "bg-white/5 border-white/10 text-stone-300"
-      : "bg-stone-50 border-stone-200/80 text-stone-600",
-    amber: isVault
-      ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
-      : "bg-amber-50/80 border-amber-100 text-amber-800",
-    rose: isVault
-      ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
-      : "bg-rose-50/70 border-rose-100 text-rose-700",
-    emerald: isVault
-      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-      : "bg-emerald-50/70 border-emerald-100 text-emerald-700",
+    stone: "bg-porcelain border-line/80 text-muted",
+    amber: "bg-gold/12 border-gold/25 text-gold",
+    rose: "bg-rose-50/70 border-rose-100 text-rose-700",
+    emerald: "bg-emerald-50/70 border-emerald-100 text-emerald-700",
   };
 
   return (
@@ -122,27 +105,15 @@ function ActionMetric({ label, value, icon: Icon, tone = "stone", delay = 0, isV
       initial={{ opacity: 0, y: 12 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.4, delay }}
-      className={`group relative rounded-2xl border p-5 overflow-hidden transition-shadow ${
-        isVault
-          ? "border-stone-800 bg-[#161412] hover:shadow-[0_14px_40px_-28px_rgba(0,0,0,0.6)]"
-          : "border-stone-200/80 bg-white/90 hover:shadow-[0_14px_40px_-28px_rgba(28,25,23,0.45)]"
-      }`}
+      className="group relative rounded-2xl border p-5 overflow-hidden transition-shadow border-line/80 bg-paper/90 hover:shadow-[0_14px_40px_-28px_rgba(28,25,23,0.45)]"
     >
-      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-amber-400/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+      <div className="absolute inset-x-0 top-0 h-px bg-gradient-to-r from-transparent via-gold/40 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p
-            className={`text-[11px] font-mono uppercase tracking-[0.14em] ${
-              isVault ? "text-stone-500" : "text-stone-400"
-            }`}
-          >
+          <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-muted">
             {label}
           </p>
-          <p
-            className={`text-3xl font-serif font-bold mt-2 tracking-tight ${
-              isVault ? "text-stone-50" : "text-stone-900"
-            }`}
-          >
+          <p className="text-3xl font-serif font-bold mt-2 tracking-tight text-ink">
             {value}
           </p>
         </div>
@@ -196,7 +167,6 @@ function CourseAxisTick({ x, y, payload }) {
 }
 
 export default function DashboardTab() {
-  const { isVault } = useTheme();
   const {
     data,
     isLoading,
@@ -221,34 +191,20 @@ export default function DashboardTab() {
 
   if (isError) {
     return (
-      <div
-        className={`border rounded-2xl p-8 text-center max-w-lg mx-auto ${
-          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200 bg-white"
-        }`}
-      >
-        <div
-          className={`w-12 h-12 border rounded-2xl flex items-center justify-center mx-auto mb-4 ${
-            isVault
-              ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
-              : "bg-rose-50 border-rose-100 text-rose-600"
-          }`}
-        >
+      <div className="border rounded-2xl p-8 text-center max-w-lg mx-auto border-line bg-paper">
+        <div className="w-12 h-12 border rounded-2xl flex items-center justify-center mx-auto mb-4 bg-rose-50 border-rose-100 text-rose-600">
           <AlertCircle className="w-6 h-6" />
         </div>
-        <h2 className={`text-xl font-serif font-bold mb-2 ${isVault ? "text-stone-50" : "text-stone-900"}`}>
+        <h2 className="text-xl font-serif font-bold mb-2 text-ink">
           Failed to Load Dashboard
         </h2>
-        <p className={`text-sm font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+        <p className="text-sm font-light mb-6 text-muted">
           {getApiErrorMessage(error, "Unable to load your dashboard.")}
         </p>
         <button
           type="button"
           onClick={() => refetch()}
-          className={`inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition ${
-            isVault
-              ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
-              : "bg-stone-900 hover:bg-stone-800 text-stone-100"
-          }`}
+          className="inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
         >
           <RefreshCw className="w-4 h-4" />
           Retry
@@ -274,11 +230,7 @@ export default function DashboardTab() {
 
   if (enrolledCourses === 0) {
     return (
-      <div
-        className={`border rounded-2xl shadow-sm ${
-          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200 bg-white"
-        }`}
-      >
+      <div className="border rounded-card shadow-soft border-line bg-paper">
         <EmptyState
           icon={BookMarked}
           label="No dashboard data yet"
@@ -297,50 +249,50 @@ export default function DashboardTab() {
         initial={{ opacity: 0, y: 12 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.45, ease: "easeOut" }}
-        className="relative overflow-hidden rounded-[1.75rem] border border-stone-800 bg-stone-950 text-white shadow-[0_24px_60px_-36px_rgba(28,25,23,0.85)]"
+        className="relative overflow-hidden rounded-[1.75rem] border border-paper/10 cn-page-bg-vault text-paper shadow-[0_24px_60px_-36px_rgba(8,31,28,0.85)]"
       >
-        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(245,158,11,0.22),_transparent_55%),radial-gradient(ellipse_at_bottom_left,_rgba(120,113,108,0.35),_transparent_50%)]" />
-        <div className="pointer-events-none absolute inset-0 opacity-[0.07] bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-[size:28px_28px]" />
+        <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_rgba(199,168,91,0.18),_transparent_55%),radial-gradient(ellipse_at_bottom_left,_rgba(217,111,95,0.14),_transparent_50%)]" />
+        <div className="pointer-events-none absolute inset-0 opacity-[0.06] bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-size-[28px_28px]" />
 
         <div className="relative z-10 p-6 sm:p-8 lg:p-10">
           <div className="flex flex-col lg:flex-row lg:items-center gap-8 lg:gap-12">
             <div className="flex-1 min-w-0">
-              <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-amber-400/90 mb-3">
+              <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-gold/90 mb-3">
                 Learning pulse
               </p>
-              <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-white leading-[1.1]">
+              <h2 className="text-3xl sm:text-4xl font-serif font-bold tracking-tight text-paper leading-[1.1]">
                 Your student
-                <span className="block text-stone-300 font-light">dashboard</span>
+                <span className="block text-paper/75 font-light">dashboard</span>
               </h2>
-              <p className="text-sm text-stone-400 font-light mt-3 max-w-md leading-relaxed">
+              <p className="text-sm text-paper/60 font-light mt-3 max-w-md leading-relaxed">
                 Track enrollments, momentum, and grades in one calm view — built around how you learn.
               </p>
 
               <div className="mt-7 flex flex-wrap gap-8">
                 <div>
-                  <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                  <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-paper/50 mb-1.5">
                     Average grade
                   </p>
-                  <p className="text-3xl font-serif font-bold text-amber-400 leading-none">
+                  <p className="text-3xl font-serif font-bold text-gold leading-none">
                     {averageGrade}
-                    <span className="text-lg text-amber-500/70 ml-0.5">%</span>
+                    <span className="text-lg text-gold/70 ml-0.5">%</span>
                   </p>
                 </div>
-                <div className="w-px bg-stone-700/80 self-stretch hidden sm:block" />
+                <div className="w-px bg-paper/15 self-stretch hidden sm:block" />
                 <div>
-                  <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                  <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-paper/50 mb-1.5">
                     Certificates
                   </p>
-                  <p className="text-3xl font-serif font-bold text-white leading-none">
+                  <p className="text-3xl font-serif font-bold text-paper leading-none">
                     {certificates}
                   </p>
                 </div>
-                <div className="w-px bg-stone-700/80 self-stretch hidden sm:block" />
+                <div className="w-px bg-paper/15 self-stretch hidden sm:block" />
                 <div>
-                  <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-stone-500 mb-1.5">
+                  <p className="text-[11px] font-mono uppercase tracking-[0.14em] text-paper/50 mb-1.5">
                     Active now
                   </p>
-                  <p className="text-3xl font-serif font-bold text-white leading-none">
+                  <p className="text-3xl font-serif font-bold text-paper leading-none">
                     {activeCourses}
                   </p>
                 </div>
@@ -348,7 +300,7 @@ export default function DashboardTab() {
             </div>
 
             <div className="flex items-center justify-center lg:justify-end shrink-0">
-              <div className="rounded-full p-3 bg-white/5 border border-white/10 backdrop-blur-sm">
+              <div className="rounded-full p-3 bg-paper/5 border border-paper/10 backdrop-blur-sm">
                 <ProgressRing value={overallProgress} />
               </div>
             </div>
@@ -356,23 +308,14 @@ export default function DashboardTab() {
         </div>
       </motion.section>
 
-      <section
-        className={`rounded-2xl border px-5 sm:px-7 py-5 sm:py-6 shadow-[0_10px_36px_-28px_rgba(28,25,23,0.35)] ${
-          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200/80 bg-white/90"
-        }`}
-      >
-        <div
-          className={`grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4 divide-y sm:divide-y-0 sm:divide-x ${
-            isVault ? "divide-white/10" : "divide-stone-100"
-          }`}
-        >
+      <section className="rounded-2xl border px-5 sm:px-7 py-5 sm:py-6 shadow-[0_10px_36px_-28px_rgba(28,25,23,0.35)] border-line/80 bg-paper/90">
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4 divide-y sm:divide-y-0 sm:divide-x divide-line">
           <div className="sm:pr-4 pt-0">
             <CourseStat
               label="Enrolled Courses"
               value={enrolledCourses}
               icon={BookMarked}
               delay={0.05}
-              isVault={isVault}
             />
           </div>
           <div className="sm:px-4 pt-6 sm:pt-0">
@@ -381,7 +324,6 @@ export default function DashboardTab() {
               value={activeCourses}
               icon={BookOpen}
               delay={0.1}
-              isVault={isVault}
             />
           </div>
           <div className="sm:pl-4 pt-6 sm:pt-0">
@@ -390,7 +332,6 @@ export default function DashboardTab() {
               value={completedCourses}
               icon={CheckCircle2}
               delay={0.15}
-              isVault={isVault}
             />
           </div>
         </div>
@@ -403,7 +344,6 @@ export default function DashboardTab() {
           icon={ClipboardList}
           tone="rose"
           delay={0.08}
-          isVault={isVault}
         />
         <ActionMetric
           label="Upcoming Quizzes"
@@ -411,7 +351,6 @@ export default function DashboardTab() {
           icon={CircleHelp}
           tone="stone"
           delay={0.12}
-          isVault={isVault}
         />
         <ActionMetric
           label="Average Grade"
@@ -419,32 +358,23 @@ export default function DashboardTab() {
           icon={TrendingUp}
           tone="amber"
           delay={0.16}
-          isVault={isVault}
         />
       </section>
 
       <MyPathwaysSummary />
 
-      <section
-        className={`relative overflow-hidden rounded-2xl border p-5 sm:p-7 shadow-[0_10px_36px_-28px_rgba(28,25,23,0.3)] ${
-          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200/80 bg-white"
-        }`}
-      >
-        <div className="pointer-events-none absolute -right-16 -top-20 w-56 h-56 rounded-full bg-amber-400/10 blur-3xl" />
+      <section className="relative overflow-hidden rounded-2xl border p-5 sm:p-7 shadow-[0_10px_36px_-28px_rgba(28,25,23,0.3)] border-line/80 bg-paper">
+        <div className="pointer-events-none absolute -right-16 -top-20 w-56 h-56 rounded-full bg-gold/10 blur-3xl" />
         <div className="relative mb-6 flex flex-col sm:flex-row sm:items-end justify-between gap-3">
           <div>
-            <p
-              className={`text-[11px] font-mono uppercase tracking-[0.16em] mb-1 ${
-                isVault ? "text-amber-500" : "text-amber-700/80"
-              }`}
-            >
+            <p className="text-[11px] font-mono uppercase tracking-[0.16em] mb-1 text-pine/80">
               Course progress
             </p>
-            <h3 className={`text-xl font-serif font-bold ${isVault ? "text-stone-50" : "text-stone-900"}`}>
+            <h3 className="text-xl font-serif font-bold text-ink">
               Progress by enrolled course
             </h3>
           </div>
-          <p className={`text-sm font-light ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+          <p className="text-sm font-light text-muted">
             {progressByCourse.length} course
             {progressByCourse.length === 1 ? "" : "s"} tracked
           </p>

@@ -171,7 +171,7 @@ export default function TeachersTab() {
       header: "Teacher Name",
       sortable: true,
       render: (teacher) => (
-        <span className="font-semibold text-stone-800">
+        <span className="font-semibold text-ink">
           {teacher.full_name}
         </span>
       ),
@@ -262,7 +262,7 @@ export default function TeachersTab() {
           <button
             type="button"
             onClick={() => setIsBulkImportOpen(true)}
-            className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-700 text-sm font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-paper hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-xl tracking-wider border border-line shadow-sm transition-all flex items-center gap-2"
             title="Bulk add teachers from a CSV or XLSX file"
             aria-label="Bulk add teachers from a CSV or XLSX file"
           >
@@ -272,7 +272,7 @@ export default function TeachersTab() {
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2"
             title="Create a new teacher account"
             aria-label="Create a new teacher account"
           >
@@ -282,7 +282,7 @@ export default function TeachersTab() {
         </div>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
         <DataTable size="lg"
           columns={columns}
           rows={paginatedTeachers}

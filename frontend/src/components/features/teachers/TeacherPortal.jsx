@@ -158,21 +158,21 @@ function TeacherPortalContent() {
   if (!isFacultyLoggedIn) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-6">
-        <div className="w-full max-w-md bg-white border border-stone-200 rounded-2xl shadow-xl p-8 text-center relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 to-amber-800" />
-          <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center">
+        <div className="w-full max-w-md bg-paper border border-line rounded-2xl shadow-xl p-8 text-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gold/60 via-gold to-gold/60" />
+          <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-gold/12 border border-gold/25 text-gold flex items-center justify-center">
             <Lock className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-serif font-bold text-stone-900 mb-1.5">
+          <h2 className="text-2xl font-serif font-bold text-ink mb-1.5">
             Faculty Access Required
           </h2>
-          <p className="text-sm text-stone-500 font-light mb-6">
+          <p className="text-sm text-muted font-light mb-6">
             Sign in with a teacher account to open the Faculty Suite.
           </p>
           <button
             type="button"
             onClick={() => router.push(ROUTES.LOGIN)}
-            className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition"
+            className="w-full py-3.5 bg-pine hover:bg-moss text-paper font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition"
           >
             Go to Sign In
           </button>
@@ -186,29 +186,29 @@ function TeacherPortalContent() {
       id="teacher-portal-view"
       className="py-10 px-4 sm:px-6 md:px-10 max-w-7xl mx-auto min-h-[85vh] font-sans"
     >
-      <div className="relative z-30 flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 mb-8 border-b border-stone-200">
+      <div className="relative z-30 flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 mb-8 border-b border-line">
         <div className="flex items-center gap-4 sm:gap-5 min-w-0">
           <div className="relative shrink-0">
-            <div className="absolute inset-0 rounded-[1.15rem] bg-amber-500/25 blur-md scale-110" />
-            <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-[1.15rem] bg-gradient-to-br from-amber-400 via-amber-600 to-amber-800 text-white flex items-center justify-center shadow-[0_10px_24px_-12px_rgba(180,83,9,0.7)] ring-2 ring-white">
+            <div className="absolute inset-0 rounded-[1.15rem] bg-gold/25 blur-md scale-110" />
+            <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-[1.15rem] bg-gradient-to-br from-pine via-moss to-gold text-paper flex items-center justify-center shadow-[0_10px_24px_-12px_rgba(9,45,41,0.7)] ring-2 ring-paper">
               <GraduationCap className="w-7 h-7" />
             </div>
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-stone-900 border-2 border-[#faf9f6] text-amber-400 flex items-center justify-center shadow-sm">
+            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-ink border-2 border-paper text-gold flex items-center justify-center shadow-sm">
               <BookMarked className="w-3 h-3" />
             </div>
           </div>
 
           <div className="min-w-0 pt-0.5">
             <div className="inline-flex items-center gap-2 mb-1.5">
-              <span className="h-px w-4 bg-amber-500/70" />
-              <span className="text-xs font-mono uppercase tracking-[0.2em] text-amber-700/90">
+              <span className="h-px w-4 bg-gold/70" />
+              <span className="text-xs font-mono uppercase tracking-[0.2em] text-gold">
                 Faculty Portal
               </span>
             </div>
-            <h1 className="text-2xl sm:text-[2rem] font-serif font-bold tracking-tight text-stone-900 leading-none">
+            <h1 className="text-2xl sm:text-[2rem] font-serif font-bold tracking-tight text-ink leading-none">
               Teacher & Faculty Suite
             </h1>
-            <p className="text-base text-stone-500 font-light mt-2 leading-snug max-w-md">
+            <p className="text-base text-muted font-light mt-2 leading-snug max-w-md">
               Courses, students, scores, manuals, and enrollment — in one place.
             </p>
           </div>

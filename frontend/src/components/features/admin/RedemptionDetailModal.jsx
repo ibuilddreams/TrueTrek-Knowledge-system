@@ -8,9 +8,9 @@ import { formatDateTime, formatPlainDate, formatPlainTime } from "@/lib/adminFor
 function InfoRow({ label, value }) {
   if (!value) return null;
   return (
-    <div className="flex items-center justify-between text-sm py-1.5 border-b border-stone-50 last:border-0">
-      <span className="text-stone-500 font-light">{label}</span>
-      <span className="text-stone-800 font-medium text-right">{value}</span>
+    <div className="flex items-center justify-between text-sm py-1.5 border-b border-line last:border-0">
+      <span className="text-muted font-light">{label}</span>
+      <span className="text-ink font-medium text-right">{value}</span>
     </div>
   );
 }
@@ -25,13 +25,13 @@ export default function RedemptionDetailModal({ isOpen, onClose, redemption }) {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-serif font-bold text-lg text-stone-900">{redemption.student?.name}</p>
-            <p className="text-xs text-stone-400">{redemption.student?.email}</p>
+            <p className="font-serif font-bold text-lg text-ink">{redemption.student?.name}</p>
+            <p className="text-xs text-muted">{redemption.student?.email}</p>
           </div>
           <StatusBadge size="lg" status={redemption.status} />
         </div>
 
-        <div className="bg-stone-50 border border-stone-100 rounded-xl p-4">
+        <div className="bg-porcelain border border-line rounded-xl p-4">
           <InfoRow label="Reward" value={redemption.reward?.name} />
           <InfoRow label="Reward Type" value={redemption.reward?.reward_type} />
           {redemption.reward?.duration_minutes && (
@@ -48,11 +48,11 @@ export default function RedemptionDetailModal({ isOpen, onClose, redemption }) {
         </div>
 
         {redemption.student_note && (
-          <div className="bg-amber-50 border border-amber-100 rounded-xl p-4">
-            <p className="text-[11px] font-mono uppercase tracking-wider text-amber-700/80 font-semibold mb-1">
+          <div className="bg-gold/12 border border-gold/25 rounded-xl p-4">
+            <p className="text-[11px] font-mono uppercase tracking-wider text-gold font-semibold mb-1">
               Student message
             </p>
-            <p className="text-sm text-amber-900">{redemption.student_note}</p>
+            <p className="text-sm text-ink">{redemption.student_note}</p>
           </div>
         )}
 

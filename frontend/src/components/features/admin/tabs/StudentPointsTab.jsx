@@ -39,15 +39,15 @@ export default function StudentPointsTab() {
       header: "Student",
       render: (student) => (
         <div>
-          <span className="font-semibold text-stone-800">{student.name}</span>
-          <p className="text-[11px] text-stone-400 font-light">{student.email}</p>
+          <span className="font-semibold text-ink">{student.name}</span>
+          <p className="text-[11px] text-muted font-light">{student.email}</p>
         </div>
       ),
     },
     {
       key: "balance",
       header: "Balance",
-      render: (student) => <span className="font-mono font-bold text-stone-800">{student.balance.toLocaleString()}</span>,
+      render: (student) => <span className="font-mono font-bold text-ink">{student.balance.toLocaleString()}</span>,
     },
     {
       key: "total_earned",
@@ -65,7 +65,7 @@ export default function StudentPointsTab() {
     <div className="space-y-6">
       <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search students by name or email..." />
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
         <DataTable
           size="lg"
           columns={columns}

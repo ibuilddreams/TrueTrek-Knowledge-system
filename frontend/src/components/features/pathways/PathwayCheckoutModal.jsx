@@ -18,12 +18,12 @@ function formatExpiry(value) {
 }
 
 const FIELD_CLASS =
-  "w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 focus:border-amber-600 rounded-xl text-xs font-mono text-stone-800 placeholder:text-stone-400 focus:outline-none focus:bg-white transition";
+  "w-full px-3.5 py-2.5 bg-porcelain border border-line focus:border-moss rounded-xl text-xs font-sans text-ink placeholder:text-muted focus:outline-none focus:bg-paper transition";
 
 function Field({ label, ...inputProps }) {
   return (
     <div>
-      <label className="text-[9px] font-mono uppercase tracking-wider text-stone-400 block mb-1.5">
+      <label className="text-[9px] font-sans font-medium uppercase tracking-widest text-muted block mb-1.5">
         {label}
       </label>
       <input {...inputProps} className={FIELD_CLASS} />
@@ -66,46 +66,46 @@ export default function PathwayCheckoutModal({
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-[110] overflow-y-auto flex items-center justify-center p-6 bg-stone-900/60 backdrop-blur-xs"
+          className="fixed inset-0 z-[110] overflow-y-auto flex items-center justify-center p-6 bg-ink/60 backdrop-blur-xs"
           id="pathway-checkout-modal-layout"
         >
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="relative bg-white rounded-3xl overflow-hidden max-w-md w-full border border-stone-200 shadow-2xl"
+            className="relative bg-paper rounded-panel overflow-hidden max-w-md w-full border border-line shadow-2xl"
           >
             <CloseButton
               onClick={handleClose}
-              className="absolute top-4 right-4 text-stone-400 hover:text-stone-900 bg-white/90 p-2 rounded-full shadow-md z-10 border border-stone-200 transition"
+              className="absolute top-4 right-4 text-muted hover:text-ink bg-paper/90 p-2 rounded-full shadow-md z-10 border border-line transition"
               iconClassName="w-4 h-4"
             />
 
             <div className="p-6 space-y-5">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-stone-950 text-white flex items-center justify-center shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-pine text-paper flex items-center justify-center shrink-0">
                   <CreditCard className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-serif font-bold text-stone-900">Pathway Checkout</h3>
-                  <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
+                  <h3 className="font-serif font-light text-ink">Pathway Checkout</h3>
+                  <p className="text-[10px] font-sans uppercase tracking-widest font-medium text-muted">
                     Simulated payment — no real charge
                   </p>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-stone-200 bg-stone-50/80 p-3.5 space-y-2">
+              <div className="rounded-xl border border-line bg-porcelain/80 p-3.5 space-y-2">
                 {pathways.map((pathway) => (
                   <div key={pathway.id} className="flex items-center justify-between gap-3 text-xs">
-                    <span className="text-stone-600 truncate">{pathway.name}</span>
-                    <span className="font-mono text-stone-800 shrink-0">
+                    <span className="text-muted truncate">{pathway.name}</span>
+                    <span className="font-sans text-ink shrink-0">
                       {formatCoursePrice(pathway.base_price)}
                     </span>
                   </div>
                 ))}
-                <div className="flex items-center justify-between pt-2 border-t border-stone-200 text-xs font-bold">
-                  <span className="text-stone-900">Total</span>
-                  <span className="font-mono text-amber-800">{formatCoursePrice(subtotal)}</span>
+                <div className="flex items-center justify-between pt-2 border-t border-line text-xs font-bold">
+                  <span className="text-ink">Total</span>
+                  <span className="font-sans font-semibold text-moss">{formatCoursePrice(subtotal)}</span>
                 </div>
               </div>
 
@@ -145,7 +145,7 @@ export default function PathwayCheckoutModal({
                   />
                 </div>
 
-                <p className="flex items-center gap-1.5 text-[10px] text-stone-400">
+                <p className="flex items-center gap-1.5 text-[10px] text-muted">
                   <Lock className="w-3 h-3 shrink-0" />
                   This is a demo checkout. Card details are never sent or stored.
                 </p>
@@ -153,7 +153,7 @@ export default function PathwayCheckoutModal({
                 <button
                   type="submit"
                   disabled={isSubmitting || pathways.length === 0}
-                  className="w-full flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-mono text-xs font-extrabold uppercase tracking-wider py-3.5 rounded-xl shadow-md transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+                  className="w-full flex items-center justify-center gap-2 bg-gold hover:brightness-95 text-ink font-sans text-xs font-semibold uppercase tracking-widest py-3.5 rounded-full shadow-md transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
                 >
                   <ShieldCheck className="w-4 h-4" />
                   {isSubmitting ? "Processing..." : "Confirm Payment"}

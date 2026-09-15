@@ -88,7 +88,7 @@ export default function Popover({ isOpen, onClose, anchorRef, children, width = 
     <div
       ref={popoverRef}
       style={{ position: "fixed", top: position.top, left: position.left, width }}
-      className="z-50 border border-stone-200 rounded-xl shadow-2xl bg-white py-1.5 font-mono"
+      className="z-50 border border-line rounded-xl shadow-elevated bg-paper py-1.5 font-mono"
     >
       {children}
     </div>,

@@ -2,7 +2,6 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft } from "lucide-react";
-import { useTheme } from "@/hooks/useTheme";
 import { useCourseLessons } from "@/hooks/student/useCourseLessons";
 import FullScreenPortal from "./FullScreenPortal";
 import ContentPlayerPanel from "./ContentPlayerPanel";
@@ -28,8 +27,6 @@ export default function LessonViewScreen({
   onSelectItem,
   onExit,
 }) {
-  const { isVault } = useTheme();
-
   const lessonCompletionById = useMemo(() => {
     const map = new Map();
     modules.forEach((module) => {
@@ -107,20 +104,12 @@ export default function LessonViewScreen({
           <button
             type="button"
             onClick={onExit}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 border text-xs font-mono uppercase tracking-wider rounded-xl transition ${
-              isVault
-                ? "border-stone-700 hover:border-amber-500/50 hover:text-amber-400 text-stone-400"
-                : "border-stone-200 hover:border-amber-300 hover:text-amber-800 text-stone-600"
-            }`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 border text-xs font-mono uppercase tracking-wider rounded-xl transition border-line hover:border-pine hover:text-pine text-muted"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Back to course
           </button>
-          <p
-            className={`text-sm font-mono uppercase tracking-wider truncate max-w-[60%] text-right ${
-              isVault ? "text-stone-500" : "text-stone-400"
-            }`}
-          >
+          <p className="text-sm font-mono uppercase tracking-wider truncate max-w-[60%] text-right text-muted">
             {course?.title}
           </p>
         </div>
@@ -152,7 +141,6 @@ export default function LessonViewScreen({
               onSelectItem={onSelectItem}
               expandedModuleIds={expandedModuleIds}
               onToggleModule={toggleModule}
-              isVault={isVault}
             />
           </div>
         </div>

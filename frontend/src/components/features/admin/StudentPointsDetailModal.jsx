@@ -49,17 +49,17 @@ export default function StudentPointsDetailModal({ isOpen, onClose, student }) {
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-center">
-                <p className="text-[10px] font-mono uppercase tracking-widest text-amber-700/80 font-semibold">
+              <div className="bg-gold/12 border border-gold/25 rounded-xl p-4 text-center">
+                <p className="text-[10px] font-mono uppercase tracking-widest text-gold font-semibold">
                   Balance
                 </p>
-                <p className="text-2xl font-serif font-bold text-stone-900 mt-1">{(data?.balance ?? 0).toLocaleString()}</p>
+                <p className="text-2xl font-serif font-bold text-ink mt-1">{(data?.balance ?? 0).toLocaleString()}</p>
               </div>
               <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
                 <p className="text-[10px] font-mono uppercase tracking-widest text-emerald-700/80 font-semibold">
                   Total Earned
                 </p>
-                <p className="text-2xl font-serif font-bold text-stone-900 mt-1">
+                <p className="text-2xl font-serif font-bold text-ink mt-1">
                   {(data?.total_earned ?? 0).toLocaleString()}
                 </p>
               </div>
@@ -67,7 +67,7 @@ export default function StudentPointsDetailModal({ isOpen, onClose, student }) {
                 <p className="text-[10px] font-mono uppercase tracking-widest text-rose-700/80 font-semibold">
                   Total Spent
                 </p>
-                <p className="text-2xl font-serif font-bold text-stone-900 mt-1">
+                <p className="text-2xl font-serif font-bold text-ink mt-1">
                   {(data?.total_spent ?? 0).toLocaleString()}
                 </p>
               </div>
@@ -76,28 +76,28 @@ export default function StudentPointsDetailModal({ isOpen, onClose, student }) {
             <button
               type="button"
               onClick={() => setIsAdjustOpen(true)}
-              className="w-full py-2.5 bg-stone-900 hover:bg-stone-800 text-white text-xs font-semibold font-mono uppercase tracking-wider rounded-xl shadow-sm transition flex items-center justify-center gap-2"
+              className="w-full py-2.5 bg-pine hover:bg-moss text-paper text-xs font-semibold font-mono uppercase tracking-wider rounded-xl shadow-sm transition flex items-center justify-center gap-2"
             >
               <Sparkles className="w-3.5 h-3.5" />
               Adjust Points
             </button>
 
             <div>
-              <p className="text-[11px] font-mono text-stone-500 uppercase tracking-wider font-semibold mb-2">
+              <p className="text-[11px] font-mono text-muted uppercase tracking-wider font-semibold mb-2">
                 Recent Activity
               </p>
 
               {transactions.length === 0 ? (
                 <EmptyState icon={Coins} label="No points activity yet." compact />
               ) : (
-                <div className="divide-y divide-stone-100 border border-stone-100 rounded-xl overflow-hidden">
+                <div className="divide-y divide-line border border-line rounded-xl overflow-hidden">
                   {transactions.map((transaction) => (
                     <div key={transaction.id} className="flex items-center justify-between gap-3 px-4 py-3">
                       <div className="min-w-0">
-                        <p className="text-sm text-stone-700 truncate">
+                        <p className="text-sm text-muted truncate">
                           {transaction.reason || formatActivityType(transaction.transaction_type)}
                         </p>
-                        <p className="text-[11px] text-stone-400 font-light">
+                        <p className="text-[11px] text-muted font-light">
                           {formatDateTime(transaction.created_at)}
                         </p>
                       </div>

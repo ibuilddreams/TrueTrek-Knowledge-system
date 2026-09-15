@@ -90,25 +90,25 @@ function SortableTeacherLessonItem({ lesson, moduleId, onEditLesson, onDeleteLes
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-white ${
+      className={`flex items-center gap-3 p-3 rounded-xl border border-line bg-paper ${
         isDragging ? "z-10 shadow-lg opacity-90" : ""
       }`}
     >
       <span
         {...attributes}
         {...listeners}
-        className="text-stone-300 cursor-grab shrink-0 touch-none"
+        className="text-muted cursor-grab shrink-0 touch-none"
         title="Drag to reorder"
         aria-hidden="true"
       >
         <GripVertical className="w-4 h-4" />
       </span>
-      <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+      <div className="w-9 h-9 rounded-lg bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
         <LessonIcon className="w-4 h-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-stone-800 truncate">{lesson.title}</p>
-        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
+        <p className="text-sm font-semibold text-ink truncate">{lesson.title}</p>
+        <p className="text-[11px] font-mono uppercase text-muted tracking-wider mt-0.5">
           {lesson.content_type}
           {lesson.duration_minutes ? ` · ${lesson.duration_minutes} min` : ""} ·{" "}
           {formatLessonDate(lesson.created_at)}
@@ -120,7 +120,7 @@ function SortableTeacherLessonItem({ lesson, moduleId, onEditLesson, onDeleteLes
           onClick={() => onEditLesson(lesson)}
           title="Edit lesson"
           aria-label="Edit lesson"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
         >
           <Edit3 className="w-3.5 h-3.5" />
         </button>
@@ -129,7 +129,7 @@ function SortableTeacherLessonItem({ lesson, moduleId, onEditLesson, onDeleteLes
           onClick={() => onDeleteLesson({ id: lesson.id, title: lesson.title, moduleId })}
           title="Delete lesson"
           aria-label="Delete lesson"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line text-rose-600 hover:bg-rose-50 transition cursor-pointer"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -220,7 +220,7 @@ function TeacherLessonsPanel({ moduleId, onAddLesson, onEditLesson, onDeleteLess
       <button
         type="button"
         onClick={() => onAddLesson(moduleId)}
-        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
+        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-line rounded-lg text-xs font-mono uppercase tracking-wider text-muted hover:border-pine hover:text-pine transition cursor-pointer"
       >
         <Plus className="w-3.5 h-3.5" />
         Add Lesson
@@ -253,31 +253,31 @@ function SortableTeacherAssignmentItem({
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-white ${
+      className={`flex items-center gap-3 p-3 rounded-xl border border-line bg-paper ${
         isDragging ? "z-10 shadow-lg opacity-90" : ""
       }`}
     >
       <span
         {...attributes}
         {...listeners}
-        className="text-stone-300 cursor-grab shrink-0 touch-none"
+        className="text-muted cursor-grab shrink-0 touch-none"
         title="Drag to reorder"
         aria-hidden="true"
       >
         <GripVertical className="w-4 h-4" />
       </span>
-      <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+      <div className="w-9 h-9 rounded-lg bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
         <ClipboardCheck className="w-4 h-4" />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-stone-800 truncate">{assignment.title}</p>
+          <p className="text-sm font-semibold text-ink truncate">{assignment.title}</p>
           <StatusBadge status={assignment.status} size="lg" />
         </div>
-        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5 flex items-center gap-1 flex-wrap">
+        <p className="text-[11px] font-mono uppercase text-muted tracking-wider mt-0.5 flex items-center gap-1 flex-wrap">
           <Calendar className="w-2.5 h-2.5" />
           <span className={overdue ? "text-rose-500" : ""}>{formatDueDate(assignment.due_date)}</span>
-          <span className="text-stone-200">·</span>
+          <span className="text-muted">·</span>
           <span>{assignment.total_marks} marks</span>
         </p>
       </div>
@@ -287,11 +287,11 @@ function SortableTeacherAssignmentItem({
           onClick={() => onManageAttachments(assignment)}
           title="Manage attachments"
           aria-label="Manage attachments"
-          className="relative w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+          className="relative w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
         >
           <Paperclip className="w-3.5 h-3.5" />
           {assignment.attachments?.length > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-amber-600 text-white text-[10px] font-mono font-bold flex items-center justify-center">
+            <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-gold text-ink text-[10px] font-mono font-bold flex items-center justify-center">
               {assignment.attachments.length}
             </span>
           )}
@@ -303,7 +303,7 @@ function SortableTeacherAssignmentItem({
             disabled={isPublishing}
             title="Publish assignment"
             aria-label="Publish assignment"
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-emerald-600 hover:bg-emerald-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-emerald-600 hover:bg-emerald-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Send className="w-3.5 h-3.5" />
           </button>
@@ -313,7 +313,7 @@ function SortableTeacherAssignmentItem({
           onClick={() => onEditAssignment(assignment)}
           title="Edit assignment"
           aria-label="Edit assignment"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
         >
           <Edit3 className="w-3.5 h-3.5" />
         </button>
@@ -322,7 +322,7 @@ function SortableTeacherAssignmentItem({
           onClick={() => onDeleteAssignment({ id: assignment.id, title: assignment.title, moduleId })}
           title="Delete assignment"
           aria-label="Delete assignment"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line text-rose-600 hover:bg-rose-50 transition cursor-pointer"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -443,7 +443,7 @@ function TeacherAssignmentsPanel({ moduleId, onAddAssignment, onEditAssignment, 
       <button
         type="button"
         onClick={() => onAddAssignment(moduleId)}
-        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
+        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-line rounded-lg text-xs font-mono uppercase tracking-wider text-muted hover:border-pine hover:text-pine transition cursor-pointer"
       >
         <Plus className="w-3.5 h-3.5" />
         Add Assignment
@@ -481,32 +481,32 @@ function SortableTeacherQuizItem({
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-white ${
+      className={`flex items-center gap-3 p-3 rounded-xl border border-line bg-paper ${
         isDragging ? "z-10 shadow-lg opacity-90" : ""
       }`}
     >
       <span
         {...attributes}
         {...listeners}
-        className="text-stone-300 cursor-grab shrink-0 touch-none"
+        className="text-muted cursor-grab shrink-0 touch-none"
         title="Drag to reorder"
         aria-hidden="true"
       >
         <GripVertical className="w-4 h-4" />
       </span>
-      <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+      <div className="w-9 h-9 rounded-lg bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
         <HelpCircle className="w-4 h-4" />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-stone-800 truncate">{quiz.title}</p>
+          <p className="text-sm font-semibold text-ink truncate">{quiz.title}</p>
           <StatusBadge status={quiz.status} size="lg" />
         </div>
-        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5 flex items-center gap-1 flex-wrap">
+        <p className="text-[11px] font-mono uppercase text-muted tracking-wider mt-0.5 flex items-center gap-1 flex-wrap">
           <span>{quiz.total_marks} marks</span>
-          <span className="text-stone-200">·</span>
+          <span className="text-muted">·</span>
           <span>{quiz.passing_score}% to pass</span>
-          <span className="text-stone-200">·</span>
+          <span className="text-muted">·</span>
           <span>{quiz.number_of_questions} question{quiz.number_of_questions === 1 ? "" : "s"}</span>
         </p>
       </div>
@@ -516,7 +516,7 @@ function SortableTeacherQuizItem({
           onClick={() => onManageQuestions(quiz)}
           title="Manage questions"
           aria-label="Manage questions"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
         >
           <ListChecks className="w-3.5 h-3.5" />
         </button>
@@ -527,7 +527,7 @@ function SortableTeacherQuizItem({
             disabled={isPublishing}
             title="Publish quiz"
             aria-label="Publish quiz"
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-emerald-600 hover:bg-emerald-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-emerald-600 hover:bg-emerald-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Send className="w-3.5 h-3.5" />
           </button>
@@ -537,7 +537,7 @@ function SortableTeacherQuizItem({
           onClick={() => onEditQuiz(quiz)}
           title="Edit quiz"
           aria-label="Edit quiz"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
         >
           <Edit3 className="w-3.5 h-3.5" />
         </button>
@@ -546,7 +546,7 @@ function SortableTeacherQuizItem({
           onClick={() => onDeleteQuiz({ id: quiz.id, title: quiz.title, moduleId })}
           title="Delete quiz"
           aria-label="Delete quiz"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line text-rose-600 hover:bg-rose-50 transition cursor-pointer"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -660,7 +660,7 @@ function TeacherQuizzesPanel({ moduleId, onAddQuiz, onEditQuiz, onDeleteQuiz }) 
       <button
         type="button"
         onClick={() => onAddQuiz(moduleId)}
-        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer"
+        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-line rounded-lg text-xs font-mono uppercase tracking-wider text-muted hover:border-pine hover:text-pine transition cursor-pointer"
       >
         <Plus className="w-3.5 h-3.5" />
         Add Quiz
@@ -706,7 +706,7 @@ export default function TeacherModuleRow({
     <li
       ref={setNodeRef}
       style={style}
-      className={`rounded-2xl border border-stone-200 bg-white overflow-hidden ${
+      className={`rounded-2xl border border-line bg-paper overflow-hidden ${
         isDragging ? "z-10 shadow-lg opacity-90" : ""
       }`}
     >
@@ -714,14 +714,14 @@ export default function TeacherModuleRow({
         <span
           {...attributes}
           {...listeners}
-          className="text-stone-300 cursor-grab shrink-0 touch-none"
+          className="text-muted cursor-grab shrink-0 touch-none"
           title="Drag to reorder"
           aria-hidden="true"
         >
           <GripVertical className="w-4 h-4" />
         </span>
 
-        <div className="w-8 h-8 rounded-full bg-stone-900 text-white flex items-center justify-center shrink-0 text-sm font-bold">
+        <div className="w-8 h-8 rounded-full bg-pine text-paper flex items-center justify-center shrink-0 text-sm font-bold">
           {module.order ?? 1}
         </div>
 
@@ -730,8 +730,8 @@ export default function TeacherModuleRow({
           onClick={() => onToggleExpand(module.id)}
           className="min-w-0 flex-1 text-left cursor-pointer"
         >
-          <p className="font-serif text-base font-bold text-stone-900 truncate">{module.title}</p>
-          <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-1">
+          <p className="font-serif text-base font-bold text-ink truncate">{module.title}</p>
+          <p className="text-[11px] font-mono uppercase text-muted tracking-wider mt-1">
             {module.lessons_count ?? 0} Lessons · {module.assignments_count ?? 0} Assignments ·{" "}
             {module.quizzes_count ?? 0} Quizzes
           </p>
@@ -743,7 +743,7 @@ export default function TeacherModuleRow({
             onClick={() => onEditModule(module)}
             title="Edit module"
             aria-label="Edit module"
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
           >
             <Edit3 className="w-3.5 h-3.5" />
           </button>
@@ -752,7 +752,7 @@ export default function TeacherModuleRow({
             onClick={() => onDeleteModule(module)}
             title="Delete module"
             aria-label="Delete module"
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-line bg-paper text-rose-600 hover:bg-rose-50 transition cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -760,7 +760,7 @@ export default function TeacherModuleRow({
             type="button"
             onClick={() => onToggleExpand(module.id)}
             aria-label={isExpanded ? "Collapse module" : "Expand module"}
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
           >
             {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
           </button>
@@ -768,8 +768,8 @@ export default function TeacherModuleRow({
       </div>
 
       {isExpanded && (
-        <div className="border-t border-stone-200 bg-stone-50/60 px-4 py-4 space-y-4">
-          <div className="inline-flex items-center gap-1 rounded-xl border border-stone-200 bg-white p-1">
+        <div className="border-t border-line bg-porcelain/60 px-4 py-4 space-y-4">
+          <div className="inline-flex items-center gap-1 rounded-xl border border-line bg-paper p-1">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
@@ -777,8 +777,8 @@ export default function TeacherModuleRow({
                 onClick={() => setActiveTab(tab.key)}
                 className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
                   activeTab === tab.key
-                    ? "bg-amber-50 text-amber-800 border border-amber-200"
-                    : "text-stone-500 hover:text-stone-700"
+                    ? "bg-gold/12 text-gold border border-gold/25"
+                    : "text-muted hover:text-ink"
                 }`}
               >
                 <tab.icon className="w-3.5 h-3.5" />

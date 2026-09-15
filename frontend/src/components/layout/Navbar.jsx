@@ -2,58 +2,48 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { User, Sun, Moon } from "lucide-react";
+import { User } from "lucide-react";
 import { useDispatch, useSelector } from "react-redux";
 import { toggleMobileMenu } from "@/store/slices/ui/uiSlice";
 import { NAV_LINKS } from "@/constants/navigation";
 import { ROUTES, getSectionFromPathname } from "@/constants/routes";
-import { useTheme } from "@/hooks/useTheme";
 
 export default function Navbar() {
   const pathname = usePathname();
   const dispatch = useDispatch();
   const mobileMenuOpen = useSelector((state) => state.ui.mobileMenuOpen);
-  const { theme, toggleTheme, isVault } = useTheme();
   const activeSection = getSectionFromPathname(pathname);
 
   const linkClass = (key) =>
-    `hover:text-amber-500 transition-colors ${
-      activeSection === key ? "text-amber-500 font-bold" : "text-stone-500"
+    `min-h-[34px] inline-flex items-center px-3 rounded-xl transition-colors duration-200 ${
+      activeSection === key
+        ? "text-ink bg-paper/90 shadow-[inset_0_0_0_1px_rgba(22,33,29,0.06)]"
+        : "text-ink/60 hover:text-ink hover:bg-paper/60"
     }`;
 
   return (
     <nav
       id="master-nav"
-      className={`backdrop-blur-md border-b fixed w-full z-50 top-0 h-20 flex items-center px-6 md:px-10 justify-between transition-colors duration-300 ${
-        isVault
-          ? "bg-[#161412]/90 border-stone-800"
-          : "bg-white/90 border-stone-200/80"
-      }`}
+      className="sticky top-[18px] z-50 mx-auto w-[min(1100px,calc(100%-32px))] mt-[18px] flex items-center gap-3 p-2 justify-between rounded-nav border border-white/78 bg-paper/58 backdrop-blur-2xl shadow-soft transition-colors duration-300"
     >
       <Link
         id="logo-combo"
         href={ROUTES.HOME}
-        className="flex items-center gap-3 cursor-pointer select-none group"
+        className="inline-flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-2xl bg-white/42 cursor-pointer select-none group"
         title="Return to TrueTrek Learning home orientation page"
         aria-label="Return to TrueTrek Learning home orientation page"
       >
-        <div className="w-10 h-10 bg-gradient-to-br from-amber-600 to-amber-800 rounded-lg flex items-center justify-center text-white font-serif font-extrabold text-xl shadow-md">
-          TTL
+        <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-br from-pine to-moss flex items-center justify-center text-paper font-serif font-light text-[11px] shadow-soft">
+          TT
         </div>
-        <h1
-          className={`text-xl md:text-2xl font-serif font-black tracking-wide transition-colors duration-250 ${
-            isVault
-              ? "text-[#f5f5f4] group-hover:text-amber-500"
-              : "text-stone-900 group-hover:text-amber-800"
-          }`}
-        >
-          TrueTrek Learning<span className="text-amber-700 font-sans">.</span>
-        </h1>
+        <span className="text-sm font-sans font-bold tracking-tight text-ink group-hover:text-pine transition-colors duration-200">
+          TrueTrek Learning<span className="text-gold">.</span>
+        </span>
       </Link>
 
       <div
         id="desktop-nav-links"
-        className="hidden md:flex gap-8 font-mono text-sm tracking-wider capitalize font-semibold"
+        className="hidden md:flex items-center gap-0.5 p-1 rounded-2xl bg-white/40 border border-ink/6 font-sans text-[13px] font-semibold capitalize"
       >
         {NAV_LINKS.map((link) => (
           <Link
@@ -69,36 +59,11 @@ export default function Navbar() {
         ))}
       </div>
 
-      <div id="nav-cta-segment" className="flex items-center gap-3">
-        <button
-          id="theme-toggle-btn"
-          type="button"
-          onClick={toggleTheme}
-          className={`w-9 h-9 flex items-center justify-center rounded-full border transition-all duration-300 ${
-            isVault
-              ? "bg-stone-800 border-stone-700 text-amber-500 hover:bg-stone-700 hover:border-amber-500/50 hover:text-amber-400 shadow-md"
-              : "bg-stone-50 border-stone-200 text-stone-500 hover:text-stone-900 hover:bg-stone-100"
-          }`}
-          title={isVault ? "Switch to Light Mode" : "Activate Vault Dark Mode"}
-          aria-label={
-            isVault ? "Switch to Light Mode" : "Activate Vault Dark Mode"
-          }
-        >
-          {isVault ? (
-            <Sun className="w-4 h-4 text-amber-500 animate-[spin_10s_linear_infinite]" />
-          ) : (
-            <Moon className="w-4 h-4 text-stone-600" />
-          )}
-        </button>
-
+      <div id="nav-cta-segment" className="flex items-center gap-2">
         <Link
           id="nav-portal-login-btn"
           href={ROUTES.LOGIN}
-          className={`font-mono text-sm uppercase tracking-wider px-6 py-2.5 rounded-full font-bold transition duration-250 shadow-sm flex items-center gap-2 select-none ${
-            isVault
-              ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
-              : "bg-stone-900 hover:bg-stone-800 text-stone-100"
-          }`}
+          className="font-sans text-[13px] px-3.5 min-h-10 rounded-[14px] font-extrabold transition duration-200 shadow-[0_12px_26px_rgba(22,33,29,0.17)] hover:-translate-y-0.5 flex items-center gap-2 select-none bg-ink hover:bg-pine text-white"
           title="Access the secure Student Portal simulator with interactive drills"
           aria-label="Access the secure Student Portal simulator with interactive drills"
         >
@@ -110,11 +75,7 @@ export default function Navbar() {
           id="mobile-menu-trigger"
           type="button"
           onClick={() => dispatch(toggleMobileMenu())}
-          className={`md:hidden w-10 h-10 flex items-center justify-center border rounded-full transition ${
-            isVault
-              ? "border-stone-700 text-stone-300 hover:bg-stone-800 hover:text-white"
-              : "border-stone-200 text-stone-600 hover:text-stone-950 hover:bg-stone-50"
-          }`}
+          className="md:hidden w-10 h-10 flex items-center justify-center border border-line rounded-full text-muted hover:text-ink hover:bg-porcelain transition"
           title="Toggle mobile navigation menu"
           aria-label="Toggle mobile navigation menu"
           aria-expanded={mobileMenuOpen}

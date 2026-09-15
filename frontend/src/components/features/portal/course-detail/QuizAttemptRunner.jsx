@@ -3,7 +3,6 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Timer } from "lucide-react";
 import { useAutosaveQuizAttempt } from "@/hooks/student/useQuizAttempt";
-import { useTheme } from "@/hooks/useTheme";
 
 const AUTOSAVE_DEBOUNCE_MS = 2000;
 
@@ -38,7 +37,6 @@ function buildAnswersPayload(answers) {
 }
 
 export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
-  const { isVault } = useTheme();
   const questions = attempt.questions || [];
   const [currentIndex, setCurrentIndex] = useState(0);
   const [answers, setAnswers] = useState(() => buildInitialAnswers(attempt.saved_answers));
@@ -121,36 +119,28 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
   }
 
   if (!currentQuestion) {
-    return <p className="text-sm text-stone-500">This quiz has no questions yet.</p>;
+    return <p className="text-sm text-muted">This quiz has no questions yet.</p>;
   }
 
   return (
     <div className="space-y-5">
       {attempt.resumed ? (
         <div
-          className={`rounded-xl border px-3.5 py-2.5 text-sm ${
-            isVault
-              ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
-              : "border-amber-100 bg-amber-50 text-amber-800"
-          }`}
+          className="rounded-xl border px-3.5 py-2.5 text-sm bg-gold/12 text-gold border-gold/25"
         >
           Resumed from your last session — answers you&apos;d already saved are pre-filled.
         </div>
       ) : null}
       <div className="flex items-center justify-between gap-3">
-        <p className={`text-xs font-mono uppercase tracking-wider ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+        <p className="text-xs font-mono uppercase tracking-wider text-muted">
           Question {currentIndex + 1} of {questions.length} · {answeredCount} answered
         </p>
         {secondsLeft !== null ? (
           <span
             className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-mono font-bold ${
               secondsLeft <= 30
-                ? isVault
-                  ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                  : "bg-rose-50 text-rose-600 border-rose-100"
-                : isVault
-                  ? "bg-white/5 text-stone-300 border-stone-700"
-                  : "bg-stone-50 text-stone-600 border-stone-200"
+                ? "bg-rose-50 text-rose-600 border-rose-100"
+                : "bg-porcelain text-muted border-line"
             }`}
           >
             <Timer className="w-3.5 h-3.5" />
@@ -167,16 +157,10 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
             onClick={() => setCurrentIndex(index)}
             className={`w-7 h-7 rounded-lg text-xs font-mono font-bold border transition ${
               index === currentIndex
-                ? isVault
-                  ? "bg-amber-600 text-stone-950 border-amber-600"
-                  : "bg-stone-900 text-white border-stone-900"
+                ? "bg-pine text-paper border-pine"
                 : answers[question.id] !== undefined
-                  ? isVault
-                    ? "bg-emerald-500/10 text-emerald-400 border-emerald-500/20"
-                    : "bg-emerald-50 text-emerald-700 border-emerald-100"
-                  : isVault
-                    ? "bg-white/5 text-stone-500 border-stone-700"
-                    : "bg-white text-stone-400 border-stone-200"
+                  ? "bg-emerald-50 text-emerald-700 border-emerald-100"
+                  : "bg-paper text-muted border-line"
             }`}
           >
             {index + 1}
@@ -185,11 +169,9 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
       </div>
 
       <div
-        className={`rounded-2xl border p-4 space-y-3 ${
-          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200 bg-white"
-        }`}
+        className="rounded-2xl border p-4 space-y-3 border-line bg-paper"
       >
-        <p className={`text-sm font-medium ${isVault ? "text-stone-100" : "text-stone-900"}`}>
+        <p className="text-sm font-medium text-ink">
           {currentQuestion.text}
         </p>
 
@@ -199,11 +181,7 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
             onChange={(event) => setAnswer(currentQuestion.id, { textAnswer: event.target.value })}
             rows={4}
             placeholder="Type your answer..."
-            className={`w-full px-3.5 py-3 border focus:ring-4 focus:outline-none rounded-xl text-sm transition ${
-              isVault
-                ? "bg-[#0c0b0a] border-stone-700 focus:border-amber-600 focus:ring-amber-500/10 text-stone-200 placeholder:text-stone-500"
-                : "bg-stone-50/90 border-stone-200 focus:border-amber-500/70 focus:ring-amber-500/10 text-stone-800 placeholder:text-stone-400"
-            }`}
+            className="w-full px-3.5 py-3 border focus:ring-4 focus:outline-none rounded-xl text-sm transition bg-porcelain/90 border-line focus:border-pine focus:ring-pine/10 text-ink placeholder:text-muted"
           />
         ) : (
           <div className="space-y-2">
@@ -212,12 +190,8 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
                 key={choice.id}
                 className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border text-sm cursor-pointer transition ${
                   answers[currentQuestion.id]?.selectedChoice === choice.id
-                    ? isVault
-                      ? "border-amber-500/50 bg-amber-500/10 text-amber-300"
-                      : "border-amber-400 bg-amber-50/70 text-amber-900"
-                    : isVault
-                      ? "border-stone-700 hover:border-stone-600 text-stone-300"
-                      : "border-stone-200 hover:border-stone-300 text-stone-700"
+                    ? "border-pine/25 bg-pine/10 text-pine"
+                    : "border-line hover:border-pine text-muted"
                 }`}
               >
                 <input
@@ -225,7 +199,7 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
                   name={`question-${currentQuestion.id}`}
                   checked={answers[currentQuestion.id]?.selectedChoice === choice.id}
                   onChange={() => setAnswer(currentQuestion.id, { selectedChoice: choice.id })}
-                  className="accent-amber-600"
+                  className="accent-pine"
                 />
                 {choice.text}
               </label>
@@ -239,11 +213,7 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
           type="button"
           onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))}
           disabled={currentIndex === 0}
-          className={`px-4 py-2 border disabled:opacity-40 text-xs font-mono uppercase tracking-wider rounded-xl transition ${
-            isVault
-              ? "border-stone-700 text-stone-400 hover:border-stone-600"
-              : "border-stone-200 text-stone-600"
-          }`}
+          className="px-4 py-2 border disabled:opacity-40 text-xs font-mono uppercase tracking-wider rounded-xl transition border-line text-muted"
         >
           Previous
         </button>
@@ -252,11 +222,7 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
           <button
             type="button"
             onClick={() => setCurrentIndex((index) => Math.min(questions.length - 1, index + 1))}
-            className={`px-4 py-2 text-xs font-mono uppercase tracking-wider rounded-xl transition ${
-              isVault
-                ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
-                : "bg-stone-900 hover:bg-stone-800 text-white"
-            }`}
+            className="px-4 py-2 text-xs font-mono uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
           >
             Next
           </button>
@@ -265,11 +231,7 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
             type="button"
             onClick={() => onSubmit(buildPayload())}
             disabled={isSubmitting}
-            className={`inline-flex items-center gap-2 px-4 py-2 disabled:opacity-50 text-xs font-mono uppercase tracking-wider rounded-xl transition ${
-              isVault
-                ? "bg-emerald-600 hover:bg-emerald-500 text-stone-950"
-                : "bg-emerald-700 hover:bg-emerald-800 text-white"
-            }`}
+            className="inline-flex items-center gap-2 px-4 py-2 disabled:opacity-50 text-xs font-mono uppercase tracking-wider rounded-xl transition bg-emerald-700 hover:bg-emerald-800 text-paper"
           >
             {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
             {isSubmitting && isAiGradedShortAnswer ? "Evaluating your answer…" : "Submit quiz"}
@@ -279,7 +241,7 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
 
       {isSubmitting && isAiGradedShortAnswer ? (
         <p
-          className={`text-xs text-center ${isVault ? "text-stone-500" : "text-stone-400"}`}
+          className="text-xs text-center text-muted"
         >
           The Elite Coach is reviewing your short-answer response — this can take up to a
           minute. Please don&apos;t close this window.

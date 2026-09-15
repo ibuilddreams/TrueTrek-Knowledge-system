@@ -68,7 +68,7 @@ export default function GoogleSignInButton({ onSuccess, disabled = false }) {
         type="button"
         disabled
         title="Google sign-in is not configured yet"
-        className="w-full flex items-center justify-center gap-2 border border-stone-200 text-stone-400 font-mono text-xs font-bold uppercase tracking-wider py-3.5 rounded-xl cursor-not-allowed"
+        className="w-full flex items-center justify-center gap-2 border border-line text-muted font-sans text-xs font-bold uppercase tracking-wider py-3.5 rounded-full cursor-not-allowed"
       >
         Continue with Google (Coming soon)
       </button>
@@ -84,9 +84,9 @@ export default function GoogleSignInButton({ onSuccess, disabled = false }) {
       />
       <div ref={containerRef} className="flex justify-center" />
       {(isVerifying || disabled) && (
-        <div className="absolute inset-0 bg-white/70 rounded-xl flex items-center justify-center">
+        <div className="absolute inset-0 bg-paper/70 rounded-xl flex items-center justify-center">
           {isVerifying && (
-            <div className="w-4 h-4 border-2 border-amber-600 border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-pine border-t-transparent rounded-full animate-spin" />
           )}
         </div>
       )}

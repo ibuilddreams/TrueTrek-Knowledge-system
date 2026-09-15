@@ -40,11 +40,11 @@ import LessonViewScreen from "../lesson-view/LessonViewScreen";
 import LessonViewPending from "../lesson-view/LessonViewPending";
 
 const ASSIGNMENT_STATUS_STYLES = {
-  SUBMITTED: "bg-amber-50 text-amber-700 border-amber-100",
+  SUBMITTED: "bg-gold/12 text-gold border-gold/25",
   LATE: "bg-rose-50 text-rose-600 border-rose-100",
   GRADED: "bg-emerald-50 text-emerald-700 border-emerald-100",
   RETURNED: "bg-sky-50 text-sky-700 border-sky-100",
-  RESUBMITTED: "bg-amber-50 text-amber-700 border-amber-100",
+  RESUBMITTED: "bg-gold/12 text-gold border-gold/25",
 };
 
 const LESSON_TYPE_META = {
@@ -52,7 +52,7 @@ const LESSON_TYPE_META = {
   PDF: { icon: FileText, label: "PDF", badge: "bg-rose-50 text-rose-600 border-rose-100" },
   DOCUMENT: { icon: FileText, label: "Document", badge: "bg-blue-50 text-blue-600 border-blue-100" },
   IMAGE: { icon: ImageIcon, label: "Image", badge: "bg-violet-50 text-violet-600 border-violet-100" },
-  DEFAULT: { icon: FileQuestion, label: "Lesson", badge: "bg-stone-50 text-stone-500 border-stone-200" },
+  DEFAULT: { icon: FileQuestion, label: "Lesson", badge: "bg-porcelain text-muted border-line" },
 };
 
 function RowIcon({ icon: Icon, className }) {
@@ -69,14 +69,14 @@ function ProgressBar({ value }) {
   const progress = Math.round(value || 0);
   return (
     <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-stone-400">
+      <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-muted">
         <span>Overall progress</span>
-        <span className="text-amber-800 font-bold">{progress}%</span>
+        <span className="text-pine font-bold">{progress}%</span>
       </div>
-      <div className="w-full bg-stone-100 h-2 rounded-full overflow-hidden">
+      <div className="w-full bg-porcelain h-2 rounded-full overflow-hidden">
         <motion.div
           className={`h-full rounded-full ${
-            progress >= 80 ? "bg-emerald-500" : "bg-amber-600"
+            progress >= 80 ? "bg-emerald-500" : "bg-pine"
           }`}
           initial={{ width: 0 }}
           animate={{ width: `${progress}%` }}
@@ -89,11 +89,11 @@ function ProgressBar({ value }) {
 
 function StatChip({ label, value }) {
   return (
-    <div className="rounded-xl border border-stone-100 bg-stone-50/80 px-3 py-2.5">
-      <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
+    <div className="rounded-xl border border-line bg-porcelain/80 px-3 py-2.5">
+      <p className="text-[10px] font-mono uppercase tracking-wider text-muted">
         {label}
       </p>
-      <p className="text-base font-serif font-bold text-stone-900 mt-0.5">{value}</p>
+      <p className="text-base font-serif font-bold text-ink mt-0.5">{value}</p>
     </div>
   );
 }
@@ -123,7 +123,7 @@ function InstructorAvatar({ name, avatar }) {
     );
   }
   return (
-    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-amber-600 text-white font-bold text-[11px] shrink-0">
+    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-pine text-paper font-bold text-[11px] shrink-0">
       {instructorInitials(name)}
     </span>
   );
@@ -133,7 +133,7 @@ function CourseThumbnail({ image, title }) {
   const [imageFailed, setImageFailed] = useState(false);
   const hasImage = Boolean(image) && !imageFailed;
   return (
-    <div className="relative w-full h-44 sm:h-56 rounded-2xl border border-stone-200 overflow-hidden shrink-0">
+    <div className="relative w-full h-44 sm:h-56 rounded-2xl border border-line overflow-hidden shrink-0">
       <img
         src={hasImage ? image : "/images/course-placeholder.svg"}
         alt={title ? `${title} thumbnail` : "Course thumbnail"}
@@ -146,18 +146,18 @@ function CourseThumbnail({ image, title }) {
 
 function assignmentStatusLabel(submission) {
   if (!submission) {
-    return { label: "Not submitted", className: "bg-stone-50 text-stone-500 border-stone-200" };
+    return { label: "Not submitted", className: "bg-porcelain text-muted border-line" };
   }
   const className =
-    ASSIGNMENT_STATUS_STYLES[submission.status] || "bg-stone-50 text-stone-500 border-stone-200";
+    ASSIGNMENT_STATUS_STYLES[submission.status] || "bg-porcelain text-muted border-line";
   return { label: submission.status, className };
 }
 
 function quizStatusLabel(quiz) {
   const attempt = quiz.latest_attempt;
-  if (!attempt) return { label: "Not attempted", className: "bg-stone-50 text-stone-500 border-stone-200" };
+  if (!attempt) return { label: "Not attempted", className: "bg-porcelain text-muted border-line" };
   if (attempt.status === "IN_PROGRESS") {
-    return { label: "In progress", className: "bg-amber-50 text-amber-700 border-amber-100" };
+    return { label: "In progress", className: "bg-gold/12 text-gold border-gold/25" };
   }
   if (attempt.is_passed === true) {
     return { label: "Passed", className: "bg-emerald-50 text-emerald-700 border-emerald-100" };
@@ -165,7 +165,7 @@ function quizStatusLabel(quiz) {
   if (attempt.is_passed === false) {
     return { label: "Failed", className: "bg-rose-50 text-rose-600 border-rose-100" };
   }
-  return { label: "Submitted", className: "bg-stone-50 text-stone-500 border-stone-200" };
+  return { label: "Submitted", className: "bg-porcelain text-muted border-line" };
 }
 
 function LessonRow({ lesson, onOpen, disabled }) {
@@ -175,18 +175,18 @@ function LessonRow({ lesson, onOpen, disabled }) {
       type="button"
       onClick={() => onOpen(lesson)}
       disabled={disabled}
-      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-stone-50 disabled:hover:bg-transparent disabled:cursor-default transition-colors group"
+      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-porcelain disabled:hover:bg-transparent disabled:cursor-default transition-colors group"
     >
       <RowIcon icon={meta.icon} className={meta.badge} />
       <span className="min-w-0 flex-1">
-        <span className="block text-[12.5px] font-medium text-stone-700 group-hover:text-amber-800 truncate transition-colors">
+        <span className="block text-[12.5px] font-medium text-muted group-hover:text-pine truncate transition-colors">
           {lesson.title}
         </span>
-        <span className="flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
+        <span className="flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-muted mt-0.5">
           <span>{meta.label}</span>
           {lesson.duration_minutes ? (
             <>
-              <span className="w-0.5 h-0.5 rounded-full bg-stone-300 shrink-0" />
+              <span className="w-0.5 h-0.5 rounded-full bg-muted/40 shrink-0" />
               <span>{lesson.duration_minutes}m</span>
             </>
           ) : null}
@@ -195,7 +195,7 @@ function LessonRow({ lesson, onOpen, disabled }) {
       {lesson.is_completed ? (
         <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
       ) : (
-        <Circle className="w-4 h-4 text-stone-200 shrink-0" />
+        <Circle className="w-4 h-4 text-muted shrink-0" />
       )}
     </button>
   );
@@ -208,15 +208,15 @@ function AssignmentRow({ assignment, onOpen, disabled }) {
       type="button"
       onClick={() => onOpen(assignment)}
       disabled={disabled}
-      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-stone-50 disabled:hover:bg-transparent disabled:cursor-default disabled:opacity-50 transition-colors group"
+      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-porcelain disabled:hover:bg-transparent disabled:cursor-default disabled:opacity-50 transition-colors group"
     >
-      <RowIcon icon={ClipboardList} className="bg-amber-50 text-amber-600 border-amber-100" />
+      <RowIcon icon={ClipboardList} className="bg-gold/12 text-gold border-gold/25" />
       <span className="min-w-0 flex-1">
-        <span className="block text-[12.5px] font-medium text-stone-700 group-hover:text-amber-800 truncate transition-colors">
+        <span className="block text-[12.5px] font-medium text-muted group-hover:text-pine truncate transition-colors">
           {assignment.title}
         </span>
         {assignment.due_date ? (
-          <span className="flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
+          <span className="flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-muted mt-0.5">
             <CalendarClock className="w-3 h-3 shrink-0" />
             Due {formatDateTime(assignment.due_date)}
           </span>
@@ -238,14 +238,14 @@ function QuizRow({ quiz, onOpen, disabled }) {
       type="button"
       onClick={() => onOpen(quiz)}
       disabled={disabled}
-      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-stone-50 disabled:hover:bg-transparent disabled:cursor-default disabled:opacity-50 transition-colors group"
+      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-porcelain disabled:hover:bg-transparent disabled:cursor-default disabled:opacity-50 transition-colors group"
     >
       <RowIcon icon={CircleHelp} className="bg-violet-50 text-violet-600 border-violet-100" />
       <span className="min-w-0 flex-1">
-        <span className="block text-[12.5px] font-medium text-stone-700 group-hover:text-amber-800 truncate transition-colors">
+        <span className="block text-[12.5px] font-medium text-muted group-hover:text-pine truncate transition-colors">
           {quiz.title}
         </span>
-        <span className="flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-stone-400 mt-0.5">
+        <span className="flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-muted mt-0.5">
           <Repeat className="w-3 h-3 shrink-0" />
           {quiz.number_of_questions} question{quiz.number_of_questions === 1 ? "" : "s"}
         </span>
@@ -301,25 +301,25 @@ function ModuleAccordionItem({
   const rowsDisabled = isLocked;
 
   return (
-    <div className="rounded-2xl border border-stone-200 bg-white overflow-hidden">
+    <div className="rounded-2xl border border-line bg-paper overflow-hidden">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={isExpanded}
-        className="w-full text-left p-4 sm:p-5 space-y-3 hover:bg-stone-50/70 transition-colors"
+        className="w-full text-left p-4 sm:p-5 space-y-3 hover:bg-porcelain/70 transition-colors"
       >
         <div className="flex items-start justify-between gap-3">
           <div className="min-w-0">
-            <p className="text-[11px] font-mono uppercase tracking-wider text-stone-400">
+            <p className="text-[11px] font-mono uppercase tracking-wider text-muted">
               Module {module.order}
             </p>
-            <h5 className="font-serif font-bold text-stone-900 mt-0.5 truncate">
+            <h5 className="font-serif font-bold text-ink mt-0.5 truncate">
               {module.title}
             </h5>
           </div>
           <div className="flex items-center gap-2 shrink-0">
             {isLocked ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border bg-stone-100 text-stone-500 border-stone-200">
+              <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border bg-porcelain text-muted border-line">
                 <Lock className="w-3 h-3" />
                 Locked
               </span>
@@ -328,7 +328,7 @@ function ModuleAccordionItem({
                 className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${
                   module.is_completed
                     ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                    : "bg-stone-50 text-stone-500 border-stone-200"
+                    : "bg-porcelain text-muted border-line"
                 }`}
               >
                 {Math.round(module.completion_percentage || 0)}%
@@ -336,21 +336,21 @@ function ModuleAccordionItem({
             )}
             {hasDetails ? (
               isExpanded ? (
-                <ChevronUp className="w-4 h-4 text-stone-500" />
+                <ChevronUp className="w-4 h-4 text-muted" />
               ) : (
-                <ChevronDown className="w-4 h-4 text-stone-500" />
+                <ChevronDown className="w-4 h-4 text-muted" />
               )
             ) : null}
           </div>
         </div>
 
         {module.description ? (
-          <p className="text-xs text-stone-500 font-light leading-relaxed line-clamp-2">
+          <p className="text-xs text-muted font-light leading-relaxed line-clamp-2">
             {module.description}
           </p>
         ) : null}
 
-        <div className="flex flex-wrap gap-2 text-[11px] font-mono uppercase tracking-wider text-stone-400">
+        <div className="flex flex-wrap gap-2 text-[11px] font-mono uppercase tracking-wider text-muted">
           <span className="inline-flex items-center gap-1">
             <BookOpen className="w-3 h-3" />
             {module.stats?.completed_lessons || 0}/
@@ -378,8 +378,8 @@ function ModuleAccordionItem({
           >
             <div className="px-4 sm:px-5 pb-4 sm:pb-5 space-y-4">
               {(module.lessons || []).length > 0 && (
-                <div className="space-y-0.5 pt-2 border-t border-stone-100">
-                  <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 px-2 pb-1">
+                <div className="space-y-0.5 pt-2 border-t border-line">
+                  <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-muted px-2 pb-1">
                     <BookOpen className="w-3 h-3" />
                     Lessons
                   </p>
@@ -401,8 +401,8 @@ function ModuleAccordionItem({
               )}
 
               {moduleAssignments.length > 0 && (
-                <div className="space-y-0.5 pt-2 border-t border-stone-100">
-                  <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 px-2 pb-1">
+                <div className="space-y-0.5 pt-2 border-t border-line">
+                  <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-muted px-2 pb-1">
                     <ClipboardList className="w-3 h-3" />
                     Assignments
                   </p>
@@ -418,8 +418,8 @@ function ModuleAccordionItem({
               )}
 
               {moduleQuizzes.length > 0 && (
-                <div className="space-y-0.5 pt-2 border-t border-stone-100">
-                  <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-stone-400 px-2 pb-1">
+                <div className="space-y-0.5 pt-2 border-t border-line">
+                  <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-muted px-2 pb-1">
                     <HelpCircle className="w-3 h-3" />
                     Quizzes
                   </p>
@@ -437,7 +437,7 @@ function ModuleAccordionItem({
               ) : null}
 
               {!canInteract ? (
-                <p className="flex items-center gap-1.5 text-[11px] text-stone-400 pt-1">
+                <p className="flex items-center gap-1.5 text-[11px] text-muted pt-1">
                   <Lock className="w-3 h-3" />
                   Actions are disabled while this enrollment isn&apos;t active.
                 </p>
@@ -583,7 +583,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
         <button
           type="button"
           onClick={onBack}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-stone-200 hover:border-amber-300 hover:text-amber-800 text-stone-600 text-xs font-mono uppercase tracking-wider rounded-xl transition"
+          className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-line hover:border-pine hover:text-pine text-muted text-xs font-mono uppercase tracking-wider rounded-xl transition"
         >
           <ArrowLeft className="w-3.5 h-3.5" />
           Back to My Courses
@@ -617,7 +617,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
             <button
               type="button"
               onClick={() => refetch()}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 text-white text-sm font-mono uppercase rounded-lg"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-pine text-paper text-sm font-mono uppercase rounded-lg"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Retry
@@ -652,13 +652,13 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
         >
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div className="min-w-0">
-              <p className="text-[11px] font-mono uppercase tracking-[0.16em] text-amber-700/80 mb-1">
+              <p className="text-[11px] font-mono uppercase tracking-[0.16em] text-pine/80 mb-1">
                 Course dossier
               </p>
-              <h2 className="font-serif font-bold text-2xl sm:text-3xl text-stone-900 leading-tight">
+              <h2 className="font-serif font-bold text-2xl sm:text-3xl text-ink leading-tight">
                 {course.title || "Course details"}
               </h2>
-              <p className="text-sm text-stone-500 font-light mt-1.5">
+              <p className="text-sm text-muted font-light mt-1.5">
                 {course.category?.name || "General"}
                 {course.code ? ` · ${course.code}` : ""}
               </p>
@@ -670,13 +670,13 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
 
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <div className="lg:col-span-2 space-y-6 min-w-0">
-              <div className="rounded-2xl border border-stone-200 bg-white p-5 sm:p-6 space-y-4">
-                <p className="text-sm text-stone-600 font-light leading-relaxed">
+              <div className="rounded-card border border-line bg-paper shadow-soft p-5 sm:p-6 space-y-4">
+                <p className="text-sm text-muted font-light leading-relaxed">
                   {course.description || "No course description has been added yet."}
                 </p>
 
                 {!canInteract ? (
-                  <div className="flex items-start gap-2 rounded-xl border border-stone-200 bg-stone-50 px-3.5 py-3 text-sm text-stone-500">
+                  <div className="flex items-start gap-2 rounded-xl border border-line bg-porcelain px-3.5 py-3 text-sm text-muted">
                     <Lock className="w-4 h-4 shrink-0 mt-0.5" />
                     <span>
                       This enrollment is {detailEnrollment.status?.toLowerCase()} — lessons,
@@ -688,8 +688,8 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
               </div>
 
               {(courseLevelAssignments.length > 0 || courseLevelQuizzes.length > 0) && (
-                <div className="rounded-2xl border border-stone-200 bg-white p-5 space-y-3">
-                  <h4 className="font-serif font-bold text-stone-900 text-sm">
+                <div className="rounded-card border border-line bg-paper shadow-soft p-5 space-y-3">
+                  <h4 className="font-serif font-bold text-ink text-sm">
                     Course-wide assignments & quizzes
                   </h4>
                   {courseLevelAssignments.map((assignment) => (
@@ -713,16 +713,16 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
 
               <div className="space-y-3">
                 <div>
-                  <h4 className="font-serif font-bold text-stone-900">Modules & lessons</h4>
-                  <p className="text-sm text-stone-500 font-light mt-0.5">
+                  <h4 className="font-serif font-bold text-ink">Modules & lessons</h4>
+                  <p className="text-sm text-muted font-light mt-0.5">
                     Your learning path inside this enrolled course.
                   </p>
                 </div>
 
                 {modules.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-stone-200 bg-white px-4 py-8 text-center">
-                    <Layers className="w-5 h-5 text-stone-300 mx-auto mb-2" />
-                    <p className="text-sm text-stone-500">
+                  <div className="rounded-2xl border border-dashed border-line bg-paper px-4 py-8 text-center">
+                    <Layers className="w-5 h-5 text-muted mx-auto mb-2" />
+                    <p className="text-sm text-muted">
                       No modules have been published for this course yet.
                     </p>
                   </div>
@@ -758,7 +758,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
             </div>
 
             <div className="space-y-4 lg:sticky lg:top-24">
-              <div className="rounded-2xl border border-stone-200 bg-white p-5 space-y-4">
+              <div className="rounded-card border border-line bg-paper shadow-soft p-5 space-y-4">
                 <ProgressBar value={stats.completion_percentage} />
 
                 <div className="grid grid-cols-2 gap-2.5">
@@ -779,9 +779,9 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
                   <StatChip label="Quizzes" value={stats.total_quizzes || 0} />
                 </div>
 
-                <div className="pt-3 border-t border-stone-100 space-y-3">
+                <div className="pt-3 border-t border-line space-y-3">
                   <div className="space-y-2">
-                    <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
+                    <p className="text-[10px] font-mono uppercase tracking-wider text-muted">
                       Instructor
                     </p>
                     {assignedInstructor ? (
@@ -791,33 +791,33 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
                           avatar={assignedInstructor.avatar}
                         />
                         <div className="min-w-0 flex-1">
-                          <p className="text-[12px] font-medium text-stone-800 truncate">
+                          <p className="text-[12px] font-medium text-ink truncate">
                             {assignedInstructor.name}
                           </p>
                           {assignedInstructor.email ? (
-                            <p className="text-[11px] text-stone-400 font-mono truncate">
+                            <p className="text-[11px] text-muted font-mono truncate">
                               {assignedInstructor.email}
                             </p>
                           ) : null}
                         </div>
                       </div>
                     ) : (
-                      <div className="flex items-center gap-2 text-[12px] text-stone-600">
-                        <UserRound className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                      <div className="flex items-center gap-2 text-[12px] text-muted">
+                        <UserRound className="w-3.5 h-3.5 text-muted shrink-0" />
                         <span>{fallbackInstructorName}</span>
                       </div>
                     )}
                   </div>
                 </div>
 
-                <div className="space-y-2.5 text-[12px] text-stone-600">
+                <div className="space-y-2.5 text-[12px] text-muted">
                   <div className="flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                    <Calendar className="w-3.5 h-3.5 text-muted shrink-0" />
                     <span>Enrolled {formatDate(detailEnrollment.enrolled_at)}</span>
                   </div>
                   {course.duration_minutes ? (
                     <div className="flex items-center gap-2">
-                      <BookOpen className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+                      <BookOpen className="w-3.5 h-3.5 text-muted shrink-0" />
                       <span>{course.duration_minutes} minutes total</span>
                     </div>
                   ) : null}

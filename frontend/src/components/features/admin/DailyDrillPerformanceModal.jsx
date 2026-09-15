@@ -29,19 +29,19 @@ export default function DailyDrillPerformanceModal({ isOpen, onClose, schedule }
         <Loader fullScreen={false} label="Loading performance..." />
       ) : (
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-stone-50 border border-stone-100 rounded-xl p-4 text-center">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400 font-semibold">Viewed</p>
-            <p className="text-2xl font-serif font-bold text-stone-900 mt-1">{data?.viewed_count ?? 0}</p>
+          <div className="bg-porcelain border border-line rounded-xl p-4 text-center">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-muted font-semibold">Viewed</p>
+            <p className="text-2xl font-serif font-bold text-ink mt-1">{data?.viewed_count ?? 0}</p>
           </div>
           <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
             <p className="text-[10px] font-mono uppercase tracking-widest text-emerald-700/80 font-semibold">
               Completed
             </p>
-            <p className="text-2xl font-serif font-bold text-stone-900 mt-1">{data?.completed_count ?? 0}</p>
+            <p className="text-2xl font-serif font-bold text-ink mt-1">{data?.completed_count ?? 0}</p>
           </div>
-          <div className="bg-amber-50 border border-amber-100 rounded-xl p-4 text-center">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-amber-700/80 font-semibold">Points</p>
-            <p className="text-2xl font-serif font-bold text-stone-900 mt-1">{data?.points_awarded_total ?? 0}</p>
+          <div className="bg-gold/12 border border-gold/25 rounded-xl p-4 text-center">
+            <p className="text-[10px] font-mono uppercase tracking-widest text-gold font-semibold">Points</p>
+            <p className="text-2xl font-serif font-bold text-ink mt-1">{data?.points_awarded_total ?? 0}</p>
           </div>
         </div>
       )}

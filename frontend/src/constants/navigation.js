@@ -56,5 +56,5 @@ export const GOVERNANCE_BADGES = [
   "IP Trademark Compliant",
 ];
 
-/** @deprecated Prefer PREFERENCE_COOKIE.THEME from constants/auth */
+/** @deprecated Unused leftover from the removed theme toggle. */
 export const THEME_STORAGE_KEY = "ttl_theme";

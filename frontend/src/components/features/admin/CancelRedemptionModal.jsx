@@ -5,7 +5,7 @@ import { XCircle } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60 resize-none";
+  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60 resize-none";
 
 const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
 
@@ -47,7 +47,7 @@ export default function CancelRedemptionModal({ isOpen, onClose, onConfirm, rede
       maxWidth="max-w-sm"
     >
       <div className="mb-6">
-        <label className="text-[11px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold">
+        <label className="text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium">
           Reason
         </label>
         <textarea
@@ -69,7 +69,7 @@ export default function CancelRedemptionModal({ isOpen, onClose, onConfirm, rede
           type="button"
           onClick={handleClose}
           disabled={isSubmitting}
-          className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+          className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-xs font-semibold font-mono rounded-full tracking-wider transition-colors duration-150 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
         >
           Back
         </button>
@@ -77,7 +77,7 @@ export default function CancelRedemptionModal({ isOpen, onClose, onConfirm, rede
           type="button"
           onClick={handleConfirm}
           disabled={isSubmitting}
-          className="px-6 py-3 bg-rose-600 hover:bg-rose-700 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
+          className="px-6 py-3 bg-rose-600 hover:bg-rose-700 disabled:opacity-60 disabled:cursor-not-allowed text-paper text-xs font-semibold font-mono rounded-full tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
         >
           {isSubmitting ? (
             <>

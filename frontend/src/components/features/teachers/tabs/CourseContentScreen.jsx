@@ -281,25 +281,25 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-sm font-mono font-semibold text-stone-500 hover:text-amber-700 transition-colors cursor-pointer"
+        className="inline-flex items-center gap-1.5 text-sm font-mono font-semibold text-muted hover:text-pine transition-colors cursor-pointer"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to Courses
       </button>
 
-      <div className="relative bg-white border border-stone-200/90 rounded-2xl shadow-sm overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 to-amber-800 opacity-80" />
+      <div className="relative bg-paper border border-line/90 rounded-2xl shadow-sm overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pine to-moss opacity-80" />
         <div className="p-6 sm:p-7 flex flex-col lg:flex-row lg:items-start justify-between gap-5">
           <div className="flex items-center gap-4 min-w-0">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
               <Layers className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <span className="text-amber-600 font-mono text-[11px] uppercase tracking-widest font-bold block mb-1">
+              <span className="text-gold font-mono text-[11px] uppercase tracking-widest font-bold block mb-1">
                 Course Content
               </span>
               <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className="text-2xl font-serif font-black text-stone-900 truncate">
+                <h2 className="text-2xl font-serif font-black text-ink truncate">
                   {course?.title || "Course"}
                 </h2>
                 {course?.status && <StatusBadge status={course.status} size="lg" />}
@@ -310,22 +310,22 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
           <button
             type="button"
             onClick={openCreateModuleForm}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+            className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0 cursor-pointer"
           >
             <ListPlus className="w-4 h-4" />
             NEW MODULE
           </button>
         </div>
 
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-stone-100 border-t border-stone-100">
+        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-line border-t border-line">
           {stats.map((stat) => (
             <div key={stat.key} className="flex items-center gap-3 px-5 py-4">
-              <div className="w-9 h-9 rounded-xl bg-amber-50 text-amber-700 flex items-center justify-center shrink-0">
+              <div className="w-9 h-9 rounded-xl bg-gold/12 text-gold flex items-center justify-center shrink-0">
                 <stat.icon className="w-4 h-4" />
               </div>
               <div>
-                <p className="text-lg font-serif font-bold text-stone-900">{stat.value}</p>
-                <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400">{stat.label}</p>
+                <p className="text-lg font-serif font-bold text-ink">{stat.value}</p>
+                <p className="text-[10px] font-mono uppercase tracking-widest text-muted">{stat.label}</p>
               </div>
             </div>
           ))}
@@ -335,14 +335,14 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="font-serif font-bold text-lg text-stone-900">Modules</h3>
-            <p className="text-sm text-stone-400 font-light">
+            <h3 className="font-serif font-bold text-lg text-ink">Modules</h3>
+            <p className="text-sm text-muted font-light">
               {modules.length} module{modules.length === 1 ? "" : "s"}
             </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-stone-400">
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-muted">
               <MoveVertical className="w-3.5 h-3.5" />
               Drag the handle to reorder
             </span>
@@ -350,7 +350,7 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
               <button
                 type="button"
                 onClick={toggleExpandAll}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-paper hover:bg-porcelain text-muted text-xs font-semibold font-mono rounded-xl tracking-wider border border-line shadow-sm transition-all cursor-pointer"
               >
                 {areAllExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
                 {areAllExpanded ? "Collapse All" : "Expand All"}
@@ -362,11 +362,11 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         {modulesQuery.isLoading ? (
           <div className="grid grid-cols-1 gap-3" aria-busy="true" aria-label="Loading modules">
             {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="h-20 rounded-2xl bg-stone-100 animate-pulse" />
+              <div key={index} className="h-20 rounded-2xl bg-porcelain animate-pulse" />
             ))}
           </div>
         ) : modules.length === 0 ? (
-          <div className="bg-white border border-stone-200 rounded-2xl shadow-sm">
+          <div className="bg-paper border border-line rounded-2xl shadow-sm">
             <EmptyState
               icon={Layers}
               label="No modules yet."

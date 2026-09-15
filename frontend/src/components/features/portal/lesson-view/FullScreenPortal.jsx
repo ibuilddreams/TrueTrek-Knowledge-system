@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import { createPortal } from "react-dom";
 import { motion } from "motion/react";
-import { useTheme } from "@/hooks/useTheme";
 
 /**
  * Teleports children to <body> as a fixed, full-viewport overlay — above the portal
@@ -14,7 +13,6 @@ import { useTheme } from "@/hooks/useTheme";
  * the course-detail fetch) is ever visible for a moment while deep-linking into a lesson.
  */
 export default function FullScreenPortal({ children }) {
-  const { isVault } = useTheme();
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -36,9 +34,7 @@ export default function FullScreenPortal({ children }) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.18 }}
-      className={`fixed inset-0 z-70 overflow-y-auto ${
-        isVault ? "bg-[#0c0b0a] text-stone-200" : "bg-[#faf9f6] text-stone-900"
-      }`}
+      className="fixed inset-0 z-70 overflow-y-auto bg-porcelain text-ink"
     >
       {children}
     </motion.div>,

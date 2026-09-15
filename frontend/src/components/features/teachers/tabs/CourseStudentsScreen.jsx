@@ -28,12 +28,12 @@ const SORT_OPTIONS = [
 ];
 
 const AVATAR_COLORS = [
-  "bg-amber-600",
+  "bg-pine",
   "bg-sky-600",
   "bg-emerald-700",
   "bg-violet-600",
   "bg-rose-700",
-  "bg-stone-600",
+  "bg-ink",
 ];
 
 function initialsFor(name) {
@@ -131,14 +131,14 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
       render: (student) => (
         <div className="flex items-center gap-3 min-w-0">
           <div
-            className={`w-9 h-9 rounded-full ${student.avatarColor} text-white flex items-center justify-center font-bold text-xs shrink-0`}
+            className={`w-9 h-9 rounded-full ${student.avatarColor} text-paper flex items-center justify-center font-bold text-xs shrink-0`}
           >
             {initialsFor(student.name)}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-stone-800 truncate">{student.name}</p>
+            <p className="text-sm font-semibold text-ink truncate">{student.name}</p>
             {student.email && (
-              <p className="text-[11px] font-mono text-stone-400 truncate">{student.email}</p>
+              <p className="text-[11px] font-mono text-muted truncate">{student.email}</p>
             )}
           </div>
         </div>
@@ -156,15 +156,15 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
         <div className="min-w-[7rem]">
           <span
             className={`text-sm font-mono font-bold ${
-              student.progress >= 75 ? "text-emerald-700" : "text-amber-700"
+              student.progress >= 75 ? "text-emerald-700" : "text-gold"
             }`}
           >
             {student.progress}%
           </span>
-          <div className="h-1.5 rounded-full bg-stone-200 overflow-hidden mt-1">
+          <div className="h-1.5 rounded-full bg-porcelain overflow-hidden mt-1">
             <div
               className={`h-full rounded-full ${
-                student.progress >= 75 ? "bg-emerald-600" : "bg-amber-600"
+                student.progress >= 75 ? "bg-emerald-600" : "bg-gold"
               }`}
               style={{ width: `${student.progress}%` }}
             />
@@ -180,7 +180,7 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
       render: (student) => (
         <span
           className={`text-sm font-mono font-bold ${
-            student.quizAvg >= 70 ? "text-emerald-700" : "text-amber-700"
+            student.quizAvg >= 70 ? "text-emerald-700" : "text-gold"
           }`}
         >
           {student.quizAvg}%
@@ -198,7 +198,7 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
       render: () => (
         <button
           type="button"
-          className="w-8 h-8 flex items-center justify-center rounded-lg border border-stone-200 text-stone-500 hover:bg-stone-50 cursor-pointer transition"
+          className="w-8 h-8 flex items-center justify-center rounded-lg border border-line text-muted hover:bg-porcelain cursor-pointer transition"
           title="View student progress"
           aria-label="View student progress"
         >
@@ -213,44 +213,44 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-sm font-mono font-semibold text-stone-500 hover:text-amber-700 transition-colors cursor-pointer"
+        className="inline-flex items-center gap-1.5 text-sm font-mono font-semibold text-muted hover:text-pine transition-colors cursor-pointer"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to Courses
       </button>
 
-      <div className="relative bg-white border border-stone-200/90 rounded-2xl shadow-sm overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 to-amber-800 opacity-80" />
+      <div className="relative bg-paper border border-line rounded-card shadow-soft overflow-hidden">
+        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pine to-moss opacity-80" />
         <div className="p-6 sm:p-7 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
           <div className="flex items-center gap-4 min-w-0">
-            <div className="w-12 h-12 rounded-2xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+            <div className="w-12 h-12 rounded-2xl bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
               <Users className="w-5 h-5" />
             </div>
             <div className="min-w-0">
-              <span className="text-amber-600 font-mono text-[11px] uppercase tracking-widest font-bold block mb-1">
+              <span className="text-gold font-mono text-[11px] uppercase tracking-widest font-bold block mb-1">
                 Enrolled Students
               </span>
-              <h2 className="text-2xl font-serif font-black text-stone-900 truncate">
+              <h2 className="text-2xl font-serif font-black text-ink truncate">
                 {course?.title || "Course"}
               </h2>
             </div>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <div className="text-center px-4 py-2.5 rounded-xl border border-stone-100 bg-stone-50/80">
-              <p className="text-lg font-serif font-bold text-stone-900">{enrolledCount}</p>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400">Enrolled</p>
+            <div className="text-center px-4 py-2.5 rounded-xl border border-line bg-porcelain/80">
+              <p className="text-lg font-serif font-bold text-ink">{enrolledCount}</p>
+              <p className="text-[10px] font-mono uppercase tracking-widest text-muted">Enrolled</p>
             </div>
-            <div className="text-center px-4 py-2.5 rounded-xl border border-stone-100 bg-stone-50/80">
+            <div className="text-center px-4 py-2.5 rounded-xl border border-line bg-porcelain/80">
               <p className="text-lg font-serif font-bold text-emerald-700">{activeCount}</p>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400">Active</p>
+              <p className="text-[10px] font-mono uppercase tracking-widest text-muted">Active</p>
             </div>
-            <div className="text-center px-4 py-2.5 rounded-xl border border-stone-100 bg-stone-50/80">
-              <p className="text-lg font-serif font-bold text-amber-700 flex items-center gap-1 justify-center">
+            <div className="text-center px-4 py-2.5 rounded-xl border border-line bg-porcelain/80">
+              <p className="text-lg font-serif font-bold text-gold flex items-center gap-1 justify-center">
                 <TrendingUp className="w-3.5 h-3.5" />
                 {avgProgress}%
               </p>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-stone-400">Avg Progress</p>
+              <p className="text-[10px] font-mono uppercase tracking-widest text-muted">Avg Progress</p>
             </div>
           </div>
         </div>
@@ -269,7 +269,7 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
           />
         </div>
 
-        <div className="flex items-center gap-1 rounded-xl border border-stone-200 bg-stone-50 p-1 shrink-0">
+        <div className="flex items-center gap-1 rounded-xl border border-line bg-porcelain p-1 shrink-0">
           {STATUS_FILTERS.map((filter) => (
             <button
               key={filter.value}
@@ -280,8 +280,8 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
               }}
               className={`px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
                 statusFilter === filter.value
-                  ? "bg-white text-amber-800 shadow-xs border border-amber-200"
-                  : "text-stone-500 hover:text-stone-700"
+                  ? "bg-paper text-pine shadow-xs border border-pine/20"
+                  : "text-muted hover:text-ink"
               }`}
             >
               {filter.label}
@@ -294,17 +294,17 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
         </div>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
         {isLoading ? (
           <div className="py-10 text-center">
-            <p className="text-sm font-medium text-stone-500">Loading students...</p>
+            <p className="text-sm font-medium text-muted">Loading students...</p>
           </div>
         ) : paginatedStudents.length === 0 ? (
           <div className="py-10 text-center">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-stone-50 border border-stone-100 text-stone-400 flex items-center justify-center">
+            <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-porcelain border border-line text-muted flex items-center justify-center">
               <Search className="w-5 h-5" />
             </div>
-            <p className="text-sm font-medium text-stone-500">
+            <p className="text-sm font-medium text-muted">
               {students.length === 0
                 ? "No students are enrolled in this course yet."
                 : "No students match your filters."}

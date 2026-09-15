@@ -13,24 +13,24 @@ import {
 import { BarChart3 } from "lucide-react";
 import EmptyState from "@/components/ui/EmptyState";
 
-const CHART_COLORS = ["#d97706", "#b45309", "#92400e", "#78350f", "#57534e"];
+const CHART_COLORS = ["#092d29", "#21483f", "#c7a85b", "#4a6b61", "#8fa89e"];
 
 export default function AdminChartPanel({ title, data, dataKey, subtitle }) {
   const chartData = data || [];
   const total = chartData.reduce((sum, row) => sum + (Number(row.count) || 0), 0);
 
   return (
-    <div className="bg-white border border-stone-200/90 rounded-2xl shadow-sm overflow-hidden flex flex-col min-h-[300px]">
-      <div className="px-5 pt-5 pb-3 flex items-start justify-between gap-3 border-b border-stone-100">
+    <div className="bg-paper border border-line rounded-card shadow-soft hover:shadow-elevated hover:-translate-y-1 transition-all duration-300 overflow-hidden flex flex-col min-h-[300px]">
+      <div className="px-5 pt-5 pb-3 flex items-start justify-between gap-3 border-b border-line">
         <div>
-          <h3 className="text-sm font-mono font-bold uppercase tracking-widest text-stone-700">
+          <h3 className="text-sm font-sans font-medium uppercase tracking-widest text-ink">
             {title}
           </h3>
           {subtitle && (
-            <p className="text-sm text-stone-400 font-light mt-1">{subtitle}</p>
+            <p className="text-sm text-muted font-light mt-1">{subtitle}</p>
           )}
         </div>
-        <span className="shrink-0 text-xs font-mono font-bold uppercase tracking-wider px-2.5 py-1 rounded-lg bg-amber-50 text-amber-800 border border-amber-100">
+        <span className="shrink-0 text-xs font-sans font-medium uppercase tracking-widest px-2.5 py-1 rounded-lg bg-gold/12 text-gold border border-gold/20">
           {total} total
         </span>
       </div>
@@ -46,29 +46,29 @@ export default function AdminChartPanel({ title, data, dataKey, subtitle }) {
         ) : (
           <ResponsiveContainer width="100%" height={220}>
             <BarChart data={chartData} margin={{ top: 8, right: 8, left: -12, bottom: 0 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="#e7e5e4" vertical={false} />
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(22,33,29,.12)" vertical={false} />
               <XAxis
                 dataKey={dataKey}
-                tick={{ fontSize: 13, fill: "#78716c" }}
+                tick={{ fontSize: 13, fill: "#62706a" }}
                 axisLine={false}
                 tickLine={false}
               />
               <YAxis
                 allowDecimals={false}
-                tick={{ fontSize: 13, fill: "#78716c" }}
+                tick={{ fontSize: 13, fill: "#62706a" }}
                 axisLine={false}
                 tickLine={false}
               />
               <Tooltip
-                cursor={{ fill: "rgba(217, 119, 6, 0.06)" }}
+                cursor={{ fill: "rgba(9, 45, 41, 0.06)" }}
                 contentStyle={{
                   borderRadius: 12,
-                  borderColor: "#e7e5e4",
+                  borderColor: "rgba(22,33,29,.12)",
                   fontSize: 14,
-                  boxShadow: "0 8px 24px rgba(28, 25, 23, 0.08)",
+                  boxShadow: "0 8px 24px rgba(16, 22, 21, 0.08)",
                 }}
-                labelStyle={{ color: "#292524", fontWeight: 600 }}
-                itemStyle={{ color: "#78350f" }}
+                labelStyle={{ color: "#101615", fontWeight: 600 }}
+                itemStyle={{ color: "#092d29" }}
               />
               <Bar dataKey="count" radius={[8, 8, 0, 0]} maxBarSize={48}>
                 {chartData.map((entry, index) => (

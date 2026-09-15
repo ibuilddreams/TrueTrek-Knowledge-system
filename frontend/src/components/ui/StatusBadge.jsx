@@ -1,30 +1,30 @@
 "use client";
 
 const STATUS_COLORS = {
-  ACTIVE: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  PUBLISHED: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  DRAFT: "bg-stone-100 text-stone-600 border-stone-200",
-  ARCHIVED: "bg-stone-100 text-stone-500 border-stone-200",
-  SUSPENDED: "bg-amber-50 text-amber-700 border-amber-200",
-  CANCELLED: "bg-rose-50 text-rose-700 border-rose-200",
-  COMPLETED: "bg-blue-50 text-blue-700 border-blue-200",
-  DEACTIVATED: "bg-rose-50 text-rose-700 border-rose-200",
-  PASSED: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  FAILED: "bg-rose-50 text-rose-700 border-rose-200",
-  NOT_ATTEMPTED: "bg-stone-100 text-stone-500 border-stone-200",
-  IN_PROGRESS: "bg-amber-50 text-amber-700 border-amber-200",
-  SUBMITTED: "bg-amber-50 text-amber-700 border-amber-200",
-  GRADED: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  EXPIRED: "bg-orange-50 text-orange-700 border-orange-200",
-  ABANDONED: "bg-stone-200 text-stone-600 border-stone-300",
-  PENDING: "bg-amber-50 text-amber-700 border-amber-200",
-  APPROVED: "bg-emerald-50 text-emerald-700 border-emerald-200",
-  REJECTED: "bg-rose-50 text-rose-700 border-rose-200",
+  ACTIVE: "bg-sage/40 text-pine border-pine/20",
+  PUBLISHED: "bg-sage/40 text-pine border-pine/20",
+  DRAFT: "bg-porcelain text-muted border-line",
+  ARCHIVED: "bg-porcelain text-muted border-line",
+  SUSPENDED: "bg-gold/12 text-gold border-gold/25",
+  CANCELLED: "bg-rose/35 text-clay border-clay/25",
+  COMPLETED: "bg-sky/60 text-blue border-blue/20",
+  DEACTIVATED: "bg-rose/35 text-clay border-clay/25",
+  PASSED: "bg-sage/40 text-pine border-pine/20",
+  FAILED: "bg-rose/35 text-clay border-clay/25",
+  NOT_ATTEMPTED: "bg-porcelain text-muted border-line",
+  IN_PROGRESS: "bg-gold/12 text-gold border-gold/25",
+  SUBMITTED: "bg-gold/12 text-gold border-gold/25",
+  GRADED: "bg-sage/40 text-pine border-pine/20",
+  EXPIRED: "bg-clay/12 text-clay border-clay/25",
+  ABANDONED: "bg-porcelain text-muted border-line",
+  PENDING: "bg-gold/12 text-gold border-gold/25",
+  APPROVED: "bg-sage/40 text-pine border-pine/20",
+  REJECTED: "bg-rose/35 text-clay border-clay/25",
 };
 
 export default function StatusBadge({ status, size = "base" }) {
   const normalized = (status || "").toUpperCase();
-  const colorClass = STATUS_COLORS[normalized] || "bg-stone-100 text-stone-600 border-stone-200";
+  const colorClass = STATUS_COLORS[normalized] || "bg-porcelain text-muted border-line";
 
   return (
     <span

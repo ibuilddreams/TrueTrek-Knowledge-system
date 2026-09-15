@@ -35,8 +35,8 @@ export default function StudentConcernsTab() {
       header: "Student",
       render: (concern) => (
         <div>
-          <span className="font-semibold text-stone-800">{concern.student?.name}</span>
-          <p className="text-[11px] text-stone-400 font-light">{concern.student?.email}</p>
+          <span className="font-semibold text-ink">{concern.student?.name}</span>
+          <p className="text-[11px] text-muted font-light">{concern.student?.email}</p>
         </div>
       ),
     },
@@ -44,7 +44,7 @@ export default function StudentConcernsTab() {
       key: "category",
       header: "Category",
       render: (concern) => (
-        <span className="text-stone-600 font-mono text-xs">{concern.category_display}</span>
+        <span className="text-muted font-mono text-xs">{concern.category_display}</span>
       ),
     },
     {
@@ -57,7 +57,7 @@ export default function StudentConcernsTab() {
             Yes
           </span>
         ) : (
-          <span className="text-[11px] font-mono uppercase text-stone-400">No</span>
+          <span className="text-[11px] font-mono uppercase text-muted">No</span>
         ),
     },
     {
@@ -69,7 +69,7 @@ export default function StudentConcernsTab() {
       key: "created_at",
       header: "Flagged",
       render: (concern) => (
-        <span className="text-stone-500 whitespace-nowrap">{formatDateTime(concern.created_at)}</span>
+        <span className="text-muted whitespace-nowrap">{formatDateTime(concern.created_at)}</span>
       ),
     },
   ];
@@ -77,13 +77,13 @@ export default function StudentConcernsTab() {
   return (
     <div className="space-y-5">
       <div>
-        <h2 className="text-lg font-serif font-bold text-stone-900">Flagged Student Concerns</h2>
-        <p className="text-sm text-stone-500 font-light mt-0.5">
+        <h2 className="text-lg font-serif font-bold text-ink">Flagged Student Concerns</h2>
+        <p className="text-sm text-muted font-light mt-0.5">
           Concerns you've flagged from a student's dossier, and how the admin team resolved them.
         </p>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
         {!isLoading && !isError && concerns.length === 0 ? (
           <EmptyState
             size="lg"

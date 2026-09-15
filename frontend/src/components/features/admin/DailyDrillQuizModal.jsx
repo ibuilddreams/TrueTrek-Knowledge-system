@@ -145,7 +145,7 @@ export default function DailyDrillQuizModal({ isOpen, onClose, onSaved, schedule
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         {questions.map((question, questionIndex) => (
-          <div key={questionIndex} className="border border-stone-200 rounded-xl p-4 space-y-3 bg-stone-50/60">
+          <div key={questionIndex} className="border border-line rounded-xl p-4 space-y-3 bg-porcelain/60">
             <div className="flex items-start gap-2">
               <input
                 type="text"
@@ -153,7 +153,7 @@ export default function DailyDrillQuizModal({ isOpen, onClose, onSaved, schedule
                 onChange={(event) => updateQuestionText(questionIndex, event.target.value)}
                 disabled={saveMutation.isPending}
                 placeholder={`Question ${questionIndex + 1}`}
-                className="flex-1 px-3 py-2 bg-white border border-stone-200 focus:border-amber-600 focus:outline-none rounded-lg text-sm font-mono text-stone-800"
+                className="flex-1 px-3 py-2 bg-paper border border-line focus:border-pine focus:outline-none rounded-lg text-sm font-mono text-ink"
               />
               {questions.length > 1 && (
                 <button
@@ -177,10 +177,10 @@ export default function DailyDrillQuizModal({ isOpen, onClose, onSaved, schedule
                     disabled={saveMutation.isPending}
                     title="Mark as correct"
                     className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center ${
-                      choice.is_correct ? "bg-emerald-500 border-emerald-500" : "border-stone-300"
+                      choice.is_correct ? "bg-emerald-500 border-emerald-500" : "border-line"
                     }`}
                   >
-                    {choice.is_correct && <Check className="w-3 h-3 text-white" />}
+                    {choice.is_correct && <Check className="w-3 h-3 text-paper" />}
                   </button>
                   <input
                     type="text"
@@ -188,14 +188,14 @@ export default function DailyDrillQuizModal({ isOpen, onClose, onSaved, schedule
                     onChange={(event) => updateChoiceText(questionIndex, choiceIndex, event.target.value)}
                     disabled={saveMutation.isPending}
                     placeholder={`Choice ${choiceIndex + 1}`}
-                    className="flex-1 px-3 py-1.5 bg-white border border-stone-200 focus:border-amber-600 focus:outline-none rounded-lg text-xs font-mono text-stone-800"
+                    className="flex-1 px-3 py-1.5 bg-paper border border-line focus:border-pine focus:outline-none rounded-lg text-xs font-mono text-ink"
                   />
                   {question.choices.length > 2 && (
                     <button
                       type="button"
                       onClick={() => removeChoice(questionIndex, choiceIndex)}
                       disabled={saveMutation.isPending}
-                      className="p-1.5 text-stone-400 hover:text-rose-500 transition"
+                      className="p-1.5 text-muted hover:text-rose-500 transition"
                       aria-label="Remove choice"
                     >
                       <X className="w-3.5 h-3.5" />
@@ -207,7 +207,7 @@ export default function DailyDrillQuizModal({ isOpen, onClose, onSaved, schedule
                 type="button"
                 onClick={() => addChoice(questionIndex)}
                 disabled={saveMutation.isPending}
-                className="text-[11px] font-mono uppercase tracking-wider text-amber-700 hover:text-amber-800 flex items-center gap-1 pt-1"
+                className="text-[11px] font-mono uppercase tracking-wider text-pine hover:text-moss flex items-center gap-1 pt-1"
               >
                 <Plus className="w-3 h-3" />
                 Add Choice
@@ -223,30 +223,30 @@ export default function DailyDrillQuizModal({ isOpen, onClose, onSaved, schedule
             type="button"
             onClick={addQuestion}
             disabled={saveMutation.isPending}
-            className="w-full py-2.5 border-2 border-dashed border-stone-300 hover:border-amber-400 text-stone-500 hover:text-amber-700 rounded-xl text-xs font-mono uppercase tracking-wider transition flex items-center justify-center gap-1.5"
+            className="w-full py-2.5 border-2 border-dashed border-line hover:border-pine text-muted hover:text-pine rounded-xl text-xs font-mono uppercase tracking-wider transition flex items-center justify-center gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" />
             Add Question
           </button>
         )}
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-stone-100">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-line">
           <button
             type="button"
             onClick={handleClose}
             disabled={saveMutation.isPending}
-            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-sm font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-colors duration-150 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saveMutation.isPending}
-            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
+            className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
           >
             {saveMutation.isPending ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
                 Saving...
               </>
             ) : (

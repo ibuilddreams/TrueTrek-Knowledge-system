@@ -13,7 +13,6 @@ export {
 export { INDEX_FAQ_ITEMS } from "./faq";
 export {
   AUTH_COOKIE,
-  PREFERENCE_COOKIE,
   AUTH_ROLES,
   SESSION_MAX_AGE_SECONDS,
 } from "./auth";
