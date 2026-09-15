@@ -115,8 +115,8 @@ export default function StudentConcernsTab() {
       header: "Student",
       render: (concern) => (
         <div>
-          <span className="font-semibold text-stone-800">{concern.student?.name}</span>
-          <p className="text-[11px] text-stone-400 font-light">{concern.student?.email}</p>
+          <span className="font-semibold text-ink">{concern.student?.name}</span>
+          <p className="text-[11px] text-muted font-light">{concern.student?.email}</p>
         </div>
       ),
     },
@@ -124,14 +124,14 @@ export default function StudentConcernsTab() {
       key: "teacher",
       header: "Flagged By",
       render: (concern) => (
-        <span className="text-stone-600">{concern.teacher?.name}</span>
+        <span className="text-muted">{concern.teacher?.name}</span>
       ),
     },
     {
       key: "category",
       header: "Category",
       render: (concern) => (
-        <span className="text-stone-600 font-mono text-xs">{concern.category_display}</span>
+        <span className="text-muted font-mono text-xs">{concern.category_display}</span>
       ),
     },
     {
@@ -144,7 +144,7 @@ export default function StudentConcernsTab() {
             Needed
           </span>
         ) : (
-          <span className="text-[11px] font-mono uppercase text-stone-400">—</span>
+          <span className="text-[11px] font-mono uppercase text-muted">—</span>
         ),
     },
     {
@@ -156,7 +156,7 @@ export default function StudentConcernsTab() {
       key: "created_at",
       header: "Flagged",
       render: (concern) => (
-        <span className="text-stone-500 whitespace-nowrap">{formatDateTime(concern.created_at)}</span>
+        <span className="text-muted whitespace-nowrap">{formatDateTime(concern.created_at)}</span>
       ),
     },
   ];
@@ -204,7 +204,7 @@ export default function StudentConcernsTab() {
         </div>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
         <DataTable
           size="lg"
           columns={columns}

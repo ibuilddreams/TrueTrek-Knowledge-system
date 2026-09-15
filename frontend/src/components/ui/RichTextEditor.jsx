@@ -36,8 +36,8 @@ function ToolbarButton({ onClick, isActive, disabled, title, children }) {
       title={title}
       className={`inline-flex items-center justify-center w-7 h-7 rounded-lg border transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer ${
         isActive
-          ? "bg-stone-900 text-white border-stone-900"
-          : "bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100"
+          ? "bg-pine text-paper border-pine"
+          : "bg-porcelain text-muted border-line hover:bg-porcelain/70"
       }`}
     >
       {children}
@@ -116,8 +116,8 @@ export default function RichTextEditor({
   };
 
   return (
-    <div className="rounded-xl border border-stone-200 bg-stone-50 overflow-hidden focus-within:border-amber-600 transition">
-      <div className="flex flex-wrap items-center gap-1 px-2.5 py-2 border-b border-stone-200 bg-white">
+    <div className="rounded-xl border border-line bg-porcelain overflow-hidden focus-within:border-pine transition">
+      <div className="flex flex-wrap items-center gap-1 px-2.5 py-2 border-b border-line bg-paper">
         <ToolbarButton
           title="Heading 1"
           isActive={editor.isActive("heading", { level: 1 })}
@@ -143,7 +143,7 @@ export default function RichTextEditor({
           <Heading3 className="w-3.5 h-3.5" />
         </ToolbarButton>
 
-        <span className="w-px h-5 bg-stone-200 mx-1" />
+        <span className="w-px h-5 bg-line mx-1" />
 
         <ToolbarButton
           title="Bold"
@@ -178,7 +178,7 @@ export default function RichTextEditor({
           <Strikethrough className="w-3.5 h-3.5" />
         </ToolbarButton>
 
-        <span className="w-px h-5 bg-stone-200 mx-1" />
+        <span className="w-px h-5 bg-line mx-1" />
 
         <ToolbarButton
           title="Bullet list"
@@ -205,7 +205,7 @@ export default function RichTextEditor({
           <Quote className="w-3.5 h-3.5" />
         </ToolbarButton>
 
-        <span className="w-px h-5 bg-stone-200 mx-1" />
+        <span className="w-px h-5 bg-line mx-1" />
 
         <ToolbarButton title="Link" isActive={editor.isActive("link")} disabled={disabled} onClick={openLinkInput}>
           <Link2 className="w-3.5 h-3.5" />
@@ -234,7 +234,7 @@ export default function RichTextEditor({
           <Minus className="w-3.5 h-3.5" />
         </ToolbarButton>
 
-        <span className="w-px h-5 bg-stone-200 mx-1" />
+        <span className="w-px h-5 bg-line mx-1" />
 
         <ToolbarButton title="Undo" disabled={disabled || !editor.can().undo()} onClick={() => editor.chain().focus().undo().run()}>
           <Undo2 className="w-3.5 h-3.5" />
@@ -245,7 +245,7 @@ export default function RichTextEditor({
       </div>
 
       {linkInputOpen && (
-        <div className="flex items-center gap-2 px-3 py-2 border-b border-stone-200 bg-amber-50/60">
+        <div className="flex items-center gap-2 px-3 py-2 border-b border-line bg-gold/10">
           <input
             type="text"
             autoFocus
@@ -260,19 +260,19 @@ export default function RichTextEditor({
               }
             }}
             placeholder="https://example.com"
-            className="flex-1 px-2.5 py-1.5 bg-white border border-stone-200 focus:border-amber-600 focus:outline-none rounded-lg text-xs font-mono text-stone-850 placeholder:text-stone-400"
+            className="flex-1 px-2.5 py-1.5 bg-paper border border-line focus:border-pine focus:outline-none rounded-lg text-xs font-mono text-ink placeholder:text-muted"
           />
           <button
             type="button"
             onClick={applyLink}
-            className="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-stone-900 text-white hover:bg-stone-800 cursor-pointer"
+            className="w-7 h-7 inline-flex items-center justify-center rounded-lg bg-pine text-paper hover:bg-moss cursor-pointer"
           >
             <Check className="w-3.5 h-3.5" />
           </button>
           <button
             type="button"
             onClick={() => setLinkInputOpen(false)}
-            className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-stone-200 text-stone-500 hover:bg-stone-100 cursor-pointer"
+            className="w-7 h-7 inline-flex items-center justify-center rounded-lg border border-line text-muted hover:bg-porcelain cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
           </button>

@@ -166,7 +166,7 @@ export default function CoursesTab() {
       header: "Code",
       sortable: true,
       render: (course) => (
-        <span className="font-mono text-stone-600">{course.code || "—"}</span>
+        <span className="font-mono text-muted">{course.code || "—"}</span>
       ),
     },
     {
@@ -174,7 +174,7 @@ export default function CoursesTab() {
       header: "Title",
       sortable: true,
       render: (course) => (
-        <span className="font-semibold text-stone-800">{course.title}</span>
+        <span className="font-semibold text-ink">{course.title}</span>
       ),
     },
     {
@@ -194,7 +194,7 @@ export default function CoursesTab() {
       header: "Amount",
       sortable: true,
       render: (course) => (
-        <span className="font-mono text-stone-600">
+        <span className="font-mono text-muted">
           {formatAmount(course.amount)}
         </span>
       ),
@@ -302,7 +302,7 @@ export default function CoursesTab() {
           <button
             type="button"
             onClick={() => setIsAiModalOpen(true)}
-            className="px-4 py-2.5 bg-white hover:bg-stone-50 text-stone-700 text-sm font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-paper hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-xl tracking-wider border border-line shadow-sm transition-all flex items-center gap-2"
             title="Generate a complete draft course with AI"
             aria-label="Generate a complete draft course with AI"
           >
@@ -312,7 +312,7 @@ export default function CoursesTab() {
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2"
             title="Create a new course"
             aria-label="Create a new course"
           >
@@ -322,7 +322,7 @@ export default function CoursesTab() {
         </div>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
         <DataTable size="lg"
           columns={columns}
           rows={paginatedCourses}

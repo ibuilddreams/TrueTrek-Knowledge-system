@@ -24,7 +24,6 @@ import { useStudentQuizzes } from "@/hooks/student/useStudentQuizzes";
 import { getStudentEnrollments } from "@/services/studentCoursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatDateTime } from "@/lib/adminFormatters";
-import { useTheme } from "@/hooks/useTheme";
 import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
 import QuizAttemptHistoryModal from "../history/QuizAttemptHistoryModal";
@@ -32,9 +31,9 @@ import QuizAttemptModal from "../course-detail/QuizAttemptModal";
 import CourseworkSummaryCard from "../CourseworkSummaryCard";
 
 const SCORE_TONES = {
-  high: { bar: "bg-emerald-500", text: "text-emerald-700", textVault: "text-emerald-400" },
-  mid: { bar: "bg-amber-500", text: "text-amber-700", textVault: "text-amber-400" },
-  low: { bar: "bg-rose-500", text: "text-rose-600", textVault: "text-rose-400" },
+  high: { bar: "bg-emerald-500", text: "text-emerald-700" },
+  mid: { bar: "bg-gold", text: "text-gold" },
+  low: { bar: "bg-rose-500", text: "text-rose-600" },
 };
 
 function scoreTone(percentage) {
@@ -45,38 +44,31 @@ function scoreTone(percentage) {
 
 const TONE_STYLES = {
   stone: {
-    light: "bg-stone-50 text-stone-500 border-stone-200",
-    vault: "bg-stone-500/10 text-stone-400 border-stone-500/20",
+    light: "bg-porcelain text-muted border-line",
   },
   amber: {
-    light: "bg-amber-50 text-amber-700 border-amber-100",
-    vault: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+    light: "bg-gold/12 text-gold border-gold/25",
   },
   rose: {
     light: "bg-rose-50 text-rose-600 border-rose-100",
-    vault: "bg-rose-500/10 text-rose-400 border-rose-500/20",
   },
   emerald: {
     light: "bg-emerald-50 text-emerald-700 border-emerald-100",
-    vault: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
   },
   sky: {
-    light: "bg-sky-50 text-sky-700 border-sky-100",
-    vault: "bg-sky-500/10 text-sky-400 border-sky-500/20",
+    light: "bg-sky/60 text-blue border-blue/20",
   },
   orange: {
-    light: "bg-orange-50 text-orange-700 border-orange-100",
-    vault: "bg-orange-500/10 text-orange-400 border-orange-500/20",
+    light: "bg-clay/12 text-clay border-clay/25",
   },
   abandoned: {
-    light: "bg-stone-100 text-stone-600 border-stone-200",
-    vault: "bg-stone-500/15 text-stone-400 border-stone-500/25",
+    light: "bg-porcelain text-muted border-line",
   },
 };
 
-function toneClass(tone, isVault) {
+function toneClass(tone) {
   const entry = TONE_STYLES[tone] || TONE_STYLES.stone;
-  return isVault ? entry.vault : entry.light;
+  return entry.light;
 }
 
 const STATUS_FILTERS = [
@@ -214,17 +206,11 @@ function quizToDoMeta(quiz) {
   return { label: attempt.status, tone: "stone", icon: CircleHelp, note };
 }
 
-function StatChip({ label, value, tone = "stone", isVault }) {
+function StatChip({ label, value, tone = "stone" }) {
   const toneClasses = {
-    stone: isVault
-      ? "bg-white/5 border-stone-700 text-stone-300"
-      : "bg-stone-50 border-stone-100 text-stone-700",
-    amber: isVault
-      ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
-      : "bg-amber-50 border-amber-100 text-amber-800",
-    emerald: isVault
-      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-      : "bg-emerald-50 border-emerald-100 text-emerald-700",
+    stone: "bg-porcelain border-line text-muted",
+    amber: "bg-gold/12 border-gold/25 text-gold",
+    emerald: "bg-emerald-50 border-emerald-100 text-emerald-700",
   };
   return (
     <div
@@ -238,19 +224,15 @@ function StatChip({ label, value, tone = "stone", isVault }) {
   );
 }
 
-function FilterButton({ active, onClick, isVault, children }) {
+function FilterButton({ active, onClick, children }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase tracking-wider border transition ${
         active
-          ? isVault
-            ? "bg-amber-600 border-amber-600 text-stone-950"
-            : "bg-stone-900 border-stone-900 text-white"
-          : isVault
-            ? "bg-stone-900/60 border-stone-700 text-stone-400 hover:border-amber-600/50 hover:text-amber-400"
-            : "bg-white border-stone-200 text-stone-500 hover:border-amber-300 hover:text-amber-800"
+          ? "bg-pine border-pine text-paper"
+          : "bg-paper border-line text-muted hover:border-pine/40 hover:text-pine"
       }`}
     >
       {children}
@@ -258,10 +240,10 @@ function FilterButton({ active, onClick, isVault, children }) {
   );
 }
 
-function QuizToDoRow({ quiz, isVault, onOpen }) {
+function QuizToDoRow({ quiz, onOpen }) {
   const meta = quizToDoMeta(quiz);
   const StatusIcon = meta.icon;
-  const badgeClass = toneClass(meta.tone, isVault);
+  const badgeClass = toneClass(meta.tone);
   const attempt = quiz.latest_attempt;
   const hasScore = attempt && attempt.percentage !== null && attempt.percentage !== undefined;
   const tone = hasScore ? scoreTone(attempt.percentage) : null;
@@ -273,24 +255,16 @@ function QuizToDoRow({ quiz, isVault, onOpen }) {
       onClick={isLocked ? undefined : onOpen}
       disabled={isLocked}
       title={isLocked ? quiz.lock_info?.reason : undefined}
-      className={`group w-full flex items-center gap-3 rounded-xl border transition p-3.5 text-left disabled:cursor-default disabled:opacity-70 ${
-        isVault
-          ? "border-stone-800 bg-[#161412] enabled:hover:border-amber-700/50 enabled:hover:shadow-[0_8px_24px_-18px_rgba(0,0,0,0.6)]"
-          : "border-stone-200 bg-white enabled:hover:border-amber-300 enabled:hover:shadow-[0_8px_24px_-18px_rgba(28,25,23,0.35)]"
-      }`}
+      className="group w-full flex items-center gap-3 rounded-xl border transition p-3.5 text-left disabled:cursor-default disabled:opacity-70 border-line bg-paper enabled:hover:border-pine enabled:hover:shadow-[0_8px_24px_-18px_rgba(28,25,23,0.35)]"
     >
       <span className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 border ${badgeClass}`}>
         <StatusIcon className="w-4 h-4" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className={`block text-[13px] font-medium truncate ${isVault ? "text-stone-200" : "text-stone-800"}`}>
+        <span className="block text-[13px] font-medium truncate text-ink">
           {quiz.title}
         </span>
-        <span
-          className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-mono uppercase tracking-wider mt-1 ${
-            isVault ? "text-stone-500" : "text-stone-400"
-          }`}
-        >
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-mono uppercase tracking-wider mt-1 text-muted">
           {quiz.module ? <span>{quiz.module.title}</span> : null}
           <span className="flex items-center gap-1">
             <Repeat className="w-3 h-3" />
@@ -306,7 +280,7 @@ function QuizToDoRow({ quiz, isVault, onOpen }) {
           {meta.label}
         </span>
         {hasScore ? (
-          <span className={`text-xs font-mono font-bold ${isVault ? tone.textVault : tone.text}`}>
+          <span className={`text-xs font-mono font-bold ${tone.text}`}>
             {attempt.percentage}%
           </span>
         ) : null}
@@ -321,19 +295,15 @@ function QuizToDoRow({ quiz, isVault, onOpen }) {
       {isLocked ? (
         <span className="w-4 h-4 shrink-0" />
       ) : (
-        <ChevronRight
-          className={`w-4 h-4 transition shrink-0 ${
-            isVault ? "text-stone-600 group-hover:text-amber-500" : "text-stone-300 group-hover:text-amber-600"
-          }`}
-        />
+        <ChevronRight className="w-4 h-4 transition shrink-0 text-muted group-hover:text-pine" />
       )}
     </button>
   );
 }
 
-function QuizAttemptRow({ attempt, isVault, onOpen, isBest }) {
+function QuizAttemptRow({ attempt, onOpen, isBest }) {
   const { label, tone, icon: StatusIcon } = attemptStatusMeta(attempt);
-  const badgeClass = toneClass(tone, isVault);
+  const badgeClass = toneClass(tone);
   const canOpenDetail = Boolean(attempt.ended_at);
   const hasScore = attempt.percentage !== null && attempt.percentage !== undefined;
   const scoreToneValue = hasScore ? scoreTone(attempt.percentage) : null;
@@ -343,37 +313,23 @@ function QuizAttemptRow({ attempt, isVault, onOpen, isBest }) {
       type="button"
       onClick={canOpenDetail ? onOpen : undefined}
       disabled={!canOpenDetail}
-      className={`group w-full flex items-center gap-3 rounded-xl border transition p-3.5 text-left disabled:opacity-70 disabled:cursor-default ${
-        isVault
-          ? "border-stone-800 bg-[#161412] enabled:hover:border-amber-700/50 enabled:hover:shadow-[0_8px_24px_-18px_rgba(0,0,0,0.6)]"
-          : "border-stone-200 bg-white enabled:hover:border-amber-300 enabled:hover:shadow-[0_8px_24px_-18px_rgba(28,25,23,0.35)]"
-      }`}
+      className="group w-full flex items-center gap-3 rounded-xl border transition p-3.5 text-left disabled:opacity-70 disabled:cursor-default border-line bg-paper enabled:hover:border-pine enabled:hover:shadow-[0_8px_24px_-18px_rgba(28,25,23,0.35)]"
     >
       <span className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 border ${badgeClass}`}>
         <StatusIcon className="w-4 h-4" />
       </span>
       <span className="min-w-0 flex-1">
         <span className="flex items-center gap-1.5">
-          <span className={`block text-[13px] font-medium truncate ${isVault ? "text-stone-200" : "text-stone-800"}`}>
+          <span className="block text-[13px] font-medium truncate text-ink">
             {attempt.quiz.title}
           </span>
           {isBest ? (
-            <span
-              className={`flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md border shrink-0 ${
-                isVault
-                  ? "text-amber-400 bg-amber-500/10 border-amber-500/20"
-                  : "text-amber-700 bg-amber-50 border-amber-100"
-              }`}
-            >
+            <span className="flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md border shrink-0 text-gold bg-gold/12 border-gold/25">
               <Trophy className="w-3 h-3" /> Best
             </span>
           ) : null}
         </span>
-        <span
-          className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-mono uppercase tracking-wider mt-1 ${
-            isVault ? "text-stone-500" : "text-stone-400"
-          }`}
-        >
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-mono uppercase tracking-wider mt-1 text-muted">
           {attempt.module ? <span>{attempt.module.title}</span> : null}
           <span className="flex items-center gap-1">
             <Repeat className="w-3 h-3" />
@@ -394,13 +350,13 @@ function QuizAttemptRow({ attempt, isVault, onOpen, isBest }) {
         </span>
         {hasScore ? (
           <span className="flex items-center gap-1.5 w-full">
-            <span className={`flex-1 h-1.5 rounded-full overflow-hidden ${isVault ? "bg-white/10" : "bg-stone-100"}`}>
+            <span className="flex-1 h-1.5 rounded-full overflow-hidden bg-porcelain">
               <span
                 className={`block h-full rounded-full ${scoreToneValue.bar}`}
                 style={{ width: `${Math.min(100, Math.max(0, attempt.percentage))}%` }}
               />
             </span>
-            <span className={`text-xs font-mono font-bold ${isVault ? scoreToneValue.textVault : scoreToneValue.text}`}>
+            <span className={`text-xs font-mono font-bold ${scoreToneValue.text}`}>
               {attempt.percentage}%
             </span>
           </span>
@@ -413,17 +369,13 @@ function QuizAttemptRow({ attempt, isVault, onOpen, isBest }) {
           {label}
         </span>
         {hasScore ? (
-          <span className={`text-xs font-mono ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+          <span className="text-xs font-mono text-muted">
             {attempt.score}/{attempt.total_marks} · {attempt.percentage}%
           </span>
         ) : null}
       </span>
       {canOpenDetail ? (
-        <ChevronRight
-          className={`w-4 h-4 transition shrink-0 ${
-            isVault ? "text-stone-600 group-hover:text-amber-500" : "text-stone-300 group-hover:text-amber-600"
-          }`}
-        />
+        <ChevronRight className="w-4 h-4 transition shrink-0 text-muted group-hover:text-pine" />
       ) : (
         <span className="w-4 h-4 shrink-0" />
       )}
@@ -432,7 +384,6 @@ function QuizAttemptRow({ attempt, isVault, onOpen, isBest }) {
 }
 
 export default function QuizzesTab() {
-  const { isVault } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -609,34 +560,20 @@ export default function QuizzesTab() {
     );
   } else if (isError) {
     content = (
-      <div
-        className={`border rounded-2xl p-8 text-center max-w-lg mx-auto ${
-          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200 bg-white"
-        }`}
-      >
-        <div
-          className={`w-12 h-12 border rounded-2xl flex items-center justify-center mx-auto mb-4 ${
-            isVault
-              ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
-              : "bg-rose-50 border-rose-100 text-rose-600"
-          }`}
-        >
+      <div className="border rounded-2xl p-8 text-center max-w-lg mx-auto border-line bg-paper">
+        <div className="w-12 h-12 border rounded-2xl flex items-center justify-center mx-auto mb-4 bg-rose-50 border-rose-100 text-rose-600">
           <AlertCircle className="w-6 h-6" />
         </div>
-        <h2 className={`text-xl font-serif font-bold mb-2 ${isVault ? "text-stone-50" : "text-stone-900"}`}>
+        <h2 className="text-xl font-serif font-bold mb-2 text-ink">
           Failed to Load Quizzes
         </h2>
-        <p className={`text-sm font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+        <p className="text-sm font-light mb-6 text-muted">
           {getApiErrorMessage(error, "Unable to load your quizzes.")}
         </p>
         <button
           type="button"
           onClick={() => refetch()}
-          className={`inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition ${
-            isVault
-              ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
-              : "bg-stone-900 hover:bg-stone-800 text-stone-100"
-          }`}
+          className="inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
         >
           <RefreshCw className="w-4 h-4" />
           Retry
@@ -645,11 +582,7 @@ export default function QuizzesTab() {
     );
   } else if (quizzes.length === 0) {
     content = (
-      <div
-        className={`rounded-2xl border border-dashed ${
-          isVault ? "border-stone-700 bg-[#161412]/70" : "border-stone-200 bg-white/70"
-        }`}
-      >
+      <div className="rounded-2xl border border-dashed border-line bg-paper/70">
         <EmptyState
           icon={CircleHelp}
           label="No quizzes yet"
@@ -661,22 +594,14 @@ export default function QuizzesTab() {
   } else if (selectedCourseId) {
     if (!selectedGroup) {
       content = (
-        <div
-          className={`rounded-2xl border border-dashed p-10 text-center space-y-4 ${
-            isVault ? "border-stone-700 bg-[#161412]/70" : "border-stone-200 bg-white/70"
-          }`}
-        >
-          <p className={`text-sm ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+        <div className="rounded-2xl border border-dashed p-10 text-center space-y-4 border-line bg-paper/70">
+          <p className="text-sm text-muted">
             We couldn&apos;t find quizzes for that course.
           </p>
           <button
             type="button"
             onClick={closeCourse}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-mono uppercase tracking-wider rounded-xl transition ${
-              isVault
-                ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
-                : "bg-stone-900 hover:bg-stone-800 text-white"
-            }`}
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-mono uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
           >
             Back to Quizzes
           </button>
@@ -696,21 +621,17 @@ export default function QuizzesTab() {
           <button
             type="button"
             onClick={closeCourse}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 border text-xs font-mono uppercase tracking-wider rounded-xl transition ${
-              isVault
-                ? "border-stone-700 hover:border-amber-600/50 hover:text-amber-400 text-stone-400"
-                : "border-stone-200 hover:border-amber-300 hover:text-amber-800 text-stone-600"
-            }`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 border text-xs font-mono uppercase tracking-wider rounded-xl transition border-line hover:border-pine hover:text-pine text-muted"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Back to Quizzes
           </button>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h2 className={`font-serif font-bold text-2xl ${isVault ? "text-stone-50" : "text-stone-900"}`}>
+              <h2 className="font-serif font-bold text-2xl text-ink">
                 {selectedGroup.course.title}
               </h2>
-              <p className={`text-sm font-light mt-1 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+              <p className="text-sm font-light mt-1 text-muted">
                 {selectedGroup.quizzes.length} quiz{selectedGroup.quizzes.length === 1 ? "" : "zes"} total
                 {!canInteractWithSelectedCourse
                   ? " · enrollment isn't active, attempts are disabled"
@@ -722,16 +643,14 @@ export default function QuizzesTab() {
                 label="To do"
                 value={selectedGroup.pendingCount}
                 tone={selectedGroup.pendingCount > 0 ? "amber" : "stone"}
-                isVault={isVault}
               />
-              <StatChip label="Passed" value={selectedGroup.passedCount} tone="emerald" isVault={isVault} />
+              <StatChip label="Passed" value={selectedGroup.passedCount} tone="emerald" />
               <StatChip
                 label="Avg score"
                 value={
                   selectedGroup.averagePercentage === null ? "—" : `${selectedGroup.averagePercentage}%`
                 }
                 tone="amber"
-                isVault={isVault}
               />
             </div>
           </div>
@@ -739,10 +658,10 @@ export default function QuizzesTab() {
           {selectedGroup.toDoQuizzes.length > 0 ? (
             <div className="space-y-2.5">
               <div className="flex items-baseline gap-2">
-                <h3 className={`text-sm font-mono font-bold uppercase tracking-wider ${isVault ? "text-stone-300" : "text-stone-600"}`}>
+                <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-muted">
                   To do
                 </h3>
-                <span className={`text-[11px] font-mono ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+                <span className="text-[11px] font-mono text-muted">
                   Quizzes you can take right now
                 </span>
               </div>
@@ -751,7 +670,6 @@ export default function QuizzesTab() {
                   <QuizToDoRow
                     key={quiz.id}
                     quiz={quiz}
-                    isVault={isVault}
                     onOpen={() => setSelectedQuizId(quiz.id)}
                   />
                 ))}
@@ -761,10 +679,10 @@ export default function QuizzesTab() {
 
           <div className="space-y-2.5">
             <div className="flex items-baseline gap-2">
-              <h3 className={`text-sm font-mono font-bold uppercase tracking-wider ${isVault ? "text-stone-300" : "text-stone-600"}`}>
+              <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-muted">
                 Attempt history
               </h3>
-              <span className={`text-[11px] font-mono ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+              <span className="text-[11px] font-mono text-muted">
                 Every attempt you&apos;ve made in this course
               </span>
             </div>
@@ -785,7 +703,6 @@ export default function QuizzesTab() {
                     key={filter.id}
                     active={statusFilter === filter.id}
                     onClick={() => setStatusFilter(filter.id)}
-                    isVault={isVault}
                   >
                     {filter.label} ({count})
                   </FilterButton>
@@ -793,11 +710,7 @@ export default function QuizzesTab() {
               })}
             </div>
             {filteredAttempts.length === 0 ? (
-              <div
-                className={`rounded-2xl border border-dashed ${
-                  isVault ? "border-stone-700 bg-[#161412]/70" : "border-stone-200 bg-white/70"
-                }`}
-              >
+              <div className="rounded-2xl border border-dashed border-line bg-paper/70">
                 <EmptyState
                   icon={CircleHelp}
                   label="Nothing here"
@@ -812,7 +725,6 @@ export default function QuizzesTab() {
                   <QuizAttemptRow
                     key={attempt.attempt_id}
                     attempt={attempt}
-                    isVault={isVault}
                     isBest={selectedAttemptGroup.bestAttemptIds.has(attempt.attempt_id)}
                     onOpen={() => setDetailAttemptId(attempt.attempt_id)}
                   />
@@ -827,17 +739,13 @@ export default function QuizzesTab() {
     content = (
       <div className="space-y-6">
         <div>
-          <p
-            className={`text-[11px] font-mono uppercase tracking-[0.2em] mb-2 ${
-              isVault ? "text-amber-500" : "text-amber-700/80"
-            }`}
-          >
+          <p className="text-[11px] font-mono uppercase tracking-[0.2em] mb-2 text-pine/80">
             Assessments
           </p>
-          <h2 className={`font-serif font-bold text-2xl sm:text-3xl ${isVault ? "text-stone-50" : "text-stone-900"}`}>
+          <h2 className="font-serif font-bold text-2xl sm:text-3xl text-ink">
             Your quizzes
           </h2>
-          <p className={`text-sm font-light mt-2 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+          <p className="text-sm font-light mt-2 text-muted">
             Grouped by course — open a course to take a pending quiz or review every attempt and
             score.
           </p>
@@ -859,7 +767,6 @@ export default function QuizzesTab() {
               completedCount={group.passedCount}
               completedLabel="Passed"
               averagePercentage={group.averagePercentage}
-              isVault={isVault}
               onOpen={() => openCourse(group.course.id)}
             />
           ))}

@@ -11,7 +11,6 @@ export default function CurriculumItemRow({
   statusClassName,
   isCompleted,
   isActive,
-  isVault,
   onClick,
   disabled,
 }) {
@@ -23,12 +22,8 @@ export default function CurriculumItemRow({
       aria-current={isActive ? "true" : undefined}
       className={`w-full flex items-center gap-2.5 rounded-xl px-2.5 py-2 text-left transition-colors group border disabled:cursor-default disabled:opacity-50 ${
         isActive
-          ? isVault
-            ? "bg-amber-500/10 border-amber-500/40"
-            : "bg-amber-50/80 border-amber-300"
-          : isVault
-            ? "border-transparent hover:bg-white/5 disabled:hover:bg-transparent"
-            : "border-transparent hover:bg-stone-50 disabled:hover:bg-transparent"
+          ? "bg-pine/10 border-pine/20"
+          : "border-transparent hover:bg-porcelain disabled:hover:bg-transparent"
       }`}
     >
       <span
@@ -40,22 +35,14 @@ export default function CurriculumItemRow({
         <span
           className={`block text-[12.5px] font-medium truncate transition-colors ${
             isActive
-              ? isVault
-                ? "text-amber-300"
-                : "text-amber-800"
-              : isVault
-                ? "text-stone-200 group-hover:text-amber-400"
-                : "text-stone-700 group-hover:text-amber-800"
+              ? "text-pine"
+              : "text-muted group-hover:text-pine"
           }`}
         >
           {title}
         </span>
         {meta ? (
-          <span
-            className={`flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider mt-0.5 ${
-              isVault ? "text-stone-500" : "text-stone-400"
-            }`}
-          >
+          <span className="flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider mt-0.5 text-muted">
             {meta}
           </span>
         ) : null}
@@ -67,11 +54,9 @@ export default function CurriculumItemRow({
           {statusLabel}
         </span>
       ) : isCompleted ? (
-        <CheckCircle2
-          className={`w-4 h-4 shrink-0 ${isVault ? "text-emerald-400" : "text-emerald-600"}`}
-        />
+        <CheckCircle2 className="w-4 h-4 shrink-0 text-emerald-600" />
       ) : (
-        <Circle className={`w-4 h-4 shrink-0 ${isVault ? "text-stone-700" : "text-stone-200"}`} />
+        <Circle className="w-4 h-4 shrink-0 text-muted" />
       )}
     </button>
   );

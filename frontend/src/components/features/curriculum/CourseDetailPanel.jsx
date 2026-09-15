@@ -5,7 +5,6 @@ import { useQuery } from "@tanstack/react-query";
 import { AlertCircle, Clock, Layers, RefreshCw, UserRound } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { useAuth } from "@/hooks/useAuth";
-import { useTheme } from "@/hooks/useTheme";
 import { AUTH_ROLES } from "@/constants/auth";
 import { ROUTES } from "@/constants/routes";
 import { getCourseById } from "@/services/coursesService";
@@ -44,7 +43,6 @@ async function fetchCourseDetail(courseId, role) {
 
 export default function CourseDetailPanel({ course: cardCourse, onClose }) {
   const router = useRouter();
-  const { isVault } = useTheme();
   const { role } = useAuth();
   const courseId = cardCourse?.id;
 
@@ -89,33 +87,15 @@ export default function CourseDetailPanel({ course: cardCourse, onClose }) {
             animate={{ x: 0 }}
             exit={{ x: "100%" }}
             transition={{ type: "spring", damping: 25, stiffness: 200 }}
-            className={`fixed right-0 top-0 bottom-0 w-full max-w-lg shadow-2xl z-50 p-6 md:p-8 flex flex-col justify-between overflow-y-auto ${
-              isVault ? "bg-[#161412] border-l border-stone-800" : "bg-white"
-            }`}
+            className="fixed right-0 top-0 bottom-0 w-full max-w-lg shadow-2xl z-50 p-6 md:p-8 flex flex-col justify-between overflow-y-auto bg-white"
           >
             <div>
-              <div
-                className={`flex items-center justify-between border-b pb-4 mb-6 ${
-                  isVault ? "border-stone-800" : "border-stone-100"
-                }`}
-              >
+              <div className="flex items-center justify-between border-b pb-4 mb-6 border-stone-100">
                 <div className="flex flex-wrap items-center gap-2">
-                  <span
-                    className={`font-mono text-sm font-bold px-3 py-1.5 rounded-lg border ${
-                      isVault
-                        ? "text-amber-400 bg-amber-600/15 border-amber-700/40"
-                        : "text-amber-800 bg-amber-50 border-amber-200/40"
-                    }`}
-                  >
+                  <span className="font-mono text-sm font-bold px-3 py-1.5 rounded-lg border text-amber-800 bg-amber-50 border-amber-200/40">
                     {course.code || cardCourse.code}
                   </span>
-                  <span
-                    className={`text-xs uppercase font-mono tracking-widest px-3 py-1 rounded-full border ${
-                      isVault
-                        ? "bg-stone-900 text-stone-300 border-stone-700"
-                        : "bg-stone-50 text-stone-700 border-stone-200"
-                    }`}
-                  >
+                  <span className="text-xs uppercase font-mono tracking-widest px-3 py-1 rounded-full border bg-stone-50 text-stone-700 border-stone-200">
                     {course.category?.name || cardCourse.category?.name || "General"}
                   </span>
                 </div>
@@ -155,48 +135,26 @@ export default function CourseDetailPanel({ course: cardCourse, onClose }) {
 
               {!isLoading && !isError && (
                 <>
-                  <h3
-                    className={`text-2xl md:text-3xl font-serif font-bold tracking-tight mb-1 ${
-                      isVault ? "text-stone-100" : "text-stone-900"
-                    }`}
-                  >
+                  <h3 className="text-2xl md:text-3xl font-serif font-bold tracking-tight mb-1 text-stone-900">
                     {course.title}
                   </h3>
-                  <p
-                    className={`font-mono text-xs tracking-wider uppercase mb-4 ${
-                      isVault ? "text-stone-400" : "text-stone-500"
-                    }`}
-                  >
+                  <p className="font-mono text-xs tracking-wider uppercase mb-4 text-stone-500">
                     {course.difficulty || "General curriculum"}
                   </p>
 
-                  <div
-                    className={`border p-4 rounded-xl mb-6 flex items-center gap-3 ${
-                      isVault
-                        ? "bg-stone-900/40 border-stone-800"
-                        : "bg-stone-50 border-stone-200/60"
-                    }`}
-                  >
+                  <div className="border p-4 rounded-xl mb-6 flex items-center gap-3 bg-stone-50 border-stone-200/60">
                     <UserRound className="w-4 h-4 text-amber-700 shrink-0" />
                     <div>
                       <p className="text-stone-400 text-[10px] font-mono uppercase tracking-wider mb-0.5">
                         Lead Instructor
                       </p>
-                      <p
-                        className={`text-sm font-medium ${
-                          isVault ? "text-stone-200" : "text-stone-800"
-                        }`}
-                      >
+                      <p className="text-sm font-medium text-stone-800">
                         {leadInstructor}
                       </p>
                     </div>
                   </div>
 
-                  <p
-                    className={`text-sm leading-relaxed mb-6 font-light ${
-                      isVault ? "text-stone-400" : "text-stone-600"
-                    }`}
-                  >
+                  <p className="text-sm leading-relaxed mb-6 font-light text-stone-600">
                     {course.description || "No description has been added for this course yet."}
                   </p>
 
@@ -205,11 +163,7 @@ export default function CourseDetailPanel({ course: cardCourse, onClose }) {
                   <div className="mb-6">
                     <div className="flex items-center gap-2 mb-3">
                       <Layers className="w-4 h-4 text-amber-700" />
-                      <h4
-                        className={`text-xs font-mono uppercase tracking-wider ${
-                          isVault ? "text-stone-100" : "text-stone-900"
-                        }`}
-                      >
+                      <h4 className="text-xs font-mono uppercase tracking-wider text-stone-900">
                         MODULES & LESSONS
                       </h4>
                     </div>
@@ -229,20 +183,12 @@ export default function CourseDetailPanel({ course: cardCourse, onClose }) {
             </div>
 
             {!isLoading && !isError && (
-              <div
-                className={`pt-6 border-t flex items-center justify-between -mx-6 md:-mx-8 -mb-6 md:-mb-8 p-6 ${
-                  isVault ? "border-stone-800 bg-stone-900/40" : "border-stone-100 bg-stone-50"
-                }`}
-              >
-                <div
-                  className={`flex items-center gap-2 font-mono text-xs ${
-                    isVault ? "text-stone-400" : "text-stone-500"
-                  }`}
-                >
+              <div className="pt-6 border-t flex items-center justify-between -mx-6 md:-mx-8 -mb-6 md:-mb-8 p-6 border-stone-100 bg-stone-50">
+                <div className="flex items-center gap-2 font-mono text-xs text-stone-500">
                   <Clock className="w-4 h-4 text-amber-700" />
                   <span>
                     DURATION:{" "}
-                    <strong className={isVault ? "text-stone-200" : "text-stone-800"}>
+                    <strong className="text-stone-800">
                       {formatDurationMinutes(course.duration_minutes)}
                     </strong>
                   </span>
@@ -253,11 +199,7 @@ export default function CourseDetailPanel({ course: cardCourse, onClose }) {
                     onClick={() =>
                       router.push(`${ROUTES.STUDENT_PORTAL}?tab=courses&course=${courseId}`)
                     }
-                    className={`font-semibold text-xs px-5 py-2.5 rounded-lg tracking-wide transition ${
-                      isVault
-                        ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
-                        : "bg-stone-900 hover:bg-stone-800 text-white"
-                    }`}
+                    className="font-semibold text-xs px-5 py-2.5 rounded-lg tracking-wide transition bg-stone-900 hover:bg-stone-800 text-white"
                   >
                     Continue Learning →
                   </button>
@@ -265,11 +207,7 @@ export default function CourseDetailPanel({ course: cardCourse, onClose }) {
                   <button
                     id="curriculum-drawer-close-btn"
                     onClick={onClose}
-                    className={`font-semibold text-xs px-5 py-2.5 rounded-lg tracking-wide transition ${
-                      isVault
-                        ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
-                        : "bg-stone-900 hover:bg-stone-800 text-white"
-                    }`}
+                    className="font-semibold text-xs px-5 py-2.5 rounded-lg tracking-wide transition bg-stone-900 hover:bg-stone-800 text-white"
                   >
                     Close
                   </button>

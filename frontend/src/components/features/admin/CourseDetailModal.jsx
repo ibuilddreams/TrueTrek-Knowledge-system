@@ -36,16 +36,16 @@ function LessonRow({ lesson }) {
 
   return (
     <li className="flex items-center gap-3 p-3">
-      <div className="w-8 h-8 rounded-lg bg-stone-50 border border-stone-100 text-stone-500 flex items-center justify-center shrink-0">
+      <div className="w-8 h-8 rounded-lg bg-porcelain border border-line text-muted flex items-center justify-center shrink-0">
         <Icon className="w-3.5 h-3.5" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-stone-800 truncate">{lesson.title}</p>
-        <div className="flex items-center gap-2 mt-0.5 text-[11px] font-mono uppercase text-stone-400 tracking-wider">
+        <p className="text-sm font-semibold text-ink truncate">{lesson.title}</p>
+        <div className="flex items-center gap-2 mt-0.5 text-[11px] font-mono uppercase text-muted tracking-wider">
           <span>{lesson.content_type}</span>
           {lesson.duration_minutes != null && (
             <>
-              <span className="text-stone-200">·</span>
+              <span className="text-muted">·</span>
               <span className="flex items-center gap-1">
                 <Clock className="w-2.5 h-2.5" />
                 {lesson.duration_minutes}m
@@ -62,20 +62,20 @@ function LessonRow({ lesson }) {
 function AssignmentRow({ assignment }) {
   return (
     <li className="flex items-center gap-3 p-3">
-      <div className="w-8 h-8 rounded-lg bg-stone-50 border border-stone-100 text-stone-500 flex items-center justify-center shrink-0">
+      <div className="w-8 h-8 rounded-lg bg-porcelain border border-line text-muted flex items-center justify-center shrink-0">
         <ClipboardCheck className="w-3.5 h-3.5" />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-stone-800 truncate">{assignment.title}</p>
+          <p className="text-sm font-semibold text-ink truncate">{assignment.title}</p>
           <StatusBadge size="lg" status={assignment.status} />
         </div>
-        <div className="flex items-center gap-2 mt-0.5 text-[11px] font-mono uppercase text-stone-400 tracking-wider">
+        <div className="flex items-center gap-2 mt-0.5 text-[11px] font-mono uppercase text-muted tracking-wider">
           <span className="flex items-center gap-1">
             <Calendar className="w-2.5 h-2.5" />
             {formatDate(assignment.due_date)}
           </span>
-          <span className="text-stone-200">·</span>
+          <span className="text-muted">·</span>
           <span className="flex items-center gap-1">
             <Award className="w-2.5 h-2.5" />
             {assignment.total_marks} marks
@@ -89,19 +89,19 @@ function AssignmentRow({ assignment }) {
 function QuizRow({ quiz }) {
   return (
     <li className="flex items-center gap-3 p-3">
-      <div className="w-8 h-8 rounded-lg bg-stone-50 border border-stone-100 text-stone-500 flex items-center justify-center shrink-0">
+      <div className="w-8 h-8 rounded-lg bg-porcelain border border-line text-muted flex items-center justify-center shrink-0">
         <HelpCircle className="w-3.5 h-3.5" />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-stone-800 truncate">{quiz.title}</p>
+          <p className="text-sm font-semibold text-ink truncate">{quiz.title}</p>
           <StatusBadge size="lg" status={quiz.status} />
         </div>
-        <div className="flex items-center gap-2 mt-0.5 text-[11px] font-mono uppercase text-stone-400 tracking-wider">
+        <div className="flex items-center gap-2 mt-0.5 text-[11px] font-mono uppercase text-muted tracking-wider">
           <span>Pass {quiz.passing_score}%</span>
           {quiz.time_limit_minutes ? (
             <>
-              <span className="text-stone-200">·</span>
+              <span className="text-muted">·</span>
               <span className="flex items-center gap-1">
                 <Clock className="w-2.5 h-2.5" />
                 {quiz.time_limit_minutes}m
@@ -116,15 +116,15 @@ function QuizRow({ quiz }) {
 
 function ModuleContentSection({ title, icon: Icon, items, renderItem, emptyLabel }) {
   return (
-    <div className="border-t border-stone-100">
-      <p className="flex items-center gap-1.5 text-[11px] font-mono uppercase text-stone-400 tracking-wider px-3 pt-3">
+    <div className="border-t border-line">
+      <p className="flex items-center gap-1.5 text-[11px] font-mono uppercase text-muted tracking-wider px-3 pt-3">
         <Icon className="w-3 h-3" />
         {title} · {items.length}
       </p>
       {items.length ? (
-        <ul className="divide-y divide-stone-100">{items.map(renderItem)}</ul>
+        <ul className="divide-y divide-line">{items.map(renderItem)}</ul>
       ) : (
-        <p className="text-xs text-stone-400 font-light px-3 py-3">{emptyLabel}</p>
+        <p className="text-xs text-muted font-light px-3 py-3">{emptyLabel}</p>
       )}
     </div>
   );
@@ -137,19 +137,19 @@ function ModuleAccordion({ module, defaultOpen }) {
   const quizzes = module.quizzes || [];
 
   return (
-    <div className="rounded-xl border border-stone-100 overflow-hidden">
+    <div className="rounded-xl border border-line overflow-hidden">
       <button
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        className="w-full flex items-center justify-between gap-3 p-3 bg-stone-50/60 hover:bg-stone-50 transition"
+        className="w-full flex items-center justify-between gap-3 p-3 bg-porcelain/60 hover:bg-porcelain transition"
       >
         <div className="flex items-center gap-2.5 min-w-0">
-          <span className="shrink-0 w-6 h-6 rounded-lg bg-amber-600/10 text-amber-700 text-[11px] font-mono font-bold flex items-center justify-center">
+          <span className="shrink-0 w-6 h-6 rounded-lg bg-gold/12 text-gold text-[11px] font-mono font-bold flex items-center justify-center">
             {module.order ?? 1}
           </span>
           <div className="min-w-0 text-left">
-            <p className="text-sm font-semibold text-stone-800 truncate">{module.title}</p>
-            <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
+            <p className="text-sm font-semibold text-ink truncate">{module.title}</p>
+            <p className="text-[11px] font-mono uppercase text-muted tracking-wider mt-0.5">
               {lessons.length} {lessons.length === 1 ? "Lesson" : "Lessons"} · {assignments.length}{" "}
               {assignments.length === 1 ? "Assignment" : "Assignments"} · {quizzes.length}{" "}
               {quizzes.length === 1 ? "Quiz" : "Quizzes"}
@@ -157,14 +157,14 @@ function ModuleAccordion({ module, defaultOpen }) {
           </div>
         </div>
         <ChevronDown
-          className={`w-4 h-4 text-stone-400 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`w-4 h-4 text-muted shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
         />
       </button>
 
       {isOpen && (
         <div>
           {module.description && (
-            <p className="text-sm text-stone-500 font-light leading-relaxed px-3 pt-3">{module.description}</p>
+            <p className="text-sm text-muted font-light leading-relaxed px-3 pt-3">{module.description}</p>
           )}
 
           <ModuleContentSection
@@ -229,54 +229,54 @@ export default function CourseDetailModal({ isOpen, onClose, courseId }) {
         <Loader fullScreen={false} label="Loading course..." />
       ) : course ? (
         <div className="space-y-4">
-          <div className="relative w-full h-40 rounded-lg border border-stone-100 overflow-hidden">
+          <div className="relative w-full h-40 rounded-lg border border-line overflow-hidden">
             {course.image ? (
               <img src={course.image} alt={course.title} className="w-full h-full object-cover" />
             ) : (
-              <div className="w-full h-full bg-stone-50 flex items-center justify-center">
-                <BookOpen className="w-8 h-8 text-stone-300" />
+              <div className="w-full h-full bg-porcelain flex items-center justify-center">
+                <BookOpen className="w-8 h-8 text-muted" />
               </div>
             )}
             <div className="absolute inset-x-0 bottom-0 bg-linear-to-t from-black/70 via-black/30 to-transparent p-3 flex items-center justify-between gap-3">
-              <h4 className="text-base font-serif font-bold text-white">{course.title}</h4>
+              <h4 className="text-base font-serif font-bold text-paper">{course.title}</h4>
               <StatusBadge size="lg" status={course.status} />
             </div>
           </div>
           {course.description && (
-            <p className="text-sm text-stone-500 font-light leading-relaxed">{course.description}</p>
+            <p className="text-sm text-muted font-light leading-relaxed">{course.description}</p>
           )}
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mb-1">Category</p>
-              <p className="text-stone-700 font-semibold">{course.category?.name || "—"}</p>
+              <p className="text-[11px] font-mono uppercase text-muted tracking-wider mb-1">Category</p>
+              <p className="text-ink font-semibold">{course.category?.name || "—"}</p>
             </div>
             <div>
-              <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mb-1">Tags</p>
-              <p className="text-stone-700 font-semibold">
+              <p className="text-[11px] font-mono uppercase text-muted tracking-wider mb-1">Tags</p>
+              <p className="text-ink font-semibold">
                 {course.tags?.length ? course.tags.map((tag) => tag.name).join(", ") : "—"}
               </p>
             </div>
           </div>
           <div>
-            <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mb-2">Instructors</p>
+            <p className="text-[11px] font-mono uppercase text-muted tracking-wider mb-2">Instructors</p>
             {course.instructors?.length ? (
               <ul className="space-y-2">
                 {course.instructors.map((instructor) => (
                   <li
                     key={instructor.id}
-                    className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-stone-100 bg-stone-50/60 text-sm"
+                    className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-line bg-porcelain/60 text-sm"
                   >
-                    <span className="font-semibold text-stone-800">{instructor.name}</span>
-                    <span className="text-stone-400 font-mono">{instructor.email}</span>
+                    <span className="font-semibold text-ink">{instructor.name}</span>
+                    <span className="text-muted font-mono">{instructor.email}</span>
                   </li>
                 ))}
               </ul>
             ) : (
-              <p className="text-sm text-stone-400 font-light">No instructors assigned.</p>
+              <p className="text-sm text-muted font-light">No instructors assigned.</p>
             )}
           </div>
           <div>
-            <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mb-2">Modules &amp; Content</p>
+            <p className="text-[11px] font-mono uppercase text-muted tracking-wider mb-2">Modules &amp; Content</p>
             {course.modules?.length ? (
               <div className="space-y-2">
                 {course.modules.map((module, index) => (
@@ -289,7 +289,7 @@ export default function CourseDetailModal({ isOpen, onClose, courseId }) {
           </div>
         </div>
       ) : (
-        <p className="text-sm text-stone-400 font-light">Course details unavailable.</p>
+        <p className="text-sm text-muted font-light">Course details unavailable.</p>
       )}
     </Modal>
   );

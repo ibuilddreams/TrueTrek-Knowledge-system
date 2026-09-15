@@ -85,7 +85,7 @@ export default function ProgressTab() {
         <button
           type="button"
           onClick={() => handleSelectCourse(course)}
-          className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-pine hover:text-moss transition cursor-pointer"
         >
           <LineChart className="w-3.5 h-3.5" />
           View Progress
@@ -107,17 +107,17 @@ export default function ProgressTab() {
       />
 
       {!isLoading && isError && (
-        <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-8 text-center max-w-lg mx-auto">
+        <div className="bg-paper border border-line rounded-card shadow-soft p-8 text-center max-w-lg mx-auto">
           <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <p className="text-sm text-stone-500 font-light mb-6">
+          <p className="text-sm text-muted font-light mb-6">
             {getApiErrorMessage(error, "Unable to load your assigned courses.")}
           </p>
           <button
             type="button"
             onClick={() => refetch()}
-            className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-pine hover:bg-moss text-paper font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-soft transition cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -126,7 +126,7 @@ export default function ProgressTab() {
       )}
 
       {!isError && (
-        <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+        <div className="bg-paper border border-line rounded-card shadow-soft p-6">
           <DataTable
             columns={columns}
             rows={paginatedCourses}

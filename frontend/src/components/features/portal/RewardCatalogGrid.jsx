@@ -49,7 +49,7 @@ export default function RewardCatalogGrid({ onRedeemed }) {
 
   if (isLoading) {
     return (
-      <div className="bg-white border border-stone-200 rounded-2xl p-10">
+      <div className="bg-paper border border-line rounded-2xl p-10">
         <Loader fullScreen={false} label="Loading rewards catalog..." />
       </div>
     );
@@ -57,17 +57,17 @@ export default function RewardCatalogGrid({ onRedeemed }) {
 
   if (isError) {
     return (
-      <div className="bg-white border border-stone-200 rounded-2xl p-10 flex flex-col items-center gap-3 text-center">
+      <div className="bg-paper border border-line rounded-2xl p-10 flex flex-col items-center gap-3 text-center">
         <div className="w-10 h-10 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl flex items-center justify-center">
           <AlertCircle className="w-5 h-5" />
         </div>
-        <p className="text-sm text-stone-500 font-light">
+        <p className="text-sm text-muted font-light">
           {getApiErrorMessage(error, "Unable to load the rewards catalog.")}
         </p>
         <button
           type="button"
           onClick={() => refetch()}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-xs uppercase tracking-wider rounded-lg transition"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-pine hover:bg-moss text-paper font-bold font-mono text-xs uppercase tracking-wider rounded-lg transition"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Retry
@@ -81,7 +81,7 @@ export default function RewardCatalogGrid({ onRedeemed }) {
 
   if (rewards.length === 0) {
     return (
-      <div className="bg-white border border-stone-200 rounded-2xl p-6">
+      <div className="bg-paper border border-line rounded-2xl p-6">
         <EmptyState icon={Gift} label="No rewards available right now." size="lg" />
       </div>
     );

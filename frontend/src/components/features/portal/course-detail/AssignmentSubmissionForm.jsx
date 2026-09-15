@@ -10,7 +10,6 @@ import {
   isAllowedAssignmentFile,
 } from "@/lib/assignmentFileTypes";
 import { toastError } from "@/lib/toast";
-import { useTheme } from "@/hooks/useTheme";
 
 export default function AssignmentSubmissionForm({
   assignment,
@@ -18,7 +17,6 @@ export default function AssignmentSubmissionForm({
   canSubmit,
   isPastDue,
 }) {
-  const { isVault } = useTheme();
   const [files, setFiles] = useState([]);
   const submitMutation = useSubmitAssignment(assignment.id);
   const isAiGraded = assignment.grading_mode === "AI";
@@ -26,11 +24,7 @@ export default function AssignmentSubmissionForm({
   if (!canSubmit) {
     return (
       <div
-        className={`rounded-xl border border-dashed px-4 py-4 text-sm ${
-          isVault
-            ? "border-stone-700 bg-white/5 text-stone-400"
-            : "border-stone-200 bg-stone-50 text-stone-500"
-        }`}
+        className="rounded-xl border border-dashed px-4 py-4 text-sm border-line bg-porcelain text-muted"
       >
         {isPastDue
           ? "The due date has passed and resubmission isn't allowed for this assignment."
@@ -77,20 +71,14 @@ export default function AssignmentSubmissionForm({
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
       <h5
-        className={`text-sm font-mono uppercase tracking-wider ${
-          isVault ? "text-stone-500" : "text-stone-400"
-        }`}
+        className="text-sm font-mono uppercase tracking-wider text-muted"
       >
         {hasSubmission ? "Resubmit your work" : "Submit your work"}
       </h5>
 
       <div className="space-y-2">
         <label
-          className={`inline-flex items-center gap-2 px-3.5 py-2 border border-dashed rounded-xl text-xs font-mono uppercase tracking-wider cursor-pointer transition ${
-            isVault
-              ? "border-stone-700 hover:border-amber-500/60 text-stone-400 hover:text-amber-400"
-              : "border-stone-300 hover:border-amber-400 text-stone-500 hover:text-amber-700"
-          }`}
+          className="inline-flex items-center gap-2 px-3.5 py-2 border border-dashed rounded-xl text-xs font-mono uppercase tracking-wider cursor-pointer transition border-line hover:border-pine text-muted hover:text-pine"
         >
           <UploadCloud className="w-3.5 h-3.5" />
           Attach files
@@ -103,7 +91,7 @@ export default function AssignmentSubmissionForm({
             className="hidden"
           />
         </label>
-        <p className={`text-[11px] ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+        <p className="text-[11px] text-muted">
           Allowed: {ALL_ALLOWED_ASSIGNMENT_EXTENSIONS.join(", ")} · up to {MAX_ASSIGNMENT_FILE_SIZE_MB}
           MB each
         </p>
@@ -113,15 +101,11 @@ export default function AssignmentSubmissionForm({
             {files.map((file, index) => (
               <li
                 key={`${file.name}-${index}`}
-                className={`flex items-center justify-between gap-2 text-[12px] border rounded-lg px-3 py-1.5 ${
-                  isVault
-                    ? "text-stone-300 bg-white/5 border-stone-800"
-                    : "text-stone-600 bg-stone-50 border-stone-200"
-                }`}
+                className="flex items-center justify-between gap-2 text-[12px] border rounded-lg px-3 py-1.5 text-muted bg-porcelain border-line"
               >
                 <span className="inline-flex items-center gap-1.5 min-w-0 truncate">
                   <Paperclip
-                    className={`w-3.5 h-3.5 shrink-0 ${isVault ? "text-stone-500" : "text-stone-400"}`}
+                    className="w-3.5 h-3.5 shrink-0 text-muted"
                   />
                   <span className="truncate">{file.name}</span>
                 </span>
@@ -129,9 +113,7 @@ export default function AssignmentSubmissionForm({
                   type="button"
                   onClick={() => removeFile(index)}
                   disabled={submitMutation.isPending}
-                  className={`transition ${
-                    isVault ? "text-stone-500 hover:text-rose-400" : "text-stone-400 hover:text-rose-600"
-                  }`}
+                  className="transition text-muted hover:text-rose-600"
                   aria-label={`Remove ${file.name}`}
                 >
                   <X className="w-3.5 h-3.5" />
@@ -145,11 +127,7 @@ export default function AssignmentSubmissionForm({
       <button
         type="submit"
         disabled={submitMutation.isPending || files.length === 0}
-        className={`inline-flex items-center gap-2 px-4 py-2.5 disabled:opacity-50 text-xs font-mono uppercase tracking-wider rounded-xl transition ${
-          isVault
-            ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
-            : "bg-stone-900 hover:bg-stone-800 text-white"
-        }`}
+        className="inline-flex items-center gap-2 px-4 py-2.5 disabled:opacity-50 text-xs font-mono uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
       >
         {submitMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
         {submitMutation.isPending && isAiGraded
@@ -159,7 +137,7 @@ export default function AssignmentSubmissionForm({
             : "Submit assignment"}
       </button>
       {submitMutation.isPending && isAiGraded ? (
-        <p className={`text-[11px] ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+        <p className="text-[11px] text-muted">
           Your work has been saved. This can take up to a minute — please don&apos;t close this window.
         </p>
       ) : null}

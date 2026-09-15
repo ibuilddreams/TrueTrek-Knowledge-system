@@ -17,10 +17,10 @@ const STATUS_OPTIONS = [
 ];
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60";
+  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-[11px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold";
+  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
 
 const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
 
@@ -28,8 +28,8 @@ function InfoRow({ label, value }) {
   if (!value) return null;
   return (
     <div className="flex items-center justify-between text-sm py-1.5">
-      <span className="text-stone-500 font-light">{label}</span>
-      <span className="text-stone-800 font-medium text-right">{value}</span>
+      <span className="text-muted font-light">{label}</span>
+      <span className="text-ink font-medium text-right">{value}</span>
     </div>
   );
 }
@@ -94,20 +94,20 @@ export default function TeacherRequestDetailModal({ isOpen, onClose, request }) 
     >
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-mono uppercase tracking-wider text-stone-500 font-semibold">
+          <span className="text-xs font-mono uppercase tracking-wider text-muted font-semibold">
             {request.request_type_display}
           </span>
           <StatusBadge size="lg" status={request.status} />
         </div>
 
         <div>
-          <p className="text-[11px] font-mono uppercase tracking-wider text-stone-400 font-semibold mb-1.5">
+          <p className="text-[11px] font-mono uppercase tracking-wider text-muted font-semibold mb-1.5">
             Teacher's Description
           </p>
-          <p className="text-sm text-stone-700 whitespace-pre-wrap leading-relaxed">{request.description}</p>
+          <p className="text-sm text-muted whitespace-pre-wrap leading-relaxed">{request.description}</p>
         </div>
 
-        <div className="border-t border-stone-100 pt-3">
+        <div className="border-t border-line pt-3">
           <InfoRow label="Submitted" value={formatDateTime(request.created_at)} />
           <InfoRow label="Last Updated" value={formatDateTime(request.updated_at)} />
           {request.handled_by && (
@@ -124,7 +124,7 @@ export default function TeacherRequestDetailModal({ isOpen, onClose, request }) 
             This request has been completed and can no longer be modified.
           </div>
         ) : (
-          <div className="border-t border-stone-100 pt-4 space-y-4">
+          <div className="border-t border-line pt-4 space-y-4">
             <div>
               <label className={LABEL_CLASS}>Status</label>
               <select
@@ -168,7 +168,7 @@ export default function TeacherRequestDetailModal({ isOpen, onClose, request }) 
                 type="button"
                 onClick={handleClose}
                 disabled={isSubmitting}
-                className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-sm font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-colors duration-150 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
@@ -176,7 +176,7 @@ export default function TeacherRequestDetailModal({ isOpen, onClose, request }) 
                 type="button"
                 onClick={handleSave}
                 disabled={isSubmitting}
-                className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
+                className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>

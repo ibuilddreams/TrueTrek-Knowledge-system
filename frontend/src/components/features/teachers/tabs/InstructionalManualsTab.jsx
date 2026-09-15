@@ -46,11 +46,11 @@ export default function InstructionalManualsTab() {
     <div className="space-y-8">
 
       {/* Alert Warning Box */}
-      <div className="bg-amber-500/5 border border-amber-500/30 p-5 rounded-2xl flex items-start gap-4">
-        <ShieldAlert className="w-5 h-5 text-amber-700 shrink-0 mt-0.5" />
+      <div className="bg-gold/12 border border-gold/25 p-5 rounded-2xl flex items-start gap-4">
+        <ShieldAlert className="w-5 h-5 text-gold shrink-0 mt-0.5" />
         <div>
-          <h4 className="font-serif font-bold text-stone-900 text-sm">Faculty Operational Integrity Protocols</h4>
-          <p className="text-sm text-stone-605 leading-relaxed font-light mt-0.5">
+          <h4 className="font-serif font-bold text-ink text-sm">Faculty Operational Integrity Protocols</h4>
+          <p className="text-sm text-muted leading-relaxed font-light mt-0.5">
             Under standard covenants, these teaching manuals contain proprietary cognitive behavioral and contract evaluation scripts licensed to registered educational networks. All classroom assignments must respect federal FERPA protections. Hide individual student performance records during external audits.
           </p>
         </div>
@@ -62,40 +62,40 @@ export default function InstructionalManualsTab() {
           <div
             key={manual.id}
             id={`manual-card-${manual.id}`}
-            className="bg-white border border-stone-200 rounded-2xl p-6 shadow-sm hover:border-amber-600/30 transition-all duration-300 flex flex-col justify-between"
+            className="bg-paper border border-line rounded-card p-6 shadow-soft hover:border-gold/30 transition-all duration-300 flex flex-col justify-between"
           >
             <div>
               <div className="flex items-center justify-between mb-4">
-                <span className="font-mono text-[10px] uppercase tracking-widest bg-stone-100 text-stone-600 px-2.5 py-1 rounded-md font-bold">
+                <span className="font-mono text-[10px] uppercase tracking-widest bg-porcelain text-muted px-2.5 py-1 rounded-md font-bold">
                   MODULE 0{idx + 1}
                 </span>
-                <BookOpenCheck className="w-5 h-5 text-amber-600" />
+                <BookOpenCheck className="w-5 h-5 text-gold" />
               </div>
 
-              <h4 className="font-serif font-bold text-stone-900 text-base leading-snug mb-1">
+              <h4 className="font-serif font-bold text-ink text-base leading-snug mb-1">
                 {manual.title}
               </h4>
-              <p className="text-[11px] font-mono text-amber-800 font-bold uppercase tracking-tight mb-4">
+              <p className="text-[11px] font-mono text-gold font-bold uppercase tracking-tight mb-4">
                 {manual.subtitle}
               </p>
 
-              <div className="space-y-3.5 text-sm text-stone-650 font-light leading-relaxed">
-                <div className="p-3 bg-[#faf9f6] rounded-xl border border-stone-200/50">
-                  <p className="font-mono text-[10px] uppercase text-stone-400 font-bold mb-1">Instructional Objective</p>
-                  <p className="text-stone-700">{manual.objective}</p>
+              <div className="space-y-3.5 text-sm text-muted font-light leading-relaxed">
+                <div className="p-3 bg-porcelain rounded-xl border border-line/50">
+                  <p className="font-mono text-[10px] uppercase text-muted font-bold mb-1">Instructional Objective</p>
+                  <p className="text-muted">{manual.objective}</p>
                 </div>
 
-                <div className="p-3 bg-[#faf9f6] rounded-xl border border-stone-200/50">
-                  <p className="font-mono text-[10px] uppercase text-stone-400 font-bold mb-1">Suggested Method Flow</p>
-                  <p className="text-stone-700">{manual.method}</p>
+                <div className="p-3 bg-porcelain rounded-xl border border-line/50">
+                  <p className="font-mono text-[10px] uppercase text-muted font-bold mb-1">Suggested Method Flow</p>
+                  <p className="text-muted">{manual.method}</p>
                 </div>
 
                 <div>
-                  <p className="font-mono text-[10px] uppercase text-stone-400 font-bold mb-2">Evaluation Checklist</p>
-                  <ul className="space-y-1.5 text-stone-600 text-xs">
+                  <p className="font-mono text-[10px] uppercase text-muted font-bold mb-2">Evaluation Checklist</p>
+                  <ul className="space-y-1.5 text-muted text-xs">
                     {manual.checklist.map((item, idy) => (
                       <li key={idy} className="flex items-start gap-1 w-full text-left">
-                        <span className="text-amber-500 font-mono mt-0.5 shrink-0">✓</span>
+                        <span className="text-gold font-mono mt-0.5 shrink-0">✓</span>
                         <span>{item}</span>
                       </li>
                     ))}
@@ -104,10 +104,10 @@ export default function InstructionalManualsTab() {
               </div>
             </div>
 
-            <div className="pt-6 mt-6 border-t border-stone-100 flex items-center justify-between text-xs font-mono text-stone-450">
+            <div className="pt-6 mt-6 border-t border-line flex items-center justify-between text-xs font-mono text-muted">
               <span>Ref ID: {manual.id}</span>
               <button
-                className="text-amber-700 hover:text-amber-905 font-bold flex items-center gap-1 hover:underline"
+                className="text-pine hover:text-moss font-bold flex items-center gap-1 hover:underline"
               >
                 PRINT SYLLABUS
                 <Plus className="w-3.5 h-3.5" />

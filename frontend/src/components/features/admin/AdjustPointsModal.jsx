@@ -9,10 +9,10 @@ import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60";
+  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-[11px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold";
+  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
 
 const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
 
@@ -102,7 +102,7 @@ export default function AdjustPointsModal({ isOpen, onClose, onAdjusted, student
             className={`py-2.5 rounded-xl text-xs font-semibold font-mono uppercase tracking-wider border flex items-center justify-center gap-1.5 transition ${
               direction === "add"
                 ? "bg-emerald-50 border-emerald-300 text-emerald-700"
-                : "bg-stone-50 border-stone-200 text-stone-500"
+                : "bg-porcelain border-line text-muted"
             }`}
           >
             <Plus className="w-3.5 h-3.5" />
@@ -115,7 +115,7 @@ export default function AdjustPointsModal({ isOpen, onClose, onAdjusted, student
             className={`py-2.5 rounded-xl text-xs font-semibold font-mono uppercase tracking-wider border flex items-center justify-center gap-1.5 transition ${
               direction === "remove"
                 ? "bg-rose-50 border-rose-300 text-rose-700"
-                : "bg-stone-50 border-stone-200 text-stone-500"
+                : "bg-porcelain border-line text-muted"
             }`}
           >
             <Minus className="w-3.5 h-3.5" />
@@ -156,23 +156,23 @@ export default function AdjustPointsModal({ isOpen, onClose, onAdjusted, student
           {fieldErrors.reason && <p className={ERROR_CLASS}>{fieldErrors.reason}</p>}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-3 border-t border-stone-100">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-3 border-t border-line">
           <button
             type="button"
             onClick={handleClose}
             disabled={adjustMutation.isPending}
-            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-xs font-semibold font-mono rounded-full tracking-wider transition-colors duration-150 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={adjustMutation.isPending}
-            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
+            className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-xs font-semibold font-mono rounded-full tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
           >
             {adjustMutation.isPending ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
                 Saving...
               </>
             ) : (

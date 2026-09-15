@@ -17,31 +17,31 @@ function CertificateCard({ certificate, onOpen }) {
     <button
       type="button"
       onClick={onOpen}
-      className="group w-full text-left rounded-2xl border border-stone-200 bg-white hover:border-amber-300 hover:shadow-[0_10px_30px_-20px_rgba(28,25,23,0.35)] transition p-5 space-y-4"
+      className="group w-full text-left rounded-2xl border border-line bg-paper hover:border-pine hover:shadow-[0_10px_30px_-20px_rgba(28,25,23,0.35)] transition p-5 space-y-4"
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-[11px] font-mono uppercase tracking-wider text-stone-400">
+          <p className="text-[11px] font-mono uppercase tracking-wider text-muted">
             {course.category || "Course"}
           </p>
-          <h3 className="font-serif font-bold text-stone-900 mt-0.5 truncate">
+          <h3 className="font-serif font-bold text-ink mt-0.5 truncate">
             {course.title}
           </h3>
         </div>
-        <span className="w-9 h-9 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+        <span className="w-9 h-9 rounded-xl bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
           <Award className="w-4 h-4" />
         </span>
       </div>
-      <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-stone-400">
+      <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-muted">
         <span className="flex items-center gap-1">
           <CalendarCheck className="w-3.5 h-3.5" />
           {formatDate(certificate.completed_at)}
         </span>
-        <span className="text-amber-800 font-bold">
+        <span className="text-gold font-bold">
           {Math.round(certificate.completion_percentage)}%
         </span>
       </div>
-      <span className="block text-center text-xs font-mono uppercase tracking-wider text-stone-600 border border-stone-200 rounded-xl py-2 group-hover:border-amber-300">
+      <span className="block text-center text-xs font-mono uppercase tracking-wider text-muted border border-line rounded-xl py-2 group-hover:border-pine">
         View Certificate
       </span>
     </button>
@@ -71,20 +71,20 @@ export default function CertificatesTab({ studentName }) {
     );
   } else if (isError) {
     content = (
-      <div className="bg-white border border-stone-200 rounded-2xl p-8 text-center max-w-lg mx-auto">
+      <div className="bg-paper border border-line rounded-2xl p-8 text-center max-w-lg mx-auto">
         <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
           <AlertCircle className="w-6 h-6" />
         </div>
-        <h2 className="text-xl font-serif font-bold text-stone-900 mb-2">
+        <h2 className="text-xl font-serif font-bold text-ink mb-2">
           Failed to Load Certificates
         </h2>
-        <p className="text-sm text-stone-500 font-light mb-6">
+        <p className="text-sm text-muted font-light mb-6">
           {getApiErrorMessage(error, "Unable to load your certificates.")}
         </p>
         <button
           type="button"
           onClick={() => refetch()}
-          className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-pine hover:bg-moss text-paper font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition"
         >
           <RefreshCw className="w-4 h-4" />
           Retry
@@ -93,7 +93,7 @@ export default function CertificatesTab({ studentName }) {
     );
   } else if (certificates.length === 0) {
     content = (
-      <div className="rounded-2xl border border-dashed border-stone-200 bg-white/70">
+      <div className="rounded-2xl border border-dashed border-line bg-paper/70">
         <EmptyState
           icon={Award}
           label="No certificates yet"
@@ -124,13 +124,13 @@ export default function CertificatesTab({ studentName }) {
   return (
     <div className="space-y-6">
       <div>
-        <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-amber-700/80 mb-2">
+        <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-pine/80 mb-2">
           Completed courses
         </p>
-        <h2 className="font-serif font-bold text-2xl sm:text-3xl text-stone-900">
+        <h2 className="font-serif font-bold text-2xl sm:text-3xl text-ink">
           Your certificates
         </h2>
-        <p className="text-sm text-stone-500 font-light mt-2">
+        <p className="text-sm text-muted font-light mt-2">
           Earned automatically once every lesson and quiz in a course is
           completed.
         </p>

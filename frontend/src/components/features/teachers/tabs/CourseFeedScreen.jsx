@@ -78,36 +78,36 @@ export default function CourseFeedScreen({ courseId, course, onBack }) {
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-stone-200 hover:border-amber-300 hover:text-amber-800 text-stone-600 text-xs font-mono uppercase tracking-wider rounded-xl transition"
+        className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-line hover:border-pine/25 hover:text-pine text-muted text-xs font-mono uppercase tracking-wider rounded-xl transition"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
         Back to My Courses
       </button>
 
       <div className="flex items-center gap-2">
-        <Megaphone className="w-5 h-5 text-amber-700" />
-        <h2 className="font-serif font-bold text-xl text-stone-900">
+        <Megaphone className="w-5 h-5 text-gold" />
+        <h2 className="font-serif font-bold text-xl text-ink">
           {course?.title ? `${course.title} — Class Feed` : "Class Feed"}
         </h2>
       </div>
 
       <form
         onSubmit={handleSubmit}
-        className="bg-white border border-stone-200 rounded-2xl shadow-sm p-5 space-y-3"
+        className="bg-paper border border-line rounded-card shadow-soft p-5 space-y-3"
       >
         <input
           type="text"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="Title (optional)"
-          className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-amber-600 transition"
+          className="w-full bg-porcelain border border-line rounded-xl px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:border-pine transition"
         />
         <textarea
           value={caption}
           onChange={(event) => setCaption(event.target.value)}
           rows={3}
           placeholder="Share an update, tip, or short video with this class..."
-          className="w-full bg-stone-50 border border-stone-200 rounded-xl px-4 py-2.5 text-sm text-stone-800 placeholder:text-stone-400 focus:outline-none focus:border-amber-600 transition resize-none"
+          className="w-full bg-porcelain border border-line rounded-xl px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:border-pine transition resize-none"
         />
 
         {attachment && <AttachmentPreview file={attachment} onRemove={() => setAttachment(null)} />}
@@ -124,7 +124,7 @@ export default function CourseFeedScreen({ courseId, course, onBack }) {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={createMutation.isPending}
-            className="inline-flex items-center gap-2 px-3.5 py-2 border border-stone-200 hover:bg-stone-50 text-stone-600 text-xs font-mono uppercase tracking-wider rounded-xl transition disabled:opacity-40"
+            className="inline-flex items-center gap-2 px-3.5 py-2 border border-line hover:bg-porcelain text-muted text-xs font-mono uppercase tracking-wider rounded-xl transition disabled:opacity-40"
           >
             <ImagePlus className="w-4 h-4" />
             Add Image/Video
@@ -132,7 +132,7 @@ export default function CourseFeedScreen({ courseId, course, onBack }) {
           <button
             type="submit"
             disabled={!canPublish}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-stone-900 hover:bg-stone-800 text-stone-100 text-xs font-bold font-mono uppercase tracking-wider rounded-xl shadow-md transition disabled:opacity-40"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-pine hover:bg-moss text-paper text-xs font-bold font-mono uppercase tracking-wider rounded-xl shadow-md transition disabled:opacity-40"
           >
             <Send className="w-3.5 h-3.5" />
             {createMutation.isPending ? "Publishing..." : "Publish"}
@@ -142,8 +142,8 @@ export default function CourseFeedScreen({ courseId, course, onBack }) {
 
       {isLoading && (
         <div className="space-y-3" aria-busy="true">
-          <div className="h-32 rounded-2xl bg-stone-100 animate-pulse" />
-          <div className="h-32 rounded-2xl bg-stone-100 animate-pulse" />
+          <div className="h-32 rounded-2xl bg-porcelain animate-pulse" />
+          <div className="h-32 rounded-2xl bg-porcelain animate-pulse" />
         </div>
       )}
 
@@ -154,7 +154,7 @@ export default function CourseFeedScreen({ courseId, course, onBack }) {
       )}
 
       {!isLoading && !isError && posts.length === 0 && (
-        <div className="bg-white border border-stone-200 rounded-2xl shadow-sm">
+        <div className="bg-paper border border-line rounded-card shadow-soft">
           <EmptyState
             icon={Megaphone}
             label="No posts yet"

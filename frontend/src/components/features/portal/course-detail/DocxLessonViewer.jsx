@@ -3,7 +3,6 @@
 import { useEffect, useState } from "react";
 import mammoth from "mammoth";
 import { Download, FileWarning, Loader2 } from "lucide-react";
-import { useTheme } from "@/hooks/useTheme";
 import { useFileDownload } from "@/hooks/useFileDownload";
 import { getFilenameFromUrl } from "@/lib/downloadFile";
 
@@ -18,7 +17,6 @@ const PROSE_CLASSES =
   "[&_a]:underline [&_img]:max-w-full [&_img]:rounded-lg [&_img]:my-3";
 
 export default function DocxLessonViewer({ fileUrl, title }) {
-  const { isVault } = useTheme();
   const { download, isDownloading } = useFileDownload();
   const [html, setHtml] = useState(null);
   const [loadError, setLoadError] = useState(false);
@@ -50,19 +48,13 @@ export default function DocxLessonViewer({ fileUrl, title }) {
 
   return (
     <div
-      className={`rounded-2xl border overflow-hidden ${
-        isVault ? "border-stone-800 bg-[#0c0b0a]" : "border-stone-200 bg-stone-100"
-      }`}
+      className="rounded-2xl border overflow-hidden border-line bg-porcelain"
     >
       <div
-        className={`flex items-center justify-between gap-3 px-4 py-2.5 border-b ${
-          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200 bg-white"
-        }`}
+        className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-line bg-paper"
       >
         <p
-          className={`text-xs font-mono uppercase tracking-wider truncate ${
-            isVault ? "text-stone-400" : "text-stone-500"
-          }`}
+          className="text-xs font-mono uppercase tracking-wider truncate text-muted"
         >
           Word document
         </p>
@@ -70,11 +62,7 @@ export default function DocxLessonViewer({ fileUrl, title }) {
           type="button"
           onClick={() => download(fileUrl, filename)}
           disabled={isDownloading}
-          className={`inline-flex items-center gap-1.5 px-2.5 py-1.5 border disabled:opacity-50 text-[11px] font-mono uppercase tracking-wider rounded-lg transition ${
-            isVault
-              ? "border-stone-700 hover:border-amber-500/50 hover:bg-white/10 text-stone-300 hover:text-amber-400"
-              : "border-stone-200 hover:border-amber-300 hover:bg-white text-stone-600 hover:text-amber-800"
-          }`}
+          className="inline-flex items-center gap-1.5 px-2.5 py-1.5 border disabled:opacity-50 text-[11px] font-mono uppercase tracking-wider rounded-lg transition border-line hover:border-pine hover:bg-paper text-muted hover:text-pine"
         >
           {isDownloading ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -86,32 +74,26 @@ export default function DocxLessonViewer({ fileUrl, title }) {
       </div>
 
       <div
-        className={`max-h-[75vh] overflow-y-auto p-6 sm:p-8 ${
-          isVault ? "bg-[#161412]" : "bg-white"
-        }`}
+        className="max-h-[75vh] overflow-y-auto p-6 sm:p-8 bg-paper"
       >
         {loadError ? (
           <div className="py-16 text-center space-y-2">
             <FileWarning
-              className={`w-6 h-6 mx-auto ${isVault ? "text-rose-400" : "text-rose-500"}`}
+              className="w-6 h-6 mx-auto text-rose-500"
             />
-            <p className={`text-sm ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+            <p className="text-sm text-muted">
               This document couldn&apos;t be loaded for preview — try downloading it instead.
             </p>
           </div>
         ) : html === null ? (
           <div className="flex justify-center py-16">
             <Loader2
-              className={`w-6 h-6 animate-spin ${isVault ? "text-stone-500" : "text-stone-400"}`}
+              className="w-6 h-6 animate-spin text-muted"
             />
           </div>
         ) : (
           <div
-            className={`text-sm max-w-none ${PROSE_CLASSES} ${
-              isVault
-                ? "text-stone-200 [&_h1]:text-stone-50 [&_h2]:text-stone-50 [&_h3]:text-stone-100 [&_td]:border-stone-700 [&_th]:border-stone-700 [&_a]:text-amber-400"
-                : "text-stone-700 [&_h1]:text-stone-900 [&_h2]:text-stone-900 [&_h3]:text-stone-800 [&_td]:border-stone-200 [&_th]:border-stone-200 [&_a]:text-amber-700"
-            }`}
+            className={`text-sm max-w-none ${PROSE_CLASSES} text-muted [&_h1]:text-ink [&_h2]:text-ink [&_h3]:text-ink [&_td]:border-line [&_th]:border-line [&_a]:text-pine`}
             // eslint-disable-next-line react/no-danger -- mammoth converts a docx's own
             // content into a constrained HTML subset (headings/paragraphs/lists/tables);
             // it never preserves macros or scripts, so this is not attacker-controlled markup.

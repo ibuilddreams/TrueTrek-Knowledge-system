@@ -20,27 +20,27 @@ export default function StreakReengagementBanner({ streakDetail }) {
       className={`rounded-2xl border p-4 flex items-start gap-3 ${
         isInactive
           ? "bg-rose-50 border-rose-200"
-          : "bg-amber-50 border-amber-200"
+          : "bg-gold/12 border-gold/25"
       }`}
     >
       <div
         className={`w-9 h-9 rounded-lg flex items-center justify-center shrink-0 border ${
           isInactive
             ? "bg-rose-100 border-rose-200 text-rose-600"
-            : "bg-amber-100 border-amber-200 text-amber-700"
+            : "bg-gold/20 border-gold/30 text-gold"
         }`}
       >
         {isInactive ? <AlarmClockOff className="w-4 h-4" /> : <Flame className="w-4 h-4" />}
       </div>
       <div className="min-w-0">
         <p
-          className={`text-sm font-semibold ${isInactive ? "text-rose-800" : "text-amber-800"}`}
+          className={`text-sm font-semibold ${isInactive ? "text-rose-800" : "text-gold"}`}
         >
           {isInactive
             ? `You've been away for ${daysSince} days`
             : "Your streak reset"}
         </p>
-        <p className={`text-xs mt-0.5 ${isInactive ? "text-rose-700" : "text-amber-700"}`}>
+        <p className={`text-xs mt-0.5 ${isInactive ? "text-rose-700" : "text-gold"}`}>
           {isInactive
             ? "Complete today's Daily Drill to pick your streak back up and stay on track."
             : "No worries — complete today's drill to start a new streak."}

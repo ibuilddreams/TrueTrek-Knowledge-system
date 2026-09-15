@@ -16,7 +16,7 @@ const WEEKDAY_ROW_LABELS = [{ row: 1, label: "Mon" }, { row: 3, label: "Wed" }, 
 // every 7-day chunk starting at index 0 is exactly one calendar week — this
 // component never has to compute a day-of-week itself, it only reads the
 // `weekday` field the backend already attached to each entry.
-export default function YearStreakCalendar({ days, isVault }) {
+export default function YearStreakCalendar({ days }) {
   const totalWeeks = Math.ceil(days.length / 7);
   const scrollContainerRef = useRef(null);
 
@@ -65,9 +65,7 @@ export default function YearStreakCalendar({ days, isVault }) {
           <span
             key={label}
             style={{ gridRow: row + 2 }}
-            className={`text-[10px] font-mono leading-none flex items-center ${
-              isVault ? "text-stone-500" : "text-stone-400"
-            }`}
+            className="text-[10px] font-mono leading-none flex items-center text-muted"
           >
             {label}
           </span>
@@ -80,9 +78,7 @@ export default function YearStreakCalendar({ days, isVault }) {
             <span
               key={`${weekIndex}-${label}`}
               style={{ gridRow: 1, gridColumn: weekIndex + 1 }}
-              className={`text-[10px] font-mono leading-none whitespace-nowrap ${
-                isVault ? "text-stone-500" : "text-stone-400"
-              }`}
+              className="text-[10px] font-mono leading-none whitespace-nowrap text-muted"
             >
               {label}
             </span>
@@ -97,12 +93,8 @@ export default function YearStreakCalendar({ days, isVault }) {
                 title={`${formatPlainDate(day.date)} — ${day.completed ? "Completed" : "Missed"}`}
                 className={`rounded-[3px] border transition-colors ${
                   day.completed
-                    ? isVault
-                      ? "bg-amber-500 border-amber-400"
-                      : "bg-amber-500 border-amber-600"
-                    : isVault
-                      ? "bg-white/5 border-stone-800"
-                      : "bg-stone-100 border-stone-200"
+                    ? "bg-gold border-gold"
+                    : "bg-porcelain border-line"
                 }`}
               />
             );

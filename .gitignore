@@ -8,7 +8,7 @@
 /modifyrewardfeature.txt
 /client-requirements.md
 /prompt.txt
-
+/design.md
 
 # Backend (Django)
 backend/env/

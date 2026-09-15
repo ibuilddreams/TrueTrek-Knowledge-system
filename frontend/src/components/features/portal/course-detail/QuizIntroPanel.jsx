@@ -2,19 +2,16 @@
 
 import { Loader2, PlayCircle, ShieldAlert } from "lucide-react";
 import { formatDateTime } from "@/lib/adminFormatters";
-import { useTheme } from "@/hooks/useTheme";
 
-function InfoChip({ label, value, isVault }) {
+function InfoChip({ label, value }) {
   return (
     <div
-      className={`rounded-xl border px-3 py-2.5 ${
-        isVault ? "border-stone-800 bg-white/5" : "border-stone-100 bg-stone-50/80"
-      }`}
+      className="rounded-xl border px-3 py-2.5 border-line bg-porcelain/80"
     >
-      <p className={`text-[10px] font-mono uppercase tracking-wider ${isVault ? "text-stone-500" : "text-stone-400"}`}>
+      <p className="text-[10px] font-mono uppercase tracking-wider text-muted">
         {label}
       </p>
-      <p className={`text-sm font-serif font-bold mt-0.5 ${isVault ? "text-stone-50" : "text-stone-900"}`}>
+      <p className="text-sm font-serif font-bold mt-0.5 text-ink">
         {value}
       </p>
     </div>
@@ -22,7 +19,6 @@ function InfoChip({ label, value, isVault }) {
 }
 
 export default function QuizIntroPanel({ quiz, canInteract, isStarting, onStart }) {
-  const { isVault } = useTheme();
   const isUnavailable = !quiz.is_available;
   const hasInProgress = quiz.latest_attempt?.status === "IN_PROGRESS";
   // Attempts are unlimited — every attempt after the first regenerates a
@@ -36,33 +32,27 @@ export default function QuizIntroPanel({ quiz, canInteract, isStarting, onStart 
   return (
     <div className="space-y-5">
       {quiz.description ? (
-        <p className={`text-sm font-light leading-relaxed ${isVault ? "text-stone-300" : "text-stone-600"}`}>
+        <p className="text-sm font-light leading-relaxed text-muted">
           {quiz.description}
         </p>
       ) : null}
 
       <div className="grid grid-cols-2 gap-2.5">
-        <InfoChip label="Passing score" value={`${quiz.passing_score}%`} isVault={isVault} />
+        <InfoChip label="Passing score" value={`${quiz.passing_score}%`} />
         <InfoChip
           label="Time limit"
           value={quiz.time_limit_minutes ? `${quiz.time_limit_minutes} min` : "No limit"}
-          isVault={isVault}
         />
-        <InfoChip label="Attempts" value={`${quiz.attempts_used || 0}`} isVault={isVault} />
+        <InfoChip label="Attempts" value={`${quiz.attempts_used || 0}`} />
         <InfoChip
           label="Available until"
           value={quiz.available_until ? formatDateTime(quiz.available_until) : "No deadline"}
-          isVault={isVault}
         />
       </div>
 
       {hasInProgress ? (
         <div
-          className={`flex items-start gap-2 rounded-xl border px-3.5 py-3 text-sm ${
-            isVault
-              ? "border-amber-500/20 bg-amber-500/10 text-amber-300"
-              : "border-amber-100 bg-amber-50 text-amber-800"
-          }`}
+          className="flex items-start gap-2 rounded-xl border px-3.5 py-3 text-sm bg-gold/12 text-gold border-gold/25"
         >
           <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
           <span>
@@ -73,7 +63,7 @@ export default function QuizIntroPanel({ quiz, canInteract, isStarting, onStart 
       ) : null}
 
       {disabledReason ? (
-        <p className={`text-sm ${isVault ? "text-rose-400" : "text-rose-600"}`}>{disabledReason}</p>
+        <p className="text-sm text-rose-600">{disabledReason}</p>
       ) : null}
 
       <div className="flex flex-wrap items-center gap-2.5">
@@ -81,11 +71,7 @@ export default function QuizIntroPanel({ quiz, canInteract, isStarting, onStart 
           type="button"
           onClick={onStart}
           disabled={Boolean(disabledReason) || isStarting}
-          className={`inline-flex items-center gap-2 px-4 py-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-mono uppercase tracking-wider rounded-xl transition ${
-            isVault
-              ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
-              : "bg-stone-900 hover:bg-stone-800 text-white"
-          }`}
+          className="inline-flex items-center gap-2 px-4 py-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-mono uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
         >
           {isStarting ? (
             <Loader2 className="w-3.5 h-3.5 animate-spin" />

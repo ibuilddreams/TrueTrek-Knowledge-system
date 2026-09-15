@@ -5,7 +5,6 @@ import Link from "next/link";
 import { KeyRound, MailCheck } from "lucide-react";
 import { forgotPassword } from "@/services/authService";
 import { useGuestOnlyRoute } from "@/hooks/useGuestOnlyRoute";
-import { useTheme } from "@/hooks/useTheme";
 import { toastError } from "@/lib/toast";
 import { ROUTES } from "@/constants/routes";
 import AuthGateCard from "@/components/ui/AuthGateCard";
@@ -25,7 +24,6 @@ function validateEmail(email) {
 
 export default function ForgotPasswordForm() {
   const { shouldBlock, isAuthenticated } = useGuestOnlyRoute();
-  const { isVault } = useTheme();
   const [email, setEmail] = useState("");
   const [emailError, setEmailError] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -87,13 +85,7 @@ export default function ForgotPasswordForm() {
         />
 
         {successMessage && (
-          <div
-            className={`p-3.5 rounded-xl flex items-start gap-2.5 text-xs ${
-              isVault
-                ? "bg-emerald-500/10 border border-emerald-500/20 text-emerald-400"
-                : "bg-emerald-50 border border-emerald-100 text-emerald-700"
-            }`}
-          >
+          <div className="p-3.5 rounded-xl flex items-start gap-2.5 text-xs bg-sage/40 border border-sage text-moss">
             <MailCheck className="w-4 h-4 shrink-0 mt-0.5" />
             <span>{successMessage}</span>
           </div>
@@ -106,18 +98,10 @@ export default function ForgotPasswordForm() {
           isSubmitting={isSubmitting}
         />
 
-        <p
-          className={`text-center text-xs font-light ${
-            isVault ? "text-stone-400" : "text-stone-500"
-          }`}
-        >
+        <p className="text-center text-xs font-light text-muted">
           <Link
             href={ROUTES.LOGIN}
-            className={`font-semibold transition ${
-              isVault
-                ? "text-stone-200 hover:text-amber-500"
-                : "text-stone-700 hover:text-amber-800"
-            }`}
+            className="font-semibold transition text-pine hover:text-moss"
           >
             Back to Sign In
           </Link>

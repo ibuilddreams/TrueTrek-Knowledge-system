@@ -131,7 +131,7 @@ export default function MultiSelect({
     <div ref={containerRef} className="relative">
       {label && (
         <label
-          className={`${smallSize} font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold`}
+          className={`${smallSize} font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium`}
         >
           {label}
         </label>
@@ -143,13 +143,13 @@ export default function MultiSelect({
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
           disabled={disabled || loading}
-          className={`w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl ${bodySize} font-mono text-stone-800 flex items-center justify-between gap-2 transition disabled:opacity-60 disabled:cursor-not-allowed`}
+          className={`w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl ${bodySize} font-mono text-ink flex items-center justify-between gap-2 transition disabled:opacity-60 disabled:cursor-not-allowed`}
         >
-          <span className={selectedOptions.length ? "text-stone-800" : "text-stone-400"}>
+          <span className={selectedOptions.length ? "text-ink" : "text-muted"}>
             {loading ? "Loading..." : selectedOptions.length ? `${selectedOptions.length} selected` : placeholder}
           </span>
           <ChevronDown
-            className={`w-3.5 h-3.5 text-stone-400 shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+            className={`w-3.5 h-3.5 text-muted shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
           />
         </button>
 
@@ -160,23 +160,23 @@ export default function MultiSelect({
             <div
               ref={popupRef}
               style={{ ...popupStyle, zIndex: 200 }}
-              className="bg-white border border-stone-200 rounded-xl shadow-lg overflow-hidden flex flex-col"
+              className="bg-paper border border-line rounded-xl shadow-elevated overflow-hidden flex flex-col"
             >
-            <div className="p-2 border-b border-stone-100 flex items-center gap-2">
-              <Search className="w-3.5 h-3.5 text-stone-400 shrink-0" />
+            <div className="p-2 border-b border-line flex items-center gap-2">
+              <Search className="w-3.5 h-3.5 text-muted shrink-0" />
               <input
                 autoFocus
                 type="text"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={searchPlaceholder}
-                className={`w-full ${bodySize} font-mono text-stone-800 placeholder:text-stone-400 focus:outline-none`}
+                className={`w-full ${bodySize} font-mono text-ink placeholder:text-muted focus:outline-none`}
               />
             </div>
 
             <ul className="max-h-56 overflow-y-auto py-1">
               {filteredOptions.length === 0 ? (
-                <li className={`px-4 py-3 ${bodySize} text-stone-400 font-light`}>{emptyLabel}</li>
+                <li className={`px-4 py-3 ${bodySize} text-muted font-light`}>{emptyLabel}</li>
               ) : (
                 filteredOptions.map((option) => {
                   const isSelected = values.includes(option.value);
@@ -185,10 +185,10 @@ export default function MultiSelect({
                       <button
                         type="button"
                         onClick={() => toggleOption(option)}
-                        className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 ${bodySize} font-mono text-stone-700 hover:bg-stone-50 transition-colors text-left`}
+                        className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 ${bodySize} font-mono text-ink hover:bg-porcelain transition-colors text-left`}
                       >
                         <span>{option.label}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-amber-600 shrink-0" />}
+                        {isSelected && <Check className="w-3.5 h-3.5 text-pine shrink-0" />}
                       </button>
                     </li>
                   );
@@ -197,7 +197,7 @@ export default function MultiSelect({
             </ul>
 
             {onCreate && (
-              <div className="border-t border-stone-100 shrink-0">
+              <div className="border-t border-line shrink-0">
                 {isCreating ? (
                   <div className="p-2.5 space-y-1.5">
                     <input
@@ -213,7 +213,7 @@ export default function MultiSelect({
                       }}
                       disabled={isSubmittingCreate}
                       placeholder={`${createLabel} name`}
-                      className={`w-full px-3 py-2 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-lg ${bodySize} font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60`}
+                      className={`w-full px-3 py-2 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-lg ${bodySize} font-mono text-ink placeholder:text-muted transition disabled:opacity-60`}
                     />
                     {createError && (
                       <p className={`${smallSize} font-mono text-red-600`}>{createError}</p>
@@ -227,7 +227,7 @@ export default function MultiSelect({
                           setCreateError("");
                         }}
                         disabled={isSubmittingCreate}
-                        className={`px-3 py-1.5 ${smallSize} font-mono uppercase tracking-wider text-stone-500 hover:text-stone-700 disabled:opacity-60 disabled:cursor-not-allowed transition-colors`}
+                        className={`px-3 py-1.5 ${smallSize} font-mono uppercase tracking-wider text-muted hover:text-ink disabled:opacity-60 disabled:cursor-not-allowed transition-colors`}
                       >
                         Cancel
                       </button>
@@ -235,11 +235,11 @@ export default function MultiSelect({
                         type="button"
                         onClick={handleCreateSubmit}
                         disabled={isSubmittingCreate}
-                        className={`px-3 py-1.5 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white ${smallSize} font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5`}
+                        className={`px-3 py-1.5 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper ${smallSize} font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5`}
                       >
                         {isSubmittingCreate ? (
                           <>
-                            <span className="w-3 h-3 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                            <span className="w-3 h-3 border-2 border-paper border-t-transparent rounded-full animate-spin" />
                             Saving...
                           </>
                         ) : (
@@ -252,7 +252,7 @@ export default function MultiSelect({
                   <button
                     type="button"
                     onClick={() => setIsCreating(true)}
-                    className={`w-full flex items-center gap-2 px-4 py-2.5 ${bodySize} font-mono font-semibold text-amber-700 hover:bg-amber-50 transition-colors text-left`}
+                    className={`w-full flex items-center gap-2 px-4 py-2.5 ${bodySize} font-mono font-semibold text-pine hover:bg-sage/30 transition-colors text-left`}
                   >
                     <Plus className="w-3.5 h-3.5" />
                     {createLabel}
@@ -270,14 +270,14 @@ export default function MultiSelect({
           {selectedOptions.map((option) => (
             <span
               key={option.value}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 bg-amber-600/10 border border-amber-200/40 text-amber-800 ${smallSize} font-mono rounded-lg`}
+              className={`inline-flex items-center gap-1 px-2.5 py-1 bg-gold/12 border border-gold/25 text-gold ${smallSize} font-mono rounded-lg`}
             >
               {option.label}
               <button
                 type="button"
                 onClick={() => removeOption(option.value)}
                 disabled={disabled}
-                className="hover:text-amber-950"
+                className="hover:text-ink"
                 aria-label={`Remove ${option.label}`}
               >
                 <X className="w-3 h-3" />

@@ -9,8 +9,8 @@ function InfoRow({ label, value }) {
   if (!value) return null;
   return (
     <div className="flex items-center justify-between text-sm py-1.5">
-      <span className="text-stone-500 font-light">{label}</span>
-      <span className="text-stone-800 font-medium text-right">{value}</span>
+      <span className="text-muted font-light">{label}</span>
+      <span className="text-ink font-medium text-right">{value}</span>
     </div>
   );
 }
@@ -30,7 +30,7 @@ export default function StudentConcernDetailModal({ isOpen, onClose, concern }) 
     >
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-mono uppercase tracking-wider text-stone-500 font-semibold">
+          <span className="text-xs font-mono uppercase tracking-wider text-muted font-semibold">
             {concern.category_display}
           </span>
           <StatusBadge size="lg" status={status} />
@@ -44,23 +44,23 @@ export default function StudentConcernDetailModal({ isOpen, onClose, concern }) 
         )}
 
         <div>
-          <p className="text-[11px] font-mono uppercase tracking-wider text-stone-400 font-semibold mb-1.5">
+          <p className="text-[11px] font-mono uppercase tracking-wider text-muted font-semibold mb-1.5">
             Your Description
           </p>
-          <p className="text-sm text-stone-700 whitespace-pre-wrap leading-relaxed">
+          <p className="text-sm text-muted whitespace-pre-wrap leading-relaxed">
             {concern.description}
           </p>
         </div>
 
         {status === "PENDING" && (
-          <div className="flex items-center gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-sm text-gold bg-gold/12 border border-gold/25 rounded-xl p-4">
             <Clock3 className="w-4 h-4 shrink-0" />
             This concern is waiting for the admin team to take a look.
           </div>
         )}
 
         {status === "IN_PROGRESS" && (
-          <div className="flex items-center gap-2 text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-sm text-gold bg-gold/12 border border-gold/25 rounded-xl p-4">
             <Loader2 className="w-4 h-4 shrink-0" />
             The admin team is currently reviewing this concern.
           </div>
@@ -80,7 +80,7 @@ export default function StudentConcernDetailModal({ isOpen, onClose, concern }) 
           </div>
         )}
 
-        <div className="border-t border-stone-100 pt-3">
+        <div className="border-t border-line pt-3">
           {concern.course?.title && <InfoRow label="Course" value={concern.course.title} />}
           <InfoRow label="Flagged" value={formatDateTime(concern.created_at)} />
           <InfoRow label="Last Updated" value={formatDateTime(concern.updated_at)} />

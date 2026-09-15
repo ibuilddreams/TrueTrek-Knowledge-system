@@ -81,8 +81,8 @@ export default function DailyDrillsTab() {
       header: "Daily Drill",
       render: (schedule) => (
         <div>
-          <span className="font-semibold text-stone-800">{schedule.title}</span>
-          <p className="text-[11px] text-stone-400 font-light">
+          <span className="font-semibold text-ink">{schedule.title}</span>
+          <p className="text-[11px] text-muted font-light">
             {schedule.quiz_question_count} question{schedule.quiz_question_count === 1 ? "" : "s"}
           </p>
         </div>
@@ -91,12 +91,12 @@ export default function DailyDrillsTab() {
     {
       key: "scheduled_date",
       header: "Scheduled",
-      render: (schedule) => <span className="font-mono text-stone-600">{formatDate(schedule.scheduled_date)}</span>,
+      render: (schedule) => <span className="font-mono text-muted">{formatDate(schedule.scheduled_date)}</span>,
     },
     {
       key: "reward_points",
       header: "Points",
-      render: (schedule) => <span className="font-mono font-bold text-stone-800">{schedule.reward_points}</span>,
+      render: (schedule) => <span className="font-mono font-bold text-ink">{schedule.reward_points}</span>,
     },
     {
       key: "status",
@@ -139,7 +139,7 @@ export default function DailyDrillsTab() {
         <button
           type="button"
           onClick={() => setIsFormOpen(true)}
-          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
+          className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2 shrink-0"
           title="Schedule a new Daily Drill"
           aria-label="Schedule a new Daily Drill"
         >
@@ -148,7 +148,7 @@ export default function DailyDrillsTab() {
         </button>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
         <DataTable
           size="lg"
           columns={columns}

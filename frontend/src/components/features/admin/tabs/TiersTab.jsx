@@ -80,17 +80,17 @@ export default function TiersTab() {
     {
       key: "level",
       header: "Level",
-      render: (tier) => <span className="font-mono text-stone-600">#{tier.level}</span>,
+      render: (tier) => <span className="font-mono text-muted">#{tier.level}</span>,
     },
     {
       key: "name",
       header: "Tier Name",
-      render: (tier) => <span className="font-semibold text-stone-800">{tier.name}</span>,
+      render: (tier) => <span className="font-semibold text-ink">{tier.name}</span>,
     },
     {
       key: "audience",
       header: "Audience",
-      render: (tier) => <span className="text-stone-600">{tier.audience || "—"}</span>,
+      render: (tier) => <span className="text-muted">{tier.audience || "—"}</span>,
     },
     {
       key: "status",
@@ -147,7 +147,7 @@ export default function TiersTab() {
           <button
             type="button"
             onClick={() => setIsFormOpen(true)}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
+            className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2 shrink-0"
             title="Create a new tier"
             aria-label="Create a new tier"
           >
@@ -156,7 +156,7 @@ export default function TiersTab() {
           </button>
         </div>
 
-        <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+        <div className="bg-paper border border-line rounded-card shadow-soft p-6">
           <DataTable size="lg"
             columns={columns}
             rows={paginatedTiers}

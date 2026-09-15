@@ -1,7 +1,6 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 const initialState = {
-  theme: "light",
   sidebarOpen: false,
   mobileMenuOpen: false,
   searchQuery: "",
@@ -20,12 +19,6 @@ const uiSlice = createSlice({
   name: "ui",
   initialState,
   reducers: {
-    setTheme(state, action) {
-      state.theme = action.payload;
-    },
-    toggleTheme(state) {
-      state.theme = state.theme === "light" ? "vault" : "light";
-    },
     toggleSidebar(state) {
       state.sidebarOpen = !state.sidebarOpen;
     },
@@ -68,8 +61,6 @@ const uiSlice = createSlice({
 });
 
 export const {
-  setTheme,
-  toggleTheme,
   toggleSidebar,
   setSidebarOpen,
   setMobileMenuOpen,
@@ -85,7 +76,6 @@ export const {
 } = uiSlice.actions;
 
 export const selectUi = (state) => state.ui;
-export const selectTheme = (state) => state.ui.theme;
 export const selectLogoutStage = (state) => state.ui.logoutStage;
 
 export default uiSlice.reducer;

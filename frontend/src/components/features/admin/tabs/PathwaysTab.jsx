@@ -112,7 +112,7 @@ export default function PathwaysTab() {
     {
       key: "name",
       header: "Pathway Name",
-      render: (pathway) => <span className="font-semibold text-stone-800">{pathway.name}</span>,
+      render: (pathway) => <span className="font-semibold text-ink">{pathway.name}</span>,
     },
     {
       key: "status",
@@ -123,7 +123,7 @@ export default function PathwaysTab() {
       key: "base_price",
       header: "Base Price",
       render: (pathway) => (
-        <span className="font-mono text-stone-600">{formatAmount(pathway.base_price)}</span>
+        <span className="font-mono text-muted">{formatAmount(pathway.base_price)}</span>
       ),
     },
     {
@@ -135,14 +135,14 @@ export default function PathwaysTab() {
             {pathway.tiers.map((tier) => (
               <span
                 key={tier.id}
-                className="text-[11px] font-mono uppercase tracking-wider text-stone-600 bg-stone-100 border border-stone-200 rounded-md px-2 py-1"
+                className="text-[11px] font-mono uppercase tracking-wider text-muted bg-porcelain border border-line rounded-md px-2 py-1"
               >
                 #{tier.level} {tier.name}
               </span>
             ))}
           </div>
         ) : (
-          <span className="text-[11px] font-mono uppercase tracking-wider text-stone-400">Unassigned</span>
+          <span className="text-[11px] font-mono uppercase tracking-wider text-muted">Unassigned</span>
         ),
     },
     {
@@ -190,12 +190,12 @@ export default function PathwaysTab() {
     {
       key: "pathway_count",
       header: "Pathway Count",
-      render: (rule) => <span className="font-mono text-stone-700">{rule.pathway_count}</span>,
+      render: (rule) => <span className="font-mono text-muted">{rule.pathway_count}</span>,
     },
     {
       key: "discount_percent",
       header: "Discount",
-      render: (rule) => <span className="font-mono text-stone-700">{rule.discount_percent}%</span>,
+      render: (rule) => <span className="font-mono text-muted">{rule.discount_percent}%</span>,
     },
     {
       key: "actions",
@@ -231,7 +231,7 @@ export default function PathwaysTab() {
           <button
             type="button"
             onClick={() => setIsFormOpen(true)}
-            className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
+            className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2 shrink-0"
             title="Create a new pathway"
             aria-label="Create a new pathway"
           >
@@ -240,7 +240,7 @@ export default function PathwaysTab() {
           </button>
         </div>
 
-        <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+        <div className="bg-paper border border-line rounded-card shadow-soft p-6">
           <DataTable size="lg"
             columns={columns}
             rows={paginatedPathways}
@@ -258,15 +258,15 @@ export default function PathwaysTab() {
         </div>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
               <Percent className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-serif font-bold text-stone-900 leading-tight">Bundle Pricing</h3>
-              <p className="text-xs text-stone-450 font-light">
+              <h3 className="text-sm font-serif font-bold text-ink leading-tight">Bundle Pricing</h3>
+              <p className="text-xs text-muted font-light">
                 Discount rules applied when students bundle multiple pathways.
               </p>
             </div>
@@ -274,7 +274,7 @@ export default function PathwaysTab() {
           <button
             type="button"
             onClick={() => setIsRuleFormOpen(true)}
-            className="px-3.5 py-2 bg-white hover:bg-stone-50 text-stone-700 text-xs font-semibold font-mono rounded-xl tracking-wider border border-stone-200 shadow-sm transition-all flex items-center gap-1.5 shrink-0"
+            className="px-3.5 py-2 bg-paper hover:bg-porcelain text-ink text-xs font-semibold font-mono rounded-xl tracking-wider border border-line shadow-sm transition-all flex items-center gap-1.5 shrink-0"
             title="Add a bundle pricing rule"
             aria-label="Add a bundle pricing rule"
           >

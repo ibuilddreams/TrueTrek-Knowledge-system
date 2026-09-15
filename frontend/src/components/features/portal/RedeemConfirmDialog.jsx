@@ -27,22 +27,22 @@ export default function RedeemConfirmDialog({ isOpen, onClose, onConfirm, reward
     >
       <div className="space-y-2 mb-4">
         <div className="flex items-center justify-between text-sm">
-          <span className="text-stone-500 font-light">Cost</span>
-          <span className="font-mono font-bold text-stone-800">{reward.points_required.toLocaleString()} pts</span>
+          <span className="text-muted font-light">Cost</span>
+          <span className="font-mono font-bold text-ink">{reward.points_required.toLocaleString()} pts</span>
         </div>
         <div className="flex items-center justify-between text-sm">
-          <span className="text-stone-500 font-light">Current balance</span>
-          <span className="font-mono text-stone-700">{balance.toLocaleString()} pts</span>
+          <span className="text-muted font-light">Current balance</span>
+          <span className="font-mono text-muted">{balance.toLocaleString()} pts</span>
         </div>
-        <div className="flex items-center justify-between text-sm pt-2 border-t border-stone-100">
-          <span className="text-stone-500 font-light">Remaining balance</span>
+        <div className="flex items-center justify-between text-sm pt-2 border-t border-line">
+          <span className="text-muted font-light">Remaining balance</span>
           <span className="font-mono font-bold text-emerald-700">{remaining.toLocaleString()} pts</span>
         </div>
       </div>
 
       {isSchedulable && (
         <div className="mb-6">
-          <label className="text-[11px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold">
+          <label className="text-[11px] font-mono text-muted block uppercase tracking-wider mb-1.5 font-semibold">
             Note for the admin (optional)
           </label>
           <textarea
@@ -52,7 +52,7 @@ export default function RedeemConfirmDialog({ isOpen, onClose, onConfirm, reward
             placeholder="e.g. I'd like to discuss my Tier 2 pathway."
             rows={3}
             maxLength={1000}
-            className="w-full px-3 py-2.5 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60 resize-none"
+            className="w-full px-3 py-2.5 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm text-ink placeholder:text-muted transition disabled:opacity-60 resize-none"
           />
         </div>
       )}
@@ -62,7 +62,7 @@ export default function RedeemConfirmDialog({ isOpen, onClose, onConfirm, reward
           type="button"
           onClick={onClose}
           disabled={isConfirming}
-          className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+          className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-xs font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
@@ -70,11 +70,11 @@ export default function RedeemConfirmDialog({ isOpen, onClose, onConfirm, reward
           type="button"
           onClick={() => onConfirm(note)}
           disabled={isConfirming}
-          className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
+          className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
         >
           {isConfirming ? (
             <>
-              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
               Redeeming...
             </>
           ) : (

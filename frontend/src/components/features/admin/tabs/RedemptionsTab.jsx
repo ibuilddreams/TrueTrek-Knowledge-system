@@ -173,8 +173,8 @@ export default function RedemptionsTab() {
       header: "Student",
       render: (redemption) => (
         <div>
-          <span className="font-semibold text-stone-800">{redemption.student?.name}</span>
-          <p className="text-[11px] text-stone-400 font-light">{redemption.student?.email}</p>
+          <span className="font-semibold text-ink">{redemption.student?.name}</span>
+          <p className="text-[11px] text-muted font-light">{redemption.student?.email}</p>
         </div>
       ),
     },
@@ -187,14 +187,14 @@ export default function RedemptionsTab() {
       key: "points_cost",
       header: "Points",
       render: (redemption) => (
-        <span className="font-mono font-bold text-stone-800">{redemption.points_cost.toLocaleString()}</span>
+        <span className="font-mono font-bold text-ink">{redemption.points_cost.toLocaleString()}</span>
       ),
     },
     {
       key: "created_at",
       header: "Redeemed",
       render: (redemption) => (
-        <span className="text-stone-500 whitespace-nowrap">{formatDateTime(redemption.created_at)}</span>
+        <span className="text-muted whitespace-nowrap">{formatDateTime(redemption.created_at)}</span>
       ),
     },
     {
@@ -218,7 +218,7 @@ export default function RedemptionsTab() {
             setStatusFilter(event.target.value);
             setPage(1);
           }}
-          className="px-4 py-2.5 bg-white border border-stone-200 rounded-xl text-sm font-mono text-stone-700 focus:border-amber-600 focus:outline-none"
+          className="px-4 py-2.5 bg-paper border border-line rounded-xl text-sm font-mono text-muted focus:border-pine focus:outline-none"
         >
           {STATUS_FILTERS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -228,7 +228,7 @@ export default function RedemptionsTab() {
         </select>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
         <DataTable
           size="lg"
           columns={columns}

@@ -21,7 +21,7 @@ export default function CourseFeedSection({ courseId }) {
   if (isLoading) {
     return (
       <div className="space-y-3" aria-busy="true">
-        <div className="h-28 rounded-2xl bg-stone-100 animate-pulse" />
+        <div className="h-28 rounded-2xl bg-porcelain animate-pulse" />
       </div>
     );
   }
@@ -41,11 +41,11 @@ export default function CourseFeedSection({ courseId }) {
   return (
     <div className="space-y-3">
       <div>
-        <h4 className="font-serif font-bold text-stone-900 flex items-center gap-2">
-          <Megaphone className="w-4 h-4 text-amber-700" />
+        <h4 className="font-serif font-bold text-ink flex items-center gap-2">
+          <Megaphone className="w-4 h-4 text-pine" />
           Class Feed
         </h4>
-        <p className="text-sm text-stone-500 font-light mt-0.5">
+        <p className="text-sm text-muted font-light mt-0.5">
           Updates and short videos your instructor has shared with this class.
         </p>
       </div>

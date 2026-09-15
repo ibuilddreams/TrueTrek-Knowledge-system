@@ -163,22 +163,22 @@ function StudentPortalContent() {
   if (!isLoggedIn) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-6 py-16">
-        <div className="w-full max-w-md bg-white border border-stone-200 rounded-2xl shadow-xl p-8 text-center relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 to-amber-800" />
-          <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center">
+        <div className="w-full max-w-md bg-paper border border-line rounded-2xl shadow-xl p-8 text-center relative overflow-hidden">
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gold/60 via-gold to-gold/60" />
+          <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-gold/12 border border-gold/25 text-gold flex items-center justify-center">
             <Lock className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-serif font-bold text-stone-900 mb-1.5">
+          <h2 className="text-2xl font-serif font-bold text-ink mb-1.5">
             Student Access Required
           </h2>
-          <p className="text-sm text-stone-500 font-light mb-6">
+          <p className="text-sm text-muted font-light mb-6">
             Sign in with a student account to open your courses, drills, and
             progress suite.
           </p>
           <button
             type="button"
             onClick={() => router.push(ROUTES.LOGIN)}
-            className="w-full py-3.5 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition"
+            className="w-full py-3.5 bg-pine hover:bg-moss text-paper font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition"
           >
             Go to Sign In
           </button>

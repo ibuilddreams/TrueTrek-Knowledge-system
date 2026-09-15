@@ -23,9 +23,9 @@ function AmountCell({ amount }) {
 function ReasonCell({ transaction }) {
   return (
     <div>
-      <p className="text-stone-700">{transaction.reason || formatActivityType(transaction.transaction_type)}</p>
+      <p className="text-muted">{transaction.reason || formatActivityType(transaction.transaction_type)}</p>
       {transaction.redemption_reward_name && (
-        <p className="text-[11px] text-stone-400 font-light">{transaction.redemption_reward_name}</p>
+        <p className="text-[11px] text-muted font-light">{transaction.redemption_reward_name}</p>
       )}
     </div>
   );
@@ -50,7 +50,7 @@ export default function PointsTransactionsTable() {
       key: "created_at",
       header: "Date",
       render: (transaction) => (
-        <span className="text-stone-500 whitespace-nowrap">{formatDateTime(transaction.created_at)}</span>
+        <span className="text-muted whitespace-nowrap">{formatDateTime(transaction.created_at)}</span>
       ),
     },
     {
@@ -62,7 +62,7 @@ export default function PointsTransactionsTable() {
       key: "type",
       header: "Type",
       render: (transaction) => (
-        <span className="text-[11px] font-mono uppercase tracking-wider text-stone-500">
+        <span className="text-[11px] font-mono uppercase tracking-wider text-muted">
           {formatActivityType(transaction.transaction_type)}
         </span>
       ),
@@ -76,13 +76,13 @@ export default function PointsTransactionsTable() {
       key: "balance_after",
       header: "Balance",
       render: (transaction) => (
-        <span className="font-mono text-stone-500">{transaction.balance_after.toLocaleString()}</span>
+        <span className="font-mono text-muted">{transaction.balance_after.toLocaleString()}</span>
       ),
     },
   ];
 
   return (
-    <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+    <div className="bg-paper border border-line rounded-2xl shadow-sm p-6">
       <DataTable
         size="lg"
         columns={columns}
