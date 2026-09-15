@@ -22,7 +22,7 @@ DOMPurify.addHook("afterSanitizeAttributes", (node) => {
   }
 });
 
-export default function RichTextLessonViewer({ html, isVault }) {
+export default function RichTextLessonViewer({ html }) {
   const clean = DOMPurify.sanitize(html || "", {
     ALLOWED_TAGS,
     ALLOWED_ATTR,
@@ -30,9 +30,7 @@ export default function RichTextLessonViewer({ html, isVault }) {
 
   return (
     <div
-      className={`rounded-2xl border px-5 py-5 lesson-rich-text ${
-        isVault ? "lesson-rich-text--vault border-stone-800 bg-[#0c0b0a]" : "border-stone-200 bg-stone-50"
-      }`}
+      className="rounded-2xl border px-5 py-5 lesson-rich-text border-line bg-porcelain"
       // eslint-disable-next-line react/no-danger -- sanitized above via DOMPurify
       // with an explicit tag/attribute allowlist mirroring the backend's nh3 pass.
       dangerouslySetInnerHTML={{ __html: clean }}

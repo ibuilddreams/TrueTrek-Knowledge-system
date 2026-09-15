@@ -20,10 +20,10 @@ const INITIAL_FORM = {
 };
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60";
+  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-[11px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold";
+  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
 
 const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
 
@@ -195,7 +195,7 @@ export default function DailyDrillScheduleFormModal({ isOpen, onClose, onSaved, 
               onClick={() => setVideoMode("LINK")}
               disabled={isSubmitting || isLocked}
               className={`py-2.5 rounded-xl text-xs font-semibold font-mono uppercase tracking-wider border transition ${
-                videoMode === "LINK" ? "bg-amber-50 border-amber-300 text-amber-700" : "bg-stone-50 border-stone-200 text-stone-500"
+                videoMode === "LINK" ? "bg-gold/12 border-gold/25 text-gold" : "bg-porcelain border-line text-muted"
               }`}
             >
               Video Link
@@ -205,7 +205,7 @@ export default function DailyDrillScheduleFormModal({ isOpen, onClose, onSaved, 
               onClick={() => setVideoMode("UPLOAD")}
               disabled={isSubmitting || isLocked}
               className={`py-2.5 rounded-xl text-xs font-semibold font-mono uppercase tracking-wider border transition ${
-                videoMode === "UPLOAD" ? "bg-amber-50 border-amber-300 text-amber-700" : "bg-stone-50 border-stone-200 text-stone-500"
+                videoMode === "UPLOAD" ? "bg-gold/12 border-gold/25 text-gold" : "bg-porcelain border-line text-muted"
               }`}
             >
               Upload File
@@ -234,9 +234,9 @@ export default function DailyDrillScheduleFormModal({ isOpen, onClose, onSaved, 
             />
           )}
           {schedule?.file_url && !file && (
-            <p className="text-[11px] font-mono text-stone-500 mt-2">
+            <p className="text-[11px] font-mono text-muted mt-2">
               Current file:{" "}
-              <a href={schedule.file_url} target="_blank" rel="noreferrer" className="text-amber-700 underline">
+              <a href={schedule.file_url} target="_blank" rel="noreferrer" className="text-pine underline">
                 view
               </a>{" "}
               — leave empty to keep it.
@@ -295,12 +295,12 @@ export default function DailyDrillScheduleFormModal({ isOpen, onClose, onSaved, 
           </div>
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-stone-100">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-line">
           <button
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-sm font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-colors duration-150 flex items-center justify-center gap-2 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -310,11 +310,11 @@ export default function DailyDrillScheduleFormModal({ isOpen, onClose, onSaved, 
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
+              className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
-                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
                   {isEditMode ? "Updating..." : "Creating..."}
                 </>
               ) : (

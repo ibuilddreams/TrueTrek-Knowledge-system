@@ -52,7 +52,7 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 bg-stone-950/50 backdrop-blur-sm z-50 flex items-center justify-center p-4"
+          className="fixed inset-0 bg-ink/60 backdrop-blur-sm z-50 flex items-center justify-center p-4"
         >
           <motion.form
             initial={{ opacity: 0 }}
@@ -60,19 +60,19 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
             exit={{ opacity: 0 }}
             transition={{ duration: 0.15, ease: "easeOut" }}
             onSubmit={handleSubmit}
-            className="bg-white border border-stone-250 w-full max-w-lg rounded-2xl shadow-2xl p-6 sm:p-8 space-y-5"
+            className="bg-paper border border-line w-full max-w-lg rounded-2xl shadow-2xl p-6 sm:p-8 space-y-5"
           >
 
-            <div className="flex items-center justify-between pb-3 border-b border-stone-200">
+            <div className="flex items-center justify-between pb-3 border-b border-line">
               <div>
-                <h3 className="font-serif font-black text-lg text-stone-950">
+                <h3 className="font-serif font-black text-lg text-ink">
                   {editingStudent ? 'Adjust Scholar-Athlete Metrics' : 'Enroll Candidate into Registry'}
                 </h3>
-                <p className="text-xs text-stone-450 mt-0.5">TrueTrek Cohort validation slot allocation</p>
+                <p className="text-xs text-muted mt-0.5">TrueTrek Cohort validation slot allocation</p>
               </div>
               <CloseButton
                 onClick={onClose}
-                className="p-1 border border-stone-200 rounded-full text-stone-450 hover:bg-stone-50"
+                className="p-1 border border-line rounded-full text-muted hover:bg-porcelain"
                 iconClassName="w-4 h-4"
               />
             </div>
@@ -81,24 +81,24 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] text-stone-450 uppercase mb-1.5 font-bold">Candidate Name *</label>
+                  <label className="block text-[11px] text-muted uppercase mb-1.5 font-bold">Candidate Name *</label>
                   <input
                     type="text"
                     required
                     value={formData.name}
                     onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                    className="w-full bg-stone-52 border border-stone-200 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-650 font-sans"
+                    className="w-full bg-porcelain border border-line rounded-lg px-3 py-2 focus:outline-none focus:border-pine font-sans"
                     placeholder="e.g. Richard Pierce"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-stone-450 uppercase mb-1.5 font-bold">Advisor Notification Email *</label>
+                  <label className="block text-[11px] text-muted uppercase mb-1.5 font-bold">Advisor Notification Email *</label>
                   <input
                     type="email"
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full bg-stone-52 border border-stone-200 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-650 font-sans"
+                    className="w-full bg-porcelain border border-line rounded-lg px-3 py-2 focus:outline-none focus:border-pine font-sans"
                     placeholder="e.g. r_pierce@crimson.ua.edu"
                   />
                 </div>
@@ -106,22 +106,22 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] text-stone-450 uppercase mb-1.5 font-bold">Institution / Affiliated Academy *</label>
+                  <label className="block text-[11px] text-muted uppercase mb-1.5 font-bold">Institution / Affiliated Academy *</label>
                   <input
                     type="text"
                     required
                     value={formData.institution}
                     onChange={(e) => setFormData({ ...formData, institution: e.target.value })}
-                    className="w-full bg-stone-52 border border-stone-200 rounded-lg px-3 py-2 focus:outline-none focus:border-amber-650 font-sans"
+                    className="w-full bg-porcelain border border-line rounded-lg px-3 py-2 focus:outline-none focus:border-pine font-sans"
                     placeholder="e.g. Auburn University"
                   />
                 </div>
                 <div>
-                  <label className="block text-[11px] text-stone-450 uppercase mb-1.5 font-bold">Specialty Focus Tract</label>
+                  <label className="block text-[11px] text-muted uppercase mb-1.5 font-bold">Specialty Focus Tract</label>
                   <select
                     value={formData.category}
                     onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full bg-stone-52 border border-stone-200 rounded-lg px-3 py-2 focus:outline-none"
+                    className="w-full bg-porcelain border border-line rounded-lg px-3 py-2 focus:outline-none"
                   >
                     <option value="Academic">Academic</option>
                     <option value="Athletic">Athletic</option>
@@ -133,11 +133,11 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-[11px] text-stone-450 uppercase mb-1.5 font-bold">Curriculum Placement Tier</label>
+                  <label className="block text-[11px] text-muted uppercase mb-1.5 font-bold">Curriculum Placement Tier</label>
                   <select
                     value={formData.activeTierId}
                     onChange={(e) => setFormData({ ...formData, activeTierId: e.target.value })}
-                    className="w-full bg-stone-52 border border-stone-200 rounded-lg px-3 py-2 focus:outline-none"
+                    className="w-full bg-porcelain border border-line rounded-lg px-3 py-2 focus:outline-none"
                   >
                     {CURRICULUM_TIERS.map(t => (
                       <option key={t.id} value={t.id}>{t.number}: {t.title}</option>
@@ -145,11 +145,11 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[11px] text-stone-450 uppercase mb-1.5 font-bold">Enrollment Standing Status</label>
+                  <label className="block text-[11px] text-muted uppercase mb-1.5 font-bold">Enrollment Standing Status</label>
                   <select
                     value={formData.status}
                     onChange={(e) => setFormData({ ...formData, status: e.target.value })}
-                    className="w-full bg-stone-52 border border-stone-200 rounded-lg px-3 py-2 focus:outline-none"
+                    className="w-full bg-porcelain border border-line rounded-lg px-3 py-2 focus:outline-none"
                   >
                     <option value="Active">Active Student</option>
                     <option value="Under Review">Under Review</option>
@@ -158,11 +158,11 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
                 </div>
               </div>
 
-              <div className="bg-stone-50 p-4 rounded-xl border border-stone-200 gap-4 space-y-3.5">
+              <div className="bg-porcelain p-4 rounded-xl border border-line gap-4 space-y-3.5">
                 <div>
-                  <div className="flex justify-between items-center text-[11px] text-stone-500 font-bold mb-1">
+                  <div className="flex justify-between items-center text-[11px] text-muted font-bold mb-1">
                     <span>VERIFIED COMPLIANCE DRILL SCORE</span>
-                    <span className="text-amber-800 font-mono">{formData.averageScore} / 100</span>
+                    <span className="text-gold font-mono">{formData.averageScore} / 100</span>
                   </div>
                   <input
                     type="range"
@@ -170,15 +170,15 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
                     max="100"
                     value={formData.averageScore}
                     onChange={(e) => setFormData({ ...formData, averageScore: Number(e.target.value) })}
-                    className="w-full accent-amber-600 cursor-pointer"
+                    className="w-full accent-pine cursor-pointer"
                   />
-                  <p className="text-[10px] text-stone-400 font-sans tracking-tight">Updates the aggregate test score on the active database profile</p>
+                  <p className="text-[10px] text-muted font-sans tracking-tight">Updates the aggregate test score on the active database profile</p>
                 </div>
 
                 <div>
-                  <div className="flex justify-between items-center text-[11px] text-stone-500 font-bold mb-1">
+                  <div className="flex justify-between items-center text-[11px] text-muted font-bold mb-1">
                     <span>CURRICULUM MODULES PROGRESS PROGRESSION</span>
-                    <span className="text-amber-800 font-mono">{formData.progressPercent}%</span>
+                    <span className="text-gold font-mono">{formData.progressPercent}%</span>
                   </div>
                   <input
                     type="range"
@@ -186,35 +186,35 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
                     max="100"
                     value={formData.progressPercent}
                     onChange={(e) => setFormData({ ...formData, progressPercent: Number(e.target.value) })}
-                    className="w-full accent-amber-600 cursor-pointer"
+                    className="w-full accent-pine cursor-pointer"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-[11px] text-stone-450 uppercase mb-1 font-bold">Continuous Learning Streak (Days)</label>
+                  <label className="block text-[11px] text-muted uppercase mb-1 font-bold">Continuous Learning Streak (Days)</label>
                   <input
                     type="number"
                     min="0"
                     value={formData.streakDays}
                     onChange={(e) => setFormData({ ...formData, streakDays: Number(e.target.value) })}
-                    className="w-full bg-white border border-stone-200 rounded-lg px-3 py-1.5 focus:outline-none placeholder:text-stone-300 font-sans"
+                    className="w-full bg-paper border border-line rounded-lg px-3 py-1.5 focus:outline-none placeholder:text-muted font-sans"
                   />
                 </div>
               </div>
 
             </div>
 
-            <div className="flex items-center justify-end gap-3 pt-3 border-t border-stone-200 font-mono text-sm">
+            <div className="flex items-center justify-end gap-3 pt-3 border-t border-line font-mono text-sm">
               <button
                 type="button"
                 onClick={onClose}
-                className="px-4 py-2 border border-stone-200 hover:bg-stone-50 rounded-xl"
+                className="px-4 py-2 bg-transparent hover:bg-porcelain text-ink border border-line rounded-full"
               >
                 Cancel
               </button>
               <button
                 type="submit"
-                className="px-5 py-2 bg-stone-900 border hover:bg-stone-850 text-stone-100 font-bold rounded-xl"
+                className="px-5 py-2 bg-pine hover:bg-moss text-paper font-bold rounded-full"
               >
                 {editingStudent ? 'SAVE CHANCES' : 'ENROLL CANDIDATE'}
               </button>

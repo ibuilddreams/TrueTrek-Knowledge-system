@@ -3,7 +3,6 @@
 import { Calendar, CheckCircle, ChevronRight, Flame, Lock } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import { formatDate } from "@/lib/adminFormatters";
-import { useTheme } from "@/hooks/useTheme";
 
 function getInitials(title) {
   return (title || "C")
@@ -16,7 +15,6 @@ function getInitials(title) {
 }
 
 export default function StudentCourseCard({ enrollment, onClick }) {
-  const { isVault } = useTheme();
   const course = enrollment.course || {};
   const progress = Math.round(enrollment.completion_percentage || 0);
   // The teacher assigned to *this* enrollment, not just any instructor on the
@@ -47,35 +45,15 @@ export default function StudentCourseCard({ enrollment, onClick }) {
             }
           : undefined
       }
-      className={`border rounded-2xl p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer flex flex-col justify-between group focus:outline-none focus-visible:ring-2 focus-visible:ring-amber-500/40 focus-visible:ring-offset-2 ${
-        isVault
-          ? "bg-[#161412] border-stone-800"
-          : "bg-white border-stone-200/80"
-      }`}
+      className="border rounded-2xl p-6 hover:shadow-lg transition-all duration-300 hover:-translate-y-1 cursor-pointer flex flex-col justify-between group focus:outline-none focus-visible:ring-2 focus-visible:ring-pine focus-visible:ring-offset-2 bg-paper border-line/80"
     >
       <div>
-        <div
-          className={`flex items-center justify-between gap-2 border-b pb-3 mb-4 ${
-            isVault ? "border-stone-800" : "border-stone-100"
-          }`}
-        >
+        <div className="flex items-center justify-between gap-2 border-b pb-3 mb-4 border-line">
           <div className="flex items-center gap-2 min-w-0">
-            <span
-              className={`font-mono text-sm font-bold px-2.5 py-1 rounded-md shrink-0 ${
-                isVault
-                  ? "text-amber-500 bg-amber-600/15"
-                  : "text-amber-750 bg-amber-50"
-              }`}
-            >
+            <span className="font-mono text-sm font-bold px-2.5 py-1 rounded-md shrink-0 text-gold bg-gold/12">
               {course.code || getInitials(course.title)}
             </span>
-            <span
-              className={`text-[11px] uppercase font-mono tracking-wider px-2 py-0.5 rounded-full border truncate ${
-                isVault
-                  ? "bg-stone-900 text-stone-300 border-stone-700"
-                  : "bg-stone-50 text-stone-700 border-stone-200"
-              }`}
-            >
+            <span className="text-[11px] uppercase font-mono tracking-wider px-2 py-0.5 rounded-full border truncate bg-porcelain text-muted border-line">
               {course.category?.name || "General"}
             </span>
           </div>
@@ -90,36 +68,18 @@ export default function StudentCourseCard({ enrollment, onClick }) {
                 transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
               >
                 {isCompleted || statusLabel === "COMPLETED" ? (
-                  <span
-                    className={`flex items-center gap-1 text-[11px] font-mono font-bold border px-2.5 py-1 rounded-full shadow-2xs ${
-                      isVault
-                        ? "bg-emerald-900/30 text-emerald-300 border-emerald-700/40"
-                        : "bg-emerald-50 text-emerald-700 border-emerald-200"
-                    }`}
-                  >
+                  <span className="flex items-center gap-1 text-[11px] font-mono font-bold border px-2.5 py-1 rounded-full shadow-2xs bg-emerald-50 text-emerald-700 border-emerald-200">
                     <CheckCircle className="w-3 h-3 text-emerald-600 shrink-0" />
                     COMPLETED
                   </span>
                 ) : statusLabel === "ACTIVE" ? (
-                  <span
-                    className={`flex items-center gap-1 text-[11px] font-mono font-bold border px-2.5 py-1 rounded-full animate-pulse ${
-                      isVault
-                        ? "bg-amber-900/30 text-amber-300 border-amber-700/40"
-                        : "bg-amber-50 text-amber-700 border-amber-200"
-                    }`}
-                  >
-                    <Flame className="w-3 h-3 text-amber-600 shrink-0 animate-bounce" />
+                  <span className="flex items-center gap-1 text-[11px] font-mono font-bold border px-2.5 py-1 rounded-full animate-pulse bg-gold/12 text-gold border-gold/25">
+                    <Flame className="w-3 h-3 text-gold shrink-0 animate-bounce" />
                     ACTIVE
                   </span>
                 ) : (
-                  <span
-                    className={`flex items-center gap-1 text-[11px] font-mono font-medium border px-2.5 py-1 rounded-full ${
-                      isVault
-                        ? "bg-stone-800/60 text-stone-500 border-stone-700/50"
-                        : "bg-stone-100 text-stone-400 border-stone-200/60"
-                    }`}
-                  >
-                    <Lock className="w-3 h-3 text-stone-400 shrink-0" />
+                  <span className="flex items-center gap-1 text-[11px] font-mono font-medium border px-2.5 py-1 rounded-full bg-porcelain text-muted border-line/60">
+                    <Lock className="w-3 h-3 text-muted shrink-0" />
                     {statusLabel}
                   </span>
                 )}
@@ -128,41 +88,23 @@ export default function StudentCourseCard({ enrollment, onClick }) {
           </div>
         </div>
 
-        <h3
-          className={`text-lg font-serif font-semibold tracking-tight mb-2 transition-colors duration-250 line-clamp-2 ${
-            isVault
-              ? "text-stone-100 group-hover:text-amber-500"
-              : "text-stone-900 group-hover:text-amber-800"
-          }`}
-        >
+        <h3 className="text-lg font-serif font-semibold tracking-tight mb-2 transition-colors duration-250 line-clamp-2 text-ink group-hover:text-pine">
           {course.title}
         </h3>
-        <p className="text-sm font-mono text-stone-400 mb-3 tracking-tight truncate">
+        <p className="text-sm font-mono text-muted mb-3 tracking-tight truncate">
           Instructor: {assignedInstructor}
         </p>
-        <p
-          className={`text-[13px] leading-relaxed line-clamp-3 font-light mb-4 ${
-            isVault ? "text-stone-400" : "text-stone-600"
-          }`}
-        >
+        <p className="text-[13px] leading-relaxed line-clamp-3 font-light mb-4 text-muted">
           {progressText}
         </p>
       </div>
 
-      <div
-        className={`flex items-center justify-between pt-4 border-t gap-3 ${
-          isVault ? "border-stone-800" : "border-stone-100"
-        }`}
-      >
-        <span className="flex items-center gap-1.5 text-xs font-mono min-w-0 text-stone-400">
+      <div className="flex items-center justify-between pt-4 border-t gap-3 border-line">
+        <span className="flex items-center gap-1.5 text-xs font-mono min-w-0 text-muted">
           <Calendar className="w-3.5 h-3.5 shrink-0" />
           <span className="truncate">Enrolled {formatDate(enrollment.enrolled_at)}</span>
         </span>
-        <span
-          className={`shrink-0 text-sm font-semibold flex items-center gap-0.5 group-hover:gap-1.5 transition-all ${
-            isVault ? "text-amber-500" : "text-amber-700"
-          }`}
-        >
+        <span className="shrink-0 text-sm font-semibold flex items-center gap-0.5 group-hover:gap-1.5 transition-all text-pine">
           View Course Details
           <ChevronRight className="w-3.5 h-3.5" />
         </span>

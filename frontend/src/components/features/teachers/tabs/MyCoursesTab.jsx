@@ -174,8 +174,8 @@ export default function MyCoursesTab() {
     if (isCoursesLoading) {
       return (
         <div className="space-y-5" aria-busy="true" aria-label="Loading course">
-          <div className="h-24 rounded-2xl bg-stone-100 animate-pulse" />
-          <div className="h-96 rounded-2xl bg-stone-100 animate-pulse" />
+          <div className="h-24 rounded-2xl bg-porcelain animate-pulse" />
+          <div className="h-96 rounded-2xl bg-porcelain animate-pulse" />
         </div>
       );
     }
@@ -255,7 +255,7 @@ export default function MyCoursesTab() {
         <button
           type="button"
           onClick={() => setIsAddCourseModalOpen(true)}
-          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+          className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0 cursor-pointer"
           title="Add a new course"
           aria-label="Add a new course"
         >
@@ -277,26 +277,26 @@ export default function MyCoursesTab() {
           aria-label="Loading assigned courses"
         >
           {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="h-64 rounded-2xl bg-stone-100 animate-pulse" />
+            <div key={index} className="h-64 rounded-2xl bg-porcelain animate-pulse" />
           ))}
         </div>
       )}
 
       {!isCoursesLoading && isCoursesError && (
-        <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-8 text-center max-w-lg mx-auto">
+        <div className="bg-paper border border-line rounded-card shadow-soft p-8 text-center max-w-lg mx-auto">
           <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <h2 className="text-xl font-serif font-bold text-stone-900 mb-2">
+          <h2 className="text-xl font-serif font-bold text-ink mb-2">
             Failed to Load Your Courses
           </h2>
-          <p className="text-sm text-stone-500 font-light mb-6">
+          <p className="text-sm text-muted font-light mb-6">
             {getApiErrorMessage(coursesError, "Unable to load your assigned courses.")}
           </p>
           <button
             type="button"
             onClick={() => refetchCourses()}
-            className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-pine hover:bg-moss text-paper font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -305,7 +305,7 @@ export default function MyCoursesTab() {
       )}
 
       {!isCoursesLoading && !isCoursesError && paginatedCourses.length === 0 && (
-        <div className="bg-white border border-stone-200 rounded-2xl shadow-sm">
+        <div className="bg-paper border border-line rounded-card shadow-soft">
           <EmptyState
             icon={BookMarked}
             label="No assigned courses found."

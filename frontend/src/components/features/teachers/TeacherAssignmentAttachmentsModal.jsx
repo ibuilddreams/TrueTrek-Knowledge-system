@@ -72,20 +72,20 @@ function SortableTeacherAttachmentRow({ attachment, onReplace, onDelete, isRepla
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-white ${
+      className={`flex items-center gap-3 p-3 rounded-xl border border-line bg-paper ${
         isDragging ? "z-10 shadow-lg opacity-90" : ""
       }`}
     >
       <span
         {...attributes}
         {...listeners}
-        className="text-stone-300 cursor-grab shrink-0 touch-none"
+        className="text-muted cursor-grab shrink-0 touch-none"
         title="Drag to reorder"
         aria-hidden="true"
       >
         <GripVertical className="w-4 h-4" />
       </span>
-      <div className="w-9 h-9 rounded-lg bg-amber-50 border border-amber-100 text-amber-700 flex items-center justify-center shrink-0">
+      <div className="w-9 h-9 rounded-lg bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
         <Icon className="w-4 h-4" />
       </div>
       <div className="min-w-0 flex-1">
@@ -93,11 +93,11 @@ function SortableTeacherAttachmentRow({ attachment, onReplace, onDelete, isRepla
           href={attachment.file}
           target="_blank"
           rel="noreferrer"
-          className="text-sm font-semibold text-stone-800 truncate hover:text-amber-700 hover:underline block"
+          className="text-sm font-semibold text-ink truncate hover:text-pine hover:underline block"
         >
           {attachment.original_name}
         </a>
-        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
+        <p className="text-[11px] font-mono uppercase text-muted tracking-wider mt-0.5">
           {attachment.file_type || "FILE"} · {formatUploadedDate(attachment.created_at)}
         </p>
       </div>
@@ -118,7 +118,7 @@ function SortableTeacherAttachmentRow({ attachment, onReplace, onDelete, isRepla
           disabled={isReplacing}
           title="Replace file"
           aria-label="Replace file"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 bg-white text-stone-500 hover:bg-stone-100 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <Pencil className="w-3.5 h-3.5" />
         </button>
@@ -128,7 +128,7 @@ function SortableTeacherAttachmentRow({ attachment, onReplace, onDelete, isRepla
           disabled={isDeleting}
           title="Delete attachment"
           aria-label="Delete attachment"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-stone-200 text-rose-600 hover:bg-rose-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line text-rose-600 hover:bg-rose-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -303,11 +303,11 @@ export default function TeacherAssignmentAttachmentsModal({ isOpen, onClose, ass
             type="button"
             onClick={handleUploadClick}
             disabled={uploadMutation.isPending}
-            className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-stone-300 rounded-lg text-xs font-mono uppercase tracking-wider text-stone-400 hover:border-amber-500 hover:text-amber-700 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-line rounded-lg text-xs font-mono uppercase tracking-wider text-muted hover:border-pine hover:text-pine transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {uploadMutation.isPending ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-stone-300 border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-line border-t-transparent rounded-full animate-spin" />
                 Uploading...
               </>
             ) : (
@@ -317,7 +317,7 @@ export default function TeacherAssignmentAttachmentsModal({ isOpen, onClose, ass
               </>
             )}
           </button>
-          <p className="text-[11px] font-mono text-stone-400 tracking-wider">
+          <p className="text-[11px] font-mono text-muted tracking-wider">
             Allowed: PDF, DOC/DOCX, PPT/PPTX, ZIP, JPG/PNG/WEBP · up to 50MB
           </p>
         </div>

@@ -44,28 +44,28 @@ export default function FutureClientDetailModal({ isOpen, onClose, applicationId
       ) : application ? (
         <div className="space-y-4">
           <div className="flex items-center justify-between gap-3">
-            <h4 className="text-base font-serif font-bold text-stone-900">{application.full_name}</h4>
+            <h4 className="text-base font-serif font-bold text-ink">{application.full_name}</h4>
             <StatusBadge size="lg" status={application.status} />
           </div>
 
           <div className="grid grid-cols-2 gap-3 text-sm">
             <div>
-              <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mb-1">Email</p>
-              <p className="text-stone-700 font-semibold break-all">{application.email}</p>
+              <p className="text-[11px] font-mono uppercase text-muted tracking-wider mb-1">Email</p>
+              <p className="text-muted font-semibold break-all">{application.email}</p>
             </div>
             <div>
-              <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mb-1">Submitted</p>
-              <p className="text-stone-700 font-semibold">{formatDate(application.submitted_at)}</p>
+              <p className="text-[11px] font-mono uppercase text-muted tracking-wider mb-1">Submitted</p>
+              <p className="text-muted font-semibold">{formatDate(application.submitted_at)}</p>
             </div>
             {application.reviewed_by && (
               <>
                 <div>
-                  <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mb-1">Reviewed By</p>
-                  <p className="text-stone-700 font-semibold">{application.reviewed_by.full_name}</p>
+                  <p className="text-[11px] font-mono uppercase text-muted tracking-wider mb-1">Reviewed By</p>
+                  <p className="text-muted font-semibold">{application.reviewed_by.full_name}</p>
                 </div>
                 <div>
-                  <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mb-1">Reviewed At</p>
-                  <p className="text-stone-700 font-semibold">{formatDate(application.reviewed_at)}</p>
+                  <p className="text-[11px] font-mono uppercase text-muted tracking-wider mb-1">Reviewed At</p>
+                  <p className="text-muted font-semibold">{formatDate(application.reviewed_at)}</p>
                 </div>
               </>
             )}
@@ -81,24 +81,24 @@ export default function FutureClientDetailModal({ isOpen, onClose, applicationId
           )}
 
           <div>
-            <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mb-2">
+            <p className="text-[11px] font-mono uppercase text-muted tracking-wider mb-2">
               Requested Courses
             </p>
             <div className="space-y-2">
               {application.courses.map((course) => (
                 <div
                   key={course.id}
-                  className="flex items-center justify-between gap-3 px-3 py-2.5 bg-stone-50 border border-stone-200 rounded-xl"
+                  className="flex items-center justify-between gap-3 px-3 py-2.5 bg-porcelain border border-line rounded-xl"
                 >
-                  <span className="text-sm font-semibold text-stone-800">{course.title}</span>
-                  <span className="text-sm font-mono text-stone-500">${course.amount}</span>
+                  <span className="text-sm font-semibold text-ink">{course.title}</span>
+                  <span className="text-sm font-mono text-muted">${course.amount}</span>
                 </div>
               ))}
             </div>
           </div>
         </div>
       ) : (
-        <p className="text-sm text-stone-400 font-light">Application unavailable.</p>
+        <p className="text-sm text-muted font-light">Application unavailable.</p>
       )}
     </Modal>
   );

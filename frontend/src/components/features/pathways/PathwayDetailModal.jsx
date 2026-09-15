@@ -46,7 +46,7 @@ export default function PathwayDetailModal({
           <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <p className="text-xs text-stone-500">
+          <p className="text-xs text-muted">
             {getApiErrorMessage(error, "Unable to load this pathway right now.")}
           </p>
         </div>
@@ -54,31 +54,31 @@ export default function PathwayDetailModal({
 
       {!isLoading && !isError && pathway && (
         <div className="space-y-5">
-          <div className="space-y-3 border-b border-stone-100 pb-4">
-            <span className="font-mono text-xs font-bold px-2.5 py-1 rounded-md text-amber-700 bg-amber-50 inline-flex items-center gap-1.5">
+          <div className="space-y-3 border-b border-line pb-4">
+            <span className="font-sans text-xs font-medium uppercase tracking-widest px-2.5 py-1 rounded-md text-[#8a6f2e] bg-gold/15 inline-flex items-center gap-1.5">
               <Layers className="w-3 h-3" />
               {pathway.courses?.length || 0} Course
               {(pathway.courses?.length || 0) === 1 ? "" : "s"}
             </span>
-            <h3 className="text-xl sm:text-2xl font-serif font-bold tracking-tight text-stone-900 leading-tight">
+            <h3 className="text-xl sm:text-2xl font-serif font-light tracking-tight text-ink leading-tight">
               {pathway.name}
             </h3>
           </div>
 
           <div className="flex items-center justify-between">
-            <span className="text-[9px] font-mono font-semibold text-stone-400 block uppercase tracking-wider">
+            <span className="text-[9px] font-sans font-medium text-muted block uppercase tracking-widest">
               Bundle Price
             </span>
-            <span className="text-2xl font-mono font-bold text-stone-900">
+            <span className="text-2xl font-sans font-semibold text-ink">
               {formatCoursePrice(pathway.base_price)}
             </span>
           </div>
 
-          <div className="space-y-2 border-t border-stone-100 pt-4">
-            <p className="text-xs font-mono uppercase text-amber-800 tracking-wider font-bold">
+          <div className="space-y-2 border-t border-line pt-4">
+            <p className="text-xs font-sans uppercase text-moss tracking-widest font-medium">
               Pathway Overview
             </p>
-            <p className="text-xs text-stone-600 leading-relaxed font-light">
+            <p className="text-xs text-muted leading-relaxed font-light">
               {pathway.description ||
                 pathway.summary ||
                 "No description has been added for this pathway yet."}
@@ -86,11 +86,11 @@ export default function PathwayDetailModal({
           </div>
 
           <div className="space-y-2.5">
-            <p className="text-xs font-mono uppercase text-amber-800 tracking-wider font-bold">
+            <p className="text-xs font-sans uppercase text-moss tracking-widest font-medium">
               Included Courses
             </p>
             {(pathway.courses || []).length === 0 ? (
-              <p className="text-xs text-stone-400 font-light">
+              <p className="text-xs text-muted font-light">
                 No courses have been attached to this pathway yet.
               </p>
             ) : (
@@ -101,9 +101,9 @@ export default function PathwayDetailModal({
                   .map((entry) => (
                     <li
                       key={entry.id}
-                      className="flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-stone-50"
+                      className="flex items-center gap-3 p-3 rounded-xl border border-line bg-porcelain"
                     >
-                      <div className="w-10 h-10 rounded-lg border border-stone-200 shrink-0 bg-white overflow-hidden flex items-center justify-center">
+                      <div className="w-10 h-10 rounded-lg border border-line shrink-0 bg-paper overflow-hidden flex items-center justify-center">
                         {entry.course?.image ? (
                           <img
                             src={entry.course.image}
@@ -112,14 +112,14 @@ export default function PathwayDetailModal({
                             referrerPolicy="no-referrer"
                           />
                         ) : (
-                          <BookOpen className="w-4 h-4 text-stone-400" />
+                          <BookOpen className="w-4 h-4 text-muted" />
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-xs font-bold text-stone-900 truncate">
+                        <p className="text-xs font-bold text-ink truncate">
                           {entry.course?.title}
                         </p>
-                        <p className="text-[10px] font-mono text-stone-500 mt-0.5">
+                        <p className="text-[10px] font-sans text-muted mt-0.5">
                           {entry.course?.code ? `${entry.course.code} · ` : ""}
                           {formatCoursePrice(entry.course?.amount)}
                         </p>
@@ -130,17 +130,17 @@ export default function PathwayDetailModal({
             )}
           </div>
 
-          <div className="pt-2 border-t border-stone-100 flex justify-between gap-4">
+          <div className="pt-2 border-t border-line flex justify-between gap-4">
             <button
               type="button"
               onClick={onClose}
-              className="flex-1 bg-stone-100 hover:bg-stone-200 text-stone-700 font-mono text-xs uppercase font-extrabold py-3 rounded-xl transition"
+              className="flex-1 border border-line hover:bg-porcelain text-ink font-sans text-xs uppercase font-medium tracking-widest py-3 rounded-full transition"
             >
               Close
             </button>
             {isOwned ? (
               <span
-                className="flex-1 font-mono text-[11px] uppercase font-bold py-3 rounded-xl flex items-center justify-center gap-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200"
+                className="flex-1 font-sans text-[11px] uppercase font-medium tracking-widest py-3 rounded-full flex items-center justify-center gap-1.5 bg-sage text-moss border border-moss/30"
                 title="You already have access to this pathway"
               >
                 <CheckCircle2 className="w-4 h-4" />
@@ -153,10 +153,10 @@ export default function PathwayDetailModal({
                   onToggleSelect(pathway);
                   onClose();
                 }}
-                className={`flex-1 font-mono text-xs uppercase font-extrabold py-3 rounded-xl transition flex items-center justify-center gap-1.5 ${
+                className={`flex-1 font-sans text-xs uppercase font-semibold tracking-widest py-3 rounded-full transition flex items-center justify-center gap-1.5 ${
                   isSelected
-                    ? "bg-stone-100 hover:bg-red-100 text-stone-700 hover:text-red-700"
-                    : "bg-[#141211] hover:bg-amber-600 hover:text-white text-white"
+                    ? "bg-porcelain hover:bg-rose text-ink hover:text-clay"
+                    : "bg-pine hover:bg-moss text-paper"
                 }`}
               >
                 <CheckCircle2 className="w-4 h-4" />
@@ -164,7 +164,7 @@ export default function PathwayDetailModal({
               </button>
             ) : (
               <span
-                className="flex-1 font-mono text-[11px] uppercase font-bold py-3 rounded-xl flex items-center justify-center gap-1.5 bg-stone-100 text-stone-400"
+                className="flex-1 font-sans text-[11px] uppercase font-medium tracking-widest py-3 rounded-full flex items-center justify-center gap-1.5 bg-porcelain text-muted"
                 title="Only student accounts can purchase pathways"
               >
                 <GraduationCap className="w-4 h-4" />

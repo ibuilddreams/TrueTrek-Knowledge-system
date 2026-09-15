@@ -6,7 +6,7 @@ export default function CloseButton({
   id,
   onClick,
   type = "button",
-  className = "text-stone-400 hover:text-stone-900 p-2 hover:bg-stone-100 rounded-full transition",
+  className = "text-muted hover:text-ink p-2 hover:bg-porcelain rounded-full transition",
   iconClassName = "w-5 h-5",
   icon: Icon = X,
   title,

@@ -16,7 +16,6 @@ export default function CurriculumModuleGroup({
   onSelectItem,
   isExpanded,
   onToggle,
-  isVault,
 }) {
   // Use the lightweight `module.lessons` summary rather than the (possibly not-yet-
   // fetched) `lessons` prop — otherwise a collapsed module that genuinely has lessons
@@ -28,45 +27,29 @@ export default function CurriculumModuleGroup({
   const isLocked = Boolean(module.is_locked);
 
   return (
-    <div
-      className={`rounded-xl border overflow-hidden ${
-        isVault ? "border-stone-800" : "border-stone-200"
-      }`}
-    >
+    <div className="rounded-xl border overflow-hidden border-line">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={isExpanded}
-        className={`w-full text-left px-3.5 py-3 flex items-center justify-between gap-3 transition-colors ${
-          isVault ? "hover:bg-white/5" : "hover:bg-stone-50/70"
-        }`}
+        className="w-full text-left px-3.5 py-3 flex items-center justify-between gap-3 transition-colors hover:bg-porcelain/70"
       >
         <div className="min-w-0">
-          <p
-            className={`text-[10px] font-mono uppercase tracking-wider ${
-              isVault ? "text-stone-500" : "text-stone-400"
-            }`}
-          >
+          <p className="text-[10px] font-mono uppercase tracking-wider text-muted">
             Module {module.order}
           </p>
-          <h5
-            className={`text-[13px] font-serif font-bold mt-0.5 truncate flex items-center gap-1.5 ${
-              isVault ? "text-stone-100" : "text-stone-900"
-            }`}
-          >
+          <h5 className="text-[13px] font-serif font-bold mt-0.5 truncate flex items-center gap-1.5 text-ink">
             {module.title}
             {isLocked && (
-              <Lock
-                className={`w-3 h-3 shrink-0 ${isVault ? "text-stone-500" : "text-stone-400"}`}
-              />
+              <Lock className="w-3 h-3 shrink-0 text-muted" />
             )}
           </h5>
         </div>
         {hasDetails ? (
           isExpanded ? (
-            <ChevronUp className={`w-4 h-4 shrink-0 ${isVault ? "text-stone-500" : "text-stone-500"}`} />
+            <ChevronUp className="w-4 h-4 shrink-0 text-muted" />
           ) : (
-            <ChevronDown className={`w-4 h-4 shrink-0 ${isVault ? "text-stone-500" : "text-stone-500"}`} />
+            <ChevronDown className="w-4 h-4 shrink-0 text-muted" />
           )
         ) : null}
       </button>
@@ -80,11 +63,7 @@ export default function CurriculumModuleGroup({
             transition={{ duration: 0.2, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div
-              className={`px-2.5 pb-3 space-y-3 border-t ${
-                isVault ? "border-stone-800" : "border-stone-100"
-              }`}
-            >
+            <div className="px-2.5 pb-3 space-y-3 border-t border-line">
               {isLoadingLessons ? (
                 <div className="py-3">
                   <Loader fullScreen={false} label="Loading lessons..." />
@@ -98,7 +77,7 @@ export default function CurriculumModuleGroup({
                         <CurriculumItemRow
                           key={lesson.id}
                           icon={meta.icon}
-                          iconClassName={isVault ? meta.badgeVault : meta.badge}
+                          iconClassName={meta.badge}
                           title={lesson.title}
                           meta={
                             <>
@@ -113,7 +92,6 @@ export default function CurriculumModuleGroup({
                           }
                           isCompleted={lesson.is_completed}
                           isActive={isItemActive("LESSON", lesson.id)}
-                          isVault={isVault}
                           disabled={isLocked}
                           onClick={() => onSelectItem("LESSON", lesson.id)}
                         />
@@ -126,27 +104,16 @@ export default function CurriculumModuleGroup({
               {moduleAssignments.length > 0 && (
                 <div className="space-y-0.5 pt-2">
                   {moduleAssignments.map((assignment) => {
-                    const { label, className } = getAssignmentStatusMeta(assignment.submission, isVault);
+                    const { label, className } = getAssignmentStatusMeta(assignment.submission);
                     return (
                       <CurriculumItemRow
                         key={`assignment-${assignment.id}`}
                         icon={ClipboardList}
-                        iconClassName={
-                          isVault
-                            ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                            : "bg-amber-50 text-amber-600 border-amber-100"
-                        }
+                        iconClassName="bg-gold/12 text-gold border-gold/25"
                         title={assignment.title}
                         statusLabel={isLocked ? "Locked" : label}
-                        statusClassName={
-                          isLocked
-                            ? isVault
-                              ? "bg-white/5 text-stone-500 border-stone-700"
-                              : "bg-stone-50 text-stone-400 border-stone-200"
-                            : className
-                        }
+                        statusClassName={isLocked ? "bg-porcelain text-muted border-line" : className}
                         isActive={isItemActive("ASSIGNMENT", assignment.id)}
-                        isVault={isVault}
                         disabled={isLocked}
                         onClick={() => onSelectItem("ASSIGNMENT", assignment.id)}
                       />
@@ -158,27 +125,16 @@ export default function CurriculumModuleGroup({
               {moduleQuizzes.length > 0 && (
                 <div className="space-y-0.5 pt-2">
                   {moduleQuizzes.map((quiz) => {
-                    const { label, className } = getQuizStatusMeta(quiz, isVault);
+                    const { label, className } = getQuizStatusMeta(quiz);
                     return (
                       <CurriculumItemRow
                         key={`quiz-${quiz.id}`}
                         icon={HelpCircle}
-                        iconClassName={
-                          isVault
-                            ? "bg-violet-500/10 text-violet-400 border-violet-500/20"
-                            : "bg-violet-50 text-violet-600 border-violet-100"
-                        }
+                        iconClassName="bg-violet-50 text-violet-600 border-violet-100"
                         title={quiz.title}
                         statusLabel={isLocked ? "Locked" : label}
-                        statusClassName={
-                          isLocked
-                            ? isVault
-                              ? "bg-white/5 text-stone-500 border-stone-700"
-                              : "bg-stone-50 text-stone-400 border-stone-200"
-                            : className
-                        }
+                        statusClassName={isLocked ? "bg-porcelain text-muted border-line" : className}
                         isActive={isItemActive("QUIZ", quiz.id)}
-                        isVault={isVault}
                         disabled={isLocked}
                         onClick={() => onSelectItem("QUIZ", quiz.id)}
                       />

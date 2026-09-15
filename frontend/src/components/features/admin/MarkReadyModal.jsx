@@ -21,7 +21,7 @@ export default function MarkReadyModal({ isOpen, onClose, onConfirm, redemption,
       maxWidth="max-w-sm"
     >
       <div className="mb-6">
-        <label className="text-[11px] font-mono text-stone-500 block uppercase tracking-wider mb-1.5 font-semibold">
+        <label className="text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium">
           Code / Instructions (optional)
         </label>
         <textarea
@@ -30,7 +30,7 @@ export default function MarkReadyModal({ isOpen, onClose, onConfirm, redemption,
           disabled={isSubmitting}
           placeholder="e.g. CODE: SAVE20"
           rows={3}
-          className="w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-800 placeholder:text-stone-400 transition disabled:opacity-60 resize-none"
+          className="w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60 resize-none"
         />
       </div>
 
@@ -39,7 +39,7 @@ export default function MarkReadyModal({ isOpen, onClose, onConfirm, redemption,
           type="button"
           onClick={onClose}
           disabled={isSubmitting}
-          className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+          className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-xs font-semibold font-mono rounded-full tracking-wider transition-colors duration-150 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
         >
           Cancel
         </button>
@@ -47,11 +47,11 @@ export default function MarkReadyModal({ isOpen, onClose, onConfirm, redemption,
           type="button"
           onClick={() => onConfirm(notes.trim())}
           disabled={isSubmitting}
-          className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
+          className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-xs font-semibold font-mono rounded-full tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
         >
           {isSubmitting ? (
             <>
-              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
               Saving...
             </>
           ) : (

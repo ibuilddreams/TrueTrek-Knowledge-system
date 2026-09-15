@@ -65,8 +65,8 @@ export default function TeacherRequestsTab() {
       header: "Teacher",
       render: (request) => (
         <div>
-          <span className="font-semibold text-stone-800">{request.teacher?.name}</span>
-          <p className="text-[11px] text-stone-400 font-light">{request.teacher?.email}</p>
+          <span className="font-semibold text-ink">{request.teacher?.name}</span>
+          <p className="text-[11px] text-muted font-light">{request.teacher?.email}</p>
         </div>
       ),
     },
@@ -79,7 +79,7 @@ export default function TeacherRequestsTab() {
       key: "request_type",
       header: "Type",
       render: (request) => (
-        <span className="text-stone-600 font-mono text-xs">{request.request_type_display}</span>
+        <span className="text-muted font-mono text-xs">{request.request_type_display}</span>
       ),
     },
     {
@@ -91,14 +91,14 @@ export default function TeacherRequestsTab() {
       key: "created_at",
       header: "Submitted",
       render: (request) => (
-        <span className="text-stone-500 whitespace-nowrap">{formatDateTime(request.created_at)}</span>
+        <span className="text-muted whitespace-nowrap">{formatDateTime(request.created_at)}</span>
       ),
     },
     {
       key: "updated_at",
       header: "Last Updated",
       render: (request) => (
-        <span className="text-stone-500 whitespace-nowrap">{formatDateTime(request.updated_at)}</span>
+        <span className="text-muted whitespace-nowrap">{formatDateTime(request.updated_at)}</span>
       ),
     },
   ];
@@ -137,7 +137,7 @@ export default function TeacherRequestsTab() {
         </div>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
         <DataTable
           size="lg"
           columns={columns}

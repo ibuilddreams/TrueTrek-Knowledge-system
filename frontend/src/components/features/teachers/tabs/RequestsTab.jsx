@@ -35,13 +35,13 @@ export default function RequestsTab() {
     {
       key: "title",
       header: "Title",
-      render: (request) => <span className="font-semibold text-stone-800">{request.title}</span>,
+      render: (request) => <span className="font-semibold text-ink">{request.title}</span>,
     },
     {
       key: "request_type",
       header: "Type",
       render: (request) => (
-        <span className="text-stone-600 font-mono text-xs">{request.request_type_display}</span>
+        <span className="text-muted font-mono text-xs">{request.request_type_display}</span>
       ),
     },
     {
@@ -53,14 +53,14 @@ export default function RequestsTab() {
       key: "created_at",
       header: "Submitted",
       render: (request) => (
-        <span className="text-stone-500 whitespace-nowrap">{formatDateTime(request.created_at)}</span>
+        <span className="text-muted whitespace-nowrap">{formatDateTime(request.created_at)}</span>
       ),
     },
     {
       key: "updated_at",
       header: "Last Updated",
       render: (request) => (
-        <span className="text-stone-500 whitespace-nowrap">{formatDateTime(request.updated_at)}</span>
+        <span className="text-muted whitespace-nowrap">{formatDateTime(request.updated_at)}</span>
       ),
     },
   ];
@@ -69,15 +69,15 @@ export default function RequestsTab() {
     <div className="space-y-5">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
         <div>
-          <h2 className="text-lg font-serif font-bold text-stone-900">Requests & Issue Reports</h2>
-          <p className="text-sm text-stone-500 font-light mt-0.5">
+          <h2 className="text-lg font-serif font-bold text-ink">Requests & Issue Reports</h2>
+          <p className="text-sm text-muted font-light mt-0.5">
             Ask for a change or flag an error — track it here until the admin team resolves it.
           </p>
         </div>
         <button
           type="button"
           onClick={() => setIsFormOpen(true)}
-          className="shrink-0 px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-xs font-semibold font-mono rounded-xl tracking-wider uppercase shadow-md hover:shadow-lg transition-all flex items-center gap-2"
+          className="shrink-0 px-4 py-2.5 bg-pine hover:bg-moss text-paper text-xs font-semibold font-mono rounded-xl tracking-wider uppercase shadow-md hover:shadow-lg transition-all flex items-center gap-2"
           title="Request a Change / Report an Error"
           aria-label="Request a Change / Report an Error"
         >
@@ -86,7 +86,7 @@ export default function RequestsTab() {
         </button>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
         {!isLoading && !isError && requests.length === 0 ? (
           <EmptyState
             size="lg"
@@ -97,7 +97,7 @@ export default function RequestsTab() {
               <button
                 type="button"
                 onClick={() => setIsFormOpen(true)}
-                className="px-4 py-2.5 bg-stone-900 hover:bg-stone-800 text-stone-100 text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition"
+                className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition"
               >
                 New Request
               </button>

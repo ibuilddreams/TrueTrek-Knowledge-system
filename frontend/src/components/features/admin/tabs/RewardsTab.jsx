@@ -78,9 +78,9 @@ export default function RewardsTab() {
       header: "Reward",
       render: (reward) => (
         <div>
-          <span className="font-semibold text-stone-800">{reward.name}</span>
+          <span className="font-semibold text-ink">{reward.name}</span>
           {reward.description && (
-            <p className="text-[11px] text-stone-400 font-light line-clamp-1 max-w-xs">{reward.description}</p>
+            <p className="text-[11px] text-muted font-light line-clamp-1 max-w-xs">{reward.description}</p>
           )}
         </div>
       ),
@@ -89,13 +89,13 @@ export default function RewardsTab() {
       key: "reward_type",
       header: "Type",
       render: (reward) => (
-        <span className="text-[11px] font-mono uppercase tracking-wider text-stone-500">{reward.reward_type}</span>
+        <span className="text-[11px] font-mono uppercase tracking-wider text-muted">{reward.reward_type}</span>
       ),
     },
     {
       key: "points_required",
       header: "Points",
-      render: (reward) => <span className="font-mono font-bold text-stone-800">{reward.points_required.toLocaleString()}</span>,
+      render: (reward) => <span className="font-mono font-bold text-ink">{reward.points_required.toLocaleString()}</span>,
     },
     {
       key: "status",
@@ -146,7 +146,7 @@ export default function RewardsTab() {
         <button
           type="button"
           onClick={() => setIsFormOpen(true)}
-          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
+          className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2 shrink-0"
           title="Create a new reward"
           aria-label="Create a new reward"
         >
@@ -155,7 +155,7 @@ export default function RewardsTab() {
         </button>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
         <DataTable
           size="lg"
           columns={columns}

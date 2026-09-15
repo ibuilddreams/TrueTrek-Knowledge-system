@@ -31,7 +31,7 @@ export default function RedemptionHistoryTable() {
     {
       key: "reward",
       header: "Reward",
-      render: (redemption) => <span className="font-semibold text-stone-800">{redemption.reward?.name}</span>,
+      render: (redemption) => <span className="font-semibold text-ink">{redemption.reward?.name}</span>,
     },
     {
       key: "points_cost",
@@ -44,7 +44,7 @@ export default function RedemptionHistoryTable() {
       key: "created_at",
       header: "Redeemed",
       render: (redemption) => (
-        <span className="text-stone-500 whitespace-nowrap">{formatDateTime(redemption.created_at)}</span>
+        <span className="text-muted whitespace-nowrap">{formatDateTime(redemption.created_at)}</span>
       ),
     },
     {
@@ -56,7 +56,7 @@ export default function RedemptionHistoryTable() {
       key: "notes",
       header: "Notes",
       render: (redemption) => (
-        <span className="text-stone-500 font-light">
+        <span className="text-muted font-light">
           {redemption.status === "CANCELLED"
             ? redemption.cancellation_reason || "—"
             : redemption.status === "SCHEDULED"
@@ -68,7 +68,7 @@ export default function RedemptionHistoryTable() {
   ];
 
   return (
-    <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+    <div className="bg-paper border border-line rounded-2xl shadow-sm p-6">
       <DataTable
         size="lg"
         columns={columns}

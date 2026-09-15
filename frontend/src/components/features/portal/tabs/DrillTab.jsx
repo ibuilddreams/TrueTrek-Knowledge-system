@@ -68,7 +68,7 @@ export default function DrillTab({ onNotify }) {
 
   if (isLoading) {
     return (
-      <div className="bg-white border border-stone-200 rounded-2xl p-6 min-h-[40vh] flex items-center justify-center">
+      <div className="bg-paper border border-line rounded-2xl p-6 min-h-[40vh] flex items-center justify-center">
         <Loader fullScreen={false} label="Loading today's drill..." />
       </div>
     );
@@ -76,18 +76,18 @@ export default function DrillTab({ onNotify }) {
 
   if (isError) {
     return (
-      <div className="bg-white border border-stone-200 rounded-2xl p-6">
+      <div className="bg-paper border border-line rounded-2xl p-6">
         <div className="flex flex-col items-center justify-center text-center py-10 gap-3">
           <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-100 text-red-500 flex items-center justify-center">
             <AlertCircle className="w-5 h-5" />
           </div>
-          <p className="text-sm font-medium text-stone-600">
+          <p className="text-sm font-medium text-muted">
             {getApiErrorMessage(error, "Unable to load today's drill.")}
           </p>
           <button
             type="button"
             onClick={() => refetch()}
-            className="mt-1 bg-stone-900 hover:bg-stone-800 text-white font-semibold text-sm py-2 px-4 rounded-lg tracking-wide transition"
+            className="mt-1 bg-pine hover:bg-moss text-paper font-semibold text-sm py-2 px-4 rounded-lg tracking-wide transition"
           >
             Retry
           </button>
@@ -98,7 +98,7 @@ export default function DrillTab({ onNotify }) {
 
   if (!data || data.type === "UNAVAILABLE") {
     return (
-      <div className="bg-white border border-stone-200 rounded-2xl p-6">
+      <div className="bg-paper border border-line rounded-2xl p-6">
         <EmptyState
           icon={Swords}
           label="No drill available today"

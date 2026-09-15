@@ -6,10 +6,10 @@ export default function TableSkeleton({ rows = 5, columns = 4 }) {
       {Array.from({ length: rows }).map((_, rowIndex) => (
         <div
           key={rowIndex}
-          className="flex items-center gap-4 p-3 rounded-xl border border-stone-100 bg-stone-50/60 animate-pulse"
+          className="flex items-center gap-4 p-3 rounded-xl border border-line bg-porcelain/60 animate-pulse"
         >
           {Array.from({ length: columns }).map((_, colIndex) => (
-            <div key={colIndex} className="h-3 rounded bg-stone-200 flex-1" />
+            <div key={colIndex} className="h-3 rounded bg-line flex-1" />
           ))}
         </div>
       ))}

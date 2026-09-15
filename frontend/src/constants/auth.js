@@ -9,11 +9,6 @@ export const AUTH_COOKIE = {
   USER: "ttl_auth_user",
 };
 
-/** Non-sensitive UI preference cookie (readable from the client). */
-export const PREFERENCE_COOKIE = {
-  THEME: "ttl_theme",
-};
-
 export const AUTH_ROLES = {
   ADMIN: "admin",
   STUDENT: "student",

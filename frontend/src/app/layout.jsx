@@ -32,7 +32,7 @@ export default function RootLayout({ children }) {
       className={`${inter.variable} ${playfair.variable} ${spaceGrotesk.variable}`}
     >
       <body
-        className={`${inter.className} antialiased overflow-x-hidden bg-[#faf9f6] text-stone-900`}
+        className={`${inter.className} antialiased overflow-x-hidden bg-porcelain text-ink`}
         suppressHydrationWarning
       >
         <AppProviders>{children}</AppProviders>

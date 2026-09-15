@@ -7,7 +7,6 @@ import Loader from "@/components/ui/Loader";
 import { getAssignmentAttachments } from "@/services/assignmentsService";
 import { formatDateTime } from "@/lib/adminFormatters";
 import { useMyAssignmentSubmission } from "@/hooks/student/useAssignmentSubmission";
-import { useTheme } from "@/hooks/useTheme";
 import AssignmentSubmissionForm from "./AssignmentSubmissionForm";
 import AssignmentSubmissionStatus from "./AssignmentSubmissionStatus";
 
@@ -16,7 +15,6 @@ export default function AssignmentDetailModal({
   canInteract,
   onClose,
 }) {
-  const { isVault } = useTheme();
   const isOpen = Boolean(assignment);
   const assignmentId = assignment?.id;
 
@@ -56,9 +54,7 @@ export default function AssignmentDetailModal({
         <div className="space-y-6">
           <div className="space-y-3">
             <p
-              className={`text-sm font-light leading-relaxed whitespace-pre-line ${
-                isVault ? "text-stone-300" : "text-stone-600"
-              }`}
+              className="text-sm font-light leading-relaxed whitespace-pre-line text-muted"
             >
               {assignment.description ||
                 "No instructions have been added for this assignment."}
@@ -67,12 +63,8 @@ export default function AssignmentDetailModal({
               <span
                 className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border ${
                   isPastDue
-                    ? isVault
-                      ? "bg-rose-500/10 text-rose-400 border-rose-500/20"
-                      : "bg-rose-50 text-rose-600 border-rose-100"
-                    : isVault
-                      ? "bg-white/5 text-stone-400 border-stone-700"
-                      : "bg-stone-50 text-stone-500 border-stone-200"
+                    ? "bg-rose-50 text-rose-600 border-rose-100"
+                    : "bg-porcelain text-muted border-line"
                 }`}
               >
                 <Calendar className="w-3 h-3" />
@@ -80,11 +72,7 @@ export default function AssignmentDetailModal({
               </span>
               {assignment.allow_resubmission ? (
                 <span
-                  className={`inline-flex items-center px-2.5 py-1 rounded-lg border ${
-                    isVault
-                      ? "bg-amber-500/10 text-amber-400 border-amber-500/20"
-                      : "bg-amber-50 text-amber-700 border-amber-100"
-                  }`}
+                  className="inline-flex items-center px-2.5 py-1 rounded-lg border bg-gold/12 text-gold border-gold/25"
                 >
                   Resubmission allowed
                 </span>
@@ -95,9 +83,7 @@ export default function AssignmentDetailModal({
           {attachments.length > 0 && (
             <div className="space-y-2">
               <h5
-                className={`text-sm font-mono uppercase tracking-wider ${
-                  isVault ? "text-stone-500" : "text-stone-400"
-                }`}
+                className="text-sm font-mono uppercase tracking-wider text-muted"
               >
                 Reference materials
               </h5>
@@ -105,15 +91,11 @@ export default function AssignmentDetailModal({
                 {attachments.map((attachment) => (
                   <div
                     key={attachment.id}
-                    className={`flex items-center justify-between gap-2 text-[12px] border rounded-lg px-3 py-2 ${
-                      isVault
-                        ? "text-stone-300 bg-white/5 border-stone-800"
-                        : "text-stone-600 bg-stone-50 border-stone-200"
-                    }`}
+                    className="flex items-center justify-between gap-2 text-[12px] border rounded-lg px-3 py-2 text-muted bg-porcelain border-line"
                   >
                     <span className="inline-flex items-center gap-1.5 min-w-0 truncate">
                       <Paperclip
-                        className={`w-3.5 h-3.5 shrink-0 ${isVault ? "text-stone-500" : "text-stone-400"}`}
+                        className="w-3.5 h-3.5 shrink-0 text-muted"
                       />
                       <span className="truncate">
                         {attachment.original_name || attachment.file}
@@ -122,11 +104,7 @@ export default function AssignmentDetailModal({
                     <a
                       href={attachment.file}
                       download={attachment.original_name || true}
-                      className={`inline-flex items-center gap-1 px-2.5 py-1 border text-[11px] font-mono uppercase tracking-wider rounded-md transition shrink-0 ${
-                        isVault
-                          ? "border-stone-700 hover:border-amber-500/50 hover:bg-white/10 text-stone-400 hover:text-amber-400"
-                          : "border-stone-200 hover:border-amber-300 hover:bg-white text-stone-500 hover:text-amber-800"
-                      }`}
+                      className="inline-flex items-center gap-1 px-2.5 py-1 border text-[11px] font-mono uppercase tracking-wider rounded-md transition shrink-0 border-line hover:border-pine hover:bg-paper text-muted hover:text-pine"
                     >
                       <Download className="w-3.5 h-3.5" />
                       Download
@@ -138,7 +116,7 @@ export default function AssignmentDetailModal({
           )}
 
           <div
-            className={`pt-4 border-t space-y-4 ${isVault ? "border-stone-800" : "border-stone-100"}`}
+            className="pt-4 border-t space-y-4 border-line"
           >
             {isLoadingSubmission ? (
               <div className="flex justify-center py-6" aria-busy="true">

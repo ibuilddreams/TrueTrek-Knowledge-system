@@ -29,7 +29,7 @@ import {
 const RichTextEditor = dynamic(() => import("@/components/ui/RichTextEditor"), {
   ssr: false,
   loading: () => (
-    <div className="h-40 rounded-xl border border-stone-200 bg-stone-50 animate-pulse" />
+    <div className="h-40 rounded-xl border border-line bg-porcelain animate-pulse" />
   ),
 });
 
@@ -81,10 +81,10 @@ const INITIAL_FORM = {
 };
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-850 placeholder:text-stone-400 transition disabled:opacity-60";
+  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-[11px] font-mono text-stone-450 block uppercase tracking-wider mb-1.5 font-semibold";
+  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
 
 const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
 
@@ -107,13 +107,13 @@ function getFileExtension(name) {
 
 function FilePreviewCard({ file, icon: Icon }) {
   return (
-    <div className="mt-3 flex items-center gap-3 p-3 rounded-xl border border-stone-200 bg-stone-50/60">
-      <div className="w-10 h-10 rounded-lg bg-amber-600/10 text-amber-700 flex items-center justify-center shrink-0">
+    <div className="mt-3 flex items-center gap-3 p-3 rounded-xl border border-line bg-porcelain/60">
+      <div className="w-10 h-10 rounded-lg bg-gold/12 text-gold flex items-center justify-center shrink-0">
         <Icon className="w-5 h-5" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-stone-800 truncate">{file.name}</p>
-        <p className="text-[11px] font-mono uppercase text-stone-400 tracking-wider mt-0.5">
+        <p className="text-sm font-semibold text-ink truncate">{file.name}</p>
+        <p className="text-[11px] font-mono uppercase text-muted tracking-wider mt-0.5">
           {getFileExtension(file.name)} · {formatFileSize(file.size)}
         </p>
       </div>
@@ -428,8 +428,8 @@ export default function TeacherLessonFormModal({
                   disabled={isSubmitting}
                   className={`px-3 py-2.5 rounded-xl text-xs font-semibold font-mono tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
                     isActive
-                      ? "bg-stone-900 text-white border-stone-900"
-                      : "bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100"
+                      ? "bg-pine text-paper border-pine"
+                      : "bg-porcelain text-muted border-line hover:bg-porcelain"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -452,8 +452,8 @@ export default function TeacherLessonFormModal({
                   disabled={isSubmitting}
                   className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-semibold font-mono tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
                     videoSourceMode === mode.value
-                      ? "bg-stone-900 text-white border-stone-900"
-                      : "bg-stone-50 text-stone-500 border-stone-200 hover:bg-stone-100"
+                      ? "bg-pine text-paper border-pine"
+                      : "bg-porcelain text-muted border-line hover:bg-porcelain"
                   }`}
                 >
                   <mode.icon className="w-3.5 h-3.5" />
@@ -476,13 +476,13 @@ export default function TeacherLessonFormModal({
               className={FIELD_CLASS}
               autoComplete="off"
             />
-            <p className="mt-1.5 text-[11px] font-mono text-stone-400">
+            <p className="mt-1.5 text-[11px] font-mono text-muted">
               Paste a video link, or the full &lt;iframe&gt; embed code — we&apos;ll extract the link automatically.
             </p>
             {fieldErrors.video_url && <p className={ERROR_CLASS}>{fieldErrors.video_url}</p>}
 
             {trimmedVideoUrl && !isIframeEmbedCode(trimmedVideoUrl) && (
-              <div className="mt-3 rounded-xl overflow-hidden border border-stone-200 bg-stone-900 aspect-video">
+              <div className="mt-3 rounded-xl overflow-hidden border border-line bg-ink aspect-video">
                 {videoEmbedUrl ? (
                   <iframe
                     src={videoEmbedUrl}
@@ -512,9 +512,9 @@ export default function TeacherLessonFormModal({
             {fieldErrors.file && <p className={ERROR_CLASS}>{fieldErrors.file}</p>}
 
             {!file && existingFileUrl && (
-              <p className="text-[11px] font-mono text-stone-500 mt-2">
+              <p className="text-[11px] font-mono text-muted mt-2">
                 Current file:{" "}
-                <a href={existingFileUrl} target="_blank" rel="noreferrer" className="text-amber-700 underline">
+                <a href={existingFileUrl} target="_blank" rel="noreferrer" className="text-pine underline">
                   view
                 </a>{" "}
                 — leave empty to keep it.
@@ -547,7 +547,7 @@ export default function TeacherLessonFormModal({
                   rows={8}
                   className={`${FIELD_CLASS} resize-none`}
                 />
-                <p className="mt-1.5 text-[11px] font-mono text-stone-400">
+                <p className="mt-1.5 text-[11px] font-mono text-muted">
                   This lesson was authored in plain Markdown — edits stay in Markdown.
                 </p>
               </>
@@ -586,9 +586,9 @@ export default function TeacherLessonFormModal({
               {fieldErrors.file && <p className={ERROR_CLASS}>{fieldErrors.file}</p>}
 
               {!file && existingFileUrl && (
-                <p className="text-[11px] font-mono text-stone-500 mt-2">
+                <p className="text-[11px] font-mono text-muted mt-2">
                   Current file:{" "}
-                  <a href={existingFileUrl} target="_blank" rel="noreferrer" className="text-amber-700 underline">
+                  <a href={existingFileUrl} target="_blank" rel="noreferrer" className="text-pine underline">
                     view
                   </a>{" "}
                   — leave empty to keep it.
@@ -629,16 +629,16 @@ export default function TeacherLessonFormModal({
             disabled={isSubmitting}
             className={FIELD_CLASS}
           />
-          <p className="mt-1.5 text-[11px] font-mono text-stone-400">1 = first position</p>
+          <p className="mt-1.5 text-[11px] font-mono text-muted">1 = first position</p>
           {fieldErrors.order && <p className={ERROR_CLASS}>{fieldErrors.order}</p>}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-stone-100">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-line">
           <button
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-sm font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-all flex items-center justify-center gap-2 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -646,11 +646,11 @@ export default function TeacherLessonFormModal({
           <button
             type="submit"
             disabled={isSubmitting || modules.length === 0}
-            className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
                 {isEditMode ? "Saving..." : "Creating..."}
               </>
             ) : (
@@ -663,7 +663,7 @@ export default function TeacherLessonFormModal({
         </div>
 
         {modules.length === 0 && (
-          <p className="text-[11px] font-mono text-amber-700 flex items-center gap-1.5">
+          <p className="text-[11px] font-mono text-pine flex items-center gap-1.5">
             <FilePlus2 className="w-3 h-3" />
             Create a module first before adding a lesson.
           </p>

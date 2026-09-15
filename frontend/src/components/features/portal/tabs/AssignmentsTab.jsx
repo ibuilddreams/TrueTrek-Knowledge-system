@@ -21,28 +21,18 @@ import { useStudentAssignments } from "@/hooks/student/useStudentAssignments";
 import { getStudentEnrollments } from "@/services/studentCoursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatDateTime } from "@/lib/adminFormatters";
-import { useTheme } from "@/hooks/useTheme";
 import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
 import AssignmentDetailModal from "../course-detail/AssignmentDetailModal";
 import CourseworkSummaryCard from "../CourseworkSummaryCard";
 
 const STATUS_STYLES = {
-  DRAFT: "bg-stone-50 text-stone-500 border-stone-200",
-  SUBMITTED: "bg-amber-50 text-amber-700 border-amber-100",
+  DRAFT: "bg-porcelain text-muted border-line",
+  SUBMITTED: "bg-gold/12 text-gold border-gold/25",
   LATE: "bg-rose-50 text-rose-600 border-rose-100",
   GRADED: "bg-emerald-50 text-emerald-700 border-emerald-100",
-  RETURNED: "bg-sky-50 text-sky-700 border-sky-100",
-  RESUBMITTED: "bg-amber-50 text-amber-700 border-amber-100",
-};
-
-const STATUS_STYLES_VAULT = {
-  DRAFT: "bg-stone-500/10 text-stone-400 border-stone-500/20",
-  SUBMITTED: "bg-amber-500/10 text-amber-400 border-amber-500/20",
-  LATE: "bg-rose-500/10 text-rose-400 border-rose-500/20",
-  GRADED: "bg-emerald-500/10 text-emerald-400 border-emerald-500/20",
-  RETURNED: "bg-sky-500/10 text-sky-400 border-sky-500/20",
-  RESUBMITTED: "bg-amber-500/10 text-amber-400 border-amber-500/20",
+  RETURNED: "bg-sky/60 text-blue border-blue/20",
+  RESUBMITTED: "bg-gold/12 text-gold border-gold/25",
 };
 
 const STATUS_ICON = {
@@ -54,17 +44,14 @@ const STATUS_ICON = {
   RESUBMITTED: RefreshCw,
 };
 
-const NOT_SUBMITTED_STYLE = "bg-stone-50 text-stone-500 border-stone-200";
-const NOT_SUBMITTED_STYLE_VAULT = "bg-stone-500/10 text-stone-400 border-stone-500/20";
+const NOT_SUBMITTED_STYLE = "bg-porcelain text-muted border-line";
 const OVERDUE_STYLE = "bg-rose-50 text-rose-600 border-rose-100";
-const OVERDUE_STYLE_VAULT = "bg-rose-500/10 text-rose-400 border-rose-500/20";
-const LOCKED_STYLE = "bg-stone-100 text-stone-400 border-stone-200";
-const LOCKED_STYLE_VAULT = "bg-white/5 text-stone-500 border-stone-700";
+const LOCKED_STYLE = "bg-porcelain text-muted border-line";
 
 const SCORE_TONES = {
-  high: { bar: "bg-emerald-500", text: "text-emerald-700", textVault: "text-emerald-400" },
-  mid: { bar: "bg-amber-500", text: "text-amber-700", textVault: "text-amber-400" },
-  low: { bar: "bg-rose-500", text: "text-rose-600", textVault: "text-rose-400" },
+  high: { bar: "bg-emerald-500", text: "text-emerald-700" },
+  mid: { bar: "bg-gold", text: "text-gold" },
+  low: { bar: "bg-rose-500", text: "text-rose-600" },
 };
 
 function scoreTone(percentage) {
@@ -103,17 +90,11 @@ function sortAssignments(list) {
   return [...pending, ...submitted];
 }
 
-function StatChip({ label, value, tone = "stone", isVault }) {
+function StatChip({ label, value, tone = "stone" }) {
   const toneClasses = {
-    stone: isVault
-      ? "bg-white/5 border-stone-700 text-stone-300"
-      : "bg-stone-50 border-stone-100 text-stone-700",
-    amber: isVault
-      ? "bg-amber-500/10 border-amber-500/20 text-amber-400"
-      : "bg-amber-50 border-amber-100 text-amber-800",
-    emerald: isVault
-      ? "bg-emerald-500/10 border-emerald-500/20 text-emerald-400"
-      : "bg-emerald-50 border-emerald-100 text-emerald-700",
+    stone: "bg-porcelain border-line text-muted",
+    amber: "bg-gold/12 border-gold/25 text-gold",
+    emerald: "bg-emerald-50 border-emerald-100 text-emerald-700",
   };
   return (
     <div
@@ -127,19 +108,15 @@ function StatChip({ label, value, tone = "stone", isVault }) {
   );
 }
 
-function FilterButton({ active, onClick, isVault, children }) {
+function FilterButton({ active, onClick, children }) {
   return (
     <button
       type="button"
       onClick={onClick}
       className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase tracking-wider border transition ${
         active
-          ? isVault
-            ? "bg-amber-600 border-amber-600 text-stone-950"
-            : "bg-stone-900 border-stone-900 text-white"
-          : isVault
-            ? "bg-stone-900/60 border-stone-700 text-stone-400 hover:border-amber-600/50 hover:text-amber-400"
-            : "bg-white border-stone-200 text-stone-500 hover:border-amber-300 hover:text-amber-800"
+          ? "bg-pine border-pine text-paper"
+          : "bg-paper border-line text-muted hover:border-pine/40 hover:text-pine"
       }`}
     >
       {children}
@@ -147,7 +124,7 @@ function FilterButton({ active, onClick, isVault, children }) {
   );
 }
 
-function AssignmentRow({ assignment, isVault, onOpen }) {
+function AssignmentRow({ assignment, onOpen }) {
   const submission = assignment.submission;
   const hasSubmission = Boolean(submission);
   const isGraded = hasSubmission && submission.marks !== null;
@@ -159,20 +136,12 @@ function AssignmentRow({ assignment, isVault, onOpen }) {
   const isLocked = Boolean(assignment.is_locked) && !hasSubmission;
 
   const statusClass = isLocked
-    ? isVault
-      ? LOCKED_STYLE_VAULT
-      : LOCKED_STYLE
+    ? LOCKED_STYLE
     : hasSubmission
-      ? isVault
-        ? STATUS_STYLES_VAULT[submission.status] || STATUS_STYLES_VAULT.DRAFT
-        : STATUS_STYLES[submission.status] || STATUS_STYLES.DRAFT
+      ? STATUS_STYLES[submission.status] || STATUS_STYLES.DRAFT
       : isOverdue
-        ? isVault
-          ? OVERDUE_STYLE_VAULT
-          : OVERDUE_STYLE
-        : isVault
-          ? NOT_SUBMITTED_STYLE_VAULT
-          : NOT_SUBMITTED_STYLE;
+        ? OVERDUE_STYLE
+        : NOT_SUBMITTED_STYLE;
   const StatusIcon = isLocked
     ? Lock
     : hasSubmission
@@ -206,11 +175,7 @@ function AssignmentRow({ assignment, isVault, onOpen }) {
       onClick={isLocked ? undefined : onOpen}
       disabled={isLocked}
       title={isLocked ? assignment.lock_info?.reason : undefined}
-      className={`group w-full flex items-center gap-3 rounded-xl border transition p-3.5 text-left disabled:cursor-default disabled:opacity-70 ${
-        isVault
-          ? "border-stone-800 bg-[#161412] enabled:hover:border-amber-700/50 enabled:hover:shadow-[0_8px_24px_-18px_rgba(0,0,0,0.6)]"
-          : "border-stone-200 bg-white enabled:hover:border-amber-300 enabled:hover:shadow-[0_8px_24px_-18px_rgba(28,25,23,0.35)]"
-      }`}
+      className="group w-full flex items-center gap-3 rounded-xl border transition p-3.5 text-left disabled:cursor-default disabled:opacity-70 border-line bg-paper enabled:hover:border-pine enabled:hover:shadow-[0_8px_24px_-18px_rgba(28,25,23,0.35)]"
     >
       <span
         className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 border ${statusClass}`}
@@ -218,18 +183,10 @@ function AssignmentRow({ assignment, isVault, onOpen }) {
         <StatusIcon className="w-4 h-4" />
       </span>
       <span className="min-w-0 flex-1">
-        <span
-          className={`block text-[13px] font-medium truncate ${
-            isVault ? "text-stone-200" : "text-stone-800"
-          }`}
-        >
+        <span className="block text-[13px] font-medium truncate text-ink">
           {assignment.title}
         </span>
-        <span
-          className={`flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-mono uppercase tracking-wider mt-1 ${
-            isVault ? "text-stone-500" : "text-stone-400"
-          }`}
-        >
+        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-mono uppercase tracking-wider mt-1 text-muted">
           {assignment.module ? <span>{assignment.module.title}</span> : null}
           {hasSubmission && submission.submitted_at ? (
             <span className="flex items-center gap-1">
@@ -253,7 +210,7 @@ function AssignmentRow({ assignment, isVault, onOpen }) {
         </span>
         {isGraded ? (
           <span className="flex items-center gap-1.5 w-full">
-            <span className={`flex-1 h-1.5 rounded-full overflow-hidden ${isVault ? "bg-white/10" : "bg-stone-100"}`}>
+            <span className="flex-1 h-1.5 rounded-full overflow-hidden bg-porcelain">
               <span
                 className={`block h-full rounded-full ${tone.bar}`}
                 style={{
@@ -261,7 +218,7 @@ function AssignmentRow({ assignment, isVault, onOpen }) {
                 }}
               />
             </span>
-            <span className={`text-xs font-mono font-bold ${isVault ? tone.textVault : tone.text}`}>
+            <span className={`text-xs font-mono font-bold ${tone.text}`}>
               {submission.marks}/{assignment.total_marks}
             </span>
           </span>
@@ -274,7 +231,7 @@ function AssignmentRow({ assignment, isVault, onOpen }) {
           {statusLabel}
         </span>
         {isGraded ? (
-          <span className={`text-xs font-mono ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+          <span className="text-xs font-mono text-muted">
             {submission.marks}/{assignment.total_marks}
             {submission.percentage !== null
               ? ` · ${submission.percentage}%`
@@ -285,20 +242,13 @@ function AssignmentRow({ assignment, isVault, onOpen }) {
       {isLocked ? (
         <span className="w-4 h-4 shrink-0" />
       ) : (
-        <ChevronRight
-          className={`w-4 h-4 transition shrink-0 ${
-            isVault
-              ? "text-stone-600 group-hover:text-amber-500"
-              : "text-stone-300 group-hover:text-amber-600"
-          }`}
-        />
+        <ChevronRight className="w-4 h-4 transition shrink-0 text-muted group-hover:text-pine" />
       )}
     </button>
   );
 }
 
 export default function AssignmentsTab() {
-  const { isVault } = useTheme();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -441,34 +391,20 @@ export default function AssignmentsTab() {
     );
   } else if (isError) {
     content = (
-      <div
-        className={`border rounded-2xl p-8 text-center max-w-lg mx-auto ${
-          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200 bg-white"
-        }`}
-      >
-        <div
-          className={`w-12 h-12 border rounded-2xl flex items-center justify-center mx-auto mb-4 ${
-            isVault
-              ? "bg-rose-500/10 border-rose-500/20 text-rose-400"
-              : "bg-rose-50 border-rose-100 text-rose-600"
-          }`}
-        >
+      <div className="border rounded-2xl p-8 text-center max-w-lg mx-auto border-line bg-paper">
+        <div className="w-12 h-12 border rounded-2xl flex items-center justify-center mx-auto mb-4 bg-rose-50 border-rose-100 text-rose-600">
           <AlertCircle className="w-6 h-6" />
         </div>
-        <h2 className={`text-xl font-serif font-bold mb-2 ${isVault ? "text-stone-50" : "text-stone-900"}`}>
+        <h2 className="text-xl font-serif font-bold mb-2 text-ink">
           Failed to Load Assignments
         </h2>
-        <p className={`text-sm font-light mb-6 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+        <p className="text-sm font-light mb-6 text-muted">
           {getApiErrorMessage(error, "Unable to load your assignments.")}
         </p>
         <button
           type="button"
           onClick={() => refetch()}
-          className={`inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition ${
-            isVault
-              ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
-              : "bg-stone-900 hover:bg-stone-800 text-stone-100"
-          }`}
+          className="inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
         >
           <RefreshCw className="w-4 h-4" />
           Retry
@@ -477,11 +413,7 @@ export default function AssignmentsTab() {
     );
   } else if (assignments.length === 0) {
     content = (
-      <div
-        className={`rounded-2xl border border-dashed ${
-          isVault ? "border-stone-700 bg-[#161412]/70" : "border-stone-200 bg-white/70"
-        }`}
-      >
+      <div className="rounded-2xl border border-dashed border-line bg-paper/70">
         <EmptyState
           icon={ClipboardList}
           label="No assignments yet"
@@ -493,22 +425,14 @@ export default function AssignmentsTab() {
   } else if (selectedCourseId) {
     if (!selectedGroup) {
       content = (
-        <div
-          className={`rounded-2xl border border-dashed p-10 text-center space-y-4 ${
-            isVault ? "border-stone-700 bg-[#161412]/70" : "border-stone-200 bg-white/70"
-          }`}
-        >
-          <p className={`text-sm ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+        <div className="rounded-2xl border border-dashed p-10 text-center space-y-4 border-line bg-paper/70">
+          <p className="text-sm text-muted">
             We couldn&apos;t find assignments for that course.
           </p>
           <button
             type="button"
             onClick={closeCourse}
-            className={`inline-flex items-center gap-2 px-4 py-2.5 text-sm font-mono uppercase tracking-wider rounded-xl transition ${
-              isVault
-                ? "bg-amber-600 hover:bg-amber-500 text-stone-950"
-                : "bg-stone-900 hover:bg-stone-800 text-white"
-            }`}
+            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-mono uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
           >
             Back to Assignments
           </button>
@@ -522,21 +446,17 @@ export default function AssignmentsTab() {
           <button
             type="button"
             onClick={closeCourse}
-            className={`inline-flex items-center gap-1.5 px-3.5 py-2 border text-xs font-mono uppercase tracking-wider rounded-xl transition ${
-              isVault
-                ? "border-stone-700 hover:border-amber-600/50 hover:text-amber-400 text-stone-400"
-                : "border-stone-200 hover:border-amber-300 hover:text-amber-800 text-stone-600"
-            }`}
+            className="inline-flex items-center gap-1.5 px-3.5 py-2 border text-xs font-mono uppercase tracking-wider rounded-xl transition border-line hover:border-pine hover:text-pine text-muted"
           >
             <ArrowLeft className="w-3.5 h-3.5" />
             Back to Assignments
           </button>
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <h2 className={`font-serif font-bold text-2xl ${isVault ? "text-stone-50" : "text-stone-900"}`}>
+              <h2 className="font-serif font-bold text-2xl text-ink">
                 {selectedGroup.course.title}
               </h2>
-              <p className={`text-sm font-light mt-1 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+              <p className="text-sm font-light mt-1 text-muted">
                 {selectedGroup.assignments.length} assignment
                 {selectedGroup.assignments.length === 1 ? "" : "s"} total
                 {!canInteractWithSelectedCourse
@@ -549,9 +469,8 @@ export default function AssignmentsTab() {
                 label="To do"
                 value={pendingCount}
                 tone={pendingCount > 0 ? "amber" : "stone"}
-                isVault={isVault}
               />
-              <StatChip label="Graded" value={gradedCount} tone="emerald" isVault={isVault} />
+              <StatChip label="Graded" value={gradedCount} tone="emerald" />
               <StatChip
                 label="Avg score"
                 value={
@@ -560,7 +479,6 @@ export default function AssignmentsTab() {
                     : `${selectedGroup.averagePercentage}%`
                 }
                 tone="amber"
-                isVault={isVault}
               />
             </div>
           </div>
@@ -579,7 +497,6 @@ export default function AssignmentsTab() {
                   key={filter.id}
                   active={statusFilter === filter.id}
                   onClick={() => setStatusFilter(filter.id)}
-                  isVault={isVault}
                 >
                   {filter.label} ({count})
                 </FilterButton>
@@ -587,11 +504,7 @@ export default function AssignmentsTab() {
             })}
           </div>
           {filteredAssignments.length === 0 ? (
-            <div
-              className={`rounded-2xl border border-dashed ${
-                isVault ? "border-stone-700 bg-[#161412]/70" : "border-stone-200 bg-white/70"
-              }`}
-            >
+            <div className="rounded-2xl border border-dashed border-line bg-paper/70">
               <EmptyState
                 icon={ClipboardList}
                 label="Nothing here"
@@ -606,7 +519,6 @@ export default function AssignmentsTab() {
                 <AssignmentRow
                   key={assignment.id}
                   assignment={assignment}
-                  isVault={isVault}
                   onOpen={() => setDetailAssignment(assignment)}
                 />
               ))}
@@ -619,17 +531,13 @@ export default function AssignmentsTab() {
     content = (
       <div className="space-y-6">
         <div>
-          <p
-            className={`text-[11px] font-mono uppercase tracking-[0.2em] mb-2 ${
-              isVault ? "text-amber-500" : "text-amber-700/80"
-            }`}
-          >
+          <p className="text-[11px] font-mono uppercase tracking-[0.2em] mb-2 text-pine/80">
             Coursework
           </p>
-          <h2 className={`font-serif font-bold text-2xl sm:text-3xl ${isVault ? "text-stone-50" : "text-stone-900"}`}>
+          <h2 className="font-serif font-bold text-2xl sm:text-3xl text-ink">
             Your assignments
           </h2>
-          <p className={`text-sm font-light mt-2 ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+          <p className="text-sm font-light mt-2 text-muted">
             Grouped by course — open a course to submit pending work or review
             past submissions, marks, and feedback.
           </p>
@@ -651,7 +559,6 @@ export default function AssignmentsTab() {
               completedCount={group.gradedCount}
               completedLabel="Graded"
               averagePercentage={group.averagePercentage}
-              isVault={isVault}
               onOpen={() => openCourse(group.course.id)}
             />
           ))}

@@ -78,13 +78,13 @@ export default function QuestionnaireTab() {
       key: "text",
       header: "Question",
       render: (question) => (
-        <span className="font-semibold text-stone-800 line-clamp-2">{question.text}</span>
+        <span className="font-semibold text-ink line-clamp-2">{question.text}</span>
       ),
     },
     {
       key: "order",
       header: "Order",
-      render: (question) => <span className="font-mono text-stone-600">{question.order}</span>,
+      render: (question) => <span className="font-mono text-muted">{question.order}</span>,
     },
     {
       key: "options",
@@ -134,7 +134,7 @@ export default function QuestionnaireTab() {
         <button
           type="button"
           onClick={() => setIsFormOpen(true)}
-          className="px-4 py-2.5 bg-gradient-to-r from-amber-600 to-amber-800 hover:from-amber-700 hover:to-amber-900 text-stone-100 text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0"
+          className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2 shrink-0"
           title="Create a new question"
           aria-label="Create a new question"
         >
@@ -143,7 +143,7 @@ export default function QuestionnaireTab() {
         </button>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
+      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
         <DataTable size="lg"
           columns={columns}
           rows={paginatedQuestions}

@@ -5,7 +5,6 @@ import { Document, Page, pdfjs } from "react-pdf";
 import "react-pdf/dist/Page/TextLayer.css";
 import "react-pdf/dist/Page/AnnotationLayer.css";
 import { Download, Loader2, Minus, Plus, TriangleAlert } from "lucide-react";
-import { useTheme } from "@/hooks/useTheme";
 import { useFileDownload } from "@/hooks/useFileDownload";
 import { getFilenameFromUrl } from "@/lib/downloadFile";
 
@@ -20,18 +19,14 @@ const MIN_SCALE = 0.75;
 const MAX_SCALE = 2;
 const SCALE_STEP = 0.25;
 
-function ToolbarButton({ onClick, disabled, isVault, children, title }) {
+function ToolbarButton({ onClick, disabled, children, title }) {
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
       title={title}
-      className={`inline-flex items-center justify-center w-7 h-7 rounded-lg border disabled:opacity-40 disabled:cursor-not-allowed transition ${
-        isVault
-          ? "border-stone-700 text-stone-300 hover:border-amber-500/50 hover:text-amber-400"
-          : "border-stone-200 text-stone-600 hover:border-amber-300 hover:text-amber-800"
-      }`}
+      className="inline-flex items-center justify-center w-7 h-7 rounded-lg border disabled:opacity-40 disabled:cursor-not-allowed transition border-line text-muted hover:border-pine hover:text-pine"
     >
       {children}
     </button>
@@ -39,7 +34,6 @@ function ToolbarButton({ onClick, disabled, isVault, children, title }) {
 }
 
 export default function PdfLessonViewer({ fileUrl, title }) {
-  const { isVault } = useTheme();
   const { download, isDownloading } = useFileDownload();
   const [numPages, setNumPages] = useState(null);
   const [scale, setScale] = useState(1);
@@ -49,19 +43,13 @@ export default function PdfLessonViewer({ fileUrl, title }) {
 
   return (
     <div
-      className={`rounded-2xl border overflow-hidden ${
-        isVault ? "border-stone-800 bg-[#0c0b0a]" : "border-stone-200 bg-stone-100"
-      }`}
+      className="rounded-2xl border overflow-hidden border-line bg-porcelain"
     >
       <div
-        className={`flex items-center justify-between gap-3 px-4 py-2.5 border-b ${
-          isVault ? "border-stone-800 bg-[#161412]" : "border-stone-200 bg-white"
-        }`}
+        className="flex items-center justify-between gap-3 px-4 py-2.5 border-b border-line bg-paper"
       >
         <p
-          className={`text-xs font-mono uppercase tracking-wider truncate ${
-            isVault ? "text-stone-400" : "text-stone-500"
-          }`}
+          className="text-xs font-mono uppercase tracking-wider truncate text-muted"
         >
           {numPages ? `${numPages} page${numPages === 1 ? "" : "s"}` : "PDF document"}
         </p>
@@ -70,22 +58,18 @@ export default function PdfLessonViewer({ fileUrl, title }) {
           <ToolbarButton
             onClick={() => setScale((value) => Math.max(MIN_SCALE, value - SCALE_STEP))}
             disabled={scale <= MIN_SCALE}
-            isVault={isVault}
             title="Zoom out"
           >
             <Minus className="w-3.5 h-3.5" />
           </ToolbarButton>
           <span
-            className={`text-[11px] font-mono w-9 text-center ${
-              isVault ? "text-stone-400" : "text-stone-500"
-            }`}
+            className="text-[11px] font-mono w-9 text-center text-muted"
           >
             {Math.round(scale * 100)}%
           </span>
           <ToolbarButton
             onClick={() => setScale((value) => Math.min(MAX_SCALE, value + SCALE_STEP))}
             disabled={scale >= MAX_SCALE}
-            isVault={isVault}
             title="Zoom in"
           >
             <Plus className="w-3.5 h-3.5" />
@@ -95,11 +79,7 @@ export default function PdfLessonViewer({ fileUrl, title }) {
             type="button"
             onClick={() => download(fileUrl, filename)}
             disabled={isDownloading}
-            className={`inline-flex items-center gap-1.5 ml-1 px-2.5 py-1.5 border disabled:opacity-50 text-[11px] font-mono uppercase tracking-wider rounded-lg transition ${
-              isVault
-                ? "border-stone-700 hover:border-amber-500/50 hover:bg-white/10 text-stone-300 hover:text-amber-400"
-                : "border-stone-200 hover:border-amber-300 hover:bg-white text-stone-600 hover:text-amber-800"
-            }`}
+            className="inline-flex items-center gap-1.5 ml-1 px-2.5 py-1.5 border disabled:opacity-50 text-[11px] font-mono uppercase tracking-wider rounded-lg transition border-line hover:border-pine hover:bg-paper text-muted hover:text-pine"
           >
             {isDownloading ? (
               <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -115,9 +95,9 @@ export default function PdfLessonViewer({ fileUrl, title }) {
         {loadError ? (
           <div className="py-16 text-center space-y-2">
             <TriangleAlert
-              className={`w-6 h-6 mx-auto ${isVault ? "text-rose-400" : "text-rose-500"}`}
+              className="w-6 h-6 mx-auto text-rose-500"
             />
-            <p className={`text-sm ${isVault ? "text-stone-400" : "text-stone-500"}`}>
+            <p className="text-sm text-muted">
               This PDF couldn&apos;t be loaded for preview — try downloading it instead.
             </p>
           </div>
@@ -129,7 +109,7 @@ export default function PdfLessonViewer({ fileUrl, title }) {
             loading={
               <div className="flex justify-center py-16">
                 <Loader2
-                  className={`w-6 h-6 animate-spin ${isVault ? "text-stone-500" : "text-stone-400"}`}
+                  className="w-6 h-6 animate-spin text-muted"
                 />
               </div>
             }
