@@ -24,6 +24,11 @@ export function useGuestOnlyRoute() {
 
   useEffect(() => {
     if (isResolving || !isAuthenticated) return;
+    // Only this known internal destination is accepted; never redirect to arbitrary URLs.
+    if (new URLSearchParams(window.location.search).get("next") === "/feedback") {
+      router.replace("/feedback");
+      return;
+    }
     if (isStudentRole && isCheckingOnboarding) return;
     router.replace(
       isStudentRole && needsOnboarding ? ROUTES.ONBOARDING : getPortalRouteForRole(role)

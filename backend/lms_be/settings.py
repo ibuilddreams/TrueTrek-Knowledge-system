@@ -200,7 +200,15 @@ MEDIA_ROOT = BASE_DIR / 'media'
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
-FRONTEND_URL = os.getenv('FRONTEND_URL', 'http://localhost:3000')
+# Email links follow the deployment environment, independently of Django DEBUG.
+# Default to production so an unset environment never emails localhost links.
+APP_ENV = os.getenv('APP_ENV', 'production').strip().lower()
+if APP_ENV not in ('dev', 'development', 'prod', 'production'):
+    from django.core.exceptions import ImproperlyConfigured
+    raise ImproperlyConfigured('APP_ENV must be development or production.')
+DEV_FRONTEND_URL = os.getenv('DEV_FRONTEND_URL', 'http://localhost:3000').strip().rstrip('/')
+PRODUCTION_FRONTEND_URL = os.getenv('PRODUCTION_FRONTEND_URL', 'https://test.coolnerdz.com').strip().rstrip('/')
+FRONTEND_URL = DEV_FRONTEND_URL if APP_ENV in ('dev', 'development') else PRODUCTION_FRONTEND_URL
 PASSWORD_RESET_TIMEOUT = int(os.getenv('PASSWORD_RESET_TIMEOUT', 3600))
 
 
@@ -211,7 +219,9 @@ EMAIL_HOST = os.getenv('EMAIL_HOST', '')
 EMAIL_PORT = int(os.getenv('EMAIL_PORT', 587))
 EMAIL_HOST_USER = os.getenv('EMAIL_HOST_USER', '')
 EMAIL_HOST_PASSWORD = os.getenv('EMAIL_HOST_PASSWORD', '')
-EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'True') == 'True'
+EMAIL_USE_TLS = os.getenv('EMAIL_USE_TLS', 'true').strip().lower() in ('true', '1', 'yes')
+EMAIL_USE_SSL = os.getenv('EMAIL_USE_SSL', 'false').strip().lower() in ('true', '1', 'yes')
+PRAXIN_CLIENT_EMAIL = os.getenv('PRAXIN_CLIENT_EMAIL', '').strip()
 DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@truetrek.edu')
 
 
@@ -343,3 +353,7 @@ if not DEBUG:
     SECURE_SSL_REDIRECT = os.getenv('SECURE_SSL_REDIRECT', 'False') == 'True'
     SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
     USE_X_FORWARDED_HOST = True
+
+# Approved invitation links expire after three days by default.
+INVITATION_EXPIRY_HOURS = int(os.getenv("INVITATION_EXPIRY_HOURS", "72"))
+EMAIL_TIMEOUT = int(os.getenv("EMAIL_TIMEOUT", "10"))

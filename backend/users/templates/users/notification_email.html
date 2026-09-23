@@ -1,0 +1,16 @@
+<!doctype html>
+<html lang="en">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><title>{{ heading }}</title></head>
+<body style="margin:0;background:#f4f2ec;color:#172d28;font-family:Arial,Helvetica,sans-serif;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0"><tr><td align="center" style="padding:32px 16px;">
+<table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:580px;background:#fffdf8;border:1px solid #e3e3d9;border-radius:16px;">
+<tr><td style="padding:28px 32px;background:#123e35;color:#ffffff;border-radius:16px 16px 0 0;font-size:22px;font-weight:bold;">TrueTrek Learning<span style="color:#c7a85b;">.</span></td></tr>
+<tr><td style="padding:32px;">
+<p style="font-size:11px;letter-spacing:2px;text-transform:uppercase;color:#77765f;">{{ eyebrow }}</p>
+<h1 style="font-family:Georgia,serif;font-weight:normal;font-size:30px;margin:12px 0 24px;">{{ heading }}</h1>
+{% for paragraph in paragraphs %}<p style="font-size:15px;line-height:1.7;color:#40564f;">{{ paragraph }}</p>{% endfor %}
+{% if action_url %}<p style="margin:28px 0;"><a href="{{ action_url }}" style="display:inline-block;background:#123e35;color:#fff;text-decoration:none;padding:14px 22px;border-radius:8px;font-weight:bold;">{{ action_label }}</a></p><p style="font-size:12px;color:#687870;line-height:1.6;">If the button does not open, copy this link into your browser:<br><a href="{{ action_url }}" style="color:#123e35;word-break:break-all;">{{ action_url }}</a></p>{% endif %}
+{% if secondary_url %}<p style="font-size:14px;line-height:1.6;"><a href="{{ secondary_url }}" style="color:#123e35;">{{ secondary_label }}</a></p>{% endif %}
+</td></tr><tr><td style="padding:20px 32px;border-top:1px solid #e3e3d9;font-size:12px;line-height:1.7;color:#687870;">TrueTrek Learning · Praxin Partners<br>This message relates to your TrueTrek invitation or feedback.</td></tr>
+</table></td></tr></table>
+</body></html>

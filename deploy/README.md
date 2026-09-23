@@ -84,3 +84,18 @@ sudo visudo -cf /etc/sudoers.d/truetrek
 ```
 
 The sudoers file allows passwordless `systemctl` restart/status, `nginx -t`, and the controlled `git-pull.sh` helper.
+
+## Email link environment
+
+Set these in the backend environment on the server, then restart the backend:
+
+```dotenv
+APP_ENV=production
+DEV_FRONTEND_URL=http://localhost:3000
+PRODUCTION_FRONTEND_URL=https://test.coolnerdz.com
+```
+
+For local development use `APP_ENV=development`. The selected URL applies to
+invitation, feedback notification and password-reset emails. The old standalone
+`FRONTEND_URL` environment key is no longer used. Unset `APP_ENV` defaults to
+production so deployed emails do not accidentally contain localhost links.
