@@ -103,23 +103,34 @@ def deliver(invitation, link=None):
     issued_token_hash = invitation.token_hash
     name = invitation.user.first_name
     role = invitation.user.role.title()
+    subject = "You have been invited to TrueTrek" if link else "Your TrueTrek feedback form is ready"
+    paragraphs = [f"Hello {name},", f"You have been invited to TrueTrek as a {role}."]
+    context = {"heading": "Welcome to TrueTrek", "eyebrow": "Your invitation", "paragraphs": paragraphs}
     if link:
-        subject = "Your TrueTrek invitation is approved"
-        paragraphs = [f"Hello {name},", f"Your NDA has been approved. You have been invited as a {role}.",
-                      "Choose your password using the secure link below.",
-                      f"This one-time link expires in {settings.INVITATION_EXPIRY_HOURS} hours. Please keep it private."]
-        context = {"heading": "Welcome to TrueTrek", "eyebrow": "NDA approved", "paragraphs": paragraphs,
-                   "action_url": link, "action_label": "Set up your account",
-                   "secondary_url": f"{settings.FRONTEND_URL.rstrip('/')}/feedback",
-                   "secondary_label": "After setup, sign in to share your feedback"}
-        message = "\n\n".join(paragraphs) + f"\n\n{link}\n\nAfter setup, sign in to share your feedback:\n{context['secondary_url']}"
+        paragraphs.extend(["Choose your password using the secure link below, then sign in to your account.",
+                           f"This one-time link expires in {settings.INVITATION_EXPIRY_HOURS} hours. Please keep it private."])
+        context.update(action_url=link, action_label="Set up your account")
+    if invitation.nda_approved:
+        paragraphs.append("Your NDA has been approved. Your feedback form is available after account setup and login.")
+        context.update(secondary_url=f"{settings.FRONTEND_URL.rstrip('/')}/feedback",
+                       secondary_label="Sign in to share your feedback")
+        if not link:
+            context.update(heading="Your feedback form is ready", eyebrow="NDA approved",
+                           action_url=context["secondary_url"], action_label="Share feedback")
     else:
-        subject = "You have been invited to TrueTrek"
-        paragraphs = [f"Hello {name},", f"You have been invited to join TrueTrek as a {role}.",
-                      "Your invitation is pending NDA completion and approval. Please coordinate with your administrator to complete this step.",
-                      "Once your NDA is approved, we will send a separate email with your secure account setup link. No account access is available yet."]
-        context = {"heading": "You’re invited", "eyebrow": "NDA approval pending", "paragraphs": paragraphs}
-        message = "\n\n".join(paragraphs)
+        paragraphs.append("You can set up your account and sign in now. Feedback becomes available only after your administrator approves your NDA.")
+    message = "\n\n".join(paragraphs)
+    if link:
+        message += f"\n\n{link}"
+    if invitation.nda_approved:
+        message += f"\n\nFeedback form (login required):\n{context['secondary_url']}"
+    if link:
+        context.update(
+            setup_invitation=True, recipient_name=name, account_role=role,
+            expiry_hours=settings.INVITATION_EXPIRY_HOURS,
+            nda_approved=invitation.nda_approved,
+            preheader=f"Your {role.lower()} account is ready to set up. Choose your password to get started.",
+        )
     delivery_status = send_notification(subject, message, invitation.user.email, context)
     # A slower send must not overwrite the status of a newer link or a consumed link.
     UserInvitation.objects.filter(pk=invitation.pk, token_hash=issued_token_hash).update(
@@ -163,7 +174,7 @@ def approve(invitation, admin):
         [invitation.user_id], verb="feedback_available", title="Your feedback form is ready",
         message="Your NDA has been approved. Sign in to share your feedback.", related_object_type="invitation_feedback",
     )
-    return issue_link(invitation)
+    return issue_link(invitation) if not invitation.accepted_at else None
 
 
 def invitation_result(invitation, link=None):
@@ -205,7 +216,7 @@ class InvitationsView(PrivateAPIView):
                 )
                 invitation = UserInvitation.objects.create(user=user, invited_by=request.user)
                 audit(invitation, request.user, "CREATE", {"email": user.email, "role": user.role})
-                link = approve(invitation, request.user) if approved else None
+                link = approve(invitation, request.user) if approved else issue_link(invitation)
         except IntegrityError:
             raise ValidationError("An account or invitation already exists for this email.")
         deliver(invitation, link)
@@ -218,8 +229,9 @@ class InvitationApproveView(PrivateAPIView):
     def post(self, request, pk):
         with transaction.atomic():
             invitation = get_object_or_404(UserInvitation.objects.select_for_update(), pk=pk)
+            newly_approved = not invitation.nda_approved
             link = approve(invitation, request.user)
-        if link:
+        if newly_approved:
             deliver(invitation, link)
         return success_response(invitation_result(invitation, link), "NDA approved")
 
@@ -235,8 +247,8 @@ class InvitationLinkView(PrivateAPIView):
         serializer.is_valid(raise_exception=True)
         with transaction.atomic():
             invitation = get_object_or_404(UserInvitation.objects.select_for_update(), pk=pk)
-            if not invitation.nda_approved or invitation.accepted_at:
-                raise ValidationError("Links are available only for approved invitations awaiting account setup.")
+            if invitation.accepted_at:
+                raise ValidationError("Links are available only for invitations awaiting account setup.")
             link = issue_link(invitation)
             invitation.email_status = "NOT_SENT"
             invitation.email_sent_at = None
@@ -269,10 +281,14 @@ class InvitationAcceptView(PrivateAPIView):
         values = serializer.validated_data
         with transaction.atomic():
             invitation = UserInvitation.objects.select_for_update().filter(pk=values["id"]).first()
-            if (not invitation or not invitation.nda_approved or invitation.accepted_at
-                    or not invitation.token_expires_at or invitation.token_expires_at <= timezone.now()
-                    or not secrets.compare_digest(invitation.token_hash, hashlib.sha256(values["token"].encode()).hexdigest())):
-                raise ValidationError("This invitation is invalid or has expired. Ask your admin for a new link.")
+            if not invitation:
+                raise ValidationError("This invitation link is invalid. Ask your admin for a new setup link.")
+            if invitation.accepted_at:
+                raise ValidationError("This invitation has already been used. Sign in with your email and password, or reset your password if needed.")
+            if not secrets.compare_digest(invitation.token_hash, hashlib.sha256(values["token"].encode()).hexdigest()):
+                raise ValidationError("This setup link is invalid or has been replaced by a newer link. Open the most recent invitation email, or ask your admin for a new link.")
+            if not invitation.token_expires_at or invitation.token_expires_at <= timezone.now():
+                raise ValidationError("This setup link has expired. Ask your admin to send a new invitation link.")
             if values["password"] != values["confirm_password"]:
                 raise ValidationError({"confirm_password": "Passwords do not match."})
             user = CustomUser.objects.select_for_update().get(pk=invitation.user_id)
@@ -290,7 +306,7 @@ class InvitationAcceptView(PrivateAPIView):
             invitation.token_hash = ""
             invitation.save(update_fields=["accepted_at", "token_hash"])
             audit(invitation, user, "UPDATE", {"account_setup_completed": True})
-        return success_response(None, "Your account is ready. Sign in to complete your feedback form.")
+        return success_response({"feedback_available": invitation.nda_approved}, "Your account is ready. Sign in to continue.")
 
 
 def eligible_invitation(user, lock=False):
@@ -349,8 +365,10 @@ class InvitationEmailRetryView(PrivateAPIView):
     def post(self, request, pk):
         with transaction.atomic():
             invitation = get_object_or_404(UserInvitation.objects.select_for_update(), pk=pk)
-            if invitation.nda_approved:
-                raise ValidationError("Use a new setup link for an approved invitation.")
+            if invitation.accepted_at:
+                raise ValidationError("Account setup is already complete.")
+            link = None
             if invitation.email_status != "SENT":
-                deliver(invitation)
-        return success_response(invitation_result(invitation), "Invitation delivery checked")
+                link = issue_link(invitation)
+                deliver(invitation, link)
+        return success_response(invitation_result(invitation, link), "Invitation delivery checked")

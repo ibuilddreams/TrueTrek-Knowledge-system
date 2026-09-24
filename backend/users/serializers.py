@@ -270,7 +270,7 @@ class StudentUpdateSerializer(serializers.ModelSerializer):
         if value == UserModel.AccountStatus.ACTIVE and UserInvitation.objects.filter(
             user=self.instance, accepted_at__isnull=True
         ).exists():
-            raise ValidationError("This invited user must complete NDA approval and account setup first.")
+            raise ValidationError("This invited user must complete account setup first.")
         return value
 
     def update(self, instance, validated_data):
@@ -358,7 +358,7 @@ class TeacherUpdateSerializer(serializers.ModelSerializer):
         if value == UserModel.AccountStatus.ACTIVE and UserInvitation.objects.filter(
             user=self.instance, accepted_at__isnull=True
         ).exists():
-            raise ValidationError("This invited user must complete NDA approval and account setup first.")
+            raise ValidationError("This invited user must complete account setup first.")
         return value
 
     def update(self, instance, validated_data):

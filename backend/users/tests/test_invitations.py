@@ -42,16 +42,16 @@ class InvitationTests(APITestCase):
         self.assertEqual(response.status_code, 200, response.data)
         return CustomUser.objects.get(email="invited@example.com")
 
-    def test_pending_invite_sends_notice_without_access_or_feedback(self):
+    def test_unchecked_invite_includes_setup_but_not_feedback(self):
         data = self.invite()
         invitation = UserInvitation.objects.get(pk=data["id"])
         self.assertFalse(invitation.user.is_active)
         self.assertFalse(invitation.user.has_usable_password())
-        self.assertNotIn("setup_link", data)
+        self.assertIn("setup_link", data)
         self.assertEqual(len(mail.outbox), 1)
-        self.assertIn("pending NDA", mail.outbox[0].body)
+        self.assertIn("set up your account and sign in now", mail.outbox[0].body)
         self.assertNotIn("/feedback", mail.outbox[0].body)
-        self.assertNotIn("accept-invitation", mail.outbox[0].body)
+        self.assertIn("accept-invitation", mail.outbox[0].body)
         self.assertEqual(Notification.objects.count(), 0)
         self.client.force_authenticate(invitation.user)
         self.assertEqual(self.client.get("/api/feedback/").status_code, 403)
@@ -89,18 +89,22 @@ class InvitationTests(APITestCase):
         self.assertEqual(UserInvitation.objects.get(user=user).token_hash, "")
         repeat = self.client.post("/api/invitations/accept/", self.setup_payload(data["setup_link"]), format="json")
         self.assertEqual(repeat.status_code, 400)
+        self.assertIn("already been used", repeat.data["message"])
         login = self.client.post("/api/auth/login/", {"email": user.email, "password": "A-unique-new-pass-762!"})
         self.assertEqual(login.status_code, 200, login.data)
 
-    def test_invalid_expired_and_unapproved_links_cannot_activate(self):
+    def test_invalid_and_expired_links_cannot_activate(self):
         data = self.invite(approved=True)
         payload = self.setup_payload(data["setup_link"])
         self.client.force_authenticate(None)
-        self.assertEqual(self.client.post("/api/invitations/accept/", {**payload, "token": "wrong"}).status_code, 400)
+        invalid = self.client.post("/api/invitations/accept/", {**payload, "token": "wrong"})
+        self.assertEqual(invalid.status_code, 400)
+        self.assertIn("replaced by a newer link", invalid.data["message"])
+        self.assertIn("non_field_errors", invalid.data["data"])
         UserInvitation.objects.filter(pk=data["id"]).update(token_expires_at=timezone.now() - timedelta(seconds=1))
-        self.assertEqual(self.client.post("/api/invitations/accept/", payload).status_code, 400)
-        UserInvitation.objects.filter(pk=data["id"]).update(token_expires_at=timezone.now() + timedelta(hours=1), nda_approved=False)
-        self.assertEqual(self.client.post("/api/invitations/accept/", payload).status_code, 400)
+        expired = self.client.post("/api/invitations/accept/", payload)
+        self.assertEqual(expired.status_code, 400)
+        self.assertIn("has expired", expired.data["message"])
         self.assertFalse(CustomUser.objects.get(email="invited@example.com").is_active)
 
     def test_password_validation_does_not_consume_link(self):
@@ -118,7 +122,9 @@ class InvitationTests(APITestCase):
         self.assertEqual(response.status_code, 200)
         self.assertEqual(len(mail.outbox), 1)
         self.client.force_authenticate(None)
-        self.assertEqual(self.client.post("/api/invitations/accept/", self.setup_payload(data["setup_link"])).status_code, 400)
+        replaced = self.client.post("/api/invitations/accept/", self.setup_payload(data["setup_link"]))
+        self.assertEqual(replaced.status_code, 400)
+        self.assertIn("most recent invitation email", replaced.data["message"])
         self.accept(response.data["data"]["setup_link"])
         self.client.force_authenticate(self.admin)
         self.assertEqual(self.client.post(f'/api/invitations/{data["id"]}/link/').status_code, 400)
@@ -248,11 +254,52 @@ class InvitationTests(APITestCase):
         url = f'/api/invitations/{data["id"]}/email/'
         result = self.client.post(url)
         self.assertEqual(result.data["data"]["email_status"], "SENT")
-        self.assertNotIn("setup_link", result.data["data"])
+        self.assertIn("setup_link", result.data["data"])
         count = len(mail.outbox)
         self.client.post(url)
         self.assertEqual(len(mail.outbox), count)
         self.assertFalse(UserInvitation.objects.get(pk=data["id"]).user.is_active)
+
+    def check_unapproved_account_flow(self, role):
+        data = self.invite(role=role)
+        self.client.force_authenticate(None)
+        result = self.client.post("/api/invitations/accept/", self.setup_payload(data["setup_link"]), format="json")
+        self.assertEqual(result.status_code, 200)
+        self.assertFalse(result.data["data"]["feedback_available"])
+        user = CustomUser.objects.get(email="invited@example.com")
+        self.assertTrue(user.is_active)
+        self.assertEqual(user.role, role)
+        login = self.client.post("/api/auth/login/", {"email": user.email, "password": "A-unique-new-pass-762!"})
+        self.assertEqual(login.status_code, 200)
+        self.client.force_authenticate(user)
+        self.assertFalse(self.client.get("/api/feedback/status/").data["data"]["eligible"])
+        self.assertEqual(self.client.get("/api/feedback/").status_code, 403)
+        self.assertEqual(self.client.post("/api/feedback/", {"rating": 5, "comments": "Blocked"}).status_code, 403)
+        self.client.force_authenticate(self.admin)
+        result = self.client.post(f'/api/invitations/{data["id"]}/approve/')
+        self.assertEqual(result.status_code, 200)
+        self.assertNotIn("setup_link", result.data["data"])
+        self.assertIn("/feedback", mail.outbox[-1].body)
+        self.assertNotIn("accept-invitation", mail.outbox[-1].body)
+        invitation = UserInvitation.objects.get(pk=data["id"])
+        self.assertEqual(invitation.token_hash, "")
+        self.client.force_authenticate(user)
+        self.assertTrue(self.client.get("/api/feedback/status/").data["data"]["eligible"])
+        self.assertEqual(self.client.post("/api/feedback/", {"rating": 5, "comments": "Now approved"}).status_code, 201)
+
+    def test_unchecked_student_can_login_but_needs_approval_for_feedback(self):
+        self.check_unapproved_account_flow("STUDENT")
+
+    def test_unchecked_teacher_can_login_but_needs_approval_for_feedback(self):
+        self.check_unapproved_account_flow("TEACHER")
+
+    def test_unchecked_invitation_can_regenerate_setup_link(self):
+        data = self.invite()
+        result = self.client.post(f'/api/invitations/{data["id"]}/link/', {"send_email": True}, format="json")
+        self.assertEqual(result.status_code, 200)
+        self.assertIn("accept-invitation", mail.outbox[-1].body)
+        self.assertNotIn("/feedback", mail.outbox[-1].body)
+        self.accept(result.data["data"]["setup_link"])
 
 
 @skipUnlessDBFeature("has_select_for_update")
@@ -305,3 +352,21 @@ class InvitationConcurrencyTests(APITransactionTestCase):
         user = UserInvitation.objects.get(pk=self.invitation_id).user
         self.assertEqual(self.parallel_posts("/api/feedback/", {"rating": 4, "comments": "Works well"}, user), [201, 400])
         self.assertEqual(InvitationFeedback.objects.count(), 1)
+
+
+class ValidationErrorMessageTests(APITestCase):
+    def test_plain_validation_messages_are_not_discarded(self):
+        from common.exceptions import custom_exception_handler
+        from rest_framework.exceptions import ValidationError
+        for detail, expected in [("Invalid request.", "Invalid request."),
+                                 (["First issue.", "Second issue."], "First issue. Second issue.")]:
+            response = custom_exception_handler(ValidationError(detail), {})
+            self.assertEqual(response.status_code, 400)
+            self.assertEqual(response.data["message"], expected)
+            self.assertTrue(response.data["data"]["non_field_errors"])
+
+    def test_field_validation_errors_remain_available(self):
+        from common.exceptions import custom_exception_handler
+        from rest_framework.exceptions import ValidationError
+        response = custom_exception_handler(ValidationError({"password": ["Choose a stronger password."]}), {})
+        self.assertEqual(response.data["data"]["password"], ["Choose a stronger password."])

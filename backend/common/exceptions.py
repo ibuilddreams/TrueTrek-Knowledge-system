@@ -51,6 +51,16 @@ def custom_exception_handler(exc, context):
 
     detail = response.data
 
+    # DRF wraps ValidationError("message") in a list, not a detail dictionary.
+    # Preserve these user-facing validation messages instead of hiding them.
+    if isinstance(exc, ValidationError) and isinstance(detail, list) and detail:
+        if all(isinstance(item, str) for item in detail):
+            return error_response(
+                message=" ".join(str(item) for item in detail),
+                status_code=response.status_code,
+                data={"non_field_errors": detail},
+            )
+
     if isinstance(detail, dict) and "detail" in detail and len(detail) == 1:
         return error_response(message=str(detail["detail"]), status_code=response.status_code)
 
