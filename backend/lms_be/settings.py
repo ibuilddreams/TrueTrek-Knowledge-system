@@ -67,6 +67,7 @@ INSTALLED_APPS = [
     'warroom',
     'notifications',
     'student_concerns',
+    'testimonials',
 ]
 
 MIDDLEWARE = [
@@ -169,6 +170,7 @@ REST_FRAMEWORK = {
         'room-message-send': '60/minute',
         'ai-quiz-regeneration': '10/hour',
         'ai-content-suggestions': '30/minute',
+        'testimonial-submit': '5/hour',
     },
 }
 

@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 import { X } from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { motion, AnimatePresence, useReducedMotion } from "motion/react";
 import IconBadge from "@/components/ui/IconBadge";
 
 let openModalCount = 0;
@@ -32,6 +32,8 @@ export default function Modal({
   children,
   maxWidth = "max-w-lg",
 }) {
+  const reducedMotion = useReducedMotion();
+
   useEffect(() => {
     if (!isOpen) return;
     lockBodyScroll();
@@ -44,19 +46,19 @@ export default function Modal({
     <AnimatePresence>
       {isOpen && (
         <motion.div
-          initial={{ opacity: 0 }}
+          initial={reducedMotion ? false : { opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
+          transition={{ duration: reducedMotion ? 0 : 0.18 }}
           className="fixed inset-0 z-[100] backdrop-blur-sm flex items-center justify-center p-4 overflow-y-auto bg-ink/60"
           onClick={canClose ? onClose : undefined}
         >
           <motion.div
-            initial={{ opacity: 0, y: 8 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: 8 }}
-            transition={{ duration: 0.18, ease: "easeOut" }}
-            className={`scrollbar-hide border rounded-panel shadow-elevated w-full ${maxWidth} my-auto max-h-[90vh] overflow-y-auto relative bg-paper border-line`}
+            initial={reducedMotion ? false : { opacity: 0, y: 12, scale: 0.98 }}
+            animate={{ opacity: 1, y: 0, scale: 1 }}
+            exit={{ opacity: 0, y: reducedMotion ? 0 : 8, scale: reducedMotion ? 1 : 0.98 }}
+            transition={{ duration: reducedMotion ? 0 : 0.18, ease: "easeOut" }}
+            className={`tt-interactive scrollbar-hide border rounded-panel shadow-elevated w-full ${maxWidth} my-auto max-h-[90vh] overflow-y-auto relative bg-paper border-line`}
             onClick={(event) => event.stopPropagation()}
           >
             <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-pine via-moss to-gold" />

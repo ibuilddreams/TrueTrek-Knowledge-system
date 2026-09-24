@@ -74,7 +74,7 @@ export default function InvitationsTab() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className="tt-interactive space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div><p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">Access &amp; onboarding</p><h2 className="text-2xl sm:text-3xl font-serif text-ink">Invitations</h2><p className="mt-2 text-sm text-muted max-w-xl leading-relaxed">Manage invitations, approve NDAs, and hear from your community.</p></div>
         <button className={button} disabled={creatingBusy} onClick={() => setCreating(true)}><UserPlus className="h-4 w-4" />Invite user</button>
@@ -90,8 +90,8 @@ export default function InvitationsTab() {
       {query.isError && <div role="alert" className="text-rose-700">Unable to load invitations. <button className={secondary} onClick={() => query.refetch()}>Retry</button></div>}
       {data?.results?.length === 0 && <div className="rounded-2xl border border-line bg-paper p-8 text-muted">No invitations found.</div>}
       <div className="space-y-4">
-        {data?.results?.map((invite) => (
-          <article key={invite.id} className="overflow-hidden rounded-2xl border border-line bg-paper shadow-sm transition-shadow hover:shadow-md">
+        {data?.results?.map((invite, index) => (
+          <article key={invite.id} style={{ "--tt-delay": `${Math.min(index, 5) * 45}ms` }} className="tt-enter tt-card overflow-hidden rounded-2xl border border-line bg-paper shadow-sm transition-shadow hover:shadow-md">
             <div className="flex flex-wrap items-center justify-between gap-4 p-5 sm:px-6">
               <div className="flex min-w-0 items-center gap-3">
                 <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-2xl border border-pine/10 bg-pine/5 font-serif text-lg text-pine">{invite.name?.split(" ").filter(Boolean).slice(0, 2).map((part) => part[0]).join("")}</div>

@@ -51,6 +51,7 @@ urlpatterns = [
     path('api/warroom/', include('warroom.urls')),
     path('api/notifications/', include('notifications.urls')),
     path('api/student-concerns/', include('student_concerns.urls')),
+    path('api/testimonials/', include('testimonials.urls')),
     path('api/auth/login/', CustomTokenObtainPairView.as_view()),
     path('api/auth/signup/', SignupView.as_view()),
     path('api/auth/google/', GoogleAuthView.as_view()),

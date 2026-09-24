@@ -36,7 +36,7 @@ export default function InvitationLinkModal({ invitation, onClose }) {
 
   return (
     <Modal isOpen onClose={onClose} icon={Link2} title="Share account access" subtitle="A private invitation to join TrueTrek." maxWidth="max-w-xl">
-      <div className="space-y-5">
+      <div className="tt-interactive space-y-5">
         <div className={`flex items-start gap-3 rounded-2xl border p-4 ${status.success ? "border-pine/15 bg-pine/5" : "border-gold/30 bg-gold/5"}`}>
           <StatusIcon className="mt-0.5 h-5 w-5 shrink-0 text-pine" />
           <div><p className="text-sm font-semibold text-ink">{status.title}</p><p className="mt-1 text-xs leading-relaxed text-muted">{status.detail}</p></div>
@@ -59,7 +59,7 @@ export default function InvitationLinkModal({ invitation, onClose }) {
         </div>
         <div className="flex flex-col-reverse gap-2 sm:flex-row sm:justify-end">
           <button type="button" onClick={onClose} className="rounded-xl border border-line px-5 py-3 text-sm font-medium transition hover:bg-porcelain">Done</button>
-          <button type="button" onClick={copyLink} className="inline-flex items-center justify-center gap-2 rounded-xl bg-pine px-6 py-3 text-sm font-medium text-white transition hover:bg-moss focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine">{copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied ? "Copied to clipboard" : "Copy invitation link"}</button>
+          <button type="button" onClick={copyLink} className="inline-flex items-center justify-center gap-2 rounded-xl bg-pine px-6 py-3 text-sm font-medium text-white transition hover:bg-moss focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine">{copied ? <Check className="tt-confirm h-4 w-4" /> : <Copy className="h-4 w-4" />}{copied ? "Copied to clipboard" : "Copy invitation link"}</button>
         </div>
         <p className="border-t border-line pt-4 text-[11px] leading-relaxed text-muted">Share only with the person named above. This link is shown once; you can generate a replacement from Invitations if needed.</p>
       </div>

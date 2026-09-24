@@ -18,6 +18,11 @@ import {
   Sparkles,
   HelpCircle,
   ChevronDown,
+  GraduationCap,
+  HeartHandshake,
+  Building2,
+  Users,
+  Landmark,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import IntroVideo from "@/components/features/media/IntroVideo";
@@ -34,6 +39,7 @@ import { formatCoursePrice } from "@/lib/store";
 import SectionHeading from "@/components/ui/SectionHeading";
 import PingDotSpinner from "@/components/ui/PingDotSpinner";
 import PresetPromptPills from "@/components/ui/PresetPromptPills";
+import styles from "./Home.module.css";
 
 // True once `active` has stayed true for longer than delayMs — used to swap in
 // a "taking longer than usual" message so a slow AI response doesn't look frozen.
@@ -52,7 +58,51 @@ function useDelayedFlag(active, delayMs) {
   return isSlow;
 }
 
+// Cycled per advisor card index purely for visual variety in the consult board.
+const ADVISOR_TINTS = ["bg-sky/60", "bg-sage/60", "bg-rose/45", "bg-lavender/60"];
+
 export default function Home() {
+  const homeRef = useRef(null);
+
+  // Reveal each section once, without leaving content hidden if JS is unavailable.
+  useEffect(() => {
+    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
+    const animations = new Set();
+    let observer;
+    const setup = () => {
+      observer?.disconnect();
+      animations.forEach((animation) => animation.cancel());
+      animations.clear();
+      if (preference.matches || !window.IntersectionObserver) return;
+      observer = new IntersectionObserver((entries) => {
+        entries.forEach((entry) => {
+          if (!entry.isIntersecting) return;
+          const animation = entry.target.animate(
+            [
+              { opacity: 0, transform: "translateY(24px)" },
+              { opacity: 1, transform: "translateY(0)" },
+            ],
+            { duration: 750, delay: Number(entry.target.dataset.revealDelay || 0), easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "backwards" },
+          );
+          animations.add(animation);
+          animation.onfinish = () => animations.delete(animation);
+          observer.unobserve(entry.target);
+        });
+      }, { threshold: 0.08 });
+      homeRef.current?.querySelectorAll("section > div:not([id]), #stats-dashboard > div").forEach((element, index) => {
+        element.dataset.revealDelay = element.parentElement.id === "stats-dashboard" ? String((index % 3) * 100) : "0";
+        observer.observe(element);
+      });
+    };
+    setup();
+    preference.addEventListener("change", setup);
+    return () => {
+      observer?.disconnect();
+      animations.forEach((animation) => animation.cancel());
+      preference.removeEventListener("change", setup);
+    };
+  }, []);
+
   const router = useRouter();
   const onExploreTiers = () => router.push(ROUTES.CURRICULUM);
   const onNavigateToPortal = () => router.push(ROUTES.STUDENT_PORTAL);
@@ -246,7 +296,8 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
   return (
     <div
       id="home-container"
-      className="relative overflow-hidden w-full bg-transparent text-ink"
+      ref={homeRef}
+      className={`${styles.home} relative overflow-hidden w-full bg-transparent text-ink`}
     >
       {/* Decorative ambient background */}
       <div
@@ -282,7 +333,10 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           className="text-5xl md:text-7xl lg:text-8xl font-serif text-ink tracking-tight leading-[0.88] max-w-4xl font-light mb-6"
         >
           Build Your{" "}
-          <span className="italic text-pine font-light">Legacy</span>.
+          <span className={`italic font-light ${styles.legacyShimmer}`}>
+            Legacy
+          </span>
+          .
         </motion.h1>
 
         <motion.p
@@ -357,6 +411,186 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
         </div>
       </div>
 
+      {/* Audience Role Map Section */}
+      <section
+        id="audience-role-map-section"
+        className="bg-transparent border-t border-line py-20 px-6 relative z-10"
+      >
+        <div className="max-w-6xl mx-auto">
+          <SectionHeading
+            className="mb-12"
+            eyebrow="Who We Serve"
+            heading="Built for Every Profile in the Ecosystem"
+            subtitle="From the athlete building their recruiting file to the family office stewarding a legacy, the curriculum and advisory council adapt to the role you play."
+          />
+
+          <div className="p-3 md:p-4 rounded-panel bg-porcelain/60 border border-line">
+            <div
+              id="audience-cards-grid"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
+            >
+              {/* Featured: Student-Athletes */}
+              <div className="relative overflow-hidden isolate lg:row-span-2 p-7 border border-line bg-paper rounded-panel flex flex-col justify-between">
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-14 -bottom-16 w-48 h-48 rounded-full bg-sky/60"
+                ></div>
+                <div className="relative flex items-center justify-between gap-3">
+                  <span className="w-12 h-12 rounded-2xl bg-sky text-pine flex items-center justify-center">
+                    <Target className="w-5 h-5" />
+                  </span>
+                  <span className="px-3 py-1 rounded-full bg-paper/90 border border-line text-[10px] font-sans uppercase tracking-widest text-muted font-bold">
+                    Learner Path
+                  </span>
+                </div>
+                <div className="relative mt-10 lg:mt-16">
+                  <h4 className="text-3xl font-serif font-light leading-[0.95] tracking-tight text-ink mb-2.5">
+                    Student-Athletes
+                  </h4>
+                  <p className="text-muted text-sm leading-relaxed">
+                    Follow a 9-tier roadmap built around recruiting readiness,
+                    NIL protection, and performance mindset.
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-5">
+                    <span className="px-2.5 py-1 rounded-full bg-paper/80 border border-line text-[10px] font-sans uppercase tracking-widest text-ink font-semibold">
+                      Recruiting Readiness
+                    </span>
+                    <span className="px-2.5 py-1 rounded-full bg-paper/80 border border-line text-[10px] font-sans uppercase tracking-widest text-ink font-semibold">
+                      NIL Compliance
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Scholars & Founders */}
+              <div className="relative overflow-hidden isolate p-6 border border-line bg-paper rounded-card">
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-8 -bottom-10 w-28 h-28 rounded-full bg-sage/60"
+                ></div>
+                <div className="relative flex items-center justify-between gap-3 mb-5">
+                  <span className="w-11 h-11 rounded-2xl bg-sage text-pine flex items-center justify-center">
+                    <GraduationCap className="w-4.5 h-4.5" />
+                  </span>
+                  <span className="px-2.5 py-1 rounded-full bg-paper/90 border border-line text-[9px] font-sans uppercase tracking-widest text-muted font-bold">
+                    Creator Track
+                  </span>
+                </div>
+                <h4 className="relative text-lg font-serif font-light leading-[0.95] tracking-tight text-ink mb-1.5">
+                  Scholars &amp; Founders
+                </h4>
+                <p className="relative text-muted text-xs leading-relaxed">
+                  Structured tracks for academic rigor, venture literacy, and
+                  early trademark protection.
+                </p>
+              </div>
+
+              {/* Parents & Families */}
+              <div className="relative overflow-hidden isolate p-6 border border-line bg-paper rounded-card">
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-8 -bottom-10 w-28 h-28 rounded-full bg-rose/45"
+                ></div>
+                <div className="relative flex items-center justify-between gap-3 mb-5">
+                  <span className="w-11 h-11 rounded-2xl bg-rose/60 text-clay flex items-center justify-center">
+                    <HeartHandshake className="w-4.5 h-4.5" />
+                  </span>
+                  <span className="px-2.5 py-1 rounded-full bg-paper/90 border border-line text-[9px] font-sans uppercase tracking-widest text-muted font-bold">
+                    Support Circle
+                  </span>
+                </div>
+                <h4 className="relative text-lg font-serif font-light leading-[0.95] tracking-tight text-ink mb-1.5">
+                  Parents &amp; Families
+                </h4>
+                <p className="relative text-muted text-xs leading-relaxed">
+                  Transparent progress visibility and direct access to our
+                  licensed advisory council.
+                </p>
+              </div>
+
+              {/* Featured: Institutions & Academies */}
+              <div className="relative overflow-hidden isolate lg:row-span-2 p-7 border border-line bg-paper rounded-panel flex flex-col justify-between">
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-14 -bottom-16 w-48 h-48 rounded-full bg-lavender/60"
+                ></div>
+                <div className="relative flex items-center justify-between gap-3">
+                  <span className="w-12 h-12 rounded-2xl bg-lavender text-pine flex items-center justify-center">
+                    <Building2 className="w-5 h-5" />
+                  </span>
+                  <span className="px-3 py-1 rounded-full bg-paper/90 border border-line text-[10px] font-sans uppercase tracking-widest text-muted font-bold">
+                    Programs
+                  </span>
+                </div>
+                <div className="relative mt-10 lg:mt-16">
+                  <h4 className="text-3xl font-serif font-light leading-[0.95] tracking-tight text-ink mb-2.5">
+                    Institutions &amp; Academies
+                  </h4>
+                  <p className="text-muted text-sm leading-relaxed">
+                    License the full 9-tier curriculum for your cohort, with
+                    compliance-grade reporting built in.
+                  </p>
+                  <div className="flex flex-wrap gap-2 mt-5">
+                    <span className="px-2.5 py-1 rounded-full bg-paper/80 border border-line text-[10px] font-sans uppercase tracking-widest text-ink font-semibold">
+                      Cohort Licensing
+                    </span>
+                    <span className="px-2.5 py-1 rounded-full bg-paper/80 border border-line text-[10px] font-sans uppercase tracking-widest text-ink font-semibold">
+                      Compliance Reporting
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Coaches & Mentors */}
+              <div className="relative overflow-hidden isolate p-6 border border-line bg-paper rounded-card">
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-8 -bottom-10 w-28 h-28 rounded-full bg-mint/60"
+                ></div>
+                <div className="relative flex items-center justify-between gap-3 mb-5">
+                  <span className="w-11 h-11 rounded-2xl bg-mint text-pine flex items-center justify-center">
+                    <Users className="w-4.5 h-4.5" />
+                  </span>
+                  <span className="px-2.5 py-1 rounded-full bg-paper/90 border border-line text-[9px] font-sans uppercase tracking-widest text-muted font-bold">
+                    Talent Ops
+                  </span>
+                </div>
+                <h4 className="relative text-lg font-serif font-light leading-[0.95] tracking-tight text-ink mb-1.5">
+                  Coaches &amp; Mentors
+                </h4>
+                <p className="relative text-muted text-xs leading-relaxed">
+                  Recruiting-readiness diagnostics and culture-fit audits
+                  built for your roster.
+                </p>
+              </div>
+
+              {/* Legacy & Family Offices */}
+              <div className="relative overflow-hidden isolate p-6 border border-line bg-paper rounded-card">
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-8 -bottom-10 w-28 h-28 rounded-full bg-gold/20"
+                ></div>
+                <div className="relative flex items-center justify-between gap-3 mb-5">
+                  <span className="w-11 h-11 rounded-2xl bg-gold/15 text-gold flex items-center justify-center">
+                    <Landmark className="w-4.5 h-4.5" />
+                  </span>
+                  <span className="px-2.5 py-1 rounded-full bg-paper/90 border border-line text-[9px] font-sans uppercase tracking-widest text-muted font-bold">
+                    Stewardship
+                  </span>
+                </div>
+                <h4 className="relative text-lg font-serif font-light leading-[0.95] tracking-tight text-ink mb-1.5">
+                  Legacy &amp; Family Offices
+                </h4>
+                <p className="relative text-muted text-xs leading-relaxed">
+                  Multi-generational trust architecture and endowment
+                  stewardship for high-net-worth families.
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* Cinematic Walkthrough Broadcast Section */}
       <section
         id="cinematic-walkthrough-section"
@@ -411,24 +645,35 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     id={`audit-profile-btn-${pathway.id}`}
                     key={pathway.id}
                     onClick={() => setSelectedPathwayId(pathway.id)}
-                    className={`w-full text-left p-4 rounded-card border transition-all duration-300 flex flex-col gap-1 ${
+                    className={`w-full text-left p-4 rounded-card border transition-all duration-300 flex items-center gap-3.5 ${
                       selectedPathwayId === pathway.id
                         ? "bg-pine/10 border-pine/60 text-ink shadow-soft"
                         : "bg-paper border-line text-muted hover:bg-porcelain hover:border-pine/30"
                     }`}
                   >
-                    <span className="font-medium text-sm text-ink">
-                      {pathway.name}
-                    </span>
                     <span
-                      className={`font-sans uppercase tracking-widest text-xs font-medium ${
+                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-300 ${
                         selectedPathwayId === pathway.id
-                          ? "text-pine"
-                          : "text-muted"
+                          ? "bg-pine text-paper"
+                          : "bg-gold/10 text-gold"
                       }`}
                     >
-                      {pathway.course_count} Course
-                      {pathway.course_count === 1 ? "" : "s"} Bundle
+                      <BookOpen className="w-4 h-4" />
+                    </span>
+                    <span className="flex flex-col gap-1 min-w-0">
+                      <span className="font-medium text-sm text-ink truncate">
+                        {pathway.name}
+                      </span>
+                      <span
+                        className={`font-sans uppercase tracking-widest text-xs font-medium ${
+                          selectedPathwayId === pathway.id
+                            ? "text-pine"
+                            : "text-muted"
+                        }`}
+                      >
+                        {pathway.course_count} Course
+                        {pathway.course_count === 1 ? "" : "s"} Bundle
+                      </span>
                     </span>
                   </button>
                 ))}
@@ -437,13 +682,17 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
               {/* Right Audit Recommendation Container */}
               <div
                 id="audit-results-container"
-                className="lg:col-span-8 bg-paper border border-line rounded-panel p-6 md:p-8 relative min-h-[380px] flex flex-col justify-between"
+                className="lg:col-span-8 bg-paper border border-line rounded-panel p-6 md:p-8 relative overflow-hidden isolate min-h-[380px] flex flex-col justify-between"
               >
-                <div>
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-20 -top-20 w-72 h-72 rounded-full bg-rose/25 blur-2xl"
+                ></div>
+                <div className="relative">
                   <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4 mb-6">
                     <div>
-                      <span className="text-gold font-sans uppercase tracking-widest text-xs font-medium block mb-1">
-                        RECOMMENDED PATHWAY
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky/60 text-pine font-sans uppercase tracking-widest text-[10px] font-bold mb-2.5">
+                        Recommended Pathway
                       </span>
                       <h3 className="text-xl md:text-2xl font-serif font-light tracking-tight text-ink">
                         {selectedPathway?.name || "..."}
@@ -544,7 +793,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                 Choose Direct Session Advisor
               </label>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {ADVISOR_PERSONAS.map((advisor) => (
+                {ADVISOR_PERSONAS.map((advisor, advisorIdx) => (
                   <button
                     id={`consult-advisor-btn-${advisor.id}`}
                     key={advisor.id}
@@ -552,13 +801,17 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       setSelectedConsultAdvisorId(advisor.id);
                       setConsultAdvice("");
                     }}
-                    className={`p-4 rounded-card text-left border transition-all duration-300 flex flex-col gap-3 cursor-pointer ${
+                    className={`relative overflow-hidden isolate p-4 rounded-card text-left border transition-all duration-300 flex flex-col gap-3 cursor-pointer ${
                       selectedConsultAdvisorId === advisor.id
                         ? "bg-pine/10 border-pine text-ink shadow-elevated"
                         : "bg-paper border-line text-muted hover:bg-porcelain hover:border-pine/30"
                     }`}
                   >
-                    <div className="flex items-start gap-3">
+                    <div
+                      aria-hidden="true"
+                      className={`pointer-events-none absolute -right-8 -bottom-10 w-28 h-28 rounded-full opacity-70 ${ADVISOR_TINTS[advisorIdx % ADVISOR_TINTS.length]}`}
+                    ></div>
+                    <div className="relative flex items-start gap-3">
                       <img
                         src={advisor.avatar}
                         alt={advisor.name}
@@ -574,7 +827,10 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                         </p>
                       </div>
                     </div>
-                    <p className="text-xs text-muted italic leading-relaxed line-clamp-2">
+                    <span className="relative self-start max-w-full truncate px-2.5 py-1 rounded-full bg-paper/85 border border-line text-[9px] font-sans uppercase tracking-widest text-muted font-bold">
+                      {advisor.specialty.split(",")[0]}
+                    </span>
+                    <p className="relative text-xs text-muted italic leading-relaxed line-clamp-2">
                       &quot;{advisor.quote}&quot;
                     </p>
                   </button>
@@ -720,39 +976,66 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
         id="philosophies-section"
         className="py-20 px-6 max-w-6xl mx-auto"
       >
+        <SectionHeading
+          className="mb-14"
+          eyebrow="Our Approach"
+          heading="Principles That Shape Every Tier"
+          subtitle="Three commitments run through the entire 9-tier curriculum, from the first orientation module to the final legacy briefing."
+        />
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="p-6 border border-line bg-paper rounded-card text-left">
-            <span className="w-10 h-10 rounded-lg bg-gold/10 text-gold flex items-center justify-center font-serif font-light text-lg mb-4">
+          <div className="relative overflow-hidden isolate p-7 border border-line bg-paper rounded-panel text-left">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-10 -bottom-12 w-36 h-36 rounded-full bg-sky/60"
+            ></div>
+            <div className="absolute top-7 right-7 px-3 py-1 rounded-full bg-paper/90 border border-line text-[10px] font-sans uppercase tracking-widest text-muted font-bold">
+              Structured Rigor
+            </div>
+            <span className="relative w-11 h-11 rounded-2xl bg-sky text-pine flex items-center justify-center font-serif font-light text-lg mb-5">
               I
             </span>
-            <h4 className="text-lg font-serif font-light leading-[0.92] tracking-tight text-ink mb-2">
+            <h4 className="relative text-xl font-serif font-light leading-[0.95] tracking-tight text-ink mb-2.5">
               Architectural Integrity
             </h4>
-            <p className="text-muted text-sm leading-relaxed">
+            <p className="relative text-muted text-sm leading-relaxed">
               We provide real tactical metrics, redline contract examples, and
               legal codes. No placeholders or shallow advice blocks.
             </p>
           </div>
-          <div className="p-6 border border-line bg-paper rounded-card text-left">
-            <span className="w-10 h-10 rounded-lg bg-gold/10 text-gold flex items-center justify-center font-serif font-light text-lg mb-4">
+          <div className="relative overflow-hidden isolate p-7 border border-line bg-paper rounded-panel text-left">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-10 -bottom-12 w-36 h-36 rounded-full bg-sage/60"
+            ></div>
+            <div className="absolute top-7 right-7 px-3 py-1 rounded-full bg-paper/90 border border-line text-[10px] font-sans uppercase tracking-widest text-muted font-bold">
+              Human Performance
+            </div>
+            <span className="relative w-11 h-11 rounded-2xl bg-sage text-pine flex items-center justify-center font-serif font-light text-lg mb-5">
               II
             </span>
-            <h4 className="text-lg font-serif font-light leading-[0.92] tracking-tight text-ink mb-2">
+            <h4 className="relative text-xl font-serif font-light leading-[0.95] tracking-tight text-ink mb-2.5">
               Cognitive Science First
             </h4>
-            <p className="text-muted text-sm leading-relaxed">
+            <p className="relative text-muted text-sm leading-relaxed">
               Mental capacity, diagnostic evaluation scores, and nervous system
               recovery habits drive genuine career longevity.
             </p>
           </div>
-          <div className="p-6 border border-line bg-paper rounded-card text-left">
-            <span className="w-10 h-10 rounded-lg bg-gold/10 text-gold flex items-center justify-center font-serif font-light text-lg mb-4">
+          <div className="relative overflow-hidden isolate p-7 border border-line bg-paper rounded-panel text-left">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-10 -bottom-12 w-36 h-36 rounded-full bg-gold/20"
+            ></div>
+            <div className="absolute top-7 right-7 px-3 py-1 rounded-full bg-paper/90 border border-line text-[10px] font-sans uppercase tracking-widest text-muted font-bold">
+              Legacy Design
+            </div>
+            <span className="relative w-11 h-11 rounded-2xl bg-gold/10 text-gold flex items-center justify-center font-serif font-light text-lg mb-5">
               III
             </span>
-            <h4 className="text-lg font-serif font-light leading-[0.92] tracking-tight text-ink mb-2">
+            <h4 className="relative text-xl font-serif font-light leading-[0.95] tracking-tight text-ink mb-2.5">
               Multi-Generation Focus
             </h4>
-            <p className="text-muted text-sm leading-relaxed">
+            <p className="relative text-muted text-sm leading-relaxed">
               NIL deals and admission spikes are merely entry gates. We prepare
               you to build robust, generational wealth offices.
             </p>
@@ -837,6 +1120,59 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                 </div>
               );
             })}
+          </div>
+        </div>
+      </section>
+
+      {/* Closing Enrollment CTA */}
+      <section id="enrollment-cta-section" className="py-20 px-6 relative z-10">
+        <div className="max-w-6xl mx-auto">
+          <div
+            id="enrollment-cta-card"
+            className="relative overflow-hidden isolate bg-ink border border-white/10 rounded-panel p-10 md:p-14 shadow-elevated"
+          >
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-24 -top-24 w-96 h-96 rounded-full bg-clay/25 blur-[110px]"
+            ></div>
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -left-16 -bottom-24 w-72 h-72 rounded-full bg-pine/40 blur-[100px]"
+            ></div>
+
+            <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
+              <div className="max-w-xl text-left">
+                <span className="inline-flex px-3 py-1 rounded-full bg-white/10 border border-white/10 text-gold font-sans uppercase tracking-widest text-[11px] font-bold mb-5">
+                  Early Access Cohort
+                </span>
+                <h2 className="text-3xl md:text-5xl font-serif font-light leading-[0.92] tracking-tight text-paper mb-5">
+                  Begin Your Ascent Through the 9 Tiers.
+                </h2>
+                <p className="text-sage/70 text-sm md:text-base leading-relaxed">
+                  Join student-athletes, scholars, and entrepreneurial
+                  pathfinders already building their legacy portfolio, with
+                  the Senior Advisory Council one message away.
+                </p>
+              </div>
+
+              <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full lg:w-auto shrink-0">
+                <button
+                  id="btn-cta-start-onboarding"
+                  onClick={onStartOnboarding}
+                  className="w-full sm:w-auto bg-gold hover:brightness-95 text-ink font-sans font-extrabold uppercase tracking-widest text-sm px-8 py-4 rounded-full flex items-center justify-center gap-2 transition duration-300 shadow-md"
+                >
+                  Start Your Onboarding
+                  <ArrowRight className="w-4 h-4" />
+                </button>
+                <button
+                  id="btn-cta-explore-curriculum"
+                  onClick={onExploreTiers}
+                  className="w-full sm:w-auto bg-white/5 hover:bg-white/10 text-paper border border-white/15 font-sans font-semibold uppercase tracking-widest text-sm px-8 py-4 rounded-full transition duration-300"
+                >
+                  Browse Curriculum
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       </section>
@@ -1081,6 +1417,12 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
             isChatOpen ? "bg-ink from-ink to-ink border-white/10" : ""
           }`}
         >
+          {!isChatOpen && (
+            <span
+              id="concierge-pulse-ring"
+              className="absolute inset-0 rounded-full bg-gold/50 animate-ping -z-10 pointer-events-none"
+            ></span>
+          )}
           {isChatOpen ? (
             <X className="w-6 h-6 text-sage/70" />
           ) : (
