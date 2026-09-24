@@ -5,6 +5,7 @@ from django.http import QueryDict
 from rest_framework import serializers
 
 from assignments.models import Assignment
+from common.models import Status
 from common.image import build_absolute_image_url
 from lessons.models import Lesson
 from modules.models import Module
@@ -221,6 +222,43 @@ class CourseDetailSerializer(serializers.ModelSerializer):
         if obj.thumbnail and request:
             return request.build_absolute_uri(obj.thumbnail.url)
         return None
+
+
+class PublicLessonOutlineSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Lesson
+        fields = ["id", "title", "description", "content_type", "duration_minutes", "order"]
+        read_only_fields = fields
+
+
+class PublicModuleOutlineSerializer(serializers.ModelSerializer):
+    lessons = PublicLessonOutlineSerializer(many=True, read_only=True)
+    assignments = serializers.SerializerMethodField()
+    quizzes = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Module
+        fields = ["id", "title", "description", "order", "lessons", "assignments", "quizzes"]
+        read_only_fields = fields
+
+    def get_assignments(self, obj):
+        return CourseAssignmentSerializer(
+            [item for item in obj.assignments.all() if item.status == Status.PUBLISHED], many=True
+        ).data
+
+    def get_quizzes(self, obj):
+        return CourseQuizSerializer(
+            [item for item in obj.quizzes.all() if item.status == Status.PUBLISHED], many=True
+        ).data
+
+
+class PublicCourseDetailSerializer(PublicCourseListSerializer):
+    """Public syllabus only; lesson bodies, media, answer keys and user data stay private."""
+    modules = PublicModuleOutlineSerializer(many=True, read_only=True)
+
+    class Meta(PublicCourseListSerializer.Meta):
+        fields = PublicCourseListSerializer.Meta.fields + ["modules"]
+        read_only_fields = fields
 
 
 class TeacherSerializer(serializers.ModelSerializer):

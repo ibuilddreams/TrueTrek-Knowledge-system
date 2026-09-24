@@ -7,6 +7,8 @@ from .views import (
     CourseListCreateView,
     CourseStatusChoicesView,
     PublicCourseListView,
+    PublicCourseFiltersView,
+    PublicCourseDetailView,
     TagDetailView,
     TagListCreateView,
 )
@@ -18,6 +20,8 @@ urlpatterns = [
     path("tags/<int:pk>/", TagDetailView.as_view(), name="tag-detail"),
     path("status-choices/", CourseStatusChoicesView.as_view(), name="course-status-choices"),
     path("public/", PublicCourseListView.as_view(), name="course-public-list"),
+    path("public/filters/", PublicCourseFiltersView.as_view(), name="course-public-filters"),
+    path("public/<slug:slug>/", PublicCourseDetailView.as_view(), name="course-public-detail"),
     path("", CourseListCreateView.as_view(), name="course-list-create"),
     path("<int:pk>/", CourseDetailView.as_view(), name="course-detail"),
 ]
