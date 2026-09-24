@@ -14,7 +14,18 @@ from users.views import (
     SignupView,
 )
 
+from users.invitations import (InvitationsView, InvitationApproveView, InvitationLinkView,
+    InvitationAcceptView, FeedbackStatusView, FeedbackView, FeedbackEmailRetryView, InvitationEmailRetryView)
+
 urlpatterns = [
+    path("api/invitations/", InvitationsView.as_view()),
+    path("api/invitations/<uuid:pk>/email/", InvitationEmailRetryView.as_view()),
+    path("api/invitations/<uuid:pk>/feedback-email/", FeedbackEmailRetryView.as_view()),
+    path("api/invitations/<uuid:pk>/approve/", InvitationApproveView.as_view()),
+    path("api/invitations/<uuid:pk>/link/", InvitationLinkView.as_view()),
+    path("api/invitations/accept/", InvitationAcceptView.as_view()),
+    path("api/feedback/status/", FeedbackStatusView.as_view()),
+    path("api/feedback/", FeedbackView.as_view()),
     path('admin/', admin.site.urls),
     path('api/', include('users.urls')),
     path('api/courses/', include('courses.urls')),

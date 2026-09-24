@@ -4,6 +4,7 @@ import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { useDispatch, useSelector } from "react-redux";
 import Navbar from "./Navbar";
+import FeedbackBanner from "@/components/features/feedback/FeedbackBanner";
 import MobileMenu from "./MobileMenu";
 import Footer from "./Footer";
 import { ROUTES } from "@/constants/routes";
@@ -35,6 +36,7 @@ export default function SiteShell({ children }) {
       <Navbar />
       <MobileMenu />
       <main id="primary-view-wrapper" className="flex-grow">
+        <FeedbackBanner />
         {children}
       </main>
       {!hideFooter && <Footer />}

@@ -52,6 +52,7 @@ import RewardsTab from "@/components/features/admin/tabs/RewardsTab";
 import RedemptionsTab from "@/components/features/admin/tabs/RedemptionsTab";
 import StudentPointsTab from "@/components/features/admin/tabs/StudentPointsTab";
 import DailyDrillsTab from "@/components/features/admin/tabs/DailyDrillsTab";
+import InvitationsTab from "@/components/features/admin/tabs/InvitationsTab";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -60,6 +61,7 @@ const TABS = [
   { id: "students", label: "Students", icon: GraduationCap },
   { id: "future-clients", label: "Future Clients", icon: UserPlus },
   { id: "teachers", label: "Teachers", icon: Users },
+  { id: "invitations", label: "Invitations", icon: UserPlus },
   { id: "teacher-requests", label: "Teacher Requests", icon: FileWarning },
   { id: "student-concerns", label: "Student Concerns", icon: ShieldAlert },
   { id: "progress", label: "Progress", icon: LineChart },
@@ -75,6 +77,7 @@ const TABS = [
 ];
 
 const TAB_COMPONENTS = {
+  invitations: InvitationsTab,
   dashboard: DashboardTab,
   stats: StatsTab,
   courses: CoursesTab,

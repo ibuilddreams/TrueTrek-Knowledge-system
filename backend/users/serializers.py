@@ -265,6 +265,14 @@ class StudentUpdateSerializer(serializers.ModelSerializer):
         model = UserModel
         fields = ["first_name", "last_name", "gender", "account_status"]
 
+    def validate_account_status(self, value):
+        from .models import UserInvitation
+        if value == UserModel.AccountStatus.ACTIVE and UserInvitation.objects.filter(
+            user=self.instance, accepted_at__isnull=True
+        ).exists():
+            raise ValidationError("This invited user must complete account setup first.")
+        return value
+
     def update(self, instance, validated_data):
         account_status = validated_data.get("account_status")
         instance = super().update(instance, validated_data)
@@ -344,6 +352,14 @@ class TeacherUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
         fields = ["first_name", "last_name", "gender", "account_status"]
+
+    def validate_account_status(self, value):
+        from .models import UserInvitation
+        if value == UserModel.AccountStatus.ACTIVE and UserInvitation.objects.filter(
+            user=self.instance, accepted_at__isnull=True
+        ).exists():
+            raise ValidationError("This invited user must complete account setup first.")
+        return value
 
     def update(self, instance, validated_data):
         account_status = validated_data.get("account_status")

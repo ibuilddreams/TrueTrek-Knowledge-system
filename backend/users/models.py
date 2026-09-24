@@ -1,6 +1,7 @@
 from django.contrib.auth.models import AbstractUser
 from django.db import models
 from django.utils.translation import gettext_lazy as _
+import uuid
 
 
 from django.contrib.auth.base_user import BaseUserManager
@@ -125,3 +126,34 @@ class UserProfile(models.Model):
 
     def __str__(self):
         return f"Profile of {self.user.username}"
+
+
+class UserInvitation(models.Model):
+    id = models.UUIDField(primary_key=True, default=uuid.uuid4, editable=False)
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name="invitation")
+    invited_by = models.ForeignKey(CustomUser, null=True, on_delete=models.SET_NULL, related_name="sent_invitations")
+    created_at = models.DateTimeField(auto_now_add=True)
+    nda_approved = models.BooleanField(default=False)
+    nda_approved_by = models.ForeignKey(CustomUser, null=True, blank=True, on_delete=models.SET_NULL, related_name="approved_invitations")
+    nda_approved_at = models.DateTimeField(null=True, blank=True)
+    token_hash = models.CharField(max_length=64, blank=True)
+    token_expires_at = models.DateTimeField(null=True, blank=True)
+    accepted_at = models.DateTimeField(null=True, blank=True)
+    email_status = models.CharField(max_length=20, default="NOT_SENT")
+    email_sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["-created_at"]
+
+
+class InvitationFeedback(models.Model):
+    invitation = models.OneToOneField(UserInvitation, on_delete=models.CASCADE, related_name="feedback")
+    rating = models.PositiveSmallIntegerField()
+    comments = models.TextField()
+    suggestions = models.TextField(blank=True)
+    submitted_at = models.DateTimeField(auto_now_add=True)
+    admin_email_status = models.CharField(max_length=20, default="NOT_SENT")
+    admin_email_sent_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        constraints = [models.CheckConstraint(condition=models.Q(rating__gte=1, rating__lte=5), name="invitation_feedback_rating_1_to_5")]
