@@ -4,14 +4,24 @@ import React, { useEffect, useState } from 'react';
 import {
   UserPlus, CheckCircle, ShieldAlert, Sparkles, Star, MapPin,
   Handshake, Trophy, Award, Landmark, ShieldCheck, Quote, BookOpen,
-  Eye, EyeOff, Loader2,
+  Eye, EyeOff, Loader2, MessageSquarePlus,
 } from 'lucide-react';
 import confetti from 'canvas-confetti';
+import { useQuery } from '@tanstack/react-query';
 import MultiSelect from '@/components/ui/MultiSelect';
+import Modal from '@/components/ui/Modal';
+import TestimonialForm from '@/components/features/future-clients/TestimonialForm';
 import { getPublicCourses } from '@/services/coursesService';
 import { submitFutureClientApplication } from '@/services/futureClientsService';
+import { getPublicTestimonials } from '@/services/testimonialsService';
 import { getApiErrorMessage } from '@/lib/apiErrors';
 import { toastError } from '@/lib/toast';
+
+function getInitials(name) {
+  const parts = (name || '').trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '??';
+  return parts.slice(0, 2).map((part) => part[0].toUpperCase()).join('');
+}
 
 const AVATAR_GRADIENTS = [
   'from-pine to-moss',
@@ -33,6 +43,15 @@ export default function FutureClients() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submittedApplication, setSubmittedApplication] = useState(null);
+  const [isTestimonialModalOpen, setIsTestimonialModalOpen] = useState(false);
+
+  const { data: testimonials = [], isLoading: isLoadingTestimonials } = useQuery({
+    queryKey: ["publicTestimonials"],
+    queryFn: async () => {
+      const response = await getPublicTestimonials();
+      return response?.data?.results || [];
+    },
+  });
 
   useEffect(() => {
     let isMounted = true;
@@ -131,64 +150,6 @@ export default function FutureClients() {
       location: 'Los Angeles, CA',
       status: 'Charter Partner',
       badge: 'Academic Audit'
-    }
-  ];
-
-  const PREVIOUS_FEEDBACK = [
-    {
-      id: 'feedback-1',
-      name: 'Kyler Richardson Jr.',
-      role: 'Elite Quarterback, SEC Varsity Commit',
-      sport: 'Football (D1)',
-      school: 'University of Alabama',
-      avatarText: 'KR',
-      rating: 5,
-      quote: "The 11-Tier TrueTrek Learning curriculum changed how I handle contract negotiation. Before getting on the portal, I had zero understanding of LLC incorporation and tax reserves. Now I run my own athletic brand securely and in absolute compliance with NCAA rules.",
-      verifiedBadge: 'Scholar Athlete Alum'
-    },
-    {
-      id: 'feedback-2',
-      name: 'Elena Rostova',
-      role: 'AAC National High-Jump Finalist & Academic Lead',
-      sport: 'Track & Field (D1)',
-      school: 'Stanford University',
-      avatarText: 'ER',
-      rating: 5,
-      quote: "School administrators gave us NIL packets, but TrueTrek Learning provided a real-time simulation laboratory. Testing my compliance understanding on realistic contract scenarios in their daily drills took away all the legal anxiety. Highly recommended for any student athlete searching for serious direction.",
-      verifiedBadge: 'Stanford Track Commit'
-    },
-    {
-      id: 'feedback-3',
-      name: 'Coach Marcus Vance Sr.',
-      role: 'Athletic Recruiting Director & Compliance Liaison',
-      sport: 'Multi-Sport Advisor',
-      school: 'Metropolitan Prep Academy',
-      avatarText: 'MV',
-      rating: 5,
-      quote: "As an athletic director, keeping my recruits eligible is my primary directive. TrueTrek Learning provides an impenetrable educational framework. All 42 of our senior recruits registered as clients, and we had zero compliance infractions this entire cycle.",
-      verifiedBadge: 'Verified Athletic Director'
-    },
-    {
-      id: 'feedback-4',
-      name: 'Deborah Vance, Esq.',
-      role: 'Sports Agent & Family Trust Trustee',
-      sport: 'Legal Advisory',
-      school: 'Vance & Associates Law',
-      avatarText: 'DV',
-      rating: 5,
-      quote: "The strategic financial intelligence modules on this platform are top-tier. Typically we see athletes make rookie tax mistakes when sudden sponsorship wealth occurs. TrueTrek Learning models proper cash-flow reserving before they ever sign a deal.",
-      verifiedBadge: 'Primary Trustee Counsel'
-    },
-    {
-      id: 'feedback-5',
-      name: 'Jordan Miller',
-      role: 'PAC-12 Basketball Recruit & Brand Ambassador',
-      sport: 'Basketball (D1)',
-      school: 'University of Oregon',
-      avatarText: 'JM',
-      rating: 5,
-      quote: "The War Room advisor console is incredible. Submitting potential deals and getting simulated redlined audits in seconds helped my family understand what to ask for in actual legal negotiations. This system gives you total strategic power.",
-      verifiedBadge: 'Class of 2026 Commit'
     }
   ];
 
@@ -508,68 +469,124 @@ export default function FutureClients() {
                 <h3 className="text-2xl font-serif font-light text-ink tracking-tight">Previous Customers &amp; Feedback</h3>
                 <p className="text-muted text-sm font-light">Real athletic portfolios, family advisors, and academic councils tracking outstanding outcomes.</p>
               </div>
-              <div className="flex items-center gap-1 bg-paper border border-line px-3 py-1.5 rounded-full font-sans text-sm text-ink">
-                <span className="w-2 h-2 rounded-full bg-moss shrink-0" />
-                <span className="font-bold">100% Client Satisfaction</span>
+              <div className="flex items-center gap-3 shrink-0">
+                <div className="flex items-center gap-1 bg-paper border border-line px-3 py-1.5 rounded-full font-sans text-sm text-ink">
+                  <span className="w-2 h-2 rounded-full bg-moss shrink-0" />
+                  <span className="font-bold">100% Client Satisfaction</span>
+                </div>
+                <button
+                  id="btn-open-testimonial-form"
+                  type="button"
+                  onClick={() => setIsTestimonialModalOpen(true)}
+                  className="flex items-center gap-1.5 bg-pine hover:bg-moss text-paper font-sans text-sm font-semibold px-3.5 py-1.5 rounded-full transition shadow-soft"
+                >
+                  <MessageSquarePlus className="w-4 h-4" />
+                  Share Your Experience
+                </button>
               </div>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {PREVIOUS_FEEDBACK.map((feedback, index) => (
-              <div
-                id={`feedback-card-${feedback.id}`}
-                key={feedback.id}
-                className="bg-paper border border-line p-6 rounded-card flex flex-col justify-between shadow-soft hover:shadow-elevated hover:-translate-y-1 transition-all duration-300 relative group text-left"
-              >
-                {/* Visual quote icon ornament */}
-                <div className="absolute right-4 top-4 text-porcelain group-hover:text-gold/20 transition-colors pointer-events-none">
-                  <Quote className="w-10 h-10 stroke-[3]" />
-                </div>
-
-                <div className="space-y-4 relative z-10">
-                  {/* Stars Rating */}
-                  <div className="flex gap-1">
-                    {[...Array(feedback.rating)].map((_, i) => (
-                      <Star key={i} className="w-3.5 h-3.5 fill-gold text-gold" />
-                    ))}
+          {isLoadingTestimonials ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {[...Array(3)].map((_, index) => (
+                <div key={index} className="bg-paper border border-line p-6 rounded-card space-y-4 animate-pulse">
+                  <div className="h-3.5 w-24 bg-line rounded" />
+                  <div className="space-y-2">
+                    <div className="h-3 w-full bg-line rounded" />
+                    <div className="h-3 w-5/6 bg-line rounded" />
+                    <div className="h-3 w-2/3 bg-line rounded" />
                   </div>
-
-                  {/* Testimonial Quote */}
-                  <blockquote className="text-xs sm:text-sm text-muted font-light italic leading-relaxed py-1">
-                    &ldquo;{feedback.quote}&rdquo;
-                  </blockquote>
-                </div>
-
-                {/* Writer Identity Details */}
-                <div className="flex items-center gap-3.5 border-t border-line pt-4 mt-4 relative z-10">
-                  <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length]} text-paper flex items-center justify-center font-serif font-medium text-sm shadow-soft shrink-0`}>
-                    {feedback.avatarText}
-                  </div>
-                  <div className="min-w-0 flex-grow">
-                    <div className="flex items-center justify-between gap-1">
-                      <cite className="not-italic text-sm font-serif font-light text-ink truncate block">
-                        {feedback.name}
-                      </cite>
+                  <div className="flex items-center gap-3 border-t border-line pt-4">
+                    <div className="w-10 h-10 rounded-full bg-line shrink-0" />
+                    <div className="flex-1 space-y-1.5">
+                      <div className="h-3 w-1/2 bg-line rounded" />
+                      <div className="h-2.5 w-2/3 bg-line rounded" />
                     </div>
-                    <span className="text-[11px] text-pine font-sans font-medium block truncate">
-                      {feedback.role}
-                    </span>
-                    <span className="text-[10px] text-muted font-sans block uppercase tracking-wider">
-                      {feedback.school} &bull; {feedback.sport}
-                    </span>
                   </div>
                 </div>
+              ))}
+            </div>
+          ) : testimonials.length === 0 ? (
+            <div className="bg-paper border border-line rounded-card p-10 text-center space-y-3">
+              <Quote className="w-8 h-8 text-porcelain mx-auto" />
+              <p className="text-muted text-sm font-light">
+                No testimonials published yet. Be the first to share your experience!
+              </p>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {testimonials.map((feedback, index) => (
+                <div
+                  id={`feedback-card-${feedback.id}`}
+                  key={feedback.id}
+                  className="bg-paper border border-line p-6 rounded-card flex flex-col justify-between shadow-soft hover:shadow-elevated hover:-translate-y-1 transition-all duration-300 relative group text-left"
+                >
+                  {/* Visual quote icon ornament */}
+                  <div className="absolute right-4 top-4 text-porcelain group-hover:text-gold/20 transition-colors pointer-events-none">
+                    <Quote className="w-10 h-10 stroke-[3]" />
+                  </div>
 
-                <div className="absolute top-3 left-4 bg-gold/15 border border-gold/30 font-sans text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded text-pine scale-0 group-hover:scale-100 duration-150 transform transition">
-                  {feedback.verifiedBadge}
+                  <div className="space-y-4 relative z-10">
+                    {/* Stars Rating */}
+                    <div className="flex gap-1">
+                      {[...Array(feedback.rating)].map((_, i) => (
+                        <Star key={i} className="w-3.5 h-3.5 fill-gold text-gold" />
+                      ))}
+                    </div>
+
+                    {/* Testimonial Quote */}
+                    <blockquote className="text-xs sm:text-sm text-muted font-light italic leading-relaxed py-1">
+                      &ldquo;{feedback.quote}&rdquo;
+                    </blockquote>
+                  </div>
+
+                  {/* Writer Identity Details */}
+                  <div className="flex items-center gap-3.5 border-t border-line pt-4 mt-4 relative z-10">
+                    <div className={`w-10 h-10 rounded-full bg-gradient-to-br ${AVATAR_GRADIENTS[index % AVATAR_GRADIENTS.length]} text-paper flex items-center justify-center font-serif font-medium text-sm shadow-soft shrink-0`}>
+                      {getInitials(feedback.name)}
+                    </div>
+                    <div className="min-w-0 flex-grow">
+                      <div className="flex items-center justify-between gap-1">
+                        <cite className="not-italic text-sm font-serif font-light text-ink truncate block">
+                          {feedback.name}
+                        </cite>
+                      </div>
+                      {feedback.role && (
+                        <span className="text-[11px] text-pine font-sans font-medium block truncate">
+                          {feedback.role}
+                        </span>
+                      )}
+                      {(feedback.school || feedback.sport) && (
+                        <span className="text-[10px] text-muted font-sans block uppercase tracking-wider">
+                          {[feedback.school, feedback.sport].filter(Boolean).join(' • ')}
+                        </span>
+                      )}
+                    </div>
+                  </div>
+
+                  {feedback.verified_badge && (
+                    <div className="absolute top-3 left-4 bg-gold/15 border border-gold/30 font-sans text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded text-pine scale-0 group-hover:scale-100 duration-150 transform transition">
+                      {feedback.verified_badge}
+                    </div>
+                  )}
                 </div>
-              </div>
-            ))}
-          </div>
+              ))}
+            </div>
+          )}
         </section>
 
       </div>
+
+      <Modal
+        isOpen={isTestimonialModalOpen}
+        onClose={() => setIsTestimonialModalOpen(false)}
+        icon={MessageSquarePlus}
+        title="Share Your Experience"
+        subtitle="Tell future clients about your journey with TrueTrek Learning."
+      >
+        <TestimonialForm onSubmitted={() => setIsTestimonialModalOpen(false)} />
+      </Modal>
     </div>
   );
 }

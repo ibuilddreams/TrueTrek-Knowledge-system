@@ -16,6 +16,7 @@ import {
   Layers3,
   LineChart,
   Lock,
+  MessageSquareQuote,
   Route,
   Shield,
   ShieldAlert,
@@ -53,6 +54,7 @@ import RedemptionsTab from "@/components/features/admin/tabs/RedemptionsTab";
 import StudentPointsTab from "@/components/features/admin/tabs/StudentPointsTab";
 import DailyDrillsTab from "@/components/features/admin/tabs/DailyDrillsTab";
 import InvitationsTab from "@/components/features/admin/tabs/InvitationsTab";
+import TestimonialsTab from "@/components/features/admin/tabs/TestimonialsTab";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -60,6 +62,7 @@ const TABS = [
   { id: "enrollments", label: "Enrollments", icon: ClipboardList },
   { id: "students", label: "Students", icon: GraduationCap },
   { id: "future-clients", label: "Future Clients", icon: UserPlus },
+  { id: "testimonials", label: "Testimonials", icon: MessageSquareQuote },
   { id: "teachers", label: "Teachers", icon: Users },
   { id: "invitations", label: "Invitations", icon: UserPlus },
   { id: "teacher-requests", label: "Teacher Requests", icon: FileWarning },
@@ -84,6 +87,7 @@ const TAB_COMPONENTS = {
   enrollments: EnrollmentsTab,
   students: StudentsTab,
   "future-clients": FutureClientsTab,
+  testimonials: TestimonialsTab,
   teachers: TeachersTab,
   "teacher-requests": TeacherRequestsTab,
   "student-concerns": StudentConcernsTab,

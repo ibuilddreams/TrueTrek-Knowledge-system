@@ -38,14 +38,14 @@ export default function FeedbackForm() {
   if (status === "idle" || status === "loading") return <Loader label="Checking session…" />;
   const response = query.data?.data?.response;
   return (
-    <section className="mx-auto max-w-2xl px-5 py-10 sm:py-16">
-      <div className="mb-8 text-center">
-        <span className="mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-pine/10 bg-pine/5 text-pine"><MessageSquareText className="h-5 w-5" /></span>
+    <section className="tt-interactive mx-auto max-w-2xl px-5 py-10 sm:py-16">
+      <div className="tt-enter mb-8 text-center">
+        <span className="tt-float mb-4 inline-flex h-12 w-12 items-center justify-center rounded-2xl border border-pine/10 bg-pine/5 text-pine"><MessageSquareText className="h-5 w-5" /></span>
         <p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.22em] text-muted">Your voice matters</p>
         <h1 className="font-serif text-3xl sm:text-4xl text-ink">A better TrueTrek starts with you.</h1>
         <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-muted">Share what you enjoyed and where we can do better. Your experience helps shape what comes next.</p>
       </div>
-      <div className="overflow-hidden rounded-3xl border border-line bg-paper shadow-sm">
+      <div className="tt-enter overflow-hidden rounded-3xl border border-line bg-paper shadow-sm">
         <div className="h-1 bg-gradient-to-r from-pine via-moss to-gold" />
         <div className="space-y-6 p-6 sm:p-9">
           {!isAuthenticated ? <div className="space-y-5 text-center py-5"><ShieldCheck className="mx-auto h-8 w-8 text-pine" /><h2 className="font-serif text-2xl">Your feedback is personal.</h2><p className="text-sm text-muted">Sign in to access your feedback form.</p><Link href="/login?next=/feedback" className="inline-flex items-center gap-2 rounded-xl bg-pine px-5 py-3 text-sm text-white">Sign in to continue<ArrowRight className="h-4 w-4" /></Link></div>
@@ -53,7 +53,7 @@ export default function FeedbackForm() {
             : query.isError ? <div role="alert" className="rounded-xl border border-line bg-porcelain/50 p-5 text-sm"><p>{getApiErrorMessage(query.error)}</p>{query.error?.status !== 403 && <button className="underline mt-3" onClick={() => query.refetch()}>Try again</button>}</div>
             : response ? (
               <div className="space-y-6">
-                <div className="text-center"><CheckCircle2 className="mx-auto mb-3 h-9 w-9 text-pine" /><h2 className="font-serif text-2xl text-pine">Thank you for sharing.</h2><p className="mt-2 text-sm leading-relaxed text-muted">Your feedback is with our team. We appreciate you helping us make TrueTrek better.</p></div>
+                <div className="text-center"><CheckCircle2 className="tt-confirm mx-auto mb-3 h-9 w-9 text-pine" /><h2 className="font-serif text-2xl text-pine">Thank you for sharing.</h2><p className="mt-2 text-sm leading-relaxed text-muted">Your feedback is with our team. We appreciate you helping us make TrueTrek better.</p></div>
                 <div className="rounded-2xl border border-gold/25 bg-gold/5 p-5 text-center"><p className="mb-3 text-[10px] uppercase tracking-widest text-muted">Your experience</p><StarRating value={response.rating} /><p className="mt-2 text-sm font-medium text-pine">{RATING_LABELS[response.rating]}</p></div>
                 <div><h3 className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted">What you shared</h3><p className="whitespace-pre-wrap break-words text-sm leading-7">{response.comments}</p></div>
                 {response.suggestions && <div className="border-t border-line pt-5"><h3 className="mb-2 text-[10px] font-semibold uppercase tracking-widest text-muted">Your suggestions</h3><p className="whitespace-pre-wrap break-words text-sm leading-7">{response.suggestions}</p></div>}

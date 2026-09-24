@@ -22,7 +22,7 @@ export default function StarRating({ value = 0, onChange, disabled = false, comp
         {[1, 2, 3, 4, 5].map((star) => (
           <label key={star} className={`relative ${disabled ? "cursor-not-allowed opacity-50" : "cursor-pointer"}`} onMouseEnter={() => !disabled && setHovered(star)}>
             <input className="peer sr-only" type="radio" name={`rating-${id}`} value={star} checked={selected === star} onChange={() => { setHovered(0); onChange(star); }} required aria-label={`${star} ${star === 1 ? "star" : "stars"} — ${RATING_LABELS[star]}`} />
-            <span className={`flex h-12 w-10 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border transition-all duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-pine peer-focus-visible:ring-offset-4 ${star <= preview ? "border-gold/40 bg-gold/10 shadow-sm" : "border-line bg-paper hover:border-gold/40"}`}>
+            <span className={`tt-star flex h-12 w-10 sm:h-14 sm:w-14 items-center justify-center rounded-2xl border transition-all duration-150 peer-focus-visible:ring-2 peer-focus-visible:ring-pine peer-focus-visible:ring-offset-4 ${star <= preview ? "border-gold/40 bg-gold/10 shadow-sm" : "border-line bg-paper hover:border-gold/40"}`}>
               <Star aria-hidden="true" className={`h-7 w-7 transition-colors ${star <= preview ? "fill-gold text-gold" : "text-muted/40"}`} strokeWidth={1.5} />
             </span>
           </label>

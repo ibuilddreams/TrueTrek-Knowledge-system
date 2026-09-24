@@ -36,7 +36,7 @@ export default function StatCard({
 
   return (
     <div
-      className={`group relative bg-paper border border-line p-5 sm:p-6 rounded-card shadow-soft overflow-hidden transition-shadow duration-200 ${tone.glow}`}
+      className={`tt-card group relative bg-paper border border-line p-5 sm:p-6 rounded-card shadow-soft overflow-hidden transition-shadow duration-200 ${tone.glow}`}
     >
       <div
         className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${tone.bar} opacity-90`}
