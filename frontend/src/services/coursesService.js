@@ -6,6 +6,7 @@ export async function getPublicCourses({
   search,
   category,
   excludeEnrolled,
+  sort,
 } = {}) {
   const params = new URLSearchParams();
   params.set("page", page);
@@ -13,7 +14,16 @@ export async function getPublicCourses({
   if (search) params.set("search", search);
   if (category) params.set("category", category);
   if (excludeEnrolled) params.set("exclude_enrolled", "true");
+  if (sort) params.set("sort", sort);
   return backendClient.get(`/courses/public/?${params.toString()}`);
+}
+
+export async function getPublicCourseFilters() {
+  return backendClient.get("/courses/public/filters/");
+}
+
+export async function getPublicCourseBySlug(slug) {
+  return backendClient.get(`/courses/public/${encodeURIComponent(slug)}/`);
 }
 
 export async function getCourses({ pageSize = 100, search, status, category, tags } = {}) {

@@ -1,4 +1,5 @@
 from django.contrib.auth import get_user_model
+from django.db.models import Q
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
@@ -16,6 +17,7 @@ from .serializers import (
     CourseListSerializer,
     CourseWriteSerializer,
     PublicCourseListSerializer,
+    PublicCourseDetailSerializer,
     TagSerializer,
     TagWriteSerializer,
     TeacherSerializer,
@@ -192,11 +194,14 @@ class PublicCourseListView(generics.ListAPIView):
 
         search = params.get("search")
         if search:
-            queryset = queryset.filter(title__icontains=search)
+            queryset = queryset.filter(Q(title__icontains=search) | Q(description__icontains=search))
 
         category_param = params.get("category")
         if category_param:
             queryset = queryset.filter(category_id=category_param)
+
+        ordering = {"title": "title", "-title": "-title", "newest": "-created_at"}
+        queryset = queryset.order_by(ordering.get(params.get("sort"), "title"), "id")
 
         # Opt-in — the public curriculum/marketing page shares this endpoint and
         # must keep showing every course regardless of the viewer's enrollment
@@ -217,6 +222,28 @@ class PublicCourseListView(generics.ListAPIView):
         serializer = self.get_serializer(page, many=True)
         paginated_data = self.paginator.get_paginated_response(serializer.data).data
         return success_response(paginated_data, message="Courses fetched successfully")
+
+
+class PublicCourseDetailView(generics.RetrieveAPIView):
+    permission_classes = [AllowAny]
+    serializer_class = PublicCourseDetailSerializer
+    lookup_field = "slug"
+    queryset = Course.objects.filter(status=Status.PUBLISHED).select_related("category").prefetch_related(
+        "tags", "modules__lessons", "modules__assignments", "modules__quizzes"
+    )
+
+    def retrieve(self, request, *args, **kwargs):
+        return success_response(self.get_serializer(self.get_object()).data, message="Course details fetched successfully")
+
+
+class PublicCourseFiltersView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+
+    def get(self, request):
+        courses = Course.objects.filter(status=Status.PUBLISHED)
+        return success_response({
+            "subjects": list(Category.objects.filter(courses__in=courses).distinct().order_by("name").values("id", "name")),
+        }, message="Curriculum filters fetched successfully")
 
 
 class CourseListCreateView(generics.ListCreateAPIView):
