@@ -149,3 +149,11 @@ class PathwayCourseOrderTests(PathwayTestCase):
         pc_b.refresh_from_db()
         self.assertEqual(pc_a.order, 2)
         self.assertEqual(pc_b.order, 1)
+
+
+class GuestCheckoutTests(APITestCase):
+    def test_guest_cannot_checkout_pathways(self):
+        response = self.client.post(reverse("pathway-checkout"), {"pathway_ids": [1]}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+        self.assertFalse(PathwayEnrollment.objects.exists())

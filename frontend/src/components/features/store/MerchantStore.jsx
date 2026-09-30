@@ -280,22 +280,31 @@ export default function MerchantStore() {
             </p>
           </div>
 
-          {canUseCart && (
-            <button
-              id="shopping-cart-toggle-btn"
-              type="button"
-              onClick={() => setIsCartOpen(true)}
-              title="Course Cart"
-              aria-label={`Open cart, ${cart.length} ${cart.length === 1 ? "course" : "courses"}`}
-              className="absolute -top-8 right-0 w-12 h-12 rounded-full bg-gold hover:brightness-95 text-ink flex items-center justify-center shadow-md transition-all duration-200 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-paper"
-            >
-              <ShoppingCart className="w-5 h-5" />
-              <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-ink text-gold text-[11px] font-bold flex items-center justify-center font-sans border-2 border-pine">
-                {cart.length > 9 ? "9+" : cart.length}
-              </span>
-            </button>
-          )}
         </div>
+
+        {canUseCart && (
+          <button
+            id="shopping-cart-toggle-btn"
+            type="button"
+            onClick={() => {
+              // Guests have no cart — send them to sign in instead of an empty drawer.
+              if (!isAuthenticated) {
+                toastInfo("Sign in to add courses to your cart.");
+                router.push(ROUTES.LOGIN);
+                return;
+              }
+              setIsCartOpen(true);
+            }}
+            title="Course Cart"
+            aria-label={`Open cart, ${cart.length} ${cart.length === 1 ? "course" : "courses"}`}
+            className="absolute top-5 right-5 sm:top-6 sm:right-8 z-20 w-12 h-12 rounded-full bg-gold hover:brightness-95 text-ink flex items-center justify-center shadow-md transition-all duration-200 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-paper"
+          >
+            <ShoppingCart className="w-5 h-5" />
+            <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-ink text-gold text-[11px] font-bold flex items-center justify-center font-sans border-2 border-pine">
+              {cart.length > 9 ? "9+" : cart.length}
+            </span>
+          </button>
+        )}
       </div>
 
       <div className="max-w-6xl mx-auto px-6 mt-12">
