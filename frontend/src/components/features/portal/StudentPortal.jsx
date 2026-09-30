@@ -34,6 +34,8 @@ import WarRoomScreen from "@/components/features/warroom/WarRoomScreen";
 // refresh of the Drill tab doesn't re-nag) — see the reminder effect below.
 const DRILL_REMINDER_STORAGE_PREFIX = "ttl:dailyDrillReminderShown:";
 
+const DETAIL_PARAMS = ["assignmentCourse", "quizCourse", "course", "content"];
+
 function StudentPortalContent() {
   const router = useRouter();
   const pathname = usePathname();
@@ -140,6 +142,10 @@ function StudentPortalContent() {
         params.set("tab", nextTab);
       }
 
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      // Opened detail views (course/assignment/quiz/etc.) live in the URL, so drop
+      // them on a tab switch — returning to a tab should start at its list.
+      DETAIL_PARAMS.forEach((key) => params.delete(key));
       const query = params.toString();
       router.replace(query ? `${pathname}?${query}` : pathname, {
         scroll: false,

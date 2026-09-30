@@ -111,6 +111,8 @@ function resolveTab(tabParam) {
   return DEFAULT_TAB;
 }
 
+const DETAIL_PARAMS = ["progressCourseId", "concern"];
+
 function AdminDashboardContent() {
   const router = useRouter();
   const pathname = usePathname();
@@ -142,6 +144,10 @@ function AdminDashboardContent() {
         params.set("tab", nextTab);
       }
 
+      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+      // Opened detail views (course/assignment/quiz/etc.) live in the URL, so drop
+      // them on a tab switch — returning to a tab should start at its list.
+      DETAIL_PARAMS.forEach((key) => params.delete(key));
       const query = params.toString();
       router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
     },

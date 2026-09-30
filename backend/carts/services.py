@@ -7,15 +7,21 @@ from enrollments.services import assign_teacher_for_course
 from .models import CartItem
 
 
-def checkout_cart(student):
+def checkout_cart(student, course_ids=None):
     """Processes every course currently in the student's cart as a purchase.
 
     Each course is handled independently and atomically — a course is either
     fully enrolled (Enrollment created + cart item removed) or left untouched,
     never a partial state. One course failing (no instructor yet, no longer
     published) doesn't block the rest of the cart from checking out.
+
+    When `course_ids` is given, only those cart items are processed and the
+    rest of the cart is left untouched (used by "Buy now" on a single course).
     """
-    cart_items = list(CartItem.objects.filter(user=student).select_related("course"))
+    items = CartItem.objects.filter(user=student)
+    if course_ids is not None:
+        items = items.filter(course_id__in=course_ids)
+    cart_items = list(items.select_related("course"))
 
     enrolled = []
     already_enrolled = []

@@ -406,3 +406,45 @@ class CartCheckoutViewTests(APITestCase):
             Enrollment.objects.filter(student=self.student, course=good_course).exists()
         )
         self.assertTrue(CartItem.objects.filter(user=self.student, course=orphan_course).exists())
+
+
+class CartCheckoutSelectedCoursesTests(APITestCase):
+    """`course_ids` limits checkout to specific cart items ("Buy now")."""
+
+    setUp = CartCheckoutViewTests.setUp
+
+    def _make_course(self, code):
+        course = Course.objects.create(
+            title=code, code=code, category=self.category, status=Status.PUBLISHED
+        )
+        CourseInstructor.objects.create(course=course, instructor=self.teacher_a)
+        return course
+
+    def test_checkout_only_selected_course_leaves_rest_of_cart(self):
+        wanted = self._make_course("SEL-1")
+        other = self._make_course("SEL-2")
+        CartItem.objects.create(user=self.student, course=wanted)
+        CartItem.objects.create(user=self.student, course=other)
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.post(self.checkout_url, {"course_ids": [wanted.id]}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(Enrollment.objects.filter(student=self.student, course=wanted).exists())
+        self.assertFalse(Enrollment.objects.filter(student=self.student, course=other).exists())
+        self.assertTrue(CartItem.objects.filter(user=self.student, course=other).exists())
+
+    def test_checkout_selected_course_not_in_cart_returns_400(self):
+        course = self._make_course("SEL-3")
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.post(self.checkout_url, {"course_ids": [course.id]}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_checkout_rejects_malformed_course_ids(self):
+        self.client.force_authenticate(user=self.student)
+
+        response = self.client.post(self.checkout_url, {"course_ids": "abc"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
