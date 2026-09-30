@@ -281,23 +281,19 @@ export default function MerchantStore() {
           </div>
 
           {canUseCart && (
-            <div className="shrink-0 flex items-center gap-4">
-              <button
-                id="shopping-cart-toggle-btn"
-                type="button"
-                onClick={() => setIsCartOpen(true)}
-                aria-label={`Open cart, ${cart.length} ${cart.length === 1 ? "course" : "courses"}`}
-                className="relative bg-gold hover:brightness-95 text-ink p-4 rounded-2xl flex items-center gap-3 transition-all duration-200 shadow-md transform hover:scale-[1.02]"
-              >
-                <ShoppingCart className="w-5 h-5" />
-                <span className="font-sans text-xs font-medium uppercase tracking-widest hidden sm:inline">
-                  Course Cart
-                </span>
-                <span className="bg-ink text-gold text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center font-sans">
-                  {cart.length}
-                </span>
-              </button>
-            </div>
+            <button
+              id="shopping-cart-toggle-btn"
+              type="button"
+              onClick={() => setIsCartOpen(true)}
+              title="Course Cart"
+              aria-label={`Open cart, ${cart.length} ${cart.length === 1 ? "course" : "courses"}`}
+              className="absolute -top-8 right-0 w-12 h-12 rounded-full bg-gold hover:brightness-95 text-ink flex items-center justify-center shadow-md transition-all duration-200 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-paper"
+            >
+              <ShoppingCart className="w-5 h-5" />
+              <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-ink text-gold text-[11px] font-bold flex items-center justify-center font-sans border-2 border-pine">
+                {cart.length > 9 ? "9+" : cart.length}
+              </span>
+            </button>
           )}
         </div>
       </div>
