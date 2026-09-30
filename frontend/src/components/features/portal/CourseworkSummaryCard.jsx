@@ -118,23 +118,18 @@ export default function CourseworkSummaryCard({
     >
       <div className="absolute inset-x-6 top-0 h-px bg-linear-to-r from-transparent via-gold/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
 
-      <div className="flex items-start justify-between gap-3">
+      <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-3 min-w-0">
           <div
-            className={`w-11 h-11 rounded-2xl flex items-center justify-center shrink-0 border ${accentClass.light}`}
+            className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 border ${accentClass.light}`}
           >
             <span className="text-sm font-serif font-bold tracking-wide">
               {getInitials(courseTitle)}
             </span>
           </div>
-          <div className="min-w-0">
-            <p className="text-[11px] font-mono uppercase tracking-wider text-muted">
-              Course
-            </p>
-            <h3 className="font-serif font-bold mt-0.5 truncate text-ink">
-              {courseTitle}
-            </h3>
-          </div>
+          <p className="text-[11px] font-mono uppercase tracking-wider text-muted">
+            Course
+          </p>
         </div>
         <span
           className={`shrink-0 inline-flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${
@@ -151,6 +146,17 @@ export default function CourseworkSummaryCard({
           {allCaughtUp ? "All caught up" : `${pendingCount} to do`}
         </span>
       </div>
+
+      {/* Full-width title row so long course names wrap (up to 2 lines) instead
+          of being cut off; min-height keeps cards in a grid row aligned. */}
+      <h3
+        title={courseTitle}
+        className="font-serif text-lg font-bold leading-snug text-ink line-clamp-2 min-h-[3.25rem] wrap-break-word"
+      >
+        {courseTitle}
+      </h3>
+
+      <div className="border-t border-line/70" />
 
       <div className="flex items-center gap-4">
         <ProgressRing value={completionPercentage} tone={tone} />

@@ -2,7 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ClipboardCheck, FileText, Paperclip, Plus, Trash2, Upload, X } from "lucide-react";
+import {
+  Check,
+  ClipboardCheck,
+  FileText,
+  Paperclip,
+  Plus,
+  Trash2,
+  Upload,
+  X,
+} from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import AiSuggestionsPanel from "@/components/ui/AiSuggestionsPanel";
 import AssignmentAttachmentsModal from "@/components/features/admin/AssignmentAttachmentsModal";
@@ -47,7 +56,8 @@ const GRADING_MODE_OPTIONS = [
   {
     value: "AI",
     label: "AI Grading",
-    description: "Elite Coach AI grades each submission and assigns academic marks — see below.",
+    description:
+      "Elite Coach AI grades each submission and assigns academic marks — see below.",
   },
 ];
 
@@ -55,12 +65,14 @@ const GRADING_METHOD_OPTIONS = [
   {
     value: "RUBRIC",
     label: "Rubric / Criteria Based",
-    description: "Grade the whole submission holistically against named criteria (e.g. Understanding, Accuracy).",
+    description:
+      "Grade the whole submission holistically against named criteria (e.g. Understanding, Accuracy).",
   },
   {
     value: "QUESTION_BASED",
     label: "Question Based",
-    description: "Grade each question separately — use when the assignment has clearly identifiable questions with their own marks.",
+    description:
+      "Grade each question separately — use when the assignment has clearly identifiable questions with their own marks.",
   },
 ];
 
@@ -78,7 +90,7 @@ function toDatetimeLocalValue(isoString) {
   if (Number.isNaN(date.getTime())) return "";
   const pad = (value) => String(value).padStart(2, "0");
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(
-    date.getHours()
+    date.getHours(),
   )}:${pad(date.getMinutes())}`;
 }
 
@@ -125,7 +137,8 @@ export default function AddAssignmentModal({
   const [pendingAttachments, setPendingAttachments] = useState([]);
   const pendingAttachmentInputRef = useRef(null);
 
-  const [titleSuggestionsDismissed, setTitleSuggestionsDismissed] = useState(false);
+  const [titleSuggestionsDismissed, setTitleSuggestionsDismissed] =
+    useState(false);
   const [appliedTitleSuggestion, setAppliedTitleSuggestion] = useState(null);
   const debouncedTitle = useDebouncedValue(form.title.trim(), 500);
 
@@ -144,7 +157,10 @@ export default function AddAssignmentModal({
   const titleSuggestionsQuery = useQuery({
     queryKey: ["assignment-title-suggestions", form.module, debouncedTitle],
     queryFn: () =>
-      getAssignmentTitleSuggestions({ module: Number(form.module), draftTitle: debouncedTitle }),
+      getAssignmentTitleSuggestions({
+        module: Number(form.module),
+        draftTitle: debouncedTitle,
+      }),
     enabled: showTitleSuggestions,
     retry: false,
     staleTime: 5 * 60 * 1000,
@@ -155,8 +171,10 @@ export default function AddAssignmentModal({
     setAppliedTitleSuggestion(suggestion);
   };
 
-  const [descriptionSuggestionsDismissed, setDescriptionSuggestionsDismissed] = useState(false);
-  const [appliedDescriptionSuggestion, setAppliedDescriptionSuggestion] = useState(null);
+  const [descriptionSuggestionsDismissed, setDescriptionSuggestionsDismissed] =
+    useState(false);
+  const [appliedDescriptionSuggestion, setAppliedDescriptionSuggestion] =
+    useState(null);
   const debouncedDescription = useDebouncedValue(form.description.trim(), 500);
 
   useEffect(() => {
@@ -172,7 +190,12 @@ export default function AddAssignmentModal({
     !descriptionSuggestionsDismissed;
 
   const descriptionSuggestionsQuery = useQuery({
-    queryKey: ["assignment-description-suggestions", form.module, form.title, debouncedDescription],
+    queryKey: [
+      "assignment-description-suggestions",
+      form.module,
+      form.title,
+      debouncedDescription,
+    ],
     queryFn: () =>
       getAssignmentDescriptionSuggestions({
         module: Number(form.module),
@@ -192,18 +215,23 @@ export default function AddAssignmentModal({
   const createAssignmentMutation = useMutation({
     mutationFn: (payload) => createAssignment(payload),
     onSuccess: (_data, payload) => {
-      queryClient.invalidateQueries({ queryKey: ["assignments", payload.module] });
+      queryClient.invalidateQueries({
+        queryKey: ["assignments", payload.module],
+      });
     },
   });
 
   const updateAssignmentMutation = useMutation({
     mutationFn: ({ id, payload }) => updateAssignment(id, payload),
     onSuccess: (_data, { payload }) => {
-      queryClient.invalidateQueries({ queryKey: ["assignments", payload.module] });
+      queryClient.invalidateQueries({
+        queryKey: ["assignments", payload.module],
+      });
     },
   });
 
-  const isSubmitting = createAssignmentMutation.isPending || updateAssignmentMutation.isPending;
+  const isSubmitting =
+    createAssignmentMutation.isPending || updateAssignmentMutation.isPending;
 
   useEffect(() => {
     if (!isOpen) return;
@@ -225,11 +253,15 @@ export default function AddAssignmentModal({
           name: criterion.name || "",
           description: criterion.description || "",
           max_marks: String(criterion.max_marks ?? 10),
-        }))
+        })),
       );
     } else {
-      const initialModuleId = defaultModuleId ? String(defaultModuleId) : String(modules[0]?.id || "");
-      const initialModule = modules.find((module) => String(module.id) === initialModuleId);
+      const initialModuleId = defaultModuleId
+        ? String(defaultModuleId)
+        : String(modules[0]?.id || "");
+      const initialModule = modules.find(
+        (module) => String(module.id) === initialModuleId,
+      );
       setForm({
         ...INITIAL_FORM,
         module: initialModuleId,
@@ -245,12 +277,15 @@ export default function AddAssignmentModal({
     setAppliedDescriptionSuggestion(null);
   }, [isOpen, defaultModuleId, assignment, modules]);
 
-  const addCriterion = () => setRubricCriteria((prev) => [...prev, { ...EMPTY_CRITERION }]);
+  const addCriterion = () =>
+    setRubricCriteria((prev) => [...prev, { ...EMPTY_CRITERION }]);
   const removeCriterion = (index) =>
     setRubricCriteria((prev) => prev.filter((_, i) => i !== index));
   const updateCriterion = (index, field, value) =>
     setRubricCriteria((prev) =>
-      prev.map((criterion, i) => (i === index ? { ...criterion, [field]: value } : criterion))
+      prev.map((criterion, i) =>
+        i === index ? { ...criterion, [field]: value } : criterion,
+      ),
     );
 
   const handleClose = () => {
@@ -271,7 +306,10 @@ export default function AddAssignmentModal({
   };
 
   const updateField = (field) => (event) => {
-    const value = event.target.type === "checkbox" ? event.target.checked : event.target.value;
+    const value =
+      event.target.type === "checkbox"
+        ? event.target.checked
+        : event.target.value;
     setForm((prev) => ({ ...prev, [field]: value }));
     setFieldErrors((prev) => ({ ...prev, [field]: null }));
   };
@@ -280,8 +318,14 @@ export default function AddAssignmentModal({
     const value = event.target.value;
     setForm((prev) => {
       if (isEditMode) return { ...prev, module: value };
-      const selectedModule = modules.find((module) => String(module.id) === value);
-      return { ...prev, module: value, order: String((selectedModule?.assignments_count ?? 0) + 1) };
+      const selectedModule = modules.find(
+        (module) => String(module.id) === value,
+      );
+      return {
+        ...prev,
+        module: value,
+        order: String((selectedModule?.assignments_count ?? 0) + 1),
+      };
     });
     setFieldErrors((prev) => ({ ...prev, module: null }));
   };
@@ -292,7 +336,8 @@ export default function AddAssignmentModal({
 
     if (!form.module) errors.module = "Module is required.";
     if (!title) errors.title = "Title is required.";
-    if (title.length > 255) errors.title = "Title must be at most 255 characters.";
+    if (title.length > 255)
+      errors.title = "Title must be at most 255 characters.";
     if (!form.due_date) errors.due_date = "Due date is required.";
 
     const totalMarks = Number(form.total_marks);
@@ -344,26 +389,38 @@ export default function AddAssignmentModal({
 
     try {
       const response = isEditMode
-        ? await updateAssignmentMutation.mutateAsync({ id: assignment.id, payload })
+        ? await updateAssignmentMutation.mutateAsync({
+            id: assignment.id,
+            payload,
+          })
         : await createAssignmentMutation.mutateAsync(payload);
 
       const newAssignmentId = response?.data?.id;
       if (!isEditMode && newAssignmentId && pendingAttachments.length > 0) {
         const results = await Promise.allSettled(
-          pendingAttachments.map((file) => uploadAssignmentAttachment(newAssignmentId, file))
+          pendingAttachments.map((file) =>
+            uploadAssignmentAttachment(newAssignmentId, file),
+          ),
         );
-        const failedCount = results.filter((result) => result.status === "rejected").length;
+        const failedCount = results.filter(
+          (result) => result.status === "rejected",
+        ).length;
         if (failedCount > 0) {
           toastError(
-            `Assignment created, but ${failedCount} of ${pendingAttachments.length} attachment(s) failed to upload.`
+            `Assignment created, but ${failedCount} of ${pendingAttachments.length} attachment(s) failed to upload.`,
           );
         }
-        queryClient.invalidateQueries({ queryKey: ["assignments", payload.module] });
-        queryClient.invalidateQueries({ queryKey: ["assignment-attachments", newAssignmentId] });
+        queryClient.invalidateQueries({
+          queryKey: ["assignments", payload.module],
+        });
+        queryClient.invalidateQueries({
+          queryKey: ["assignment-attachments", newAssignmentId],
+        });
       }
 
       toastSuccess(
-        response?.message || `Assignment ${isEditMode ? "updated" : "created"} successfully.`
+        response?.message ||
+          `Assignment ${isEditMode ? "updated" : "created"} successfully.`,
       );
       onSaved?.(response?.data);
       onClose();
@@ -371,7 +428,10 @@ export default function AddAssignmentModal({
       const mapped = extractFieldErrors(error);
       if (mapped) setFieldErrors(mapped);
       toastError(
-        getApiErrorMessage(error, `Unable to ${isEditMode ? "update" : "create"} assignment.`)
+        getApiErrorMessage(
+          error,
+          `Unable to ${isEditMode ? "update" : "create"} assignment.`,
+        ),
       );
     }
   };
@@ -380,10 +440,11 @@ export default function AddAssignmentModal({
   const itemNoun = isQuestionBased ? "Question" : "Criterion";
   const criteriaMarksSum = rubricCriteria.reduce(
     (sum, criterion) => sum + (Number(criterion.max_marks) || 0),
-    0
+    0,
   );
   const totalMarksNumber = Number(form.total_marks) || 0;
-  const marksSumMismatch = form.grading_mode === "AI" && criteriaMarksSum !== totalMarksNumber;
+  const marksSumMismatch =
+    form.grading_mode === "AI" && criteriaMarksSum !== totalMarksNumber;
 
   return (
     <Modal
@@ -391,7 +452,11 @@ export default function AddAssignmentModal({
       onClose={handleClose}
       icon={ClipboardCheck}
       title={isEditMode ? "Edit Assignment" : "Add Assignment"}
-      subtitle={isEditMode ? assignment?.title : "Create a new assignment for this module"}
+      subtitle={
+        isEditMode
+          ? assignment?.title
+          : "Create a new assignment for this module"
+      }
       titleClassName="text-2xl"
       maxWidth="max-w-xl"
     >
@@ -411,7 +476,9 @@ export default function AddAssignmentModal({
               </option>
             ))}
           </select>
-          {fieldErrors.module && <p className={ERROR_CLASS}>{fieldErrors.module}</p>}
+          {fieldErrors.module && (
+            <p className={ERROR_CLASS}>{fieldErrors.module}</p>
+          )}
         </div>
 
         <div>
@@ -425,7 +492,9 @@ export default function AddAssignmentModal({
             className={FIELD_CLASS}
             autoComplete="off"
           />
-          {fieldErrors.title && <p className={ERROR_CLASS}>{fieldErrors.title}</p>}
+          {fieldErrors.title && (
+            <p className={ERROR_CLASS}>{fieldErrors.title}</p>
+          )}
         </div>
 
         {showTitleSuggestions && (
@@ -450,13 +519,17 @@ export default function AddAssignmentModal({
             rows={3}
             className={`${FIELD_CLASS} resize-none`}
           />
-          {fieldErrors.description && <p className={ERROR_CLASS}>{fieldErrors.description}</p>}
+          {fieldErrors.description && (
+            <p className={ERROR_CLASS}>{fieldErrors.description}</p>
+          )}
         </div>
 
         {showDescriptionSuggestions && (
           <AiSuggestionsPanel
             heading="Description Suggestions"
-            suggestions={descriptionSuggestionsQuery.data?.data?.suggestions || []}
+            suggestions={
+              descriptionSuggestionsQuery.data?.data?.suggestions || []
+            }
             isLoading={descriptionSuggestionsQuery.isFetching}
             isError={descriptionSuggestionsQuery.isError}
             onRetry={() => descriptionSuggestionsQuery.refetch()}
@@ -476,7 +549,9 @@ export default function AddAssignmentModal({
               disabled={isSubmitting}
               className={FIELD_CLASS}
             />
-            {fieldErrors.due_date && <p className={ERROR_CLASS}>{fieldErrors.due_date}</p>}
+            {fieldErrors.due_date && (
+              <p className={ERROR_CLASS}>{fieldErrors.due_date}</p>
+            )}
           </div>
           <div>
             <label className={LABEL_CLASS}>Total Marks</label>
@@ -488,7 +563,9 @@ export default function AddAssignmentModal({
               disabled={isSubmitting}
               className={FIELD_CLASS}
             />
-            {fieldErrors.total_marks && <p className={ERROR_CLASS}>{fieldErrors.total_marks}</p>}
+            {fieldErrors.total_marks && (
+              <p className={ERROR_CLASS}>{fieldErrors.total_marks}</p>
+            )}
           </div>
         </div>
 
@@ -507,7 +584,9 @@ export default function AddAssignmentModal({
                 </option>
               ))}
             </select>
-            {fieldErrors.status && <p className={ERROR_CLASS}>{fieldErrors.status}</p>}
+            {fieldErrors.status && (
+              <p className={ERROR_CLASS}>{fieldErrors.status}</p>
+            )}
           </div>
           <div className="w-32">
             <label className={LABEL_CLASS}>Order</label>
@@ -518,15 +597,24 @@ export default function AddAssignmentModal({
               value={form.order}
               onChange={updateField("order")}
               onKeyDown={(event) => {
-                if (event.key === "-" || event.key === "e" || event.key === "E" || event.key === "+") {
+                if (
+                  event.key === "-" ||
+                  event.key === "e" ||
+                  event.key === "E" ||
+                  event.key === "+"
+                ) {
                   event.preventDefault();
                 }
               }}
               disabled={isSubmitting}
               className={FIELD_CLASS}
             />
-            <p className="mt-1.5 text-xs font-mono text-muted">1 = first position</p>
-            {fieldErrors.order && <p className={ERROR_CLASS}>{fieldErrors.order}</p>}
+            <p className="mt-1.5 text-xs font-mono text-muted">
+              1 = first position
+            </p>
+            {fieldErrors.order && (
+              <p className={ERROR_CLASS}>{fieldErrors.order}</p>
+            )}
           </div>
         </div>
 
@@ -537,7 +625,9 @@ export default function AddAssignmentModal({
               <button
                 key={option.value}
                 type="button"
-                onClick={() => setForm((prev) => ({ ...prev, grading_mode: option.value }))}
+                onClick={() =>
+                  setForm((prev) => ({ ...prev, grading_mode: option.value }))
+                }
                 disabled={isSubmitting}
                 title={option.description}
                 className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-semibold font-mono tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
@@ -551,7 +641,11 @@ export default function AddAssignmentModal({
             ))}
           </div>
           <p className="text-xs font-mono text-muted tracking-wider mt-1.5">
-            {GRADING_MODE_OPTIONS.find((option) => option.value === form.grading_mode)?.description}
+            {
+              GRADING_MODE_OPTIONS.find(
+                (option) => option.value === form.grading_mode,
+              )?.description
+            }
           </p>
         </div>
 
@@ -564,7 +658,12 @@ export default function AddAssignmentModal({
                   <button
                     key={option.value}
                     type="button"
-                    onClick={() => setForm((prev) => ({ ...prev, grading_method: option.value }))}
+                    onClick={() =>
+                      setForm((prev) => ({
+                        ...prev,
+                        grading_method: option.value,
+                      }))
+                    }
                     disabled={isSubmitting}
                     title={option.description}
                     className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-semibold font-mono tracking-wider uppercase transition-all border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
@@ -578,7 +677,11 @@ export default function AddAssignmentModal({
                 ))}
               </div>
               <p className="text-xs font-mono text-muted tracking-wider mt-1.5 grading-callout-hint">
-                {GRADING_METHOD_OPTIONS.find((option) => option.value === form.grading_method)?.description}
+                {
+                  GRADING_METHOD_OPTIONS.find(
+                    (option) => option.value === form.grading_method,
+                  )?.description
+                }
               </p>
             </div>
 
@@ -595,17 +698,31 @@ export default function AddAssignmentModal({
                     <div className="flex-1 space-y-1.5">
                       <input
                         type="text"
-                        placeholder={isQuestionBased ? "Question label (e.g. Question 1)" : "Criterion name"}
+                        placeholder={
+                          isQuestionBased
+                            ? "Question label (e.g. Question 1)"
+                            : "Criterion name"
+                        }
                         value={criterion.name}
-                        onChange={(event) => updateCriterion(index, "name", event.target.value)}
+                        onChange={(event) =>
+                          updateCriterion(index, "name", event.target.value)
+                        }
                         disabled={isSubmitting}
                         className={FIELD_CLASS}
                       />
                       <textarea
-                        placeholder={isQuestionBased ? "The actual question text" : "Description (optional)"}
+                        placeholder={
+                          isQuestionBased
+                            ? "The actual question text"
+                            : "Description (optional)"
+                        }
                         value={criterion.description}
                         onChange={(event) =>
-                          updateCriterion(index, "description", event.target.value)
+                          updateCriterion(
+                            index,
+                            "description",
+                            event.target.value,
+                          )
                         }
                         disabled={isSubmitting}
                         rows={2}
@@ -618,7 +735,13 @@ export default function AddAssignmentModal({
                         min="1"
                         placeholder="Marks"
                         value={criterion.max_marks}
-                        onChange={(event) => updateCriterion(index, "max_marks", event.target.value)}
+                        onChange={(event) =>
+                          updateCriterion(
+                            index,
+                            "max_marks",
+                            event.target.value,
+                          )
+                        }
                         disabled={isSubmitting}
                         className={FIELD_CLASS}
                       />
@@ -652,10 +775,15 @@ export default function AddAssignmentModal({
                     : "mt-1.5 text-xs font-mono tracking-wider text-muted grading-callout-hint"
                 }
               >
-                {itemNoun} marks total: {criteriaMarksSum} / {totalMarksNumber || "—"}
-                {marksSumMismatch ? " — must match Total Marks exactly before publishing." : ""}
+                {itemNoun} marks total: {criteriaMarksSum} /{" "}
+                {totalMarksNumber || "—"}
+                {marksSumMismatch
+                  ? " — must match Total Marks exactly before publishing."
+                  : ""}
               </p>
-              {fieldErrors.rubric && <p className={ERROR_CLASS}>{fieldErrors.rubric}</p>}
+              {fieldErrors.rubric && (
+                <p className={ERROR_CLASS}>{fieldErrors.rubric}</p>
+              )}
             </div>
           </div>
         )}
@@ -700,7 +828,9 @@ export default function AddAssignmentModal({
                         <FileText className="w-3.5 h-3.5" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-ink truncate">{file.name}</p>
+                        <p className="text-sm font-semibold text-ink truncate">
+                          {file.name}
+                        </p>
                         <p className="text-xs font-mono uppercase text-muted tracking-wider mt-0.5">
                           {formatFileSize(file.size)}
                         </p>
@@ -736,8 +866,8 @@ export default function AddAssignmentModal({
                 Add Attachment
               </button>
               <p className="text-xs font-mono text-muted tracking-wider">
-                Files upload once the assignment is created · PDF, DOC/DOCX, PPT/PPTX, ZIP, JPG/PNG/WEBP · up to
-                50MB
+                Files upload once the assignment is created · PDF, DOC/DOCX,
+                PPT/PPTX, ZIP, JPG/PNG/WEBP · up to 50MB
               </p>
             </div>
           )}

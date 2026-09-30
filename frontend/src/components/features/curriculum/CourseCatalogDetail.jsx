@@ -5,10 +5,9 @@ import { useQuery } from "@tanstack/react-query";
 import { ArrowLeft, BookOpen, ClipboardList, ListChecks, ChevronDown } from "lucide-react";
 import { getPublicCourseBySlug } from "@/services/coursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
-import { useAuth } from "@/hooks/useAuth";
-import { getPortalRouteForRole, ROUTES } from "@/constants/routes";
 import Loader from "@/components/ui/Loader";
 import { CourseBanner, CourseBadges } from "./CourseCatalogParts";
+import CourseEnrollPanel from "./CourseEnrollPanel";
 
 function OutlineGroup({ title, items, icon: Icon }) {
   if (!items?.length) return null;
@@ -33,7 +32,6 @@ function OutlineGroup({ title, items, icon: Icon }) {
 }
 
 export default function CourseCatalogDetail({ slug }) {
-  const { isAuthenticated, isStudent, role } = useAuth();
   const query = useQuery({
     queryKey: ["public-course-detail", slug],
     queryFn: async () => (await getPublicCourseBySlug(slug)).data,
@@ -46,9 +44,7 @@ export default function CourseCatalogDetail({ slug }) {
     assignments: result.assignments + module.assignments.length,
     quizzes: result.quizzes + module.quizzes.length,
   }), { lessons: 0, assignments: 0, quizzes: 0 });
-  const portalUrl = !isAuthenticated ? ROUTES.LOGIN : isStudent
-    ? `${ROUTES.STUDENT_PORTAL}?tab=courses&course=${course?.id}`
-    : getPortalRouteForRole(role);
+
 
   return (
     <div className="min-h-screen bg-porcelain px-5 py-12 text-ink md:px-8">
@@ -83,7 +79,7 @@ export default function CourseCatalogDetail({ slug }) {
                 </details>
               ))}
             </div>
-            {modules.length > 0 && <div className="mt-6 rounded-2xl border border-line bg-sage/50 p-6"><h3 className="font-semibold">Continue learning</h3><p className="mt-2 text-sm text-muted">Enrolled students can read the lessons, submit assignments, and take quizzes in their learning portal.</p><Link href={portalUrl} className="mt-4 inline-block rounded-xl bg-pine px-5 py-3 text-sm font-medium text-paper">{isAuthenticated ? "Open learning portal" : "Sign in to learn"}</Link></div>}
+            <CourseEnrollPanel course={course} />
           </section>
         </>}
       </div>

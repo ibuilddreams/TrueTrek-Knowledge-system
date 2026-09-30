@@ -286,11 +286,12 @@ export default function MerchantStore() {
                 id="shopping-cart-toggle-btn"
                 type="button"
                 onClick={() => setIsCartOpen(true)}
+                aria-label={`Open cart, ${cart.length} ${cart.length === 1 ? "course" : "courses"}`}
                 className="relative bg-gold hover:brightness-95 text-ink p-4 rounded-2xl flex items-center gap-3 transition-all duration-200 shadow-md transform hover:scale-[1.02]"
               >
                 <ShoppingCart className="w-5 h-5" />
                 <span className="font-sans text-xs font-medium uppercase tracking-widest hidden sm:inline">
-                  Active Ledger
+                  Course Cart
                 </span>
                 <span className="bg-ink text-gold text-xs font-bold w-6 h-6 rounded-full flex items-center justify-center font-sans">
                   {cart.length}

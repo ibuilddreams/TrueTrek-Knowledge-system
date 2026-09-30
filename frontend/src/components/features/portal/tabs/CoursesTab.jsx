@@ -14,6 +14,7 @@ import Loader from "@/components/ui/Loader";
 import StudentCourseCard from "../StudentCourseCard";
 import CourseDetailScreen from "../course-detail/CourseDetailScreen";
 import LessonViewPending from "../lesson-view/LessonViewPending";
+import MorePathwaysPicker from "../MorePathwaysPicker";
 
 const PAGE_SIZE = 6;
 
@@ -193,13 +194,16 @@ export default function CoursesTab() {
 
   if (enrollments.length === 0) {
     return (
-      <div className="rounded-2xl border border-dashed border-line bg-paper/70">
-        <EmptyState
-          icon={BookMarked}
-          label="No courses yet"
-          description="Once you are enrolled in a course, it will appear here with your live progress."
-          size="lg"
-        />
+      <div className="space-y-7">
+        <div className="rounded-2xl border border-dashed border-line bg-paper/70">
+          <EmptyState
+            icon={BookMarked}
+            label="No courses yet"
+            description="Once you are enrolled in a course, it will appear here with your live progress."
+            size="lg"
+          />
+        </div>
+        <MorePathwaysPicker />
       </div>
     );
   }
@@ -296,6 +300,8 @@ export default function CoursesTab() {
           </div>
         </div>
       </motion.section>
+
+      <MorePathwaysPicker />
 
       <div className="rounded-2xl border shadow-[0_8px_30px_-24px_rgba(28,25,23,0.35)] overflow-hidden border-line/80 bg-paper/90">
         <div className="flex flex-col gap-4 p-4 sm:p-5">

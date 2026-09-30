@@ -57,10 +57,28 @@ class CartCheckoutView(generics.GenericAPIView):
     permission_classes = [IsStudent]
 
     def post(self, request):
-        if not CartItem.objects.filter(user=request.user).exists():
-            return error_response(message="Your cart is empty.", status_code=400)
+        course_ids = request.data.get("course_ids")
+        if course_ids is not None:
+            if not isinstance(course_ids, list) or not all(
+                isinstance(course_id, int) and not isinstance(course_id, bool)
+                for course_id in course_ids
+            ):
+                return error_response(
+                    message="course_ids must be a list of course ids.", status_code=400
+                )
 
-        result = checkout_cart(request.user)
+        items = CartItem.objects.filter(user=request.user)
+        if course_ids is not None:
+            items = items.filter(course_id__in=course_ids)
+        if not items.exists():
+            return error_response(
+                message="Your cart is empty."
+                if course_ids is None
+                else "That course is not in your cart.",
+                status_code=400,
+            )
+
+        result = checkout_cart(request.user, course_ids=course_ids)
         enrolled_count = len(result["enrolled"])
         already_count = len(result["already_enrolled"])
         failed_count = len(result["failed"])

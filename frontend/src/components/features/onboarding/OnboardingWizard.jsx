@@ -147,6 +147,12 @@ export default function OnboardingWizard() {
     progressQuery.data,
   ]);
 
+  // Steps swap in place (no route change), so the previous step's scroll
+  // offset would otherwise carry over to the next step.
+  useEffect(() => {
+    if (step) window.scrollTo({ top: 0, left: 0, behavior: "instant" });
+  }, [step]);
+
   function goToStep(nextStep, nextSelectedPathwayIds = selectedPathwayIds) {
     setStep(nextStep);
     saveProgressMutation.mutate({

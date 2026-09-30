@@ -2,6 +2,7 @@ from django.contrib.auth import get_user_model
 from django.http import FileResponse
 from rest_framework import generics
 from rest_framework.parsers import FormParser, MultiPartParser
+from rest_framework_simplejwt.exceptions import InvalidToken, TokenError
 from rest_framework_simplejwt.views import TokenObtainPairView, TokenRefreshView
 
 from common.import_files import ImportFileError
@@ -60,7 +61,12 @@ class CustomTokenObtainPairView(TokenObtainPairView):
 class CustomTokenRefreshView(TokenRefreshView):
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
-        serializer.is_valid(raise_exception=True)
+        try:
+            serializer.is_valid(raise_exception=True)
+        except TokenError as exc:
+            # The stock view converts this to a 401; overriding post() dropped that,
+            # so an expired/invalid refresh token surfaced as a 500.
+            raise InvalidToken(exc.args[0]) from exc
         return success_response(serializer.validated_data, message="Token refreshed")
 
 
