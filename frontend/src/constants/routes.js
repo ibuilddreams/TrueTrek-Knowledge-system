@@ -8,6 +8,7 @@ export const ROUTES = {
   CURRICULUM: "/curriculum",
   PARTNERSHIPS: "/partnerships",
   STORE: "/store",
+  CART: "/cart",
   ONBOARDING: "/onboarding",
   PATHWAYS: "/pathways",
   FUTURE_CLIENTS: "/future-clients",

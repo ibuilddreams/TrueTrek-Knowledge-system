@@ -6,6 +6,7 @@ import { useAuth } from "@/hooks/useAuth";
 import { useNeedsOnboarding } from "@/hooks/useNeedsOnboarding";
 import { AUTH_ROLES } from "@/constants/auth";
 import { ROUTES, getPortalRouteForRole } from "@/constants/routes";
+import { getNextPathFromSearch } from "@/lib/authRedirect";
 
 export function useGuestOnlyRoute() {
   const router = useRouter();
@@ -24,9 +25,11 @@ export function useGuestOnlyRoute() {
 
   useEffect(() => {
     if (isResolving || !isAuthenticated) return;
-    // Only this known internal destination is accepted; never redirect to arbitrary URLs.
-    if (new URLSearchParams(window.location.search).get("next") === "/feedback") {
-      router.replace("/feedback");
+    // Send the user back to where they came from (e.g. the cart after the
+    // "sign in to purchase" prompt). Only validated same-site paths are used.
+    const nextPath = getNextPathFromSearch(window.location.search, role);
+    if (nextPath) {
+      router.replace(nextPath);
       return;
     }
     if (isStudentRole && isCheckingOnboarding) return;

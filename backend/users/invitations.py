@@ -20,8 +20,12 @@ from rest_framework.throttling import AnonRateThrottle
 from rest_framework.views import APIView
 
 from audit_logs.models import AuditLog
+from common.models import Status
 from common.pagination import Pagination
 from common.response import success_response
+from courses.models import Course, CourseInstructor
+from enrollments.models import Enrollment
+from enrollments.services import assign_teacher_for_course
 from notifications.services import create_notifications_for_users
 from .models import CustomUser, InvitationFeedback, UserInvitation
 from .permissions import IsAdmin
@@ -33,12 +37,33 @@ class InviteInput(serializers.Serializer):
     email = serializers.EmailField(max_length=254)
     role = serializers.ChoiceField(choices=["TEACHER", "STUDENT"])
     nda_approved = serializers.BooleanField(default=False)
+    course_ids = serializers.ListField(
+        child=serializers.IntegerField(min_value=1), required=False, default=list, max_length=100)
 
     def validate_email(self, value):
         value = value.strip().lower()
         if CustomUser.objects.filter(email__iexact=value).exists():
             raise ValidationError("An account or invitation already exists for this email.")
         return value
+
+    def validate(self, attrs):
+        # De-duplicate while keeping the admin's selection order.
+        ids = list(dict.fromkeys(attrs.get("course_ids", [])))
+        courses = {course.pk: course for course in Course.objects.filter(pk__in=ids)}
+        missing = [pk for pk in ids if pk not in courses]
+        if missing:
+            raise ValidationError({"course_ids": "One or more selected courses no longer exist."})
+        if attrs["role"] == "STUDENT":
+            # Mirrors the admin enrollment rules: published courses that have a teacher to enroll under.
+            for course in courses.values():
+                if course.status != Status.PUBLISHED:
+                    raise ValidationError({"course_ids": f"“{course.title}” is not published, so students cannot be enrolled in it."})
+                if not CourseInstructor.objects.filter(course=course).exists():
+                    raise ValidationError({"course_ids": f"“{course.title}” has no assigned teacher yet. Assign a teacher before enrolling students."})
+        elif any(course.status == Status.ARCHIVED for course in courses.values()):
+            raise ValidationError({"course_ids": "Archived courses cannot be assigned to a teacher."})
+        attrs["courses"] = [courses[pk] for pk in ids]
+        return attrs
 
 
 class FeedbackInput(serializers.ModelSerializer):
@@ -58,16 +83,36 @@ class InvitationSerializer(serializers.ModelSerializer):
     role = serializers.CharField(source="user.role")
     approved_by_name = serializers.CharField(source="nda_approved_by.name", default=None)
     feedback = FeedbackInput(read_only=True)
+    courses = serializers.SerializerMethodField()
 
     class Meta:
         model = UserInvitation
         fields = ["id", "email", "name", "role", "created_at", "nda_approved", "nda_approved_at",
-                  "approved_by_name", "accepted_at", "email_status", "email_sent_at", "token_expires_at", "feedback"]
+                  "approved_by_name", "accepted_at", "email_status", "email_sent_at", "token_expires_at", "feedback",
+                  "courses"]
+
+    def get_courses(self, invitation):
+        """Courses the invitee is enrolled in (students) or assigned to teach (teachers)."""
+        user = invitation.user
+        if user.role == "STUDENT":
+            courses = [enrollment.course for enrollment in user.enrollments.all()]
+        else:
+            courses = [assignment.course for assignment in user.taught_courses.all()]
+        return [{"id": course.pk, "title": course.title, "code": course.code} for course in courses]
 
 
 def audit(invitation, admin, action, values):
     AuditLog.objects.create(user=admin, action=action, object_name="UserInvitation",
                             object_id=str(invitation.pk), new_values=values)
+
+
+def attach_courses(user, courses):
+    """Enroll an invited student in, or assign an invited teacher to, the selected courses."""
+    for course in courses:
+        if user.role == "STUDENT":
+            Enrollment.objects.create(student=user, course=course, teacher=assign_teacher_for_course(course))
+        else:
+            CourseInstructor.objects.get_or_create(course=course, instructor=user)
 
 
 def issue_link(invitation):
@@ -105,6 +150,10 @@ def deliver(invitation, link=None):
     role = invitation.user.role.title()
     subject = "You have been invited to TrueTrek" if link else "Your TrueTrek feedback form is ready"
     paragraphs = [f"Hello {name},", f"You have been invited to TrueTrek as a {role}."]
+    course_titles = [course["title"] for course in InvitationSerializer(invitation).data["courses"]]
+    if course_titles:
+        verb = "enrolled in" if invitation.user.role == "STUDENT" else "assigned to"
+        paragraphs.append(f"You have been {verb}: {', '.join(course_titles)}.")
     context = {"heading": "Welcome to TrueTrek", "eyebrow": "Your invitation", "paragraphs": paragraphs}
     if link:
         paragraphs.extend(["Choose your password using the secure link below, then sign in to your account.",
@@ -195,7 +244,8 @@ class InvitationsView(PrivateAPIView):
     permission_classes = [IsAdmin]
 
     def get(self, request):
-        invitations = UserInvitation.objects.select_related("user", "nda_approved_by", "feedback")
+        invitations = UserInvitation.objects.select_related("user", "nda_approved_by", "feedback").prefetch_related(
+            "user__enrollments__course", "user__taught_courses__course")
         search = request.query_params.get("search", "").strip()
         if search:
             invitations = invitations.filter(Q(user__email__icontains=search) | Q(user__name__icontains=search))
@@ -208,6 +258,8 @@ class InvitationsView(PrivateAPIView):
         serializer.is_valid(raise_exception=True)
         values = dict(serializer.validated_data)
         approved = values.pop("nda_approved")
+        values.pop("course_ids", None)
+        courses = values.pop("courses")
         try:
             with transaction.atomic():
                 user = CustomUser.objects.create_user(
@@ -215,7 +267,9 @@ class InvitationsView(PrivateAPIView):
                     is_active=False, account_status=CustomUser.AccountStatus.DEACTIVATED, **values,
                 )
                 invitation = UserInvitation.objects.create(user=user, invited_by=request.user)
-                audit(invitation, request.user, "CREATE", {"email": user.email, "role": user.role})
+                attach_courses(user, courses)
+                audit(invitation, request.user, "CREATE", {
+                    "email": user.email, "role": user.role, "course_ids": [course.pk for course in courses]})
                 link = approve(invitation, request.user) if approved else issue_link(invitation)
         except IntegrityError:
             raise ValidationError("An account or invitation already exists for this email.")

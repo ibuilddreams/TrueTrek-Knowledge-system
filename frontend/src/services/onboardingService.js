@@ -44,3 +44,7 @@ export async function saveOnboardingProgress({ step, selectedPathwayIds }) {
 export async function clearOnboardingProgress() {
   return backendClient.delete("/onboarding/progress/");
 }
+
+export async function getOnboardingStatus() {
+  return backendClient.get("/onboarding/status/");
+}

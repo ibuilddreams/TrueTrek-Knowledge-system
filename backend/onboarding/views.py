@@ -2,6 +2,7 @@ from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 
 from common.response import error_response, success_response
+from pathways.models import PathwayEnrollment
 from pathways.serializers import PathwayListSerializer
 from users.permissions import IsAdmin
 
@@ -153,3 +154,25 @@ class OnboardingProgressView(generics.GenericAPIView):
     def delete(self, request):
         OnboardingProgress.objects.filter(user=request.user).delete()
         return success_response(None, message="Onboarding progress cleared successfully")
+
+
+class OnboardingStatusView(generics.GenericAPIView):
+    """Tells the frontend whether the signed-in user must go through the
+    onboarding wizard before reaching the student portal.
+
+    Self-signup students who haven't picked a pathway yet need it. Students an
+    admin invited do not — the admin already arranged their access (course
+    enrollments), so they go straight to the portal after setting a password.
+    """
+
+    http_method_names = ["get", "head", "options"]
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        is_invited = hasattr(user, "invitation")
+        has_pathway = PathwayEnrollment.objects.filter(
+            user=user, status=PathwayEnrollment.EnrollmentStatus.ACTIVE
+        ).exists()
+        required = user.role == user.Roles.STUDENT and not is_invited and not has_pathway
+        return success_response({"required": required}, message="Onboarding status fetched successfully")

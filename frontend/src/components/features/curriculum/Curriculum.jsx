@@ -4,22 +4,29 @@ import { useEffect, useState } from "react";
 import Link from "next/link";
 import { CourseBanner, CourseBadges } from "./CourseCatalogParts";
 import { useQuery } from "@tanstack/react-query";
-import { Heart, Search } from "lucide-react";
+import { Check, Heart, Search, ShoppingCart } from "lucide-react";
+import CurriculumFilters from "./CurriculumFilters";
 import { getPublicCourses, getPublicCourseFilters } from "@/services/coursesService";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { getApiErrorMessage } from "@/lib/apiErrors";
+import { useCart } from "@/hooks/useCart";
+import { useAuth } from "@/hooks/useAuth";
 import Loader from "@/components/ui/Loader";
 
 const SAVED_KEY = "truetrek-saved-curriculum";
 const PAGE_SIZE = 24;
+const DEFAULT_FILTERS = { category: "", grade: "", difficulty: "", sort: "title" };
 
 export default function Curriculum() {
   const [search, setSearch] = useState("");
   const query = useDebouncedValue(search);
-  const [filters, setFilters] = useState({ category: "", sort: "title" });
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [page, setPage] = useState(1);
   const [saved, setSaved] = useState([]);
   const [savedOnly, setSavedOnly] = useState(false);
+  const { isAuthenticated, isStudent } = useAuth();
+  const { isInCart, isPending, toggleCourse } = useCart();
+  const canUseCart = !isAuthenticated || isStudent;
   useEffect(() => {
     try {
       const stored = JSON.parse(localStorage.getItem(SAVED_KEY) || "[]");
@@ -43,23 +50,26 @@ export default function Curriculum() {
     setSaved(next);
     try { localStorage.setItem(SAVED_KEY, JSON.stringify(next)); } catch { /* Keep this session's selection. */ }
   }
+  function clearFilters() { setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort })); setPage(1); }
   const subjects = facets.data?.subjects || [];
+  const grades = facets.data?.grades || [];
+  const difficulties = facets.data?.difficulties || [];
   return (
     <div className="min-h-screen bg-porcelain px-5 py-12 text-ink md:px-8" id="curriculum-container">
       <div className="mx-auto max-w-7xl">
         <h1 className="text-4xl font-serif">Curriculum Explorer</h1>
         <p className="mt-3 text-muted">Browse TrueTrek's courses by subject, and dive into each one's modules, lessons, assignments, and quizzes.</p>
-        <div className="mt-8 flex flex-wrap items-end gap-3">
-          <label className="flex min-w-32 flex-col gap-1 text-sm">
-            <span>Subject</span>
-            <select value={filters.category} onChange={(event) => updateFilter("category", event.target.value)} className="max-w-64 rounded-xl border border-line bg-paper px-3 py-2.5">
-              <option value="">All subjects</option>
-              {subjects.map((subject) => <option key={subject.id} value={subject.id}>{subject.name}</option>)}
-            </select>
-          </label>
-          <button type="button" aria-pressed={savedOnly} title="Courses saved in this browser" onClick={() => setSavedOnly(!savedOnly)} className={`flex items-center gap-2 rounded-xl border px-4 py-2.5 text-sm ${savedOnly ? "border-pine bg-pine text-paper" : "border-line bg-paper"}`}><Heart className="h-4 w-4" />Saved ({saved.length})</button>
-          <label className="ml-auto flex flex-col gap-1 text-sm"><span>Sort</span><select value={filters.sort} onChange={(event) => updateFilter("sort", event.target.value)} className="rounded-xl border border-line bg-paper px-3 py-2.5"><option value="title">Title A–Z</option><option value="-title">Title Z–A</option><option value="newest">Newest</option></select></label>
-        </div>
+        <CurriculumFilters
+          filters={filters}
+          onFilterChange={updateFilter}
+          onClear={clearFilters}
+          subjects={subjects}
+          grades={grades}
+          difficulties={difficulties}
+          savedCount={saved.length}
+          savedOnly={savedOnly}
+          onToggleSaved={() => setSavedOnly(!savedOnly)}
+        />
         <label className="relative mt-5 block"><span className="sr-only">Search courses</span><Search className="absolute left-4 top-3.5 h-5 w-5 text-muted" /><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search courses..." className="w-full rounded-xl border border-line bg-paper py-3 pl-12 pr-4" /></label>
         {facets.isError && <p role="alert" className="mt-3 text-sm text-red-700">Filters could not load. <button type="button" className="underline" onClick={() => facets.refetch()}>Retry filters</button></p>}
         <p className="my-5 text-sm text-muted" aria-live="polite">{coursesQuery.isLoading ? "Loading courses…" : `${count} course${count === 1 ? "" : "s"}`}{savedOnly ? " · Showing saved courses on this page" : ""}</p>
@@ -71,6 +81,7 @@ export default function Curriculum() {
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
             {courses.map((course) => {
               const isSaved = saved.includes(String(course.id));
+              const inCart = isInCart(course.id);
               return <article key={course.id} className="relative overflow-hidden rounded-2xl border border-line bg-paper transition-all duration-300 hover:-translate-y-1 hover:shadow-elevated">
                 <Link href={`/curriculum/${course.slug}`} className="block h-full w-full text-left focus-visible:outline-2 focus-visible:outline-pine focus-visible:outline-offset-[-3px]" aria-label={`View ${course.title}`}>
                   <CourseBanner course={course} />
@@ -81,6 +92,7 @@ export default function Curriculum() {
                   </div>
                 </Link>
                 <button type="button" onClick={() => toggleSaved(course)} aria-pressed={isSaved} aria-label={`${isSaved ? "Unsave" : "Save"} ${course.title}`} className="absolute right-3 top-3 rounded-full bg-white/90 p-2.5 text-ink hover:bg-white"><Heart className={`h-4 w-4 ${isSaved ? "fill-rose-600 text-rose-600" : ""}`} /></button>
+                {canUseCart && <button type="button" onClick={() => toggleCourse(course)} disabled={isPending(course.id)} aria-pressed={inCart} aria-label={`${inCart ? "Remove" : "Add"} ${course.title} ${inCart ? "from" : "to"} cart`} title={inCart ? "Remove from cart" : "Add to cart"} className={`absolute right-3 top-16 rounded-full p-2.5 transition disabled:opacity-60 ${inCart ? "bg-pine text-paper" : "bg-white/90 text-ink hover:bg-white"}`}>{inCart ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}</button>}
               </article>;
             })}
           </div>

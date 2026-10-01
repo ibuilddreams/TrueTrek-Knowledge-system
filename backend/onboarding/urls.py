@@ -4,6 +4,7 @@ from .views import (
     AdminQuestionDetailView,
     AdminQuestionListCreateView,
     OnboardingProgressView,
+    OnboardingStatusView,
     PathwayRecommendationView,
     QuestionnaireQuestionsView,
     QuestionnaireSubmitView,
@@ -15,5 +16,6 @@ urlpatterns = [
     path("questions/", QuestionnaireQuestionsView.as_view(), name="onboarding-question-list"),
     path("answers/", QuestionnaireSubmitView.as_view(), name="onboarding-answers-submit"),
     path("recommendations/", PathwayRecommendationView.as_view(), name="onboarding-recommendations"),
+    path("status/", OnboardingStatusView.as_view(), name="onboarding-status"),
     path("progress/", OnboardingProgressView.as_view(), name="onboarding-progress"),
 ]

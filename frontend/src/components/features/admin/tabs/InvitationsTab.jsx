@@ -2,9 +2,10 @@
 
 import { useRef, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { UserPlus, ShieldCheck, Clock3, CheckCircle2, ArrowUpRight, Search, MessageSquareText, Mail, Link2, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
+import { UserPlus, ShieldCheck, Clock3, CheckCircle2, ArrowUpRight, Search, MessageSquareText, Mail, Link2, ChevronLeft, ChevronRight, Loader2, BookOpen } from "lucide-react";
 import StarRating, { RATING_LABELS } from "@/components/ui/StarRating";
 import InvitationLinkModal from "@/components/features/admin/InvitationLinkModal";
+import InviteCoursesField from "@/components/features/admin/InviteCoursesField";
 import Modal from "@/components/ui/Modal";
 import { getInvitations, createInvitation, approveInvitation, regenerateInvitationLink, retryInvitationEmail, retryFeedbackEmail } from "@/services/invitationsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
@@ -13,7 +14,7 @@ import { toastError, toastSuccess } from "@/lib/toast";
 const field = "w-full rounded-xl border border-line bg-paper px-4 py-3 text-sm focus:outline-none focus:ring-2 focus:ring-pine/30";
 const button = "inline-flex items-center justify-center gap-2 rounded-xl bg-pine px-4 py-2.5 text-sm font-medium text-white shadow-sm transition hover:bg-moss focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-pine disabled:opacity-50";
 const secondary = "inline-flex items-center justify-center gap-2 rounded-xl border border-line bg-paper px-3 py-2 text-sm font-medium transition hover:border-pine/30 hover:bg-porcelain disabled:opacity-40";
-const initial = { first_name: "", last_name: "", email: "", role: "STUDENT", nda_approved: false };
+const initial = { first_name: "", last_name: "", email: "", role: "STUDENT", nda_approved: false, course_ids: [] };
 const deliveryLabels = { NOT_SENT: "Email not sent", NOT_CONFIGURED: "Email not configured — share setup link manually", SENT: "Email accepted by mail server", FAILED: "Email failed — retry or share setup link" };
 const date = (value) => value ? new Date(value).toLocaleString(undefined, { month: "short", day: "numeric", year: "numeric", hour: "numeric", minute: "2-digit" }) : "—";
 
@@ -44,6 +45,12 @@ export default function InvitationsTab() {
   const [feedback, setFeedback] = useState(null);
   const query = useQuery({ queryKey: ["invitations", page, search], queryFn: () => getInvitations(page, search) });
   const data = query.data?.data;
+
+  function closeCreateModal() {
+    if (creatingBusy) return;
+    setCreating(false);
+    setForm(initial);
+  }
 
   async function perform(action, actionKey) {
     const scope = actionKey === "create" ? "create" : actionKey.split(":")[1];
@@ -77,7 +84,7 @@ export default function InvitationsTab() {
     <div className="tt-interactive space-y-6">
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div><p className="mb-2 text-[10px] font-semibold uppercase tracking-[0.2em] text-muted">Access &amp; onboarding</p><h2 className="text-2xl sm:text-3xl font-serif text-ink">Invitations</h2><p className="mt-2 text-sm text-muted max-w-xl leading-relaxed">Manage invitations, approve NDAs, and hear from your community.</p></div>
-        <button className={button} disabled={creatingBusy} onClick={() => setCreating(true)}><UserPlus className="h-4 w-4" />Invite user</button>
+        <button className={button} disabled={creatingBusy} onClick={() => { setForm(initial); setCreating(true); }}><UserPlus className="h-4 w-4" />Invite user</button>
       </div>
       <div className="flex flex-wrap items-center justify-between gap-4 rounded-2xl border border-line bg-paper/80 p-4">
         <div className="flex items-center gap-2 text-sm font-medium"><span>All invitations</span>{data && <span className="rounded-full bg-pine/10 px-2.5 py-0.5 text-xs text-pine">{data.count}</span>}</div>
@@ -107,6 +114,12 @@ export default function InvitationsTab() {
               <div><p className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-muted"><Mail className="h-3.5 w-3.5" />Account access</p><p className="text-sm font-medium text-ink">{invite.accepted_at ? "Setup completed" : "Setup link available"}</p><p className="mt-1 text-xs leading-relaxed text-muted">{invite.accepted_at ? date(invite.accepted_at) : deliveryLabels[invite.email_status]}</p>{!invite.accepted_at && <p className="mt-1 text-[11px] text-muted">Expires {date(invite.token_expires_at)}</p>}</div>
               <div><p className="mb-2 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-muted"><MessageSquareText className="h-3.5 w-3.5" />Feedback</p>{invite.feedback ? <><StarRating value={invite.feedback.rating} compact /><p className="mt-1 text-[11px] text-muted">Submitted {date(invite.feedback.submitted_at)}</p></> : <><p className="text-sm font-medium">{invite.nda_approved ? "Awaiting response" : "Locked"}</p><p className="mt-1 text-xs text-muted">{invite.nda_approved ? "Available to this user after login." : "Available after NDA approval."}</p></>}</div>
             </div>
+            {invite.courses?.length > 0 && (
+              <div className="flex flex-wrap items-center gap-2 border-t border-line px-5 py-3 sm:px-6">
+                <p className="mr-1 flex items-center gap-2 text-[10px] font-semibold uppercase tracking-widest text-muted"><BookOpen className="h-3.5 w-3.5" />{invite.role === "TEACHER" ? "Assigned courses" : "Enrolled courses"}</p>
+                {invite.courses.map((course) => <span key={course.id} className="rounded-full border border-pine/15 bg-pine/5 px-2.5 py-1 text-xs text-pine">{course.title}</span>)}
+              </div>
+            )}
             <div className="flex flex-wrap items-center justify-between gap-3 border-t border-line px-5 py-3 sm:px-6">
               <p className="text-[11px] text-muted">Invited {date(invite.created_at)}</p>
               <div className="flex flex-wrap gap-2">
@@ -128,10 +141,11 @@ export default function InvitationsTab() {
       </div>
       {data && data.count > 0 && <div className="flex flex-wrap items-center justify-between gap-3 px-1"><span className="text-xs text-muted">Page {page} · {data.count} {data.count === 1 ? "invitation" : "invitations"}</span><div className="flex gap-2"><button className={secondary} disabled={!data.previous || query.isFetching} onClick={() => setPage(page - 1)}><ChevronLeft className="h-4 w-4" />Previous</button><button className={secondary} disabled={!data.next || query.isFetching} onClick={() => setPage(page + 1)}>Next<ChevronRight className="h-4 w-4" /></button></div></div>}
 
-      <Modal isOpen={creating} onClose={() => !creatingBusy && setCreating(false)} title="Invite user" icon={UserPlus} maxWidth="max-w-xl">
+      <Modal isOpen={creating} onClose={closeCreateModal} title="Invite user" icon={UserPlus} maxWidth="max-w-xl">
         <form className="space-y-4" onSubmit={(event) => { event.preventDefault(); perform(() => createInvitation(form), "create"); }}>
           {[['first_name', 'First name'], ['last_name', 'Last name'], ['email', 'Email']].map(([key, label]) => <label key={key} className="block text-sm space-y-1"><span>{label}</span><input required maxLength={key === "email" ? 254 : 150} type={key === "email" ? "email" : "text"} className={field} value={form[key]} onChange={(event) => setForm({ ...form, [key]: event.target.value })} /></label>)}
-          <label className="block text-sm space-y-1"><span>Role</span><select className={field} value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value })}><option value="STUDENT">Student</option><option value="TEACHER">Teacher</option></select></label>
+          <label className="block text-sm space-y-1"><span>Role</span><select className={field} value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value, course_ids: [] })}><option value="STUDENT">Student</option><option value="TEACHER">Teacher</option></select></label>
+          <InviteCoursesField role={form.role} values={form.course_ids} onChange={(course_ids) => setForm({ ...form, course_ids })} enabled={creating} disabled={creatingBusy} />
           <label className="flex items-start gap-3 rounded-xl bg-porcelain p-4 text-sm"><input className="mt-1" type="checkbox" checked={form.nda_approved} onChange={(event) => setForm({ ...form, nda_approved: event.target.checked })} /><span>I confirm this user&apos;s NDA is completed and approved.</span></label>
           <p className="text-xs text-muted">Every invitee receives a link to set their password and sign in. Check this box only when their NDA is approved to also enable feedback. Your approval is recorded with your name and the date.</p>
           <button className={button} disabled={creatingBusy} aria-busy={creatingBusy}>{creatingBusy && <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />}{creatingBusy ? "Creating invitation…" : "Create invitation"}</button>

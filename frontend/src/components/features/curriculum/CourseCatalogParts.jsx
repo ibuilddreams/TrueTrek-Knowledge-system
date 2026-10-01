@@ -1,4 +1,4 @@
-import { BookOpen, Clock } from "lucide-react";
+import { BookOpen, Clock, GraduationCap } from "lucide-react";
 import { formatCoursePrice } from "@/lib/store";
 
 const DIFFICULTY_LABELS = { BEGINNER: "Beginner", INTERMEDIATE: "Intermediate", ADVANCED: "Advanced" };
@@ -38,6 +38,12 @@ export function CourseBadges({ course }) {
   const duration = formatDuration(course.duration_minutes);
   return (
     <div className="flex flex-wrap items-center gap-3 text-xs text-muted">
+      {course.grade_label && (
+        <span className="inline-flex items-center gap-1.5">
+          <GraduationCap className="h-3.5 w-3.5" />
+          {course.grade_label}
+        </span>
+      )}
       {duration && (
         <span className="inline-flex items-center gap-1.5">
           <Clock className="h-3.5 w-3.5" />

@@ -109,6 +109,8 @@ class CourseListSerializer(serializers.ModelSerializer):
 class PublicCourseListSerializer(CourseListSerializer):
     """Anonymous-safe course card data — published courses only, no instructor PII."""
 
+    grade_label = serializers.CharField(read_only=True)
+
     class Meta(CourseListSerializer.Meta):
         fields = [
             "id",
@@ -120,6 +122,7 @@ class PublicCourseListSerializer(CourseListSerializer):
             "category",
             "tags",
             "difficulty",
+            "grade_label",
             "duration_minutes",
             "amount",
         ]
