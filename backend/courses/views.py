@@ -10,6 +10,7 @@ from enrollments.models import Enrollment
 from enrollments.serializers import CourseEnrolledStudentSerializer
 from users.permissions import IsAdmin, IsTeacher
 
+from .grades import MAX_GRADE, MIN_GRADE, grade_name
 from .models import Category, Course, Tag
 from .serializers import (
     CategorySerializer,
@@ -200,6 +201,23 @@ class PublicCourseListView(generics.ListAPIView):
         if category_param:
             queryset = queryset.filter(category_id=category_param)
 
+        difficulty_param = params.get("difficulty")
+        if difficulty_param:
+            queryset = queryset.filter(difficulty=difficulty_param.upper())
+
+        # A single grade (Pre-K = -1, K = 0, 1-12) matches every course whose
+        # grade range includes it.
+        grade_param = params.get("grade")
+        if grade_param not in (None, ""):
+            try:
+                grade = int(grade_param)
+            except ValueError:
+                grade = None
+            if grade is None or not MIN_GRADE <= grade <= MAX_GRADE:
+                queryset = queryset.none()
+            else:
+                queryset = queryset.filter(grade_min__lte=grade, grade_max__gte=grade)
+
         ordering = {"title": "title", "-title": "-title", "newest": "-created_at"}
         queryset = queryset.order_by(ordering.get(params.get("sort"), "title"), "id")
 
@@ -241,8 +259,23 @@ class PublicCourseFiltersView(generics.GenericAPIView):
 
     def get(self, request):
         courses = Course.objects.filter(status=Status.PUBLISHED)
+
+        ranges = courses.exclude(grade_min__isnull=True).exclude(grade_max__isnull=True).values_list(
+            "grade_min", "grade_max"
+        ).distinct()
+        grades = sorted({g for low, high in ranges for g in range(low, high + 1)})
+
+        present_difficulties = set(courses.values_list("difficulty", flat=True).distinct())
+        difficulties = [
+            {"value": value, "label": label}
+            for value, label in Course.Difficulty.choices
+            if value in present_difficulties
+        ]
+
         return success_response({
             "subjects": list(Category.objects.filter(courses__in=courses).distinct().order_by("name").values("id", "name")),
+            "grades": [{"value": grade, "label": grade_name(grade)} for grade in grades],
+            "difficulties": difficulties,
         }, message="Curriculum filters fetched successfully")
 
 

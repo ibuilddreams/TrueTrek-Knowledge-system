@@ -7,6 +7,7 @@ import { useDispatch, useSelector } from "react-redux";
 import { toggleMobileMenu } from "@/store/slices/ui/uiSlice";
 import { NAV_LINKS } from "@/constants/navigation";
 import { ROUTES, getSectionFromPathname } from "@/constants/routes";
+import CartNavButton from "./CartNavButton";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -60,6 +61,8 @@ export default function Navbar() {
       </div>
 
       <div id="nav-cta-segment" className="flex items-center gap-2">
+        <CartNavButton />
+
         <Link
           id="nav-portal-login-btn"
           href={ROUTES.LOGIN}

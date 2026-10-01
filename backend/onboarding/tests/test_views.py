@@ -4,7 +4,7 @@ from rest_framework import status
 from rest_framework.test import APITestCase
 
 from common.models import Status
-from pathways.models import Pathway
+from pathways.models import Pathway, PathwayEnrollment
 from tiers.models import Tier, TierPathway
 
 from ..models import (
@@ -240,3 +240,32 @@ class AdminQuestionManagementTests(OnboardingTestCase):
         self.assertEqual(question.options.count(), 2)
         heavy_option = question.options.get(text="5+ hours")
         self.assertEqual(heavy_option.pathway_weights.get().weight, 2)
+
+
+class OnboardingStatusTests(OnboardingTestCase):
+    url_name = "onboarding-status"
+
+    def required_for(self, user):
+        self.client.force_authenticate(user)
+        response = self.client.get(reverse(self.url_name))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return response.data["data"]["required"]
+
+    def test_requires_authentication(self):
+        self.assertEqual(self.client.get(reverse(self.url_name)).status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_self_signup_student_without_pathway_needs_onboarding(self):
+        self.assertTrue(self.required_for(self.student))
+
+    def test_student_with_active_pathway_does_not_need_onboarding(self):
+        PathwayEnrollment.objects.create(user=self.student, pathway=self.parent_pathway)
+        self.assertFalse(self.required_for(self.student))
+
+    def test_invited_student_skips_onboarding(self):
+        from users.models import UserInvitation
+
+        UserInvitation.objects.create(user=self.student, invited_by=self.admin)
+        self.assertFalse(self.required_for(self.student))
+
+    def test_admin_never_needs_onboarding(self):
+        self.assertFalse(self.required_for(self.admin))

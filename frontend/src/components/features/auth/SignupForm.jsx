@@ -5,6 +5,8 @@ import Link from "next/link";
 import { AlertCircle, UserPlus } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuestOnlyRoute } from "@/hooks/useGuestOnlyRoute";
+import { useNextPath } from "@/hooks/useNextPath";
+import { buildAuthUrl } from "@/lib/authRedirect";
 import { ROUTES } from "@/constants/routes";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -36,6 +38,7 @@ function generateUsername(email) {
 export default function SignupForm() {
   const { signup } = useAuth();
   const { shouldBlock, isAuthenticated } = useGuestOnlyRoute();
+  const nextPath = useNextPath();
   const [form, setForm] = useState({
     firstName: "",
     lastName: "",
@@ -184,7 +187,7 @@ export default function SignupForm() {
         <p className="text-center text-xs font-light text-muted">
           Already have an account?{" "}
           <Link
-            href={ROUTES.LOGIN}
+            href={buildAuthUrl(ROUTES.LOGIN, nextPath)}
             className="font-semibold transition text-pine hover:text-moss"
           >
             Sign In

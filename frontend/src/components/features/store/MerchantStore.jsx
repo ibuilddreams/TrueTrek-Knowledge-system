@@ -2,39 +2,26 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { useRouter } from "next/navigation";
-import {
-  keepPreviousData,
-  useMutation,
-  useQuery,
-  useQueryClient,
-} from "@tanstack/react-query";
+import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
   LogIn,
   RefreshCw,
   ShoppingBag,
-  ShoppingCart,
   Store,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES, getPortalRouteForRole } from "@/constants/routes";
 import { getPublicCourses } from "@/services/coursesService";
-import {
-  addToCart,
-  checkoutCart,
-  getCart,
-  removeFromCart,
-} from "@/services/cartService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
-import { toastError, toastInfo, toastSuccess } from "@/lib/toast";
+import { useCart } from "@/hooks/useCart";
+import { buildAuthUrl } from "@/lib/authRedirect";
 import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
 import Pagination from "@/components/ui/Pagination";
 import StoreCourseCard from "./StoreCourseCard";
 import StoreCourseDetailModal from "./StoreCourseDetailModal";
-import StoreCartDrawer from "./StoreCartDrawer";
-import StorePaymentModal from "./StorePaymentModal";
 import StoreAdvisorSuite from "./StoreAdvisorSuite";
 
 const PAGE_SIZE = 9;
@@ -50,17 +37,12 @@ export default function MerchantStore() {
 
   // Only students can own a cart / purchase — teachers and admins can still
   // browse and view course details, they just don't get cart functionality.
-  // Guests are treated like students here (they simply get redirected to
-  // login on the first cart action) so the "not signed in yet" flow is kept
-  // separate from the "signed in with the wrong role" flow.
+  // Guests can fill a cart too (stored in their browser) and are asked to
+  // sign in only at purchase time.
   const canUseCart = !isAuthenticated || isStudent;
-
-  const queryClient = useQueryClient();
 
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [page, setPage] = useState(1);
-  const [isCartOpen, setIsCartOpen] = useState(false);
-  const [isPaymentModalOpen, setIsPaymentModalOpen] = useState(false);
   const [viewingCourse, setViewingCourse] = useState(null);
 
   const onNavigateToPortal = () => router.push(getPortalRouteForRole(role));
@@ -113,134 +95,9 @@ export default function MerchantStore() {
     );
   }, [categorySourceCourses]);
 
-  // Cart is server-persisted per authenticated student — disabled for guests
-  // (no session to scope it to) and for teachers/admins (cart is a
-  // student-only backend endpoint, so fetching it for other roles would
-  // just 403).
-  const { data: cartItems = [], isLoading: isCartLoading } = useQuery({
-    queryKey: ["store-cart"],
-    queryFn: async () => {
-      const response = await getCart();
-      return response?.data || [];
-    },
-    enabled: isAuthenticated && isStudent,
-  });
-
-  const cart = useMemo(() => cartItems.map((item) => item.course), [cartItems]);
-  const cartIds = useMemo(
-    () => new Set(cart.map((course) => course.id)),
-    [cart],
-  );
-
-  const addToCartMutation = useMutation({
-    mutationFn: (course) => addToCart(course.id),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["store-cart"] });
-    },
-    onError: (mutationError) => {
-      toastError(
-        getApiErrorMessage(
-          mutationError,
-          "Unable to add this course to your cart.",
-        ),
-      );
-    },
-  });
-
-  const removeFromCartMutation = useMutation({
-    mutationFn: (courseId) => removeFromCart(courseId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["store-cart"] });
-    },
-    onError: (mutationError) => {
-      toastError(
-        getApiErrorMessage(
-          mutationError,
-          "Unable to remove this course from your cart.",
-        ),
-      );
-    },
-  });
-
-  function isInCart(courseId) {
-    return cartIds.has(courseId);
-  }
-
-  function isCartActionPending(courseId) {
-    return (
-      (addToCartMutation.isPending &&
-        addToCartMutation.variables?.id === courseId) ||
-      (removeFromCartMutation.isPending &&
-        removeFromCartMutation.variables === courseId)
-    );
-  }
-
-  function toggleCart(course) {
-    if (!isAuthenticated) {
-      toastInfo("Sign in to add courses to your cart.");
-      router.push(ROUTES.LOGIN);
-      return;
-    }
-
-    if (!isStudent) {
-      toastInfo("Only student accounts can add courses to their cart.");
-      return;
-    }
-
-    const wasInCart = cartIds.has(course.id);
-    if (wasInCart) {
-      removeFromCartMutation.mutate(course.id);
-    } else {
-      addToCartMutation.mutate(course);
-      setIsCartOpen(true);
-    }
-  }
-
-  function handleRemoveFromCart(courseId) {
-    removeFromCartMutation.mutate(courseId);
-  }
-
-  const checkoutMutation = useMutation({
-    mutationFn: () => checkoutCart(),
-    onSuccess: (response) => {
-      const result = response?.data || { enrolled: [], already_enrolled: [], failed: [] };
-      const enrolledCount = result.enrolled?.length || 0;
-      const alreadyCount = result.already_enrolled?.length || 0;
-      const failedCount = result.failed?.length || 0;
-
-      if (enrolledCount > 0) {
-        toastSuccess(
-          enrolledCount === 1
-            ? "Payment successful — you're enrolled in your course!"
-            : `Payment successful — you're enrolled in ${enrolledCount} courses!`
-        );
-      } else if (alreadyCount > 0 && failedCount === 0) {
-        toastInfo("You were already enrolled in the course(s) from your cart.");
-      }
-
-      (result.failed || []).forEach((item) => {
-        toastError(`${item.course_title}: ${item.reason}`);
-      });
-
-      setIsPaymentModalOpen(false);
-      queryClient.invalidateQueries({ queryKey: ["store-cart"] });
-      queryClient.invalidateQueries({ queryKey: ["store-public-courses"] });
-      queryClient.invalidateQueries({ queryKey: ["store-categories-source"] });
-      queryClient.invalidateQueries({ queryKey: ["studentEnrollments"] });
-    },
-    onError: (mutationError) => {
-      toastError(getApiErrorMessage(mutationError, "Checkout failed. Please try again."));
-    },
-  });
-
-  function handlePurchase() {
-    if (cart.length === 0) return;
-    setIsPaymentModalOpen(true);
-  }
-
-  function handleConfirmPayment() {
-    checkoutMutation.mutate();
-  }
+  // Guests (browser-stored) and students (server-persisted) share the same
+  // cart API — see useCart. Teachers/admins get an info toast instead.
+  const { isInCart, isPending: isCartActionPending, toggleCourse } = useCart();
 
   // If everything on the current store page just got purchased/enrolled, the
   // refetch after checkout can leave the user stranded on a now-empty page —
@@ -279,32 +136,7 @@ export default function MerchantStore() {
               and check out to enroll instantly.
             </p>
           </div>
-
         </div>
-
-        {canUseCart && (
-          <button
-            id="shopping-cart-toggle-btn"
-            type="button"
-            onClick={() => {
-              // Guests have no cart — send them to sign in instead of an empty drawer.
-              if (!isAuthenticated) {
-                toastInfo("Sign in to add courses to your cart.");
-                router.push(ROUTES.LOGIN);
-                return;
-              }
-              setIsCartOpen(true);
-            }}
-            title="Course Cart"
-            aria-label={`Open cart, ${cart.length} ${cart.length === 1 ? "course" : "courses"}`}
-            className="absolute top-5 right-5 sm:top-6 sm:right-8 z-20 w-12 h-12 rounded-full bg-gold hover:brightness-95 text-ink flex items-center justify-center shadow-md transition-all duration-200 hover:scale-105 focus:outline-none focus-visible:ring-2 focus-visible:ring-paper"
-          >
-            <ShoppingCart className="w-5 h-5" />
-            <span className="absolute -top-1.5 -right-1.5 min-w-5 h-5 px-1 rounded-full bg-ink text-gold text-[11px] font-bold flex items-center justify-center font-sans border-2 border-pine">
-              {cart.length > 9 ? "9+" : cart.length}
-            </span>
-          </button>
-        )}
       </div>
 
       <div className="max-w-6xl mx-auto px-6 mt-12">
@@ -339,12 +171,12 @@ export default function MerchantStore() {
                 <span className="font-sans font-bold text-gold uppercase tracking-widest text-xs mr-2">
                   [BROWSING AS GUEST]
                 </span>
-                Courses are visible to everyone. Sign in as a student to add
-                courses to your cart and check out.
+                Add courses to your cart as you browse — you'll sign in as a
+                student when you're ready to check out.
               </p>
               <button
                 type="button"
-                onClick={() => router.push(ROUTES.LOGIN)}
+                onClick={() => router.push(buildAuthUrl(ROUTES.LOGIN, ROUTES.STORE))}
                 className="text-xs font-sans font-medium uppercase tracking-widest bg-pine hover:bg-moss text-paper px-4 py-2 rounded-full transition duration-200 shadow-sm shrink-0 flex items-center gap-1.5"
               >
                 <LogIn className="w-3 h-3" />
@@ -456,7 +288,7 @@ export default function MerchantStore() {
                   isPending={isCartActionPending(course.id)}
                   canPurchase={canUseCart}
                   onViewDetails={setViewingCourse}
-                  onToggleCart={toggleCart}
+                  onToggleCart={toggleCourse}
                 />
               ))}
             </motion.div>
@@ -472,20 +304,6 @@ export default function MerchantStore() {
         )}
       </div>
 
-      <StoreCartDrawer
-        isOpen={isCartOpen}
-        onClose={() => setIsCartOpen(false)}
-        items={cart}
-        isLoading={isCartLoading}
-        pendingCourseIds={
-          removeFromCartMutation.isPending
-            ? [removeFromCartMutation.variables]
-            : []
-        }
-        onRemove={handleRemoveFromCart}
-        onPurchase={handlePurchase}
-      />
-
       <StoreCourseDetailModal
         course={viewingCourse}
         isInCart={viewingCourse ? isInCart(viewingCourse.id) : false}
@@ -494,16 +312,7 @@ export default function MerchantStore() {
         }
         canPurchase={canUseCart}
         onClose={() => setViewingCourse(null)}
-        onToggleCart={toggleCart}
-      />
-
-      <StorePaymentModal
-        isOpen={isPaymentModalOpen}
-        items={cart}
-        isSubmitting={checkoutMutation.isPending}
-        onClose={() => setIsPaymentModalOpen(false)}
-        onConfirm={handleConfirmPayment}
-        size="lg"
+        onToggleCart={toggleCourse}
       />
     </div>
   );

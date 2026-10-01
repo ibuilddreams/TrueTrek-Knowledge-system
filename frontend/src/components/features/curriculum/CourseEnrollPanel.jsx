@@ -1,36 +1,24 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, CheckCircle2, ShoppingCart } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
+import { ArrowRight, Check, CheckCircle2, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
+import { useCart } from "@/hooks/useCart";
 import { getPortalRouteForRole, ROUTES } from "@/constants/routes";
-import { addToCart, checkoutCart, getCart } from "@/services/cartService";
 import { getStudentEnrolledCourseDetail } from "@/services/studentCoursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatCoursePrice } from "@/lib/store";
-import { toastError, toastInfo, toastSuccess } from "@/lib/toast";
-import StorePaymentModal from "@/components/features/store/StorePaymentModal";
+
+const SECONDARY_BUTTON =
+  "mt-4 inline-flex items-center gap-2 rounded-xl border border-line bg-paper px-5 py-3 text-sm font-medium text-ink transition hover:bg-porcelain disabled:cursor-not-allowed disabled:opacity-70";
 
 const PRIMARY_BUTTON =
   "mt-4 inline-flex items-center gap-2 rounded-xl bg-pine px-5 py-3 text-sm font-medium text-paper transition hover:bg-moss disabled:cursor-not-allowed disabled:opacity-70";
 
-// Puts `course` in the student's cart if it isn't there yet, then checks out
-// just that course — the rest of the cart is left untouched.
-async function buyCourseNow(course) {
-  const cartResponse = await getCart();
-  const inCart = (cartResponse?.data || []).some((item) => item.course?.id === course.id);
-  if (!inCart) {
-    await addToCart(course.id);
-  }
-  return checkoutCart([course.id]);
-}
-
 export default function CourseEnrollPanel({ course }) {
-  const queryClient = useQueryClient();
   const { status, user, isAuthenticated, isStudent, role } = useAuth();
-  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const { isInCart, isPending: isCartPending, toggleCourse } = useCart();
 
   const isAuthResolved = status !== "idle" && status !== "loading";
   const courseId = course.id;
@@ -52,37 +40,31 @@ export default function CourseEnrollPanel({ course }) {
     retry: false,
   });
 
-  const purchaseMutation = useMutation({
-    mutationFn: () => buyCourseNow(course),
-    onSuccess: (response) => {
-      const result = response?.data || {};
-      const failed = result.failed || [];
-      failed.forEach((item) => toastError(`${item.course_title}: ${item.reason}`));
-      const enrolled = (result.enrolled?.length || 0) > 0;
-      const already = (result.already_enrolled?.length || 0) > 0;
+  const inCart = isInCart(courseId);
+  const cartButton = (
+    <button
+      type="button"
+      onClick={() => toggleCourse(course)}
+      disabled={isCartPending(courseId)}
+      className={inCart ? SECONDARY_BUTTON : PRIMARY_BUTTON}
+    >
+      {inCart ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
+      {inCart ? "In cart · remove" : "Add to cart"}
+    </button>
+  );
 
-      if (enrolled) {
-        toastSuccess("Payment successful — you're enrolled in this course!");
-      } else if (already) {
-        toastInfo("You're already enrolled in this course.");
-      }
-
-      if (enrolled || already) {
-        queryClient.setQueryData(["curriculum-enrollment", user?.id, courseId], true);
-        queryClient.invalidateQueries({ queryKey: ["studentEnrollments"] });
-        queryClient.invalidateQueries({ queryKey: ["store-cart"] });
-        queryClient.invalidateQueries({ queryKey: ["store-public-courses"] });
-        setIsPaymentOpen(false);
-      } else if (failed.length === 0) {
-        toastError("Checkout failed. Please try again.");
-      } else {
-        setIsPaymentOpen(false);
-      }
-    },
-    onError: (error) => {
-      toastError(getApiErrorMessage(error, "Checkout failed. Please try again."));
-    },
-  });
+  // Purchasing happens from the cart page, never from here.
+  const cartActions = (
+    <div className="flex flex-wrap items-center gap-3">
+      {cartButton}
+      {inCart && (
+        <Link href={ROUTES.CART} className={PRIMARY_BUTTON}>
+          View cart
+          <ArrowRight className="h-4 w-4" />
+        </Link>
+      )}
+    </div>
+  );
 
   const portalCourseUrl = `${ROUTES.STUDENT_PORTAL}?tab=courses&course=${courseId}`;
   let heading;
@@ -99,13 +81,8 @@ export default function CourseEnrollPanel({ course }) {
     );
   } else if (!isAuthenticated) {
     heading = "Enroll in this course";
-    body = "Sign in with your student account to purchase this course and start learning.";
-    action = (
-      <Link href={ROUTES.LOGIN} className={PRIMARY_BUTTON}>
-        Sign in to enroll
-        <ArrowRight className="h-4 w-4" />
-      </Link>
-    );
+    body = `Add this course to your cart (${formatCoursePrice(course.amount)}). You'll sign in with your student account when you check out from your cart.`;
+    action = cartActions;
   } else if (!isStudent) {
     heading = "Manage this course";
     body = "Course purchases are available to student accounts. Open your portal to manage courses.";
@@ -144,19 +121,9 @@ export default function CourseEnrollPanel({ course }) {
       </Link>
     );
   } else {
-    const price = formatCoursePrice(course.amount);
     heading = "Enroll in this course";
-    body = "Purchase this course to unlock its lessons, assignments, and quizzes in your learning portal.";
-    action = (
-      <button
-        type="button"
-        onClick={() => setIsPaymentOpen(true)}
-        className={PRIMARY_BUTTON}
-      >
-        <ShoppingCart className="h-4 w-4" />
-        {price === "Free" ? "Enroll for free" : `Buy this course · ${price}`}
-      </button>
-    );
+    body = `Add this course to your cart (${formatCoursePrice(course.amount)}), then purchase it from your cart to unlock its lessons, assignments, and quizzes.`;
+    action = cartActions;
   }
 
   return (
@@ -169,17 +136,6 @@ export default function CourseEnrollPanel({ course }) {
       </h3>
       <p className="mt-2 text-sm text-muted">{body}</p>
       {action}
-
-      {isStudent && (
-        <StorePaymentModal
-          isOpen={isPaymentOpen}
-          items={[course]}
-          isSubmitting={purchaseMutation.isPending}
-          onClose={() => setIsPaymentOpen(false)}
-          onConfirm={() => purchaseMutation.mutate()}
-          size="lg"
-        />
-      )}
     </div>
   );
 }

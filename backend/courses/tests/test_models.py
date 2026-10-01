@@ -65,3 +65,27 @@ class CourseModelTests(TestCase):
         course = Course.objects.create(title="Machine Learning", category=self.category)
 
         self.assertEqual(str(course), "Machine Learning")
+
+
+class ParseGradeRangeTests(TestCase):
+    def test_parses_ranges_singles_and_special_grades(self):
+        from courses.grades import parse_grade_range
+
+        self.assertEqual(parse_grade_range("x · Grades 9–12 · y"), (9, 12))
+        self.assertEqual(parse_grade_range("x · Grades K–2 · y"), (0, 2))
+        self.assertEqual(parse_grade_range("x · Grades Pre-K · y"), (-1, -1))
+        self.assertEqual(parse_grade_range("x · Grades 6 · y"), (6, 6))
+        self.assertEqual(parse_grade_range("x · Grades 1-3 · y"), (1, 3))
+
+    def test_prefers_structured_segment_over_incidental_mentions(self):
+        from courses.grades import parse_grade_range
+
+        text = "Grade 8 math prep.\n\nProvider: X · 1 credit · Grades 7–9 · Subject: Math"
+        self.assertEqual(parse_grade_range(text), (7, 9))
+
+    def test_returns_none_without_grades_or_when_out_of_range(self):
+        from courses.grades import parse_grade_range
+
+        self.assertIsNone(parse_grade_range("A course about gradesmanship."))
+        self.assertIsNone(parse_grade_range("· Grades 15 ·"))
+        self.assertIsNone(parse_grade_range(""))

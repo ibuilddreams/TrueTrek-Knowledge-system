@@ -6,6 +6,8 @@ import confetti from "canvas-confetti";
 import { AlertCircle, Lock, LogIn } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuestOnlyRoute } from "@/hooks/useGuestOnlyRoute";
+import { useNextPath } from "@/hooks/useNextPath";
+import { buildAuthUrl } from "@/lib/authRedirect";
 import { ROUTES } from "@/constants/routes";
 import { toastError, toastSuccess } from "@/lib/toast";
 import AuthGateCard from "@/components/ui/AuthGateCard";
@@ -17,6 +19,7 @@ import GoogleSignInButton from "@/components/features/auth/GoogleSignInButton";
 export default function LoginForm() {
   const { login } = useAuth();
   const { shouldBlock, isAuthenticated } = useGuestOnlyRoute();
+  const nextPath = useNextPath();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -129,7 +132,7 @@ export default function LoginForm() {
         <p className="text-center text-xs font-light text-muted">
           New to TrueTrek?{" "}
           <Link
-            href={ROUTES.SIGNUP}
+            href={buildAuthUrl(ROUTES.SIGNUP, nextPath)}
             className="font-semibold transition text-pine hover:text-moss"
           >
             Create an Account

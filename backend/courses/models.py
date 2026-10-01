@@ -1,8 +1,11 @@
 from django.conf import settings
+from django.core.validators import MaxValueValidator, MinValueValidator
 from django.db import models
 from django.utils.text import slugify
 
 from common.models import BaseModel, Status
+
+from .grades import MAX_GRADE, MIN_GRADE, grade_range_label, parse_grade_range
 
 
 class Category(BaseModel):
@@ -56,6 +59,18 @@ class Course(BaseModel):
     )
     duration_minutes = models.PositiveIntegerField(default=0)
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    # Inclusive grade range (Pre-K = -1, K = 0, 1-12); null when unknown.
+    # Derived from the description's "Grades X–Y" segment on save.
+    grade_min = models.SmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(MIN_GRADE), MaxValueValidator(MAX_GRADE)],
+    )
+    grade_max = models.SmallIntegerField(
+        null=True,
+        blank=True,
+        validators=[MinValueValidator(MIN_GRADE), MaxValueValidator(MAX_GRADE)],
+    )
 
     class Meta:
         ordering = ["-created_at"]
@@ -63,11 +78,18 @@ class Course(BaseModel):
     def __str__(self):
         return f"{self.code} — {self.title}"
 
+    @property
+    def grade_label(self):
+        return grade_range_label(self.grade_min, self.grade_max)
+
     def save(self, *args, **kwargs):
         if self.code:
             self.code = self.code.strip().upper()
         if not self.slug:
             self.slug = slugify(self.title)
+        grades = parse_grade_range(self.description)
+        if grades:
+            self.grade_min, self.grade_max = grades
         super().save(*args, **kwargs)
 
 

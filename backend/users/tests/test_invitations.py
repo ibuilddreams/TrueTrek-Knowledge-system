@@ -11,6 +11,8 @@ from django.test import skipUnlessDBFeature
 
 from audit_logs.models import AuditLog
 from notifications.models import Notification
+from courses.models import Category, Course, CourseInstructor
+from enrollments.models import Enrollment
 from users.models import CustomUser, InvitationFeedback, UserInvitation
 
 
@@ -41,6 +43,46 @@ class InvitationTests(APITestCase):
         response = self.client.post("/api/invitations/accept/", self.setup_payload(link), format="json")
         self.assertEqual(response.status_code, 200, response.data)
         return CustomUser.objects.get(email="invited@example.com")
+
+    def make_course(self, code, status="PUBLISHED", teacher=True):
+        category, _ = Category.objects.get_or_create(name="General")
+        course = Course.objects.create(title=f"Course {code}", code=code, category=category, status=status)
+        if teacher:
+            instructor = CustomUser.objects.create_user(
+                username=f"t_{code}", email=f"t_{code}@example.com", password="Complex-pass-987", gender="OTHER", role="TEACHER")
+            CourseInstructor.objects.create(course=course, instructor=instructor)
+        return course
+
+    def invite_with_courses(self, course_ids, role="STUDENT"):
+        return self.client.post("/api/invitations/", {
+            "first_name": "New", "last_name": "User", "email": "invited@example.com",
+            "role": role, "course_ids": course_ids}, format="json")
+
+    def test_student_invite_enrolls_in_selected_courses(self):
+        first, second = self.make_course("C1"), self.make_course("C2")
+        response = self.invite_with_courses([first.pk, second.pk, first.pk])
+        self.assertEqual(response.status_code, 201, response.data)
+        user = CustomUser.objects.get(email="invited@example.com")
+        self.assertEqual(set(Enrollment.objects.filter(student=user).values_list("course_id", flat=True)), {first.pk, second.pk})
+        self.assertEqual({c["id"] for c in response.data["data"]["courses"]}, {first.pk, second.pk})
+        self.assertIn("enrolled in", mail.outbox[0].body)
+        listed = self.client.get("/api/invitations/").data["data"]["results"][0]
+        self.assertEqual(len(listed["courses"]), 2)
+
+    def test_teacher_invite_assigns_selected_courses(self):
+        course = self.make_course("C3", status="DRAFT")
+        response = self.invite_with_courses([course.pk], role="TEACHER")
+        self.assertEqual(response.status_code, 201, response.data)
+        user = CustomUser.objects.get(email="invited@example.com")
+        self.assertTrue(CourseInstructor.objects.filter(course=course, instructor=user).exists())
+        self.assertFalse(Enrollment.objects.filter(course=course).exists())
+
+    def test_invalid_course_selection_rejects_whole_invitation(self):
+        draft, no_teacher = self.make_course("C4", status="DRAFT"), self.make_course("C5", teacher=False)
+        for ids in ([draft.pk], [no_teacher.pk], [999999]):
+            self.assertEqual(self.invite_with_courses(ids).status_code, 400)
+        self.assertFalse(CustomUser.objects.filter(email="invited@example.com").exists())
+        self.assertFalse(UserInvitation.objects.exists())
 
     def test_unchecked_invite_includes_setup_but_not_feedback(self):
         data = self.invite()

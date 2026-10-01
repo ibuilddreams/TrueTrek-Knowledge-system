@@ -5,6 +5,8 @@ export async function getPublicCourses({
   pageSize = 100,
   search,
   category,
+  grade,
+  difficulty,
   excludeEnrolled,
   sort,
 } = {}) {
@@ -13,6 +15,8 @@ export async function getPublicCourses({
   params.set("page_size", pageSize);
   if (search) params.set("search", search);
   if (category) params.set("category", category);
+  if (grade !== undefined && grade !== "") params.set("grade", grade);
+  if (difficulty) params.set("difficulty", difficulty);
   if (excludeEnrolled) params.set("exclude_enrolled", "true");
   if (sort) params.set("sort", sort);
   return backendClient.get(`/courses/public/?${params.toString()}`);

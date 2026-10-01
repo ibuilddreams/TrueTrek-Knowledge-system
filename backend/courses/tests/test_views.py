@@ -255,6 +255,77 @@ class PublicCourseListViewTests(APITestCase):
         self.assertIn("Published Course", titles)
 
 
+class PublicCourseGradeFilterTests(APITestCase):
+    def setUp(self):
+        self.url = reverse("course-public-list")
+        self.filters_url = reverse("course-public-filters")
+        self.category = Category.objects.create(name="Mathematics")
+        self.early = Course.objects.create(
+            title="Early Math",
+            code="EARLY1",
+            category=self.category,
+            status=Status.PUBLISHED,
+            difficulty=Course.Difficulty.BEGINNER,
+            description="Counting.\n\nProvider: X · 1 credit · Grades K–2 · Subject: Mathematics",
+        )
+        self.high = Course.objects.create(
+            title="High School Math",
+            code="HIGH1",
+            category=self.category,
+            status=Status.PUBLISHED,
+            difficulty=Course.Difficulty.ADVANCED,
+            description="Algebra.\n\nProvider: X · 1 credit · Grades 9–12 · Subject: Mathematics",
+        )
+        Course.objects.create(
+            title="No Grade", code="NOGRADE1", category=self.category, status=Status.PUBLISHED
+        )
+        Course.objects.create(
+            title="Draft Grade",
+            code="DRAFTG1",
+            category=self.category,
+            status=Status.DRAFT,
+            description="· Grades 3 ·",
+        )
+
+    def _titles(self, **params):
+        response = self.client.get(self.url, params)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        return [item["title"] for item in response.data["data"]["results"]]
+
+    def test_grade_range_is_parsed_on_save(self):
+        self.assertEqual((self.early.grade_min, self.early.grade_max), (0, 2))
+        self.assertEqual(self.early.grade_label, "Grades K–2")
+
+    def test_grade_filter_matches_courses_whose_range_includes_the_grade(self):
+        self.assertEqual(self._titles(grade="1"), ["Early Math"])
+        self.assertEqual(self._titles(grade="0"), ["Early Math"])
+        self.assertEqual(self._titles(grade="12"), ["High School Math"])
+
+    def test_grade_filter_with_no_match_or_invalid_value_returns_nothing(self):
+        self.assertEqual(self._titles(grade="5"), [])
+        self.assertEqual(self._titles(grade="abc"), [])
+        self.assertEqual(self._titles(grade="99"), [])
+
+    def test_difficulty_filter(self):
+        self.assertEqual(self._titles(difficulty="advanced"), ["High School Math"])
+
+    def test_filters_endpoint_lists_available_grades_and_difficulties(self):
+        data = self.client.get(self.filters_url).data["data"]
+
+        grade_values = [grade["value"] for grade in data["grades"]]
+        self.assertEqual(grade_values, [0, 1, 2, 9, 10, 11, 12])
+        self.assertEqual(data["grades"][0]["label"], "Kindergarten")
+        self.assertEqual(
+            [difficulty["value"] for difficulty in data["difficulties"]],
+            ["BEGINNER", "ADVANCED"],
+        )
+
+    def test_list_exposes_grade_label(self):
+        response = self.client.get(self.url, {"grade": "10"})
+
+        self.assertEqual(response.data["data"]["results"][0]["grade_label"], "Grades 9–12")
+
+
 class CourseDetailViewTests(APITestCase):
     def setUp(self):
         self.category = Category.objects.create(name="Programming")
