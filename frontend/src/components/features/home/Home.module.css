@@ -150,13 +150,13 @@
     animation-play-state: paused;
   }
 
-  .home [id="btn-explore-curriculum"] {
+  .home [id="btn-explore-pathways"] {
     position: relative;
     overflow: hidden;
     isolation: isolate;
   }
 
-  .home [id="btn-explore-curriculum"]::before {
+  .home [id="btn-explore-pathways"]::before {
     content: "";
     position: absolute;
     top: 0;
@@ -252,7 +252,7 @@
       color: var(--color-gold);
     }
 
-    .home [id="btn-explore-curriculum"]:hover::before {
+    .home [id="btn-explore-pathways"]:hover::before {
       left: 130%;
     }
 

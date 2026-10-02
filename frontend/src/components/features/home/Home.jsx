@@ -456,11 +456,11 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center max-w-md"
         >
           <button
-            id="btn-explore-curriculum"
-            onClick={onExploreTiers}
+            id="btn-explore-pathways"
+            onClick={onExplorePathways}
             className="w-full sm:w-auto bg-pine hover:bg-moss text-paper font-semibold px-8 py-3.5 rounded-full flex items-center justify-center gap-2 transition duration-300 shadow-elevated text-sm tracking-wide"
           >
-            Explore 9-Tier Curriculum
+            Discover Your Pathway
             <ArrowRight className="w-4 h-4" />
           </button>
           <button
