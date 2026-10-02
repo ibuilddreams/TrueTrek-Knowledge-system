@@ -70,6 +70,7 @@ class CustomUser(AbstractUser):
         default=AccountStatus.ACTIVE,
     )
     is_verified = models.BooleanField(default=False)
+    is_advisor = models.BooleanField(default=False)
     last_login_ip = models.GenericIPAddressField(null=True, blank=True)
 
     created_at = models.DateTimeField(auto_now_add=True)

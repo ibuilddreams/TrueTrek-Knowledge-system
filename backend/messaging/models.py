@@ -9,16 +9,27 @@ class Conversation(BaseModel):
     (enforced in services.get_or_create_conversation) so (a, b) and (b, a) collapse
     to the same row and unique_together can do its job."""
 
+    class ConversationType(models.TextChoices):
+        DIRECT = "DIRECT", "Direct"
+        ADVISOR = "ADVISOR", "Advisor"
+
     participant_one = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="conversations_as_one"
     )
     participant_two = models.ForeignKey(
         settings.AUTH_USER_MODEL, on_delete=models.CASCADE, related_name="conversations_as_two"
     )
+    conversation_type = models.CharField(
+        max_length=20, choices=ConversationType.choices, default=ConversationType.DIRECT
+    )
     last_message_at = models.DateTimeField(null=True, blank=True)
 
     class Meta:
-        unique_together = ("participant_one", "participant_two")
+        # conversation_type is part of the uniqueness key (not just
+        # participant_one/two) so a student's regular class-related DM thread
+        # with a teacher stays a separate row from a formal advisor thread
+        # with that same person, if they're also auto-assigned as advisor.
+        unique_together = ("participant_one", "participant_two", "conversation_type")
         ordering = ["-last_message_at", "-created_at"]
 
     def __str__(self):

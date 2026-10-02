@@ -11,6 +11,7 @@ class ParticipantSerializer(serializers.Serializer):
     name = serializers.CharField()
     email = serializers.EmailField()
     role = serializers.CharField()
+    is_advisor = serializers.BooleanField()
     avatar = serializers.SerializerMethodField()
 
     def get_avatar(self, instance):
@@ -100,6 +101,7 @@ class ConversationSerializer(serializers.ModelSerializer):
         model = Conversation
         fields = [
             "id",
+            "conversation_type",
             "other_participant",
             "last_message",
             "unread_count",
@@ -157,6 +159,18 @@ class SendMessageSerializer(serializers.Serializer):
         if not body and not attachment and not course_id:
             raise serializers.ValidationError("Message must include text or an attachment.")
         return attrs
+
+
+class AskAdvisorSerializer(serializers.Serializer):
+    body = serializers.CharField()
+
+    def validate_body(self, value):
+        value = value.strip()
+        if not value:
+            raise serializers.ValidationError("Please enter your question.")
+        if len(value) > 5000:
+            raise serializers.ValidationError("Message body cannot exceed 5000 characters.")
+        return value
 
 
 class EditMessageSerializer(serializers.Serializer):

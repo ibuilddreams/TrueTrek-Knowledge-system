@@ -12,6 +12,12 @@ export async function getPublicPathwayById(id) {
   return backendClient.get(`/pathways/public/${id}/`);
 }
 
+// Slug form of the above, used by the public pathway page (/pathways/<slug>).
+// The id form stays for callers that already hold one (home teaser, onboarding).
+export async function getPublicPathwayBySlug(slug) {
+  return backendClient.get(`/pathways/public/${slug}/`);
+}
+
 export async function getAdminPathways({ pageSize = 100, search, status } = {}) {
   const params = new URLSearchParams();
   params.set("page_size", pageSize);

@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.db.models import Q
+from django.db.models import Count, Q
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
@@ -18,6 +18,7 @@ from .serializers import (
     CourseListSerializer,
     CourseWriteSerializer,
     PublicCourseListSerializer,
+    PublicCourseRecommendationSerializer,
     PublicCourseDetailSerializer,
     TagSerializer,
     TagWriteSerializer,
@@ -242,12 +243,103 @@ class PublicCourseListView(generics.ListAPIView):
         return success_response(paginated_data, message="Courses fetched successfully")
 
 
+class PublicCourseRecommendationsView(generics.GenericAPIView):
+    """Cart upsell data — courses related to the cart and the most purchased ones.
+
+    `course_ids` (comma-separated) is the viewer's cart: those courses, plus
+    anything an authenticated viewer is already enrolled in, are never suggested.
+    Anonymous-safe so guests (whose cart lives in the browser) get it too.
+    """
+
+    permission_classes = [AllowAny]
+    DEFAULT_LIMIT = 8
+    MAX_LIMIT = 12
+
+    def _parse_ids(self, raw):
+        ids = []
+        for part in (raw or "").split(","):
+            part = part.strip()
+            if part.isdigit():
+                ids.append(int(part))
+        return ids
+
+    def _parse_limit(self, raw):
+        try:
+            limit = int(raw)
+        except (TypeError, ValueError):
+            return self.DEFAULT_LIMIT
+        return max(1, min(limit, self.MAX_LIMIT))
+
+    def get(self, request):
+        cart_ids = self._parse_ids(request.query_params.get("course_ids"))
+        limit = self._parse_limit(request.query_params.get("limit"))
+
+        excluded_ids = set(cart_ids)
+        if request.user and request.user.is_authenticated:
+            excluded_ids.update(
+                Enrollment.objects.filter(student=request.user).values_list("course_id", flat=True)
+            )
+
+        candidates = (
+            Course.objects.filter(status=Status.PUBLISHED)
+            .exclude(id__in=excluded_ids)
+            .select_related("category")
+            .prefetch_related("tags")
+            .annotate(
+                purchase_count=Count(
+                    "enrollments",
+                    filter=~Q(enrollments__status=Enrollment.EnrollmentStatus.CANCELLED),
+                    distinct=True,
+                )
+            )
+            .order_by("-purchase_count", "title", "id")
+        )
+
+        # Related: same category or shared tags, best tag overlap first.
+        # Popular: most purchased overall, skipping whatever "related" already
+        # shows so the two tabs surface different courses.
+        related = []
+        cart_courses = Course.objects.filter(id__in=cart_ids)
+        if cart_courses.exists():
+            category_ids = list(cart_courses.values_list("category_id", flat=True))
+            tag_ids = list(Tag.objects.filter(courses__in=cart_courses).values_list("id", flat=True))
+            related_ids = Course.objects.filter(
+                Q(category_id__in=category_ids) | Q(tags__id__in=tag_ids)
+            ).values_list("id", flat=True)
+            related = list(
+                candidates.filter(id__in=related_ids)
+                .annotate(shared_tags=Count("tags", filter=Q(tags__id__in=tag_ids), distinct=True))
+                .order_by("-shared_tags", "-purchase_count", "title", "id")[:limit]
+            )
+
+        popular = candidates.exclude(id__in=[c.id for c in related])
+        # With a cart, "popular" means actually purchased. With no cart (the
+        # empty-cart "Learners are viewing" shelf) fall back to every published
+        # course so a fresh catalogue still has something to show.
+        if cart_ids:
+            popular = popular.filter(purchase_count__gt=0)
+
+        context = self.get_serializer_context()
+        return success_response(
+            {
+                "related": PublicCourseRecommendationSerializer(related, many=True, context=context).data,
+                "popular": PublicCourseRecommendationSerializer(popular[:limit], many=True, context=context).data,
+            },
+            message="Course recommendations fetched successfully",
+        )
+
+
 class PublicCourseDetailView(generics.RetrieveAPIView):
     permission_classes = [AllowAny]
     serializer_class = PublicCourseDetailSerializer
     lookup_field = "slug"
     queryset = Course.objects.filter(status=Status.PUBLISHED).select_related("category").prefetch_related(
-        "tags", "modules__lessons", "modules__assignments", "modules__quizzes"
+        "tags",
+        "instructors__instructor__profile",
+        "instructors__instructor__instructor_profile",
+        "modules__lessons",
+        "modules__assignments",
+        "modules__quizzes",
     )
 
     def retrieve(self, request, *args, **kwargs):

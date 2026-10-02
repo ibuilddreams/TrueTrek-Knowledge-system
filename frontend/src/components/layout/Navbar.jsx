@@ -8,6 +8,7 @@ import { toggleMobileMenu } from "@/store/slices/ui/uiSlice";
 import { NAV_LINKS } from "@/constants/navigation";
 import { ROUTES, getSectionFromPathname } from "@/constants/routes";
 import CartNavButton from "./CartNavButton";
+import WishlistNavButton from "./WishlistNavButton";
 
 export default function Navbar() {
   const pathname = usePathname();
@@ -61,6 +62,7 @@ export default function Navbar() {
       </div>
 
       <div id="nav-cta-segment" className="flex items-center gap-2">
+        <WishlistNavButton />
         <CartNavButton />
 
         <Link

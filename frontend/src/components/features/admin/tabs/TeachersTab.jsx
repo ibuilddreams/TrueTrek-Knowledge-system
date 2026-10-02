@@ -171,8 +171,13 @@ export default function TeachersTab() {
       header: "Teacher Name",
       sortable: true,
       render: (teacher) => (
-        <span className="font-semibold text-ink">
+        <span className="font-semibold text-ink inline-flex items-center gap-2">
           {teacher.full_name}
+          {teacher.is_advisor && (
+            <span className="px-2 py-0.5 rounded-full bg-pine/10 text-pine text-[10px] font-mono uppercase tracking-wider">
+              Advisor
+            </span>
+          )}
         </span>
       ),
     },

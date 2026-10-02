@@ -52,6 +52,28 @@ class PublicPathwayDetailView(generics.GenericAPIView):
         return success_response(serializer.data, message="Pathway fetched successfully")
 
 
+class PublicPathwayDetailBySlugView(generics.GenericAPIView):
+    """Same payload as PublicPathwayDetailView, addressed by slug.
+
+    The slug form is what the public pathway page (/pathways/<slug>) uses so
+    the URL is readable; the pk form stays for the callers that already hold an
+    id (the home page teaser, the onboarding recommendation step).
+    """
+
+    permission_classes = [AllowAny]
+
+    def get(self, request, slug):
+        try:
+            pathway = Pathway.objects.get(slug=slug, status=Status.PUBLISHED)
+        except Pathway.DoesNotExist:
+            return error_response(
+                message="Pathway with the given slug does not exist.", status_code=404
+            )
+
+        serializer = PublicPathwayDetailSerializer(pathway, context={"request": request})
+        return success_response(serializer.data, message="Pathway fetched successfully")
+
+
 class PathwayListCreateView(generics.ListCreateAPIView):
     queryset = Pathway.objects.all()
     pagination_class = Pagination

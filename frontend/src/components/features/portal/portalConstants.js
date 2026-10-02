@@ -6,6 +6,7 @@ import {
   CircleHelp,
   ClipboardList,
   Gift,
+  MessageCircleQuestion,
   Scale,
 } from "lucide-react";
 
@@ -57,6 +58,12 @@ export const PORTAL_TABS = [
     label: "War Room",
     icon: Scale,
     title: "Course group chat with your instructor and classmates",
+  },
+  {
+    id: "advisor",
+    label: "Ask an Advisor",
+    icon: MessageCircleQuestion,
+    title: "Chat privately with an advisor",
   },
 ];
 

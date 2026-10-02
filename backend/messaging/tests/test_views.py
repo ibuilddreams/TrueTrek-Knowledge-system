@@ -147,6 +147,93 @@ class ConversationCreateTests(MessagingTestCase):
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
 
 
+class AdvisorAskViewTests(MessagingTestCase):
+    def test_anonymous_cannot_ask_an_advisor(self):
+        response = self.client.post(reverse("messaging-advisor-ask"), {"body": "Hi"})
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+    def test_non_student_cannot_ask_an_advisor(self):
+        self.teacher.is_advisor = True
+        self.teacher.save(update_fields=["is_advisor"])
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.post(reverse("messaging-advisor-ask"), {"body": "Hi"})
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_no_advisors_available_returns_400(self):
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(reverse("messaging-advisor-ask"), {"body": "How do I enroll?"})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_blank_body_is_rejected(self):
+        self.teacher.is_advisor = True
+        self.teacher.save(update_fields=["is_advisor"])
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(reverse("messaging-advisor-ask"), {"body": "   "})
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_student_question_creates_advisor_conversation_with_message(self):
+        self.teacher.is_advisor = True
+        self.teacher.save(update_fields=["is_advisor"])
+
+        self.client.force_authenticate(user=self.student)
+        response = self.client.post(reverse("messaging-advisor-ask"), {"body": "How do I enroll?"})
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["data"]["conversation_type"], Conversation.ConversationType.ADVISOR)
+        conversation = Conversation.objects.get(pk=response.data["data"]["id"])
+        self.assertEqual(conversation.other_participant(self.student), self.teacher)
+        self.assertEqual(conversation.messages.count(), 1)
+        self.assertEqual(conversation.messages.first().body, "How do I enroll?")
+
+    def test_asking_again_reuses_the_same_advisor_conversation(self):
+        self.teacher.is_advisor = True
+        self.teacher.save(update_fields=["is_advisor"])
+        self.client.force_authenticate(user=self.student)
+
+        first = self.client.post(reverse("messaging-advisor-ask"), {"body": "First question"})
+        second = self.client.post(reverse("messaging-advisor-ask"), {"body": "Second question"})
+
+        self.assertEqual(first.data["data"]["id"], second.data["data"]["id"])
+        conversation = Conversation.objects.get(pk=first.data["data"]["id"])
+        self.assertEqual(conversation.messages.count(), 2)
+
+    def test_unrelated_student_can_reach_advisor_without_enrollment(self):
+        # other_student has no enrollment/CourseInstructor link to self.teacher,
+        # so the regular enrollment-gated picker would reject this pair — the
+        # advisor path must bypass that check entirely.
+        self.teacher.is_advisor = True
+        self.teacher.save(update_fields=["is_advisor"])
+        self.client.force_authenticate(user=self.other_student)
+
+        response = self.client.post(reverse("messaging-advisor-ask"), {"body": "Need help"})
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+
+class ConversationTypeFilterTests(MessagingTestCase):
+    def setUp(self):
+        super().setUp()
+        self.teacher.is_advisor = True
+        self.teacher.save(update_fields=["is_advisor"])
+
+    def test_advisor_filter_excludes_direct_conversations_for_student(self):
+        self.client.force_authenticate(user=self.student)
+        self.client.post(reverse("conversation-list-create"), {"recipient_id": self.teacher.id})
+        self.client.post(reverse("messaging-advisor-ask"), {"body": "A question"})
+
+        response = self.client.get(reverse("conversation-list-create"), {"conversation_type": "advisor"})
+        rows = response.data["data"]["results"]
+        self.assertEqual(len(rows), 1)
+        self.assertEqual(rows[0]["conversation_type"], Conversation.ConversationType.ADVISOR)
+
+    def test_advisor_filter_scopes_to_the_assigned_advisor_only(self):
+        self.client.force_authenticate(user=self.student)
+        self.client.post(reverse("messaging-advisor-ask"), {"body": "A question"})
+
+        self.client.force_authenticate(user=self.other_teacher)
+        response = self.client.get(reverse("conversation-list-create"), {"conversation_type": "advisor"})
+        self.assertEqual(len(response.data["data"]["results"]), 0)
+
+
 class MessageViewTests(MessagingTestCase):
     def setUp(self):
         super().setUp()

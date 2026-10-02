@@ -4,9 +4,10 @@ import { useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CheckCircle2, Info, ShoppingBag, ShoppingCart } from "lucide-react";
+import { CheckCircle2, Info, ShoppingCart } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { CART_QUERY_KEY, useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
 import { buildAuthUrl } from "@/lib/authRedirect";
 import { ROUTES, getPortalRouteForRole } from "@/constants/routes";
 import { checkoutCart } from "@/services/cartService";
@@ -17,6 +18,8 @@ import Loader from "@/components/ui/Loader";
 import StorePaymentModal from "@/components/features/store/StorePaymentModal";
 import CartItemRow from "./CartItemRow";
 import CartOrderSummary from "./CartOrderSummary";
+import CartPopularTopics from "./CartPopularTopics";
+import CartRecommendations from "./CartRecommendations";
 import SignInToPurchaseModal from "./SignInToPurchaseModal";
 
 const PRIMARY_LINK =
@@ -27,6 +30,8 @@ export default function CartPage() {
   const queryClient = useQueryClient();
   const { status, isAuthenticated, isStudent, role } = useAuth();
   const { courses, count, isLoading, isPending, removeCourse } = useCart();
+
+  const wishlist = useWishlist();
 
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [isSignInPromptOpen, setIsSignInPromptOpen] = useState(false);
@@ -58,7 +63,6 @@ export default function CartPage() {
       setIsPaymentOpen(false);
       queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });
       queryClient.invalidateQueries({ queryKey: ["store-public-courses"] });
-      queryClient.invalidateQueries({ queryKey: ["store-categories-source"] });
       queryClient.invalidateQueries({ queryKey: ["studentEnrollments"] });
       queryClient.invalidateQueries({ queryKey: ["curriculum-enrollment"] });
     },
@@ -67,6 +71,14 @@ export default function CartPage() {
     },
   });
 
+  // Saves to the wishlist first so a failure never loses the item.
+  async function handleMoveToWishlist(course) {
+    const saved = await wishlist.addCourse(course, { silent: true });
+    if (!saved) return;
+    removeCourse(course.id);
+    toastSuccess("Moved to your wishlist.");
+  }
+
   function handlePurchase() {
     if (!isAuthenticated) {
       setIsSignInPromptOpen(true);
@@ -74,6 +86,14 @@ export default function CartPage() {
     }
     setIsPaymentOpen(true);
   }
+
+  // Suggestions are for people who can actually buy (guests and students) and
+  // are hidden on the post-purchase confirmation so it stays focused.
+  const showRecommendations =
+    isAuthResolved &&
+    (!isAuthenticated || isStudent) &&
+    !isLoading &&
+    !(enrolledCount > 0 && count === 0);
 
   let body;
 
@@ -135,18 +155,14 @@ export default function CartPage() {
     );
   } else if (count === 0) {
     body = (
-      <div className="rounded-card border border-dashed border-line bg-paper/70">
-        <EmptyState
-          icon={ShoppingBag}
-          size="lg"
-          label="Your cart is empty"
-          description="Browse the store or curriculum and add a course to see it here."
-          action={
-            <Link href={ROUTES.STORE} className={PRIMARY_LINK}>
-              Browse Courses
-            </Link>
-          }
-        />
+      <div className="space-y-4 pb-2">
+        <p className="text-lg font-light italic text-muted">
+          <span className="font-medium text-ink">Your cart is empty</span> — let's change
+          that. Time to learn some new skills!
+        </p>
+        <Link href={ROUTES.STORE} className={PRIMARY_LINK}>
+          Browse Courses
+        </Link>
       </div>
     );
   } else {
@@ -173,6 +189,7 @@ export default function CartPage() {
               course={course}
               isRemoving={isPending(course.id)}
               onRemove={removeCourse}
+              onMoveToWishlist={handleMoveToWishlist}
             />
           ))}
         </ul>
@@ -204,6 +221,9 @@ export default function CartPage() {
         </div>
 
         {body}
+
+        {showRecommendations && <CartRecommendations />}
+        {showRecommendations && count === 0 && <CartPopularTopics />}
       </div>
 
       <SignInToPurchaseModal

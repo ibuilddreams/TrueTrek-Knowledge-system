@@ -49,6 +49,8 @@ INSTALLED_APPS = [
     'quizzes',
     'assignments',
     'carts',
+    'wishlists',
+    'instructors',
     'daily_drill',
     'pathways',
     'onboarding',

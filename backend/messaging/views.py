@@ -12,6 +12,7 @@ from progress.models import CourseProgress
 from .models import Conversation, Message
 from .permissions import IsConversationParticipant
 from .serializers import (
+    AskAdvisorSerializer,
     ConversationSerializer,
     EditMessageSerializer,
     MessageSerializer,
@@ -24,12 +25,14 @@ from .services import (
     MessageDeleteError,
     MessageEditError,
     MessagingPermissionError,
+    NoAdvisorsAvailableError,
     delete_message,
     edit_message,
     get_eligible_recipients,
     get_unread_counts,
     mark_conversation_read,
     send_message,
+    start_advisor_conversation,
     start_conversation,
     toggle_reaction,
 )
@@ -75,9 +78,15 @@ class ConversationListCreateView(generics.ListCreateAPIView):
 
     def get_queryset(self):
         user = self.request.user
-        return Conversation.objects.filter(
+        queryset = Conversation.objects.filter(
             Q(participant_one=user) | Q(participant_two=user)
         ).select_related("participant_one", "participant_two", "participant_one__profile", "participant_two__profile")
+
+        conversation_type = self.request.query_params.get("conversation_type", "").strip().upper()
+        if conversation_type in Conversation.ConversationType.values:
+            queryset = queryset.filter(conversation_type=conversation_type)
+
+        return queryset
 
     def list(self, request, *args, **kwargs):
         conversations = self.filter_queryset(self.get_queryset())
@@ -104,6 +113,39 @@ class ConversationListCreateView(generics.ListCreateAPIView):
         return success_response(
             ConversationSerializer(conversation, context={"request": request}).data,
             message="Conversation ready",
+            status_code=201,
+        )
+
+
+class AdvisorAskView(generics.GenericAPIView):
+    """Entry point for a student contacting an advisor (e.g. from the public
+    FAQ page) — auto-assigns an available advisor-flagged teacher and posts
+    the student's question as the first message, reusing the same
+    Conversation/Message machinery as regular messaging rather than a
+    parallel chat system. Re-asking reuses the student's existing advisor
+    conversation instead of starting a new one each time."""
+
+    http_method_names = ["post", "head", "options"]
+    permission_classes = [IsAuthenticated]
+    serializer_class = AskAdvisorSerializer
+
+    def post(self, request):
+        if not request.user.is_student:
+            return error_response(message="Only students can contact an advisor.", status_code=403)
+
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            conversation = start_advisor_conversation(request.user)
+        except NoAdvisorsAvailableError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        send_message(conversation, request.user, body=serializer.validated_data["body"])
+
+        return success_response(
+            ConversationSerializer(conversation, context={"request": request}).data,
+            message="Your question has been sent to an advisor.",
             status_code=201,
         )
 

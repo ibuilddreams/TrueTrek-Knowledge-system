@@ -32,6 +32,7 @@ def _build_token_response(user):
             "full_name": user.name,
             "email": user.email,
             "role": user.role,
+            "is_advisor": user.is_advisor,
         },
     }
 
@@ -92,6 +93,7 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
                 "full_name": user.name,
                 "email": user.email,
                 "role": user.role,
+                "is_advisor": user.is_advisor,
             },
         }
 
@@ -290,10 +292,11 @@ class StudentUpdateSerializer(serializers.ModelSerializer):
 class CreateTeacherSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
     gender = serializers.ChoiceField(choices=UserModel.Gender.choices, required=True)
+    is_advisor = serializers.BooleanField(required=False, default=False)
 
     class Meta:
         model = UserModel
-        fields = ["id", "username", "first_name", "last_name", "email", "password", "gender"]
+        fields = ["id", "username", "first_name", "last_name", "email", "password", "gender", "is_advisor"]
 
     def validate_email(self, value):
         email = UserModel.objects.normalize_email(value)
@@ -325,6 +328,7 @@ class CreateTeacherSerializer(serializers.ModelSerializer):
             "email": instance.email,
             "gender": instance.gender,
             "role": instance.role,
+            "is_advisor": instance.is_advisor,
         }
 
 
@@ -343,6 +347,7 @@ class TeacherSerializer(serializers.ModelSerializer):
             "gender",
             "role",
             "account_status",
+            "is_advisor",
             "date_joined",
         ]
         read_only_fields = fields
@@ -351,7 +356,7 @@ class TeacherSerializer(serializers.ModelSerializer):
 class TeacherUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
-        fields = ["first_name", "last_name", "gender", "account_status"]
+        fields = ["first_name", "last_name", "gender", "account_status", "is_advisor"]
 
     def validate_account_status(self, value):
         from .models import UserInvitation
@@ -448,6 +453,7 @@ class ProfileSerializer(serializers.ModelSerializer):
             "role",
             "account_status",
             "is_verified",
+            "is_advisor",
             "profile",
         ]
         read_only_fields = fields

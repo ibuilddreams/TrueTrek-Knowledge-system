@@ -12,11 +12,14 @@ export default function ConversationList({
   selectedConversationId,
   onSelectConversation,
   autoSelectConversationId,
+  conversationType,
+  emptyLabel = "No conversations yet.",
+  emptyDescription = "Start a new message to begin a conversation.",
 }) {
   const conversationsQuery = useQuery({
-    queryKey: ["conversations"],
+    queryKey: ["conversations", conversationType || "all"],
     queryFn: async () => {
-      const response = await getConversations({ pageSize: 50 });
+      const response = await getConversations({ pageSize: 50, conversationType });
       return response?.data?.results || [];
     },
     refetchInterval: 15000,
@@ -47,8 +50,8 @@ export default function ConversationList({
       <div className="flex-1 flex items-center justify-center p-4">
         <EmptyState
           icon={MessageSquare}
-          label="No conversations yet."
-          description="Start a new message to begin a conversation."
+          label={emptyLabel}
+          description={emptyDescription}
           compact
           size="lg"
         />

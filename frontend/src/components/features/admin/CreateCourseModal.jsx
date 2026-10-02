@@ -6,6 +6,9 @@ import { BookPlus, Check, Edit3, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import MultiSelect from "@/components/ui/MultiSelect";
+import LearningOutcomesField, {
+  cleanLearningOutcomes,
+} from "@/components/features/courses/LearningOutcomesField";
 import { createCourse, getCourseById, getCourseStatusChoices, updateCourse } from "@/services/coursesService";
 import { createCategory, getCategories } from "@/services/categoriesService";
 import { createTag, getTags } from "@/services/tagsService";
@@ -49,6 +52,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
   const [selectedTagIds, setSelectedTagIds] = useState([]);
   const [selectedInstructorIds, setSelectedInstructorIds] = useState([]);
   const [leadInstructorIds, setLeadInstructorIds] = useState([]);
+  const [learningOutcomes, setLearningOutcomes] = useState([]);
 
   const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -132,6 +136,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
     setSelectedTagIds([]);
     setSelectedInstructorIds([]);
     setLeadInstructorIds([]);
+    setLearningOutcomes([]);
     setFieldErrors({});
   }, [isOpen]);
 
@@ -150,6 +155,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
       amount: String(detail.amount ?? 0),
     });
     setExistingThumbnailUrl(detail.thumbnail || null);
+    setLearningOutcomes(detail.learning_outcomes || []);
     setSelectedTagIds((detail.tags || []).map((tag) => tag.id));
     setSelectedInstructorIds((detail.instructors || []).map((instructor) => instructor.id));
     setLeadInstructorIds(
@@ -273,6 +279,8 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
     formData.append("duration_minutes", String(durationMinutes));
     formData.append("amount", String(amount));
     selectedTagIds.forEach((tagId) => formData.append("tags", tagId));
+    // Always sent (even empty) so editing can clear the list.
+    formData.append("learning_outcomes", JSON.stringify(cleanLearningOutcomes(learningOutcomes)));
     if (selectedInstructorIds.length) {
       formData.append(
         "instructors",
@@ -358,6 +366,16 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
           />
           {fieldErrors.description && <p className={ERROR_CLASS}>{fieldErrors.description}</p>}
         </div>
+
+        <LearningOutcomesField
+          values={learningOutcomes}
+          onChange={(next) => {
+            setLearningOutcomes(next);
+            setFieldErrors((prev) => ({ ...prev, learning_outcomes: null }));
+          }}
+          disabled={isBusy}
+          error={fieldErrors.learning_outcomes}
+        />
 
         <div>
           <label className={LABEL_CLASS}>Thumbnail</label>

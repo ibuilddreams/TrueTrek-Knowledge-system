@@ -19,6 +19,7 @@ import { AnimatePresence, motion } from "motion/react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES, getPortalRouteForRole } from "@/constants/routes";
 import { checkoutPathways, getMyPathways, getPublicPathways } from "@/services/pathwaysService";
+import { buildAuthUrl } from "@/lib/authRedirect";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatCoursePrice } from "@/lib/store";
 import { toastError, toastInfo, toastSuccess } from "@/lib/toast";
@@ -26,7 +27,7 @@ import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
 import Pagination from "@/components/ui/Pagination";
 import PathwayCard from "./PathwayCard";
-import PathwayDetailModal from "./PathwayDetailModal";
+import SignInToSelectModal from "./SignInToSelectModal";
 import PathwayCheckoutModal from "./PathwayCheckoutModal";
 
 const PAGE_SIZE = 9;
@@ -44,8 +45,10 @@ export default function PathwaysStore() {
   const queryClient = useQueryClient();
 
   const [page, setPage] = useState(1);
-  const [viewingPathwayId, setViewingPathwayId] = useState(null);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
+  // The pathway a guest tried to select — drives the sign-in prompt and
+  // names it in the copy.
+  const [pendingSignInPathway, setPendingSignInPathway] = useState(null);
   // Keyed by id so a selection made on one page survives paginating away
   // from it — there's no server-side cart for pathways to persist this.
   const [selectedMap, setSelectedMap] = useState(new Map());
@@ -84,9 +87,10 @@ export default function PathwaysStore() {
   );
 
   function toggleSelect(pathway) {
+    // Guests get a prompt rather than an abrupt redirect; signing in from it
+    // carries `?next=` so they land back on this page.
     if (!isAuthenticated) {
-      toastInfo("Sign in to select pathways to purchase.");
-      router.push(ROUTES.LOGIN);
+      setPendingSignInPathway(pathway);
       return;
     }
 
@@ -236,7 +240,7 @@ export default function PathwaysStore() {
               </p>
               <button
                 type="button"
-                onClick={() => router.push(ROUTES.LOGIN)}
+                onClick={() => router.push(buildAuthUrl(ROUTES.LOGIN, ROUTES.PATHWAYS))}
                 className="text-xs font-sans font-medium uppercase tracking-widest bg-pine hover:bg-moss text-paper px-4 py-2 rounded-full transition duration-200 shadow-sm shrink-0 flex items-center gap-1.5"
               >
                 <LogIn className="w-3 h-3" />
@@ -305,7 +309,6 @@ export default function PathwaysStore() {
                   isSelected={selectedIds.has(pathway.id)}
                   isOwned={ownedPathwayIds.has(pathway.id)}
                   canSelect={canSelect}
-                  onViewDetails={(item) => setViewingPathwayId(item.id)}
                   onToggleSelect={toggleSelect}
                 />
               ))}
@@ -354,13 +357,11 @@ export default function PathwaysStore() {
         )}
       </AnimatePresence>
 
-      <PathwayDetailModal
-        pathwayId={viewingPathwayId}
-        isSelected={viewingPathwayId ? selectedIds.has(viewingPathwayId) : false}
-        isOwned={viewingPathwayId ? ownedPathwayIds.has(viewingPathwayId) : false}
-        canSelect={canSelect}
-        onClose={() => setViewingPathwayId(null)}
-        onToggleSelect={toggleSelect}
+      <SignInToSelectModal
+        isOpen={Boolean(pendingSignInPathway)}
+        pathwayName={pendingSignInPathway?.name}
+        nextPath={ROUTES.PATHWAYS}
+        onClose={() => setPendingSignInPathway(null)}
       />
 
       <PathwayCheckoutModal

@@ -26,6 +26,16 @@ export async function getPublicCourseFilters() {
   return backendClient.get("/courses/public/filters/");
 }
 
+// Cart upsell: courses related to the given cart (`courseIds`) and the most
+// purchased ones. Cart/enrolled courses are excluded server-side.
+export async function getPublicCourseRecommendations({ courseIds = [], limit } = {}) {
+  const params = new URLSearchParams();
+  if (courseIds.length) params.set("course_ids", courseIds.join(","));
+  if (limit) params.set("limit", limit);
+  const query = params.toString();
+  return backendClient.get(`/courses/public/recommendations/${query ? `?${query}` : ""}`);
+}
+
 export async function getPublicCourseBySlug(slug) {
   return backendClient.get(`/courses/public/${encodeURIComponent(slug)}/`);
 }

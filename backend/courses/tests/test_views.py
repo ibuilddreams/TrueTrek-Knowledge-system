@@ -5,6 +5,7 @@ from rest_framework.test import APITestCase
 
 from common.models import Status
 from courses.models import Category, Course
+from enrollments.models import Enrollment
 
 UserModel = get_user_model()
 
@@ -376,3 +377,174 @@ class CourseDetailViewTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_200_OK)
         self.assertFalse(Course.objects.filter(id=self.course.id).exists())
+
+
+class PublicCourseRecommendationsViewTests(APITestCase):
+    def setUp(self):
+        self.url = reverse("course-public-recommendations")
+        programming = Category.objects.create(name="Programming")
+        art = Category.objects.create(name="Art")
+        self.cart_course = Course.objects.create(
+            title="Cart Course", code="CART1", category=programming, status=Status.PUBLISHED
+        )
+        self.related_course = Course.objects.create(
+            title="Related Course", code="REL1", category=programming, status=Status.PUBLISHED
+        )
+        self.popular_course = Course.objects.create(
+            title="Popular Course", code="POP1", category=art, status=Status.PUBLISHED
+        )
+        Course.objects.create(
+            title="Draft Course", code="DRF1", category=programming, status=Status.DRAFT
+        )
+        self.student = UserModel.objects.create_user(
+            username="buyer", email="buyer@example.com", password="StrongPass123!",
+            gender=UserModel.Gender.MALE,
+        )
+        other = UserModel.objects.create_user(
+            username="other", email="other@example.com", password="StrongPass123!",
+            gender=UserModel.Gender.MALE,
+        )
+        Enrollment.objects.create(student=other, course=self.popular_course)
+
+    def _ids(self, response, key):
+        return [course["id"] for course in response.data["data"][key]]
+
+    def test_does_not_require_authentication(self):
+        self.assertEqual(self.client.get(self.url).status_code, status.HTTP_200_OK)
+
+    def test_related_matches_cart_category_and_excludes_cart_and_drafts(self):
+        response = self.client.get(self.url, {"course_ids": str(self.cart_course.id)})
+
+        self.assertEqual(self._ids(response, "related"), [self.related_course.id])
+
+    def test_related_is_empty_without_cart(self):
+        self.assertEqual(self._ids(self.client.get(self.url), "related"), [])
+
+    def test_popular_with_cart_only_includes_purchased_courses_with_count(self):
+        response = self.client.get(self.url, {"course_ids": str(self.cart_course.id)})
+
+        self.assertEqual(self._ids(response, "popular"), [self.popular_course.id])
+        self.assertEqual(response.data["data"]["popular"][0]["purchase_count"], 1)
+
+    def test_popular_without_cart_falls_back_to_all_published_courses(self):
+        response = self.client.get(self.url)
+
+        ids = self._ids(response, "popular")
+        self.assertEqual(ids[0], self.popular_course.id)
+        self.assertEqual(
+            set(ids), {self.cart_course.id, self.related_course.id, self.popular_course.id}
+        )
+
+    def test_cancelled_enrollments_do_not_count(self):
+        Enrollment.objects.filter(course=self.popular_course).update(
+            status=Enrollment.EnrollmentStatus.CANCELLED
+        )
+
+        response = self.client.get(self.url, {"course_ids": str(self.cart_course.id)})
+
+        self.assertEqual(self._ids(response, "popular"), [])
+
+    def test_excludes_courses_authenticated_student_is_enrolled_in(self):
+        Enrollment.objects.create(student=self.student, course=self.popular_course)
+        self.client.force_authenticate(self.student)
+
+        response = self.client.get(self.url, {"course_ids": str(self.cart_course.id)})
+
+        self.assertEqual(self._ids(response, "popular"), [])
+
+    def test_ignores_malformed_ids_and_limit(self):
+        response = self.client.get(self.url, {"course_ids": "abc,,x1", "limit": "zzz"})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+
+
+class CourseLearningOutcomesTests(APITestCase):
+    def setUp(self):
+        self.category = Category.objects.create(name="Programming")
+        self.admin = UserModel.objects.create_user(
+            username="outcomesadmin", email="outcomesadmin@example.com", password="StrongPass123!",
+            role=UserModel.Roles.ADMIN, gender=UserModel.Gender.MALE,
+        )
+        self.teacher = UserModel.objects.create_user(
+            username="outcomesteacher", email="outcomesteacher@example.com", password="StrongPass123!",
+            role=UserModel.Roles.TEACHER, gender=UserModel.Gender.MALE,
+        )
+
+    def _payload(self, **extra):
+        return {"title": "Outcome Course", "code": "OUT101", "category": self.category.id, **extra}
+
+    def test_admin_can_create_with_outcomes_as_json_list(self):
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.post(
+            reverse("course-list-create"),
+            self._payload(learning_outcomes=["  Build apps ", "", "Ship   code"]),
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["data"]["learning_outcomes"], ["Build apps", "Ship code"])
+
+    def test_multipart_form_accepts_outcomes_as_json_string(self):
+        self.client.force_authenticate(self.teacher)
+
+        response = self.client.post(
+            reverse("course-list-create"),
+            self._payload(learning_outcomes='["Learn A", "Learn B"]'),
+            format="multipart",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        self.assertEqual(response.data["data"]["learning_outcomes"], ["Learn A", "Learn B"])
+
+    def test_rejects_too_many_or_too_long_points(self):
+        self.client.force_authenticate(self.admin)
+        url = reverse("course-list-create")
+
+        too_many = self.client.post(
+            url,
+            self._payload(learning_outcomes=[f"Point {i}" for i in range(13)]),
+            format="json",
+        )
+        too_long = self.client.post(
+            url, self._payload(code="OUT102", title="Other", learning_outcomes=["x" * 301]), format="json"
+        )
+        not_text = self.client.post(
+            url, self._payload(code="OUT103", title="Third", learning_outcomes=[1]), format="json"
+        )
+
+        self.assertEqual(too_many.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(too_long.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(not_text.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_admin_can_update_outcomes(self):
+        course = Course.objects.create(
+            title="Editable", code="EDT1", category=self.category, status=Status.PUBLISHED
+        )
+        self.client.force_authenticate(self.admin)
+
+        response = self.client.patch(
+            reverse("course-detail", args=[course.id]), {"learning_outcomes": ["New point"]}, format="json"
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        course.refresh_from_db()
+        self.assertEqual(course.learning_outcomes, ["New point"])
+
+    def test_public_detail_exposes_outcomes_and_instructor_names_only(self):
+        from courses.models import CourseInstructor
+
+        course = Course.objects.create(
+            title="Public One", code="PUB9", category=self.category, status=Status.PUBLISHED,
+            learning_outcomes=["Learn this"],
+        )
+        CourseInstructor.objects.create(course=course, instructor=self.teacher, is_lead=True)
+
+        response = self.client.get(reverse("course-public-detail", args=[course.slug]))
+
+        data = response.data["data"]
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(data["learning_outcomes"], ["Learn this"])
+        self.assertEqual(data["purchase_count"], 0)
+        self.assertEqual(set(data["instructors"][0].keys()), {"id", "user_id", "name", "is_lead", "headline", "bio", "avatar", "stats"})
+        self.assertNotIn("outcomesteacher@example.com", str(data))

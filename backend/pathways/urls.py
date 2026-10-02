@@ -10,6 +10,7 @@ from .views import (
     PathwayCourseOrderView,
     PathwayDetailView,
     PathwayListCreateView,
+    PublicPathwayDetailBySlugView,
     PublicPathwayDetailView,
     PublicPathwayListView,
 )
@@ -17,6 +18,11 @@ from .views import (
 urlpatterns = [
     path("public/", PublicPathwayListView.as_view(), name="pathway-public-list"),
     path("public/<int:pk>/", PublicPathwayDetailView.as_view(), name="pathway-public-detail"),
+    path(
+        "public/<slug:slug>/",
+        PublicPathwayDetailBySlugView.as_view(),
+        name="pathway-public-detail-by-slug",
+    ),
     path("mine/", MyPathwaysView.as_view(), name="pathway-mine"),
     path("checkout/", PathwayCheckoutView.as_view(), name="pathway-checkout"),
     path("bundle-rules/", PathwayBundleRuleListCreateView.as_view(), name="pathway-bundle-rule-list-create"),

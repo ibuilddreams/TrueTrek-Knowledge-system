@@ -1,6 +1,13 @@
 "use client";
 
-import { CheckCircle2, ChevronRight, GraduationCap, Layers } from "lucide-react";
+import Link from "next/link";
+import {
+  CheckCircle2,
+  ChevronRight,
+  GraduationCap,
+  Layers,
+} from "lucide-react";
+import { ROUTES } from "@/constants/routes";
 import { formatCoursePrice } from "@/lib/store";
 
 function getTierLabel(tiers) {
@@ -19,7 +26,6 @@ export default function PathwayCard({
   isSelected,
   isOwned = false,
   canSelect = true,
-  onViewDetails,
   onToggleSelect,
 }) {
   const courseCount = pathway.course_count ?? 0;
@@ -27,7 +33,7 @@ export default function PathwayCard({
   return (
     <div
       id={`pathway-card-${pathway.id}`}
-      className={`bg-paper border rounded-card shadow-soft p-6 hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group ${
+      className={`relative bg-paper border rounded-card shadow-soft p-6 hover:shadow-elevated transition-all duration-300 hover:-translate-y-1 flex flex-col justify-between group ${
         isOwned
           ? "border-moss"
           : isSelected
@@ -84,50 +90,61 @@ export default function PathwayCard({
             </span>
           </div>
 
-          <button
-            id={`pathway-view-details-${pathway.id}`}
-            type="button"
-            onClick={() => onViewDetails(pathway)}
-            className="text-xs font-semibold text-moss flex items-center gap-0.5 hover:gap-1.5 transition-all cursor-pointer"
+          <span
+            aria-hidden="true"
+            className="text-xs font-semibold text-moss flex items-center gap-0.5 group-hover:gap-1.5 transition-all"
           >
             View Pathway Details
             <ChevronRight className="w-3.5 h-3.5" />
-          </button>
+          </span>
         </div>
 
-        {isOwned ? (
-          <span
-            id={`pathway-owned-${pathway.id}`}
-            className="w-full font-sans text-[10px] uppercase font-medium px-3 py-2.5 rounded-full tracking-widest flex items-center justify-center gap-1.5 bg-sage text-moss border border-moss/30"
-            title="You already have access to this pathway"
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            Already Purchased
-          </span>
-        ) : canSelect ? (
-          <button
-            id={`pathway-toggle-select-${pathway.id}`}
-            type="button"
-            onClick={() => onToggleSelect(pathway)}
-            className={`w-full font-sans text-xs uppercase font-semibold px-4 py-2.5 rounded-full tracking-widest transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
-              isSelected
-                ? "bg-gold hover:brightness-95 text-ink"
-                : "bg-pine hover:bg-moss text-paper"
-            }`}
-          >
-            <CheckCircle2 className="w-3.5 h-3.5" />
-            {isSelected ? "Selected" : "Select"}
-          </button>
-        ) : (
-          <span
-            className="w-full font-sans text-[10px] uppercase font-medium px-3 py-2.5 rounded-full tracking-widest flex items-center justify-center gap-1.5 bg-porcelain text-muted"
-            title="Only student accounts can purchase pathways"
-          >
-            <GraduationCap className="w-3.5 h-3.5" />
-            Student Only
-          </span>
-        )}
+        {/* Above the stretched link, so the action is not a navigation. */}
+        <div className="relative z-10">
+          {isOwned ? (
+            <span
+              id={`pathway-owned-${pathway.id}`}
+              className="w-full font-sans text-[10px] uppercase font-medium px-3 py-2.5 rounded-full tracking-widest flex items-center justify-center gap-1.5 bg-sage text-moss border border-moss/30"
+              title="You already have access to this pathway"
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              Already Purchased
+            </span>
+          ) : canSelect ? (
+            <button
+              id={`pathway-toggle-select-${pathway.id}`}
+              type="button"
+              onClick={() => onToggleSelect(pathway)}
+              className={`w-full font-sans text-xs uppercase font-semibold px-4 py-2.5 rounded-full tracking-widest transition-all duration-200 flex items-center justify-center gap-1.5 cursor-pointer ${
+                isSelected
+                  ? "bg-gold hover:brightness-95 text-ink"
+                  : "bg-pine hover:bg-moss text-paper"
+              }`}
+            >
+              <CheckCircle2 className="w-3.5 h-3.5" />
+              {isSelected ? "Selected" : "Select"}
+            </button>
+          ) : (
+            <span
+              className="w-full font-sans text-[10px] uppercase font-medium px-3 py-2.5 rounded-full tracking-widest flex items-center justify-center gap-1.5 bg-porcelain text-muted"
+              title="Only student accounts can purchase pathways"
+            >
+              <GraduationCap className="w-3.5 h-3.5" />
+              Student Only
+            </span>
+          )}
+        </div>
       </div>
+
+      {/* Stretched link: the whole card opens the pathway page. Rendered last
+          so it paints over the card body, while the action above opts out
+          with z-10. Keeps the markup free of nested interactive elements. */}
+      <Link
+        id={`pathway-view-details-${pathway.id}`}
+        href={`${ROUTES.PATHWAYS}/${pathway.slug}`}
+        aria-label={`View ${pathway.name} details`}
+        className="absolute inset-0 rounded-card focus:outline-none focus-visible:ring-2 focus-visible:ring-pine focus-visible:ring-offset-2"
+      />
     </div>
   );
 }

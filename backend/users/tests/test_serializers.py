@@ -145,7 +145,7 @@ class CustomTokenObtainPairSerializerTests(TestCase):
         self.assertIn("refresh_token", representation)
         self.assertEqual(
             set(representation["user"].keys()),
-            {"id", "first_name", "last_name", "full_name", "email", "role"},
+            {"id", "first_name", "last_name", "full_name", "email", "role", "is_advisor"},
         )
 
 
@@ -252,7 +252,17 @@ class CreateTeacherSerializerTests(TestCase):
 
         self.assertEqual(
             set(representation.keys()),
-            {"id", "username", "first_name", "last_name", "full_name", "email", "gender", "role"},
+            {
+                "id",
+                "username",
+                "first_name",
+                "last_name",
+                "full_name",
+                "email",
+                "gender",
+                "role",
+                "is_advisor",
+            },
         )
 
 

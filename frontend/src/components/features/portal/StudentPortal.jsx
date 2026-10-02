@@ -28,6 +28,7 @@ import CertificatesTab from "./tabs/CertificatesTab";
 import DrillTab from "./tabs/DrillTab";
 import RewardsTab from "./tabs/RewardsTab";
 import StreakTab from "./tabs/StreakTab";
+import AskAdvisorTab from "./tabs/AskAdvisorTab";
 import WarRoomScreen from "@/components/features/warroom/WarRoomScreen";
 
 // Shown at most once per calendar day (persisted per drill_date so a
@@ -248,6 +249,7 @@ function StudentPortalContent() {
             {activeTab === "drill" && <DrillTab onNotify={setLastNotification} />}
             {activeTab === "rewards" && <RewardsTab />}
             {activeTab === "warroom" && <WarRoomScreen />}
+            {activeTab === "advisor" && <AskAdvisorTab />}
             {activeTab === "streak" && (
               <StreakTab onBack={() => setActiveTab(DEFAULT_PORTAL_TAB)} />
             )}

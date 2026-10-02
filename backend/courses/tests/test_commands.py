@@ -9,6 +9,7 @@ from courses.management.commands import seeddata as seed
 from courses.models import Category, Course
 from daily_drill.models import DrillOption, DrillQuestion
 from enrollments.models import Enrollment
+from instructors.models import InstructorFeedback
 from lessons.models import Lesson
 from onboarding.models import Question as OnboardingQuestion
 from pathways.models import Pathway, PathwayCourse
@@ -35,7 +36,10 @@ class SeedDataCommandTests(TestCase):
         self.assertEqual(OnboardingQuestion.objects.count(), len(seed.QUESTIONNAIRE))
         self.assertEqual(DrillQuestion.objects.count(), len(seed.DRILL_DEFS))
         self.assertEqual(User.objects.filter(role=User.Roles.TEACHER).count(), len(seed.TEACHER_NAMES))
-        self.assertEqual(User.objects.filter(role=User.Roles.STUDENT).count(), len(seed.STUDENT_NAMES))
+        self.assertEqual(
+            User.objects.filter(role=User.Roles.STUDENT).count(),
+            len(seed.STUDENT_NAMES) + len(seed.REVIEWER_NAMES),
+        )
         self.assertEqual(
             sorted(Category.objects.values_list("name", flat=True)), sorted(seed.CATEGORY_NAMES)
         )
@@ -191,7 +195,35 @@ class SeedDataCommandTests(TestCase):
     def test_students_are_not_auto_enrolled(self):
         seed_offline()
 
-        self.assertEqual(Enrollment.objects.count(), 0)
+        # Only the demo reviewers (who back the seeded instructor feedback) are enrolled.
+        self.assertFalse(Enrollment.objects.filter(student__email__startswith="student").exists())
+        self.assertFalse(
+            Enrollment.objects.exclude(student__email__startswith="reviewer").exists()
+        )
+
+    def test_every_instructor_gets_profile_details_and_enrolled_feedback(self):
+        seed_offline()
+
+        teachers = User.objects.filter(role=User.Roles.TEACHER)
+        for teacher in teachers:
+            self.assertTrue(teacher.instructor_profile.headline)
+            self.assertTrue(teacher.instructor_profile.skills)
+            self.assertTrue(teacher.profile.bio)
+            feedback = InstructorFeedback.objects.filter(instructor=teacher)
+            self.assertEqual(feedback.count(), seed.FEEDBACK_REVIEWS_PER_INSTRUCTOR)
+            for item in feedback:
+                self.assertTrue(
+                    Enrollment.objects.filter(student=item.student, course=item.course).exists()
+                )
+                self.assertTrue(1 <= item.rating <= 5)
+
+    def test_reseeding_does_not_duplicate_feedback(self):
+        seed_offline()
+        first = InstructorFeedback.objects.count()
+
+        seed_offline()
+
+        self.assertEqual(InstructorFeedback.objects.count(), first)
 
 
 class SeedDataAssetTests(TestCase):
@@ -211,15 +243,26 @@ class SeedDataAssetTests(TestCase):
         with patch.object(seed.requests, "get", return_value=response()) as mock_get:
             call_command("seeddata", noinput=True)
 
-        # One request per thumbnail plus one per shared lesson file — the PDF and
+        # One request per thumbnail, per instructor photo, plus one per shared lesson file — the PDF and
         # DOCX are fetched once each and reused across every PDF/DOCX lesson.
         self.assertEqual(
             mock_get.call_count,
-            len(seed.COURSE_THUMBNAIL_URLS) + len(seed.LESSON_ASSET_URLS),
+            sum(1 for url in seed.NUMA_PROVIDER_THUMBNAILS.values() if url)
+            + len(seed.LESSON_ASSET_URLS)
+            + len(seed.INSTRUCTOR_AVATAR_IDS),
         )
 
-        for course in Course.objects.all():
-            self.assertTrue(course.thumbnail, course.code)
+        # Providers with no logo on file are seeded without a thumbnail by design.
+        providers_with_logo = {
+            name for name, url in seed.NUMA_PROVIDER_THUMBNAILS.items() if url
+        }
+        for course_def in seed.COURSE_DEFS:
+            if course_def["provider"] in providers_with_logo:
+                course = Course.objects.get(code=course_def["code"])
+                self.assertTrue(course.thumbnail, course.code)
+
+        for teacher in User.objects.filter(role=User.Roles.TEACHER):
+            self.assertTrue(teacher.profile.avatar, teacher.email)
 
         pdf_files = set(
             Lesson.objects.filter(content_type=Lesson.ContentType.PDF).values_list("file", flat=True)

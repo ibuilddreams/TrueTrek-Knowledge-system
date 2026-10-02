@@ -4,6 +4,10 @@ import { useEffect, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, Edit3, Route, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
+import LearningOutcomesField, {
+  cleanLearningOutcomes,
+  MAX_LEARNING_OUTCOMES,
+} from "@/components/features/courses/LearningOutcomesField";
 import { createPathway, getPathwayById, updatePathway } from "@/services/pathwaysService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -14,12 +18,29 @@ const STATUS_OPTIONS = [
   { value: "ARCHIVED", label: "Archived" },
 ];
 
+const DIFFICULTY_OPTIONS = [
+  { value: "BEGINNER", label: "Beginner" },
+  { value: "INTERMEDIATE", label: "Intermediate" },
+  { value: "ADVANCED", label: "Advanced" },
+];
+
 const INITIAL_FORM = {
   name: "",
   summary: "",
   description: "",
+  purpose: "",
   base_price: "0",
   status: "DRAFT",
+  difficulty: "BEGINNER",
+  duration_weeks: "0",
+};
+
+// The three bullet lists shown on the public pathway page, kept outside `form`
+// because each is an array the LearningOutcomesField editor mutates in place.
+const INITIAL_BULLETS = {
+  learning_outcomes: [],
+  who_is_for: [],
+  prerequisites: [],
 };
 
 const FIELD_CLASS =
@@ -37,11 +58,61 @@ function sanitizeAmountInput(rawValue) {
   return `${integerPart}.${decimalParts.join("").slice(0, 2)}`;
 }
 
+// A labelled group of fields, so the form reads as three short steps rather
+// than one long column of inputs.
+function FormSection({ title, description, children }) {
+  return (
+    <section className="space-y-4">
+      <div className="border-b border-line pb-2.5">
+        <h4 className="text-xs font-sans font-semibold uppercase tracking-widest text-ink">
+          {title}
+        </h4>
+        {description && <p className="mt-1 text-[11px] font-mono text-muted">{description}</p>}
+      </div>
+      {children}
+    </section>
+  );
+}
+
+// Frames one bullet-list editor with its own heading, a used/limit counter and
+// an explicit empty state — without it an unfilled list is just a lone
+// "Add point" link, which reads as broken rather than optional.
+function BulletCard({ title, description, count, error, children }) {
+  return (
+    <div
+      className={`rounded-2xl border bg-porcelain/40 p-4 transition-colors ${
+        error ? "border-red-300" : "border-line"
+      }`}
+    >
+      <div className="mb-2.5 flex items-start justify-between gap-3">
+        <div className="min-w-0">
+          <p className="text-xs font-sans font-semibold uppercase tracking-widest text-ink">
+            {title}
+          </p>
+          <p className="mt-1 text-[11px] font-mono text-muted">{description}</p>
+        </div>
+        <span className="shrink-0 rounded-full border border-line bg-paper px-2 py-0.5 text-[10px] font-mono tabular-nums text-muted">
+          {count}/{MAX_LEARNING_OUTCOMES}
+        </span>
+      </div>
+
+      {count === 0 && (
+        <p className="mb-2.5 rounded-lg border border-dashed border-line px-3 py-2.5 text-[11px] font-mono text-muted">
+          Nothing added yet — this section stays hidden on the public page.
+        </p>
+      )}
+
+      {children}
+    </div>
+  );
+}
+
 export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) {
   const isEditMode = Boolean(pathway);
   const queryClient = useQueryClient();
 
   const [form, setForm] = useState(INITIAL_FORM);
+  const [bullets, setBullets] = useState(INITIAL_BULLETS);
   const [fieldErrors, setFieldErrors] = useState({});
 
   const pathwayDetailQuery = useQuery({
@@ -75,6 +146,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
   useEffect(() => {
     if (!isOpen) return;
     setForm(INITIAL_FORM);
+    setBullets(INITIAL_BULLETS);
     setFieldErrors({});
   }, [isOpen]);
 
@@ -86,8 +158,16 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
       name: detail.name || "",
       summary: detail.summary || "",
       description: detail.description || "",
+      purpose: detail.purpose || "",
       base_price: String(detail.base_price ?? 0),
       status: detail.status || "DRAFT",
+      difficulty: detail.difficulty || "BEGINNER",
+      duration_weeks: String(detail.duration_weeks ?? 0),
+    });
+    setBullets({
+      learning_outcomes: detail.learning_outcomes || [],
+      who_is_for: detail.who_is_for || [],
+      prerequisites: detail.prerequisites || [],
     });
   }, [isOpen, isEditMode, pathwayDetailQuery.data]);
 
@@ -106,6 +186,19 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
     setFieldErrors((prev) => ({ ...prev, [field]: null }));
   };
 
+  const updateBullets = (field) => (next) => {
+    setBullets((prev) => ({ ...prev, [field]: next }));
+    setFieldErrors((prev) => ({ ...prev, [field]: null }));
+  };
+
+  const handleDurationChange = (event) => {
+    setForm((prev) => ({
+      ...prev,
+      duration_weeks: event.target.value.replace(/[^0-9]/g, ""),
+    }));
+    setFieldErrors((prev) => ({ ...prev, duration_weeks: null }));
+  };
+
   const handleAmountChange = (event) => {
     setForm((prev) => ({ ...prev, base_price: sanitizeAmountInput(event.target.value) }));
     setFieldErrors((prev) => ({ ...prev, base_price: null }));
@@ -118,11 +211,16 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
     const summary = form.summary.trim();
     const basePrice = Number(form.base_price);
 
+    const durationWeeks = Number(form.duration_weeks || 0);
+
     const errors = {};
     if (!name) errors.name = "Name is required.";
     if (!summary) errors.summary = "Summary is required.";
     if (!Number.isFinite(basePrice) || basePrice < 0) {
       errors.base_price = "Base price must be a positive number.";
+    }
+    if (!Number.isInteger(durationWeeks) || durationWeeks < 0) {
+      errors.duration_weeks = "Duration must be a whole number of weeks.";
     }
 
     if (Object.keys(errors).length > 0) {
@@ -134,8 +232,14 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
       name,
       summary,
       description: form.description.trim(),
+      purpose: form.purpose.trim(),
       base_price: basePrice,
       status: form.status,
+      difficulty: form.difficulty,
+      duration_weeks: durationWeeks,
+      learning_outcomes: cleanLearningOutcomes(bullets.learning_outcomes),
+      who_is_for: cleanLearningOutcomes(bullets.who_is_for),
+      prerequisites: cleanLearningOutcomes(bullets.prerequisites),
     };
 
     try {
@@ -164,85 +268,209 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
       onClose={handleClose}
       icon={isEditMode ? Edit3 : Route}
       title={isEditMode ? "Edit Pathway" : "Add Pathway"}
-      subtitle={isEditMode ? "Update the pathway details." : "Create a new pathway."}
-      maxWidth="max-w-2xl"
+      subtitle={
+        isEditMode
+          ? "Update this pathway and what its public page shows."
+          : "Name it, price it, then fill in the public page."
+      }
+      maxWidth="max-w-3xl"
     >
-      <form onSubmit={handleSubmit} className="space-y-4">
-        <div>
-          <label className={LABEL_CLASS}>Name</label>
-          <input
-            type="text"
-            value={form.name}
-            onChange={updateField("name")}
-            disabled={isBusy}
-            placeholder="Pathway name"
-            className={FIELD_CLASS}
-            autoComplete="off"
-          />
-          {fieldErrors.name && <p className={ERROR_CLASS}>{fieldErrors.name}</p>}
-        </div>
-
-        <div>
-          <label className={LABEL_CLASS}>Summary</label>
-          <input
-            type="text"
-            value={form.summary}
-            onChange={updateField("summary")}
-            disabled={isBusy}
-            placeholder="Short one-line summary"
-            className={FIELD_CLASS}
-            autoComplete="off"
-          />
-          {fieldErrors.summary && <p className={ERROR_CLASS}>{fieldErrors.summary}</p>}
-        </div>
-
-        <div>
-          <label className={LABEL_CLASS}>Description</label>
-          <textarea
-            value={form.description}
-            onChange={updateField("description")}
-            disabled={isBusy}
-            placeholder="Full pathway description"
-            rows={4}
-            className={`${FIELD_CLASS} resize-none`}
-          />
-          {fieldErrors.description && <p className={ERROR_CLASS}>{fieldErrors.description}</p>}
-        </div>
-
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <form onSubmit={handleSubmit} className="space-y-7">
+        <FormSection
+          title="Pathway basics"
+          description="Name and blurb used across the catalogue, cards and page header."
+        >
           <div>
-            <label className={LABEL_CLASS}>Base Price ($)</label>
+            <label className={LABEL_CLASS}>
+              Name <span className="text-clay">*</span>
+            </label>
             <input
               type="text"
-              inputMode="decimal"
-              value={form.base_price}
-              onChange={handleAmountChange}
+              value={form.name}
+              onChange={updateField("name")}
               disabled={isBusy}
-              placeholder="0.00"
+              placeholder="e.g. Elite Athlete Business Pathway"
               className={FIELD_CLASS}
+              autoComplete="off"
             />
-            {fieldErrors.base_price && <p className={ERROR_CLASS}>{fieldErrors.base_price}</p>}
+            {fieldErrors.name && <p className={ERROR_CLASS}>{fieldErrors.name}</p>}
           </div>
 
           <div>
-            <label className={LABEL_CLASS}>Status</label>
-            <select
-              value={form.status}
-              onChange={updateField("status")}
+            <label className={LABEL_CLASS}>
+              Summary <span className="text-clay">*</span>
+            </label>
+            <input
+              type="text"
+              value={form.summary}
+              onChange={updateField("summary")}
               disabled={isBusy}
+              placeholder="One line shown on pathway cards and under the title"
               className={FIELD_CLASS}
-            >
-              {STATUS_OPTIONS.map((option) => (
-                <option key={option.value} value={option.value}>
-                  {option.label}
-                </option>
-              ))}
-            </select>
-            {fieldErrors.status && <p className={ERROR_CLASS}>{fieldErrors.status}</p>}
+              autoComplete="off"
+            />
+            {fieldErrors.summary && <p className={ERROR_CLASS}>{fieldErrors.summary}</p>}
           </div>
-        </div>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-line">
+          <div>
+            <label className={LABEL_CLASS}>Description</label>
+            <textarea
+              value={form.description}
+              onChange={updateField("description")}
+              disabled={isBusy}
+              placeholder="The longer explanation shown under “Why this pathway exists”"
+              rows={3}
+              className={`${FIELD_CLASS} resize-none`}
+            />
+            {fieldErrors.description && <p className={ERROR_CLASS}>{fieldErrors.description}</p>}
+          </div>
+        </FormSection>
+
+        <FormSection
+          title="Pricing & availability"
+          description="Only PUBLISHED pathways appear on the public site."
+        >
+          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div>
+              <label className={LABEL_CLASS}>Base price ($)</label>
+              <input
+                type="text"
+                inputMode="decimal"
+                value={form.base_price}
+                onChange={handleAmountChange}
+                disabled={isBusy}
+                placeholder="0.00"
+                className={FIELD_CLASS}
+              />
+              {fieldErrors.base_price && <p className={ERROR_CLASS}>{fieldErrors.base_price}</p>}
+            </div>
+
+            <div>
+              <label className={LABEL_CLASS}>Status</label>
+              <select
+                value={form.status}
+                onChange={updateField("status")}
+                disabled={isBusy}
+                className={FIELD_CLASS}
+              >
+                {STATUS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {fieldErrors.status && <p className={ERROR_CLASS}>{fieldErrors.status}</p>}
+            </div>
+
+            <div>
+              <label className={LABEL_CLASS}>Difficulty</label>
+              <select
+                value={form.difficulty}
+                onChange={updateField("difficulty")}
+                disabled={isBusy}
+                className={FIELD_CLASS}
+              >
+                {DIFFICULTY_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              {fieldErrors.difficulty && <p className={ERROR_CLASS}>{fieldErrors.difficulty}</p>}
+            </div>
+
+            <div>
+              <label className={LABEL_CLASS}>Duration (weeks)</label>
+              <input
+                type="text"
+                inputMode="numeric"
+                value={form.duration_weeks}
+                onChange={handleDurationChange}
+                disabled={isBusy}
+                placeholder="0"
+                className={FIELD_CLASS}
+              />
+              <p className="mt-1 text-[11px] font-mono text-muted">
+                Leave at 0 to show “Self-paced” instead.
+              </p>
+              {fieldErrors.duration_weeks && (
+                <p className={ERROR_CLASS}>{fieldErrors.duration_weeks}</p>
+              )}
+            </div>
+          </div>
+        </FormSection>
+
+        <FormSection
+          title="Public page content"
+          description="Everything below is optional — each section is hidden on the pathway page until it has content."
+        >
+          <div>
+            <label className={LABEL_CLASS}>Purpose</label>
+            <textarea
+              value={form.purpose}
+              onChange={updateField("purpose")}
+              disabled={isBusy}
+              placeholder="Why this pathway exists and who it was built for"
+              rows={3}
+              className={`${FIELD_CLASS} resize-none`}
+            />
+            {fieldErrors.purpose && <p className={ERROR_CLASS}>{fieldErrors.purpose}</p>}
+          </div>
+
+          <BulletCard
+            title="What you'll learn"
+            description="Key takeaways, shown first on the pathway page."
+            count={bullets.learning_outcomes.length}
+            error={fieldErrors.learning_outcomes}
+          >
+            <LearningOutcomesField
+              values={bullets.learning_outcomes}
+              onChange={updateBullets("learning_outcomes")}
+              disabled={isBusy}
+              error={fieldErrors.learning_outcomes}
+              label={null}
+              hint={null}
+              placeholderExample="Read and redline an NIL term sheet"
+            />
+          </BulletCard>
+
+          <BulletCard
+            title="Who this pathway is for"
+            description="The profiles this pathway was designed around."
+            count={bullets.who_is_for.length}
+            error={fieldErrors.who_is_for}
+          >
+            <LearningOutcomesField
+              values={bullets.who_is_for}
+              onChange={updateBullets("who_is_for")}
+              disabled={isBusy}
+              error={fieldErrors.who_is_for}
+              label={null}
+              hint={null}
+              placeholderExample="Student-athletes entering their junior year"
+            />
+          </BulletCard>
+
+          <BulletCard
+            title="Before you start"
+            description="What a student should already have in place."
+            count={bullets.prerequisites.length}
+            error={fieldErrors.prerequisites}
+          >
+            <LearningOutcomesField
+              values={bullets.prerequisites}
+              onChange={updateBullets("prerequisites")}
+              disabled={isBusy}
+              error={fieldErrors.prerequisites}
+              label={null}
+              hint={null}
+              placeholderExample="Completed the Tier 1 orientation pathway"
+            />
+          </BulletCard>
+        </FormSection>
+
+        {/* Stays in reach while the form scrolls. */}
+        <div className="sticky bottom-0 -mx-5 -mb-5 flex flex-col-reverse gap-3 border-t border-line bg-paper/95 px-5 py-4 backdrop-blur-sm sm:-mx-7 sm:-mb-7 sm:flex-row sm:justify-end sm:px-7">
           <button
             type="button"
             onClick={handleClose}

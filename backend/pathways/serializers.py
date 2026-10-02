@@ -1,3 +1,6 @@
+import json
+
+from django.http import QueryDict
 from rest_framework import serializers
 
 from common.image import build_absolute_image_url
@@ -6,6 +9,50 @@ from common.ordering import get_next_order
 from courses.models import Course
 
 from .models import Pathway, PathwayBundleRule, PathwayCourse, PathwayEnrollment
+
+# Caps for the bullet-list fields on the public pathway page. Mirrors the
+# equivalent limits on Course.learning_outcomes (courses/serializers.py).
+MAX_BULLET_POINTS = 12
+MAX_BULLET_POINT_LENGTH = 300
+
+# The JSON list fields a pathway write accepts, in one place so the multipart
+# coercion and the per-field validation can't drift apart.
+BULLET_LIST_FIELDS = ("learning_outcomes", "who_is_for", "prerequisites")
+
+
+def clean_bullet_list(value, field_label):
+    """Normalise one bullet-list field: trim, drop blanks, enforce the caps."""
+    if not isinstance(value, list):
+        raise serializers.ValidationError(f"{field_label} must be a list of points.")
+    points = []
+    for item in value:
+        if not isinstance(item, str):
+            raise serializers.ValidationError(f"Each {field_label} point must be text.")
+        text = " ".join(item.split())
+        if not text:
+            continue
+        if len(text) > MAX_BULLET_POINT_LENGTH:
+            raise serializers.ValidationError(
+                f"Each {field_label} point must be at most {MAX_BULLET_POINT_LENGTH} characters."
+            )
+        points.append(text)
+    if len(points) > MAX_BULLET_POINTS:
+        raise serializers.ValidationError(
+            f"{field_label} can have at most {MAX_BULLET_POINTS} points."
+        )
+    return points
+
+
+def serialize_pathway_tiers(pathway):
+    """Tier badges for a pathway.
+
+    A pathway can belong to more than one tier — every tier it's currently
+    attached to, not just one, so the badge can show all of them.
+    """
+    return [
+        {"id": tp.tier_id, "name": tp.tier.name, "slug": tp.tier.slug, "level": tp.tier.level}
+        for tp in pathway.tier_pathways.select_related("tier").order_by("tier__level")
+    ]
 
 
 class PathwayCourseCourseSerializer(serializers.ModelSerializer):
@@ -42,6 +89,8 @@ class PathwayListSerializer(serializers.ModelSerializer):
             "summary",
             "status",
             "base_price",
+            "difficulty",
+            "duration_weeks",
             "tiers",
             "course_count",
             "created_at",
@@ -50,16 +99,13 @@ class PathwayListSerializer(serializers.ModelSerializer):
         read_only_fields = fields
 
     def get_tiers(self, obj):
-        # A pathway can belong to more than one tier — every tier it's currently
-        # attached to, not just one, so the admin badge can show all of them.
-        return [
-            {"id": tp.tier_id, "name": tp.tier.name, "slug": tp.tier.slug, "level": tp.tier.level}
-            for tp in obj.tier_pathways.select_related("tier").order_by("tier__level")
-        ]
+        return serialize_pathway_tiers(obj)
 
 
 class PathwayDetailSerializer(serializers.ModelSerializer):
     courses = serializers.SerializerMethodField()
+    tiers = serializers.SerializerMethodField()
+    course_count = serializers.IntegerField(source="pathway_courses.count", read_only=True)
 
     class Meta:
         model = Pathway
@@ -71,11 +117,22 @@ class PathwayDetailSerializer(serializers.ModelSerializer):
             "description",
             "status",
             "base_price",
+            "purpose",
+            "learning_outcomes",
+            "who_is_for",
+            "prerequisites",
+            "difficulty",
+            "duration_weeks",
+            "tiers",
+            "course_count",
             "courses",
             "created_at",
             "updated_at",
         ]
         read_only_fields = fields
+
+    def get_tiers(self, obj):
+        return serialize_pathway_tiers(obj)
 
     def get_courses(self, obj):
         pathway_courses = obj.pathway_courses.select_related("course").order_by("order")
@@ -104,8 +161,40 @@ class PathwayWriteSerializer(serializers.ModelSerializer):
             "description",
             "status",
             "base_price",
+            "purpose",
+            "learning_outcomes",
+            "who_is_for",
+            "prerequisites",
+            "difficulty",
+            "duration_weeks",
         ]
         read_only_fields = ["id"]
+
+    def to_internal_value(self, data):
+        # The admin form posts JSON, but accept a multipart/form-encoded body
+        # too (same tolerance as CourseWriteSerializer) so the bullet lists can
+        # arrive as JSON-encoded strings rather than only as real lists.
+        if isinstance(data, QueryDict):
+            data = {key: data.getlist(key)[-1] for key in data}
+
+        for field in BULLET_LIST_FIELDS:
+            value = data.get(field)
+            if isinstance(value, str):
+                try:
+                    data[field] = json.loads(value)
+                except ValueError:
+                    raise serializers.ValidationError({field: "Must be a valid JSON list."})
+
+        return super().to_internal_value(data)
+
+    def validate_learning_outcomes(self, value):
+        return clean_bullet_list(value, "Learning outcomes")
+
+    def validate_who_is_for(self, value):
+        return clean_bullet_list(value, "Who this is for")
+
+    def validate_prerequisites(self, value):
+        return clean_bullet_list(value, "Prerequisites")
 
     def validate_name(self, value):
         queryset = Pathway.objects.filter(name__iexact=value)

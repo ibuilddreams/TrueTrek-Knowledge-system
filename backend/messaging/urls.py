@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    AdvisorAskView,
     ConversationListCreateView,
     ConversationReadView,
     EligibleRecipientsView,
@@ -13,6 +14,7 @@ from .views import (
 urlpatterns = [
     path("recipients/", EligibleRecipientsView.as_view(), name="messaging-recipients"),
     path("unread-count/", UnreadCountView.as_view(), name="messaging-unread-count"),
+    path("advisor/ask/", AdvisorAskView.as_view(), name="messaging-advisor-ask"),
     path("", ConversationListCreateView.as_view(), name="conversation-list-create"),
     path("<int:conversation_id>/messages/", MessageListCreateView.as_view(), name="conversation-messages"),
     path(

@@ -8,12 +8,34 @@ from courses.models import Course
 
 
 class Pathway(BaseModel):
+    class Difficulty(models.TextChoices):
+        BEGINNER = "BEGINNER", "Beginner"
+        INTERMEDIATE = "INTERMEDIATE", "Intermediate"
+        ADVANCED = "ADVANCED", "Advanced"
+
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True, blank=True)
     summary = models.CharField(max_length=500, blank=True)
     description = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     base_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+
+    # Marketing copy for the public pathway page (/pathways/<slug>), mirroring
+    # what Course exposes on the course page. All optional: a pathway created
+    # before these existed still renders, just with fewer sections.
+    # "Why this pathway exists" — a short prose block above the outcomes.
+    purpose = models.TextField(blank=True)
+    # "What you'll learn" bullet points — same shape as Course.learning_outcomes.
+    learning_outcomes = models.JSONField(default=list, blank=True)
+    # "Who this pathway is for" bullet points.
+    who_is_for = models.JSONField(default=list, blank=True)
+    # "Before you start" bullet points.
+    prerequisites = models.JSONField(default=list, blank=True)
+    difficulty = models.CharField(
+        max_length=20, choices=Difficulty.choices, default=Difficulty.BEGINNER
+    )
+    # Estimated time to complete; 0 means "not specified" and hides the badge.
+    duration_weeks = models.PositiveIntegerField(default=0)
 
     class Meta:
         ordering = ["-created_at"]

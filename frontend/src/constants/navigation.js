@@ -41,6 +41,14 @@ export const NAV_LINKS = [
     mobileLabel: "Future Clients",
     title: "Calculate program metrics and configure parent/guardian custom plans",
   },
+  {
+    id: "nav-link-faq",
+    key: ROUTE_KEYS.FAQ,
+    href: ROUTES.FAQ,
+    label: "FAQ",
+    mobileLabel: "FAQ & Support",
+    title: "Review frequently asked questions about TrueTrek Learning",
+  },
 ];
 
 export const FOOTER_LINKS = [
@@ -48,6 +56,7 @@ export const FOOTER_LINKS = [
   { href: ROUTES.PARTNERSHIPS, label: "School Licensing cost" },
   { href: ROUTES.STUDENT_PORTAL, label: "Daily Drill Sandbox" },
   { href: ROUTES.STORE, label: "Strategic Merchant Store" },
+  { href: ROUTES.FAQ, label: "Frequently Asked Questions" },
 ];
 
 export const GOVERNANCE_BADGES = [

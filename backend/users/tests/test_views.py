@@ -331,6 +331,17 @@ class TeacherDetailViewTests(APITestCase):
         self.assertEqual(self.teacher.first_name, "Updated")
         self.assertEqual(self.teacher.account_status, UserModel.AccountStatus.SUSPENDED)
 
+    def test_admin_can_flag_teacher_as_advisor(self):
+        self.client.force_authenticate(user=self.admin)
+        self.assertFalse(self.teacher.is_advisor)
+
+        response = self.client.patch(self.url, {"is_advisor": True})
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["data"]["is_advisor"])
+        self.teacher.refresh_from_db()
+        self.assertTrue(self.teacher.is_advisor)
+
     def test_destroy_deactivates_teacher(self):
         self.client.force_authenticate(user=self.admin)
 

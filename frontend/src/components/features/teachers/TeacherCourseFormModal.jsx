@@ -6,6 +6,9 @@ import { BookPlus, Check, X } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import MultiSelect from "@/components/ui/MultiSelect";
+import LearningOutcomesField, {
+  cleanLearningOutcomes,
+} from "@/components/features/courses/LearningOutcomesField";
 import { createCourse, getCourseStatusChoices } from "@/services/coursesService";
 import { getCategories } from "@/services/categoriesService";
 import { getTags } from "@/services/tagsService";
@@ -54,6 +57,7 @@ export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
   const [form, setForm] = useState(INITIAL_FORM);
   const [thumbnailFile, setThumbnailFile] = useState(null);
   const [selectedTagIds, setSelectedTagIds] = useState([]);
+  const [learningOutcomes, setLearningOutcomes] = useState([]);
   const [fieldErrors, setFieldErrors] = useState({});
   const [isSubmitting, setIsSubmitting] = useState(false);
 
@@ -95,6 +99,7 @@ export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
     setForm(INITIAL_FORM);
     setThumbnailFile(null);
     setSelectedTagIds([]);
+    setLearningOutcomes([]);
     setFieldErrors({});
   }, [isOpen]);
 
@@ -167,6 +172,7 @@ export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
     formData.append("duration_minutes", String(durationMinutes));
     formData.append("amount", String(amount));
     selectedTagIds.forEach((tagId) => formData.append("tags", tagId));
+    formData.append("learning_outcomes", JSON.stringify(cleanLearningOutcomes(learningOutcomes)));
 
     setIsSubmitting(true);
     try {
@@ -233,6 +239,16 @@ export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
           />
           {fieldErrors.description && <p className={ERROR_CLASS}>{fieldErrors.description}</p>}
         </div>
+
+        <LearningOutcomesField
+          values={learningOutcomes}
+          onChange={(next) => {
+            setLearningOutcomes(next);
+            setFieldErrors((prev) => ({ ...prev, learning_outcomes: null }));
+          }}
+          disabled={isSubmitting}
+          error={fieldErrors.learning_outcomes}
+        />
 
         <div>
           <label className={LABEL_CLASS}>Thumbnail</label>
