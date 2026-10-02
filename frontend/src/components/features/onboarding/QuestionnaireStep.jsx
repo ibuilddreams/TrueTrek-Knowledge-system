@@ -1,15 +1,23 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, ClipboardList, RefreshCw } from "lucide-react";
+import { AlertCircle, ArrowLeft, ArrowRight, ClipboardList, RefreshCw } from "lucide-react";
 import { getQuestionnaireQuestions, submitQuestionnaireAnswers } from "@/services/onboardingService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError } from "@/lib/toast";
 import Loader from "@/components/ui/Loader";
+import QuestionnaireQuestion from "./QuestionnaireQuestion";
+
+// Single-select questions advance on their own so the flow feels like a
+// conversation rather than a form; the delay lets the selected state land
+// before the next question slides in.
+const AUTO_ADVANCE_DELAY_MS = 320;
 
 export default function QuestionnaireStep({ answers, onAnswersChange, onContinue }) {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const advanceTimer = useRef(null);
 
   const {
     data: questions = [],
@@ -25,60 +33,97 @@ export default function QuestionnaireStep({ answers, onAnswersChange, onContinue
     },
   });
 
-  const sortedQuestions = [...questions].sort((a, b) => a.order - b.order);
+  const sortedQuestions = useMemo(
+    () => [...questions].sort((a, b) => a.order - b.order),
+    [questions]
+  );
+
+  function isAnswered(question, source = answers) {
+    const value = source[question.id];
+    if (question.is_multi_select) return Array.isArray(value) && value.length > 0;
+    return Boolean(value);
+  }
 
   // If this user already answered (e.g. resuming after a refresh, or backend
   // progress put them back on this step), prefill from the server's record
   // rather than starting blank — runs once per questions load, and never
   // overwrites an answer the user has already changed locally in this
-  // session (`answers[question.id] !== undefined` guard).
+  // session (`answers[question.id] !== undefined` guard). The resume point is
+  // the first still-unanswered question, so a returning visitor isn't walked
+  // back through questions they already completed.
   const hasPrefilled = useRef(false);
   useEffect(() => {
-    if (hasPrefilled.current || questions.length === 0) return;
+    if (hasPrefilled.current || sortedQuestions.length === 0) return;
     hasPrefilled.current = true;
 
     const prefill = {};
-    questions.forEach((question) => {
+    sortedQuestions.forEach((question) => {
       if (answers[question.id] !== undefined) return;
       const savedOptionIds = question.selected_option_ids || [];
       if (savedOptionIds.length === 0) return;
       prefill[question.id] = question.is_multi_select ? savedOptionIds : savedOptionIds[0];
     });
 
-    if (Object.keys(prefill).length > 0) {
-      onAnswersChange({ ...answers, ...prefill });
-    }
+    const merged = { ...answers, ...prefill };
+    if (Object.keys(prefill).length > 0) onAnswersChange(merged);
+
+    const firstUnanswered = sortedQuestions.findIndex((q) => !isAnswered(q, merged));
+    setCurrentIndex(firstUnanswered === -1 ? sortedQuestions.length - 1 : firstUnanswered);
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [questions]);
+  }, [sortedQuestions]);
 
-  function handleSingleSelect(questionId, optionId) {
-    onAnswersChange({ ...answers, [questionId]: optionId });
-  }
+  useEffect(() => () => clearTimeout(advanceTimer.current), []);
 
-  function handleMultiToggle(questionId, optionId) {
-    const current = Array.isArray(answers[questionId]) ? answers[questionId] : [];
-    const next = current.includes(optionId)
-      ? current.filter((id) => id !== optionId)
-      : [...current, optionId];
-    onAnswersChange({ ...answers, [questionId]: next });
-  }
+  const totalQuestions = sortedQuestions.length;
+  const safeIndex = Math.min(currentIndex, Math.max(0, totalQuestions - 1));
+  const currentQuestion = sortedQuestions[safeIndex];
+  const isLastQuestion = safeIndex === totalQuestions - 1;
 
-  function isQuestionAnswered(question) {
-    const value = answers[question.id];
-    if (question.is_multi_select) return Array.isArray(value) && value.length > 0;
-    return Boolean(value);
-  }
+  const answeredCount = sortedQuestions.filter((question) => isAnswered(question)).length;
+  const progressPercent = totalQuestions === 0 ? 100 : (answeredCount / totalQuestions) * 100;
 
   // If, for whatever reason, no questions are configured, don't strand the
   // visitor on an unpassable step — let them through.
-  const allAnswered =
-    sortedQuestions.length === 0 || sortedQuestions.every(isQuestionAnswered);
+  const allAnswered = totalQuestions === 0 || sortedQuestions.every((q) => isAnswered(q));
+  const canAdvance = !currentQuestion || isAnswered(currentQuestion);
+
+  function goToIndex(nextIndex) {
+    clearTimeout(advanceTimer.current);
+    setCurrentIndex(Math.min(Math.max(nextIndex, 0), Math.max(0, totalQuestions - 1)));
+  }
+
+  function handleSelect(optionId) {
+    clearTimeout(advanceTimer.current);
+
+    if (currentQuestion.is_multi_select) {
+      const current = Array.isArray(answers[currentQuestion.id]) ? answers[currentQuestion.id] : [];
+      const next = current.includes(optionId)
+        ? current.filter((id) => id !== optionId)
+        : [...current, optionId];
+      onAnswersChange({ ...answers, [currentQuestion.id]: next });
+      return;
+    }
+
+    onAnswersChange({ ...answers, [currentQuestion.id]: optionId });
+    if (!isLastQuestion) {
+      advanceTimer.current = setTimeout(
+        () => setCurrentIndex((index) => Math.min(index + 1, totalQuestions - 1)),
+        AUTO_ADVANCE_DELAY_MS
+      );
+    }
+  }
 
   async function handleSubmit(event) {
     event.preventDefault();
+
+    if (!isLastQuestion && totalQuestions > 0) {
+      if (canAdvance) goToIndex(safeIndex + 1);
+      return;
+    }
+
     if (!allAnswered) return;
 
-    if (sortedQuestions.length === 0) {
+    if (totalQuestions === 0) {
       onContinue();
       return;
     }
@@ -143,7 +188,7 @@ export default function QuestionnaireStep({ answers, onAnswersChange, onContinue
       <div className="bg-white border border-stone-200/85 rounded-2xl shadow-xl relative overflow-hidden p-8 sm:p-10">
         <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 to-amber-800" />
 
-        <div className="text-center mb-8">
+        <div className="text-center mb-7">
           <div className="w-12 h-12 mx-auto mb-4 rounded-xl border bg-amber-600/10 text-amber-700 border-amber-200/40 flex items-center justify-center">
             <ClipboardList className="w-6 h-6" />
           </div>
@@ -155,60 +200,67 @@ export default function QuestionnaireStep({ answers, onAnswersChange, onContinue
           </p>
         </div>
 
+        {totalQuestions > 0 && (
+          <div className="mb-7">
+            <div className="flex items-center justify-between mb-2 text-[10px] font-mono uppercase tracking-wider">
+              <span className="text-stone-400">
+                Question {safeIndex + 1} of {totalQuestions}
+              </span>
+              <span className="text-amber-700 font-bold">
+                {Math.round(progressPercent)}% Complete
+              </span>
+            </div>
+            <div className="h-1 w-full rounded-full bg-stone-100 overflow-hidden">
+              <div
+                className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-800 transition-all duration-500 ease-out"
+                style={{ width: `${progressPercent}%` }}
+              />
+            </div>
+          </div>
+        )}
+
         <form onSubmit={handleSubmit} className="space-y-8">
-          {sortedQuestions.map((question) => {
-            const sortedOptions = [...(question.options || [])].sort(
-              (a, b) => a.order - b.order
-            );
+          {currentQuestion ? (
+            // Keyed on the question so each one animates in as it becomes
+            // the active question.
+            <div key={currentQuestion.id} className="tt-enter">
+              <QuestionnaireQuestion
+                question={currentQuestion}
+                value={answers[currentQuestion.id]}
+                onSelect={handleSelect}
+              />
+            </div>
+          ) : (
+            <p className="text-center text-xs font-light text-stone-500">
+              No questions are configured right now — continue to see your pathway
+              recommendations.
+            </p>
+          )}
 
-            return (
-              <fieldset key={question.id} className="space-y-3">
-                <legend className="text-sm font-serif font-bold text-stone-900 mb-1">
-                  {question.text}
-                </legend>
-                <div className="space-y-2">
-                  {sortedOptions.map((option) => {
-                    const checked = question.is_multi_select
-                      ? Array.isArray(answers[question.id]) &&
-                        answers[question.id].includes(option.id)
-                      : answers[question.id] === option.id;
-
-                    return (
-                      <label
-                        key={option.id}
-                        className={`flex items-center gap-3 px-4 py-3 rounded-xl border text-xs font-mono cursor-pointer transition ${
-                          checked
-                            ? "border-amber-600 bg-amber-50 text-stone-900"
-                            : "border-stone-200 bg-stone-50 text-stone-600 hover:border-stone-300"
-                        }`}
-                      >
-                        <input
-                          type={question.is_multi_select ? "checkbox" : "radio"}
-                          name={`onboarding-question-${question.id}`}
-                          checked={checked}
-                          onChange={() =>
-                            question.is_multi_select
-                              ? handleMultiToggle(question.id, option.id)
-                              : handleSingleSelect(question.id, option.id)
-                          }
-                          className="accent-amber-600 w-3.5 h-3.5"
-                        />
-                        {option.text}
-                      </label>
-                    );
-                  })}
-                </div>
-              </fieldset>
-            );
-          })}
-
-          <button
-            type="submit"
-            disabled={!allAnswered || isSubmitting}
-            className="w-full bg-amber-600 hover:bg-amber-500 text-white font-mono text-xs font-extrabold uppercase tracking-wider py-3.5 rounded-xl shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
-          >
-            {isSubmitting ? "Submitting..." : "Continue"}
-          </button>
+          <div className="flex items-center gap-3">
+            {safeIndex > 0 && (
+              <button
+                type="button"
+                onClick={() => goToIndex(safeIndex - 1)}
+                className="flex items-center justify-center gap-2 border border-stone-200 text-stone-600 hover:bg-stone-50 font-mono text-xs font-bold uppercase tracking-wider py-3.5 px-5 rounded-xl transition"
+              >
+                <ArrowLeft className="w-3.5 h-3.5" />
+                Back
+              </button>
+            )}
+            <button
+              type="submit"
+              disabled={!canAdvance || (isLastQuestion && !allAnswered) || isSubmitting}
+              className="flex-1 flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-mono text-xs font-extrabold uppercase tracking-wider py-3.5 rounded-xl shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+            >
+              {isSubmitting
+                ? "Submitting..."
+                : isLastQuestion || totalQuestions === 0
+                  ? "Continue"
+                  : "Next Question"}
+              {!isSubmitting && <ArrowRight className="w-3.5 h-3.5" />}
+            </button>
+          </div>
         </form>
       </div>
     </div>

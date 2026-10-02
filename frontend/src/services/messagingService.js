@@ -7,16 +7,21 @@ export async function getEligibleRecipients({ search } = {}) {
   return backendClient.get(`/messaging/recipients/${query ? `?${query}` : ""}`);
 }
 
-export async function getConversations({ page, pageSize } = {}) {
+export async function getConversations({ page, pageSize, conversationType } = {}) {
   const params = new URLSearchParams();
   if (page) params.set("page", page);
   if (pageSize) params.set("page_size", pageSize);
+  if (conversationType) params.set("conversation_type", conversationType);
   const query = params.toString();
   return backendClient.get(`/messaging/${query ? `?${query}` : ""}`);
 }
 
 export async function startConversation(recipientId) {
   return backendClient.post("/messaging/", { recipient_id: recipientId });
+}
+
+export async function askAdvisor(body) {
+  return backendClient.post("/messaging/advisor/ask/", { body });
 }
 
 export async function getConversationMessages(conversationId, { page, pageSize } = {}) {

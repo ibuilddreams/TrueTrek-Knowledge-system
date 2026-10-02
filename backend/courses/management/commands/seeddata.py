@@ -1,4 +1,5 @@
 import random
+from collections import Counter
 from datetime import timedelta
 
 import requests
@@ -18,6 +19,7 @@ from courses.models import Category, Course, CourseInstructor, Tag
 from daily_drill.models import DrillOption, DrillQuestion
 from enrollments.models import Enrollment, EnrollmentHistory
 from future_clients.models import FutureClientApplication
+from instructors.models import InstructorFeedback, InstructorProfile
 from lessons.models import Lesson
 from modules.models import Module
 from onboarding.models import OnboardingProgress
@@ -29,6 +31,7 @@ from quizzes.models import Choice
 from quizzes.models import Question as QuizQuestion
 from quizzes.models import Quiz
 from tiers.models import Tier, TierPathway, TierProgress
+from users.models import UserProfile
 
 User = get_user_model()
 
@@ -78,8 +81,140 @@ STUDENT_NAMES = [
 # Tier.category (see courses/migrations/0003_seed_tier_categories.py and
 # 0004_consolidate_categories.py). `_reset_data` wipes every category and this
 # command recreates exactly this list, so a reseed can never reintroduce the
-# divergent one-off categories those migrations consolidated away.
-CATEGORY_NAMES = ["Academic", "Athletic", "Foundation", "Legacy", "Professional", "Vocational"]
+# divergent one-off categories those migrations consolidated away. The last three
+# (courses/migrations/0006_audience_categories.py) mirror the homepage audience tracks.
+CATEGORY_NAMES = [
+    "Academic",
+    "Athletic",
+    "Foundation",
+    "Legacy",
+    "Professional",
+    "Vocational",
+    "Scholars & Founders",
+    "Coaches & Mentors",
+    "Legacy & Family Offices",
+]
+
+def build_learning_outcomes(course_def):
+    """Demo "What you'll learn" points for a seeded course, derived only from its own
+    catalog metadata (no randomness, so reseeding stays deterministic)."""
+    subject = course_def.get("subject") or "subject"
+    grade_label = course_def.get("grade_label")
+    audience = f"Grades {grade_label}" if grade_label else "your level"
+    return [
+        f"Build a confident understanding of the core {subject} concepts in {course_def['title']}",
+        f"Work through structured lessons designed for {audience}",
+        f"Practice with {course_def['provider']} material through guided assignments and quizzes",
+        "Track your progress module by module and review at your own pace",
+    ]
+
+
+# Demo reviewers: separate from STUDENT_NAMES on purpose, so the regular demo
+# students still start with no enrollments. Each reviewer is enrolled in one of an
+# instructor's first two courses so their feedback matches the app's rule that
+# only enrolled students can review an instructor.
+REVIEWER_NAMES = [
+    ("Dorothy", "Baker"),
+    ("Thulisile", "Nkosi"),
+    ("Richard", "Torres"),
+    ("Priya", "Raman"),
+    ("Marcus", "Webb"),
+    ("Hannah", "Lindqvist"),
+    ("Omar", "Haddad"),
+    ("Grace", "Okafor"),
+    ("Daniel", "Kowalski"),
+    ("Sofia", "Marchetti"),
+    ("Elijah", "Brooks"),
+    ("Naomi", "Fischer"),
+]
+FEEDBACK_REVIEWS_PER_INSTRUCTOR = 4
+
+# (rating, comment) pairs sampled per instructor. Mostly positive with the odd
+# constructive note, and one rating without a comment, like real feedback.
+INSTRUCTOR_FEEDBACK_POOL = [
+    (5, "Clear, patient and well organised. Every lesson built on the last one, and I always knew what to do next."),
+    (5, "Excellent instructor. The assignments were the right level of challenge and the feedback was genuinely useful."),
+    (5, "I came in nervous about this subject and left confident. The pacing was perfect for our family."),
+    (5, "Explains difficult ideas in a simple way. I went back and reviewed the lessons several times and they held up."),
+    (5, "Great structure and great examples. The quizzes at the end of each module really locked in what I'd learned."),
+    (5, "Warm, encouraging and professional. My child actually looks forward to these lessons now."),
+    (4, "Very thorough course. I'd love a few more practice problems in the later modules, but overall excellent."),
+    (4, "Well paced and easy to follow. The reading materials were helpful and the assignments were fair."),
+    (4, "Solid teaching and good communication. Would take another course with this instructor."),
+    (4, "Helpful and knowledgeable. A couple of lessons could go a little deeper, but I learned a lot."),
+    (4, "Good balance of theory and practice. The module summaries made revision quick."),
+    (5, "Exactly what I was looking for: structured, practical and easy to fit around a busy week."),
+    (3, "Good content overall. I found the first module a bit slow, though it picked up nicely after that."),
+    (5, ""),
+    (4, ""),
+    (5, "Highly recommend. The whole experience, from lessons to assignments, felt carefully thought through."),
+]
+
+# Rotated per instructor for the demo "About" text; {placeholders} are filled from
+# the instructor's own courses so no unverifiable credentials are invented.
+INSTRUCTOR_BIO_TEMPLATES = [
+    (
+        "I'm {first}, an instructor at TrueTrek Learning. I teach {course_count} courses spanning "
+        "{subjects}, built around trusted programs from {providers}.\n\n"
+        "My goal is simple: make every lesson clear, structured and easy to come back to. Each course "
+        "I lead pairs guided lessons with practice assignments and quizzes, so you always know exactly "
+        "where you stand.\n\n"
+        "Whether you're starting fresh or reviewing, I'll help you build confidence one module at a time."
+    ),
+    (
+        "Hello, I'm {first}. At TrueTrek Learning I guide learners through {course_count} courses in "
+        "{subjects}, using materials from {providers}.\n\n"
+        "I believe good teaching starts with a clear path. That's why every course I lead is broken "
+        "into short modules with readings, assignments and a quiz, so progress is always visible.\n\n"
+        "Bring your questions, work at your own pace, and let's make learning something you look forward to."
+    ),
+    (
+        "I'm {first} and I love helping learners succeed. My {course_count} courses on TrueTrek Learning "
+        "cover {subjects}, drawing on programs from {providers}.\n\n"
+        "You'll find a steady rhythm in my courses: a short lesson, focused practice, then a quiz to "
+        "check understanding. It's a simple approach that keeps things manageable and builds real mastery.\n\n"
+        "I'm glad you're here. Let's get started."
+    ),
+]
+
+
+# Random-looking portraits for the demo instructors. pravatar serves a fixed photo per
+# `img` id, so every seed run gives the same instructors the same faces, and the
+# images are downloaded once into media storage like the other seed assets.
+INSTRUCTOR_AVATAR_URL = "https://i.pravatar.cc/400?img={image_id}"
+INSTRUCTOR_AVATAR_IDS = [12, 32, 47, 15, 5, 33, 60, 25, 68, 11, 3, 52]
+
+
+def _join_words(items):
+    items = list(items)
+    if len(items) <= 1:
+        return "".join(items)
+    return ", ".join(items[:-1]) + f" and {items[-1]}"
+
+
+def build_instructor_profile(first_name, course_defs, index):
+    """Demo headline, bio and skills for one seeded instructor, derived only from
+    the courses they teach (deterministic, no randomness)."""
+    subjects = Counter(d["subject"] for d in course_defs if d.get("subject"))
+    providers = Counter(d["provider"] for d in course_defs if d.get("provider"))
+    top_subjects = [name for name, _ in subjects.most_common(6)]
+    top_providers = [name for name, _ in providers.most_common(3)]
+
+    if len(top_subjects) >= 2:
+        headline = f"{top_subjects[0]} and {top_subjects[1]} educator"
+    elif top_subjects:
+        headline = f"{top_subjects[0]} educator"
+    else:
+        headline = "Instructor at TrueTrek Learning"
+
+    bio = INSTRUCTOR_BIO_TEMPLATES[index % len(INSTRUCTOR_BIO_TEMPLATES)].format(
+        first=first_name,
+        course_count=len(course_defs),
+        subjects=_join_words(top_subjects[:3]) or "a range of subjects",
+        providers=_join_words(top_providers) or "leading publishers",
+    )
+    return {"headline": headline, "bio": bio, "skills": top_subjects}
+
 
 # Fixed seed for every random-but-deterministic choice `_create_course_content` makes
 # (course amount, module/lesson counts, quiz distractor sampling) — reused every run so
@@ -278,7 +413,7 @@ COURSE_DEFS = [
     {"code": "BJU-BIBLE-K5", "title": "Bible K5", "category": "Academic", "description": "Introduces foundational Bible stories and themes through age-appropriate lessons, memory work, and guided activities.\n\nProvider: BJU Press · 1 credit · Grades K–1 · Subject: Bible / Religious Studies · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "BJU Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/bju-press.png", "subject": "Bible / Religious Studies", "grade_label": "K–1", "tags": ["BJU Press", "Bible / Religious Studies", "Grades K–1"]},
     {"code": "WAYGO-BIB-PK", "title": "Bible PK", "category": "Academic", "description": "Scripture study, Bible stories, and Christian worldview for Pre-Kindergarten, taught in the WayGo Academy co-op.\n\nProvider: WayGo Academy · 1 credit · Grades Pre-K · Subject: Bible / Religious Studies · Format: Curriculum", "difficulty": Course.Difficulty.BEGINNER, "provider": "WayGo Academy", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/waygo-academy.jpg", "subject": "Bible / Religious Studies", "grade_label": "Pre-K", "tags": ["WayGo Academy", "Bible / Religious Studies", "Grades Pre-K"]},
     {"code": "BUNDLE-TGB-BIBLE-K", "title": "Bible Stories for Young Hearts", "category": "Academic", "description": "Introduces Scripture through age-appropriate stories\n\nProvider: The Good and the Beautiful · 1 credit · Grades K · Subject: Bible / Religious Studies · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "The Good and the Beautiful", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/good-and-beautiful.png", "subject": "Bible / Religious Studies", "grade_label": "K", "tags": ["The Good and the Beautiful", "Bible / Religious Studies", "Grades K"]},
-    {"code": "MB-BIBLICAL-ECON", "title": "Biblical Economics", "category": "Vocational", "description": "Introduces economic principles from a biblical worldview.\n\nProvider: Master Books · 1 credit · Grades 9–12 · Subject: Electives · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Master Books", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/master-books.png", "subject": "Electives", "grade_label": "9–12", "tags": ["Master Books", "Electives", "Grades 9–12"]},
+    {"code": "MB-BIBLICAL-ECON", "title": "Biblical Economics", "category": "Legacy & Family Offices", "description": "Introduces economic principles from a biblical worldview.\n\nProvider: Master Books · 1 credit · Grades 9–12 · Subject: Electives · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Master Books", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/master-books.png", "subject": "Electives", "grade_label": "9–12", "tags": ["Master Books", "Electives", "Grades 9–12"]},
     {"code": "BJU-BIO", "title": "Biology", "category": "Academic", "description": "Surveys cell biology, genetics, ecology, botany, zoology, and human biology through structured lessons and review.\n\nProvider: BJU Press · 1 credit · Grades 8–10 · Subject: Science · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "BJU Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/bju-press.png", "subject": "Science", "grade_label": "8–10", "tags": ["BJU Press", "Science", "Grades 8–10"]},
     {"code": "OM-BIO", "title": "Biology", "category": "Academic", "description": "High school biology with labs.\n\nProvider: Oak Meadow · 1 credit · Grades 9–12 · Subject: Science · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Oak Meadow", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/oak-meadow.png", "subject": "Science", "grade_label": "9–12", "tags": ["Oak Meadow", "Science", "Grades 9–12"]},
     {"code": "CK12-BIO", "title": "Biology", "category": "Academic", "description": "High school biology covering cellular biology genetics and ecology.\n\nProvider: CK-12 · 1 credit · Grades 9–12 · Subject: Science · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "CK-12", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/ck12.png", "subject": "Science", "grade_label": "9–12", "tags": ["CK-12", "Science", "Grades 9–12"]},
@@ -320,7 +455,7 @@ COURSE_DEFS = [
     {"code": "MP-CLASS-6", "title": "Classical Studies 6", "category": "Academic", "description": "Middle school classical history and geography.\n\nProvider: Memoria Press · 1 credit · Grades 5–7 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Memoria Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/memoria-press.png", "subject": "Social Studies", "grade_label": "5–7", "tags": ["Memoria Press", "Social Studies", "Grades 5–7"]},
     {"code": "OM-COMP1", "title": "Composition 1", "category": "Academic", "description": "Foundational high school writing course.\n\nProvider: Oak Meadow · 0.5 credits · Grades 8–10 · Subject: English Language Arts · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Oak Meadow", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/oak-meadow.png", "subject": "English Language Arts", "grade_label": "8–10", "tags": ["Oak Meadow", "English Language Arts", "Grades 8–10"]},
     {"code": "OM-COMP2", "title": "Composition 2", "category": "Academic", "description": "Creative and nonfiction writing course.\n\nProvider: Oak Meadow · 0.5 credits · Grades 8–10 · Subject: English Language Arts · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Oak Meadow", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/oak-meadow.png", "subject": "English Language Arts", "grade_label": "8–10", "tags": ["Oak Meadow", "English Language Arts", "Grades 8–10"]},
-    {"code": "OM-MEDIA", "title": "Critical Media Literacy", "category": "Vocational", "description": "Analysis of media messages and critical thinking.\n\nProvider: Oak Meadow · 0.5 credits · Grades 9–12 · Subject: Electives · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Oak Meadow", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/oak-meadow.png", "subject": "Electives", "grade_label": "9–12", "tags": ["Oak Meadow", "Electives", "Grades 9–12"]},
+    {"code": "OM-MEDIA", "title": "Critical Media Literacy", "category": "Coaches & Mentors", "description": "Analysis of media messages and critical thinking.\n\nProvider: Oak Meadow · 0.5 credits · Grades 9–12 · Subject: Electives · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Oak Meadow", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/oak-meadow.png", "subject": "Electives", "grade_label": "9–12", "tags": ["Oak Meadow", "Electives", "Grades 9–12"]},
     {"code": "BJU-CULTGEO-5", "title": "Cultural Geography", "category": "Academic", "description": "Introduces world regions and cultures through geographic study, maps, and comparative analysis.\n\nProvider: BJU Press · 1 credit · Grades 4–6 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "BJU Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/bju-press.png", "subject": "Social Studies", "grade_label": "4–6", "tags": ["BJU Press", "Social Studies", "Grades 4–6"]},
     {"code": "V4-076876", "title": "Daily 6-Trait Writing Grade 3", "category": "Academic", "description": "Scaffolded daily lessons covering ideas, organization, word choice, and fluency\n\nProvider: Evan-Moor · 1 credit · Grades 3 · Subject: English Language Arts · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "Evan-Moor", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/evan-moor.jpg", "subject": "English Language Arts", "grade_label": "3", "tags": ["Evan-Moor", "English Language Arts", "Grades 3"]},
     {"code": "V4-076877", "title": "Daily 6-Trait Writing Grade 4", "category": "Academic", "description": "125 lessons across 25 weeks covering Ideas, Organization, Word Choice, Sentence Fluency, Voice, and Conventions. Each lesson is 10–15 minutes with reproducible student pages.\n\nProvider: Evan-Moor · 1 credit · Grades 4 · Subject: English Language Arts · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "Evan-Moor", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/evan-moor.jpg", "subject": "English Language Arts", "grade_label": "4", "tags": ["Evan-Moor", "English Language Arts", "Grades 4"]},
@@ -355,9 +490,9 @@ COURSE_DEFS = [
     {"code": "CK12-EARTHSCI-HS", "title": "Earth Science (HS)", "category": "Academic", "description": "High school earth science covering geology meteorology and astronomy.\n\nProvider: CK-12 · 1 credit · Grades 9–12 · Subject: Science · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "CK-12", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/ck12.png", "subject": "Science", "grade_label": "9–12", "tags": ["CK-12", "Science", "Grades 9–12"]},
     {"code": "CK12-EARTHSCI-MS", "title": "Earth Science (MS)", "category": "Academic", "description": "Middle school earth science covering geology weather and space.\n\nProvider: CK-12 · 1 credit · Grades 6–8 · Subject: Science · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "CK-12", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/ck12.png", "subject": "Science", "grade_label": "6–8", "tags": ["CK-12", "Science", "Grades 6–8"]},
     {"code": "MB-ECOLOGY", "title": "Ecology", "category": "Academic", "description": "Examines ecosystems stewardship and environmental science.\n\nProvider: Master Books · 1 credit · Grades 9–12 · Subject: Science · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Master Books", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/master-books.png", "subject": "Science", "grade_label": "9–12", "tags": ["Master Books", "Science", "Grades 9–12"]},
-    {"code": "BJU-ECON", "title": "Economic Systems", "category": "Academic", "description": "Covers basic economic principles including markets, production, money, banking, and personal finance concepts.\n\nProvider: BJU Press · 1 credit · Grades 11–12 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "BJU Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/bju-press.png", "subject": "Social Studies", "grade_label": "11–12", "tags": ["BJU Press", "Social Studies", "Grades 11–12"]},
-    {"code": "ABEKA-ECON", "title": "Economics", "category": "Academic", "description": "Covers basic economic principles including markets, production, money, banking, and personal finance topics.\n\nProvider: Abeka · 1 credit · Grades 11–12 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Abeka", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/abeka.png", "subject": "Social Studies", "grade_label": "11–12", "tags": ["Abeka", "Social Studies", "Grades 11–12"]},
-    {"code": "OM-ECON", "title": "Economics", "category": "Academic", "description": "Introductory economics course.\n\nProvider: Oak Meadow · 0.5 credits · Grades 9–12 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Oak Meadow", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/oak-meadow.png", "subject": "Social Studies", "grade_label": "9–12", "tags": ["Oak Meadow", "Social Studies", "Grades 9–12"]},
+    {"code": "BJU-ECON", "title": "Economic Systems", "category": "Scholars & Founders", "description": "Covers basic economic principles including markets, production, money, banking, and personal finance concepts.\n\nProvider: BJU Press · 1 credit · Grades 11–12 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "BJU Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/bju-press.png", "subject": "Social Studies", "grade_label": "11–12", "tags": ["BJU Press", "Social Studies", "Grades 11–12"]},
+    {"code": "ABEKA-ECON", "title": "Economics", "category": "Scholars & Founders", "description": "Covers basic economic principles including markets, production, money, banking, and personal finance topics.\n\nProvider: Abeka · 1 credit · Grades 11–12 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Abeka", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/abeka.png", "subject": "Social Studies", "grade_label": "11–12", "tags": ["Abeka", "Social Studies", "Grades 11–12"]},
+    {"code": "OM-ECON", "title": "Economics", "category": "Scholars & Founders", "description": "Introductory economics course.\n\nProvider: Oak Meadow · 0.5 credits · Grades 9–12 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Oak Meadow", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/oak-meadow.png", "subject": "Social Studies", "grade_label": "9–12", "tags": ["Oak Meadow", "Social Studies", "Grades 9–12"]},
     {"code": "V4-008656", "title": "Egermeier's Bible Story Book", "category": "Academic", "description": "312 Bible stories from Genesis to Revelation with 122 full-color illustrations. Thorough retelling that doesn't oversimplify or omit important details.\n\nProvider: Warner Press · 1 credit · Grades 6 · Subject: Bible / Religious Studies · Format: Textbook", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Warner Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/warner-press.jpg", "subject": "Bible / Religious Studies", "grade_label": "6", "tags": ["Warner Press", "Bible / Religious Studies", "Grades 6"]},
     {"code": "CK12-ELEM-MATH", "title": "Elementary Math", "category": "Academic", "description": "Elementary mathematics covering foundational arithmetic and problem solving.\n\nProvider: CK-12 · 1 credit · Grades 3–5 · Subject: Mathematics · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "CK-12", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/ck12.png", "subject": "Mathematics", "grade_label": "3–5", "tags": ["CK-12", "Mathematics", "Grades 3–5"]},
     {"code": "BJU-ENG-1", "title": "English 1", "category": "Academic", "description": "Builds grammar and writing skills through sentence formation, parts of speech, punctuation, capitalization, and structured composition practice.\n\nProvider: BJU Press · 1 credit · Grades K–2 · Subject: English Language Arts · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "BJU Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/bju-press.png", "subject": "English Language Arts", "grade_label": "K–2", "tags": ["BJU Press", "English Language Arts", "Grades K–2"]},
@@ -464,7 +599,7 @@ COURSE_DEFS = [
     {"code": "OM-8", "title": "Grade 8", "category": "Academic", "description": "Integrated eighth grade curriculum with civics physical science and pre-algebra.\n\nProvider: Oak Meadow · 1 credit · Grades 7–9 · Subject: General Education · Format: Textbook", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Oak Meadow", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/oak-meadow.png", "subject": "General Education", "grade_label": "7–9", "tags": ["Oak Meadow", "General Education", "Grades 7–9"]},
     {"code": "MP-TRAGEDY", "title": "Greek Tragedy", "category": "Academic", "description": "Study of classical Greek drama.\n\nProvider: Memoria Press · 1 credit · Grades 9–12 · Subject: English Language Arts · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Memoria Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/memoria-press.png", "subject": "English Language Arts", "grade_label": "9–12", "tags": ["Memoria Press", "English Language Arts", "Grades 9–12"]},
     {"code": "BUNDLE-TGB-WRITING-K", "title": "Handwriting Level K", "category": "Academic", "description": "Teaches letter formation and early writing skills\n\nProvider: The Good and the Beautiful · 1 credit · Grades K · Subject: English Language Arts · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "The Good and the Beautiful", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/good-and-beautiful.png", "subject": "English Language Arts", "grade_label": "K", "tags": ["The Good and the Beautiful", "English Language Arts", "Grades K"]},
-    {"code": "OM-HEALTH", "title": "Health and Wellness", "category": "Athletic", "description": "Comprehensive health education.\n\nProvider: Oak Meadow · 1 credit · Grades 9–12 · Subject: Physical Education · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Oak Meadow", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/oak-meadow.png", "subject": "Physical Education", "grade_label": "9–12", "tags": ["Oak Meadow", "Physical Education", "Grades 9–12"]},
+    {"code": "OM-HEALTH", "title": "Health and Wellness", "category": "Coaches & Mentors", "description": "Comprehensive health education.\n\nProvider: Oak Meadow · 1 credit · Grades 9–12 · Subject: Physical Education · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Oak Meadow", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/oak-meadow.png", "subject": "Physical Education", "grade_label": "9–12", "tags": ["Oak Meadow", "Physical Education", "Grades 9–12"]},
     {"code": "MP-HENLE1", "title": "Henle Latin I", "category": "Academic", "description": "High school Latin grammar and translation.\n\nProvider: Memoria Press · 1 credit · Grades 9–12 · Subject: World Languages · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Memoria Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/memoria-press.png", "subject": "World Languages", "grade_label": "9–12", "tags": ["Memoria Press", "World Languages", "Grades 9–12"]},
     {"code": "MP-HENLE2", "title": "Henle Latin II", "category": "Academic", "description": "Advanced Latin prose and syntax.\n\nProvider: Memoria Press · 1 credit · Grades 9–12 · Subject: World Languages · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Memoria Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/memoria-press.png", "subject": "World Languages", "grade_label": "9–12", "tags": ["Memoria Press", "World Languages", "Grades 9–12"]},
     {"code": "BJU-HERIT-K5", "title": "Heritage Studies", "category": "Academic", "description": "Introduces community life, basic geography, and early historical awareness through age-appropriate lessons and activities.\n\nProvider: BJU Press · 1 credit · Grades K–1 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "BJU Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/bju-press.png", "subject": "Social Studies", "grade_label": "K–1", "tags": ["BJU Press", "Social Studies", "Grades K–1"]},
@@ -534,7 +669,7 @@ COURSE_DEFS = [
     {"code": "AOP-BIBLE-K", "title": "LIFEPAC Bible K", "category": "Academic", "description": "Kindergarten Bible lessons teaching God's Word and character.\n\nProvider: Alpha Omega Publications · 1 credit · Grades K–1 · Subject: Bible / Religious Studies · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "Alpha Omega Publications", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/alpha-omega.png", "subject": "Bible / Religious Studies", "grade_label": "K–1", "tags": ["Alpha Omega Publications", "Bible / Religious Studies", "Grades K–1"]},
     {"code": "AOP-BIO", "title": "LIFEPAC Biology", "category": "Academic", "description": "High school biology taught from a biblical creation worldview.\n\nProvider: Alpha Omega Publications · 1 credit · Grades 8–10 · Subject: Science · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Alpha Omega Publications", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/alpha-omega.png", "subject": "Science", "grade_label": "8–10", "tags": ["Alpha Omega Publications", "Science", "Grades 8–10"]},
     {"code": "AOP-CHEM", "title": "LIFEPAC Chemistry", "category": "Academic", "description": "High school chemistry covering matter reactions and labs.\n\nProvider: Alpha Omega Publications · 1 credit · Grades 9–11 · Subject: Science · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Alpha Omega Publications", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/alpha-omega.png", "subject": "Science", "grade_label": "9–11", "tags": ["Alpha Omega Publications", "Science", "Grades 9–11"]},
-    {"code": "AOP-ECON", "title": "LIFEPAC Economics", "category": "Academic", "description": "High school economics taught from a biblical worldview.\n\nProvider: Alpha Omega Publications · 1 credit · Grades 11–12 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Alpha Omega Publications", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/alpha-omega.png", "subject": "Social Studies", "grade_label": "11–12", "tags": ["Alpha Omega Publications", "Social Studies", "Grades 11–12"]},
+    {"code": "AOP-ECON", "title": "LIFEPAC Economics", "category": "Scholars & Founders", "description": "High school economics taught from a biblical worldview.\n\nProvider: Alpha Omega Publications · 1 credit · Grades 11–12 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Alpha Omega Publications", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/alpha-omega.png", "subject": "Social Studies", "grade_label": "11–12", "tags": ["Alpha Omega Publications", "Social Studies", "Grades 11–12"]},
     {"code": "AOP-ENG-10", "title": "LIFEPAC English 10", "category": "Academic", "description": "High school English II focusing on literary analysis and writing.\n\nProvider: Alpha Omega Publications · 1 credit · Grades 9–11 · Subject: English Language Arts · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Alpha Omega Publications", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/alpha-omega.png", "subject": "English Language Arts", "grade_label": "9–11", "tags": ["Alpha Omega Publications", "English Language Arts", "Grades 9–11"]},
     {"code": "AOP-ENG-11", "title": "LIFEPAC English 11", "category": "Academic", "description": "High school English III emphasizing American literature.\n\nProvider: Alpha Omega Publications · 1 credit · Grades 10–12 · Subject: English Language Arts · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Alpha Omega Publications", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/alpha-omega.png", "subject": "English Language Arts", "grade_label": "10–12", "tags": ["Alpha Omega Publications", "English Language Arts", "Grades 10–12"]},
     {"code": "AOP-ENG-12", "title": "LIFEPAC English 12", "category": "Academic", "description": "High school English IV focusing on world literature.\n\nProvider: Alpha Omega Publications · 1 credit · Grades 11–12 · Subject: English Language Arts · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Alpha Omega Publications", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/alpha-omega.png", "subject": "English Language Arts", "grade_label": "11–12", "tags": ["Alpha Omega Publications", "English Language Arts", "Grades 11–12"]},
@@ -672,7 +807,7 @@ COURSE_DEFS = [
     {"code": "SM-PM-4", "title": "Primary Mathematics 4", "category": "Academic", "description": "Expands fractions decimals and bar modeling techniques.\n\nProvider: Singapore Math · 1 credit · Grades 3–5 · Subject: Mathematics · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "Singapore Math", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/singapore-math.png", "subject": "Mathematics", "grade_label": "3–5", "tags": ["Singapore Math", "Mathematics", "Grades 3–5"]},
     {"code": "SM-PM-5", "title": "Primary Mathematics 5", "category": "Academic", "description": "Advanced arithmetic emphasizing ratios and percent.\n\nProvider: Singapore Math · 1 credit · Grades 4–6 · Subject: Mathematics · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "Singapore Math", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/singapore-math.png", "subject": "Mathematics", "grade_label": "4–6", "tags": ["Singapore Math", "Mathematics", "Grades 4–6"]},
     {"code": "SM-PM-6", "title": "Primary Mathematics 6", "category": "Academic", "description": "Capstone elementary math preparing for secondary mathematics.\n\nProvider: Singapore Math · 1 credit · Grades 5–7 · Subject: Mathematics · Format: Textbook", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Singapore Math", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/singapore-math.png", "subject": "Mathematics", "grade_label": "5–7", "tags": ["Singapore Math", "Mathematics", "Grades 5–7"]},
-    {"code": "OM-PSYCH", "title": "Psychology", "category": "Vocational", "description": "Introductory psychology.\n\nProvider: Oak Meadow · 0.5 credits · Grades 9–12 · Subject: Electives · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Oak Meadow", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/oak-meadow.png", "subject": "Electives", "grade_label": "9–12", "tags": ["Oak Meadow", "Electives", "Grades 9–12"]},
+    {"code": "OM-PSYCH", "title": "Psychology", "category": "Coaches & Mentors", "description": "Introductory psychology.\n\nProvider: Oak Meadow · 0.5 credits · Grades 9–12 · Subject: Electives · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Oak Meadow", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/oak-meadow.png", "subject": "Electives", "grade_label": "9–12", "tags": ["Oak Meadow", "Electives", "Grades 9–12"]},
     {"code": "V4-013631", "title": "R.E.A.L. Science Odyssey Biology Level 1", "category": "Academic", "description": "Year-long secular biology curriculum for grades 2-5. Covers cells, DNA, anatomy, plant structure, evolution, ecology. 36-week schedule, 2 days/week. Hands-on labs included.\n\nProvider: Pandia Press · 1 credit · Grades 2 · Subject: Science · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "Pandia Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/pandia-press.png", "subject": "Science", "grade_label": "2", "tags": ["Pandia Press", "Science", "Grades 2"]},
     {"code": "V4-039411", "title": "R.E.A.L. Science Odyssey Life Science Level 1", "category": "Academic", "description": "Year-long secular life science for grades K-1. Covers human body, animal kingdom, and plant kingdom through hands-on labs, reading lists, and journaling. Reproducible student pages. No science background needed to teach.\n\nProvider: Pandia Press · 1 credit · Grades K · Subject: Science · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "Pandia Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/pandia-press.png", "subject": "Science", "grade_label": "K", "tags": ["Pandia Press", "Science", "Grades K"]},
     {"code": "OM-ETHNIC", "title": "Race & Ethnic Studies", "category": "Academic", "description": "Exploration of race and ethnic perspectives in society.\n\nProvider: Oak Meadow · 0.5 credits · Grades 9–12 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Oak Meadow", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/oak-meadow.png", "subject": "Social Studies", "grade_label": "9–12", "tags": ["Oak Meadow", "Social Studies", "Grades 9–12"]},
@@ -768,7 +903,7 @@ COURSE_DEFS = [
     {"code": "BJU-SPELL-K5", "title": "Spelling K5", "category": "Academic", "description": "Introduces early spelling skills through phonetic patterns, word families, and guided practice designed to build foundational accuracy.\n\nProvider: BJU Press · 1 credit · Grades K–1 · Subject: English Language Arts · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "BJU Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/bju-press.png", "subject": "English Language Arts", "grade_label": "K–1", "tags": ["BJU Press", "English Language Arts", "Grades K–1"]},
     {"code": "BUNDLE-NOTG-HISTORY-1", "title": "Star-Spangled Story", "category": "Academic", "description": "Introduces American history through engaging stories rooted in faith\n\nProvider: Notgrass · 1 credit · Grades 1 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "Notgrass", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/notgrass.png", "subject": "Social Studies", "grade_label": "1", "tags": ["Notgrass", "Social Studies", "Grades 1"]},
     {"code": "BUNDLE-NOTG-HISTORY-K", "title": "Star-Spangled Story (Read Aloud Portions)", "category": "Academic", "description": "Introduces national heritage through story-based learning\n\nProvider: Notgrass · 1 credit · Grades K · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "Notgrass", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/notgrass.png", "subject": "Social Studies", "grade_label": "K", "tags": ["Notgrass", "Social Studies", "Grades K"]},
-    {"code": "MB-STEWARD", "title": "Stewardship: Money and Life Skills", "category": "Vocational", "description": "Teaches financial stewardship and responsibility.\n\nProvider: Master Books · 1 credit · Grades 6–8 · Subject: Electives · Format: Textbook", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Master Books", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/master-books.png", "subject": "Electives", "grade_label": "6–8", "tags": ["Master Books", "Electives", "Grades 6–8"]},
+    {"code": "MB-STEWARD", "title": "Stewardship: Money and Life Skills", "category": "Legacy & Family Offices", "description": "Teaches financial stewardship and responsibility.\n\nProvider: Master Books · 1 credit · Grades 6–8 · Subject: Electives · Format: Textbook", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Master Books", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/master-books.png", "subject": "Electives", "grade_label": "6–8", "tags": ["Master Books", "Electives", "Grades 6–8"]},
     {"code": "V4-010992", "title": "Story of the World Vol. 1: Ancient Times", "category": "Academic", "description": "Engaging narrative-based world history that builds a sense of timeline and place\n\nProvider: Well-Trained Mind · 1 credit · Grades 3 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "Well-Trained Mind", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/well-trained-mind.png", "subject": "Social Studies", "grade_label": "3", "tags": ["Well-Trained Mind", "Social Studies", "Grades 3"]},
     {"code": "V4-040707", "title": "Story of the World Vol. 2: The Middle Ages", "category": "Academic", "description": "Covers the Fall of Rome through the Renaissance. Narrative-driven world history covering European, Indian, Chinese, Arabic, Japanese, African, and American histories side by side.\n\nProvider: Well-Trained Mind · 1 credit · Grades 4 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "Well-Trained Mind", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/well-trained-mind.png", "subject": "Social Studies", "grade_label": "4", "tags": ["Well-Trained Mind", "Social Studies", "Grades 4"]},
     {"code": "V4-005652", "title": "Story of the World Vol. 3: Early Modern Times", "category": "Academic", "description": "42-chapter narrative world history covering 1600s–1850s. Topics include the Holy Roman Empire, colonization, the Revolutionary War, Napoleon, Lewis & Clark, the Gold Rush, and more. Covers Europe, Asia, Africa, and the Americas side by side.\n\nProvider: Well-Trained Mind · 1 credit · Grades 5 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "Well-Trained Mind", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/well-trained-mind.png", "subject": "Social Studies", "grade_label": "5", "tags": ["Well-Trained Mind", "Social Studies", "Grades 5"]},
@@ -794,8 +929,8 @@ COURSE_DEFS = [
     {"code": "MB-PLANTS", "title": "The World of Plants", "category": "Academic", "description": "Studies plant structure growth and classification.\n\nProvider: Master Books · 1 credit · Grades 3–5 · Subject: Science · Format: Textbook", "difficulty": Course.Difficulty.BEGINNER, "provider": "Master Books", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/master-books.png", "subject": "Science", "grade_label": "3–5", "tags": ["Master Books", "Science", "Grades 3–5"]},
     {"code": "MB-THINKING", "title": "Thinking Like a Christian", "category": "Academic", "description": "Develops critical thinking grounded in biblical truth.\n\nProvider: Master Books · 1 credit · Grades 6–8 · Subject: Bible / Religious Studies · Format: Textbook", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Master Books", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/master-books.png", "subject": "Bible / Religious Studies", "grade_label": "6–8", "tags": ["Master Books", "Bible / Religious Studies", "Grades 6–8"]},
     {"code": "MP-TF", "title": "Third Form Latin", "category": "Academic", "description": "Advanced Latin grammar and translation.\n\nProvider: Memoria Press · 1 credit · Grades 6–8 · Subject: World Languages · Format: Textbook", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Memoria Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/memoria-press.png", "subject": "World Languages", "grade_label": "6–8", "tags": ["Memoria Press", "World Languages", "Grades 6–8"]},
-    {"code": "MP-LOGIC1", "title": "Traditional Logic I", "category": "Vocational", "description": "Introduction to formal logic and reasoning.\n\nProvider: Memoria Press · 1 credit · Grades 6–8 · Subject: Electives · Format: Textbook", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Memoria Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/memoria-press.png", "subject": "Electives", "grade_label": "6–8", "tags": ["Memoria Press", "Electives", "Grades 6–8"]},
-    {"code": "MP-LOGIC2", "title": "Traditional Logic II", "category": "Vocational", "description": "Continuation of deductive logic and argument analysis.\n\nProvider: Memoria Press · 1 credit · Grades 6–8 · Subject: Electives · Format: Textbook", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Memoria Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/memoria-press.png", "subject": "Electives", "grade_label": "6–8", "tags": ["Memoria Press", "Electives", "Grades 6–8"]},
+    {"code": "MP-LOGIC1", "title": "Traditional Logic I", "category": "Scholars & Founders", "description": "Introduction to formal logic and reasoning.\n\nProvider: Memoria Press · 1 credit · Grades 6–8 · Subject: Electives · Format: Textbook", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Memoria Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/memoria-press.png", "subject": "Electives", "grade_label": "6–8", "tags": ["Memoria Press", "Electives", "Grades 6–8"]},
+    {"code": "MP-LOGIC2", "title": "Traditional Logic II", "category": "Scholars & Founders", "description": "Continuation of deductive logic and argument analysis.\n\nProvider: Memoria Press · 1 credit · Grades 6–8 · Subject: Electives · Format: Textbook", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Memoria Press", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/memoria-press.png", "subject": "Electives", "grade_label": "6–8", "tags": ["Memoria Press", "Electives", "Grades 6–8"]},
     {"code": "CK12-TRIG", "title": "Trigonometry", "category": "Academic", "description": "Trigonometry covering angles functions and identities.\n\nProvider: CK-12 · 1 credit · Grades 9–12 · Subject: Mathematics · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "CK-12", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/ck12.png", "subject": "Mathematics", "grade_label": "9–12", "tags": ["CK-12", "Mathematics", "Grades 9–12"]},
     {"code": "OM-GOVT", "title": "U.S. Government", "category": "Academic", "description": "U.S. government and civics.\n\nProvider: Oak Meadow · 0.5 credits · Grades 9–12 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Oak Meadow", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/oak-meadow.png", "subject": "Social Studies", "grade_label": "9–12", "tags": ["Oak Meadow", "Social Studies", "Grades 9–12"]},
     {"code": "OM-USHIST", "title": "U.S. History", "category": "Academic", "description": "Comprehensive U.S. history survey.\n\nProvider: Oak Meadow · 1 credit · Grades 9–12 · Subject: Social Studies · Format: Textbook", "difficulty": Course.Difficulty.ADVANCED, "provider": "Oak Meadow", "provider_thumbnail_url": "https://sgsgzpduygkgfyginsaz.supabase.co/storage/v1/object/public/curriculum-assets/providers/oak-meadow.png", "subject": "Social Studies", "grade_label": "9–12", "tags": ["Oak Meadow", "Social Studies", "Grades 9–12"]},
@@ -1323,7 +1458,8 @@ class Command(BaseCommand):
                 "This will DELETE every row except the admin account(s) — teachers, students, "
                 "courses, modules, lessons, assignments, quizzes, enrollments, progress, pathways, "
                 "tiers, onboarding questions, and daily drills — and reseed fresh demo data. "
-                "Students will NOT be auto-enrolled in any course.\n"
+                "The regular demo students will NOT be auto-enrolled in any course (only the demo "
+                "reviewers are, so instructor feedback matches real enrollments).\n"
                 "Type 'yes' to continue: "
             )
             if confirm.strip().lower() != "yes":
@@ -1353,6 +1489,12 @@ class Command(BaseCommand):
                 for i, (first, last) in enumerate(STUDENT_NAMES, start=1)
             ]
             self.stdout.write(self.style.SUCCESS(f"Created {len(students)} students"))
+
+            reviewers = [
+                self._create_user(first, last, f"reviewer{i}@example.com", User.Roles.STUDENT)
+                for i, (first, last) in enumerate(REVIEWER_NAMES, start=1)
+            ]
+            self.stdout.write(self.style.SUCCESS(f"Created {len(reviewers)} demo reviewers"))
 
             # Wraps around when there are more courses than teachers, so adding a
             # course def never has to be paired with adding a teacher name.
@@ -1386,6 +1528,14 @@ class Command(BaseCommand):
             self._seed_drills()
             self.stdout.write(self.style.SUCCESS(f"Seeded {len(DRILL_DEFS)} daily drill scenarios"))
 
+            self._seed_instructor_profiles(teachers_by_code, assets["instructor_avatars"])
+            feedback_count = self._seed_instructor_feedback(teachers, reviewers)
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Filled {len(teachers)} instructor profiles with {feedback_count} student feedback entries"
+                )
+            )
+
         self.stdout.write(self.style.SUCCESS("Seed data completed successfully."))
 
     def _download_assets(self, skip=False):
@@ -1397,7 +1547,7 @@ class Command(BaseCommand):
         simply absent from the result, and its courses are seeded without a
         thumbnail; a failed lesson-asset download leaves the affected lessons
         without a file."""
-        assets = {"provider_thumbnails": {}, "lessons": {}}
+        assets = {"provider_thumbnails": {}, "lessons": {}, "instructor_avatars": []}
 
         if skip:
             self.stdout.write(
@@ -1419,9 +1569,18 @@ class Command(BaseCommand):
             if path:
                 assets["provider_thumbnails"][provider] = path
 
+        for image_id in INSTRUCTOR_AVATAR_IDS:
+            path = self._store_asset(
+                f"avatars/seed-instructor-{image_id}.jpg",
+                INSTRUCTOR_AVATAR_URL.format(image_id=image_id),
+            )
+            if path:
+                assets["instructor_avatars"].append(path)
+
         self.stdout.write(
             self.style.SUCCESS(
-                f"Prepared {len(assets['lessons'])} lesson file(s) and "
+                f"Prepared {len(assets['instructor_avatars'])} instructor photo(s), "
+                f"{len(assets['lessons'])} lesson file(s) and "
                 f"{len(assets['provider_thumbnails'])} provider thumbnail(s) in media storage"
             )
         )
@@ -1579,6 +1738,7 @@ class Command(BaseCommand):
                     "status": Status.PUBLISHED,
                     "difficulty": course_def["difficulty"],
                     "amount": rng.choice(COURSE_AMOUNT_CHOICES),
+                    "learning_outcomes": build_learning_outcomes(course_def),
                 },
             )
             courses_by_code[course_def["code"]] = course
@@ -1789,6 +1949,71 @@ class Command(BaseCommand):
                     QuestionOptionPathwayWeight.objects.create(
                         option=option, pathway=pathways_by_key[pathway_key], weight=weight
                     )
+
+    def _seed_instructor_profiles(self, teachers_by_code, avatars=()):
+        """Public instructor details (bio, headline, skills, photo) for every teacher
+        that teaches at least one seeded course. `avatars` are stored image paths,
+        handed out in order (wrapping around). Safe to re-run: it updates in place."""
+        grouped = {}
+        for course_def in COURSE_DEFS:
+            teacher = teachers_by_code.get(course_def["code"])
+            if teacher:
+                grouped.setdefault(teacher.pk, (teacher, []))[1].append(course_def)
+
+        for index, (teacher, course_defs) in enumerate(
+            sorted(grouped.values(), key=lambda item: item[0].email)
+        ):
+            details = build_instructor_profile(teacher.first_name, course_defs, index)
+            profile_defaults = {"bio": details["bio"]}
+            if avatars:
+                profile_defaults["avatar"] = avatars[index % len(avatars)]
+            UserProfile.objects.update_or_create(user=teacher, defaults=profile_defaults)
+            InstructorProfile.objects.update_or_create(
+                user=teacher,
+                defaults={"headline": details["headline"], "skills": details["skills"]},
+            )
+
+    def _seed_instructor_feedback(self, teachers, reviewers):
+        """A few reviews per instructor from demo reviewers, each enrolled in one of
+        that instructor's first two courses. Deterministic and safe to re-run."""
+        if not reviewers:
+            return 0
+
+        rng = random.Random(SEED_RNG_SEED + 1)
+        now = timezone.now()
+        created = 0
+
+        for teacher_index, teacher in enumerate(teachers):
+            taught = list(
+                Course.objects.filter(instructors__instructor=teacher, status=Status.PUBLISHED)
+                .order_by("code")
+                .distinct()[:2]
+            )
+            if not taught:
+                continue
+
+            reviews = rng.sample(INSTRUCTOR_FEEDBACK_POOL, FEEDBACK_REVIEWS_PER_INSTRUCTOR)
+            for offset, (rating, comment) in enumerate(reviews):
+                reviewer = reviewers[
+                    (teacher_index * FEEDBACK_REVIEWS_PER_INSTRUCTOR + offset) % len(reviewers)
+                ]
+                course = taught[offset % len(taught)]
+                Enrollment.objects.get_or_create(
+                    student=reviewer, course=course, defaults={"teacher": teacher}
+                )
+                feedback, _ = InstructorFeedback.objects.update_or_create(
+                    instructor=teacher,
+                    student=reviewer,
+                    course=course,
+                    defaults={"rating": rating, "comment": comment},
+                )
+                # created_at is auto_now_add, so spread the dates with an update.
+                InstructorFeedback.objects.filter(pk=feedback.pk).update(
+                    created_at=now - timedelta(days=rng.randint(3, 150), hours=rng.randint(0, 23))
+                )
+                created += 1
+
+        return created
 
     def _seed_drills(self):
         for drill_def in DRILL_DEFS:

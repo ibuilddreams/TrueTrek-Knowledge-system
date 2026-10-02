@@ -14,6 +14,7 @@ const INITIAL_FORM = {
   email: "",
   password: "",
   gender: "",
+  is_advisor: false,
 };
 
 const FIELD_CLASS =
@@ -69,6 +70,7 @@ export default function CreateTeacherModal({ isOpen, onClose, onCreated }) {
         email,
         password,
         gender,
+        is_advisor: form.is_advisor,
       });
       toastSuccess(response?.message || "Teacher created successfully.");
       onCreated?.();
@@ -188,6 +190,21 @@ export default function CreateTeacherModal({ isOpen, onClose, onCreated }) {
             <option value="OTHER">Other</option>
           </select>
         </div>
+
+        <label className="flex items-center gap-2.5 p-3 rounded-xl border border-line bg-porcelain/60 text-sm font-mono text-ink cursor-pointer">
+          <input
+            type="checkbox"
+            checked={form.is_advisor}
+            onChange={() => setForm((prev) => ({ ...prev, is_advisor: !prev.is_advisor }))}
+            disabled={isSubmitting}
+          />
+          <span>
+            Advisor
+            <span className="block text-xs font-sans text-muted normal-case tracking-normal">
+              Students can reach this teacher directly from "Ask an Advisor"
+            </span>
+          </span>
+        </label>
 
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-line">
           <button

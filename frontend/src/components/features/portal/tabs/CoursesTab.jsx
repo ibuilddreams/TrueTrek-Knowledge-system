@@ -389,6 +389,7 @@ export default function CoursesTab() {
               >
                 <StudentCourseCard
                   enrollment={enrollment}
+                  number={(page - 1) * PAGE_SIZE + index + 1}
                   onClick={() => openCourse(enrollment.course?.id)}
                 />
               </motion.div>

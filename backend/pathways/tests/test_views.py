@@ -157,3 +157,96 @@ class GuestCheckoutTests(APITestCase):
 
         self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
         self.assertFalse(PathwayEnrollment.objects.exists())
+
+
+class PathwayDetailContentTestCase(APITestCase):
+    """The marketing fields behind the public pathway page (/pathways/<slug>)."""
+
+    def setUp(self):
+        self.admin = make_user("content-admin@example.com", UserModel.Roles.ADMIN)
+        self.pathway = Pathway.objects.create(
+            name="NIL And Legacy",
+            status=Status.PUBLISHED,
+            base_price=249,
+            purpose="Built for athletes signing their first NIL deal.",
+            learning_outcomes=["Read an NIL term sheet", "Spot an unfair royalty clause"],
+            who_is_for=["Student-athletes entering junior year"],
+            prerequisites=["Completed Tier 1 orientation"],
+            difficulty=Pathway.Difficulty.ADVANCED,
+            duration_weeks=12,
+        )
+
+    def test_public_detail_by_slug_returns_marketing_fields(self):
+        response = self.client.get(
+            reverse("pathway-public-detail-by-slug", args=[self.pathway.slug])
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data["data"]
+        self.assertEqual(data["purpose"], "Built for athletes signing their first NIL deal.")
+        self.assertEqual(len(data["learning_outcomes"]), 2)
+        self.assertEqual(data["who_is_for"], ["Student-athletes entering junior year"])
+        self.assertEqual(data["prerequisites"], ["Completed Tier 1 orientation"])
+        self.assertEqual(data["difficulty"], "ADVANCED")
+        self.assertEqual(data["duration_weeks"], 12)
+
+    def test_public_detail_by_slug_is_anonymous_and_hides_drafts(self):
+        draft = Pathway.objects.create(name="Draft Route", status=Status.DRAFT)
+        response = self.client.get(reverse("pathway-public-detail-by-slug", args=[draft.slug]))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_public_detail_by_slug_unknown_slug_is_404(self):
+        response = self.client.get(reverse("pathway-public-detail-by-slug", args=["no-such-route"]))
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_public_list_exposes_badge_fields(self):
+        response = self.client.get(reverse("pathway-public-list"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        row = response.data["data"]["results"][0]
+        self.assertIn("difficulty", row)
+        self.assertIn("duration_weeks", row)
+
+    def test_admin_can_write_marketing_fields_and_blanks_are_dropped(self):
+        self.client.force_authenticate(self.admin)
+        response = self.client.patch(
+            reverse("pathway-detail", args=[self.pathway.id]),
+            {"learning_outcomes": ["  Draft a cap table ", "", "Negotiate   terms"]},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.pathway.refresh_from_db()
+        self.assertEqual(self.pathway.learning_outcomes, ["Draft a cap table", "Negotiate terms"])
+
+    def test_bullet_lists_accept_a_json_encoded_string(self):
+        self.client.force_authenticate(self.admin)
+        response = self.client.patch(
+            reverse("pathway-detail", args=[self.pathway.id]),
+            {"who_is_for": '["Parents", "Coaches"]'},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.pathway.refresh_from_db()
+        self.assertEqual(self.pathway.who_is_for, ["Parents", "Coaches"])
+
+    def test_bullet_lists_reject_too_many_points_and_overlong_text(self):
+        self.client.force_authenticate(self.admin)
+        url = reverse("pathway-detail", args=[self.pathway.id])
+        too_many = self.client.patch(
+            url, {"learning_outcomes": [f"Point {i}" for i in range(13)]}, format="json"
+        )
+        self.assertEqual(too_many.status_code, status.HTTP_400_BAD_REQUEST)
+        too_long = self.client.patch(
+            url, {"prerequisites": ["x" * 301]}, format="json"
+        )
+        self.assertEqual(too_long.status_code, status.HTTP_400_BAD_REQUEST)
+        not_text = self.client.patch(url, {"who_is_for": [7]}, format="json")
+        self.assertEqual(not_text.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_non_admin_cannot_write_marketing_fields(self):
+        student = make_user("content-student@example.com", UserModel.Roles.STUDENT)
+        self.client.force_authenticate(student)
+        response = self.client.patch(
+            reverse("pathway-detail", args=[self.pathway.id]),
+            {"purpose": "hijacked"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)

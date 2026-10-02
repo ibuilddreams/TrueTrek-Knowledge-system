@@ -8,7 +8,9 @@ export const ROUTES = {
   CURRICULUM: "/curriculum",
   PARTNERSHIPS: "/partnerships",
   STORE: "/store",
+  INSTRUCTORS: "/instructors",
   CART: "/cart",
+  WISHLIST: "/wishlist",
   ONBOARDING: "/onboarding",
   PATHWAYS: "/pathways",
   FUTURE_CLIENTS: "/future-clients",
@@ -24,6 +26,7 @@ export const ROUTES = {
   DASHBOARD: "/dashboard",
   PORTAL: "/portal",
   TEACHERS: "/teachers",
+  FAQ: "/faq",
 };
 
 export const ROUTE_KEYS = {
@@ -42,6 +45,7 @@ export const ROUTE_KEYS = {
   PORTAL: "portal",
   DASHBOARD: "dashboard",
   TEACHERS: "teachers",
+  FAQ: "faq",
 };
 
 export function getPortalRouteForRole(role) {
@@ -60,6 +64,7 @@ export function getSectionFromPathname(pathname) {
   if (pathname.startsWith(ROUTES.ONBOARDING)) return ROUTE_KEYS.ONBOARDING;
   if (pathname.startsWith(ROUTES.PATHWAYS)) return ROUTE_KEYS.PATHWAYS;
   if (pathname.startsWith(ROUTES.FUTURE_CLIENTS)) return ROUTE_KEYS.FUTURE_CLIENTS;
+  if (pathname.startsWith(ROUTES.FAQ)) return ROUTE_KEYS.FAQ;
   if (
     pathname.startsWith(ROUTES.STUDENT_PORTAL) ||
     pathname.startsWith(ROUTES.PORTAL) ||

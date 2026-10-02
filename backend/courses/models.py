@@ -59,6 +59,8 @@ class Course(BaseModel):
     )
     duration_minutes = models.PositiveIntegerField(default=0)
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    # "What you'll learn" bullet points shown on the course detail page.
+    learning_outcomes = models.JSONField(default=list, blank=True)
     # Inclusive grade range (Pre-K = -1, K = 0, 1-12); null when unknown.
     # Derived from the description's "Grades X–Y" segment on save.
     grade_min = models.SmallIntegerField(

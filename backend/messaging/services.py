@@ -24,6 +24,10 @@ class MessageDeleteError(Exception):
     pass
 
 
+class NoAdvisorsAvailableError(Exception):
+    pass
+
+
 def get_eligible_recipients(user):
     """Users `user` is allowed to start a NEW conversation with.
 
@@ -59,9 +63,11 @@ def can_message(sender, recipient):
     return get_eligible_recipients(sender).filter(pk=recipient.pk).exists()
 
 
-def get_or_create_conversation(user_a, user_b):
+def get_or_create_conversation(user_a, user_b, conversation_type=Conversation.ConversationType.DIRECT):
     lo, hi = sorted([user_a, user_b], key=lambda u: u.pk)
-    conversation, _ = Conversation.objects.get_or_create(participant_one=lo, participant_two=hi)
+    conversation, _ = Conversation.objects.get_or_create(
+        participant_one=lo, participant_two=hi, conversation_type=conversation_type
+    )
     return conversation
 
 
@@ -69,6 +75,57 @@ def start_conversation(sender, recipient):
     if not can_message(sender, recipient):
         raise MessagingPermissionError("You are not allowed to message this user.")
     return get_or_create_conversation(sender, recipient)
+
+
+def assign_advisor():
+    """Pick the advisor-flagged, active teacher with the fewest open advisor
+    conversations (simple load-balancing). Returns None if no advisor is
+    available to take on a new student."""
+    advisors = list(
+        UserModel.objects.filter(
+            role=Roles.TEACHER, is_advisor=True, account_status=UserModel.AccountStatus.ACTIVE
+        )
+    )
+    if not advisors:
+        return None
+
+    def open_advisor_conversation_count(advisor):
+        return Conversation.objects.filter(
+            models.Q(participant_one=advisor) | models.Q(participant_two=advisor),
+            conversation_type=Conversation.ConversationType.ADVISOR,
+        ).count()
+
+    return min(advisors, key=open_advisor_conversation_count)
+
+
+def get_advisor_conversation(student):
+    """The student's existing advisor conversation, if any."""
+    return (
+        Conversation.objects.filter(
+            models.Q(participant_one=student) | models.Q(participant_two=student),
+            conversation_type=Conversation.ConversationType.ADVISOR,
+        )
+        .order_by("-last_message_at", "-created_at")
+        .first()
+    )
+
+
+def start_advisor_conversation(student):
+    """Get the student's existing advisor conversation, or auto-assign them to
+    an available advisor and start a new one. Bypasses can_message/
+    get_eligible_recipients entirely — advisor contact doesn't require a prior
+    course enrollment, unlike the regular messaging picker."""
+    existing = get_advisor_conversation(student)
+    if existing is not None:
+        return existing
+
+    advisor = assign_advisor()
+    if advisor is None:
+        raise NoAdvisorsAvailableError("No advisors are currently available. Please try again later.")
+
+    return get_or_create_conversation(
+        student, advisor, conversation_type=Conversation.ConversationType.ADVISOR
+    )
 
 
 def send_message(

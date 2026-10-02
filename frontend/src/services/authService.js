@@ -51,6 +51,7 @@ function toPublicBackendUser(rawUser) {
     email: rawUser.email,
     name: rawUser.full_name || `${rawUser.first_name} ${rawUser.last_name}`.trim(),
     role: BACKEND_ROLE_MAP[rawUser.role] || AUTH_ROLES.GUEST,
+    isAdvisor: Boolean(rawUser.is_advisor),
   };
 }
 

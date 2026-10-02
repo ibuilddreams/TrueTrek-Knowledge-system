@@ -1,22 +1,41 @@
 "use client";
 
-import { BookOpen, GraduationCap, Info, Plus, X } from "lucide-react";
+import Link from "next/link";
+import { BookOpen, GraduationCap, Plus, X } from "lucide-react";
+import { ROUTES } from "@/constants/routes";
 import { formatCoursePrice } from "@/lib/store";
+import WishlistHeartButton from "@/components/features/wishlist/WishlistHeartButton";
 
 export default function StoreCourseCard({
   course,
   isInCart,
   isPending = false,
   canPurchase = true,
-  onViewDetails,
   onToggleCart,
+  isWishlisted = false,
+  isWishlistPending = false,
+  onToggleWishlist,
 }) {
   return (
     <div
       id={`store-course-card-${course.id}`}
-      className="bg-paper border border-line rounded-card overflow-hidden shadow-soft hover:shadow-elevated hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
+      className="relative bg-paper border border-line rounded-card overflow-hidden shadow-soft hover:shadow-elevated hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
     >
-      <div>
+      {/* The wishlist heart sits outside the link (a button can't live inside an anchor) but is positioned over the thumbnail. */}
+      {onToggleWishlist && (
+        <WishlistHeartButton
+          isWishlisted={isWishlisted}
+          isPending={isWishlistPending}
+          onToggle={() => onToggleWishlist(course)}
+          className="absolute top-3.5 right-3.5 z-10"
+        />
+      )}
+
+      <Link
+        href={`${ROUTES.STORE}/${course.slug}`}
+        aria-label={`View details for ${course.title}`}
+        className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pine"
+      >
         <div className="relative h-56 overflow-hidden bg-porcelain">
           {course.image ? (
             <img
@@ -49,7 +68,7 @@ export default function StoreCourseCard({
             {course.description || "No description has been added for this course yet."}
           </p>
         </div>
-      </div>
+      </Link>
 
       <div className="p-6 pt-0 border-t border-line mt-4 flex items-center justify-between">
         <div>
@@ -62,15 +81,6 @@ export default function StoreCourseCard({
         </div>
 
         <div className="flex items-center gap-2">
-          <button
-            id={`view-details-${course.id}`}
-            type="button"
-            onClick={() => onViewDetails(course)}
-            className="bg-porcelain hover:bg-line/40 text-ink p-2.5 rounded-xl text-sm transition duration-200"
-            title="View Course Details"
-          >
-            <Info className="w-4 h-4" />
-          </button>
           {canPurchase ? (
             <button
               id={`toggle-cart-${course.id}`}
@@ -93,7 +103,7 @@ export default function StoreCourseCard({
               ) : (
                 <>
                   <Plus className="w-3.5 h-3.5" />
-                  Acquire
+                  Add to cart
                 </>
               )}
             </button>

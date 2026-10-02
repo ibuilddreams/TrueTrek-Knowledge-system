@@ -5,6 +5,7 @@ import AuthProvider from "./AuthProvider";
 import QueryProvider from "./QueryProvider";
 import Toaster from "@/components/ui/Toaster";
 import GuestCartSync from "@/components/features/cart/GuestCartSync";
+import GuestWishlistSync from "@/components/features/wishlist/GuestWishlistSync";
 
 export default function AppProviders({ children }) {
   return (
@@ -12,6 +13,7 @@ export default function AppProviders({ children }) {
       <ReduxProvider>
         <AuthProvider>
           <GuestCartSync />
+          <GuestWishlistSync />
           {children}
           <Toaster />
         </AuthProvider>

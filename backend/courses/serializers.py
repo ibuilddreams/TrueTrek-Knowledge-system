@@ -7,6 +7,7 @@ from rest_framework import serializers
 from assignments.models import Assignment
 from common.models import Status
 from common.image import build_absolute_image_url
+from enrollments.models import Enrollment
 from lessons.models import Lesson
 from modules.models import Module
 from quizzes.models import Quiz
@@ -14,6 +15,9 @@ from quizzes.models import Quiz
 from .models import Category, Course, CourseInstructor, Tag
 
 UserModel = get_user_model()
+
+MAX_LEARNING_OUTCOMES = 12
+MAX_LEARNING_OUTCOME_LENGTH = 300
 
 class SimpleCourseSerializer(serializers.ModelSerializer):
     class Meta:
@@ -129,6 +133,16 @@ class PublicCourseListSerializer(CourseListSerializer):
         read_only_fields = fields
 
 
+class PublicCourseRecommendationSerializer(PublicCourseListSerializer):
+    """Public course card plus how many students have purchased/enrolled."""
+
+    purchase_count = serializers.IntegerField(read_only=True)
+
+    class Meta(PublicCourseListSerializer.Meta):
+        fields = PublicCourseListSerializer.Meta.fields + ["purchase_count"]
+        read_only_fields = fields
+
+
 class CourseLessonSerializer(serializers.ModelSerializer):
     file = serializers.SerializerMethodField()
 
@@ -214,6 +228,7 @@ class CourseDetailSerializer(serializers.ModelSerializer):
             "difficulty",
             "duration_minutes",
             "amount",
+            "learning_outcomes",
             "tags",
             "instructors",
             "modules",
@@ -255,13 +270,58 @@ class PublicModuleOutlineSerializer(serializers.ModelSerializer):
         ).data
 
 
+class PublicCourseInstructorSerializer(serializers.ModelSerializer):
+    """Public instructor card for the course page: name, headline, photo, bio
+    and headline numbers — never email or other contact details."""
+
+    name = serializers.CharField(source="instructor.name", read_only=True)
+    user_id = serializers.IntegerField(source="instructor_id", read_only=True)
+    headline = serializers.SerializerMethodField()
+    bio = serializers.SerializerMethodField()
+    avatar = serializers.SerializerMethodField()
+    stats = serializers.SerializerMethodField()
+
+    class Meta:
+        model = CourseInstructor
+        fields = ["id", "user_id", "name", "is_lead", "headline", "bio", "avatar", "stats"]
+        read_only_fields = fields
+
+    def get_headline(self, obj):
+        extras = getattr(obj.instructor, "instructor_profile", None)
+        return extras.headline if extras else ""
+
+    def get_bio(self, obj):
+        profile = getattr(obj.instructor, "profile", None)
+        return profile.bio if profile else ""
+
+    def get_avatar(self, obj):
+        profile = getattr(obj.instructor, "profile", None)
+        return build_absolute_image_url(self.context.get("request"), profile.avatar) if profile else None
+
+    def get_stats(self, obj):
+        from instructors.services import instructor_stats
+
+        return instructor_stats(obj.instructor)
+
+
 class PublicCourseDetailSerializer(PublicCourseListSerializer):
     """Public syllabus only; lesson bodies, media, answer keys and user data stay private."""
     modules = PublicModuleOutlineSerializer(many=True, read_only=True)
+    instructors = PublicCourseInstructorSerializer(many=True, read_only=True)
+    purchase_count = serializers.SerializerMethodField()
 
     class Meta(PublicCourseListSerializer.Meta):
-        fields = PublicCourseListSerializer.Meta.fields + ["modules"]
+        fields = PublicCourseListSerializer.Meta.fields + [
+            "learning_outcomes",
+            "instructors",
+            "purchase_count",
+            "updated_at",
+            "modules",
+        ]
         read_only_fields = fields
+
+    def get_purchase_count(self, obj):
+        return obj.enrollments.exclude(status=Enrollment.EnrollmentStatus.CANCELLED).count()
 
 
 class TeacherSerializer(serializers.ModelSerializer):
@@ -295,6 +355,7 @@ class CourseWriteSerializer(serializers.ModelSerializer):
             "difficulty",
             "duration_minutes",
             "amount",
+            "learning_outcomes",
             "tags",
             "instructors",
         ]
@@ -315,7 +376,33 @@ class CourseWriteSerializer(serializers.ModelSerializer):
             except ValueError:
                 raise serializers.ValidationError({"instructors": "Must be a valid JSON list."})
 
+        outcomes = data.get("learning_outcomes")
+        if isinstance(outcomes, str):
+            try:
+                data["learning_outcomes"] = json.loads(outcomes)
+            except ValueError:
+                raise serializers.ValidationError({"learning_outcomes": "Must be a valid JSON list."})
+
         return super().to_internal_value(data)
+
+    def validate_learning_outcomes(self, value):
+        if not isinstance(value, list):
+            raise serializers.ValidationError("Must be a list of points.")
+        outcomes = []
+        for item in value:
+            if not isinstance(item, str):
+                raise serializers.ValidationError("Each point must be text.")
+            text = " ".join(item.split())
+            if not text:
+                continue
+            if len(text) > MAX_LEARNING_OUTCOME_LENGTH:
+                raise serializers.ValidationError(
+                    f"Each point must be at most {MAX_LEARNING_OUTCOME_LENGTH} characters."
+                )
+            outcomes.append(text)
+        if len(outcomes) > MAX_LEARNING_OUTCOMES:
+            raise serializers.ValidationError(f"Add at most {MAX_LEARNING_OUTCOMES} points.")
+        return outcomes
 
     def validate_title(self, value):
         queryset = Course.objects.filter(title__iexact=value)

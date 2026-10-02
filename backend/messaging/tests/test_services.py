@@ -10,6 +10,7 @@ from ..services import (
     MessageDeleteError,
     MessageEditError,
     MessagingPermissionError,
+    NoAdvisorsAvailableError,
     can_message,
     delete_message,
     edit_message,
@@ -18,6 +19,7 @@ from ..services import (
     get_unread_counts,
     mark_conversation_read,
     send_message,
+    start_advisor_conversation,
     start_conversation,
     toggle_reaction,
 )
@@ -205,6 +207,60 @@ class MessageEditDeleteServiceTests(TestCase):
         delete_message(message, self.admin)
         deleted_again = delete_message(message, self.admin)
         self.assertTrue(deleted_again.is_deleted)
+
+
+class AdvisorConversationServiceTests(TestCase):
+    def setUp(self):
+        self.student = make_user("student@example.com", UserModel.Roles.STUDENT)
+        self.other_student = make_user("other.student@example.com", UserModel.Roles.STUDENT)
+
+    def test_raises_when_no_advisors_available(self):
+        with self.assertRaises(NoAdvisorsAvailableError):
+            start_advisor_conversation(self.student)
+
+    def test_ignores_teachers_not_flagged_as_advisor(self):
+        make_user("teacher@example.com", UserModel.Roles.TEACHER, is_advisor=False)
+        with self.assertRaises(NoAdvisorsAvailableError):
+            start_advisor_conversation(self.student)
+
+    def test_ignores_suspended_advisor(self):
+        make_user(
+            "suspended@example.com",
+            UserModel.Roles.TEACHER,
+            is_advisor=True,
+            account_status=UserModel.AccountStatus.SUSPENDED,
+        )
+        with self.assertRaises(NoAdvisorsAvailableError):
+            start_advisor_conversation(self.student)
+
+    def test_assigns_the_only_available_advisor(self):
+        advisor = make_user("advisor@example.com", UserModel.Roles.TEACHER, is_advisor=True)
+
+        conversation = start_advisor_conversation(self.student)
+
+        self.assertEqual(conversation.conversation_type, Conversation.ConversationType.ADVISOR)
+        self.assertEqual(conversation.other_participant(self.student), advisor)
+
+    def test_asking_again_reuses_the_same_conversation(self):
+        make_user("advisor@example.com", UserModel.Roles.TEACHER, is_advisor=True)
+
+        first = start_advisor_conversation(self.student)
+        second = start_advisor_conversation(self.student)
+
+        self.assertEqual(first.id, second.id)
+        self.assertEqual(Conversation.objects.filter(conversation_type=Conversation.ConversationType.ADVISOR).count(), 1)
+
+    def test_load_balances_across_advisors_by_open_conversation_count(self):
+        busy_advisor = make_user("busy@example.com", UserModel.Roles.TEACHER, is_advisor=True)
+        free_advisor = make_user("free@example.com", UserModel.Roles.TEACHER, is_advisor=True)
+        # Give busy_advisor an existing advisor conversation so they're no
+        # longer the least-loaded candidate.
+        get_or_create_conversation(
+            self.other_student, busy_advisor, conversation_type=Conversation.ConversationType.ADVISOR
+        )
+
+        conversation = start_advisor_conversation(self.student)
+        self.assertEqual(conversation.other_participant(self.student), free_advisor)
 
 
 class MessageReactionServiceTests(TestCase):

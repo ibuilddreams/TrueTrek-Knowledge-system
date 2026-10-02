@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
@@ -13,15 +13,15 @@ import {
 import { motion } from "motion/react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES, getPortalRouteForRole } from "@/constants/routes";
-import { getPublicCourses } from "@/services/coursesService";
+import { getPublicCourseFilters, getPublicCourses } from "@/services/coursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { useCart } from "@/hooks/useCart";
+import { useWishlist } from "@/hooks/useWishlist";
 import { buildAuthUrl } from "@/lib/authRedirect";
 import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
 import Pagination from "@/components/ui/Pagination";
 import StoreCourseCard from "./StoreCourseCard";
-import StoreCourseDetailModal from "./StoreCourseDetailModal";
 import StoreAdvisorSuite from "./StoreAdvisorSuite";
 
 const PAGE_SIZE = 9;
@@ -43,7 +43,14 @@ export default function MerchantStore() {
 
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [page, setPage] = useState(1);
-  const [viewingCourse, setViewingCourse] = useState(null);
+
+  // Deep link from the empty-cart "Popular Topics" chips: /store?category=<id>.
+  useEffect(() => {
+    const categoryParam = new URLSearchParams(window.location.search).get("category");
+    if (categoryParam && /^\d+$/.test(categoryParam)) {
+      setSelectedCategoryId(Number(categoryParam));
+    }
+  }, []);
 
   const onNavigateToPortal = () => router.push(getPortalRouteForRole(role));
 
@@ -73,31 +80,22 @@ export default function MerchantStore() {
   const totalCourses = data?.count || 0;
   const totalPages = Math.max(1, Math.ceil(totalCourses / PAGE_SIZE));
 
-  // Independent, unfiltered fetch used only to populate the category filter
-  // bar — the paginated/filtered query above can't be reused for this, since
-  // once a category is selected its results would only ever contain it.
-  const { data: categorySourceCourses = [] } = useQuery({
-    queryKey: ["store-categories-source"],
+  // Category filter bar: every subject that has published courses, from the
+  // dedicated filters endpoint. (Deriving it from a page of courses would drop
+  // any category whose courses fall outside that page.)
+  const { data: categories = [] } = useQuery({
+    queryKey: ["public-course-filters"],
     queryFn: async () => {
-      const response = await getPublicCourses({ pageSize: 100, excludeEnrolled: true });
-      return response?.data?.results || [];
+      const response = await getPublicCourseFilters();
+      return response?.data?.subjects || [];
     },
     staleTime: 5 * 60 * 1000,
   });
 
-  const categories = useMemo(() => {
-    const map = new Map();
-    categorySourceCourses.forEach((course) => {
-      if (course.category?.id) map.set(course.category.id, course.category);
-    });
-    return Array.from(map.values()).sort((a, b) =>
-      a.name.localeCompare(b.name),
-    );
-  }, [categorySourceCourses]);
-
   // Guests (browser-stored) and students (server-persisted) share the same
   // cart API — see useCart. Teachers/admins get an info toast instead.
   const { isInCart, isPending: isCartActionPending, toggleCourse } = useCart();
+  const wishlist = useWishlist();
 
   // If everything on the current store page just got purchased/enrolled, the
   // refetch after checkout can leave the user stranded on a now-empty page —
@@ -287,8 +285,10 @@ export default function MerchantStore() {
                   isInCart={isInCart(course.id)}
                   isPending={isCartActionPending(course.id)}
                   canPurchase={canUseCart}
-                  onViewDetails={setViewingCourse}
                   onToggleCart={toggleCourse}
+                  isWishlisted={wishlist.isInWishlist(course.id)}
+                  isWishlistPending={wishlist.isPending(course.id)}
+                  onToggleWishlist={canUseCart ? wishlist.toggleCourse : undefined}
                 />
               ))}
             </motion.div>
@@ -304,16 +304,6 @@ export default function MerchantStore() {
         )}
       </div>
 
-      <StoreCourseDetailModal
-        course={viewingCourse}
-        isInCart={viewingCourse ? isInCart(viewingCourse.id) : false}
-        isPending={
-          viewingCourse ? isCartActionPending(viewingCourse.id) : false
-        }
-        canPurchase={canUseCart}
-        onClose={() => setViewingCourse(null)}
-        onToggleCart={toggleCourse}
-      />
     </div>
   );
 }

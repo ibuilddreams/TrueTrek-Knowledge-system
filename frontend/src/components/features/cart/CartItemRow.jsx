@@ -1,9 +1,16 @@
 "use client";
 
-import { BookOpen, Trash2 } from "lucide-react";
+import Link from "next/link";
+import { BookOpen, Heart, Trash2 } from "lucide-react";
+import { ROUTES } from "@/constants/routes";
 import { formatCoursePrice } from "@/lib/store";
 
-export default function CartItemRow({ course, isRemoving = false, onRemove }) {
+export default function CartItemRow({
+  course,
+  isRemoving = false,
+  onRemove,
+  onMoveToWishlist,
+}) {
   return (
     <li
       id={`cart-item-${course.id}`}
@@ -37,7 +44,9 @@ export default function CartItemRow({ course, isRemoving = false, onRemove }) {
             </span>
           </div>
           <h3 className="text-base font-serif font-light tracking-tight text-ink line-clamp-2">
-            {course.title}
+            <Link href={`${ROUTES.STORE}/${course.slug}`} className="hover:text-pine transition-colors">
+              {course.title}
+            </Link>
           </h3>
           <p className="hidden sm:block text-xs text-muted font-light leading-relaxed line-clamp-2">
             {course.description || "No description has been added for this course yet."}
@@ -45,6 +54,7 @@ export default function CartItemRow({ course, isRemoving = false, onRemove }) {
         </div>
 
         <div className="flex items-end justify-between gap-3">
+          <div className="flex flex-wrap items-center gap-x-4 gap-y-1">
           <button
             type="button"
             onClick={() => onRemove(course.id)}
@@ -54,6 +64,18 @@ export default function CartItemRow({ course, isRemoving = false, onRemove }) {
             <Trash2 className="w-3.5 h-3.5" />
             {isRemoving ? "Removing..." : "Remove"}
           </button>
+          {onMoveToWishlist && (
+            <button
+              type="button"
+              onClick={() => onMoveToWishlist(course)}
+              disabled={isRemoving}
+              className="text-muted hover:text-pine font-sans text-[11px] uppercase tracking-widest font-medium flex items-center gap-1.5 disabled:cursor-not-allowed transition-colors"
+            >
+              <Heart className="w-3.5 h-3.5" />
+              Move to wishlist
+            </button>
+          )}
+          </div>
           <span className="text-lg font-sans font-semibold text-ink">
             {formatCoursePrice(course.amount)}
           </span>

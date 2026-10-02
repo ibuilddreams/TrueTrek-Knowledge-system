@@ -14,7 +14,7 @@ function getInitials(title) {
     .toUpperCase();
 }
 
-export default function StudentCourseCard({ enrollment, onClick }) {
+export default function StudentCourseCard({ enrollment, number, onClick }) {
   const course = enrollment.course || {};
   const progress = Math.round(enrollment.completion_percentage || 0);
   // The teacher assigned to *this* enrollment, not just any instructor on the
@@ -50,6 +50,11 @@ export default function StudentCourseCard({ enrollment, onClick }) {
       <div>
         <div className="flex items-center justify-between gap-2 border-b pb-3 mb-4 border-line">
           <div className="flex items-center gap-2 min-w-0">
+            {Number.isFinite(number) ? (
+              <span className="flex items-center justify-center w-6 h-6 rounded-md text-[11px] font-mono font-bold shrink-0 text-pine bg-pine/10 border border-pine/20">
+                {number}
+              </span>
+            ) : null}
             <span className="font-mono text-sm font-bold px-2.5 py-1 rounded-md shrink-0 text-gold bg-gold/12">
               {course.code || getInitials(course.title)}
             </span>

@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
   Target,
@@ -23,6 +24,7 @@ import {
   Building2,
   Users,
   Landmark,
+  Layers,
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import IntroVideo from "@/components/features/media/IntroVideo";
@@ -60,6 +62,99 @@ function useDelayedFlag(active, delayMs) {
 
 // Cycled per advisor card index purely for visual variety in the consult board.
 const ADVISOR_TINTS = ["bg-sky/60", "bg-sage/60", "bg-rose/45", "bg-lavender/60"];
+
+// Cycled per pathway card for the soft corner wash — same idea as ADVISOR_TINTS.
+const PATHWAY_TINTS = [
+  "bg-sky/70",
+  "bg-sage/70",
+  "bg-rose/50",
+  "bg-lavender/70",
+  "bg-mint/70",
+  "bg-gold/25",
+];
+
+// Mirrors PathwayCard's badge wording (components/features/pathways/PathwayCard.jsx)
+// so a pathway reads identically on the home teaser and in the /pathways store.
+// The card itself isn't reused: that one carries select/purchase controls bound
+// to auth + cart state, which this marketing teaser deliberately has none of.
+function getPathwayTierLabel(tiers) {
+  if (!tiers || tiers.length === 0) return "Standalone";
+  if (tiers.length === 1) return `Tier ${tiers[0].level}`;
+  return `${tiers.length} Tiers`;
+}
+
+// Audience role map cards. The two `featured` entries are the tall bookend
+// columns of the bento grid; the rest fill the two middle columns. Artwork is
+// self-hosted under `public/images/home/` (Unsplash-licensed, free for
+// commercial use, no attribution required) rather than hotlinked, so the
+// section renders identically in production without a third-party dependency.
+const AUDIENCE_PROFILES = [
+  {
+    id: "student-athletes",
+    featured: true,
+    tag: "Learner Path",
+    title: "Student-Athletes",
+    description:
+      "Follow a 9-tier roadmap built around recruiting readiness, NIL protection, and performance mindset.",
+    chips: ["Recruiting Readiness", "NIL Compliance"],
+    icon: Target,
+    iconClassName: "bg-sky text-pine",
+    image: "/images/home/student-athletes.jpg",
+  },
+  {
+    id: "scholars-founders",
+    tag: "Creator Track",
+    title: "Scholars & Founders",
+    description:
+      "Structured tracks for academic rigor, venture literacy, and early trademark protection.",
+    icon: GraduationCap,
+    iconClassName: "bg-sage text-pine",
+    image: "/images/home/scholars-founders.jpg",
+  },
+  {
+    id: "parents-families",
+    tag: "Support Circle",
+    title: "Parents & Families",
+    href: "https://learn.coolnerdz.com/",
+    description:
+      "Transparent progress visibility and direct access to our licensed advisory council.",
+    icon: HeartHandshake,
+    iconClassName: "bg-rose/60 text-clay",
+    image: "/images/home/parents-families.jpg",
+  },
+  {
+    id: "institutions-academies",
+    featured: true,
+    tag: "Programs",
+    title: "Institutions & Academies",
+    description:
+      "License the full 9-tier curriculum for your cohort, with compliance-grade reporting built in.",
+    chips: ["Cohort Licensing", "Compliance Reporting"],
+    icon: Building2,
+    iconClassName: "bg-lavender text-pine",
+    image: "/images/home/institutions-academies.jpg",
+  },
+  {
+    id: "coaches-mentors",
+    tag: "Talent Ops",
+    title: "Coaches & Mentors",
+    description:
+      "Recruiting-readiness diagnostics and culture-fit audits built for your roster.",
+    icon: Users,
+    iconClassName: "bg-mint text-pine",
+    image: "/images/home/coaches-mentors.jpg",
+  },
+  {
+    id: "legacy-family-offices",
+    tag: "Stewardship",
+    title: "Legacy & Family Offices",
+    description:
+      "Multi-generational trust architecture and endowment stewardship for high-net-worth families.",
+    icon: Landmark,
+    iconClassName: "bg-gold/15 text-gold",
+    image: "/images/home/legacy-family-offices.jpg",
+  },
+];
 
 export default function Home() {
   const homeRef = useRef(null);
@@ -106,6 +201,7 @@ export default function Home() {
   const router = useRouter();
   const onExploreTiers = () => router.push(ROUTES.CURRICULUM);
   const onNavigateToPortal = () => router.push(ROUTES.STUDENT_PORTAL);
+  const onExplorePathways = () => router.push(ROUTES.PATHWAYS);
   // New/unauthenticated visitors are guided into the onboarding wizard
   // (signup -> questionnaire -> pathway recommendation -> payment) rather
   // than dropped straight into passive browsing, so the hero's primary CTA
@@ -312,7 +408,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       {/* Hero Header Section */}
       <div
         id="hero-header-section"
-        className="max-w-6xl mx-auto px-6 pt-24 pb-20 text-center relative z-10 flex flex-col items-center justify-center min-h-[85vh]"
+        className="max-w-6xl mx-auto px-6 pt-20 pb-14 md:pt-24 md:pb-16 text-center relative z-10 flex flex-col items-center justify-center min-h-[78vh] lg:min-h-0"
       >
         <motion.div
           id="badge-banner"
@@ -376,10 +472,15 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           </button>
         </motion.div>
 
-        {/* Global Impact Dashboard Section */}
+        {/* Global Impact Dashboard Section — temporarily hidden at the
+            client's request. Kept here (not deleted) so it can be dropped
+            straight back in; the reveal observer in this file still
+            references #stats-dashboard, which simply matches nothing while
+            this stays commented out. */}
+        {/*
         <div
           id="stats-dashboard"
-          className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl mt-24 border-t border-line pt-16"
+          className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl mt-14 md:mt-16 border-t border-line pt-10 md:pt-12"
         >
           <div id="stat-students" className="text-center md:text-left">
             <p className="text-4xl md:text-5xl font-serif font-light text-pine tracking-tight">
@@ -409,196 +510,240 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
             </p>
           </div>
         </div>
+        */}
       </div>
 
       {/* Audience Role Map Section */}
       <section
         id="audience-role-map-section"
-        className="bg-transparent border-t border-line py-20 px-6 relative z-10"
+        className="bg-transparent border-t border-line py-14 md:py-16 px-6 relative z-10"
       >
         <div className="max-w-6xl mx-auto">
           <SectionHeading
-            className="mb-12"
+            className="mb-10"
             eyebrow="Who We Serve"
             heading="Built for Every Profile in the Ecosystem"
             subtitle="From the athlete building their recruiting file to the family office stewarding a legacy, the curriculum and advisory council adapt to the role you play."
           />
 
-          <div className="p-3 md:p-4 rounded-panel bg-porcelain/60 border border-line">
-            <div
-              id="audience-cards-grid"
-              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4"
-            >
-              {/* Featured: Student-Athletes */}
-              <div className="relative overflow-hidden isolate lg:row-span-2 p-7 border border-line bg-paper rounded-panel flex flex-col justify-between">
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-14 -bottom-16 w-48 h-48 rounded-full bg-sky/60"
-                ></div>
-                <div className="relative flex items-center justify-between gap-3">
-                  <span className="w-12 h-12 rounded-2xl bg-sky text-pine flex items-center justify-center">
-                    <Target className="w-5 h-5" />
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-paper/90 border border-line text-[10px] font-sans uppercase tracking-widest text-muted font-bold">
-                    Learner Path
-                  </span>
-                </div>
-                <div className="relative mt-10 lg:mt-16">
-                  <h4 className="text-3xl font-serif font-light leading-[0.95] tracking-tight text-ink mb-2.5">
-                    Student-Athletes
-                  </h4>
-                  <p className="text-muted text-sm leading-relaxed">
-                    Follow a 9-tier roadmap built around recruiting readiness,
-                    NIL protection, and performance mindset.
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-5">
-                    <span className="px-2.5 py-1 rounded-full bg-paper/80 border border-line text-[10px] font-sans uppercase tracking-widest text-ink font-semibold">
-                      Recruiting Readiness
-                    </span>
-                    <span className="px-2.5 py-1 rounded-full bg-paper/80 border border-line text-[10px] font-sans uppercase tracking-widest text-ink font-semibold">
-                      NIL Compliance
-                    </span>
-                  </div>
-                </div>
-              </div>
+          <div
+            id="audience-cards-grid"
+            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
+          >
+            {AUDIENCE_PROFILES.map((profile) => {
+              const Icon = profile.icon;
 
-              {/* Scholars & Founders */}
-              <div className="relative overflow-hidden isolate p-6 border border-line bg-paper rounded-card">
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-8 -bottom-10 w-28 h-28 rounded-full bg-sage/60"
-                ></div>
-                <div className="relative flex items-center justify-between gap-3 mb-5">
-                  <span className="w-11 h-11 rounded-2xl bg-sage text-pine flex items-center justify-center">
-                    <GraduationCap className="w-4.5 h-4.5" />
-                  </span>
-                  <span className="px-2.5 py-1 rounded-full bg-paper/90 border border-line text-[9px] font-sans uppercase tracking-widest text-muted font-bold">
-                    Creator Track
-                  </span>
-                </div>
-                <h4 className="relative text-lg font-serif font-light leading-[0.95] tracking-tight text-ink mb-1.5">
-                  Scholars &amp; Founders
-                </h4>
-                <p className="relative text-muted text-xs leading-relaxed">
-                  Structured tracks for academic rigor, venture literacy, and
-                  early trademark protection.
-                </p>
-              </div>
+              // Featured bookends are full-bleed photographic cards: the image
+              // fills the card and the copy sits bottom-anchored on top of it,
+              // so the tall `lg:row-span-2` column never opens a dead gap.
+              if (profile.featured) {
+                return (
+                  <article
+                    key={profile.id}
+                    id={`audience-card-${profile.id}`}
+                    className="group relative isolate flex min-h-[360px] flex-col overflow-hidden rounded-panel border border-line shadow-soft transition duration-500 hover:-translate-y-1 hover:shadow-elevated lg:row-span-2 lg:min-h-0"
+                  >
+                    <img
+                      src={profile.image}
+                      alt=""
+                      loading="lazy"
+                      className="absolute inset-0 -z-10 h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.05]"
+                    />
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/75 to-ink/20"
+                    ></div>
 
-              {/* Parents & Families */}
-              <div className="relative overflow-hidden isolate p-6 border border-line bg-paper rounded-card">
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-8 -bottom-10 w-28 h-28 rounded-full bg-rose/45"
-                ></div>
-                <div className="relative flex items-center justify-between gap-3 mb-5">
-                  <span className="w-11 h-11 rounded-2xl bg-rose/60 text-clay flex items-center justify-center">
-                    <HeartHandshake className="w-4.5 h-4.5" />
-                  </span>
-                  <span className="px-2.5 py-1 rounded-full bg-paper/90 border border-line text-[9px] font-sans uppercase tracking-widest text-muted font-bold">
-                    Support Circle
-                  </span>
-                </div>
-                <h4 className="relative text-lg font-serif font-light leading-[0.95] tracking-tight text-ink mb-1.5">
-                  Parents &amp; Families
-                </h4>
-                <p className="relative text-muted text-xs leading-relaxed">
-                  Transparent progress visibility and direct access to our
-                  licensed advisory council.
-                </p>
-              </div>
-
-              {/* Featured: Institutions & Academies */}
-              <div className="relative overflow-hidden isolate lg:row-span-2 p-7 border border-line bg-paper rounded-panel flex flex-col justify-between">
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-14 -bottom-16 w-48 h-48 rounded-full bg-lavender/60"
-                ></div>
-                <div className="relative flex items-center justify-between gap-3">
-                  <span className="w-12 h-12 rounded-2xl bg-lavender text-pine flex items-center justify-center">
-                    <Building2 className="w-5 h-5" />
-                  </span>
-                  <span className="px-3 py-1 rounded-full bg-paper/90 border border-line text-[10px] font-sans uppercase tracking-widest text-muted font-bold">
-                    Programs
-                  </span>
-                </div>
-                <div className="relative mt-10 lg:mt-16">
-                  <h4 className="text-3xl font-serif font-light leading-[0.95] tracking-tight text-ink mb-2.5">
-                    Institutions &amp; Academies
-                  </h4>
-                  <p className="text-muted text-sm leading-relaxed">
-                    License the full 9-tier curriculum for your cohort, with
-                    compliance-grade reporting built in.
-                  </p>
-                  <div className="flex flex-wrap gap-2 mt-5">
-                    <span className="px-2.5 py-1 rounded-full bg-paper/80 border border-line text-[10px] font-sans uppercase tracking-widest text-ink font-semibold">
-                      Cohort Licensing
+                    <span className="absolute top-5 right-5 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[10px] font-sans font-bold uppercase tracking-widest text-paper backdrop-blur-md">
+                      {profile.tag}
                     </span>
-                    <span className="px-2.5 py-1 rounded-full bg-paper/80 border border-line text-[10px] font-sans uppercase tracking-widest text-ink font-semibold">
-                      Compliance Reporting
+
+                    <div className="mt-auto p-6 lg:p-7">
+                      <span className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/20 bg-white/12 text-paper backdrop-blur-md">
+                        <Icon className="h-5 w-5" />
+                      </span>
+                      <h4 className="mb-3 font-serif text-2xl font-light leading-[1.05] tracking-tight text-paper lg:text-3xl">
+                        {profile.title}
+                      </h4>
+                      <p className="text-sm leading-relaxed text-paper/75">
+                        {profile.description}
+                      </p>
+                      {profile.chips && (
+                        <div className="mt-6 flex flex-wrap gap-2">
+                          {profile.chips.map((chip) => (
+                            <span
+                              key={chip}
+                              className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-sans font-semibold uppercase tracking-widest text-paper/90 backdrop-blur-sm"
+                            >
+                              {chip}
+                            </span>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  </article>
+                );
+              }
+
+              // Cards with an `href` are external links that open in a new tab.
+              const CardTag = profile.href ? "a" : "article";
+              const linkProps = profile.href
+                ? { href: profile.href, target: "_blank", rel: "noopener noreferrer" }
+                : {};
+
+              return (
+                <CardTag
+                  key={profile.id}
+                  id={`audience-card-${profile.id}`}
+                  {...linkProps}
+                  className="group relative flex flex-col overflow-hidden rounded-card border border-line bg-paper shadow-soft transition duration-500 hover:-translate-y-1 hover:border-pine/25 hover:shadow-elevated"
+                >
+                  <div className="relative h-32 overflow-hidden">
+                    <img
+                      src={profile.image}
+                      alt=""
+                      loading="lazy"
+                      className="absolute inset-0 h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.06]"
+                    />
+                    <div
+                      aria-hidden="true"
+                      className="absolute inset-0 bg-gradient-to-t from-ink/55 via-ink/10 to-transparent"
+                    ></div>
+                    <span className="absolute top-3.5 right-3.5 rounded-full border border-line bg-paper/95 px-2.5 py-1 text-[9px] font-sans font-bold uppercase tracking-widest text-pine">
+                      {profile.tag}
                     </span>
                   </div>
-                </div>
-              </div>
 
-              {/* Coaches & Mentors */}
-              <div className="relative overflow-hidden isolate p-6 border border-line bg-paper rounded-card">
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-8 -bottom-10 w-28 h-28 rounded-full bg-mint/60"
-                ></div>
-                <div className="relative flex items-center justify-between gap-3 mb-5">
-                  <span className="w-11 h-11 rounded-2xl bg-mint text-pine flex items-center justify-center">
-                    <Users className="w-4.5 h-4.5" />
-                  </span>
-                  <span className="px-2.5 py-1 rounded-full bg-paper/90 border border-line text-[9px] font-sans uppercase tracking-widest text-muted font-bold">
-                    Talent Ops
-                  </span>
-                </div>
-                <h4 className="relative text-lg font-serif font-light leading-[0.95] tracking-tight text-ink mb-1.5">
-                  Coaches &amp; Mentors
-                </h4>
-                <p className="relative text-muted text-xs leading-relaxed">
-                  Recruiting-readiness diagnostics and culture-fit audits
-                  built for your roster.
-                </p>
-              </div>
-
-              {/* Legacy & Family Offices */}
-              <div className="relative overflow-hidden isolate p-6 border border-line bg-paper rounded-card">
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-8 -bottom-10 w-28 h-28 rounded-full bg-gold/20"
-                ></div>
-                <div className="relative flex items-center justify-between gap-3 mb-5">
-                  <span className="w-11 h-11 rounded-2xl bg-gold/15 text-gold flex items-center justify-center">
-                    <Landmark className="w-4.5 h-4.5" />
-                  </span>
-                  <span className="px-2.5 py-1 rounded-full bg-paper/90 border border-line text-[9px] font-sans uppercase tracking-widest text-muted font-bold">
-                    Stewardship
-                  </span>
-                </div>
-                <h4 className="relative text-lg font-serif font-light leading-[0.95] tracking-tight text-ink mb-1.5">
-                  Legacy &amp; Family Offices
-                </h4>
-                <p className="relative text-muted text-xs leading-relaxed">
-                  Multi-generational trust architecture and endowment
-                  stewardship for high-net-worth families.
-                </p>
-              </div>
-            </div>
+                  <div className="flex flex-1 flex-col p-5">
+                    <div className="mb-3 flex items-center gap-3">
+                      <span
+                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${profile.iconClassName}`}
+                      >
+                        <Icon className="h-4.5 w-4.5" />
+                      </span>
+                      <h4 className="font-serif text-lg font-light leading-[1.1] tracking-tight text-ink">
+                        {profile.title}
+                      </h4>
+                    </div>
+                    <p className="text-xs leading-relaxed text-muted">
+                      {profile.description}
+                    </p>
+                  </div>
+                </CardTag>
+              );
+            })}
           </div>
+        </div>
+      </section>
+
+      {/* Learning Pathways Showcase */}
+      <section
+        id="learning-pathways-section"
+        className="bg-transparent border-t border-line py-14 md:py-16 px-6 relative z-10"
+      >
+        <div className="max-w-6xl mx-auto">
+          <SectionHeading
+            className="mb-10"
+            eyebrow="Guided Learning Pathways"
+            heading="Find the Pathway Built for Your Ambition"
+            subtitle="Each pathway bundles a hand-picked sequence of courses into a single enrolment — ordered so every course builds on the one before it."
+          />
+
+          {isPathwaysLoading && (
+            <div className="flex items-center justify-center min-h-[200px] text-muted font-sans uppercase tracking-widest text-xs font-medium">
+              Loading pathways...
+            </div>
+          )}
+
+          {!isPathwaysLoading && pathways.length === 0 && (
+            <div className="flex items-center justify-center min-h-[200px] text-muted font-sans uppercase tracking-widest text-xs font-medium">
+              No pathways published yet — check back soon.
+            </div>
+          )}
+
+          {!isPathwaysLoading && pathways.length > 0 && (
+            <>
+              <div
+                id="learning-pathways-grid"
+                className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5"
+              >
+                {pathways.slice(0, 6).map((pathway, pathwayIdx) => {
+                  const courseCount = pathway.course_count ?? 0;
+                  return (
+                    <Link
+                      key={pathway.id}
+                      id={`home-pathway-card-${pathway.id}`}
+                      href={`${ROUTES.PATHWAYS}/${pathway.slug}`}
+                      className="group relative isolate flex flex-col overflow-hidden rounded-panel border border-line bg-paper p-6 text-left shadow-soft transition duration-500 hover:-translate-y-1 hover:border-pine/25 hover:shadow-elevated"
+                    >
+                      <div
+                        aria-hidden="true"
+                        className={`pointer-events-none absolute -right-10 -top-12 h-36 w-36 rounded-full blur-2xl opacity-70 transition-opacity duration-500 group-hover:opacity-100 ${
+                          PATHWAY_TINTS[pathwayIdx % PATHWAY_TINTS.length]
+                        }`}
+                      ></div>
+
+                      <div className="relative flex items-center justify-between gap-3">
+                        <span className="font-serif text-3xl font-light leading-none text-ink/25 tabular-nums">
+                          {String(pathwayIdx + 1).padStart(2, "0")}
+                        </span>
+                        <span className="rounded-full border border-line bg-paper/80 px-2.5 py-1 text-[9px] font-sans font-bold uppercase tracking-widest text-pine backdrop-blur-sm">
+                          {getPathwayTierLabel(pathway.tiers)}
+                        </span>
+                      </div>
+
+                      <h3 className="relative mt-6 font-serif text-xl font-light leading-[1.15] tracking-tight text-ink line-clamp-2 transition-colors duration-300 group-hover:text-moss">
+                        {pathway.name}
+                      </h3>
+                      <p className="relative mt-2.5 text-sm font-light leading-relaxed text-muted line-clamp-3">
+                        {pathway.summary ||
+                          "A guided sequence of courses drawn from the 9-tier curriculum."}
+                      </p>
+
+                      <div className="relative mt-auto pt-6">
+                        <div className="flex items-center gap-3 border-t border-line pt-4">
+                          <span className="flex items-center gap-1.5 text-[11px] font-sans font-medium uppercase tracking-widest text-muted">
+                            <Layers className="h-3.5 w-3.5" />
+                            {courseCount} Course{courseCount === 1 ? "" : "s"}
+                          </span>
+                          <span className="ml-auto font-sans text-base font-semibold text-ink">
+                            {formatCoursePrice(pathway.base_price)}
+                          </span>
+                        </div>
+                        <span className="mt-4 flex items-center gap-1.5 text-xs font-sans font-semibold uppercase tracking-widest text-moss">
+                          Explore Pathway
+                          <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
+                        </span>
+                      </div>
+                    </Link>
+                  );
+                })}
+              </div>
+
+              <div className="mt-10 flex justify-center">
+                <button
+                  id="btn-view-all-pathways"
+                  type="button"
+                  onClick={onExplorePathways}
+                  className="inline-flex items-center gap-2 rounded-full border border-line bg-paper px-8 py-3.5 text-sm font-semibold tracking-wide text-ink transition duration-300 hover:bg-porcelain"
+                >
+                  View All Pathways
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </>
+          )}
         </div>
       </section>
 
       {/* Cinematic Walkthrough Broadcast Section */}
       <section
         id="cinematic-walkthrough-section"
-        className="bg-transparent border-t border-line py-20 px-6 relative z-10"
+        className="bg-transparent border-t border-line py-14 md:py-16 px-6 relative z-10"
       >
         <div className="max-w-6xl mx-auto">
           <SectionHeading
-            className="mb-12"
+            className="mb-10"
             eyebrow="Multi-Channel Orientation Broadcast"
             heading="Step Inside the Academy Briefing Room"
             subtitle="Explore the interactive dashboard, browse core orientation channels, and auto-track high-compliance transcript decoders with Amanda Ross, Esq. and Dr. Simone Chen."
@@ -611,11 +756,11 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       {/* Profile Discovery Segment (Bento Panel) */}
       <section
         id="pathway-audit-section"
-        className="bg-transparent border-t border-line py-20 px-6"
+        className="bg-transparent border-t border-line py-14 md:py-16 px-6"
       >
         <div className="max-w-6xl mx-auto">
           <SectionHeading
-            className="mb-16"
+            className="mb-12"
             eyebrow="Custom Diagnostics"
             heading="Determine Your TrueTrek Learning Pathway"
             subtitle="Select your high-potential profile archetype below and see your recommended developmental curriculum, custom metrics, and action blueprint."
@@ -772,13 +917,13 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       {/* Inline Academy live advisor interactive board */}
       <section
         id="live-advisors-consultation-section"
-        className="bg-transparent border-t border-line py-20 px-6 relative overflow-hidden z-10"
+        className="bg-transparent border-t border-line py-14 md:py-16 px-6 relative overflow-hidden z-10"
       >
         <div
           id="inline-consult-glow"
           className="absolute -top-12 -left-12 w-80 h-80 rounded-full bg-gold/10 blur-[100px] pointer-events-none"
         ></div>
-        <div className="max-w-6xl mx-auto space-y-12 relative z-10">
+        <div className="max-w-6xl mx-auto space-y-10 relative z-10">
           <SectionHeading
             eyebrow="Live Consulting Board"
             heading="Connect With the Senior Advisory Council"
@@ -974,10 +1119,10 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       {/* Curated Core Philosophies */}
       <section
         id="philosophies-section"
-        className="py-20 px-6 max-w-6xl mx-auto"
+        className="py-14 md:py-16 px-6 max-w-6xl mx-auto"
       >
         <SectionHeading
-          className="mb-14"
+          className="mb-10"
           eyebrow="Our Approach"
           heading="Principles That Shape Every Tier"
           subtitle="Three commitments run through the entire 9-tier curriculum, from the first orientation module to the final legacy briefing."
@@ -1046,7 +1191,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       {/* FAQ Section */}
       <section
         id="faq-section"
-        className="py-24 px-6 border-t border-line bg-transparent relative z-10"
+        className="py-14 md:py-16 px-6 border-t border-line bg-transparent relative z-10"
       >
         <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
           {/* Left Column: Heading and Badge */}
@@ -1125,7 +1270,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       </section>
 
       {/* Closing Enrollment CTA */}
-      <section id="enrollment-cta-section" className="py-20 px-6 relative z-10">
+      <section id="enrollment-cta-section" className="py-14 md:py-16 px-6 relative z-10">
         <div className="max-w-6xl mx-auto">
           <div
             id="enrollment-cta-card"

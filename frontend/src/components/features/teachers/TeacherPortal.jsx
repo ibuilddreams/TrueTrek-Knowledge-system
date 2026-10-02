@@ -12,8 +12,10 @@ import {
   FileText,
   FileWarning,
   LineChart,
+  MessageCircleQuestion,
   Scale,
   ShieldAlert,
+  UserRound,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTeacherEnrolledStudents } from "@/hooks/useTeacherEnrolledStudents";
@@ -32,6 +34,8 @@ import InstructionalManualsTab from "./tabs/InstructionalManualsTab";
 import CurriculumDocumentsTab from "./tabs/CurriculumDocumentsTab";
 import RequestsTab from "./tabs/RequestsTab";
 import StudentConcernsTab from "./tabs/StudentConcernsTab";
+import InstructorProfileTab from "./tabs/InstructorProfileTab";
+import AdvisorQuestionsTab from "./tabs/AdvisorQuestionsTab";
 
 const TEACHER_TABS = [
   {
@@ -39,6 +43,12 @@ const TEACHER_TABS = [
     label: "Analytics Dashboard",
     icon: TrendingUp,
     title: "Switch tab to Faculty Analytics Dashboard",
+  },
+  {
+    id: "profile",
+    label: "Public Profile",
+    icon: UserRound,
+    title: "Manage your public instructor profile and read student feedback",
   },
   {
     id: "requests",
@@ -70,6 +80,13 @@ const TEACHER_TABS = [
     label: "War Room",
     icon: Scale,
     title: "Course group chat with your students",
+  },
+  {
+    id: "advisor",
+    label: "Advisor Questions",
+    icon: MessageCircleQuestion,
+    title: "Questions from students you've been assigned to advise",
+    advisorOnly: true,
   },
   {
     id: "progress",
@@ -111,7 +128,7 @@ function TeacherPortalContent() {
     loadEnrolledStudents,
   } = useTeacherEnrolledStudents();
 
-  const { isAuthenticated, role } = useAuth();
+  const { isAuthenticated, role, user } = useAuth();
   const isFacultyLoggedIn = isAuthenticated && role === AUTH_ROLES.FACULTY;
 
   const activeTab = useMemo(
@@ -155,7 +172,7 @@ function TeacherPortalContent() {
     [pathname, router, searchParams],
   );
 
-  const tabs = TEACHER_TABS.map((tab) =>
+  const tabs = TEACHER_TABS.filter((tab) => !tab.advisorOnly || user?.isAdvisor).map((tab) =>
     tab.id === "students"
       ? { ...tab, label: `${tab.label} (${studentsTotal || students.length})` }
       : tab,
@@ -244,9 +261,11 @@ function TeacherPortalContent() {
         {activeTab === "courses" && <MyCoursesTab />}
         {activeTab === "students" && <EnrollmentScoresTab />}
         {activeTab === "warroom" && <WarRoomScreen />}
+        {activeTab === "advisor" && user?.isAdvisor && <AdvisorQuestionsTab />}
         {activeTab === "progress" && <ProgressTab />}
         {activeTab === "manuals" && <InstructionalManualsTab />}
         {activeTab === "documents" && <CurriculumDocumentsTab />}
+        {activeTab === "profile" && <InstructorProfileTab />}
         {activeTab === "requests" && <RequestsTab />}
         {activeTab === "concerns" && <StudentConcernsTab />}
       </TabTransition>
