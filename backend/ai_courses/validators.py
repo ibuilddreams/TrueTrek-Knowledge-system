@@ -17,6 +17,15 @@ from quizzes.question_repair import repair_question as _repair_question
 
 MAX_TITLE_LENGTH = 255
 
+# Caps for the course page's "What you'll learn" bullets. Mirrors the limits
+# CourseWriteSerializer enforces on Course.learning_outcomes
+# (courses/serializers.py) — the writer goes straight through the ORM, so this
+# layer is the only thing standing between the provider and that field.
+MAX_LEARNING_OUTCOMES = 12
+MAX_LEARNING_OUTCOME_LENGTH = 300
+# Only ever used to tell the model how many bullets to aim for (prompts/course.py).
+MIN_LEARNING_OUTCOMES = 4
+
 
 class PlanValidationError(Exception):
     """Raised when the plan cannot produce a usable course at all — malformed JSON,
@@ -159,6 +168,62 @@ def _repair_module(entry, index, form_payload, warnings):
     }
 
 
+def _repair_learning_outcomes(raw_outcomes, objectives, warnings):
+    """Normalise the provider's "what you'll learn" bullets the same way
+    CourseWriteSerializer would, falling back to the plan's objectives so the
+    course page is never left with an empty list."""
+
+    def _clean(values, source_label):
+        cleaned = []
+        seen = set()
+        for value in values:
+            if not isinstance(value, str):
+                warnings.append(f"A {source_label} bullet was not text and was dropped.")
+                continue
+            # Collapse newlines/runs of spaces exactly like the course serializer,
+            # and strip any bullet character the model prefixed despite the prompt.
+            text = " ".join(value.split()).lstrip("-*• ").strip()
+            if not text:
+                continue
+            if len(text) > MAX_LEARNING_OUTCOME_LENGTH:
+                warnings.append(
+                    f"A {source_label} bullet was longer than "
+                    f"{MAX_LEARNING_OUTCOME_LENGTH} characters and was truncated."
+                )
+                text = text[:MAX_LEARNING_OUTCOME_LENGTH].rstrip()
+            key = text.lower()
+            if key in seen:
+                warnings.append(f"A duplicate {source_label} bullet was dropped ('{text}').")
+                continue
+            seen.add(key)
+            cleaned.append(text)
+        return cleaned
+
+    outcomes = _clean(raw_outcomes if isinstance(raw_outcomes, list) else [], "learning outcome")
+
+    if not outcomes:
+        outcomes = _clean(objectives, "learning objective")
+        if outcomes:
+            warnings.append(
+                "Provider returned no \"what you'll learn\" points — the course objectives "
+                "were used instead."
+            )
+
+    if len(outcomes) > MAX_LEARNING_OUTCOMES:
+        warnings.append(
+            f"Provider returned more than {MAX_LEARNING_OUTCOMES} \"what you'll learn\" "
+            "points — the extras were dropped."
+        )
+        outcomes = outcomes[:MAX_LEARNING_OUTCOMES]
+
+    if not outcomes:
+        warnings.append(
+            "The course has no \"what you'll learn\" points — add them before publishing."
+        )
+
+    return outcomes
+
+
 def _check_objectives_coverage(objectives, modules, warnings):
     haystack = " ".join(
         f"{module['title']} {module['description']}" for module in modules
@@ -221,9 +286,14 @@ def validate_and_repair(raw_text, form_payload, max_modules):
 
     _check_objectives_coverage(objectives, modules, warnings)
 
+    learning_outcomes = _repair_learning_outcomes(
+        data.get("learning_outcomes"), objectives, warnings
+    )
+
     normalized_plan = {
         "summary": summary,
         "objectives": objectives,
+        "learning_outcomes": learning_outcomes,
         "modules": modules,
     }
     return normalized_plan, warnings

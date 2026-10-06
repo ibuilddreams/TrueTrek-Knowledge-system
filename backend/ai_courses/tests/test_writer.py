@@ -51,7 +51,12 @@ def _normalized_plan(module_count=2):
                 "assignment": {"instructions": "Do the thing."},
             }
         )
-    return {"summary": "A generated course.", "objectives": ["Learn"], "modules": modules}
+    return {
+        "summary": "A generated course.",
+        "objectives": ["Learn"],
+        "learning_outcomes": ["Build a recruiting plan", "Read an NIL term sheet"],
+        "modules": modules,
+    }
 
 
 class WriteCourseTreeTests(TestCase):
@@ -72,6 +77,21 @@ class WriteCourseTreeTests(TestCase):
         }
         payload.update(overrides)
         return payload
+
+    def test_learning_outcomes_from_the_plan_are_saved_on_the_course(self):
+        course = write_course_tree(_normalized_plan(1), self._form_payload())
+
+        self.assertEqual(
+            course.learning_outcomes, ["Build a recruiting plan", "Read an NIL term sheet"]
+        )
+
+    def test_plan_without_learning_outcomes_leaves_an_empty_list(self):
+        plan = _normalized_plan(1)
+        plan.pop("learning_outcomes")
+
+        course = write_course_tree(plan, self._form_payload())
+
+        self.assertEqual(course.learning_outcomes, [])
 
     def test_writes_full_tree_with_correct_orders(self):
         course = write_course_tree(_normalized_plan(2), self._form_payload())

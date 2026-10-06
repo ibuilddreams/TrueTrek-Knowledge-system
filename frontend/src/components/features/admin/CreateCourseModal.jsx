@@ -438,14 +438,14 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
           </div>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 items-stretch">
+          <div className="flex flex-col">
             <label className={LABEL_CLASS}>Status</label>
             <select
               value={form.status}
               onChange={updateField("status")}
               disabled={isBusy || isLoadingOptions}
-              className={FIELD_CLASS}
+              className={`${FIELD_CLASS} mt-auto`}
             >
               {statusOptions.length === 0 && <option value={form.status}>Loading...</option>}
               {statusOptions.map((option) => (
@@ -457,13 +457,13 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
             {fieldErrors.status && <p className={ERROR_CLASS}>{fieldErrors.status}</p>}
           </div>
 
-          <div>
+          <div className="flex flex-col">
             <label className={LABEL_CLASS}>Difficulty</label>
             <select
               value={form.difficulty}
               onChange={updateField("difficulty")}
               disabled={isBusy}
-              className={FIELD_CLASS}
+              className={`${FIELD_CLASS} mt-auto`}
             >
               {DIFFICULTY_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -473,20 +473,20 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
             </select>
           </div>
 
-          <div>
-            <label className={LABEL_CLASS}>Duration (minutes)</label>
+          <div className="flex flex-col">
+            <label className={LABEL_CLASS}>Duration (min)</label>
             <input
               type="number"
               min="0"
               value={form.duration_minutes}
               onChange={updateField("duration_minutes")}
               disabled={isBusy}
-              className={FIELD_CLASS}
+              className={`${FIELD_CLASS} mt-auto`}
             />
             {fieldErrors.duration_minutes && <p className={ERROR_CLASS}>{fieldErrors.duration_minutes}</p>}
           </div>
 
-          <div>
+          <div className="flex flex-col">
             <label className={LABEL_CLASS}>Amount ($)</label>
             <input
               type="text"
@@ -496,7 +496,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
               onBlur={handleAmountBlur}
               disabled={isBusy}
               placeholder="0.00"
-              className={FIELD_CLASS}
+              className={`${FIELD_CLASS} mt-auto`}
             />
             {fieldErrors.amount && <p className={ERROR_CLASS}>{fieldErrors.amount}</p>}
           </div>

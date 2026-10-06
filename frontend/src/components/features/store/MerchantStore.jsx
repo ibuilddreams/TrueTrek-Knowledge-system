@@ -1,26 +1,26 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
 import { keepPreviousData, useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
-  LogIn,
   RefreshCw,
+  RotateCcw,
+  SearchX,
   ShoppingBag,
   Store,
 } from "lucide-react";
 import { motion } from "motion/react";
 import { useAuth } from "@/hooks/useAuth";
-import { ROUTES, getPortalRouteForRole } from "@/constants/routes";
 import { getPublicCourseFilters, getPublicCourses } from "@/services/coursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { useCart } from "@/hooks/useCart";
+import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useWishlist } from "@/hooks/useWishlist";
-import { buildAuthUrl } from "@/lib/authRedirect";
 import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
 import Pagination from "@/components/ui/Pagination";
+import SearchBar from "@/components/ui/SearchBar";
 import StoreCourseCard from "./StoreCourseCard";
 import StoreAdvisorSuite from "./StoreAdvisorSuite";
 
@@ -32,8 +32,7 @@ const PAGE_SIZE = 9;
 const SHOW_PROCUREMENT_ADVISOR = false;
 
 export default function MerchantStore() {
-  const router = useRouter();
-  const { isAuthenticated, isStudent, role, user } = useAuth();
+  const { isAuthenticated, isStudent } = useAuth();
 
   // Only students can own a cart / purchase — teachers and admins can still
   // browse and view course details, they just don't get cart functionality.
@@ -42,7 +41,12 @@ export default function MerchantStore() {
   const canUseCart = !isAuthenticated || isStudent;
 
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
+  const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+
+  // Debounced so typing doesn't fire a request per keystroke; trimmed so
+  // trailing whitespace doesn't look like a different search to the query cache.
+  const searchTerm = useDebouncedValue(search).trim();
 
   // Deep link from the empty-cart "Popular Topics" chips: /store?category=<id>.
   useEffect(() => {
@@ -52,22 +56,32 @@ export default function MerchantStore() {
     }
   }, []);
 
-  const onNavigateToPortal = () => router.push(getPortalRouteForRole(role));
-
   function handleSelectCategory(categoryId) {
     setSelectedCategoryId(categoryId);
     setPage(1);
   }
 
-  // Paginated, server-filtered by category — mirrors the curriculum page's
-  // fetching pattern exactly, including keepPreviousData so the grid doesn't
-  // flash empty while switching pages/categories.
+  function handleSearchChange(value) {
+    setSearch(value);
+    setPage(1);
+  }
+
+  function handleClearFilters() {
+    setSelectedCategoryId(null);
+    setSearch("");
+    setPage(1);
+  }
+
+  // Paginated, with search and category both applied server-side — mirrors the
+  // curriculum page's fetching pattern exactly, including keepPreviousData so
+  // the grid doesn't flash empty while switching pages or searching.
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
-    queryKey: ["store-public-courses", page, selectedCategoryId],
+    queryKey: ["store-public-courses", page, selectedCategoryId, searchTerm],
     queryFn: async () => {
       const response = await getPublicCourses({
         page,
         pageSize: PAGE_SIZE,
+        search: searchTerm || undefined,
         category: selectedCategoryId || undefined,
         excludeEnrolled: true,
       });
@@ -91,6 +105,8 @@ export default function MerchantStore() {
     },
     staleTime: 5 * 60 * 1000,
   });
+
+  const activeFilterCount = [selectedCategoryId, search.trim()].filter(Boolean).length;
 
   // Guests (browser-stored) and students (server-persisted) share the same
   // cart API — see useCart. Teachers/admins get an info toast instead.
@@ -138,56 +154,20 @@ export default function MerchantStore() {
       </div>
 
       <div className="max-w-6xl mx-auto px-6 mt-12">
-        {/* Role-aware status banner — reuses the same banner slot the promo/coupon banner used to occupy */}
-        <div
-          className={`border border-line rounded-2xl p-4 mb-10 flex flex-col md:flex-row items-center justify-between gap-4 ${
-            isAuthenticated ? "bg-sage/40" : "bg-porcelain"
-          }`}
-        >
-          {isAuthenticated ? (
-            <>
-              <p className="text-sm text-ink/80 font-sans leading-relaxed">
-                <span className="font-sans font-bold text-moss uppercase tracking-widest text-xs mr-2">
-                  [SIGNED IN]
-                </span>
-                Signed in as {user?.name || user?.email}.{" "}
-                {isStudent
-                  ? "Add courses to your cart below."
-                  : "Cart and purchasing are available to student accounts only."}
-              </p>
-              <button
-                type="button"
-                onClick={onNavigateToPortal}
-                className="text-xs font-sans font-medium uppercase tracking-widest bg-pine hover:bg-moss text-paper px-4 py-2 rounded-full transition duration-200 shadow-sm shrink-0"
-              >
-                Open My Portal →
-              </button>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-ink/80 font-sans leading-relaxed">
-                <span className="font-sans font-bold text-gold uppercase tracking-widest text-xs mr-2">
-                  [BROWSING AS GUEST]
-                </span>
-                Add courses to your cart as you browse — you'll sign in as a
-                student when you're ready to check out.
-              </p>
-              <button
-                type="button"
-                onClick={() => router.push(buildAuthUrl(ROUTES.LOGIN, ROUTES.STORE))}
-                className="text-xs font-sans font-medium uppercase tracking-widest bg-pine hover:bg-moss text-paper px-4 py-2 rounded-full transition duration-200 shadow-sm shrink-0 flex items-center gap-1.5"
-              >
-                <LogIn className="w-3 h-3" />
-                Sign In
-              </button>
-            </>
-          )}
-        </div>
-
         {SHOW_PROCUREMENT_ADVISOR && <StoreAdvisorSuite />}
 
+        <SearchBar
+          id="store-search"
+          size="lg"
+          className="w-full mb-6"
+          inputClassName="bg-paper font-sans"
+          value={search}
+          onChange={handleSearchChange}
+          placeholder="Search courses by title or description..."
+        />
+
         {/* Categories Bar */}
-        <div className="flex flex-wrap items-center gap-2 border-b border-line pb-5 mb-10">
+        <div className="flex flex-wrap items-center gap-2 border-b border-line pb-4 mb-4">
           <button
             id="store-cat-btn-all"
             type="button"
@@ -216,6 +196,35 @@ export default function MerchantStore() {
             </button>
           ))}
         </div>
+
+        {(!isError || activeFilterCount > 0) && (
+          <div className="mb-6 flex items-center gap-4">
+            {!isError && (
+              <p
+                id="store-results-summary"
+                aria-live="polite"
+                className="text-xs font-sans text-muted"
+              >
+                {isLoading
+                  ? "Loading courses…"
+                  : `${totalCourses} course${totalCourses === 1 ? "" : "s"}${
+                      searchTerm ? ` matching “${searchTerm}”` : ""
+                    }`}
+              </p>
+            )}
+            {activeFilterCount > 0 && (
+              <button
+                id="store-clear-filters"
+                type="button"
+                onClick={handleClearFilters}
+                className="ml-auto flex shrink-0 items-center gap-1.5 text-xs font-sans font-medium uppercase tracking-widest text-muted transition hover:text-ink"
+              >
+                <RotateCcw className="h-3.5 w-3.5" />
+                Clear filters ({activeFilterCount})
+              </button>
+            )}
+          </div>
+        )}
 
         {isLoading && (
           <div
@@ -251,16 +260,28 @@ export default function MerchantStore() {
         {!isLoading && !isError && courses.length === 0 && (
           <div className="rounded-2xl border border-dashed border-line bg-paper/70">
             <EmptyState
-              icon={Store}
+              icon={activeFilterCount > 0 ? SearchX : Store}
               label={
-                selectedCategoryId === null
-                  ? "No courses published yet"
-                  : "No matching courses"
+                activeFilterCount > 0
+                  ? "No matching courses"
+                  : "No courses published yet"
               }
               description={
-                selectedCategoryId === null
-                  ? "Check back soon — new courses are added regularly."
-                  : "Try selecting a different category filter."
+                activeFilterCount > 0
+                  ? "Try a different search term or clear your filters."
+                  : "Check back soon — new courses are added regularly."
+              }
+              action={
+                activeFilterCount > 0 ? (
+                  <button
+                    type="button"
+                    onClick={handleClearFilters}
+                    className="inline-flex items-center gap-1.5 px-5 py-2.5 font-sans text-xs font-medium uppercase tracking-widest rounded-full transition bg-pine hover:bg-moss text-paper"
+                  >
+                    <RotateCcw className="w-3.5 h-3.5" />
+                    Clear filters
+                  </button>
+                ) : undefined
               }
               size="lg"
             />

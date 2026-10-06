@@ -232,6 +232,14 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@truetrek.edu')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini')
 AI_MODEL = os.getenv('AI_MODEL', 'gemini-3.6-flash')
+# Course generation only: a second model to try when AI_MODEL itself is
+# unavailable. Gemini answers 503 "this model is currently experiencing high
+# demand" per model — measured directly against this key, gemini-3.6/3.7/3.8-flash
+# all refused the course-generation request within seconds while gemini-3.5-flash
+# served the identical structured request in ~6s. Without this, an overloaded
+# primary model is simply a failed generation the admin has to retry by hand.
+# Set to an empty string to disable the fallback and fail on the primary model.
+AI_FALLBACK_MODEL = os.getenv('AI_FALLBACK_MODEL', 'gemini-3.5-flash')
 # Used by the advisor app's live chat instead of AI_MODEL — AI_MODEL is a
 # "thinking" model (real-world testing showed 10-20s+ per reply, all of it
 # spent on internal reasoning tokens with nothing visible to stream), which is

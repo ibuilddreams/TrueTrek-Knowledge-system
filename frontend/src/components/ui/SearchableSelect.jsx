@@ -41,18 +41,49 @@ export default function SearchableSelect({
     return options.filter((option) => option.label.toLowerCase().includes(normalizedQuery));
   }, [options, query]);
 
-  useEffect(() => {
-    if (!isOpen) return;
+  // Dismissing the dropdown with an outside click must not also hand that click
+  // to whatever sits underneath it. These selects are used inside Modal, whose
+  // backdrop closes the whole dialog on click, so clicking the backdrop to shut
+  // the dropdown used to close the entire form with it — one click, two actions.
+  // Closing happens on mousedown (as before); the click that follows is then
+  // swallowed in the capture phase, before React's root listener can route it to
+  // the backdrop.
+  //
+  // Both listeners are bound for the component's lifetime rather than scoped to
+  // `isOpen`: setIsOpen(false) re-renders and would tear down an isOpen-scoped
+  // effect before the click event arrives, taking the swallower with it.
+  const isOpenRef = useRef(false);
+  const swallowNextClickRef = useRef(false);
 
-    const handleClickOutside = (event) => {
+  useEffect(() => {
+    isOpenRef.current = isOpen;
+  }, [isOpen]);
+
+  useEffect(() => {
+    const handleMouseDown = (event) => {
+      // A fresh gesture clears any flag a previous one left behind (a drag that
+      // ended outside the window never produces a click).
+      swallowNextClickRef.current = false;
+      if (!isOpenRef.current) return;
       if (containerRef.current && containerRef.current.contains(event.target)) return;
       if (popupRef.current && popupRef.current.contains(event.target)) return;
       setIsOpen(false);
+      swallowNextClickRef.current = true;
     };
 
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, [isOpen]);
+    const handleClickCapture = (event) => {
+      if (!swallowNextClickRef.current) return;
+      swallowNextClickRef.current = false;
+      event.stopPropagation();
+    };
+
+    document.addEventListener("mousedown", handleMouseDown);
+    document.addEventListener("click", handleClickCapture, true);
+    return () => {
+      document.removeEventListener("mousedown", handleMouseDown);
+      document.removeEventListener("click", handleClickCapture, true);
+    };
+  }, []);
 
   useEffect(() => {
     if (!isOpen) {
