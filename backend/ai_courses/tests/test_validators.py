@@ -14,8 +14,15 @@ FORM_PAYLOAD = {
 }
 
 
-def _plan(modules):
-    return json.dumps({"summary": "A course.", "objectives": ["Learn things"], "modules": modules})
+def _plan(modules, **extra):
+    plan = {
+        "summary": "A course.",
+        "objectives": ["Learn things"],
+        "learning_outcomes": ["Build a recruiting plan"],
+        "modules": modules,
+    }
+    plan.update(extra)
+    return json.dumps(plan)
 
 
 def _module(title="Module", items=None):
@@ -215,3 +222,78 @@ class ValidateAndRepairTests(SimpleTestCase):
         ]
         # Not every question should have the correct answer in the same slot.
         self.assertTrue(len(set(positions)) > 1)
+
+
+class LearningOutcomesTests(SimpleTestCase):
+    """The course page's "What you'll learn" bullets (Course.learning_outcomes).
+    The writer goes straight through the ORM, so these caps are enforced here or
+    nowhere."""
+
+    def _normalized(self, **plan_overrides):
+        normalized, warnings = validate_and_repair(
+            _plan([_module(items=[_lesson()])], **plan_overrides), FORM_PAYLOAD, max_modules=12
+        )
+        return normalized["learning_outcomes"], warnings
+
+    def test_provider_outcomes_are_kept_and_normalized(self):
+        outcomes, warnings = self._normalized(
+            learning_outcomes=["  Negotiate   an NIL deal\n", "- Read a term sheet"]
+        )
+
+        self.assertEqual(outcomes, ["Negotiate an NIL deal", "Read a term sheet"])
+        # Nothing about the bullets themselves needed repairing (the module-shape
+        # warnings this minimal fixture produces are not what this test is about).
+        self.assertFalse(any("bullet" in w or "what you'll learn" in w for w in warnings))
+
+    def test_blank_and_non_text_entries_are_dropped(self):
+        outcomes, warnings = self._normalized(learning_outcomes=["Draft a cap table", "", "   ", 7])
+
+        self.assertEqual(outcomes, ["Draft a cap table"])
+        self.assertTrue(any("not text" in w for w in warnings))
+
+    def test_duplicate_outcomes_are_dropped(self):
+        outcomes, warnings = self._normalized(
+            learning_outcomes=["Draft a cap table", "draft a cap table"]
+        )
+
+        self.assertEqual(outcomes, ["Draft a cap table"])
+        self.assertTrue(any("duplicate" in w for w in warnings))
+
+    def test_long_outcome_is_truncated(self):
+        outcomes, warnings = self._normalized(learning_outcomes=["x" * 400])
+
+        self.assertEqual(len(outcomes[0]), 300)
+        self.assertTrue(any("truncated" in w for w in warnings))
+
+    def test_outcome_count_is_capped(self):
+        outcomes, warnings = self._normalized(
+            learning_outcomes=[f"Outcome number {i}" for i in range(20)]
+        )
+
+        self.assertEqual(len(outcomes), 12)
+        self.assertTrue(any("extras were dropped" in w for w in warnings))
+
+    def test_falls_back_to_objectives_when_provider_returns_none(self):
+        outcomes, warnings = self._normalized(learning_outcomes=[])
+
+        self.assertEqual(outcomes, ["Learn things"])
+        self.assertTrue(any("objectives" in w for w in warnings))
+
+    def test_falls_back_to_the_admins_objectives_when_the_plan_has_none(self):
+        normalized, _ = validate_and_repair(
+            _plan([_module(items=[_lesson()])], objectives=[], learning_outcomes=[]),
+            {**FORM_PAYLOAD, "objectives": ["Understand NCAA eligibility rules"]},
+            max_modules=12,
+        )
+
+        self.assertEqual(normalized["learning_outcomes"], ["Understand NCAA eligibility rules"])
+
+    def test_missing_outcomes_with_no_objectives_warns_instead_of_failing(self):
+        normalized, warnings = validate_and_repair(
+            _plan([_module(items=[_lesson()])], objectives=[], learning_outcomes=[]),
+            FORM_PAYLOAD,
+            max_modules=12,
+        )
+
+        self.assertEqual(normalized["learning_outcomes"], [])
+        self.assertTrue(any("before publishing" in w for w in warnings))

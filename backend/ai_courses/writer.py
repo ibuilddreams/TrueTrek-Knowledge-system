@@ -58,6 +58,10 @@ def write_course_tree(normalized_plan, form_payload):
             code=_unique_code(form_payload["title"]),
             slug=_unique_slug(form_payload["title"]),
             description=form_payload.get("description") or normalized_plan.get("summary", ""),
+            # The course page's "What you'll learn" bullets — already normalised and
+            # capped by validators._repair_learning_outcomes, since this write skips
+            # CourseWriteSerializer entirely.
+            learning_outcomes=normalized_plan.get("learning_outcomes") or [],
             category=form_payload["category"],
             difficulty=form_payload["difficulty"],
             amount=form_payload.get("amount") or 0,

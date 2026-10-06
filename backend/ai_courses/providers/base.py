@@ -8,7 +8,24 @@ class ProviderTransportError(Exception):
 
 
 class ProviderError(Exception):
-    """Any other provider failure (bad key, bad request, quota exceeded). Not retried."""
+    """Any other provider failure (bad key, bad request). Not retried."""
+
+
+class ProviderQuotaError(ProviderError):
+    """The request was rejected because this model's quota or rate limit is spent
+    (HTTP 429). A subclass of ProviderError so every existing `except ProviderError`
+    handler keeps working, but callers that have a second model configured can catch
+    it specifically: the quota is per model, so retrying the *same* model is
+    pointless while another model may answer immediately.
+
+    `retry_after_seconds` is Google's own RetryInfo hint when it sends one — a
+    per-minute rate limit reports seconds, an exhausted daily quota reports hours.
+    """
+
+    def __init__(self, message, retry_after_seconds=None, model=None):
+        super().__init__(message)
+        self.retry_after_seconds = retry_after_seconds
+        self.model = model
 
 
 @dataclass

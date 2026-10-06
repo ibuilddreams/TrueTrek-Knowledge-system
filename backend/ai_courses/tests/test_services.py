@@ -3,13 +3,18 @@ from datetime import timedelta
 from decimal import Decimal
 from unittest.mock import patch
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
-from django.test import TestCase
+from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from ai_courses import services
 from ai_courses.models import AICourseGeneration
-from ai_courses.providers.base import ProviderResult
+from ai_courses.providers.base import (
+    ProviderError,
+    ProviderQuotaError,
+    ProviderResult,
+)
 from courses.models import Category, Course
 
 UserModel = get_user_model()
@@ -57,6 +62,18 @@ class FlakyProvider:
 
             raise ProviderTransportError("simulated transient network error")
         return ProviderResult(text=self.text, input_tokens=100, output_tokens=200)
+
+
+class RaisingProvider:
+    """Raises the same error on every call — for the permanent-failure paths."""
+
+    def __init__(self, exc):
+        self.exc = exc
+        self.calls = 0
+
+    def generate_course(self, prompt, response_schema, timeout):
+        self.calls += 1
+        raise self.exc
 
 
 class ConcurrencyAndQuotaTests(TestCase):
@@ -195,6 +212,7 @@ class RunGenerationTests(TestCase):
             {
                 "summary": "s",
                 "objectives": [],
+                "learning_outcomes": ["Build a working plan"],
                 "modules": [
                     {
                         "title": "M1",
@@ -235,6 +253,7 @@ class RunGenerationTests(TestCase):
             {
                 "summary": "s",
                 "objectives": [],
+                "learning_outcomes": ["Build a working plan"],
                 "modules": [
                     {
                         "title": "M1",
@@ -254,6 +273,60 @@ class RunGenerationTests(TestCase):
         job.refresh_from_db()
         self.assertEqual(job.status, GenerationStatus.SUCCEEDED)
 
+    def test_retry_delay_backs_off_exponentially_within_bounds(self):
+        # The 503s that motivated this: three flat 2s retries gave the overloaded
+        # model only ~4s to recover, so every attempt burned inside ~14s.
+        delays = [services._retry_delay(attempt) for attempt in range(1, 6)]
+
+        for attempt, delay in enumerate(delays, start=1):
+            base = min(
+                services.TRANSPORT_RETRY_BACKOFF_SECONDS * (2 ** (attempt - 1)),
+                services.TRANSPORT_RETRY_MAX_BACKOFF_SECONDS,
+            )
+            # Jitter only ever adds, and never more than a quarter of the base.
+            self.assertGreaterEqual(delay, base)
+            self.assertLessEqual(delay, base * 1.25)
+
+        self.assertGreater(delays[3], delays[0])
+        # One backoff plus one full-length attempt must still leave the stale-job
+        # reaper unable to mistake a retrying job for an orphaned one.
+        self.assertLess(
+            services.TRANSPORT_RETRY_MAX_BACKOFF_SECONDS * 1.25 + settings.AI_REQUEST_TIMEOUT,
+            settings.AI_STALE_JOB_THRESHOLD_SECONDS,
+        )
+
+    @override_settings(AI_FALLBACK_MODEL="")
+    def test_every_retry_waits_longer_than_the_last(self):
+        job = self._create_job()
+        provider = FlakyProvider("unused", fail_times=99)
+        slept = []
+        with patch("ai_courses.services.get_provider", return_value=provider):
+            with patch("ai_courses.services.time.sleep", side_effect=slept.append):
+                services._run_generation(job.id)
+
+        self.assertEqual(len(slept), services.MAX_TRANSPORT_ATTEMPTS - 1)
+        self.assertEqual(slept, sorted(slept))
+
+    def test_cancelling_during_the_retry_window_stops_further_provider_calls(self):
+        job = self._create_job()
+        provider = FlakyProvider("unused", fail_times=99)
+
+        def cancel_instead_of_sleeping(_seconds):
+            AICourseGeneration.objects.filter(pk=job.id).update(
+                status=GenerationStatus.CANCELLED
+            )
+
+        with patch("ai_courses.services.get_provider", return_value=provider):
+            with patch("ai_courses.services.time.sleep", side_effect=cancel_instead_of_sleeping):
+                services._run_generation(job.id)
+
+        # The first attempt failed, the admin cancelled during the backoff, and no
+        # second call was billed.
+        self.assertEqual(provider.calls, 1)
+        job.refresh_from_db()
+        self.assertEqual(job.status, GenerationStatus.CANCELLED)
+
+    @override_settings(AI_FALLBACK_MODEL="")
     def test_transport_error_fails_cleanly_after_exhausting_all_retries(self):
         job = self._create_job()
         provider = FlakyProvider("unused", fail_times=99)
@@ -267,11 +340,168 @@ class RunGenerationTests(TestCase):
         self.assertIsNone(job.course)
         self.assertIn("simulated transient network error", job.error_message)
 
+    @override_settings(AI_MODEL="primary-model", AI_FALLBACK_MODEL="backup-model")
+    def test_falls_back_to_the_backup_model_when_the_primary_is_overloaded(self):
+        # The real failure this exists for: Gemini answers 503 "this model is
+        # currently experiencing high demand" per model, so the primary can be
+        # refusing every call while another model serves the same request fine.
+        plan_json = json.dumps(
+            {
+                "summary": "s",
+                "objectives": [],
+                "learning_outcomes": ["Build a working plan"],
+                "modules": [
+                    {
+                        "title": "M1",
+                        "description": "",
+                        "items": [{"kind": "lesson", "title": "L1", "body": "content", "estimated_minutes": 10}],
+                    }
+                ],
+            }
+        )
+        primary = FlakyProvider("unused", fail_times=99)
+        backup = StubProvider(plan_json)
+        providers = {"primary-model": primary, "backup-model": backup}
+        job = self._create_job()
+
+        with patch(
+            "ai_courses.services.get_provider",
+            side_effect=lambda model=None: providers[model or "primary-model"],
+        ):
+            with patch("ai_courses.services.time.sleep"):
+                services._run_generation(job.id)
+
+        self.assertEqual(primary.calls, services.MAX_TRANSPORT_ATTEMPTS)
+        job.refresh_from_db()
+        self.assertIsNotNone(job.course)
+        # Usable, but the admin is told a different model wrote it.
+        self.assertEqual(job.status, GenerationStatus.PARTIAL)
+        self.assertIn("backup-model", job.warnings[0])
+
+    @override_settings(AI_MODEL="primary-model", AI_FALLBACK_MODEL="backup-model")
+    def test_failure_message_names_both_models_when_neither_is_available(self):
+        primary = FlakyProvider("unused", fail_times=99)
+        backup = FlakyProvider("unused", fail_times=99)
+        providers = {"primary-model": primary, "backup-model": backup}
+        job = self._create_job()
+
+        with patch(
+            "ai_courses.services.get_provider",
+            side_effect=lambda model=None: providers[model or "primary-model"],
+        ):
+            with patch("ai_courses.services.time.sleep"):
+                services._run_generation(job.id)
+
+        self.assertEqual(primary.calls, services.MAX_TRANSPORT_ATTEMPTS)
+        self.assertEqual(backup.calls, services.MAX_TRANSPORT_ATTEMPTS)
+        job.refresh_from_db()
+        self.assertEqual(job.status, GenerationStatus.FAILED)
+        self.assertIn("primary-model", job.error_message)
+        self.assertIn("backup-model", job.error_message)
+
+    @override_settings(AI_MODEL="primary-model", AI_FALLBACK_MODEL="backup-model")
+    def test_quota_error_skips_retries_and_goes_straight_to_the_backup_model(self):
+        # A 429 is per model and Google's own hint can be "retry in 13h" — retrying
+        # the same model is a guaranteed second rejection, but the backup model has
+        # its own quota.
+        plan_json = json.dumps(
+            {
+                "summary": "s",
+                "objectives": [],
+                "learning_outcomes": ["Build a working plan"],
+                "modules": [
+                    {
+                        "title": "M1",
+                        "description": "",
+                        "items": [{"kind": "lesson", "title": "L1", "body": "content", "estimated_minutes": 10}],
+                    }
+                ],
+            }
+        )
+        primary = RaisingProvider(ProviderQuotaError("quota spent", retry_after_seconds=49225))
+        backup = StubProvider(plan_json)
+        providers = {"primary-model": primary, "backup-model": backup}
+        job = self._create_job()
+
+        with patch(
+            "ai_courses.services.get_provider",
+            side_effect=lambda model=None: providers[model or "primary-model"],
+        ):
+            with patch("ai_courses.services.time.sleep") as sleep:
+                services._run_generation(job.id)
+
+        self.assertEqual(primary.calls, 1)
+        sleep.assert_not_called()
+        job.refresh_from_db()
+        self.assertIsNotNone(job.course)
+        self.assertEqual(job.status, GenerationStatus.PARTIAL)
+
+    @override_settings(AI_MODEL="primary-model", AI_FALLBACK_MODEL="backup-model")
+    def test_quota_failure_message_is_readable_and_names_the_reset_time(self):
+        exc = ProviderQuotaError("You exceeded your current quota.", retry_after_seconds=49225)
+        providers = {
+            "primary-model": RaisingProvider(exc),
+            "backup-model": RaisingProvider(exc),
+        }
+        job = self._create_job()
+
+        with patch(
+            "ai_courses.services.get_provider",
+            side_effect=lambda model=None: providers[model or "primary-model"],
+        ):
+            services._run_generation(job.id)
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, GenerationStatus.FAILED)
+        self.assertIn("quota is used up", job.error_message)
+        self.assertIn("13h 40m", job.error_message)
+        self.assertIn("primary-model", job.error_message)
+        self.assertIn("backup-model", job.error_message)
+
+    @override_settings(AI_MODEL="primary-model", AI_FALLBACK_MODEL="backup-model")
+    def test_a_rejected_request_does_not_waste_a_call_on_the_backup_model(self):
+        # A bad key or bad request is rejected identically by every model.
+        primary = RaisingProvider(ProviderError("Gemini rejected the request (400): API key not valid."))
+        backup = RaisingProvider(ProviderError("should never be called"))
+        providers = {"primary-model": primary, "backup-model": backup}
+        job = self._create_job()
+
+        with patch(
+            "ai_courses.services.get_provider",
+            side_effect=lambda model=None: providers[model or "primary-model"],
+        ):
+            services._run_generation(job.id)
+
+        self.assertEqual(primary.calls, 1)
+        self.assertEqual(backup.calls, 0)
+        job.refresh_from_db()
+        self.assertEqual(job.status, GenerationStatus.FAILED)
+        self.assertIn("API key not valid", job.error_message)
+
+    def test_humanize_seconds_formats_quota_reset_hints(self):
+        self.assertEqual(services._humanize_seconds(49225), "13h 40m")
+        self.assertEqual(services._humanize_seconds(42), "42s")
+        self.assertEqual(services._humanize_seconds(600), "10m")
+        self.assertIsNone(services._humanize_seconds(0))
+        self.assertIsNone(services._humanize_seconds(None))
+
+    @override_settings(AI_MODEL="same-model", AI_FALLBACK_MODEL="same-model")
+    def test_fallback_is_skipped_when_it_is_the_same_model(self):
+        provider = FlakyProvider("unused", fail_times=99)
+        job = self._create_job()
+
+        with patch("ai_courses.services.get_provider", return_value=provider):
+            with patch("ai_courses.services.time.sleep"):
+                services._run_generation(job.id)
+
+        self.assertEqual(provider.calls, services.MAX_TRANSPORT_ATTEMPTS)
+
     def test_successful_generation_links_course_and_sets_succeeded(self):
         plan_json = json.dumps(
             {
                 "summary": "s",
                 "objectives": [],
+                "learning_outcomes": ["Build a working plan"],
                 "modules": [
                     {
                         "title": "M1",
@@ -296,6 +526,7 @@ class RunGenerationTests(TestCase):
             {
                 "summary": "s",
                 "objectives": [],
+                "learning_outcomes": ["Build a working plan"],
                 "modules": [
                     {
                         "title": "M1",

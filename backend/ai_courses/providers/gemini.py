@@ -1,8 +1,57 @@
 import requests
 
-from .base import AIProvider, ProviderError, ProviderResult, ProviderTransportError
+from .base import (
+    AIProvider,
+    ProviderError,
+    ProviderQuotaError,
+    ProviderResult,
+    ProviderTransportError,
+)
 
 GEMINI_API_BASE = "https://generativelanguage.googleapis.com/v1beta"
+
+
+def _parse_retry_delay(value):
+    """Google's RetryInfo sends a protobuf duration string like "49225s"."""
+    if not isinstance(value, str) or not value.endswith("s"):
+        return None
+    try:
+        return float(value[:-1])
+    except ValueError:
+        return None
+
+
+def _describe_error(response):
+    """Returns (message, retry_after_seconds) for an error response.
+
+    Google's error bodies are deeply nested JSON whose `message` carries several
+    sentences, doc URLs and an embedded quota dump. Putting that raw text in front
+    of an admin (it ended up rendered verbatim in the generation modal) is what
+    this avoids: take the first sentence, which is the actual reason, and read the
+    retry hint from the structured `details` rather than parsing it back out of
+    prose.
+    """
+    try:
+        error = response.json().get("error") or {}
+    except ValueError:
+        error = {}
+    if not isinstance(error, dict):
+        error = {}
+
+    message = str(error.get("message") or "").strip()
+    retry_after = None
+    for detail in error.get("details") or []:
+        if isinstance(detail, dict) and str(detail.get("@type", "")).endswith("RetryInfo"):
+            retry_after = _parse_retry_delay(detail.get("retryDelay"))
+
+    # First sentence only — the rest is links and a metric dump.
+    first_sentence = message.split("\n")[0].split(". ")[0].strip().rstrip(".")
+    if first_sentence:
+        message = f"{first_sentence}."
+    else:
+        message = (response.text or "").strip()[:200] or "no details given"
+
+    return message, retry_after
 
 
 class GeminiProvider(AIProvider):
@@ -60,10 +109,12 @@ class GeminiProvider(AIProvider):
             raise ProviderTransportError(
                 f"Gemini returned a server error ({response.status_code})."
             )
+        if response.status_code == 429:
+            message, retry_after = _describe_error(response)
+            raise ProviderQuotaError(message, retry_after_seconds=retry_after, model=self.model)
         if response.status_code >= 400:
-            raise ProviderError(
-                f"Gemini rejected the request ({response.status_code}): {response.text[:500]}"
-            )
+            message, _ = _describe_error(response)
+            raise ProviderError(f"Gemini rejected the request ({response.status_code}): {message}")
 
         try:
             data = response.json()

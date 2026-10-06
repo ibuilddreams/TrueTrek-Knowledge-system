@@ -15,6 +15,9 @@ import {
 import Modal from "@/components/ui/Modal";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import MultiSelect from "@/components/ui/MultiSelect";
+import LearningOutcomesField, {
+  cleanLearningOutcomes,
+} from "@/components/features/courses/LearningOutcomesField";
 import { getCategories } from "@/services/categoriesService";
 import { getTeachers } from "@/services/teachersService";
 import { getAdminTiers } from "@/services/tiersService";
@@ -65,7 +68,6 @@ const INITIAL_FORM = {
   difficulty: "BEGINNER",
   amount: "0",
   target_audience: "",
-  objectives: "",
   tier: "",
   modules_count: "6",
   lessons_per_module: "4",
@@ -131,6 +133,7 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
   const [jobId, setJobId] = useState(null);
   const [form, setForm] = useState(INITIAL_FORM);
   const [selectedInstructorIds, setSelectedInstructorIds] = useState([]);
+  const [objectives, setObjectives] = useState([]);
   const [fieldErrors, setFieldErrors] = useState({});
   const [displayProgress, setDisplayProgress] = useState(5);
   const [elapsedSeconds, setElapsedSeconds] = useState(0);
@@ -149,6 +152,7 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
     setJobId(null);
     setForm(INITIAL_FORM);
     setSelectedInstructorIds([]);
+    setObjectives([]);
     setFieldErrors({});
     savedRef.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -337,10 +341,7 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
     instructors: selectedInstructorIds,
     amount: form.amount || "0",
     target_audience: form.target_audience.trim(),
-    objectives: form.objectives
-      .split("\n")
-      .map((line) => line.trim())
-      .filter(Boolean),
+    objectives: cleanLearningOutcomes(objectives),
     tier: form.tier ? Number(form.tier) : null,
     modules_count: Number(form.modules_count),
     lessons_per_module: Number(form.lessons_per_module),
@@ -527,8 +528,13 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
 
           {step === 2 && (
             <div className="space-y-4">
+              <p className="text-[11px] font-mono text-muted">
+                Everything on this step is optional — it steers the AI&apos;s tone and
+                coverage. Skip it and the AI decides for itself.
+              </p>
+
               <div>
-                <label className={LABEL_CLASS}>Target Audience (optional)</label>
+                <label className={LABEL_CLASS}>Target Audience</label>
                 <input
                   type="text"
                   value={form.target_audience}
@@ -537,25 +543,28 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
                   className={FIELD_CLASS}
                   autoComplete="off"
                 />
-              </div>
-
-              <div>
-                <label className={LABEL_CLASS}>Learning Objectives (optional, one per line)</label>
-                <textarea
-                  value={form.objectives}
-                  onChange={updateField("objectives")}
-                  placeholder={"Understand NCAA eligibility rules\nBuild a recruiting highlight reel"}
-                  rows={4}
-                  className={`${FIELD_CLASS} resize-none`}
-                />
                 <p className="mt-1.5 text-[11px] font-mono text-muted">
-                  Leave blank and the AI will propose objectives itself.
+                  Who the course is written for — sets the reading level, tone, and the
+                  kind of examples used.
                 </p>
               </div>
 
+              <LearningOutcomesField
+                values={objectives}
+                onChange={(next) => {
+                  setObjectives(next);
+                  setFieldErrors((prev) => ({ ...prev, objectives: null }));
+                }}
+                error={fieldErrors.objectives}
+                label="Learning Objectives"
+                hint={`Teaching targets every module must cover between them. Leave this empty and the AI proposes its own — either way it writes the course's "What you'll learn" points for you.`}
+                placeholderExample="Understand NCAA eligibility rules"
+                itemNoun="objective"
+              />
+
               <div>
                 <SearchableSelect size="lg"
-                  label="Tier Context (optional)"
+                  label="Tier Context"
                   placeholder="No tier context"
                   searchPlaceholder="Search tiers..."
                   options={tierOptions}
@@ -808,12 +817,29 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
               {job.status === "FAILED" && (
                 <>
                   <p className="text-sm font-bold text-ink">Generation failed</p>
-                  <p className="text-sm text-muted mt-1">{job.error_message}</p>
+                  <p className="text-[11px] font-mono text-muted mt-0.5">
+                    No course was created — nothing was saved.
+                  </p>
                 </>
               )}
               {job.status === "CANCELLED" && <p className="text-sm font-bold text-ink">Generation cancelled</p>}
             </div>
           </div>
+
+          {job.status === "FAILED" && job.error_message && (
+            <div className="mb-4 p-3 rounded-xl border border-red-200 bg-red-50/70">
+              <p className="text-[11px] font-mono uppercase tracking-wider text-red-700 font-semibold mb-2 flex items-center gap-1.5">
+                <AlertTriangle className="w-3.5 h-3.5" />
+                What went wrong
+              </p>
+              {/* Capped and wrapped: generations that failed before the provider
+                  errors were parsed server-side still carry a raw JSON body here,
+                  and unbounded it filled the whole dialog. */}
+              <p className="text-xs text-red-800 leading-relaxed max-h-40 overflow-y-auto break-words whitespace-pre-wrap">
+                {job.error_message}
+              </p>
+            </div>
+          )}
 
           {job.warnings?.length > 0 && (
             <div className="mb-4 p-3 rounded-xl border border-gold/25 bg-gold/12">

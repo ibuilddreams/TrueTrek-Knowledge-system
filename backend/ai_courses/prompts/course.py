@@ -5,7 +5,13 @@ stored on every AICourseGeneration row so a bad revision is traceable back to th
 exact prompt that produced it (plan §7.1).
 """
 
-PROMPT_VERSION = "v1"
+from ..validators import (
+    MAX_LEARNING_OUTCOME_LENGTH,
+    MAX_LEARNING_OUTCOMES,
+    MIN_LEARNING_OUTCOMES,
+)
+
+PROMPT_VERSION = "v2"
 
 # Gemini structured-output schema (responseSchema). Field names mirror plan §8.2
 # exactly. The AI is only ever asked for teaching content — identity, ordering,
@@ -16,6 +22,7 @@ RESPONSE_SCHEMA = {
     "properties": {
         "summary": {"type": "STRING"},
         "objectives": {"type": "ARRAY", "items": {"type": "STRING"}},
+        "learning_outcomes": {"type": "ARRAY", "items": {"type": "STRING"}},
         "modules": {
             "type": "ARRAY",
             "items": {
@@ -71,7 +78,7 @@ RESPONSE_SCHEMA = {
             },
         },
     },
-    "required": ["summary", "objectives", "modules"],
+    "required": ["summary", "objectives", "learning_outcomes", "modules"],
 }
 
 
@@ -148,6 +155,13 @@ Structure requirements:
   student must submit.
 - estimated_minutes should be a realistic positive integer for how long the lesson or
   assignment takes to complete.
+- Also return "learning_outcomes": {MIN_LEARNING_OUTCOMES}-{MAX_LEARNING_OUTCOMES} student-facing "what you'll learn"
+  bullets for the course page, written for someone deciding whether to enroll. Each one
+  must be a single sentence of at most {MAX_LEARNING_OUTCOME_LENGTH} characters that starts with an action verb and
+  names a concrete capability the student walks away with (for example "Negotiate an NIL
+  deal using a term sheet you can read line by line"). Do not number them, do not prefix
+  them with bullet characters, do not repeat one another, and only promise things the
+  modules above actually teach.
 {additional_block}
 Respond with JSON matching the provided response schema exactly. Do not include any
 text outside the JSON object."""
