@@ -198,13 +198,6 @@ export default function AudienceDetail({ slug }) {
 
           <div className={styles.artwork}>
             <img src={profile.image} alt="" className={styles.image} fetchPriority="high" />
-            <div className={styles.imageCaption}>
-              <span className={styles.captionIcon}><BookOpen aria-hidden="true" className="h-5 w-5" /></span>
-              <div>
-                <span className={styles.captionEyebrow}>Your next chapter</span>
-                <p>Build skills. Create possibilities.</p>
-              </div>
-            </div>
           </div>
         </div>
       </header>
