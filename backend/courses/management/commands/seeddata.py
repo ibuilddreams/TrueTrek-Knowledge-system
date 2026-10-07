@@ -25,7 +25,14 @@ from modules.models import Module
 from onboarding.models import OnboardingProgress
 from onboarding.models import Question as OnboardingQuestion
 from onboarding.models import QuestionOption, QuestionOptionPathwayWeight
-from pathways.models import Pathway, PathwayBundleRule, PathwayCourse, PathwayEnrollment
+from pathways.audience_defaults import DEFAULT_PATHWAY_AUDIENCES
+from pathways.models import (
+    Audience,
+    Pathway,
+    PathwayBundleRule,
+    PathwayCourse,
+    PathwayEnrollment,
+)
 from progress.models import CourseProgress, LearningActivity, LessonProgress, ModuleProgress
 from quizzes.models import Choice
 from quizzes.models import Question as QuizQuestion
@@ -154,7 +161,7 @@ INSTRUCTOR_FEEDBACK_POOL = [
 # the instructor's own courses so no unverifiable credentials are invented.
 INSTRUCTOR_BIO_TEMPLATES = [
     (
-        "I'm {first}, an instructor at TrueTrek Learning. I teach {course_count} courses spanning "
+        "I'm {first}, an instructor at Cool Nerds. I teach {course_count} courses spanning "
         "{subjects}, built around trusted programs from {providers}.\n\n"
         "My goal is simple: make every lesson clear, structured and easy to come back to. Each course "
         "I lead pairs guided lessons with practice assignments and quizzes, so you always know exactly "
@@ -162,14 +169,14 @@ INSTRUCTOR_BIO_TEMPLATES = [
         "Whether you're starting fresh or reviewing, I'll help you build confidence one module at a time."
     ),
     (
-        "Hello, I'm {first}. At TrueTrek Learning I guide learners through {course_count} courses in "
+        "Hello, I'm {first}. At Cool Nerds I guide learners through {course_count} courses in "
         "{subjects}, using materials from {providers}.\n\n"
         "I believe good teaching starts with a clear path. That's why every course I lead is broken "
         "into short modules with readings, assignments and a quiz, so progress is always visible.\n\n"
         "Bring your questions, work at your own pace, and let's make learning something you look forward to."
     ),
     (
-        "I'm {first} and I love helping learners succeed. My {course_count} courses on TrueTrek Learning "
+        "I'm {first} and I love helping learners succeed. My {course_count} courses on Cool Nerds "
         "cover {subjects}, drawing on programs from {providers}.\n\n"
         "You'll find a steady rhythm in my courses: a short lesson, focused practice, then a quiz to "
         "check understanding. It's a simple approach that keeps things manageable and builds real mastery.\n\n"
@@ -205,7 +212,7 @@ def build_instructor_profile(first_name, course_defs, index):
     elif top_subjects:
         headline = f"{top_subjects[0]} educator"
     else:
-        headline = "Instructor at TrueTrek Learning"
+        headline = "Instructor at Cool Nerds"
 
     bio = INSTRUCTOR_BIO_TEMPLATES[index % len(INSTRUCTOR_BIO_TEMPLATES)].format(
         first=first_name,
@@ -975,6 +982,10 @@ ALL_GRADE_LABELS = sorted({course_def["grade_label"] for course_def in COURSE_DE
 
 # Pathways shown on the home page — each bundles a themed subset of the courses
 # above. `course_codes` order determines PathwayCourse.order (display order).
+# Each pathway carries exactly ten courses — the depth the 6 October 2026
+# curriculum review set as the working expectation for an audience to feel
+# complete. `course_codes` are COURSE_DEFS codes, and their list order becomes
+# each PathwayCourse.order.
 PATHWAY_DEFS = [
     {
         "key": "parent_homeschool",
@@ -985,7 +996,10 @@ PATHWAY_DEFS = [
             "covering core academics, study skills, and progress tracking."
         ),
         "base_price": 199,
-        "course_codes": ["ABEKA-ARITH-1", "BUNDLE-MEM-READING-2", "V4-069216", "BJU-AMHER-1"],
+        "course_codes": [
+            "ABEKA-ARITH-1", "BUNDLE-MEM-READING-2", "V4-069216", "BJU-AMHER-1", "OM-K",
+            "OM-1", "OM-2", "OM-3", "WAYGO-WRT-3", "MP-PRIMA"
+        ],
     },
     {
         "key": "education_academic",
@@ -996,7 +1010,10 @@ PATHWAY_DEFS = [
             "structured, standards-aligned course of study."
         ),
         "base_price": 179,
-        "course_codes": ["SM-DM-6", "BUNDLE-MEM-READING-6", "MB-EARTHSCI", "ABEKA-HIST-6", "MP-FF1"],
+        "course_codes": [
+            "SM-DM-6", "BUNDLE-MEM-READING-6", "MB-EARTHSCI", "ABEKA-HIST-6", "MP-FF1",
+            "OM-6", "OM-7", "OM-8", "WAYGO-WRT-6", "MP-COMP1"
+        ],
     },
     {
         "key": "ivy_league",
@@ -1007,7 +1024,10 @@ PATHWAY_DEFS = [
             "highly selective universities — advanced coursework paired with application strategy."
         ),
         "base_price": 299,
-        "course_codes": ["OM-ADVMATH", "MB-ADVBIO", "BJU-ECON", "OM-BRITLIT", "MP-HENLE1", "OM-COMP1"],
+        "course_codes": [
+            "OM-ADVMATH", "MB-ADVBIO", "BJU-ECON", "OM-BRITLIT", "MP-HENLE1", "OM-COMP1",
+            "OM-CALC1", "APOL-ADVCHEM", "OM-WORLDLIT", "MP-MATLOG"
+        ],
     },
     {
         "key": "athlete_sports",
@@ -1018,7 +1038,10 @@ PATHWAY_DEFS = [
             "and competition schedules, without falling behind on coursework."
         ),
         "base_price": 249,
-        "course_codes": ["APOL-HEALTH", "OM-HEALTH", "OM-7", "MB-STEWARD"],
+        "course_codes": [
+            "APOL-HEALTH", "OM-HEALTH", "OM-7", "MB-STEWARD", "MB-ANATOMY", "OM-PSYCH",
+            "OM-MEDIA", "OM-SUSTAIN", "MP-LOGIC1", "OM-COMP1"
+        ],
     },
     {
         "key": "business",
@@ -1029,7 +1052,10 @@ PATHWAY_DEFS = [
             "literacy — practical, real-world-oriented coursework."
         ),
         "base_price": 229,
-        "course_codes": ["MB-BIBLICAL-ECON", "MB-STEWARD", "BJU-ECON", "AOP-ECON"],
+        "course_codes": [
+            "MB-BIBLICAL-ECON", "MB-STEWARD", "BJU-ECON", "AOP-ECON", "OM-ECON", "MP-MATLOG",
+            "OM-COMP2", "BJU-GOVT", "OM-ADVMATH", "OM-MEDIA"
+        ],
     },
     {
         "key": "international_student",
@@ -1040,7 +1066,10 @@ PATHWAY_DEFS = [
             "including academic and language-readiness coursework."
         ),
         "base_price": 259,
-        "course_codes": ["MP-HENLE1", "MP-FF1", "OM-BRITLIT", "BJU-GOVT"],
+        "course_codes": [
+            "MP-HENLE1", "MP-FF1", "OM-BRITLIT", "BJU-GOVT", "OM-WORLDLIT", "OM-WORLDGEO",
+            "OM-WORLDHIST", "OM-COMP1", "MP-SF", "OM-ETHNIC"
+        ],
     },
     {
         "key": "the_blueprint",
@@ -1051,7 +1080,10 @@ PATHWAY_DEFS = [
             "strategy, and highlight-tape fundamentals, before mistakes become expensive."
         ),
         "base_price": 199,
-        "course_codes": ["OM-HEALTH", "APOL-HEALTH", "MP-LOGIC1"],
+        "course_codes": [
+            "OM-HEALTH", "APOL-HEALTH", "MP-LOGIC1", "OM-8", "OM-7", "MP-LOGIC2",
+            "MB-STEWARD", "WAYGO-WRT-7", "OM-COMP1", "OM-PSYCH"
+        ],
     },
     {
         "key": "athletic_recruiting",
@@ -1062,7 +1094,10 @@ PATHWAY_DEFS = [
             "building a personal brand college programs notice."
         ),
         "base_price": 199,
-        "course_codes": ["OM-PSYCH", "OM-MEDIA", "OM-HEALTH"],
+        "course_codes": [
+            "OM-PSYCH", "OM-MEDIA", "OM-HEALTH", "OM-COMP1", "OM-COMP2", "OM-PHOTO",
+            "OM-DESIGN", "MB-STEWARD", "MP-LOGIC1", "BJU-ECON"
+        ],
     },
     {
         "key": "trade_vocational",
@@ -1073,7 +1108,10 @@ PATHWAY_DEFS = [
             "traditional 4-year degree — practical business and technical foundations."
         ),
         "base_price": 179,
-        "course_codes": ["MB-STEWARD", "OM-SUSTAIN", "MP-LOGIC1"],
+        "course_codes": [
+            "MB-STEWARD", "OM-SUSTAIN", "MP-LOGIC1", "MB-BIBLICAL-ECON", "AOP-ECON",
+            "OM-DESIGN", "OM-PHOTO", "WAYGO-WRT-7", "OM-COMP1", "MP-LOGIC2"
+        ],
     },
     {
         "key": "elite_athlete_business",
@@ -1084,7 +1122,10 @@ PATHWAY_DEFS = [
             "athletes at the top of their recruiting class or already competing at the college level."
         ),
         "base_price": 279,
-        "course_codes": ["MB-BIBLICAL-ECON", "OM-PSYCH", "BJU-ECON"],
+        "course_codes": [
+            "MB-BIBLICAL-ECON", "OM-PSYCH", "BJU-ECON", "OM-MEDIA", "MB-STEWARD", "AOP-ECON",
+            "OM-COMP2", "BJU-GOVT", "OM-PHOTO", "MP-MATLOG"
+        ],
     },
     {
         "key": "strategic_analytics",
@@ -1095,7 +1136,70 @@ PATHWAY_DEFS = [
             "data-informed decision-making."
         ),
         "base_price": 249,
-        "course_codes": ["MP-MATLOG", "OM-ADVMATH", "OM-COMP1"],
+        "course_codes": [
+            "MP-MATLOG", "OM-ADVMATH", "OM-COMP1", "OM-CALC1", "OM-CALC2", "CK12-PRECALC",
+            "MP-LOGIC1", "MP-LOGIC2", "OM-MEDIA", "OM-ECON"
+        ],
+    },
+    {
+        "key": "life_after_sports",
+        "name": "Life After Sports Pathway",
+        "summary": "Earning, deciding and building once the competing stops — for athletes and anyone starting over.",
+        "description": (
+            "The fifth audience from the October curriculum review: what comes after school or "
+            "sport. Money management, contracts and economics, clear writing, and the judgement "
+            "to run something of your own rather than wait to be picked."
+        ),
+        "base_price": 229,
+        "course_codes": [
+            "MB-STEWARD", "MB-BIBLICAL-ECON", "AOP-ECON", "OM-PSYCH", "OM-COMP1", "OM-COMP2",
+            "MP-LOGIC1", "OM-MEDIA", "OM-SUSTAIN", "BJU-GOVT"
+        ],
+    },
+    {
+        "key": "life_skills_literacy",
+        "name": "Life Skills & Financial Literacy Pathway",
+        "summary": "Money, judgement and composure — the practical side of a rigorous academic load.",
+        "description": (
+            "The life-skills half of the Cool Nerd brief: financial literacy, decision-making, "
+            "critical thinking and stress management, taught alongside the academics rather "
+            "than instead of them."
+        ),
+        "base_price": 189,
+        "course_codes": [
+            "MB-STEWARD", "MB-BIBLICAL-ECON", "MP-LOGIC1", "MP-LOGIC2", "MP-MATLOG", "OM-PSYCH",
+            "OM-HEALTH", "OM-MEDIA", "OM-ECON", "OM-COMP1"
+        ],
+    },
+    {
+        "key": "parenting_athlete",
+        "name": "Parenting the Student-Athlete Pathway",
+        "summary": "Read the progress, ask the right questions, and steer the decisions that matter.",
+        "description": (
+            "For parents steering a child through school and sport at once — tracking real "
+            "progress, understanding the health and psychology behind performance, and being "
+            "the steady voice in recruiting and money conversations."
+        ),
+        "base_price": 199,
+        "course_codes": [
+            "OM-HEALTH", "APOL-HEALTH", "OM-PSYCH", "MB-STEWARD", "MP-LOGIC1", "OM-COMP1",
+            "OM-7", "OM-8", "MB-ANATOMY", "OM-MEDIA"
+        ],
+    },
+    {
+        "key": "coach_talent_management",
+        "name": "Talent Management for Coaches Pathway",
+        "summary": "Managing high-profile players: NIL guidance, media pressure and the recruiting window.",
+        "description": (
+            "Built for coaches and mentors carrying a roster: the psychology and physiology of "
+            "developing talent, the NIL and economic literacy to advise on deals, and the media "
+            "judgement to protect a player's brand through recruiting."
+        ),
+        "base_price": 249,
+        "course_codes": [
+            "OM-PSYCH", "OM-MEDIA", "OM-HEALTH", "MB-ANATOMY", "BJU-ECON", "MB-STEWARD",
+            "OM-COMP2", "MP-MATLOG", "OM-PHOTO", "APOL-HEALTH"
+        ],
     },
 ]
 
@@ -1120,7 +1224,7 @@ TIER_DEFS = [
         "focus_description": "Managing external pressures, vetting professionals, and protecting the family.",
         "category": "Foundation",
         "estimated_duration": "Ongoing",
-        "pathway_keys": ["parent_homeschool"],
+        "pathway_keys": ["parent_homeschool", "parenting_athlete"],
     },
     {
         "level": 3,
@@ -1138,7 +1242,7 @@ TIER_DEFS = [
         "focus_description": "Academic excellence, early leadership, tech literacy, and extracurricular strategy.",
         "category": "Academic",
         "estimated_duration": "18 Months",
-        "pathway_keys": ["ivy_league", "education_academic"],
+        "pathway_keys": ["ivy_league", "education_academic", "life_skills_literacy"],
     },
     {
         "level": 5,
@@ -1147,7 +1251,7 @@ TIER_DEFS = [
         "focus_description": "College admissions, internships, networking, and early career placement.",
         "category": "Academic",
         "estimated_duration": "6-9 Months",
-        "pathway_keys": ["international_student"],
+        "pathway_keys": ["international_student", "life_after_sports"],
     },
     {
         "level": 6,
@@ -1165,7 +1269,7 @@ TIER_DEFS = [
         "focus_description": "NIL maximization, pro transition, complex contract negotiation, and foundational wealth building.",
         "category": "Athletic",
         "estimated_duration": "Year-Round",
-        "pathway_keys": ["elite_athlete_business"],
+        "pathway_keys": ["elite_athlete_business", "coach_talent_management"],
     },
     {
         "level": 8,
@@ -1886,7 +1990,7 @@ class Command(BaseCommand):
     def _seed_pathways(self, courses_by_code):
         pathways_by_key = {}
         for pathway_def in PATHWAY_DEFS:
-            pathway, _ = Pathway.objects.update_or_create(
+            pathway, created = Pathway.objects.update_or_create(
                 name=pathway_def["name"],
                 defaults={
                     "summary": pathway_def["summary"],
@@ -1896,12 +2000,30 @@ class Command(BaseCommand):
                 },
             )
             pathways_by_key[pathway_def["key"]] = pathway
-            for order, code in enumerate(pathway_def["course_codes"], start=1):
+            # Only on first creation: re-seeding must not undo an admin's
+            # later audience edits.
+            if created:
+                pathway.audiences.set(
+                    Audience.objects.filter(
+                        slug__in=DEFAULT_PATHWAY_AUDIENCES.get(pathway.name, [])
+                    )
+                )
+            for code in pathway_def["course_codes"]:
                 course = courses_by_code.get(code)
                 if not course:
                     continue
+                # Appended at the next free order rather than at the list
+                # index: on a re-seed the pathway's existing courses may have
+                # been reordered in the admin, and a fixed index would collide
+                # with the (pathway, order) unique constraint.
                 PathwayCourse.objects.get_or_create(
-                    pathway=pathway, course=course, defaults={"order": order}
+                    pathway=pathway,
+                    course=course,
+                    defaults={
+                        "order": get_next_order(
+                            PathwayCourse.objects.filter(pathway=pathway)
+                        )
+                    },
                 )
         return pathways_by_key
 

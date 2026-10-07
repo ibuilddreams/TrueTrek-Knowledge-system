@@ -1,6 +1,7 @@
 from django.urls import path
 
 from .views import (
+    AudienceListView,
     MyPathwaysView,
     PathwayBundleRuleDetailView,
     PathwayBundleRuleListCreateView,
@@ -16,6 +17,7 @@ from .views import (
 )
 
 urlpatterns = [
+    path("audiences/", AudienceListView.as_view(), name="pathway-audiences"),
     path("public/", PublicPathwayListView.as_view(), name="pathway-public-list"),
     path("public/<int:pk>/", PublicPathwayDetailView.as_view(), name="pathway-public-detail"),
     path(

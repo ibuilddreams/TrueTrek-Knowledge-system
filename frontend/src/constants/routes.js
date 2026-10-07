@@ -13,6 +13,11 @@ export const ROUTES = {
   WISHLIST: "/wishlist",
   ONBOARDING: "/onboarding",
   PATHWAYS: "/pathways",
+  AUDIENCES: "/audiences",
+  // The homepage's "Who We Serve" card grid — where visitors pick an audience.
+  // Audience pages link back here rather than to the /audiences index, since
+  // the homepage cards are the entry point people actually arrive through.
+  HOME_AUDIENCES: "/#audience-role-map-section",
   FUTURE_CLIENTS: "/future-clients",
   ADMIN_PORTAL: "/adminportal",
   TEACHER_PORTAL: "/teacherportal",

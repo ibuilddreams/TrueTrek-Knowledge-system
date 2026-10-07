@@ -138,7 +138,7 @@ ${aiPrompt}
       const data = await requestAdvisorAdvice({
         scenario: promptText,
         advisorName: "Dean of Faculty & Curricula",
-        systemPrompt: `You are the Lead Dean of academic operations and student risk analysis at TrueTrek Learning.
+        systemPrompt: `You are the Lead Dean of academic operations and student risk analysis at Cool Nerds.
 Analyze the students scores, cohort strengths, compliance risks, and which manuals or guidelines the teacher needs to deploy.
 Frame your advice beautifully in highly structural Markdown. Format with bullet points, strategic takeaway highlights, and recommendations for specific students who may be failing or excelling.`
       });

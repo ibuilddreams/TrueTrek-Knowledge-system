@@ -206,6 +206,17 @@ class PublicCourseListView(generics.ListAPIView):
         if difficulty_param:
             queryset = queryset.filter(difficulty=difficulty_param.upper())
 
+        # `?audience=<slug>` backs the per-audience pages (/audiences/<slug>),
+        # which list every course a visitor can reach through that audience's
+        # pathways. Reached via pathways.Pathway.audiences; a course in a draft
+        # pathway stays hidden, and an unknown slug simply matches nothing.
+        audience_param = params.get("audience")
+        if audience_param:
+            queryset = queryset.filter(
+                pathway_courses__pathway__status=Status.PUBLISHED,
+                pathway_courses__pathway__audiences__slug=audience_param,
+            )
+
         # A single grade (Pre-K = -1, K = 0, 1-12) matches every course whose
         # grade range includes it.
         grade_param = params.get("grade")

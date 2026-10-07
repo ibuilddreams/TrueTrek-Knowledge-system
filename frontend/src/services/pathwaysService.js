@@ -1,11 +1,18 @@
 import { backendClient } from "./apiClient";
 
-export async function getPublicPathways({ page = 1, pageSize = 100, search } = {}) {
+export async function getPublicPathways({ page = 1, pageSize = 100, search, audience } = {}) {
   const params = new URLSearchParams();
   params.set("page", page);
   params.set("page_size", pageSize);
   if (search) params.set("search", search);
+  if (audience) params.set("audience", audience);
   return backendClient.get(`/pathways/public/?${params.toString()}`);
+}
+
+// The fixed audience list, used by the admin pathway form to offer the
+// audience cards a pathway can belong to.
+export async function getPathwayAudiences() {
+  return backendClient.get("/pathways/audiences/");
 }
 
 export async function getPublicPathwayById(id) {

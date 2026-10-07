@@ -1,3 +1,4 @@
+from django.db.models import Count, Q
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
@@ -6,8 +7,9 @@ from common.pagination import Pagination
 from common.response import error_response, success_response
 from users.permissions import IsAdmin, IsStudent
 
-from .models import Pathway, PathwayBundleRule, PathwayCourse, PathwayEnrollment
+from .models import Audience, Pathway, PathwayBundleRule, PathwayCourse, PathwayEnrollment
 from .serializers import (
+    AudienceSerializer,
     PathwayBundleRuleSerializer,
     PathwayBundleRuleWriteSerializer,
     PathwayCheckoutRequestSerializer,
@@ -31,12 +33,56 @@ class PublicPathwayListView(generics.ListAPIView):
     permission_classes = [AllowAny]
     pagination_class = Pagination
 
+    def get_queryset(self):
+        queryset = super().get_queryset().prefetch_related("audiences")
+
+        # `?audience=<slug>` powers the per-audience pages (/audiences/<slug>).
+        # An unrecognised slug narrows to nothing rather than 404-ing, matching
+        # how PublicCourseListView treats its own unknown filter values.
+        audience = self.request.query_params.get("audience")
+        if audience:
+            queryset = queryset.filter(audiences__slug=audience)
+
+        search = self.request.query_params.get("search", "").strip()
+        if search:
+            queryset = queryset.filter(Q(name__icontains=search) | Q(summary__icontains=search))
+
+        # The public card advertises how many courses a visitor can actually
+        # reach, so draft/archived courses are left out of the count.
+        return queryset.annotate(
+            published_course_count=Count(
+                "pathway_courses",
+                filter=Q(pathway_courses__course__status=Status.PUBLISHED),
+                distinct=True,
+            )
+        ).order_by("-created_at", "-pk")
+
     def list(self, request, *args, **kwargs):
         pathways = self.filter_queryset(self.get_queryset())
         page = self.paginate_queryset(pathways)
         serializer = self.get_serializer(page, many=True, context={"request": request})
         paginated_data = self.paginator.get_paginated_response(serializer.data).data
         return success_response(paginated_data, message="Pathways fetched successfully")
+
+
+class AudienceListView(generics.ListAPIView):
+    """The fixed set of audience cards, used by the admin pathway form.
+
+    Audiences are seeded by migration and deliberately have no create/delete
+    API: each one is paired with hand-authored marketing copy and artwork in
+    the frontend (`data/audiences.js`), so a row added here on its own would
+    have no page to link to. Admins change which pathways belong to an
+    audience, not the audience list itself.
+    """
+
+    queryset = Audience.objects.all()
+    serializer_class = AudienceSerializer
+    permission_classes = [AllowAny]
+    pagination_class = None
+
+    def list(self, request, *args, **kwargs):
+        serializer = self.get_serializer(self.filter_queryset(self.get_queryset()), many=True)
+        return success_response(serializer.data, message="Audiences fetched successfully")
 
 
 class PublicPathwayDetailView(generics.GenericAPIView):
@@ -75,7 +121,7 @@ class PublicPathwayDetailBySlugView(generics.GenericAPIView):
 
 
 class PathwayListCreateView(generics.ListCreateAPIView):
-    queryset = Pathway.objects.all()
+    queryset = Pathway.objects.all().prefetch_related("audiences")
     pagination_class = Pagination
 
     def get_permissions(self):

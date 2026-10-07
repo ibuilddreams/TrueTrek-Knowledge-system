@@ -183,10 +183,10 @@ export default function FutureClients() {
             <div className="space-y-6 relative z-10">
               <span className="text-gold font-sans text-xs uppercase tracking-widest font-medium">PORTFOLIO PLACEMENT PATHWAYS</span>
               <h3 className="text-2xl sm:text-3xl font-serif font-light tracking-tight leading-snug">
-                Why Submit Credentials For TrueTrek Learning Evaluation?
+                Why Submit Credentials For Cool Nerds Evaluation?
               </h3>
               <p className="text-paper/75 text-sm sm:text-sm font-light leading-relaxed">
-                TrueTrek Learning represents the premier administrative and legal compliance portal for selective high-performance scholar-athletes. Because platform placement is protected by strict scholastic quotas and regional compliance caps, we require prospective student-athletes to submit formal intake dossiers.
+                Cool Nerds represents the premier administrative and legal compliance portal for selective high-performance scholar-athletes. Because platform placement is protected by strict scholastic quotas and regional compliance caps, we require prospective student-athletes to submit formal intake dossiers.
               </p>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 pt-4 border-t border-paper/15">
@@ -351,7 +351,7 @@ export default function FutureClients() {
                   <div className="p-3 bg-sage/25 border border-line rounded-card flex items-start gap-2.5 text-xs text-muted leading-relaxed font-light">
                     <ShieldAlert className="w-4 h-4 text-pine mt-0.5 shrink-0" />
                     <span>
-                      By submitting this application, you authorize TrueTrek Learning to review your information for admission. Your student account is created only once an administrator approves your application.
+                      By submitting this application, you authorize Cool Nerds to review your information for admission. Your student account is created only once an administrator approves your application.
                     </span>
                   </div>
 
@@ -583,7 +583,7 @@ export default function FutureClients() {
         onClose={() => setIsTestimonialModalOpen(false)}
         icon={MessageSquarePlus}
         title="Share Your Experience"
-        subtitle="Tell future clients about your journey with TrueTrek Learning."
+        subtitle="Tell future clients about your journey with Cool Nerds."
       >
         <TestimonialForm onSubmitted={() => setIsTestimonialModalOpen(false)} />
       </Modal>

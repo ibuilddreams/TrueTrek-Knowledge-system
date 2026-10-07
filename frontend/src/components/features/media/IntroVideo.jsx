@@ -25,13 +25,13 @@ const CHANNELS = [
     durationString: '06:12',
     videoUrl: '/welcome.mp4',
     chapters: [
-      { time: 0, title: 'Introduction to TrueTrek Learning' },
+      { time: 0, title: 'Introduction to Cool Nerds' },
       { time: 45, title: 'The 11-Tier Framework Vision' },
       { time: 135, title: 'Bridging Law, Wealth, and Personal Drive' },
       { time: 270, title: 'Stewardship of Generational Legacies' }
     ],
     transcript: [
-      { time: 0, text: 'Welcome, pathfinders, to the core orientation walkthrough for TrueTrek Learning.' },
+      { time: 0, text: 'Welcome, pathfinders, to the core orientation walkthrough for Cool Nerds.' },
       { time: 11, text: 'This platform is structured around a simple, powerful truth.' },
       { time: 22, text: 'Raw craft is not enough; survival in elite networks requires compliance readiness.' },
       { time: 33, text: 'We designed the 11 Tiers to serve of immediate, practical roadmap metrics.' },

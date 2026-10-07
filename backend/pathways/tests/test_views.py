@@ -7,7 +7,7 @@ from common.models import Status
 from courses.models import Category, Course, CourseInstructor
 from enrollments.models import Enrollment
 
-from ..models import Pathway, PathwayBundleRule, PathwayCourse, PathwayEnrollment
+from ..models import Audience, Pathway, PathwayBundleRule, PathwayCourse, PathwayEnrollment
 
 UserModel = get_user_model()
 
@@ -250,3 +250,181 @@ class PathwayDetailContentTestCase(APITestCase):
             format="json",
         )
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+
+class AudienceMappingTests(PathwayTestCase):
+    """Audience <-> pathway relations and the public filters built on them."""
+
+    def setUp(self):
+        super().setUp()
+        self.athletes = Audience.objects.get(slug="student-athletes")
+        self.coaches = Audience.objects.get(slug="coaches")
+        self.parents = Audience.objects.get(slug="parents")
+
+        # `self.pathway` holds course_a + course_b; `self.second_pathway` is empty.
+        self.pathway.audiences.set([self.parents])
+        self.second_pathway.audiences.set([self.athletes, self.coaches])
+
+    def test_audiences_are_seeded_and_publicly_listed(self):
+        response = self.client.get(reverse("pathway-audiences"))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        slugs = [row["slug"] for row in response.data["data"]]
+        self.assertEqual(
+            slugs,
+            [
+                "student-athletes",
+                "cool-nerds",
+                "parents",
+                "institutions-academies",
+                "coaches",
+                "entrepreneurs",
+            ],
+        )
+
+    def test_public_list_exposes_audiences_on_each_pathway(self):
+        response = self.client.get(reverse("pathway-public-list"))
+        rows = {row["name"]: row for row in response.data["data"]["results"]}
+        self.assertEqual(
+            sorted(a["slug"] for a in rows["Athlete Pathway"]["audiences"]),
+            ["coaches", "student-athletes"],
+        )
+        self.assertEqual([a["slug"] for a in rows["Parent Pathway"]["audiences"]], ["parents"])
+
+    def test_public_list_filters_by_audience(self):
+        response = self.client.get(reverse("pathway-public-list"), {"audience": "coaches"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        names = [row["name"] for row in response.data["data"]["results"]]
+        self.assertEqual(names, ["Athlete Pathway"])
+
+    def test_a_pathway_can_serve_several_audiences(self):
+        for slug in ("student-athletes", "coaches"):
+            response = self.client.get(reverse("pathway-public-list"), {"audience": slug})
+            names = [row["name"] for row in response.data["data"]["results"]]
+            self.assertEqual(names, ["Athlete Pathway"], msg=slug)
+
+    def test_audience_filter_hides_unpublished_pathways(self):
+        draft = Pathway.objects.create(name="Draft Athlete", status=Status.DRAFT, base_price=10)
+        draft.audiences.set([self.athletes])
+        response = self.client.get(reverse("pathway-public-list"), {"audience": "student-athletes"})
+        names = [row["name"] for row in response.data["data"]["results"]]
+        self.assertNotIn("Draft Athlete", names)
+
+    def test_unknown_audience_returns_an_empty_list_not_an_error(self):
+        response = self.client.get(reverse("pathway-public-list"), {"audience": "nope"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["data"]["results"], [])
+
+    def test_public_course_count_ignores_unpublished_courses(self):
+        self.course_b.status = Status.DRAFT
+        self.course_b.save()
+        response = self.client.get(reverse("pathway-public-list"), {"audience": "parents"})
+        row = response.data["data"]["results"][0]
+        self.assertEqual(row["name"], "Parent Pathway")
+        self.assertEqual(row["course_count"], 1)
+
+    def test_admin_can_set_and_clear_audiences(self):
+        self.client.force_authenticate(self.admin)
+        url = reverse("pathway-detail", args=[self.pathway.id])
+
+        response = self.client.patch(url, {"audience_slugs": ["coaches", "parents"]}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(
+            sorted(self.pathway.audiences.values_list("slug", flat=True)),
+            ["coaches", "parents"],
+        )
+
+        response = self.client.patch(url, {"audience_slugs": []}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(list(self.pathway.audiences.all()), [])
+
+    def test_omitting_audience_slugs_leaves_existing_relations_alone(self):
+        self.client.force_authenticate(self.admin)
+        response = self.client.patch(
+            reverse("pathway-detail", args=[self.pathway.id]),
+            {"summary": "Renamed summary"},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual([a.slug for a in self.pathway.audiences.all()], ["parents"])
+
+    def test_unknown_audience_slug_is_rejected_on_write(self):
+        self.client.force_authenticate(self.admin)
+        response = self.client.patch(
+            reverse("pathway-detail", args=[self.pathway.id]),
+            {"audience_slugs": ["not-an-audience"]},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual([a.slug for a in self.pathway.audiences.all()], ["parents"])
+
+    def test_non_admin_cannot_change_audiences(self):
+        self.client.force_authenticate(self.teacher)
+        response = self.client.patch(
+            reverse("pathway-detail", args=[self.pathway.id]),
+            {"audience_slugs": ["coaches"]},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_admin_can_create_a_pathway_with_audiences(self):
+        self.client.force_authenticate(self.admin)
+        response = self.client.post(
+            reverse("pathway-list-create"),
+            {
+                "name": "NIL Branding",
+                "summary": "Brand and NIL basics.",
+                "base_price": 120,
+                "audience_slugs": ["student-athletes"],
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+        created = Pathway.objects.get(name="NIL Branding")
+        self.assertEqual([a.slug for a in created.audiences.all()], ["student-athletes"])
+
+
+class AudienceCourseListTests(PathwayTestCase):
+    """`/courses/public/?audience=` — the course half of an audience page."""
+
+    def setUp(self):
+        super().setUp()
+        self.athletes = Audience.objects.get(slug="student-athletes")
+        self.pathway.audiences.set([self.athletes])
+
+    def test_lists_courses_reachable_through_that_audience(self):
+        response = self.client.get(reverse("course-public-list"), {"audience": "student-athletes"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        titles = [row["title"] for row in response.data["data"]["results"]]
+        self.assertEqual(titles, ["Course A", "Course B"])
+
+    def test_a_course_in_two_pathways_of_one_audience_is_listed_once(self):
+        other = Pathway.objects.create(name="Second Athlete", status=Status.PUBLISHED)
+        other.audiences.set([self.athletes])
+        PathwayCourse.objects.create(pathway=other, course=self.course_a, order=1)
+
+        response = self.client.get(reverse("course-public-list"), {"audience": "student-athletes"})
+        titles = [row["title"] for row in response.data["data"]["results"]]
+        self.assertEqual(titles.count("Course A"), 1)
+
+    def test_courses_behind_an_unpublished_pathway_are_hidden(self):
+        self.pathway.status = Status.DRAFT
+        self.pathway.save()
+        response = self.client.get(reverse("course-public-list"), {"audience": "student-athletes"})
+        self.assertEqual(response.data["data"]["results"], [])
+
+    def test_unpublished_courses_are_hidden(self):
+        self.course_a.status = Status.DRAFT
+        self.course_a.save()
+        response = self.client.get(reverse("course-public-list"), {"audience": "student-athletes"})
+        titles = [row["title"] for row in response.data["data"]["results"]]
+        self.assertEqual(titles, ["Course B"])
+
+    def test_unknown_audience_returns_an_empty_list(self):
+        response = self.client.get(reverse("course-public-list"), {"audience": "nope"})
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["data"]["results"], [])
+
+    def test_no_audience_param_still_lists_every_published_course(self):
+        response = self.client.get(reverse("course-public-list"))
+        titles = [row["title"] for row in response.data["data"]["results"]]
+        self.assertEqual(titles, ["Course A", "Course B"])

@@ -114,9 +114,9 @@ def send_password_reset_email(email):
     reset_link = f"{settings.FRONTEND_URL}/reset-password?uid={uid}&token={token}"
 
     send_mail(
-        subject="Reset your TrueTrek Learning password",
+        subject="Reset your Cool Nerds password",
         message=(
-            "We received a request to reset your TrueTrek Learning password.\n\n"
+            "We received a request to reset your Cool Nerds password.\n\n"
             f"Reset your password using the link below:\n{reset_link}\n\n"
             "If you didn't request this, you can safely ignore this email."
         ),

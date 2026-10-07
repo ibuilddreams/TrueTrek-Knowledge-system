@@ -107,6 +107,9 @@ export default function MerchantStore() {
   });
 
   const activeFilterCount = [selectedCategoryId, search.trim()].filter(Boolean).length;
+  // When the search box is the only thing narrowing results, the empty state
+  // talks about the search instead of "filters" — a category isn't involved.
+  const isSearchOnly = Boolean(search.trim()) && !selectedCategoryId;
 
   // Guests (browser-stored) and students (server-persisted) share the same
   // cart API — see useCart. Teachers/admins get an info toast instead.
@@ -146,7 +149,7 @@ export default function MerchantStore() {
               The Strategic Store
             </h2>
             <p className="text-paper/70 text-sm md:text-sm font-light max-w-xl leading-relaxed">
-              Browse every course on TrueTrek Learning, add it to your cart,
+              Browse every course on Cool Nerds, add it to your cart,
               and check out to enroll instantly.
             </p>
           </div>
@@ -220,7 +223,9 @@ export default function MerchantStore() {
                 className="ml-auto flex shrink-0 items-center gap-1.5 text-xs font-sans font-medium uppercase tracking-widest text-muted transition hover:text-ink"
               >
                 <RotateCcw className="h-3.5 w-3.5" />
-                Clear filters ({activeFilterCount})
+                {isSearchOnly
+                  ? "Clear search"
+                  : `Clear filters (${activeFilterCount})`}
               </button>
             )}
           </div>
@@ -268,7 +273,9 @@ export default function MerchantStore() {
               }
               description={
                 activeFilterCount > 0
-                  ? "Try a different search term or clear your filters."
+                  ? isSearchOnly
+                    ? "Try a different search term or clear your search."
+                    : "Try a different search term or clear your filters."
                   : "Check back soon — new courses are added regularly."
               }
               action={
@@ -279,7 +286,7 @@ export default function MerchantStore() {
                     className="inline-flex items-center gap-1.5 px-5 py-2.5 font-sans text-xs font-medium uppercase tracking-widest rounded-full transition bg-pine hover:bg-moss text-paper"
                   >
                     <RotateCcw className="w-3.5 h-3.5" />
-                    Clear filters
+                    {isSearchOnly ? "Clear search" : "Clear filters"}
                   </button>
                 ) : undefined
               }

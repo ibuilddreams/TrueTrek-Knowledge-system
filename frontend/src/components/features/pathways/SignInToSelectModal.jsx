@@ -6,7 +6,7 @@ import Modal from "@/components/ui/Modal";
 import { ROUTES } from "@/constants/routes";
 import { buildAuthUrl } from "@/lib/authRedirect";
 
-// Shown when a guest tries to select or enrol in a pathway, instead of
+// Shown when a guest tries to select or enroll in a pathway, instead of
 // bouncing them straight to /login. Mirrors the cart's SignInToPurchaseModal;
 // `nextPath` is carried as `?next=` so useGuestOnlyRoute returns them to this
 // exact page once they've signed in.
@@ -22,7 +22,7 @@ export default function SignInToSelectModal({
       onClose={onClose}
       icon={ShieldCheck}
       title="Sign in to select this pathway"
-      subtitle="A student account is needed to enrol"
+      subtitle="A student account is needed to enroll"
       maxWidth="max-w-md"
     >
       <div className="space-y-5">

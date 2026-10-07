@@ -57,7 +57,7 @@ export default function Partnerships() {
           eyebrowClassName="text-gold"
           heading="Institutional Masterclass Covenants"
           headingClassName="text-4xl md:text-5xl font-serif text-ink font-light leading-[0.92] tracking-tight"
-          subtitle="We license the complete TrueTrek Learning digital framework to selective High Schools, Collegiate Leagues, and Regional Sports Academies to reduce institutional liability and maximize student-athlete success."
+          subtitle="We license the complete Cool Nerds digital framework to selective High Schools, Collegiate Leagues, and Regional Sports Academies to reduce institutional liability and maximize student-athlete success."
           subtitleClassName="text-muted text-sm max-w-2xl mx-auto font-light leading-relaxed"
         />
 

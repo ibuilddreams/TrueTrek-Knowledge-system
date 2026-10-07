@@ -7,6 +7,18 @@ from common.models import BaseModel, Status
 from courses.models import Course
 
 
+class Audience(models.Model):
+    name = models.CharField(max_length=100)
+    slug = models.SlugField(unique=True)
+    order = models.PositiveIntegerField(default=0)
+
+    class Meta:
+        ordering = ["order", "name"]
+
+    def __str__(self):
+        return self.name
+
+
 class Pathway(BaseModel):
     class Difficulty(models.TextChoices):
         BEGINNER = "BEGINNER", "Beginner"
@@ -19,6 +31,7 @@ class Pathway(BaseModel):
     description = models.TextField(blank=True)
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     base_price = models.DecimalField(max_digits=10, decimal_places=2, default=0)
+    audiences = models.ManyToManyField(Audience, blank=True, related_name="pathways")
 
     # Marketing copy for the public pathway page (/pathways/<slug>), mirroring
     # what Course exposes on the course page. All optional: a pathway created

@@ -1,7 +1,7 @@
 import CartPage from "@/components/features/cart/CartPage";
 
 export const metadata = {
-  title: "Cart | TrueTrek Learning",
+  title: "Cart | Cool Nerds",
   description: "Review the courses in your cart and complete your purchase",
 };
 
