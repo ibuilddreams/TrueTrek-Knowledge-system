@@ -10,9 +10,9 @@ export const FAQ_CATEGORIES = [
     tint: "bg-gold/15 text-[#8a6f2e]",
     items: [
       {
-        question: "What exactly is the TrueTrek Learning Incubator?",
+        question: "What exactly is the Cool Nerds Incubator?",
         answer:
-          "TrueTrek Learning is a progressive, multi-tier educational incubator built for high-performance scholars, athletic prospects, and young founders. Each tier delivers structured modules spanning NCAA/NIL compliance, athletic recruiting, academic positioning, early-stage venture mechanics, and multi-generational family office organization.",
+          "Cool Nerds is a progressive, multi-tier educational incubator built for high-performance scholars, athletic prospects, and young founders. Each tier delivers structured modules spanning NCAA/NIL compliance, athletic recruiting, academic positioning, early-stage venture mechanics, and multi-generational family office organization.",
       },
       {
         question: "How is the curriculum structured across tiers?",
@@ -20,9 +20,9 @@ export const FAQ_CATEGORIES = [
           "The curriculum is organized into sequential tiers, each with its own focus areas, estimated duration, and outcomes. Earlier tiers build foundational scholastic and athletic readiness, while later tiers introduce venture formation, trust structures, and advanced compliance scenarios. You can review every tier's breakdown on the Curriculum page.",
       },
       {
-        question: "Is TrueTrek Learning only for student-athletes?",
+        question: "Is Cool Nerds only for student-athletes?",
         answer:
-          "No. TrueTrek Learning features parallel development paths. While early tiers cover athlete scouting, highlighting, and NIL contract rules, several tiers are dedicated entirely to academic positioning, Ivy-level essay review, pre-seed startup templates, and elite cognitive performance strategies.",
+          "No. Cool Nerds features parallel development paths. While early tiers cover athlete scouting, highlighting, and NIL contract rules, several tiers are dedicated entirely to academic positioning, Ivy-level essay review, pre-seed startup templates, and elite cognitive performance strategies.",
       },
       {
         question: "How long does it take to complete a tier?",
@@ -68,7 +68,7 @@ export const FAQ_CATEGORIES = [
       {
         question: "How does school or institutional licensing work?",
         answer:
-          "We license the complete TrueTrek Learning digital framework to select high schools, prep schools, collegiate athletic conferences, and regional sports academies. Partner institutions receive full system guides, classroom-ready materials, and progress dashboards to reduce institutional liability and track compliance outcomes.",
+          "We license the complete Cool Nerds digital framework to select high schools, prep schools, collegiate athletic conferences, and regional sports academies. Partner institutions receive full system guides, classroom-ready materials, and progress dashboards to reduce institutional liability and track compliance outcomes.",
       },
       {
         question: "What's the difference between the licensing tiers?",
@@ -132,7 +132,7 @@ export const FAQ_CATEGORIES = [
           "You can reach our advisory team through the Future Clients intake flow, or use the live concierge chat available from the homepage for a quicker, conversational answer to program and enrollment questions.",
       },
       {
-        question: "Does TrueTrek Learning offer refunds or plan changes?",
+        question: "Does Cool Nerds offer refunds or plan changes?",
         answer:
           "Plan and licensing terms are confirmed during onboarding or the licensing briefing for institutional partners. If your circumstances change, reach out through the Future Clients intake flow and our advisory team will work with you on adjusting your plan.",
       },
@@ -147,9 +147,9 @@ export const FAQ_CATEGORIES = [
 
 export const INDEX_FAQ_ITEMS = [
   {
-    question: "What is the TrueTrek Learning Incubator & 11-Tier Curriculum?",
+    question: "What is the Cool Nerds Incubator & 11-Tier Curriculum?",
     answer:
-      "TrueTrek Learning is a progressive, 11-Tier educational incubator designed for high-performance scholars, athletic prospects, and young founders. Our curriculum bridges the massive gaps between raw potential and professional execution—delivering highly structured modules on NCAA/NIL compliance, athletic recruiting, academic college spikes, early-stage venture mechanics (such as SAFE agreements), and multi-generational family office/trust organization rules.",
+      "Cool Nerds is a progressive, 11-Tier educational incubator designed for high-performance scholars, athletic prospects, and young founders. Our curriculum bridges the massive gaps between raw potential and professional execution—delivering highly structured modules on NCAA/NIL compliance, athletic recruiting, academic college spikes, early-stage venture mechanics (such as SAFE agreements), and multi-generational family office/trust organization rules.",
   },
   {
     question: "How does the school licensing and partnership model work?",
@@ -164,7 +164,7 @@ export const INDEX_FAQ_ITEMS = [
   {
     question: "Is this curriculum focused strictly on sports and athletic recruits?",
     answer:
-      "No. TrueTrek Learning features parallel development paths. While early athlete scouting, highlighting, and NIL contract rules are prominent under certain tiers, many tiers (such as Tiers 3, 4, 7, and 8) focus entirely on academic college statement spikes, Ivy-scout essay reviews, pre-seed startup SAFE template models, and elite cognitive behavioral focus strategies.",
+      "No. Cool Nerds features parallel development paths. While early athlete scouting, highlighting, and NIL contract rules are prominent under certain tiers, many tiers (such as Tiers 3, 4, 7, and 8) focus entirely on academic college statement spikes, Ivy-scout essay reviews, pre-seed startup SAFE template models, and elite cognitive behavioral focus strategies.",
   },
   {
     question: "How are regional caps and vacancy quotas managed for prospective cohorts?",

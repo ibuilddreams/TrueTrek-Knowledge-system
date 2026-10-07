@@ -19,17 +19,14 @@ import {
   Sparkles,
   HelpCircle,
   ChevronDown,
-  GraduationCap,
-  HeartHandshake,
-  Building2,
-  Users,
-  Landmark,
-  Layers,
+  // Layers, // Restore with the Learning Pathways Showcase.
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import IntroVideo from "@/components/features/media/IntroVideo";
+import AudienceCard from "@/components/features/audiences/AudienceCard";
 import MarkdownMiniRenderer from "@/components/ui/MarkdownMiniRenderer";
 import { ADVISOR_PERSONAS } from "@/data/curriculum";
+import { AUDIENCE_PROFILES } from "@/data/audiences";
 import { INDEX_FAQ_ITEMS } from "@/constants/faq";
 import { ROUTES } from "@/constants/routes";
 import { requestAdvisorAdvice } from "@/services/advisorService";
@@ -61,8 +58,14 @@ function useDelayedFlag(active, delayMs) {
 }
 
 // Cycled per advisor card index purely for visual variety in the consult board.
-const ADVISOR_TINTS = ["bg-sky/60", "bg-sage/60", "bg-rose/45", "bg-lavender/60"];
+const ADVISOR_TINTS = [
+  "bg-sky/60",
+  "bg-sage/60",
+  "bg-rose/45",
+  "bg-lavender/60",
+];
 
+/* Preserved for restoring the commented-out Learning Pathways Showcase.
 // Cycled per pathway card for the soft corner wash — same idea as ADVISOR_TINTS.
 const PATHWAY_TINTS = [
   "bg-sky/70",
@@ -82,79 +85,7 @@ function getPathwayTierLabel(tiers) {
   if (tiers.length === 1) return `Tier ${tiers[0].level}`;
   return `${tiers.length} Tiers`;
 }
-
-// Audience role map cards. The two `featured` entries are the tall bookend
-// columns of the bento grid; the rest fill the two middle columns. Artwork is
-// self-hosted under `public/images/home/` (Unsplash-licensed, free for
-// commercial use, no attribution required) rather than hotlinked, so the
-// section renders identically in production without a third-party dependency.
-const AUDIENCE_PROFILES = [
-  {
-    id: "student-athletes",
-    featured: true,
-    tag: "Learner Path",
-    title: "Student-Athletes",
-    description:
-      "Follow a 9-tier roadmap built around recruiting readiness, NIL protection, and performance mindset.",
-    chips: ["Recruiting Readiness", "NIL Compliance"],
-    icon: Target,
-    iconClassName: "bg-sky text-pine",
-    image: "/images/home/student-athletes.jpg",
-  },
-  {
-    id: "scholars-founders",
-    tag: "Creator Track",
-    title: "Scholars & Founders",
-    description:
-      "Structured tracks for academic rigor, venture literacy, and early trademark protection.",
-    icon: GraduationCap,
-    iconClassName: "bg-sage text-pine",
-    image: "/images/home/scholars-founders.jpg",
-  },
-  {
-    id: "parents-families",
-    tag: "Support Circle",
-    title: "Parents & Families",
-    href: "https://learn.coolnerdz.com/",
-    description:
-      "Transparent progress visibility and direct access to our licensed advisory council.",
-    icon: HeartHandshake,
-    iconClassName: "bg-rose/60 text-clay",
-    image: "/images/home/parents-families.jpg",
-  },
-  {
-    id: "institutions-academies",
-    featured: true,
-    tag: "Programs",
-    title: "Institutions & Academies",
-    description:
-      "License the full 9-tier curriculum for your cohort, with compliance-grade reporting built in.",
-    chips: ["Cohort Licensing", "Compliance Reporting"],
-    icon: Building2,
-    iconClassName: "bg-lavender text-pine",
-    image: "/images/home/institutions-academies.jpg",
-  },
-  {
-    id: "coaches-mentors",
-    tag: "Talent Ops",
-    title: "Coaches & Mentors",
-    description:
-      "Recruiting-readiness diagnostics and culture-fit audits built for your roster.",
-    icon: Users,
-    iconClassName: "bg-mint text-pine",
-    image: "/images/home/coaches-mentors.jpg",
-  },
-  {
-    id: "legacy-family-offices",
-    tag: "Stewardship",
-    title: "Legacy & Family Offices",
-    description:
-      "Multi-generational trust architecture and endowment stewardship for high-net-worth families.",
-    icon: Landmark,
-    iconClassName: "bg-gold/15 text-gold",
-    image: "/images/home/legacy-family-offices.jpg",
-  },
-];
+*/
 
 export default function Home() {
   const homeRef = useRef(null);
@@ -169,25 +100,38 @@ export default function Home() {
       animations.forEach((animation) => animation.cancel());
       animations.clear();
       if (preference.matches || !window.IntersectionObserver) return;
-      observer = new IntersectionObserver((entries) => {
-        entries.forEach((entry) => {
-          if (!entry.isIntersecting) return;
-          const animation = entry.target.animate(
-            [
-              { opacity: 0, transform: "translateY(24px)" },
-              { opacity: 1, transform: "translateY(0)" },
-            ],
-            { duration: 750, delay: Number(entry.target.dataset.revealDelay || 0), easing: "cubic-bezier(0.22, 1, 0.36, 1)", fill: "backwards" },
-          );
-          animations.add(animation);
-          animation.onfinish = () => animations.delete(animation);
-          observer.unobserve(entry.target);
+      observer = new IntersectionObserver(
+        (entries) => {
+          entries.forEach((entry) => {
+            if (!entry.isIntersecting) return;
+            const animation = entry.target.animate(
+              [
+                { opacity: 0, transform: "translateY(24px)" },
+                { opacity: 1, transform: "translateY(0)" },
+              ],
+              {
+                duration: 750,
+                delay: Number(entry.target.dataset.revealDelay || 0),
+                easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+                fill: "backwards",
+              },
+            );
+            animations.add(animation);
+            animation.onfinish = () => animations.delete(animation);
+            observer.unobserve(entry.target);
+          });
+        },
+        { threshold: 0.08 },
+      );
+      homeRef.current
+        ?.querySelectorAll("section > div:not([id]), #stats-dashboard > div")
+        .forEach((element, index) => {
+          element.dataset.revealDelay =
+            element.parentElement.id === "stats-dashboard"
+              ? String((index % 3) * 100)
+              : "0";
+          observer.observe(element);
         });
-      }, { threshold: 0.08 });
-      homeRef.current?.querySelectorAll("section > div:not([id]), #stats-dashboard > div").forEach((element, index) => {
-        element.dataset.revealDelay = element.parentElement.id === "stats-dashboard" ? String((index % 3) * 100) : "0";
-        observer.observe(element);
-      });
     };
     setup();
     preference.addEventListener("change", setup);
@@ -269,7 +213,7 @@ How can I help you map out your high-compliance curriculum track or resolve spec
       ADVISOR_PERSONAS[0];
     const systemPrompt = `${advisor.systemPrompt}
 
-You are serving as the Senior Advisor on the TrueTrek Learning LLC Academy Home Screen.
+You are serving as the Senior Advisor on the Cool Nerds Academy Home Screen.
 Your goal is to guide prospective or active students, parents, and partners.
 Analyze their query, provide a professional, specific analysis report, and recommend:
 - At least one specific **Curriculum Tier** (Tiers 1 to 9) that matches their goals. Explain specifically why.
@@ -442,10 +386,9 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           transition={{ duration: 0.8, delay: 0.3 }}
           className="text-muted text-lg md:text-xl font-sans max-w-2xl font-light mb-10 leading-relaxed"
         >
-          The premier 9-tier educational roadmap and strategic incubator
-          helping high-potential athletes, world-class scholars, and
-          entrepreneurial pathfinders master real-world capital, law, and
-          legacy.
+          The premier 9-tier educational roadmap and strategic incubator helping
+          high-potential athletes, world-class scholars, and entrepreneurial
+          pathfinders master real-world capital, law, and legacy.
         </motion.p>
 
         <motion.div
@@ -513,130 +456,36 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
         */}
       </div>
 
-      {/* Audience Role Map Section */}
+      {/* Audience Role Map Section. scroll-mt clears the sticky navbar when an
+          audience page links back here by anchor (ROUTES.HOME_AUDIENCES). */}
       <section
         id="audience-role-map-section"
-        className="bg-transparent border-t border-line py-14 md:py-16 px-6 relative z-10"
+        className="bg-transparent border-t border-line py-14 md:py-16 px-6 relative z-10 scroll-mt-28"
       >
         <div className="max-w-6xl mx-auto">
           <SectionHeading
             className="mb-10"
             eyebrow="Who We Serve"
             heading="Built for Every Profile in the Ecosystem"
-            subtitle="From the athlete building their recruiting file to the family office stewarding a legacy, the curriculum and advisory council adapt to the role you play."
+            subtitle="Explore learning for student athletes, academically motivated students, parents, and coaches, with practical skills for education, sports, and life beyond school."
           />
 
           <div
             id="audience-cards-grid"
             className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
           >
-            {AUDIENCE_PROFILES.map((profile) => {
-              const Icon = profile.icon;
-
-              // Featured bookends are full-bleed photographic cards: the image
-              // fills the card and the copy sits bottom-anchored on top of it,
-              // so the tall `lg:row-span-2` column never opens a dead gap.
-              if (profile.featured) {
-                return (
-                  <article
-                    key={profile.id}
-                    id={`audience-card-${profile.id}`}
-                    className="group relative isolate flex min-h-[360px] flex-col overflow-hidden rounded-panel border border-line shadow-soft transition duration-500 hover:-translate-y-1 hover:shadow-elevated lg:row-span-2 lg:min-h-0"
-                  >
-                    <img
-                      src={profile.image}
-                      alt=""
-                      loading="lazy"
-                      className="absolute inset-0 -z-10 h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.05]"
-                    />
-                    <div
-                      aria-hidden="true"
-                      className="absolute inset-0 -z-10 bg-gradient-to-t from-ink via-ink/75 to-ink/20"
-                    ></div>
-
-                    <span className="absolute top-5 right-5 rounded-full border border-white/25 bg-white/15 px-3 py-1 text-[10px] font-sans font-bold uppercase tracking-widest text-paper backdrop-blur-md">
-                      {profile.tag}
-                    </span>
-
-                    <div className="mt-auto p-6 lg:p-7">
-                      <span className="mb-5 flex h-12 w-12 items-center justify-center rounded-2xl border border-white/20 bg-white/12 text-paper backdrop-blur-md">
-                        <Icon className="h-5 w-5" />
-                      </span>
-                      <h4 className="mb-3 font-serif text-2xl font-light leading-[1.05] tracking-tight text-paper lg:text-3xl">
-                        {profile.title}
-                      </h4>
-                      <p className="text-sm leading-relaxed text-paper/75">
-                        {profile.description}
-                      </p>
-                      {profile.chips && (
-                        <div className="mt-6 flex flex-wrap gap-2">
-                          {profile.chips.map((chip) => (
-                            <span
-                              key={chip}
-                              className="rounded-full border border-white/20 bg-white/10 px-2.5 py-1 text-[10px] font-sans font-semibold uppercase tracking-widest text-paper/90 backdrop-blur-sm"
-                            >
-                              {chip}
-                            </span>
-                          ))}
-                        </div>
-                      )}
-                    </div>
-                  </article>
-                );
-              }
-
-              // Cards with an `href` are external links that open in a new tab.
-              const CardTag = profile.href ? "a" : "article";
-              const linkProps = profile.href
-                ? { href: profile.href, target: "_blank", rel: "noopener noreferrer" }
-                : {};
-
-              return (
-                <CardTag
-                  key={profile.id}
-                  id={`audience-card-${profile.id}`}
-                  {...linkProps}
-                  className="group relative flex flex-col overflow-hidden rounded-card border border-line bg-paper shadow-soft transition duration-500 hover:-translate-y-1 hover:border-pine/25 hover:shadow-elevated"
-                >
-                  <div className="relative h-32 overflow-hidden">
-                    <img
-                      src={profile.image}
-                      alt=""
-                      loading="lazy"
-                      className="absolute inset-0 h-full w-full object-cover transition duration-700 ease-out group-hover:scale-[1.06]"
-                    />
-                    <div
-                      aria-hidden="true"
-                      className="absolute inset-0 bg-gradient-to-t from-ink/55 via-ink/10 to-transparent"
-                    ></div>
-                    <span className="absolute top-3.5 right-3.5 rounded-full border border-line bg-paper/95 px-2.5 py-1 text-[9px] font-sans font-bold uppercase tracking-widest text-pine">
-                      {profile.tag}
-                    </span>
-                  </div>
-
-                  <div className="flex flex-1 flex-col p-5">
-                    <div className="mb-3 flex items-center gap-3">
-                      <span
-                        className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-xl ${profile.iconClassName}`}
-                      >
-                        <Icon className="h-4.5 w-4.5" />
-                      </span>
-                      <h4 className="font-serif text-lg font-light leading-[1.1] tracking-tight text-ink">
-                        {profile.title}
-                      </h4>
-                    </div>
-                    <p className="text-xs leading-relaxed text-muted">
-                      {profile.description}
-                    </p>
-                  </div>
-                </CardTag>
-              );
-            })}
+            {AUDIENCE_PROFILES.map((profile) => (
+              <AudienceCard
+                key={profile.id}
+                profile={profile}
+                className={profile.featured ? "lg:row-span-2 lg:min-h-0" : ""}
+              />
+            ))}
           </div>
         </div>
       </section>
 
-      {/* Learning Pathways Showcase */}
+      {/* Learning Pathways Showcase — temporarily hidden; preserved for future use.
       <section
         id="learning-pathways-section"
         className="bg-transparent border-t border-line py-14 md:py-16 px-6 relative z-10"
@@ -736,6 +585,8 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
         </div>
       </section>
 
+      */}
+
       {/* Cinematic Walkthrough Broadcast Section */}
       <section
         id="cinematic-walkthrough-section"
@@ -762,7 +613,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           <SectionHeading
             className="mb-12"
             eyebrow="Custom Diagnostics"
-            heading="Determine Your TrueTrek Learning Pathway"
+            heading="Determine Your Cool Nerds Pathway"
             subtitle="Select your high-potential profile archetype below and see your recommended developmental curriculum, custom metrics, and action blueprint."
           />
 
@@ -1203,9 +1054,9 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
               Syllabus & Partnership Intelligence
             </h2>
             <p className="text-muted text-sm font-light leading-relaxed">
-              Have specific inquiries regarding TrueTrek Learning&apos;s
-              curriculum modules, security compliance pathways, and school
-              licensing structures? Review our comprehensive advisory dossier.
+              Have specific inquiries regarding Cool Nerds&apos;s curriculum
+              modules, security compliance pathways, and school licensing
+              structures? Review our comprehensive advisory dossier.
             </p>
             <div className="pt-6 border-t border-line flex items-center gap-3">
               <div className="w-9 h-9 rounded-full bg-gold/10 flex items-center justify-center text-gold shrink-0">
@@ -1270,7 +1121,10 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       </section>
 
       {/* Closing Enrollment CTA */}
-      <section id="enrollment-cta-section" className="py-14 md:py-16 px-6 relative z-10">
+      <section
+        id="enrollment-cta-section"
+        className="py-14 md:py-16 px-6 relative z-10"
+      >
         <div className="max-w-6xl mx-auto">
           <div
             id="enrollment-cta-card"
@@ -1295,8 +1149,8 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                 </h2>
                 <p className="text-sage/70 text-sm md:text-base leading-relaxed">
                   Join student-athletes, scholars, and entrepreneurial
-                  pathfinders already building their legacy portfolio, with
-                  the Senior Advisory Council one message away.
+                  pathfinders already building their legacy portfolio, with the
+                  Senior Advisory Council one message away.
                 </p>
               </div>
 

@@ -148,13 +148,13 @@ def deliver(invitation, link=None):
     issued_token_hash = invitation.token_hash
     name = invitation.user.first_name
     role = invitation.user.role.title()
-    subject = "You have been invited to TrueTrek" if link else "Your TrueTrek feedback form is ready"
-    paragraphs = [f"Hello {name},", f"You have been invited to TrueTrek as a {role}."]
+    subject = "You have been invited to Cool Nerds" if link else "Your Cool Nerds feedback form is ready"
+    paragraphs = [f"Hello {name},", f"You have been invited to Cool Nerds as a {role}."]
     course_titles = [course["title"] for course in InvitationSerializer(invitation).data["courses"]]
     if course_titles:
         verb = "enrolled in" if invitation.user.role == "STUDENT" else "assigned to"
         paragraphs.append(f"You have been {verb}: {', '.join(course_titles)}.")
-    context = {"heading": "Welcome to TrueTrek", "eyebrow": "Your invitation", "paragraphs": paragraphs}
+    context = {"heading": "Welcome to Cool Nerds", "eyebrow": "Your invitation", "paragraphs": paragraphs}
     if link:
         paragraphs.extend(["Choose your password using the secure link below, then sign in to your account.",
                            f"This one-time link expires in {settings.INVITATION_EXPIRY_HOURS} hours. Please keep it private."])
@@ -197,12 +197,12 @@ def notify_feedback(feedback_id):
             return
         user = feedback.invitation.user
         url = f"{settings.FRONTEND_URL.rstrip('/')}/adminportal?tab=invitations"
-        paragraphs = [f"{user.name} ({user.email}) has submitted their TrueTrek feedback.",
+        paragraphs = [f"{user.name} ({user.email}) has submitted their Cool Nerds feedback.",
                       f"Role: {user.role.title()}", f"Rating: {feedback.rating} out of 5",
                       f"Submitted: {feedback.submitted_at:%Y-%m-%d %H:%M %Z}",
                       "Sign in to the admin panel to read their comments and suggestions."]
         feedback.admin_email_status = send_notification(
-            f"New TrueTrek feedback from {user.name}", "\n\n".join(paragraphs) + f"\n\n{url}",
+            f"New Cool Nerds feedback from {user.name}", "\n\n".join(paragraphs) + f"\n\n{url}",
             settings.PRAXIN_CLIENT_EMAIL,
             {"heading": "New feedback received", "eyebrow": "Community feedback", "paragraphs": paragraphs,
              "action_url": url, "action_label": "Review feedback"},

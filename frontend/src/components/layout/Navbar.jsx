@@ -32,14 +32,14 @@ export default function Navbar() {
         id="logo-combo"
         href={ROUTES.HOME}
         className="inline-flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-2xl bg-white/42 cursor-pointer select-none group"
-        title="Return to TrueTrek Learning home orientation page"
-        aria-label="Return to TrueTrek Learning home orientation page"
+        title="Return to Cool Nerds home orientation page"
+        aria-label="Return to Cool Nerds home orientation page"
       >
         <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-br from-pine to-moss flex items-center justify-center text-paper font-serif font-light text-[11px] shadow-soft">
-          TT
+          CN
         </div>
         <span className="text-sm font-sans font-bold tracking-tight text-ink group-hover:text-pine transition-colors duration-200">
-          TrueTrek Learning<span className="text-gold">.</span>
+          Cool Nerds<span className="text-gold">.</span>
         </span>
       </Link>
 

@@ -1,7 +1,7 @@
 import InstructorProfilePage from "@/components/features/instructors/InstructorProfilePage";
 
 export const metadata = {
-  title: "Instructor | TrueTrek Learning",
+  title: "Instructor | Cool Nerds",
   description: "Instructor profile, courses, and student feedback.",
 };
 

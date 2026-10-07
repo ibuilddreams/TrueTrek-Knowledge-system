@@ -68,7 +68,7 @@ export default function TeacherEnrollStudentModal({ isOpen, editingStudent, onCl
                 <h3 className="font-serif font-black text-lg text-ink">
                   {editingStudent ? 'Adjust Scholar-Athlete Metrics' : 'Enroll Candidate into Registry'}
                 </h3>
-                <p className="text-xs text-muted mt-0.5">TrueTrek Cohort validation slot allocation</p>
+                <p className="text-xs text-muted mt-0.5">Cool Nerds Cohort validation slot allocation</p>
               </div>
               <CloseButton
                 onClick={onClose}

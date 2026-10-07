@@ -16,14 +16,14 @@ a { color:#123e35; }
 <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="max-width:600px;background-color:#fffdf8;border:1px solid #dde2d9;">
 <tr><td style="height:4px;background-color:#bc9c52;font-size:0;line-height:0;">&nbsp;</td></tr>
 <tr><td class="content-pad" style="padding:26px 36px;background-color:#123e35;">
-<table role="presentation" width="100%"><tr><td style="font-size:21px;font-weight:700;letter-spacing:-0.5px;color:#ffffff;">TrueTrek<span style="color:#d4b775;">.</span><br><span style="font-size:10px;letter-spacing:2px;font-weight:400;color:#d8e3db;">LEARNING</span></td><td align="right" style="font-size:10px;letter-spacing:1.5px;color:#d8e3db;">{% if setup_invitation %}YOUR NEXT CHAPTER{% else %}COMMUNITY UPDATE{% endif %}</td></tr></table>
+<table role="presentation" width="100%"><tr><td style="font-size:21px;font-weight:700;letter-spacing:-0.5px;color:#ffffff;">Cool Nerds<span style="color:#d4b775;">.</span></td><td align="right" style="font-size:10px;letter-spacing:1.5px;color:#d8e3db;">{% if setup_invitation %}YOUR NEXT CHAPTER{% else %}COMMUNITY UPDATE{% endif %}</td></tr></table>
 </td></tr>
 <tr><td class="content-pad" style="padding:34px 36px;">
 <p style="margin:0 0 12px;font-size:10px;line-height:16px;font-weight:bold;letter-spacing:2px;text-transform:uppercase;color:#756b45;">{{ eyebrow }}</p>
 <h1 class="email-title" style="margin:0 0 22px;font-family:Georgia,'Times New Roman',serif;font-weight:normal;font-size:34px;line-height:1.2;letter-spacing:-0.5px;color:#192e28;">{% if setup_invitation %}Your place is ready.{% else %}{{ heading }}{% endif %}</h1>
 {% if setup_invitation %}
 <p style="margin:0 0 12px;font-size:15px;line-height:25px;color:#40564f;">Hello {{ recipient_name }},</p>
-<p style="margin:0 0 24px;font-size:15px;line-height:25px;color:#40564f;">You’re invited to join TrueTrek as a <strong style="color:#192e28;">{{ account_role }}</strong>. Set your password, sign in, and make yourself at home.</p>
+<p style="margin:0 0 24px;font-size:15px;line-height:25px;color:#40564f;">You’re invited to join Cool Nerds as a <strong style="color:#192e28;">{{ account_role }}</strong>. Set your password, sign in, and make yourself at home.</p>
 <table role="presentation" width="100%" style="background-color:#f3f5ef;border:1px solid #e2e7dd;"><tr><td style="padding:16px 18px;"><p style="margin:0 0 5px;font-size:10px;letter-spacing:1.4px;font-weight:bold;color:#627369;">GETTING STARTED</p><p style="margin:0;font-size:13px;line-height:22px;color:#29483d;"><strong>01</strong>&nbsp; Set your password &nbsp;&middot;&nbsp; <strong>02</strong>&nbsp; Sign in</p></td></tr></table>
 {% else %}
 {% for paragraph in paragraphs %}<p style="margin:0 0 14px;font-size:15px;line-height:25px;color:#40564f;">{{ paragraph }}</p>{% endfor %}
@@ -47,8 +47,8 @@ a { color:#123e35; }
 {% endif %}
 </td></tr>
 <tr><td class="content-pad" style="padding:20px 36px;border-top:1px solid #e2e7dd;background-color:#f8f8f2;">
-<p style="margin:0 0 5px;font-size:11px;line-height:18px;color:#40564f;font-weight:bold;">TrueTrek Learning &nbsp;&middot;&nbsp; Praxin Partners</p>
-<p style="margin:0;font-size:11px;line-height:18px;color:#687870;">{% if setup_invitation %}This invitation was created for you by a TrueTrek administrator. Keep your setup link private.{% else %}You’re receiving this message about your TrueTrek invitation or community feedback.{% endif %}</p>
+<p style="margin:0 0 5px;font-size:11px;line-height:18px;color:#40564f;font-weight:bold;">Cool Nerds &nbsp;&middot;&nbsp; Praxin Partners</p>
+<p style="margin:0;font-size:11px;line-height:18px;color:#687870;">{% if setup_invitation %}This invitation was created for you by a Cool Nerds administrator. Keep your setup link private.{% else %}You’re receiving this message about your Cool Nerds invitation or community feedback.{% endif %}</p>
 </td></tr></table>
 <!--[if mso]></td></tr></table><![endif]-->
 <p style="margin:18px 0 0;font-size:10px;letter-spacing:1px;color:#7c877e;">LEARN. GROW. MOVE FORWARD.</p>

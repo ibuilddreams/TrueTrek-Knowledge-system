@@ -36,7 +36,7 @@ const ADVISOR_DEMO_CATALOG = [
   },
   {
     id: "prod-jersey",
-    name: "TrueTrek Learning Branded Athletic Jersey",
+    name: "Cool Nerds Branded Athletic Jersey",
     price: 120,
     image:
       "https://images.unsplash.com/photo-1517649763962-0c623066013b?auto=format&fit=crop&q=80&w=600",
@@ -75,7 +75,7 @@ export default function StoreAdvisorSuite({ onAcquireAsset = () => {} }) {
 
     const customizedSystemPrompt = `${advisor.systemPrompt}
 
-You are serving as the Senior Advisory Concierge for the TrueTrek Learning LLC Strategic Store.
+You are serving as the Senior Advisory Concierge for the Cool Nerds Strategic Store.
 Analyze the student or organization's goals, and guide them with specific tactical advice.
 In your advice, you MUST recommend one or premium items from our official depository inventory below.
 
@@ -83,7 +83,7 @@ Official Depository Catalog:
 - "The 11-Tier Legacy Syllabus (Lifetime Licensing)" (Price: $4,500) - For institution-wide academic frameworks, licensing compliance, and teacher-ready print materials. Best for schools, recruiters, or booster networks. (Product ID: prod-syllabus-license)
 - "Pre-Seed Venture SAFE Templates Pack" (Price: $450) - Pre-vetted simple agreements for future equity. High-yield terms to address valuation targets and block early predatory dilution. Best for founders or aspiring independent software builders. (Product ID: prod-safe-templates)
 - "NIL Contract Legal Redline Handbook" (Price: $299) - Essential manual of real-world licensing clauses, compliance forms, uniform guides, and trademark safeguards. Best for high school recruited or collegiate varsity athletes. (Product ID: prod-nil-handbook)
-- "TrueTrek Learning Branded Athletic Jersey" (Price: $120) - Strategic light-weight performance mesh with elite TTL monogram styling. Best for active field athletes or physical specialists. (Product ID: prod-jersey)
+- "Cool Nerds Branded Athletic Jersey" (Price: $120) - Strategic light-weight performance mesh with elite CN monogram styling. Best for active field athletes or physical specialists. (Product ID: prod-jersey)
 - "Circadian Stabilization Light-Block Mask" (Price: $45) - Absolute blackout contours with micro-aerated memory foam to maximize REM sleep and metabolic restoration. Best for high-performance competitors or hard-working executives. (Product ID: prod-cns-mask)
 - "Executive Cognitive Strategy Workbook" (Price: $65) - Linen-hardbound gold-debossed journal for charting cap-table distributions, decision matrices, and daily logging. Best for leaders, venture directors, or active scholars. (Product ID: prod-workbook)
 

@@ -101,7 +101,7 @@ export default function SignupForm() {
     <AuthGateCard
       icon={UserPlus}
       title="Create Your Account"
-      subtitle="Start your TrueTrek Learning journey — sign up to get a personalized course pathway."
+      subtitle="Start your Cool Nerds journey — sign up to get a personalized course pathway."
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <div className="grid grid-cols-2 gap-3.5">

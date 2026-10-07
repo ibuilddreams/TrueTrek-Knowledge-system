@@ -1,9 +1,9 @@
 import Faq from "@/components/features/faq/Faq";
 
 export const metadata = {
-  title: "FAQ | TrueTrek Learning",
+  title: "FAQ | Cool Nerds",
   description:
-    "Frequently asked questions about the TrueTrek Learning curriculum, admissions, school licensing, the Student Portal, and billing.",
+    "Frequently asked questions about the Cool Nerds curriculum, admissions, school licensing, the Student Portal, and billing.",
 };
 
 export default function FaqPage() {

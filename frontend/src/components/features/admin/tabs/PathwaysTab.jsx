@@ -8,6 +8,7 @@ import { deleteBundleRule, deletePathway, getAdminPathways, getBundleRules } fro
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatAmount, formatDate } from "@/lib/adminFormatters";
 import { toastError, toastSuccess } from "@/lib/toast";
+import { getAudienceLabel } from "@/data/audiences";
 import SearchBar from "@/components/ui/SearchBar";
 import DataTable from "@/components/ui/DataTable";
 import Pagination from "@/components/ui/Pagination";
@@ -113,6 +114,29 @@ export default function PathwaysTab() {
       key: "name",
       header: "Pathway Name",
       render: (pathway) => <span className="font-semibold text-ink">{pathway.name}</span>,
+    },
+    {
+      key: "audiences",
+      header: "Audience Cards",
+      render: (pathway) =>
+        pathway.audiences?.length ? (
+          <div className="flex flex-wrap gap-1.5">
+            {pathway.audiences.map((audience) => {
+              const { code, name } = getAudienceLabel(audience);
+              return (
+                <abbr
+                  key={audience.slug}
+                  title={name}
+                  className="rounded-full bg-sage/40 px-2.5 py-1 font-sans text-[10px] font-semibold uppercase tracking-widest text-pine no-underline"
+                >
+                  {code}
+                </abbr>
+              );
+            })}
+          </div>
+        ) : (
+          <span className="text-xs text-muted">Unassigned</span>
+        ),
     },
     {
       key: "status",
@@ -225,6 +249,12 @@ export default function PathwaysTab() {
   return (
     <div className="space-y-6">
       <div className="space-y-5">
+        <p className="text-xs font-light leading-relaxed text-muted">
+          Audience codes show which audience pages list a pathway — hover one for
+          its full name. Change them under{" "}
+          <strong className="font-medium text-ink">Edit Pathway → Audience cards</strong>;
+          a pathway can belong to more than one audience.
+        </p>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
           <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search pathways by name..." />
 

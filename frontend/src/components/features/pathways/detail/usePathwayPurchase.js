@@ -67,8 +67,8 @@ export function usePathwayPurchase(pathway) {
     loading: { label: "Loading…", note: null },
     staff: { label: "Open your portal", note: "Pathways are purchasable from student accounts." },
     owned: { label: "Start learning", note: "You already own this pathway." },
-    guest: { label: "Sign in to enrol", note: "Student accounts can enrol in this pathway." },
-    buy: { label: "Enrol in this pathway", note: "One payment unlocks every course below." },
+    guest: { label: "Sign in to enroll", note: "Student accounts can enroll in this pathway." },
+    buy: { label: "Enroll in this pathway", note: "One payment unlocks every course below." },
   };
 
   // Where a CTA should link, when the action is a navigation rather than a

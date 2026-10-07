@@ -70,7 +70,7 @@ export default function CourseCatalogDetail({ slug }) {
           </article>
           <section className="mt-10" aria-labelledby="course-syllabus-heading">
             <h2 id="course-syllabus-heading" className="text-2xl font-serif">Course curriculum</h2>
-            <p className="mt-2 text-sm text-muted">{modules.length} modules · {totals.lessons} lessons · {totals.assignments} assignments · {totals.quizzes} quizzes available on TrueTrek</p>
+            <p className="mt-2 text-sm text-muted">{modules.length} modules · {totals.lessons} lessons · {totals.assignments} assignments · {totals.quizzes} quizzes available on Cool Nerds</p>
             <div className="mt-5 space-y-4">
               {modules.length === 0 ? <p className="rounded-2xl border border-line bg-paper p-6 text-muted">Learning materials have not been added to this course yet.</p> : modules.map((module, index) => (
                 <details key={module.id} open={index === 0} className="group rounded-2xl border border-line bg-paper">

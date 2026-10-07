@@ -1,7 +1,7 @@
 import MerchantStore from "@/components/features/store/MerchantStore";
 
 export const metadata = {
-  title: "Store | TrueTrek Learning",
+  title: "Store | Cool Nerds",
   description: "Strategic merchandise and program materials",
 };
 

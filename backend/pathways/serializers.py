@@ -1,6 +1,7 @@
 import json
 
 from django.http import QueryDict
+from django.db import transaction
 from rest_framework import serializers
 
 from common.image import build_absolute_image_url
@@ -8,7 +9,14 @@ from common.models import Status
 from common.ordering import get_next_order
 from courses.models import Course
 
-from .models import Pathway, PathwayBundleRule, PathwayCourse, PathwayEnrollment
+from .models import Audience, Pathway, PathwayBundleRule, PathwayCourse, PathwayEnrollment
+
+
+class AudienceSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Audience
+        fields = ["slug", "name"]
+        read_only_fields = fields
 
 # Caps for the bullet-list fields on the public pathway page. Mirrors the
 # equivalent limits on Course.learning_outcomes (courses/serializers.py).
@@ -77,7 +85,8 @@ class PathwayCourseSerializer(serializers.ModelSerializer):
 
 
 class PathwayListSerializer(serializers.ModelSerializer):
-    course_count = serializers.IntegerField(source="pathway_courses.count", read_only=True)
+    audiences = AudienceSerializer(many=True, read_only=True)
+    course_count = serializers.SerializerMethodField()
     tiers = serializers.SerializerMethodField()
 
     class Meta:
@@ -92,6 +101,7 @@ class PathwayListSerializer(serializers.ModelSerializer):
             "difficulty",
             "duration_weeks",
             "tiers",
+            "audiences",
             "course_count",
             "created_at",
             "updated_at",
@@ -101,8 +111,14 @@ class PathwayListSerializer(serializers.ModelSerializer):
     def get_tiers(self, obj):
         return serialize_pathway_tiers(obj)
 
+    def get_course_count(self, obj):
+        if hasattr(obj, "published_course_count"):
+            return obj.published_course_count
+        return obj.pathway_courses.count()
+
 
 class PathwayDetailSerializer(serializers.ModelSerializer):
+    audiences = AudienceSerializer(many=True, read_only=True)
     courses = serializers.SerializerMethodField()
     tiers = serializers.SerializerMethodField()
     course_count = serializers.IntegerField(source="pathway_courses.count", read_only=True)
@@ -124,6 +140,7 @@ class PathwayDetailSerializer(serializers.ModelSerializer):
             "difficulty",
             "duration_weeks",
             "tiers",
+            "audiences",
             "course_count",
             "courses",
             "created_at",
@@ -152,6 +169,11 @@ class PublicPathwayDetailSerializer(PathwayDetailSerializer):
 
 
 class PathwayWriteSerializer(serializers.ModelSerializer):
+    audience_slugs = serializers.SlugRelatedField(
+        source="audiences", slug_field="slug", queryset=Audience.objects.all(),
+        many=True, required=False,
+    )
+
     class Meta:
         model = Pathway
         fields = [
@@ -167,6 +189,7 @@ class PathwayWriteSerializer(serializers.ModelSerializer):
             "prerequisites",
             "difficulty",
             "duration_weeks",
+            "audience_slugs",
         ]
         read_only_fields = ["id"]
 
@@ -175,7 +198,10 @@ class PathwayWriteSerializer(serializers.ModelSerializer):
         # too (same tolerance as CourseWriteSerializer) so the bullet lists can
         # arrive as JSON-encoded strings rather than only as real lists.
         if isinstance(data, QueryDict):
-            data = {key: data.getlist(key)[-1] for key in data}
+            data = {
+                key: data.getlist(key) if key == "audience_slugs" else data.getlist(key)[-1]
+                for key in data
+            }
 
         for field in BULLET_LIST_FIELDS:
             value = data.get(field)
@@ -209,14 +235,13 @@ class PathwayWriteSerializer(serializers.ModelSerializer):
             raise serializers.ValidationError("Base price must be a positive number.")
         return value
 
+    @transaction.atomic
     def create(self, validated_data):
-        return Pathway.objects.create(**validated_data)
+        return super().create(validated_data)
 
+    @transaction.atomic
     def update(self, instance, validated_data):
-        for attr, value in validated_data.items():
-            setattr(instance, attr, value)
-        instance.save()
-        return instance
+        return super().update(instance, validated_data)
 
 
 class PathwayCourseAttachSerializer(serializers.Serializer):

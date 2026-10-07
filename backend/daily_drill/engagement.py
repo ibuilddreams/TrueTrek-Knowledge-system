@@ -88,14 +88,14 @@ def send_reengagement_email(student):
     (users/services.py) so a broken SMTP config never blocks the management
     command or surfaces an error to anyone."""
     send_mail(
-        subject="We miss you at TrueTrek — come back and keep your streak alive",
+        subject="We miss you at Cool Nerds — come back and keep your streak alive",
         message=(
             f"Hi {student.name or student.username},\n\n"
             "We noticed you haven't completed a Daily Drill in a few days and "
             "your streak has reset. Log back in today to pick up where you "
             "left off, rebuild your streak, and keep earning points toward "
             "your rewards.\n\n"
-            "See you soon,\nThe TrueTrek Team"
+            "See you soon,\nThe Cool Nerds Team"
         ),
         from_email=settings.DEFAULT_FROM_EMAIL,
         recipient_list=[student.email],

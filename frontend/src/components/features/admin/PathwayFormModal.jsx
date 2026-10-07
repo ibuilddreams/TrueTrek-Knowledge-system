@@ -8,7 +8,13 @@ import LearningOutcomesField, {
   cleanLearningOutcomes,
   MAX_LEARNING_OUTCOMES,
 } from "@/components/features/courses/LearningOutcomesField";
-import { createPathway, getPathwayById, updatePathway } from "@/services/pathwaysService";
+import MultiSelect from "@/components/ui/MultiSelect";
+import {
+  createPathway,
+  getPathwayAudiences,
+  getPathwayById,
+  updatePathway,
+} from "@/services/pathwaysService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
@@ -33,6 +39,7 @@ const INITIAL_FORM = {
   status: "DRAFT",
   difficulty: "BEGINNER",
   duration_weeks: "0",
+  audience_slugs: [],
 };
 
 // The three bullet lists shown on the public pathway page, kept outside `form`
@@ -114,6 +121,27 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
   const [form, setForm] = useState(INITIAL_FORM);
   const [bullets, setBullets] = useState(INITIAL_BULLETS);
   const [fieldErrors, setFieldErrors] = useState({});
+  // The audience cards a pathway can be filed under. Fixed server-side, so it
+  // is cached for the session rather than refetched per modal open.
+  const audienceQuery = useQuery({
+    queryKey: ["pathway-audiences"],
+    queryFn: async () => (await getPathwayAudiences()).data || [],
+    enabled: isOpen,
+    staleTime: 10 * 60 * 1000,
+  });
+
+  const audienceOptions = (audienceQuery.data || []).map((audience) => ({
+    value: audience.slug,
+    label: audience.name,
+  }));
+
+  // Changing which audiences a pathway serves changes what every audience page
+  // lists, so those caches go stale with it.
+  const invalidateAudiencePages = () => {
+    queryClient.invalidateQueries({ queryKey: ["audience-pathways"] });
+    queryClient.invalidateQueries({ queryKey: ["audience-courses"] });
+    queryClient.invalidateQueries({ queryKey: ["public-pathways"] });
+  };
 
   const pathwayDetailQuery = useQuery({
     queryKey: ["pathway", pathway?.id],
@@ -127,6 +155,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
   const createPathwayMutation = useMutation({
     mutationFn: (payload) => createPathway(payload),
     onSuccess: () => {
+      invalidateAudiencePages();
       queryClient.invalidateQueries({ queryKey: ["pathways"] });
     },
   });
@@ -134,6 +163,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
   const updatePathwayMutation = useMutation({
     mutationFn: ({ id, payload }) => updatePathway(id, payload),
     onSuccess: () => {
+      invalidateAudiencePages();
       queryClient.invalidateQueries({ queryKey: ["pathways"] });
       queryClient.invalidateQueries({ queryKey: ["pathway", pathway?.id] });
     },
@@ -141,7 +171,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
 
   const isSubmitting = createPathwayMutation.isPending || updatePathwayMutation.isPending;
   const isLoadingPathway = isEditMode && pathwayDetailQuery.isLoading;
-  const isBusy = isSubmitting || isLoadingPathway;
+  const isBusy = isSubmitting || isLoadingPathway || (isEditMode && pathwayDetailQuery.isError);
 
   useEffect(() => {
     if (!isOpen) return;
@@ -163,6 +193,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
       status: detail.status || "DRAFT",
       difficulty: detail.difficulty || "BEGINNER",
       duration_weeks: String(detail.duration_weeks ?? 0),
+      audience_slugs: (detail.audiences || []).map((audience) => audience.slug),
     });
     setBullets({
       learning_outcomes: detail.learning_outcomes || [],
@@ -206,6 +237,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
 
   const handleSubmit = async (event) => {
     event.preventDefault();
+    if (isBusy) return;
 
     const name = form.name.trim();
     const summary = form.summary.trim();
@@ -241,6 +273,13 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
       who_is_for: cleanLearningOutcomes(bullets.who_is_for),
       prerequisites: cleanLearningOutcomes(bullets.prerequisites),
     };
+
+    // Only sent once the picker has actually loaded. If the audience list
+    // failed to load, the field was never editable, and omitting it leaves the
+    // pathway's existing audiences untouched instead of clearing them.
+    if (audienceQuery.isSuccess) {
+      payload.audience_slugs = form.audience_slugs;
+    }
 
     try {
       const response = isEditMode
@@ -324,6 +363,55 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
             />
             {fieldErrors.description && <p className={ERROR_CLASS}>{fieldErrors.description}</p>}
           </div>
+        </FormSection>
+
+        <FormSection
+          title="Audience cards"
+          description="Which audience pages list this pathway. A pathway can serve several audiences at once; leave it empty to keep it off every audience page."
+        >
+          <MultiSelect
+            size="lg"
+            label="Audiences"
+            placeholder="Select audiences"
+            searchPlaceholder="Search audiences..."
+            options={audienceOptions}
+            values={form.audience_slugs}
+            onChange={(slugs) => {
+              setForm((prev) => ({ ...prev, audience_slugs: slugs }));
+              setFieldErrors((prev) => ({ ...prev, audience_slugs: null }));
+            }}
+            loading={audienceQuery.isPending}
+            disabled={isBusy || !audienceQuery.isSuccess}
+            emptyLabel="No audiences found."
+          />
+          {fieldErrors.audience_slugs && (
+            <p className={ERROR_CLASS}>{fieldErrors.audience_slugs}</p>
+          )}
+          {audienceQuery.isError && (
+            <p role="alert" className={ERROR_CLASS}>
+              Unable to load audiences — this pathway&apos;s existing audiences
+              will be left unchanged.{" "}
+              <button
+                type="button"
+                onClick={() => audienceQuery.refetch()}
+                className="underline underline-offset-2"
+              >
+                Try again
+              </button>
+            </p>
+          )}
+          {isEditMode && pathwayDetailQuery.isError && (
+            <p role="alert" className={ERROR_CLASS}>
+              Unable to load this pathway.{" "}
+              <button
+                type="button"
+                onClick={() => pathwayDetailQuery.refetch()}
+                className="underline underline-offset-2"
+              >
+                Retry
+              </button>
+            </p>
+          )}
         </FormSection>
 
         <FormSection

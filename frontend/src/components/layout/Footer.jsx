@@ -15,10 +15,10 @@ export default function Footer() {
           <div className="space-y-4 md:col-span-1.5 col-span-1">
             <div className="flex items-center gap-2.5">
               <div className="w-8 h-8 rounded-full bg-gold flex items-center justify-center text-ink font-serif font-light text-sm">
-                TT
+                CN
               </div>
               <h4 className="font-serif font-light text-lg text-paper">
-                TrueTrek Learning LLC
+                Cool Nerds
               </h4>
             </div>
             <p className="text-sm text-sage/70 font-light leading-relaxed max-w-sm">
@@ -68,7 +68,7 @@ export default function Footer() {
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-sage/60 font-sans">
           <p>
-            &copy; {new Date().getFullYear()} TrueTrek Learning LLC. All rights
+            &copy; {new Date().getFullYear()} Cool Nerds. All rights
             or covenants reserved. Developed with Google AI Studio.
           </p>
           <div className="flex gap-4">

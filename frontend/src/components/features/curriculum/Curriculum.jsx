@@ -58,7 +58,7 @@ export default function Curriculum() {
     <div className="min-h-screen bg-porcelain px-5 py-12 text-ink md:px-8" id="curriculum-container">
       <div className="mx-auto max-w-7xl">
         <h1 className="text-4xl font-serif">Curriculum Explorer</h1>
-        <p className="mt-3 text-muted">Browse TrueTrek's courses by subject, and dive into each one's modules, lessons, assignments, and quizzes.</p>
+        <p className="mt-3 text-muted">Browse Cool Nerds's courses by subject, and dive into each one's modules, lessons, assignments, and quizzes.</p>
         <CurriculumFilters
           filters={filters}
           onFilterChange={updateFilter}

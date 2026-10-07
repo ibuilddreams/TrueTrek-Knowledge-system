@@ -1,0 +1,70 @@
+.backLink {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: var(--color-moss);
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.hero {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+  margin-top: 24px;
+  padding: 12px;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: 28px;
+  background: rgba(255, 250, 241, 0.88);
+  box-shadow: 0 16px 48px -24px rgba(9, 45, 41, 0.18);
+}
+
+.copy { padding: 28px 32px 20px; min-width: 0; }
+.eyebrow { display: flex; align-items: center; gap: 12px; color: var(--color-moss); font-size: 11px; font-weight: 600; letter-spacing: 0.12em; text-transform: uppercase; }
+.icon { display: grid; place-items: center; width: 40px; height: 40px; border-radius: 12px; flex-shrink: 0; }
+.title { margin-top: 26px; font-family: var(--font-serif); font-size: clamp(2.5rem, 4.4vw, 3.75rem); font-weight: 300; line-height: 1.06; letter-spacing: -0.045em; text-wrap: balance; }
+.description { margin-top: 20px; max-width: 440px; color: var(--color-muted); font-size: 15px; line-height: 1.8; text-wrap: pretty; }
+.chips { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 20px; }
+.chip { padding: 6px 11px; border: 1px solid var(--color-line); border-radius: 7px; color: var(--color-moss); font-size: 11px; font-weight: 500; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 12px 20px; margin: 28px 0; }
+.primaryAction, .secondaryAction { display: inline-flex; align-items: center; justify-content: center; gap: 10px; min-height: 44px; font-size: 12px; font-weight: 600; transition: background 160ms, color 160ms; }
+.primaryAction { padding: 12px 18px; border-radius: 10px; background: var(--color-pine); color: var(--color-paper); }
+.primaryAction:hover { background: var(--color-moss); }
+.secondaryAction { color: var(--color-moss); }
+.secondaryAction:hover, .backLink:hover { color: var(--color-ink); }
+.primaryAction:focus-visible, .secondaryAction:focus-visible, .backLink:focus-visible { outline: 2px solid var(--color-pine); outline-offset: 5px; }
+.stats { display: flex; gap: 28px; padding-top: 22px; border-top: 1px solid var(--color-line); }
+.stat { display: flex; flex-direction: row-reverse; align-items: baseline; gap: 9px; }
+.stat + .stat { padding-left: 28px; border-left: 1px solid var(--color-line); }
+.statLabel { font-size: 12px; color: var(--color-muted); }
+.statValue { font-family: var(--font-serif); font-size: 32px; line-height: 1; font-variant-numeric: tabular-nums; color: var(--color-pine); }
+.artwork { position: relative; min-height: 440px; overflow: hidden; border-radius: 19px; background: var(--color-sage); }
+.artwork::after { position: absolute; inset: 40% 0 0; content: ""; background: linear-gradient(transparent, rgba(5, 28, 24, 0.8)); }
+.image { position: absolute; width: 100%; height: 100%; object-fit: cover; object-position: center; }
+.imageCaption { position: absolute; z-index: 1; bottom: 28px; left: 26px; right: 26px; display: flex; align-items: center; gap: 14px; color: #fffaf1; }
+.captionIcon { display: grid; place-items: center; flex-shrink: 0; width: 42px; height: 42px; border: 1px solid rgba(255,255,255,0.4); border-radius: 12px; }
+.captionEyebrow { font-size: 10px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+.imageCaption p { margin-top: 5px; font-family: var(--font-serif); font-size: 23px; line-height: 1.2; }
+
+@media (max-width: 1023px) {
+  .copy { padding: 24px 22px 18px; }
+  .title { font-size: 44px; }
+  .imageCaption { left: 20px; right: 20px; }
+  .captionIcon { display: none; }
+}
+
+@media (max-width: 767px) {
+  .hero { grid-template-columns: minmax(0, 1fr); padding: 8px; border-radius: 22px; }
+  .copy { padding: 22px 16px 28px; }
+  .title { font-size: clamp(36px, 9vw, 48px); margin-top: 22px; }
+  .artwork { min-height: 280px; aspect-ratio: 4 / 3; border-radius: 15px; }
+  .description { max-width: none; }
+  .captionIcon { display: grid; }
+  .imageCaption { bottom: 22px; }
+  .stats { gap: 22px; }
+  .stat + .stat { padding-left: 22px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .primaryAction, .secondaryAction { transition: none; }
+}

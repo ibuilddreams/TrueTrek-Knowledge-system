@@ -1,7 +1,7 @@
 import CourseCatalogDetail from "@/components/features/curriculum/CourseCatalogDetail";
 
 export const metadata = {
-  title: "Course Details | TrueTrek Learning",
+  title: "Course Details | Cool Nerds",
   description: "Course overview, modules, lessons, assignments, and quizzes.",
 };
 

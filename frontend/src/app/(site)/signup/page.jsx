@@ -1,9 +1,9 @@
 import SignupForm from "@/components/features/auth/SignupForm";
 
 export const metadata = {
-  title: "Sign Up | TrueTrek Learning",
+  title: "Sign Up | Cool Nerds",
   description:
-    "Create your TrueTrek Learning student account to get started.",
+    "Create your Cool Nerds student account to get started.",
 };
 
 export default function SignupPage() {

@@ -1,7 +1,7 @@
 import PathwayDetailPage from "@/components/features/pathways/detail/PathwayDetailPage";
 
 export const metadata = {
-  title: "Pathway Details | TrueTrek Learning",
+  title: "Pathway Details | Cool Nerds",
   description: "Pathway purpose, what you'll learn, included courses, and pricing.",
 };
 
