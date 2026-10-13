@@ -24,7 +24,7 @@ export default function MobileMenu() {
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
-          className="md:hidden fixed top-24 left-0 w-full border-b z-40 p-6 flex flex-col gap-4 font-sans text-sm font-medium uppercase tracking-wide transition-colors duration-300 bg-paper border-line text-muted"
+          className="md:hidden fixed top-24 left-0 w-full border-b z-40 p-6 flex flex-col gap-4 font-sans text-sm font-medium uppercase tracking-wide transition-colors duration-300 bg-white border-line text-muted"
         >
           {NAV_LINKS.map((link) => (
             <Link

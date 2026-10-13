@@ -19,33 +19,34 @@ export default function Navbar() {
   const linkClass = (key) =>
     `min-h-[34px] inline-flex items-center px-3 rounded-xl transition-colors duration-200 ${
       activeSection === key
-        ? "text-ink bg-paper/90 shadow-[inset_0_0_0_1px_rgba(22,33,29,0.06)]"
-        : "text-ink/60 hover:text-ink hover:bg-paper/60"
+        ? "text-ink bg-white shadow-[inset_0_0_0_1px_rgba(22,33,29,0.12),0_1px_2px_rgba(22,33,29,0.06)]"
+        : "text-ink/60 hover:text-ink hover:bg-ink/[0.04]"
     }`;
 
   return (
     <nav
       id="master-nav"
-      className="sticky top-[18px] z-50 mx-auto w-[min(1100px,calc(100%-32px))] mt-[18px] flex items-center gap-3 p-2 justify-between rounded-nav border border-white/78 bg-paper/58 backdrop-blur-2xl shadow-soft transition-colors duration-300"
+      className="sticky top-[18px] z-50 mx-auto w-[min(1100px,calc(100%-32px))] mt-[18px] flex items-center gap-3 p-2 justify-between rounded-nav border border-ink/8 bg-white shadow-soft transition-colors duration-300"
     >
       <Link
         id="logo-combo"
         href={ROUTES.HOME}
-        className="inline-flex items-center gap-2.5 pl-2 pr-3 py-1.5 rounded-2xl bg-white/42 cursor-pointer select-none group"
+        className="inline-flex items-center px-1 py-0.5 rounded-2xl cursor-pointer select-none"
         title="Return to Cool Nerds home orientation page"
         aria-label="Return to Cool Nerds home orientation page"
       >
-        <div className="w-8.5 h-8.5 rounded-xl bg-gradient-to-br from-pine to-moss flex items-center justify-center text-paper font-serif font-light text-[11px] shadow-soft">
-          CN
-        </div>
-        <span className="text-sm font-sans font-bold tracking-tight text-ink group-hover:text-pine transition-colors duration-200">
-          Cool Nerds<span className="text-gold">.</span>
-        </span>
+        <img
+          src="/images/cool-nerds-logo.jpg"
+          alt="Cool Nerds"
+          width={1536}
+          height={445}
+          className="h-10 sm:h-12 lg:h-14 w-auto object-contain"
+        />
       </Link>
 
       <div
         id="desktop-nav-links"
-        className="hidden md:flex items-center gap-0.5 p-1 rounded-2xl bg-white/40 border border-ink/6 font-sans text-[13px] font-semibold capitalize"
+        className="hidden md:flex items-center gap-0.5 p-1 rounded-2xl bg-white border border-ink/8 font-sans text-[13px] font-semibold capitalize"
       >
         {NAV_LINKS.map((link) => (
           <Link

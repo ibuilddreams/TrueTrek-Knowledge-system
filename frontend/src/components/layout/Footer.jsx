@@ -13,13 +13,14 @@ export default function Footer() {
       <div className="max-w-6xl mx-auto">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-10 border-b border-white/10 pb-12 mb-10">
           <div className="space-y-4 md:col-span-1.5 col-span-1">
-            <div className="flex items-center gap-2.5">
-              <div className="w-8 h-8 rounded-full bg-gold flex items-center justify-center text-ink font-serif font-light text-sm">
-                CN
-              </div>
-              <h4 className="font-serif font-light text-lg text-paper">
-                Cool Nerds
-              </h4>
+            <div className="flex w-fit items-center rounded-2xl bg-white px-3 py-2 shadow-soft">
+              <img
+                src="/images/cool-nerds-logo.jpg"
+                alt="Cool Nerds"
+                width={1536}
+                height={445}
+                className="h-12 w-auto object-contain"
+              />
             </div>
             <p className="text-sm text-sage/70 font-light leading-relaxed max-w-sm">
               Licensing the world&apos;s leading high-performance administrative
