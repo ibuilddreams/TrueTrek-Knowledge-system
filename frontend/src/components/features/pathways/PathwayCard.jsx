@@ -11,6 +11,7 @@ import {
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { formatCoursePrice } from "@/lib/store";
+import { pathwayAccentStyle } from "@/lib/pathwayAccents";
 
 function getTierLabel(tiers) {
   if (!tiers || tiers.length === 0) return "Standalone";
@@ -28,6 +29,7 @@ export default function PathwayCard({
   isSelected,
   isOwned = false,
   canSelect = true,
+  accentIndex = 0,
   onToggleSelect,
 }) {
   const courseCount = pathway.course_count ?? 0;
@@ -35,65 +37,59 @@ export default function PathwayCard({
   return (
     <div
       id={`pathway-card-${pathway.id}`}
+      style={pathwayAccentStyle(accentIndex)}
       className={`${styles.card} ${isOwned ? styles.owned : isSelected ? styles.selected : ""}`}
     >
-      <div className={styles.header}>
-        <div className={styles.courseInfo}>
-          <span className={styles.icon}>
-            <Layers aria-hidden="true" className="h-5 w-5" strokeWidth={1.5} />
-          </span>
-          <div>
-            <span className={styles.eyebrow}>Learning pathway</span>
-            <span className={styles.count}>{courseCount} course{courseCount === 1 ? "" : "s"} included</span>
-          </div>
-        </div>
+      <span aria-hidden="true" className={styles.accent} />
 
-        {isOwned ? (
-          <span className="flex items-center gap-1 text-[10px] font-sans font-medium uppercase tracking-widest border px-2.5 py-1 rounded-full shrink-0 bg-sage text-moss border-moss/30">
-            <CheckCircle2 className="w-3 h-3 shrink-0 text-moss" />
-            OWNED
-          </span>
-        ) : (
-          isSelected && (
+      {(isOwned || isSelected) && (
+        <div className={styles.badgeSlot}>
+          {isOwned ? (
+            <span className="flex items-center gap-1 text-[10px] font-sans font-medium uppercase tracking-widest border px-2.5 py-1 rounded-full shrink-0 bg-sage text-moss border-moss/30">
+              <CheckCircle2 className="w-3 h-3 shrink-0 text-moss" />
+              OWNED
+            </span>
+          ) : (
             <span className="flex items-center gap-1 text-[10px] font-sans font-medium uppercase tracking-widest border px-2.5 py-1 rounded-full shrink-0 bg-gold/15 text-[#8a6f2e] border-gold/30">
               <CheckCircle2 className="w-3 h-3 shrink-0 text-gold" />
               SELECTED
             </span>
-          )
-        )}
-      </div>
+          )}
+        </div>
+      )}
 
       <div className={styles.body}>
+        <span className={styles.iconWrap}>
+          <span aria-hidden="true" className={styles.halo} />
+          <span className={styles.icon}>
+            <Layers aria-hidden="true" className="h-6 w-6" strokeWidth={1.5} />
+          </span>
+        </span>
+
+        <span className={styles.eyebrow}>
+          {courseCount} course{courseCount === 1 ? "" : "s"} included
+        </span>
+
         <h3 className={styles.title}>
           {pathway.name}
         </h3>
+
         <p className={styles.focus}>
-          {pathway.tiers?.length ? `${getTierLabel(pathway.tiers)} · ${getFocusLabel(pathway.tiers)}` : "Standalone pathway"}
+          {pathway.tiers?.length
+            ? `${getTierLabel(pathway.tiers)} · ${getFocusLabel(pathway.tiers)}`
+            : "Standalone pathway"}
         </p>
+
         <p className={styles.summary}>
           {pathway.summary || "No summary has been added for this pathway yet."}
         </p>
       </div>
 
       <div className={styles.footer}>
-        <div className={styles.priceRow}>
-          <div>
-            <span className={styles.priceLabel}>
-              Bundle price
-            </span>
-            <span className={styles.price}>
-              {formatCoursePrice(pathway.base_price)}
-            </span>
-          </div>
-
-          <span
-            aria-hidden="true"
-            className={styles.detail}
-          >
-            View details
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </span>
-        </div>
+        <span className={styles.priceLabel}>Bundle price</span>
+        <span className={styles.price}>
+          {formatCoursePrice(pathway.base_price)}
+        </span>
 
         {/* Above the stretched link, so the action is not a navigation. */}
         <div className="relative z-10">
@@ -128,6 +124,11 @@ export default function PathwayCard({
             </span>
           )}
         </div>
+
+        <span aria-hidden="true" className={styles.detail}>
+          View details
+          <ArrowUpRight className="w-3.5 h-3.5" />
+        </span>
       </div>
 
       {/* Stretched link: the whole card opens the pathway page. Rendered last

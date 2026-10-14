@@ -31,7 +31,7 @@ def compute_pathway_recommendations(user):
     )
 
     return (
-        Pathway.objects.filter(status=Status.PUBLISHED)
+        Pathway.objects.filter(status=Status.PUBLISHED, is_custom=False)
         .annotate(
             score=Coalesce(
                 Sum(

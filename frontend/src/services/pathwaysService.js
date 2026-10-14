@@ -84,3 +84,23 @@ export async function checkoutPathways(pathwayIds) {
 export async function getMyPathways() {
   return backendClient.get("/pathways/mine/");
 }
+
+// --- Custom ("build your own") pathways -------------------------------------
+// Student-owned bundles. Every endpoint is owner-scoped server-side; buying one
+// goes through the shared `checkoutPathways` above.
+
+export async function getMyCustomPathways() {
+  return backendClient.get("/pathways/custom/");
+}
+
+export async function createCustomPathway(payload) {
+  return backendClient.post("/pathways/custom/", payload);
+}
+
+export async function updateCustomPathway(id, payload) {
+  return backendClient.patch(`/pathways/custom/${id}/`, payload);
+}
+
+export async function deleteCustomPathway(id) {
+  return backendClient.delete(`/pathways/custom/${id}/`);
+}

@@ -1,8 +1,8 @@
 import Curriculum from "@/components/features/curriculum/Curriculum";
 
 export const metadata = {
-  title: "Curriculum | Cool Nerds",
-  description: "Explore Cool Nerds's courses by subject, with detailed learning outlines",
+  title: "The 9-Tier Curriculum | Cool Nerds",
+  description: "Explore the nine-tier Cool Nerds curriculum and browse courses by tier, subject, grade, and difficulty.",
 };
 
 export default function CurriculumPage() {

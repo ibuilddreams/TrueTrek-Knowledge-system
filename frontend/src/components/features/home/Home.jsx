@@ -145,7 +145,7 @@ export default function Home() {
   const router = useRouter();
   const onExploreTiers = () => router.push(ROUTES.CURRICULUM);
   const onNavigateToPortal = () => router.push(ROUTES.STUDENT_PORTAL);
-  const onExplorePathways = () => router.push(ROUTES.PATHWAYS);
+  const onExplorePathways = () => router.push(ROUTES.CURRICULUM);
   // New/unauthenticated visitors are guided into the onboarding wizard
   // (signup -> questionnaire -> pathway recommendation -> payment) rather
   // than dropped straight into passive browsing, so the hero's primary CTA
@@ -403,7 +403,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
             onClick={onExplorePathways}
             className="w-full sm:w-auto bg-pine hover:bg-moss text-paper font-semibold px-8 py-3.5 rounded-full flex items-center justify-center gap-2 transition duration-300 shadow-elevated text-sm tracking-wide"
           >
-            Discover Your Pathway
+            Discover Your 9-Tier Curriculum
             <ArrowRight className="w-4 h-4" />
           </button>
           <button
@@ -411,7 +411,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
             onClick={onNavigateToPortal}
             className="w-full sm:w-auto bg-paper hover:bg-porcelain text-ink border border-line px-8 py-3.5 rounded-full text-sm font-semibold transition duration-300 tracking-wide"
           >
-            Enter Student Portal
+            Enter Cool Nerds Portal
           </button>
         </motion.div>
 

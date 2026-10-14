@@ -44,30 +44,27 @@ class SeedDataCommandTests(TestCase):
             sorted(Category.objects.values_list("name", flat=True)), sorted(seed.CATEGORY_NAMES)
         )
 
-    def test_every_module_has_a_video_pdf_and_document_lesson(self):
+    def test_every_module_has_one_or_two_distinct_supported_lessons(self):
         seed_offline()
 
+        supported = {Lesson.ContentType.VIDEO, Lesson.ContentType.PDF, Lesson.ContentType.DOCUMENT}
         for course in Course.objects.all():
             for module in course.modules.all():
-                content_types = sorted(module.lessons.values_list("content_type", flat=True))
-                self.assertEqual(
-                    content_types,
-                    sorted(
-                        [
-                            Lesson.ContentType.VIDEO,
-                            Lesson.ContentType.PDF,
-                            Lesson.ContentType.DOCUMENT,
-                        ]
-                    ),
-                    f"{course.code} / {module.title}",
-                )
+                content_types = list(module.lessons.values_list("content_type", flat=True))
+                self.assertIn(len(content_types), (1, 2), f"{course.code} / {module.title}")
+                self.assertEqual(len(content_types), len(set(content_types)))
+                self.assertTrue(set(content_types) <= supported)
 
     def test_every_quiz_question_has_four_choices_with_exactly_one_correct(self):
         seed_offline()
 
         for course in Course.objects.all():
             for quiz in course.quizzes.all():
-                self.assertEqual(quiz.questions.count(), 10, quiz.title)
+                # The restored catalog has subject/provider/grade questions;
+                # the new athlete courses also have a focus question.
+                expected_count = 4 if course.code in {cd["code"] for cd in seed.COOL_NERDS_COURSE_DEFS} else 3
+                self.assertEqual(quiz.questions.count(), expected_count, quiz.title)
+                self.assertEqual(quiz.number_of_questions, expected_count)
                 for question in quiz.questions.all():
                     self.assertEqual(question.choices.count(), 4, question.text)
                     self.assertEqual(
@@ -109,19 +106,17 @@ class SeedDataCommandTests(TestCase):
             )
             self.assertEqual(orders, list(range(1, len(orders) + 1)), tier.name)
 
-    def test_reset_data_clears_a_tier_protected_category_without_error(self):
-        # Category is PROTECTed by both Course.category and Tier.category, so
-        # _reset_data has to delete every course and tier before it touches
-        # categories — otherwise this raises ProtectedError.
+    def test_reseeding_preserves_existing_tiers_and_categories(self):
+        # Unrelated tiers and their protected categories must survive.
         category, _ = Category.objects.get_or_create(name="Athletic")
         Tier.objects.create(name="Stale Tier", level=99, category=category)
 
         seed_offline()
 
-        self.assertFalse(Tier.objects.filter(level=99).exists())
+        self.assertTrue(Tier.objects.filter(level=99).exists())
         self.assertTrue(Category.objects.filter(name="Athletic").exists())
 
-    def test_preserves_admins_and_superusers_but_deletes_everyone_else(self):
+    def test_preserves_all_existing_users(self):
         admin = User.objects.create_user(
             email="owner@example.com",
             username="owner@example.com",
@@ -139,7 +134,7 @@ class SeedDataCommandTests(TestCase):
             gender=User.Gender.OTHER,
             role=User.Roles.STUDENT,
         )
-        doomed = User.objects.create_user(
+        student = User.objects.create_user(
             email="old-student@example.com",
             username="old-student@example.com",
             password="x",
@@ -151,7 +146,40 @@ class SeedDataCommandTests(TestCase):
 
         self.assertTrue(User.objects.filter(pk=admin.pk).exists())
         self.assertTrue(User.objects.filter(pk=superuser.pk).exists())
-        self.assertFalse(User.objects.filter(pk=doomed.pk).exists())
+        self.assertTrue(User.objects.filter(pk=student.pk).exists())
+        student.refresh_from_db()
+        self.assertTrue(student.check_password("x"))
+
+    def test_reseeding_preserves_course_content_enrollment_progress_and_custom_pathways(self):
+        from courses.models import Tag
+        from progress.models import CourseProgress
+
+        seed_offline()
+        course = Course.objects.get(code=seed.COURSE_DEFS[0]["code"])
+        course.title = "Edited by administrator"
+        course.save()
+        tag = Tag.objects.create(name="Keep my tag")
+        course.tags.set([tag])
+        student = User.objects.filter(role=User.Roles.STUDENT).first()
+        enrollment, _ = Enrollment.objects.get_or_create(student=student, course=course)
+        progress = CourseProgress.objects.create(student=student, course=course, completion_percentage=42)
+        custom = Pathway.objects.create(name="My custom bundle", is_custom=True, created_by=student)
+        link = PathwayCourse.objects.create(pathway=custom, course=course)
+        old = Pathway.objects.create(name="Obsolete catalog pathway")
+        lesson_ids = list(Lesson.objects.filter(module__course=course).values_list("id", flat=True))
+
+        seed_offline()
+
+        course.refresh_from_db()
+        self.assertEqual(course.title, "Edited by administrator")
+        self.assertEqual(list(course.tags.values_list("id", flat=True)), [tag.id])
+        self.assertEqual(list(Lesson.objects.filter(module__course=course).values_list("id", flat=True)), lesson_ids)
+        self.assertTrue(Enrollment.objects.filter(pk=enrollment.pk).exists())
+        progress.refresh_from_db()
+        self.assertEqual(progress.completion_percentage, 42)
+        self.assertTrue(PathwayCourse.objects.filter(pk=link.pk, pathway=custom).exists())
+        self.assertFalse(Pathway.objects.filter(pk=old.pk).exists())
+        self.assertEqual(Pathway.objects.filter(is_custom=False).count(), len(seed.PATHWAY_DEFS))
 
     def test_is_idempotent(self):
         seed_offline()
@@ -247,14 +275,14 @@ class SeedDataAssetTests(TestCase):
         # DOCX are fetched once each and reused across every PDF/DOCX lesson.
         self.assertEqual(
             mock_get.call_count,
-            sum(1 for url in seed.NUMA_PROVIDER_THUMBNAILS.values() if url)
+            sum(1 for url in seed.PROVIDER_THUMBNAILS.values() if url)
             + len(seed.LESSON_ASSET_URLS)
             + len(seed.INSTRUCTOR_AVATAR_IDS),
         )
 
         # Providers with no logo on file are seeded without a thumbnail by design.
         providers_with_logo = {
-            name for name, url in seed.NUMA_PROVIDER_THUMBNAILS.items() if url
+            name for name, url in seed.PROVIDER_THUMBNAILS.items() if url
         }
         for course_def in seed.COURSE_DEFS:
             if course_def["provider"] in providers_with_logo:

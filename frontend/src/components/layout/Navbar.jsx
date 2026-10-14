@@ -36,11 +36,11 @@ export default function Navbar() {
         aria-label="Return to Cool Nerds home orientation page"
       >
         <img
-          src="/images/cool-nerds-logo.jpg"
+          src="/images/coolnerdz-stacked.png"
           alt="Cool Nerds"
-          width={1536}
-          height={445}
-          className="h-10 sm:h-12 lg:h-14 w-auto object-contain"
+          width={400}
+          height={316}
+          className="h-12 sm:h-14 lg:h-16 w-auto object-contain"
         />
       </Link>
 
@@ -70,8 +70,8 @@ export default function Navbar() {
           id="nav-portal-login-btn"
           href={ROUTES.LOGIN}
           className="font-sans text-[13px] px-3.5 min-h-10 rounded-[14px] font-extrabold transition duration-200 shadow-[0_12px_26px_rgba(22,33,29,0.17)] hover:-translate-y-0.5 flex items-center gap-2 select-none bg-ink hover:bg-pine text-white"
-          title="Access the secure Student Portal simulator with interactive drills"
-          aria-label="Access the secure Student Portal simulator with interactive drills"
+          title="Access the secure Cool Nerds Portal simulator with interactive drills"
+          aria-label="Access the secure Cool Nerds Portal simulator with interactive drills"
         >
           <User className="w-3.5 h-3.5" />
           Portal Access

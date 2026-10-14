@@ -9,6 +9,7 @@ from common.response import error_response, success_response
 from enrollments.models import Enrollment
 from enrollments.serializers import CourseEnrolledStudentSerializer
 from users.permissions import IsAdmin, IsTeacher
+from tiers.models import Tier
 
 from .grades import MAX_GRADE, MIN_GRADE, grade_name
 from .models import Category, Course, Tag
@@ -217,6 +218,15 @@ class PublicCourseListView(generics.ListAPIView):
                 pathway_courses__pathway__audiences__slug=audience_param,
             )
 
+        tier_param = params.get("tier")
+        if tier_param:
+            queryset = queryset.filter(
+                pathway_courses__pathway__status=Status.PUBLISHED,
+                pathway_courses__pathway__is_custom=False,
+                pathway_courses__pathway__tier_pathways__tier__status=Status.PUBLISHED,
+                pathway_courses__pathway__tier_pathways__tier__slug=tier_param,
+            )
+
         # A single grade (Pre-K = -1, K = 0, 1-12) matches every course whose
         # grade range includes it.
         grade_param = params.get("grade")
@@ -377,6 +387,19 @@ class PublicCourseFiltersView(generics.GenericAPIView):
 
         return success_response({
             "subjects": list(Category.objects.filter(courses__in=courses).distinct().order_by("name").values("id", "name")),
+            "tiers": list(Tier.objects.filter(status=Status.PUBLISHED).annotate(
+                course_count=Count(
+                    "tier_pathways__pathway__pathway_courses__course",
+                    filter=Q(
+                        tier_pathways__pathway__status=Status.PUBLISHED,
+                        tier_pathways__pathway__is_custom=False,
+                        tier_pathways__pathway__pathway_courses__course__status=Status.PUBLISHED,
+                    ),
+                    distinct=True,
+                )
+            ).order_by("level").values(
+                "id", "slug", "name", "level", "audience", "focus_description", "estimated_duration", "course_count"
+            )),
             "grades": [{"value": grade, "label": grade_name(grade)} for grade in grades],
             "difficulties": difficulties,
         }, message="Curriculum filters fetched successfully")

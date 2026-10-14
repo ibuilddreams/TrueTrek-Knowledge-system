@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ChevronRight, Route } from "lucide-react";
+import { ChevronRight, Route, Wand2 } from "lucide-react";
 import { getMyPathways } from "@/services/pathwaysService";
 import { useAuth } from "@/hooks/useAuth";
 import PathwayCoursesModal from "./PathwayCoursesModal";
@@ -73,12 +73,24 @@ export default function MyPathwaysSummary() {
               className="group flex gap-3 p-3.5 rounded-xl border border-line bg-porcelain text-left w-full cursor-pointer transition hover:border-gold/50 hover:bg-paper hover:shadow-[0_10px_28px_-22px_rgba(28,25,23,0.35)] focus:outline-none focus-visible:ring-2 focus-visible:ring-pine"
             >
               <div className="w-11 h-11 rounded-lg border shrink-0 overflow-hidden flex items-center justify-center border-line bg-paper">
-                <Route className="w-4 h-4 text-pine" />
+                {pathway.is_custom ? (
+                  <Wand2 className="w-4 h-4 text-gold" />
+                ) : (
+                  <Route className="w-4 h-4 text-pine" />
+                )}
               </div>
               <div className="min-w-0 flex-1">
                 <span className="block text-sm font-bold truncate text-ink">
                   {pathway.name}
                 </span>
+                {/* Bundles the student built themselves on /pathways/build,
+                    so they're not mistaken for an official pathway. */}
+                {pathway.is_custom && (
+                  <span className="inline-flex items-center gap-1 mt-1 text-[10px] font-sans font-medium uppercase tracking-widest border px-2 py-0.5 rounded-full bg-gold/15 text-[#8a6f2e] border-gold/30">
+                    <Wand2 className="w-2.5 h-2.5" />
+                    Built by you
+                  </span>
+                )}
                 {pathway.summary && (
                   <span className="block text-xs mt-0.5 line-clamp-2 font-light text-muted">
                     {pathway.summary}

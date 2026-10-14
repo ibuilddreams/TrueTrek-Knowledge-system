@@ -1,4 +1,4 @@
-from django.db.models import Count, Q
+from django.db.models import Count, Exists, OuterRef, Q
 from rest_framework import generics
 from rest_framework.permissions import AllowAny, IsAuthenticated
 
@@ -10,6 +10,8 @@ from users.permissions import IsAdmin, IsStudent
 from .models import Audience, Pathway, PathwayBundleRule, PathwayCourse, PathwayEnrollment
 from .serializers import (
     AudienceSerializer,
+    CustomPathwaySerializer,
+    CustomPathwayWriteSerializer,
     PathwayBundleRuleSerializer,
     PathwayBundleRuleWriteSerializer,
     PathwayCheckoutRequestSerializer,
@@ -22,13 +24,23 @@ from .serializers import (
     PathwayWriteSerializer,
     PublicPathwayDetailSerializer,
 )
-from .services import PathwayReorderError, checkout_pathways, reorder_pathway_courses
+from .services import (
+    CustomPathwayError,
+    PathwayReorderError,
+    catalog_pathways,
+    checkout_pathways,
+    create_custom_pathway,
+    delete_custom_pathway,
+    reorder_pathway_courses,
+    update_custom_pathway,
+    visible_pathway_filter,
+)
 
 
 class PublicPathwayListView(generics.ListAPIView):
     """Anonymous-safe pathway browsing — published pathways only, no auth required."""
 
-    queryset = Pathway.objects.filter(status=Status.PUBLISHED)
+    queryset = catalog_pathways().filter(status=Status.PUBLISHED)
     serializer_class = PathwayListSerializer
     permission_classes = [AllowAny]
     pagination_class = Pagination
@@ -90,7 +102,9 @@ class PublicPathwayDetailView(generics.GenericAPIView):
 
     def get(self, request, pk):
         try:
-            pathway = Pathway.objects.get(pk=pk, status=Status.PUBLISHED)
+            pathway = Pathway.objects.filter(visible_pathway_filter(request.user)).get(
+                pk=pk, status=Status.PUBLISHED
+            )
         except Pathway.DoesNotExist:
             return error_response(message="Pathway with the given id does not exist.", status_code=404)
 
@@ -110,7 +124,9 @@ class PublicPathwayDetailBySlugView(generics.GenericAPIView):
 
     def get(self, request, slug):
         try:
-            pathway = Pathway.objects.get(slug=slug, status=Status.PUBLISHED)
+            pathway = Pathway.objects.filter(visible_pathway_filter(request.user)).get(
+                slug=slug, status=Status.PUBLISHED
+            )
         except Pathway.DoesNotExist:
             return error_response(
                 message="Pathway with the given slug does not exist.", status_code=404
@@ -121,7 +137,7 @@ class PublicPathwayDetailBySlugView(generics.GenericAPIView):
 
 
 class PathwayListCreateView(generics.ListCreateAPIView):
-    queryset = Pathway.objects.all().prefetch_related("audiences")
+    queryset = catalog_pathways().prefetch_related("audiences")
     pagination_class = Pagination
 
     def get_permissions(self):
@@ -164,7 +180,7 @@ class PathwayListCreateView(generics.ListCreateAPIView):
 
 class PathwayDetailView(generics.RetrieveUpdateDestroyAPIView):
     http_method_names = ["get", "patch", "delete", "head", "options"]
-    queryset = Pathway.objects.all()
+    queryset = catalog_pathways()
 
     def get_permissions(self):
         if self.request.method == "GET":
@@ -217,7 +233,7 @@ class PathwayCourseAttachView(generics.GenericAPIView):
 
     def post(self, request, pathway_id):
         try:
-            pathway = Pathway.objects.get(pk=pathway_id)
+            pathway = catalog_pathways().get(pk=pathway_id)
         except Pathway.DoesNotExist:
             return error_response(message="Pathway with the given id does not exist.", status_code=404)
 
@@ -238,7 +254,7 @@ class PathwayCourseDetachView(generics.GenericAPIView):
 
     def delete(self, request, pathway_id, course_id):
         deleted_count, _ = PathwayCourse.objects.filter(
-            pathway_id=pathway_id, course_id=course_id
+            pathway__is_custom=False, pathway_id=pathway_id, course_id=course_id
         ).delete()
         if not deleted_count:
             return error_response(message="This course is not attached to the pathway.", status_code=404)
@@ -251,7 +267,7 @@ class PathwayCourseOrderView(generics.GenericAPIView):
     permission_classes = [IsAdmin]
 
     def patch(self, request, pathway_id):
-        if not Pathway.objects.filter(pk=pathway_id).exists():
+        if not catalog_pathways().filter(pk=pathway_id).exists():
             return error_response(message="Pathway with the given id does not exist.", status_code=404)
 
         serializer = self.get_serializer(data=request.data, many=True)
@@ -374,3 +390,121 @@ class MyPathwaysView(generics.ListAPIView):
         enrollments = self.filter_queryset(self.get_queryset())
         serializer = self.get_serializer(enrollments, many=True, context={"request": request})
         return success_response(serializer.data, message="My pathways fetched successfully")
+
+
+class CustomPathwayBaseView(generics.GenericAPIView):
+    """Shared scoping for the student-built ("build your own") pathways.
+
+    Everything here is owner-scoped: another student's bundle is a 404, never
+    a 403, so ids can't be probed. Admin pathway endpoints deliberately can't
+    reach these rows, and these can't reach catalog pathways.
+    """
+
+    permission_classes = [IsStudent]
+    pagination_class = None
+
+    def get_queryset(self):
+        user = self.request.user
+        return (
+            Pathway.objects.filter(is_custom=True, created_by=user)
+            .annotate(
+                is_purchased_flag=Exists(
+                    PathwayEnrollment.objects.filter(pathway=OuterRef("pk"), user=user)
+                )
+            )
+            .prefetch_related("pathway_courses__course")
+            .order_by("-created_at", "-pk")
+        )
+
+
+class CustomPathwayListCreateView(CustomPathwayBaseView, generics.ListCreateAPIView):
+    def get_serializer_class(self):
+        if self.request.method == "POST":
+            return CustomPathwayWriteSerializer
+        return CustomPathwaySerializer
+
+    def list(self, request, *args, **kwargs):
+        serializer = CustomPathwaySerializer(
+            self.get_queryset(), many=True, context={"request": request}
+        )
+        return success_response(serializer.data, message="Custom pathways fetched successfully")
+
+    def create(self, request, *args, **kwargs):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            pathway = create_custom_pathway(
+                request.user,
+                name=serializer.validated_data["name"],
+                summary=serializer.validated_data.get("summary", ""),
+                course_ids=serializer.validated_data["course_ids"],
+            )
+        except CustomPathwayError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        return success_response(
+            CustomPathwaySerializer(pathway, context={"request": request}).data,
+            message="Pathway created successfully",
+            status_code=201,
+        )
+
+
+class CustomPathwayDetailView(CustomPathwayBaseView, generics.RetrieveUpdateDestroyAPIView):
+    http_method_names = ["get", "patch", "delete", "head", "options"]
+
+    def get_serializer_class(self):
+        if self.request.method == "PATCH":
+            return CustomPathwayWriteSerializer
+        return CustomPathwaySerializer
+
+    def _get_pathway(self, pk):
+        return self.get_queryset().filter(pk=pk).first()
+
+    def retrieve(self, request, *args, **kwargs):
+        pathway = self._get_pathway(kwargs["pk"])
+        if pathway is None:
+            return error_response(message="Pathway with the given id does not exist.", status_code=404)
+
+        return success_response(
+            CustomPathwaySerializer(pathway, context={"request": request}).data,
+            message="Pathway fetched successfully",
+        )
+
+    def update(self, request, *args, **kwargs):
+        pathway = self._get_pathway(kwargs["pk"])
+        if pathway is None:
+            return error_response(message="Pathway with the given id does not exist.", status_code=404)
+
+        serializer = self.get_serializer(pathway, data=request.data, partial=True)
+        serializer.is_valid(raise_exception=True)
+
+        try:
+            pathway = update_custom_pathway(
+                request.user,
+                pathway,
+                name=serializer.validated_data.get("name"),
+                summary=serializer.validated_data.get("summary"),
+                course_ids=serializer.validated_data.get("course_ids"),
+            )
+        except CustomPathwayError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        return success_response(
+            CustomPathwaySerializer(
+                self._get_pathway(pathway.pk), context={"request": request}
+            ).data,
+            message="Pathway updated successfully",
+        )
+
+    def destroy(self, request, *args, **kwargs):
+        pathway = self._get_pathway(kwargs["pk"])
+        if pathway is None:
+            return error_response(message="Pathway with the given id does not exist.", status_code=404)
+
+        try:
+            delete_custom_pathway(pathway)
+        except CustomPathwayError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        return success_response(None, message="Pathway deleted successfully")

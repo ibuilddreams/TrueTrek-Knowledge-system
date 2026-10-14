@@ -2,6 +2,8 @@ from django.urls import path
 
 from .views import (
     AudienceListView,
+    CustomPathwayDetailView,
+    CustomPathwayListCreateView,
     MyPathwaysView,
     PathwayBundleRuleDetailView,
     PathwayBundleRuleListCreateView,
@@ -27,6 +29,10 @@ urlpatterns = [
     ),
     path("mine/", MyPathwaysView.as_view(), name="pathway-mine"),
     path("checkout/", PathwayCheckoutView.as_view(), name="pathway-checkout"),
+    # Student-built bundles ("build your own pathway"). Owner-scoped and kept
+    # apart from the admin pathway endpoints below on purpose.
+    path("custom/", CustomPathwayListCreateView.as_view(), name="custom-pathway-list-create"),
+    path("custom/<int:pk>/", CustomPathwayDetailView.as_view(), name="custom-pathway-detail"),
     path("bundle-rules/", PathwayBundleRuleListCreateView.as_view(), name="pathway-bundle-rule-list-create"),
     path("bundle-rules/<int:pk>/", PathwayBundleRuleDetailView.as_view(), name="pathway-bundle-rule-detail"),
     path("", PathwayListCreateView.as_view(), name="pathway-list-create"),

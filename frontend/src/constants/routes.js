@@ -13,6 +13,9 @@ export const ROUTES = {
   WISHLIST: "/wishlist",
   ONBOARDING: "/onboarding",
   PATHWAYS: "/pathways",
+  // "Build your own pathway" — the student-only builder. A static segment, so
+  // it takes precedence over /pathways/[slug] in the App Router.
+  PATHWAY_BUILDER: "/pathways/build",
   AUDIENCES: "/audiences",
   // The homepage's "Who We Serve" card grid — where visitors pick an audience.
   // Audience pages link back here rather than to the /audiences index, since

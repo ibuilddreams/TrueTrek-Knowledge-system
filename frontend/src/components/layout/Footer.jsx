@@ -15,11 +15,11 @@ export default function Footer() {
           <div className="space-y-4 md:col-span-1.5 col-span-1">
             <div className="flex w-fit items-center rounded-2xl bg-white px-3 py-2 shadow-soft">
               <img
-                src="/images/cool-nerds-logo.jpg"
+                src="/images/coolnerdz-stacked.png"
                 alt="Cool Nerds"
-                width={1536}
-                height={445}
-                className="h-12 w-auto object-contain"
+                width={400}
+                height={316}
+                className="h-20 w-auto object-contain"
               />
             </div>
             <p className="text-sm text-sage/70 font-light leading-relaxed max-w-sm">

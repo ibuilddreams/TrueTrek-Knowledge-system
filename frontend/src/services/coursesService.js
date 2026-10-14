@@ -8,6 +8,7 @@ export async function getPublicCourses({
   grade,
   difficulty,
   audience,
+  tier,
   excludeEnrolled,
   sort,
 } = {}) {
@@ -18,6 +19,7 @@ export async function getPublicCourses({
   if (category) params.set("category", category);
   if (grade !== undefined && grade !== "") params.set("grade", grade);
   if (difficulty) params.set("difficulty", difficulty);
+  if (tier) params.set("tier", tier);
   if (audience) params.set("audience", audience);
   if (excludeEnrolled) params.set("exclude_enrolled", "true");
   if (sort) params.set("sort", sort);
