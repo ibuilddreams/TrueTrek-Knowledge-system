@@ -1,44 +1,159 @@
+/* Shared by PathwayCard (the /pathways store) and AudiencePathwayCard (the
+   audience pages) so the two never drift apart. The accent custom properties
+   are set per card from lib/pathwayAccents.js; the fallbacks keep the card
+   readable if it is ever rendered without them. */
+
 .card {
   position: relative;
   display: flex;
   flex-direction: column;
   min-width: 0;
-  border: 1px solid rgba(9, 45, 41, 0.13);
-  border-radius: 24px;
+  overflow: hidden;
+  border: 1px solid var(--color-line);
+  border-radius: var(--radius-card);
   background: var(--color-paper);
-  box-shadow: 0 5px 20px -12px rgba(9, 45, 41, 0.2);
-  transition: transform 180ms ease, box-shadow 180ms ease, border-color 180ms ease;
+  box-shadow: var(--shadow-soft);
+  transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
 }
-.card:hover { transform: translateY(-3px); border-color: rgba(9, 45, 41, 0.3); box-shadow: 0 16px 32px -20px rgba(9, 45, 41, 0.3); }
-.selected { border-color: var(--color-gold); box-shadow: 0 0 0 2px rgba(199, 168, 91, 0.2); }
-.owned { border-color: var(--color-moss); }
-.header { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; padding: 22px 24px; border-bottom: 1px solid rgba(9,45,41,0.07); border-radius: 23px 23px 0 0; background: linear-gradient(115deg, rgba(217,233,209,0.6), rgba(217,233,209,0.12)); }
-.courseInfo { display: flex; align-items: center; gap: 12px; }
-.icon { display: grid; place-items: center; width: 42px; height: 42px; flex-shrink: 0; border-radius: 13px; background: var(--color-pine); color: var(--color-paper); box-shadow: 0 4px 10px -6px var(--color-pine); }
-.eyebrow { display: block; color: var(--color-muted); font-size: 9px; font-weight: 600; letter-spacing: 0.13em; text-transform: uppercase; }
-.count { display: block; margin-top: 3px; color: var(--color-pine); font-size: 13px; font-weight: 600; }
-.body { display: flex; flex: 1; flex-direction: column; padding: 24px; }
-.title { margin-bottom: 12px; font-family: var(--font-serif); font-size: 25px; font-weight: 300; line-height: 1.22; letter-spacing: -0.025em; color: var(--color-pine); text-wrap: pretty; overflow-wrap: anywhere; }
-.summary { color: var(--color-muted); font-size: 13px; line-height: 1.8; display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 3; overflow: hidden; }
-.focus { margin-bottom: 12px; color: var(--color-moss); font-size: 11px; font-weight: 500; line-height: 1.6; }
-.footer { margin: 0 24px; padding: 19px 0 24px; border-top: 1px solid var(--color-line); }
-.priceRow { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 12px; margin-bottom: 18px; }
-.priceLabel { display: block; color: var(--color-muted); font-size: 10px; font-weight: 500; margin-bottom: 4px; }
-.price { color: var(--color-pine); font-size: 25px; font-weight: 600; letter-spacing: -0.04em; line-height: 1.2; font-variant-numeric: tabular-nums; }
-.detail { display: inline-flex; align-items: center; gap: 6px; color: var(--color-moss); font-size: 11px; font-weight: 600; }
-.action { display: flex; align-items: center; justify-content: space-between; gap: 10px; width: 100%; min-height: 46px; padding: 12px 16px; border: 1px solid transparent; border-radius: 12px; color: var(--color-paper); background: var(--color-pine); font-size: 12px; font-weight: 600; transition: background 180ms ease; }
+.card:hover {
+  transform: translateY(-4px);
+  border-color: rgba(9, 45, 41, 0.28);
+  border-color: color-mix(in srgb, var(--pathway-accent, var(--color-pine)) 38%, transparent);
+  box-shadow: var(--shadow-elevated);
+}
+
+/* Selection/ownership outrank the hover tint so the state stays visible. */
+.selected, .selected:hover { border-color: var(--color-gold); box-shadow: 0 0 0 2px rgba(199, 168, 91, 0.22); }
+.owned, .owned:hover { border-color: var(--color-moss); }
+
+/* The coloured rule across the top — what makes a grid read as a choice. */
+.accent {
+  height: 4px;
+  width: 100%;
+  flex-shrink: 0;
+  background: var(--pathway-accent, var(--color-pine));
+}
+
+.badgeSlot { position: absolute; top: 18px; right: 18px; display: flex; gap: 8px; }
+
+.body {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  align-items: center;
+  padding: 34px 26px 0;
+  text-align: center;
+}
+
+.iconWrap { position: relative; display: grid; place-items: center; margin-bottom: 18px; }
+.halo {
+  position: absolute;
+  width: 76px;
+  height: 76px;
+  border-radius: 999px;
+  background: var(--pathway-accent-halo, rgba(9, 45, 41, 0.12));
+  filter: blur(10px);
+}
+.icon {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 999px;
+  background: var(--pathway-accent-icon-bg, var(--color-sage));
+  color: var(--pathway-accent-icon-fg, var(--color-pine));
+}
+
+.eyebrow { color: var(--color-muted); font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; }
+.title {
+  margin-top: 10px;
+  font-family: var(--font-serif);
+  font-size: 25px;
+  font-weight: 300;
+  line-height: 1.2;
+  letter-spacing: -0.025em;
+  color: var(--color-pine);
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+.focus { margin-top: 8px; color: var(--pathway-accent-text, var(--color-moss)); font-size: 11px; font-weight: 600; line-height: 1.6; }
+.summary {
+  margin-top: 12px;
+  color: var(--color-muted);
+  font-size: 13px;
+  line-height: 1.75;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+
+.footer { margin: 26px 26px 26px; padding-top: 20px; border-top: 1px solid var(--color-line); text-align: center; }
+.priceLabel { display: block; color: var(--color-muted); font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+.price {
+  display: block;
+  margin-top: 5px;
+  color: var(--color-pine);
+  font-size: 26px;
+  font-weight: 600;
+  letter-spacing: -0.04em;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+
+.action {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  width: 100%;
+  min-height: 46px;
+  margin-top: 18px;
+  padding: 12px 16px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  color: var(--color-paper);
+  background: var(--color-pine);
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  transition: background 180ms ease;
+}
 .action:hover, .card:hover .browseAction { background: var(--color-moss); }
 .action:focus-visible { outline: 2px solid var(--color-pine); outline-offset: 3px; }
-.actionSelected { background: var(--color-sage); color: var(--color-pine); border-color: rgba(9,45,41,0.2); }
+.actionSelected { background: var(--color-sage); color: var(--color-pine); border-color: rgba(9, 45, 41, 0.2); }
 .actionSelected:hover { background: var(--color-mint); }
-.status { justify-content: center; background: var(--color-sage); color: var(--color-moss); }
-.link { position: absolute; inset: 0; border-radius: 24px; }
-.link:focus-visible { outline: 2px solid var(--color-pine); outline-offset: 4px; }
-@media (max-width: 380px) {
-  .header, .body { padding: 20px; }
-  .footer { margin-inline: 20px; }
+.status { background: var(--color-sage); color: var(--color-moss); }
+
+/* The accent-coloured "Explore →" line the whole card links through. */
+.detail {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  margin-top: 16px;
+  color: var(--pathway-accent-text, var(--color-moss));
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  transition: gap 180ms ease;
 }
+.card:hover .detail { gap: 11px; }
+
+/* Stretched link: the whole card opens the pathway page. */
+.link { position: absolute; inset: 0; border-radius: var(--radius-card); }
+.link:focus-visible { outline: 2px solid var(--color-pine); outline-offset: 4px; }
+
+@media (max-width: 380px) {
+  .body { padding: 30px 20px 0; }
+  .footer { margin-inline: 20px; }
+  .badgeSlot { top: 14px; right: 14px; }
+}
+
 @media (prefers-reduced-motion: reduce) {
-  .card, .action { transition: none; }
+  .card, .action, .detail { transition: none; }
   .card:hover { transform: none; }
+  .card:hover .detail { gap: 6px; }
 }

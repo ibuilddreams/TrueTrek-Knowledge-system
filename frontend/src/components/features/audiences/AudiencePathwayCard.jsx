@@ -5,57 +5,60 @@ import styles from "../pathways/PathwayCard.module.css";
 import { ArrowUpRight, Clock, Layers } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { formatCoursePrice } from "@/lib/store";
+import { pathwayAccentStyle } from "@/lib/pathwayAccents";
 
 // A browse-only pathway card for the audience pages. Deliberately not
 // PathwayCard: that one carries the select/checkout flow of the /pathways
 // store, which needs selection state, ownership lookups and a checkout modal.
 // Audience pages are navigation — they hand the visitor off to the pathway
 // page, where buying already works.
-export default function AudiencePathwayCard({ pathway }) {
+//
+// It shares PathwayCard's stylesheet so both grids stay the same card.
+export default function AudiencePathwayCard({ pathway, accentIndex = 0 }) {
   const courseCount = pathway.course_count ?? 0;
 
   return (
     <div
       id={`audience-pathway-card-${pathway.id}`}
+      style={pathwayAccentStyle(accentIndex)}
       className={styles.card}
     >
-      <div className={styles.header}>
-        <div className={styles.courseInfo}>
-          <span className={styles.icon}>
-            <Layers aria-hidden="true" className="h-5 w-5" strokeWidth={1.5} />
-          </span>
-          <div>
-            <span className={styles.eyebrow}>Learning pathway</span>
-            <span className={styles.count}>{courseCount} course{courseCount === 1 ? "" : "s"} included</span>
-          </div>
-        </div>
+      <span aria-hidden="true" className={styles.accent} />
 
-        {pathway.duration_weeks > 0 && (
-          <span className="flex items-center gap-1.5 font-sans text-xs text-muted">
-            <Clock aria-hidden="true" className="h-3.5 w-3.5" />
+      {pathway.duration_weeks > 0 && (
+        <div className={styles.badgeSlot}>
+          <span className="flex items-center gap-1.5 rounded-full border border-line bg-porcelain px-2.5 py-1 font-sans text-[10px] font-medium uppercase tracking-widest text-muted">
+            <Clock aria-hidden="true" className="h-3 w-3" />
             {pathway.duration_weeks} week{pathway.duration_weeks === 1 ? "" : "s"}
           </span>
-        )}
-      </div>
+        </div>
+      )}
 
       <div className={styles.body}>
+        <span className={styles.iconWrap}>
+          <span aria-hidden="true" className={styles.halo} />
+          <span className={styles.icon}>
+            <Layers aria-hidden="true" className="h-6 w-6" strokeWidth={1.5} />
+          </span>
+        </span>
+
+        <span className={styles.eyebrow}>
+          {courseCount} course{courseCount === 1 ? "" : "s"} included
+        </span>
+
         <h3 className={styles.title}>
           {pathway.name}
         </h3>
+
         <p className={styles.summary}>
           {pathway.summary || "No summary has been added for this pathway yet."}
         </p>
-
       </div>
 
       <div className={styles.footer}>
-        <div className={styles.priceRow}>
-          <div>
-            <span className={styles.priceLabel}>Bundle price</span>
-            <span className={styles.price}>{formatCoursePrice(pathway.base_price)}</span>
-          </div>
-          <Layers aria-hidden="true" className="h-5 w-5 text-moss/40" strokeWidth={1.5} />
-        </div>
+        <span className={styles.priceLabel}>Bundle price</span>
+        <span className={styles.price}>{formatCoursePrice(pathway.base_price)}</span>
+
         <span aria-hidden="true" className={`${styles.action} ${styles.browseAction}`}>
           Explore pathway
           <ArrowUpRight className="h-4 w-4" />

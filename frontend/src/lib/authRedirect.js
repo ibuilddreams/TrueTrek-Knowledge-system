@@ -24,7 +24,7 @@ const EXCLUDED_PREFIXES = [
   "/api",
 ];
 
-const STUDENT_ONLY_PREFIXES = [ROUTES.CART, ROUTES.WISHLIST];
+const STUDENT_ONLY_PREFIXES = [ROUTES.CART, ROUTES.WISHLIST, ROUTES.PATHWAY_BUILDER];
 
 function matchesPrefix(pathname, prefix) {
   return pathname === prefix || pathname.startsWith(`${prefix}/`);

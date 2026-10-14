@@ -26,6 +26,7 @@ import { toastError, toastInfo, toastSuccess } from "@/lib/toast";
 import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
 import Pagination from "@/components/ui/Pagination";
+import BuildYourOwnPathwayBanner from "./BuildYourOwnPathwayBanner";
 import PathwayCard from "./PathwayCard";
 import SignInToSelectModal from "./SignInToSelectModal";
 import PathwayCheckoutModal from "./PathwayCheckoutModal";
@@ -250,6 +251,8 @@ export default function PathwaysStore() {
           )}
         </div>
 
+        <BuildYourOwnPathwayBanner />
+
         {isLoading && (
           <div
             className="flex min-h-[40vh] items-center justify-center"
@@ -302,10 +305,11 @@ export default function PathwaysStore() {
                 isFetching ? "opacity-60" : "opacity-100"
               }`}
             >
-              {pathways.map((pathway) => (
+              {pathways.map((pathway, index) => (
                 <PathwayCard
                   key={pathway.id}
                   pathway={pathway}
+                  accentIndex={index}
                   isSelected={selectedIds.has(pathway.id)}
                   isOwned={ownedPathwayIds.has(pathway.id)}
                   canSelect={canSelect}

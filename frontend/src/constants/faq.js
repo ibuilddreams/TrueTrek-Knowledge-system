@@ -27,7 +27,7 @@ export const FAQ_CATEGORIES = [
       {
         question: "How long does it take to complete a tier?",
         answer:
-          "Pacing is self-directed. Most scholars complete a tier's modules and daily drills within a few weeks when working consistently, but there is no hard deadline — progress is tracked per student in the Student Portal and you can move at the pace that fits your schedule.",
+          "Pacing is self-directed. Most scholars complete a tier's modules and daily drills within a few weeks when working consistently, but there is no hard deadline — progress is tracked per student in the Cool Nerds Portal and you can move at the pace that fits your schedule.",
       },
     ],
   },
@@ -55,7 +55,7 @@ export const FAQ_CATEGORIES = [
       {
         question: "What happens after I submit my intake dossier?",
         answer:
-          "Your submission is reviewed against current cohort capacity. If a seat is available, you'll receive onboarding instructions to access the Student Portal; if your region or cohort is at capacity, you're placed on a prioritized waitlist and notified as spots open.",
+          "Your submission is reviewed against current cohort capacity. If a seat is available, you'll receive onboarding instructions to access the Cool Nerds Portal; if your region or cohort is at capacity, you're placed on a prioritized waitlist and notified as spots open.",
       },
     ],
   },
@@ -89,14 +89,14 @@ export const FAQ_CATEGORIES = [
   },
   {
     id: "portal",
-    label: "Student Portal & Technology",
+    label: "Cool Nerds Portal & Technology",
     icon: "LayoutDashboard",
     tint: "bg-lavender text-pine",
     items: [
       {
-        question: "What is the Student Portal and what are daily drills?",
+        question: "What is the Cool Nerds Portal and what are daily drills?",
         answer:
-          "The Student Portal is where enrolled scholars apply what they've learned through interactive, scenario-based drills — such as redline contract auditing, LLC setup reviews, and recovery checklists — to build real-world compliance readiness and earn verifiable credentials.",
+          "The Cool Nerds Portal is where enrolled scholars apply what they've learned through interactive, scenario-based drills — such as redline contract auditing, LLC setup reviews, and recovery checklists — to build real-world compliance readiness and earn verifiable credentials.",
       },
       {
         question: "What credentials or badges can students earn?",
@@ -109,7 +109,7 @@ export const FAQ_CATEGORIES = [
           "Yes. Every portal experience, including white-labeled institutional deployments, is built to operate within FERPA and COPPA student privacy requirements, and access is protected behind authenticated, role-based accounts.",
       },
       {
-        question: "Can I use the Student Portal on mobile devices?",
+        question: "Can I use the Cool Nerds Portal on mobile devices?",
         answer:
           "Yes. The portal is fully responsive and works in any modern mobile browser, so students can complete drills and review curriculum content from a phone or tablet as well as desktop.",
       },
@@ -147,9 +147,9 @@ export const FAQ_CATEGORIES = [
 
 export const INDEX_FAQ_ITEMS = [
   {
-    question: "What is the Cool Nerds Incubator & 11-Tier Curriculum?",
+    question: "What is the Cool Nerds Incubator & 9-Tier Curriculum?",
     answer:
-      "Cool Nerds is a progressive, 11-Tier educational incubator designed for high-performance scholars, athletic prospects, and young founders. Our curriculum bridges the massive gaps between raw potential and professional execution—delivering highly structured modules on NCAA/NIL compliance, athletic recruiting, academic college spikes, early-stage venture mechanics (such as SAFE agreements), and multi-generational family office/trust organization rules.",
+      "Cool Nerds is a progressive, 9-Tier educational incubator designed for high-performance scholars, athletic prospects, and young founders. Our curriculum bridges the massive gaps between raw potential and professional execution—delivering highly structured modules on NCAA/NIL compliance, athletic recruiting, academic college spikes, early-stage venture mechanics (such as SAFE agreements), and multi-generational family office/trust organization rules.",
   },
   {
     question: "How does the school licensing and partnership model work?",
@@ -157,9 +157,9 @@ export const INDEX_FAQ_ITEMS = [
       "We license our digital curriculum and framework to select High Schools, Prep Schools, Collegiate Athletic Conferences, Regional Sports Academies, and private networks seeking to maximize student-athlete success. Partner institutions receive full system guides, classroom-ready slide decks, print-ready legacy syllabus packages, and progress dashboards to reduce institutional liability and secure candidate compliance track records.",
   },
   {
-    question: "What is the role of the Student Portal and daily compliance drills?",
+    question: "What is the role of the Cool Nerds Portal and daily compliance drills?",
     answer:
-      "The interactive Student Portal allows registered scholars and athletes to apply knowledge or certified progress with interactive modules. By completing tactical scenario-based drills—such as redline contract auditing, LLC setup reserves, and mental recovery checklists—users build real-world compliance readiness, receive diagnostic badges, and generate verifiable credentials.",
+      "The interactive Cool Nerds Portal allows registered scholars and athletes to apply knowledge or certified progress with interactive modules. By completing tactical scenario-based drills—such as redline contract auditing, LLC setup reserves, and mental recovery checklists—users build real-world compliance readiness, receive diagnostic badges, and generate verifiable credentials.",
   },
   {
     question: "Is this curriculum focused strictly on sports and athletic recruits?",

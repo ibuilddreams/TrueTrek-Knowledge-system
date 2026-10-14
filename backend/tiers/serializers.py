@@ -130,7 +130,7 @@ class TierOrderEntrySerializer(serializers.Serializer):
 
 
 class TierPathwayAttachSerializer(serializers.Serializer):
-    pathway = serializers.PrimaryKeyRelatedField(queryset=Pathway.objects.all())
+    pathway = serializers.PrimaryKeyRelatedField(queryset=Pathway.objects.filter(is_custom=False))
 
 
 class TierPathwayOrderEntrySerializer(serializers.Serializer):

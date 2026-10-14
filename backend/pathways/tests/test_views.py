@@ -428,3 +428,260 @@ class AudienceCourseListTests(PathwayTestCase):
         response = self.client.get(reverse("course-public-list"))
         titles = [row["title"] for row in response.data["data"]["results"]]
         self.assertEqual(titles, ["Course A", "Course B"])
+
+
+class CustomPathwayTests(PathwayTestCase):
+    """The student-built "build your own pathway" bundles."""
+
+    def setUp(self):
+        super().setUp()
+        self.course_c = Course.objects.create(
+            title="Course C", code="CC101", category=self.category,
+            status=Status.PUBLISHED, amount=25,
+        )
+        CourseInstructor.objects.create(course=self.course_c, instructor=self.teacher, is_lead=True)
+        self.list_url = reverse("custom-pathway-list-create")
+
+    def create_payload(self, **overrides):
+        payload = {
+            "name": "My Bundle",
+            "summary": "Courses I picked myself",
+            "course_ids": [self.course_a.id, self.course_b.id],
+        }
+        payload.update(overrides)
+        return payload
+
+    def create_custom(self, **overrides):
+        self.client.force_authenticate(self.student)
+        response = self.client.post(self.list_url, self.create_payload(**overrides), format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED, response.data)
+        return response.data["data"]
+
+    def test_student_can_create_a_custom_pathway_priced_from_its_courses(self):
+        data = self.create_custom()
+
+        self.assertEqual(data["name"], "My Bundle")
+        self.assertEqual(data["course_count"], 2)
+        self.assertEqual(data["is_purchased"], False)
+        # 100 + 50
+        self.assertEqual(str(data["base_price"]), "150.00")
+        self.assertEqual(
+            [entry["course"]["title"] for entry in data["courses"]], ["Course A", "Course B"]
+        )
+
+        pathway = Pathway.objects.get(pk=data["id"])
+        self.assertTrue(pathway.is_custom)
+        self.assertEqual(pathway.created_by, self.student)
+        self.assertEqual(pathway.status, Status.PUBLISHED)
+
+    def test_guests_and_non_students_cannot_create_one(self):
+        response = self.client.post(self.list_url, self.create_payload(), format="json")
+        self.assertEqual(response.status_code, status.HTTP_401_UNAUTHORIZED)
+
+        for user in (self.teacher, self.admin):
+            self.client.force_authenticate(user)
+            response = self.client.post(self.list_url, self.create_payload(), format="json")
+            self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_at_least_two_courses_are_required(self):
+        self.client.force_authenticate(self.student)
+        response = self.client.post(
+            self.list_url, self.create_payload(course_ids=[self.course_a.id]), format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_duplicate_courses_are_rejected(self):
+        self.client.force_authenticate(self.student)
+        response = self.client.post(
+            self.list_url,
+            self.create_payload(course_ids=[self.course_a.id, self.course_a.id]),
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_unpublished_courses_are_rejected(self):
+        self.course_b.status = Status.DRAFT
+        self.course_b.save()
+        self.client.force_authenticate(self.student)
+        response = self.client.post(self.list_url, self.create_payload(), format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("no longer available", response.data["message"])
+
+    def test_already_enrolled_courses_are_rejected(self):
+        Enrollment.objects.create(student=self.student, course=self.course_a, teacher=self.teacher)
+        self.client.force_authenticate(self.student)
+        response = self.client.post(self.list_url, self.create_payload(), format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Course A", response.data["message"])
+
+    def test_name_must_be_unique_per_student_only(self):
+        self.create_custom()
+
+        self.client.force_authenticate(self.student)
+        response = self.client.post(self.list_url, self.create_payload(), format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+        # ...but another student may use the same name.
+        other_student = make_user("student2@example.com", UserModel.Roles.STUDENT)
+        self.client.force_authenticate(other_student)
+        response = self.client.post(self.list_url, self.create_payload(), format="json")
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_slugs_stay_unique_across_identical_names(self):
+        first = self.create_custom()
+        other_student = make_user("student3@example.com", UserModel.Roles.STUDENT)
+        self.client.force_authenticate(other_student)
+        second = self.client.post(self.list_url, self.create_payload(), format="json").data["data"]
+        self.assertNotEqual(first["slug"], second["slug"])
+
+    def test_list_only_returns_the_requesting_students_pathways(self):
+        self.create_custom()
+        other_student = make_user("student4@example.com", UserModel.Roles.STUDENT)
+        self.client.force_authenticate(other_student)
+
+        response = self.client.get(self.list_url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.data["data"], [])
+
+    def test_another_students_pathway_is_a_404_not_a_403(self):
+        created = self.create_custom()
+        other_student = make_user("student5@example.com", UserModel.Roles.STUDENT)
+        self.client.force_authenticate(other_student)
+
+        url = reverse("custom-pathway-detail", args=[created["id"]])
+        self.assertEqual(self.client.get(url).status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(self.client.delete(url).status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_custom_pathways_never_appear_in_the_public_catalog(self):
+        created = self.create_custom()
+        self.client.force_authenticate(None)
+
+        response = self.client.get(reverse("pathway-public-list"))
+        ids = [row["id"] for row in response.data["data"]["results"]]
+        self.assertNotIn(created["id"], ids)
+
+        detail = self.client.get(reverse("pathway-public-detail", args=[created["id"]]))
+        self.assertEqual(detail.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_owner_can_open_their_own_pathway_through_public_detail(self):
+        """The portal's "My Pathways" modal reads purchased bundles through here."""
+        created = self.create_custom()
+        response = self.client.get(reverse("pathway-public-detail", args=[created["id"]]))
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertTrue(response.data["data"]["is_custom"])
+
+    def test_custom_pathways_are_hidden_from_the_admin_pathway_endpoints(self):
+        created = self.create_custom()
+        self.client.force_authenticate(self.admin)
+
+        listing = self.client.get(reverse("pathway-list-create"))
+        ids = [row["id"] for row in listing.data["data"]["results"]]
+        self.assertNotIn(created["id"], ids)
+
+        detail = self.client.get(reverse("pathway-detail", args=[created["id"]]))
+        self.assertEqual(detail.status_code, status.HTTP_404_NOT_FOUND)
+
+        attach = self.client.post(
+            reverse("pathway-course-attach", args=[created["id"]]),
+            {"course": self.course_c.id},
+            format="json",
+        )
+        self.assertEqual(attach.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_update_replaces_courses_and_reprices(self):
+        created = self.create_custom()
+        url = reverse("custom-pathway-detail", args=[created["id"]])
+
+        response = self.client.patch(
+            url,
+            {"name": "Renamed Bundle", "course_ids": [self.course_c.id, self.course_a.id]},
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        data = response.data["data"]
+        self.assertEqual(data["name"], "Renamed Bundle")
+        # 25 + 100, in the order they were picked
+        self.assertEqual(str(data["base_price"]), "125.00")
+        self.assertEqual(
+            [entry["course"]["title"] for entry in data["courses"]], ["Course C", "Course A"]
+        )
+
+    def test_student_can_delete_an_unpurchased_pathway(self):
+        created = self.create_custom()
+        url = reverse("custom-pathway-detail", args=[created["id"]])
+        self.assertEqual(self.client.delete(url).status_code, status.HTTP_200_OK)
+        self.assertFalse(Pathway.objects.filter(pk=created["id"]).exists())
+
+    def test_checkout_enrolls_the_student_in_every_course_of_their_bundle(self):
+        created = self.create_custom()
+
+        response = self.client.post(
+            reverse("pathway-checkout"), {"pathway_ids": [created["id"]]}, format="json"
+        )
+        self.assertEqual(response.status_code, status.HTTP_200_OK, response.data)
+        self.assertEqual(len(response.data["data"]["enrolled_pathways"]), 1)
+        self.assertEqual(response.data["data"]["enrolled_pathways"][0]["price_paid"], "150.00")
+        self.assertTrue(
+            Enrollment.objects.filter(student=self.student, course=self.course_a).exists()
+        )
+        self.assertTrue(
+            Enrollment.objects.filter(student=self.student, course=self.course_b).exists()
+        )
+
+    def test_another_student_cannot_buy_someone_elses_custom_pathway(self):
+        created = self.create_custom()
+        other_student = make_user("student6@example.com", UserModel.Roles.STUDENT)
+        self.client.force_authenticate(other_student)
+
+        response = self.client.post(
+            reverse("pathway-checkout"), {"pathway_ids": [created["id"]]}, format="json"
+        )
+        self.assertEqual(response.data["data"]["enrolled_pathways"], [])
+        self.assertEqual(len(response.data["data"]["failed_pathways"]), 1)
+        self.assertFalse(
+            PathwayEnrollment.objects.filter(user=other_student, pathway_id=created["id"]).exists()
+        )
+
+    def test_a_purchased_pathway_can_no_longer_be_changed_or_deleted(self):
+        created = self.create_custom()
+        self.client.post(
+            reverse("pathway-checkout"), {"pathway_ids": [created["id"]]}, format="json"
+        )
+
+        url = reverse("custom-pathway-detail", args=[created["id"]])
+        patched = self.client.patch(url, {"name": "Nope"}, format="json")
+        self.assertEqual(patched.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("already been purchased", patched.data["message"])
+
+        deleted = self.client.delete(url)
+        self.assertEqual(deleted.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertTrue(Pathway.objects.filter(pk=created["id"]).exists())
+
+        listing = self.client.get(self.list_url)
+        self.assertTrue(listing.data["data"][0]["is_purchased"])
+
+    def test_checkout_is_refused_when_a_course_was_unpublished_after_saving(self):
+        created = self.create_custom()
+        self.course_b.status = Status.DRAFT
+        self.course_b.save()
+
+        response = self.client.post(
+            reverse("pathway-checkout"), {"pathway_ids": [created["id"]]}, format="json"
+        )
+        self.assertEqual(response.data["data"]["enrolled_pathways"], [])
+        self.assertEqual(len(response.data["data"]["failed_pathways"]), 1)
+        self.assertIn("no longer available", response.data["data"]["failed_pathways"][0]["reason"])
+        self.assertFalse(
+            Enrollment.objects.filter(student=self.student, course=self.course_a).exists()
+        )
+
+    def test_catalog_pathways_are_unaffected_by_the_custom_availability_check(self):
+        """An admin pathway with a draft course still checks out, as before."""
+        self.course_b.status = Status.DRAFT
+        self.course_b.save()
+        self.client.force_authenticate(self.student)
+
+        response = self.client.post(
+            reverse("pathway-checkout"), {"pathway_ids": [self.pathway.id]}, format="json"
+        )
+        self.assertEqual(len(response.data["data"]["enrolled_pathways"]), 1)

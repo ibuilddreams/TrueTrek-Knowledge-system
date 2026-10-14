@@ -50,6 +50,21 @@ class Pathway(BaseModel):
     # Estimated time to complete; 0 means "not specified" and hides the badge.
     duration_weeks = models.PositiveIntegerField(default=0)
 
+    # "Build your own pathway": a bundle a student assembled themselves on
+    # /pathways/build. Custom pathways are ordinary Pathway rows so checkout
+    # and course enrollment work unchanged, but `is_custom` keeps them out of
+    # every catalog surface (public list, admin list, tiers, onboarding) and
+    # `created_by` scopes one to the student who built it — only its owner can
+    # see, edit or buy it.
+    is_custom = models.BooleanField(default=False)
+    created_by = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        null=True,
+        blank=True,
+        related_name="custom_pathways",
+    )
+
     class Meta:
         ordering = ["-created_at"]
 

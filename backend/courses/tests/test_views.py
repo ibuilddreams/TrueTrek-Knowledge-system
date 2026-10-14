@@ -153,7 +153,7 @@ class CourseListCreateViewTests(APITestCase):
         self.client.force_authenticate(user=self.admin)
 
         response = self.client.post(
-            self.url, {"title": "Advanced Django", "category": self.category.id}
+            self.url, {"title": "Advanced Django", "code": "DJANGO-ADV", "category": self.category.id}
         )
 
         self.assertEqual(response.status_code, status.HTTP_201_CREATED)
@@ -164,7 +164,7 @@ class CourseListCreateViewTests(APITestCase):
         self.client.force_authenticate(user=self.admin)
 
         response = self.client.post(
-            self.url, {"title": "Advanced Django", "category": self.category.id}
+            self.url, {"title": "Advanced Django", "code": "DJANGO-ADV", "category": self.category.id}
         )
 
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -173,7 +173,7 @@ class CourseListCreateViewTests(APITestCase):
         self.client.force_authenticate(user=self.user)
 
         response = self.client.post(
-            self.url, {"title": "Advanced Django", "category": self.category.id}
+            self.url, {"title": "Advanced Django", "code": "DJANGO-ADV", "category": self.category.id}
         )
 
         self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
@@ -548,3 +548,46 @@ class CourseLearningOutcomesTests(APITestCase):
         self.assertEqual(data["purchase_count"], 0)
         self.assertEqual(set(data["instructors"][0].keys()), {"id", "user_id", "name", "is_lead", "headline", "bio", "avatar", "stats"})
         self.assertNotIn("outcomesteacher@example.com", str(data))
+
+
+class PublicCourseTierFilterTests(APITestCase):
+    def setUp(self):
+        from pathways.models import Pathway, PathwayCourse
+        from tiers.models import Tier, TierPathway
+
+        self.url = reverse("course-public-list")
+        self.tier = Tier.objects.create(name="Blueprint", level=1, status=Status.PUBLISHED)
+        self.draft_tier = Tier.objects.create(name="Hidden", level=2)
+        self.empty_tier = Tier.objects.create(name="Coming soon", level=3, status=Status.PUBLISHED)
+        category, _ = Category.objects.get_or_create(name="Athletic")
+        self.course = Course.objects.create(title="Included", code="TIER1", category=category, status=Status.PUBLISHED)
+        Course.objects.create(title="Unassigned", code="TIER2", category=category, status=Status.PUBLISHED)
+        draft_course = Course.objects.create(title="Draft", code="TIER3", category=category)
+        for index in range(2):
+            pathway = Pathway.objects.create(name=f"Published {index}", status=Status.PUBLISHED)
+            TierPathway.objects.create(tier=self.tier, pathway=pathway, order=index)
+            TierPathway.objects.create(tier=self.draft_tier, pathway=pathway, order=index)
+            PathwayCourse.objects.create(pathway=pathway, course=self.course, order=0)
+            PathwayCourse.objects.create(pathway=pathway, course=draft_course, order=1)
+        for name, extra in [("Draft pathway", {}), ("Private bundle", {"status": Status.PUBLISHED, "is_custom": True})]:
+            pathway = Pathway.objects.create(name=name, **extra)
+            TierPathway.objects.create(tier=self.empty_tier, pathway=pathway, order=0 if not extra else 1)
+            PathwayCourse.objects.create(pathway=pathway, course=self.course)
+
+    def test_filters_courses_through_published_tier_pathways_without_duplicates(self):
+        data = self.client.get(self.url, {"tier": self.tier.slug}).data["data"]
+        self.assertEqual(data["count"], 1)
+        self.assertEqual(data["results"][0]["id"], self.course.id)
+        self.assertEqual(self.client.get(self.url).data["data"]["count"], 2)
+
+    def test_hidden_unknown_and_empty_tiers_return_no_courses(self):
+        for slug in [self.draft_tier.slug, self.empty_tier.slug, "unknown"]:
+            self.assertEqual(self.client.get(self.url, {"tier": slug}).data["data"]["count"], 0)
+
+    def test_tier_filter_combines_with_search(self):
+        self.assertEqual(self.client.get(self.url, {"tier": self.tier.slug, "search": "Unassigned"}).data["data"]["count"], 0)
+
+    def test_facets_include_all_published_tiers_in_level_order(self):
+        data = self.client.get(reverse("course-public-filters")).data["data"]
+        self.assertEqual([tier["slug"] for tier in data["tiers"]], [self.tier.slug, self.empty_tier.slug])
+        self.assertEqual([tier["course_count"] for tier in data["tiers"]], [1, 0])

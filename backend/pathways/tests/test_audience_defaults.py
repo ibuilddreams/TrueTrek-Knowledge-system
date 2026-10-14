@@ -4,6 +4,10 @@ Pure data assertions — no DB seeding, so these stay fast. They guard the shape
 the 6 October 2026 review asked for: every audience card leads somewhere, every
 pathway belongs to someone, and a pathway may serve several audiences.
 
+The mapping itself lives in `pathways/audience_defaults.py` (fresh `seeddata`
+runs) and is mirrored by migrations 0008/0009/0011 (databases that already have
+the rows) — change one and the other needs the same edit.
+
 They also catch the easy mistake of adding a pathway to PATHWAY_DEFS and
 forgetting to file it under an audience, which would leave it unreachable from
 any audience page.
@@ -28,6 +32,24 @@ KNOWN_AUDIENCE_SLUGS = {
     "entrepreneurs",
 }
 
+# How many pathways an audience card may lead to. The 6 October 2026 review
+# curated every card down to three or four, which held while the catalogue was
+# fifteen demo pathways across six cards.
+#
+# Those pathways went with the Numa catalog, leaving the client's three -- all
+# athlete-facing. The floor is therefore 1, not 3: it holds the review's actual
+# requirement, that every card leads somewhere, without pretending three
+# pathways can fill six cards four deep. Cool Nerds and Entrepreneurs are now
+# mapped by the subject each card advertises (see `audience_defaults`), and
+# Institutions & Academies leads to Athlete CEO alone.
+#
+# Raise this back toward 3 as the client's curriculum grows past the athlete
+# track. The ceiling bites at the total number of pathways, so a card cannot
+# list the same pathway twice or drift past the catalogue, and
+# `test_every_seeded_pathway_has_an_audience` guards the reverse direction:
+# no pathway is orphaned.
+MIN_PATHWAYS_PER_CARD = 1
+
 
 class AudienceDefaultsTests(SimpleTestCase):
     def test_every_slug_is_a_real_audience(self):
@@ -46,14 +68,23 @@ class AudienceDefaultsTests(SimpleTestCase):
         seeded_names = {d["name"] for d in PATHWAY_DEFS}
         self.assertEqual(set(DEFAULT_PATHWAY_AUDIENCES) - seeded_names, set())
 
-    def test_every_audience_card_leads_to_three_or_four_pathways(self):
+    def test_every_audience_card_leads_to_a_balanced_set_of_pathways(self):
         counts = Counter(
             slug for slugs in DEFAULT_PATHWAY_AUDIENCES.values() for slug in slugs
         )
         for slug in KNOWN_AUDIENCE_SLUGS:
             with self.subTest(audience=slug):
-                self.assertIn(
-                    counts[slug], (3, 4), f"{slug} has {counts[slug]} pathways, expected 3-4"
+                self.assertGreaterEqual(
+                    counts[slug],
+                    MIN_PATHWAYS_PER_CARD,
+                    f"{slug} has {counts[slug]} pathways, expected at least "
+                    f"{MIN_PATHWAYS_PER_CARD} — that card would lead nowhere",
+                )
+                self.assertLessEqual(
+                    counts[slug],
+                    len(PATHWAY_DEFS),
+                    f"{slug} lists {counts[slug]} pathways but only "
+                    f"{len(PATHWAY_DEFS)} exist — a duplicate or a stale name",
                 )
 
     def test_a_pathway_may_serve_several_audiences(self):

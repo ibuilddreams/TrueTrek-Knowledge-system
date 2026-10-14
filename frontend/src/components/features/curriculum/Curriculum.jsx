@@ -1,11 +1,9 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
-import { CourseBanner, CourseBadges } from "./CourseCatalogParts";
 import { useQuery } from "@tanstack/react-query";
-import { Check, Heart, Search, ShoppingCart } from "lucide-react";
 import CurriculumFilters from "./CurriculumFilters";
+import CurriculumCourseCard from "./CurriculumCourseCard";
 import { getPublicCourses, getPublicCourseFilters } from "@/services/coursesService";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { getApiErrorMessage } from "@/lib/apiErrors";
@@ -15,7 +13,7 @@ import Loader from "@/components/ui/Loader";
 
 const SAVED_KEY = "truetrek-saved-curriculum";
 const PAGE_SIZE = 24;
-const DEFAULT_FILTERS = { category: "", grade: "", difficulty: "", sort: "title" };
+const DEFAULT_FILTERS = { category: "", tier: "", grade: "", difficulty: "", sort: "title" };
 
 export default function Curriculum() {
   const [search, setSearch] = useState("");
@@ -51,50 +49,51 @@ export default function Curriculum() {
     try { localStorage.setItem(SAVED_KEY, JSON.stringify(next)); } catch { /* Keep this session's selection. */ }
   }
   function clearFilters() { setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort })); setPage(1); }
+  const tiers = facets.data?.tiers || [];
   const subjects = facets.data?.subjects || [];
   const grades = facets.data?.grades || [];
   const difficulties = facets.data?.difficulties || [];
   return (
-    <div className="min-h-screen bg-porcelain px-5 py-12 text-ink md:px-8" id="curriculum-container">
+    <div className="min-h-screen bg-[#fafafa] px-5 py-10 font-sans text-zinc-900 md:px-8 md:py-12" id="curriculum-container">
       <div className="mx-auto max-w-7xl">
-        <h1 className="text-4xl font-serif">Curriculum Explorer</h1>
-        <p className="mt-3 text-muted">Browse Cool Nerds's courses by subject, and dive into each one's modules, lessons, assignments, and quizzes.</p>
+        <header className="mx-auto mb-7 max-w-3xl text-center md:mb-8">
+          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-[56px] md:leading-[1.15]">The 9-Tier Curriculum</h1>
+          <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-zinc-500">Explore courses built around your next chapter. Filter by tier, subject, or grade to find your next course and discover what you’ll learn.</p>
+        </header>
         <CurriculumFilters
           filters={filters}
+          search={search}
+          onSearchChange={(value) => { setSearch(value); setPage(1); }}
           onFilterChange={updateFilter}
           onClear={clearFilters}
           subjects={subjects}
+          tiers={tiers}
           grades={grades}
           difficulties={difficulties}
           savedCount={saved.length}
           savedOnly={savedOnly}
           onToggleSaved={() => setSavedOnly(!savedOnly)}
         />
-        <label className="relative mt-5 block"><span className="sr-only">Search courses</span><Search className="absolute left-4 top-3.5 h-5 w-5 text-muted" /><input type="search" value={search} onChange={(event) => { setSearch(event.target.value); setPage(1); }} placeholder="Search courses..." className="w-full rounded-xl border border-line bg-paper py-3 pl-12 pr-4" /></label>
         {facets.isError && <p role="alert" className="mt-3 text-sm text-red-700">Filters could not load. <button type="button" className="underline" onClick={() => facets.refetch()}>Retry filters</button></p>}
-        <p className="my-5 text-sm text-muted" aria-live="polite">{coursesQuery.isLoading ? "Loading courses…" : `${count} course${count === 1 ? "" : "s"}`}{savedOnly ? " · Showing saved courses on this page" : ""}</p>
+        <p className="my-3 text-xs text-zinc-500" aria-live="polite">{coursesQuery.isLoading ? "Loading courses…" : `${count} course${count === 1 ? "" : "s"}`}{savedOnly ? " · Showing saved courses on this page" : ""}</p>
         {coursesQuery.isLoading ? <Loader fullScreen={false} label="Loading curriculum..." /> : coursesQuery.isError ? (
           <div role="alert" className="rounded-2xl border border-line bg-paper p-8 text-center"><p>{getApiErrorMessage(coursesQuery.error, "Unable to load curriculum.")}</p><button type="button" onClick={() => coursesQuery.refetch()} className="mt-4 text-pine underline">Try again</button></div>
         ) : courses.length === 0 ? (
           <div className="rounded-2xl border border-line bg-paper p-12 text-center"><h2 className="text-xl">No courses found</h2><p className="mt-2 text-muted">Try adjusting your search or filters.</p></div>
         ) : (
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {courses.map((course) => {
-              const isSaved = saved.includes(String(course.id));
-              const inCart = isInCart(course.id);
-              return <article key={course.id} className="relative overflow-hidden rounded-2xl border border-line bg-paper transition-all duration-300 hover:-translate-y-1 hover:shadow-elevated">
-                <Link href={`/curriculum/${course.slug}`} className="block h-full w-full text-left focus-visible:outline-2 focus-visible:outline-pine focus-visible:outline-offset-[-3px]" aria-label={`View ${course.title}`}>
-                  <CourseBanner course={course} />
-                  <div className="space-y-3 p-4">
-                    <h2 className="text-base font-serif font-medium">{course.title}</h2>
-                    <p className="line-clamp-2 text-sm font-light text-muted">{course.description || "No description has been added for this course yet."}</p>
-                    <CourseBadges course={course} />
-                  </div>
-                </Link>
-                <button type="button" onClick={() => toggleSaved(course)} aria-pressed={isSaved} aria-label={`${isSaved ? "Unsave" : "Save"} ${course.title}`} className="absolute right-3 top-3 rounded-full bg-white/90 p-2.5 text-ink hover:bg-white"><Heart className={`h-4 w-4 ${isSaved ? "fill-rose-600 text-rose-600" : ""}`} /></button>
-                {canUseCart && <button type="button" onClick={() => toggleCourse(course)} disabled={isPending(course.id)} aria-pressed={inCart} aria-label={`${inCart ? "Remove" : "Add"} ${course.title} ${inCart ? "from" : "to"} cart`} title={inCart ? "Remove from cart" : "Add to cart"} className={`absolute right-3 top-16 rounded-full p-2.5 transition disabled:opacity-60 ${inCart ? "bg-pine text-paper" : "bg-white/90 text-ink hover:bg-white"}`}>{inCart ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}</button>}
-              </article>;
-            })}
+            {courses.map((course) => (
+              <CurriculumCourseCard
+                key={course.id}
+                course={course}
+                isSaved={saved.includes(String(course.id))}
+                onToggleSaved={() => toggleSaved(course)}
+                canUseCart={canUseCart}
+                inCart={isInCart(course.id)}
+                cartPending={isPending(course.id)}
+                onToggleCart={() => toggleCourse(course)}
+              />
+            ))}
           </div>
         )}
         {!coursesQuery.isError && !savedOnly && count > PAGE_SIZE && <nav aria-label="Course pages" className="mt-8 flex items-center justify-center gap-5"><button type="button" disabled={page <= 1 || coursesQuery.isFetching} onClick={() => setPage(page - 1)} className="rounded-xl border border-line bg-paper px-4 py-2 disabled:opacity-40">Previous</button><span className="text-sm">Page {page} of {totalPages}</span><button type="button" disabled={page >= totalPages || coursesQuery.isFetching} onClick={() => setPage(page + 1)} className="rounded-xl border border-line bg-paper px-4 py-2 disabled:opacity-40">Next</button></nav>}

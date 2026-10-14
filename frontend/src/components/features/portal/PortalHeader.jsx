@@ -56,7 +56,7 @@ export default function PortalHeader({
             <div className="inline-flex items-center gap-2 mb-1.5">
               <span className="h-px w-4 bg-gold/70" />
               <span className="text-xs font-mono uppercase tracking-[0.2em] text-gold">
-                Student Portal
+                Cool Nerds Portal
               </span>
             </div>
             {isLoading ? (

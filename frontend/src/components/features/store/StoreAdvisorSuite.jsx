@@ -15,7 +15,7 @@ import PingDotSpinner from "@/components/ui/PingDotSpinner";
 const ADVISOR_DEMO_CATALOG = [
   {
     id: "prod-syllabus-license",
-    name: "The 11-Tier Legacy Syllabus (Lifetime Licensing)",
+    name: "The 9-Tier Legacy Syllabus (Lifetime Licensing)",
     price: 4500,
     image:
       "https://images.unsplash.com/photo-1450133064473-71024230f91b?auto=format&fit=crop&q=80&w=600",
@@ -71,7 +71,8 @@ export default function StoreAdvisorSuite({ onAcquireAsset = () => {} }) {
     setMatchedProducts([]);
 
     const advisor =
-      ADVISOR_PERSONAS.find((a) => a.id === selectedAIAdvisorId) || ADVISOR_PERSONAS[0];
+      ADVISOR_PERSONAS.find((a) => a.id === selectedAIAdvisorId) ||
+      ADVISOR_PERSONAS[0];
 
     const customizedSystemPrompt = `${advisor.systemPrompt}
 
@@ -80,7 +81,7 @@ Analyze the student or organization's goals, and guide them with specific tactic
 In your advice, you MUST recommend one or premium items from our official depository inventory below.
 
 Official Depository Catalog:
-- "The 11-Tier Legacy Syllabus (Lifetime Licensing)" (Price: $4,500) - For institution-wide academic frameworks, licensing compliance, and teacher-ready print materials. Best for schools, recruiters, or booster networks. (Product ID: prod-syllabus-license)
+- "The 9-Tier Legacy Syllabus (Lifetime Licensing)" (Price: $4,500) - For institution-wide academic frameworks, licensing compliance, and teacher-ready print materials. Best for schools, recruiters, or booster networks. (Product ID: prod-syllabus-license)
 - "Pre-Seed Venture SAFE Templates Pack" (Price: $450) - Pre-vetted simple agreements for future equity. High-yield terms to address valuation targets and block early predatory dilution. Best for founders or aspiring independent software builders. (Product ID: prod-safe-templates)
 - "NIL Contract Legal Redline Handbook" (Price: $299) - Essential manual of real-world licensing clauses, compliance forms, uniform guides, and trademark safeguards. Best for high school recruited or collegiate varsity athletes. (Product ID: prod-nil-handbook)
 - "Cool Nerds Branded Athletic Jersey" (Price: $120) - Strategic light-weight performance mesh with elite CN monogram styling. Best for active field athletes or physical specialists. (Product ID: prod-jersey)
@@ -115,7 +116,7 @@ Instructions:
             p.id === "prod-syllabus-license" &&
             (lowerText.includes("syllabus") ||
               lowerText.includes("licensing") ||
-              lowerText.includes("11-tier"))
+              lowerText.includes("9-tier"))
           )
             return true;
           if (
@@ -197,9 +198,9 @@ Instructions:
               Advisory Procurement Suite
             </h3>
             <p className="text-sm text-stone-400 font-light leading-relaxed">
-              Connect your personal scenarios directly with council advisors to formulate
-              targeted pathway acquisitions. Get professional feedback on compliance rules and
-              purchase-ready materials.
+              Connect your personal scenarios directly with council advisors to
+              formulate targeted pathway acquisitions. Get professional feedback
+              on compliance rules and purchase-ready materials.
             </p>
           </div>
         </div>
@@ -232,7 +233,9 @@ Instructions:
                     referrerPolicy="no-referrer"
                   />
                   <div className="min-w-0">
-                    <p className="text-sm font-bold text-stone-100 truncate">{advisor.name}</p>
+                    <p className="text-sm font-bold text-stone-100 truncate">
+                      {advisor.name}
+                    </p>
                     <p className="text-[10px] font-mono text-stone-450 truncate uppercase mt-0.5">
                       {advisor.title.split("&")[0]}
                     </p>
@@ -321,7 +324,10 @@ Instructions:
                   <Sparkles className="w-4 h-4 text-amber-500 animate-pulse" />
                   <span className="text-sm font-mono font-bold uppercase tracking-wider text-stone-205">
                     Analysis Report from{" "}
-                    {ADVISOR_PERSONAS.find((a) => a.id === selectedAIAdvisorId)?.name}
+                    {
+                      ADVISOR_PERSONAS.find((a) => a.id === selectedAIAdvisorId)
+                        ?.name
+                    }
                   </span>
                 </div>
                 <span className="text-[10px] font-mono uppercase bg-stone-850 px-2 py-0.5 rounded text-stone-400">
@@ -345,7 +351,8 @@ Instructions:
                       <div className="flex items-center gap-2 text-left">
                         <Package className="w-4.5 h-4.5 text-amber-500" />
                         <h4 className="text-sm font-mono font-bold uppercase tracking-wider text-amber-500">
-                          RECOMMENDED ACQUISITION PATHWAY ASSETS ({matchedProducts.length})
+                          RECOMMENDED ACQUISITION PATHWAY ASSETS (
+                          {matchedProducts.length})
                         </h4>
                       </div>
 
@@ -364,7 +371,9 @@ Instructions:
                                 referrerPolicy="no-referrer"
                               />
                               <div className="min-w-0 text-left">
-                                <p className="text-sm font-bold text-white truncate">{p.name}</p>
+                                <p className="text-sm font-bold text-white truncate">
+                                  {p.name}
+                                </p>
                                 <p className="text-[11px] font-mono text-amber-500 mt-0.5">
                                   ${p.price.toLocaleString()}
                                 </p>

@@ -12,8 +12,8 @@ class PathwayCourseInline(admin.TabularInline):
 
 @admin.register(Pathway)
 class PathwayAdmin(admin.ModelAdmin):
-    list_display = ("name", "status", "base_price", "created_at")
-    list_filter = ("status", "audiences")
+    list_display = ("name", "status", "base_price", "is_custom", "created_by", "created_at")
+    list_filter = ("status", "is_custom", "audiences")
     filter_horizontal = ("audiences",)
     search_fields = ("name",)
     inlines = (PathwayCourseInline,)

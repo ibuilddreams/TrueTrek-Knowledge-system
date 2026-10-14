@@ -31,7 +31,7 @@ export default function LmsAccessStep({ checkoutResult }) {
         <p className="text-xs font-light leading-relaxed text-stone-500 mb-8 max-w-md mx-auto">
           Welcome to Cool Nerds, {user?.name || user?.email}. Your account is ready
           {unlocked.length > 0
-            ? ` and your pathway${unlocked.length === 1 ? " is" : "s are"} unlocked in your student portal.`
+            ? ` and your pathway${unlocked.length === 1 ? " is" : "s are"} unlocked in your Cool Nerds Portal.`
             : "."}
         </p>
 

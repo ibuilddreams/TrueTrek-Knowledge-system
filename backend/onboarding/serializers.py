@@ -75,7 +75,7 @@ class QuestionPublicSerializer(serializers.ModelSerializer):
 
 
 class QuestionOptionWeightInputSerializer(serializers.Serializer):
-    pathway = serializers.PrimaryKeyRelatedField(queryset=Pathway.objects.all())
+    pathway = serializers.PrimaryKeyRelatedField(queryset=Pathway.objects.filter(is_custom=False))
     weight = serializers.IntegerField(min_value=1)
 
 

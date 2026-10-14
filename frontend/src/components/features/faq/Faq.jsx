@@ -458,7 +458,7 @@ export default function Faq() {
                   </h2>
                   <p className="text-sage/70 text-sm md:text-base leading-relaxed">
                     Send your question directly to an advisor and get a reply
-                    in your student portal — no forms, no waiting on an intake
+                    in your Cool Nerds Portal — no forms, no waiting on an intake
                     review.
                   </p>
                 </div>

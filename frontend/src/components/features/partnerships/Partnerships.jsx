@@ -26,7 +26,7 @@ export default function Partnerships() {
     } else { // legacy
       baseRate = 38; // $38 per year per student
       multiplier = 1.45;
-      coverageText = 'Unlimited 11-Tier portfolio access including Trust Offices guidance (Tier 9), and active advisory webinars.';
+      coverageText = 'Unlimited 9-Tier portfolio access including Trust Offices guidance (Tier 9), and active advisory webinars.';
     }
 
     // Calculate licensing fee

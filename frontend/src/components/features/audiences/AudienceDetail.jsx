@@ -262,10 +262,11 @@ export default function AudienceDetail({ slug }) {
                 pathwaysQuery.isFetching ? "opacity-60" : "opacity-100"
               }`}
             >
-              {pathways.map((pathway) => (
+              {pathways.map((pathway, index) => (
                 <AudiencePathwayCard
                   key={pathway.id}
                   pathway={pathway}
+                  accentIndex={index}
                 />
               ))}
             </motion.div>

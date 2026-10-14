@@ -10,6 +10,11 @@ from common.ordering import get_next_order
 from courses.models import Course
 
 from .models import Audience, Pathway, PathwayBundleRule, PathwayCourse, PathwayEnrollment
+from .services import (
+    MAX_CUSTOM_PATHWAY_COURSES,
+    MIN_CUSTOM_PATHWAY_COURSES,
+    is_custom_pathway_purchased,
+)
 
 
 class AudienceSerializer(serializers.ModelSerializer):
@@ -143,6 +148,7 @@ class PathwayDetailSerializer(serializers.ModelSerializer):
             "audiences",
             "course_count",
             "courses",
+            "is_custom",
             "created_at",
             "updated_at",
         ]
@@ -223,7 +229,7 @@ class PathwayWriteSerializer(serializers.ModelSerializer):
         return clean_bullet_list(value, "Prerequisites")
 
     def validate_name(self, value):
-        queryset = Pathway.objects.filter(name__iexact=value)
+        queryset = Pathway.objects.filter(name__iexact=value, is_custom=False)
         if self.instance:
             queryset = queryset.exclude(pk=self.instance.pk)
         if queryset.exists():
@@ -310,7 +316,7 @@ class PathwayCheckoutRequestSerializer(serializers.Serializer):
 class PathwayEnrollmentPathwaySerializer(serializers.ModelSerializer):
     class Meta:
         model = Pathway
-        fields = ["id", "name", "slug", "summary"]
+        fields = ["id", "name", "slug", "summary", "is_custom"]
         read_only_fields = fields
 
 
@@ -321,3 +327,90 @@ class PathwayEnrollmentSerializer(serializers.ModelSerializer):
         model = PathwayEnrollment
         fields = ["id", "pathway", "status", "price_paid", "enrolled_at"]
         read_only_fields = fields
+
+
+class CustomPathwaySerializer(serializers.ModelSerializer):
+    """A student's own "build your own" bundle, with its courses and buy state."""
+
+    courses = serializers.SerializerMethodField()
+    course_count = serializers.SerializerMethodField()
+    is_purchased = serializers.SerializerMethodField()
+
+    class Meta:
+        model = Pathway
+        fields = [
+            "id",
+            "name",
+            "slug",
+            "summary",
+            "base_price",
+            "course_count",
+            "courses",
+            "is_purchased",
+            "created_at",
+            "updated_at",
+        ]
+        read_only_fields = fields
+
+    def get_courses(self, obj):
+        pathway_courses = sorted(obj.pathway_courses.all(), key=lambda pc: pc.order)
+        return PathwayCourseSerializer(pathway_courses, many=True, context=self.context).data
+
+    def get_course_count(self, obj):
+        return len(obj.pathway_courses.all())
+
+    def get_is_purchased(self, obj):
+        # Annotated by the list/detail views so a list doesn't run one query
+        # per row; the fallback keeps the serializer usable on its own.
+        annotated = getattr(obj, "is_purchased_flag", None)
+        if annotated is not None:
+            return annotated
+        return is_custom_pathway_purchased(obj)
+
+
+class CustomPathwayWriteSerializer(serializers.Serializer):
+    """Create/update payload for a custom pathway.
+
+    Deliberately not a ModelSerializer: a student only ever chooses a name, a
+    note and the courses — price, slug, status and ownership are all derived
+    server-side in `services.create_custom_pathway`.
+    """
+
+    name = serializers.CharField(max_length=255)
+    summary = serializers.CharField(max_length=500, required=False, allow_blank=True)
+    course_ids = serializers.ListField(
+        child=serializers.IntegerField(),
+        allow_empty=False,
+        min_length=MIN_CUSTOM_PATHWAY_COURSES,
+        max_length=MAX_CUSTOM_PATHWAY_COURSES,
+        error_messages={
+            "min_length": (
+                f"Pick at least {MIN_CUSTOM_PATHWAY_COURSES} courses to build a pathway."
+            ),
+            "max_length": (
+                f"A pathway can hold at most {MAX_CUSTOM_PATHWAY_COURSES} courses."
+            ),
+        },
+    )
+
+    def validate_name(self, value):
+        name = " ".join(value.split())
+        if not name:
+            raise serializers.ValidationError("Please give your pathway a name.")
+
+        queryset = Pathway.objects.filter(
+            is_custom=True, created_by=self.context["request"].user, name__iexact=name
+        )
+        if self.instance is not None:
+            queryset = queryset.exclude(pk=self.instance.pk)
+        if queryset.exists():
+            raise serializers.ValidationError("You already have a pathway with this name.")
+        return name
+
+    def validate_summary(self, value):
+        return " ".join(value.split())
+
+    def validate_course_ids(self, value):
+        if len(value) != len(set(value)):
+            raise serializers.ValidationError("Duplicate courses are not allowed.")
+        return value

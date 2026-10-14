@@ -1,6 +1,6 @@
 "use client";
 
-import { Heart, RotateCcw } from "lucide-react";
+import { Heart, RotateCcw, Search } from "lucide-react";
 import CurriculumFilterSelect from "./CurriculumFilterSelect";
 
 const SORT_OPTIONS = [
@@ -11,23 +11,34 @@ const SORT_OPTIONS = [
 
 export default function CurriculumFilters({
   filters,
+  search,
+  onSearchChange,
   onFilterChange,
   onClear,
   subjects = [],
+  tiers = [],
   grades = [],
   difficulties = [],
   savedCount,
   savedOnly,
   onToggleSaved,
 }) {
-  const activeCount = [filters.category, filters.grade, filters.difficulty].filter(Boolean).length;
+  const activeCount = [filters.category, filters.grade, filters.difficulty, filters.tier].filter(Boolean).length;
 
   return (
     <div
       id="curriculum-filters"
-      className="mt-8 rounded-2xl border border-line bg-paper/70 p-4 sm:p-5"
+      className="rounded-2xl border border-zinc-200/80 bg-white p-3 shadow-[0_2px_12px_rgba(24,24,27,0.03)] sm:p-4"
     >
-      <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
+      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+        <CurriculumFilterSelect
+          id="curriculum-filter-tier"
+          label="Tier"
+          value={filters.tier}
+          onChange={(value) => onFilterChange("tier", value)}
+          allLabel="All tiers"
+          options={tiers.map((tier) => ({ value: tier.slug, label: `Tier ${tier.level}: ${tier.name}` }))}
+        />
         <CurriculumFilterSelect
           id="curriculum-filter-subject"
           label="Subject"
@@ -61,17 +72,22 @@ export default function CurriculumFilters({
         />
       </div>
 
-      <div className="mt-4 flex flex-wrap items-center gap-3 border-t border-line pt-4">
+      <div className="mt-3 flex flex-wrap items-center gap-2 border-t border-zinc-100 pt-3">
+        <label className="relative min-w-0 basis-full sm:flex-1 sm:basis-auto">
+          <span className="sr-only">Search courses</span>
+          <Search aria-hidden="true" className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-zinc-400" />
+          <input type="search" value={search} onChange={(event) => onSearchChange(event.target.value)} placeholder="Search courses…" className="h-10 w-full rounded-lg border border-zinc-200 bg-zinc-50/70 pl-9 pr-3 text-sm text-zinc-900 placeholder:text-zinc-400 focus:border-indigo-400 focus:outline-none focus:ring-2 focus:ring-indigo-100" />
+        </label>
         <button
           type="button"
           aria-pressed={savedOnly}
           title="Courses saved in this browser"
           onClick={onToggleSaved}
-          className={`flex items-center gap-2 rounded-xl border px-4 py-2 text-sm transition ${
-            savedOnly ? "border-pine bg-pine text-paper" : "border-line bg-paper hover:border-ink/25"
+          className={`flex h-10 shrink-0 items-center gap-2 rounded-lg border px-3 text-xs font-medium transition focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-500 ${
+            savedOnly ? "border-indigo-200 bg-indigo-50 text-indigo-700" : "border-zinc-200 bg-white text-zinc-600 hover:bg-zinc-50"
           }`}
         >
-          <Heart className="h-4 w-4" />
+          <Heart aria-hidden="true" className={`h-3.5 w-3.5 ${savedOnly ? "fill-current" : ""}`} />
           Saved ({savedCount})
         </button>
 
@@ -79,10 +95,10 @@ export default function CurriculumFilters({
           <button
             type="button"
             onClick={onClear}
-            className="ml-auto flex items-center gap-1.5 text-xs font-sans font-medium uppercase tracking-widest text-muted transition hover:text-ink"
+            className="flex h-10 shrink-0 items-center gap-1.5 rounded-lg px-2.5 text-xs font-medium text-zinc-500 transition hover:bg-zinc-50 hover:text-zinc-900 focus-visible:outline-2 focus-visible:outline-indigo-500"
           >
             <RotateCcw className="h-3.5 w-3.5" />
-            Clear filters ({activeCount})
+            Reset ({activeCount})
           </button>
         )}
       </div>
