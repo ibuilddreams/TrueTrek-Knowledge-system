@@ -17,20 +17,19 @@ export default function CurriculumFilters({
   onClear,
   subjects = [],
   tiers = [],
-  grades = [],
   difficulties = [],
   savedCount,
   savedOnly,
   onToggleSaved,
 }) {
-  const activeCount = [filters.category, filters.grade, filters.difficulty, filters.tier].filter(Boolean).length;
+  const activeCount = [filters.category, filters.difficulty, filters.tier].filter(Boolean).length;
 
   return (
     <div
       id="curriculum-filters"
       className="rounded-2xl border border-zinc-200/80 bg-white p-3 shadow-[0_2px_12px_rgba(24,24,27,0.03)] sm:p-4"
     >
-      <div className="grid grid-cols-2 gap-2.5 sm:grid-cols-3 lg:grid-cols-5">
+      <div className="grid grid-cols-2 gap-2.5 lg:grid-cols-4">
         <CurriculumFilterSelect
           id="curriculum-filter-tier"
           label="Tier"
@@ -46,14 +45,6 @@ export default function CurriculumFilters({
           onChange={(value) => onFilterChange("category", value)}
           allLabel="All subjects"
           options={subjects.map((subject) => ({ value: subject.id, label: subject.name }))}
-        />
-        <CurriculumFilterSelect
-          id="curriculum-filter-grade"
-          label="Grade level"
-          value={filters.grade}
-          onChange={(value) => onFilterChange("grade", value)}
-          allLabel="All grades"
-          options={grades.map((grade) => ({ value: String(grade.value), label: grade.label }))}
         />
         <CurriculumFilterSelect
           id="curriculum-filter-difficulty"
