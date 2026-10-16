@@ -62,9 +62,11 @@ class CourseModelTests(TestCase):
             self.category.delete()
 
     def test_str_representation(self):
-        course = Course.objects.create(title="Machine Learning", category=self.category)
+        course = Course.objects.create(
+            title="Machine Learning", code="ML-101", category=self.category
+        )
 
-        self.assertEqual(str(course), "Machine Learning")
+        self.assertEqual(str(course), "ML-101 — Machine Learning")
 
 
 class ParseGradeRangeTests(TestCase):

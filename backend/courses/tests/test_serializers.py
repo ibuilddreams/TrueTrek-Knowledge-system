@@ -33,7 +33,7 @@ class CourseWriteSerializerTests(TestCase):
 
     def test_valid_data_creates_course(self):
         serializer = CourseWriteSerializer(
-            data={"title": "Intro to Python", "category": self.category.id}
+            data={"title": "Intro to Python", "code": "PY-101", "category": self.category.id}
         )
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
@@ -52,11 +52,18 @@ class CourseWriteSerializerTests(TestCase):
         self.assertIn("title", serializer.errors)
 
     def test_duplicate_title_allowed_on_same_instance(self):
-        course = Course.objects.create(title="Existing Course", category=self.category)
+        course = Course.objects.create(
+            title="Existing Course", code="EX-101", category=self.category
+        )
 
         serializer = CourseWriteSerializer(
             instance=course,
-            data={"title": "Existing Course", "category": self.category.id, "status": Status.PUBLISHED},
+            data={
+                "title": "Existing Course",
+                "code": "EX-101",
+                "category": self.category.id,
+                "status": Status.PUBLISHED,
+            },
         )
 
         self.assertTrue(serializer.is_valid(), serializer.errors)
