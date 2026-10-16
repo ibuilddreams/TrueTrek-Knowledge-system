@@ -12,26 +12,36 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from assignments.models import Assignment
+from carts.models import CartItem
 from common.models import Status
 from common.ordering import get_next_order
 from courses.models import Category, Course, CourseInstructor, Tag
 from daily_drill.models import DrillOption, DrillQuestion
-from enrollments.models import Enrollment
+from enrollments.models import Enrollment, EnrollmentHistory
+from future_clients.models import FutureClientApplication
 from instructors.models import InstructorFeedback, InstructorProfile
 from lessons.models import Lesson
 from modules.models import Module
+from onboarding.models import OnboardingProgress
 from onboarding.models import Question as OnboardingQuestion
 from onboarding.models import QuestionOption, QuestionOptionPathwayWeight
 from pathways.audience_defaults import DEFAULT_PATHWAY_AUDIENCES
-from pathways.models import Audience, Pathway, PathwayBundleRule, PathwayCourse
+from pathways.models import (
+    Audience,
+    Pathway,
+    PathwayBundleRule,
+    PathwayCourse,
+    PathwayEnrollment,
+)
+from progress.models import CourseProgress, LearningActivity, LessonProgress, ModuleProgress
 
 from quizzes.models import Choice
 from quizzes.models import Question as QuizQuestion
 from quizzes.models import Quiz
-from tiers.models import Tier, TierPathway
+from tiers.models import Tier, TierPathway, TierProgress
 from users.models import UserProfile
 
-from ._numa_catalog import NUMA_COURSE_DEFS, NUMA_PROVIDER_THUMBNAILS
+from ._retired_courses import RETIRED_COURSE_CODES
 
 User = get_user_model()
 
@@ -320,22 +330,23 @@ COURSE_AMOUNT_CHOICES = list(range(20, 300, 10))
 
 # Provider logo, keyed by provider name, downloaded once into
 # MEDIA_ROOT/course_thumbnails/ and shared by every course from that provider.
-# Cool Nerds has no logo on file, so its entry is intentionally None:
-# `_download_assets` skips a provider whose URL is None and its courses seed
-# without a thumbnail (the frontend falls back to its own placeholder). Add a
-# hosted URL here to give the Cool Nerds courses real artwork. The 30 Numa
-# provider logos come from the catalog module beside this one.
+# Cool Nerds is the only provider in COURSE_DEFS and has no logo on file, so this
+# is intentionally a single None entry: `_download_assets` skips a provider whose
+# URL is None and its courses seed without a thumbnail (the frontend falls back to
+# its own placeholder). The 30 Numa provider logos that used to live here went with
+# the catalog they belonged to. Add a hosted URL here to give the Cool Nerds
+# courses real artwork.
 PROVIDER_THUMBNAILS = {
     "Cool Nerds": None,
-    **NUMA_PROVIDER_THUMBNAILS,
 }
 
-# Cool Nerds' own curriculum: the thirty courses from the client's "Courses We
-# need to add" sheet. Every course below is first-party, `provider` is always
-# Cool Nerds, and there is no provider logo to download, so these seed without a
-# thumbnail (see `_download_assets`). They are the only courses bundled into
-# PATHWAY_DEFS; the 629 Numa courses sit alongside them in the catalog without
-# belonging to a pathway.
+# Cool Nerds' own curriculum, and the whole catalog: the thirty courses from the
+# client's "Courses We need to add" sheet. The 629-course Numa demo catalog that
+# used to live here was removed at the client's request, so every course below is
+# first-party and `provider` is always Cool Nerds. There is no provider logo to
+# download, so these seed without a thumbnail (see `_download_assets`). The codes
+# of the retired Numa courses live in `_retired_courses.py`, which `_reset_catalog`
+# reads to delete them from an environment that still has them.
 #
 # `title` carries the sheet's course code ("CEO-101: ...") because that is how the
 # client refers to them and how they sort inside a pathway, and `subject` carries
@@ -350,7 +361,7 @@ PROVIDER_THUMBNAILS = {
 # (unique per course) backs a third. `provider` is left as the one value it
 # honestly has; _create_quiz drops any question it cannot fill with four options.
 # `pathway` and `core` feed the course page's "What you'll learn" list.
-COOL_NERDS_COURSE_DEFS = [
+COURSE_DEFS = [
     {"code": "CEO-101", "title": "CEO-101: The Athlete CEO Mindset & Enterprise Foundations", "category": "Professional", "description": "Establishing the transition from athlete to Chief Executive Officer of \"Me, Inc.\"\n\nCore competencies: Time/energy management matrixes, personal governance models, and setting multi-year athletic, academic, and professional OKRs (Objectives and Key Results).\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 1: Foundational Executive Readiness · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 1: Foundational Executive Readiness", "grade_label": "9–12", "pathway": "The Athlete CEO Pathway", "focus": "Establishing the transition from athlete to Chief Executive Officer of \"Me, Inc.\"", "core": "Time/energy management matrixes, personal governance models, and setting multi-year athletic, academic, and professional OKRs (Objectives and Key Results).", "tags": ["Cool Nerds", "The Athlete CEO Pathway", "Level 1: Foundational Executive Readiness"]},
     {"code": "CEO-102", "title": "CEO-102: Academic Leverage & Collegiate Eligibility Architecture", "category": "Professional", "description": "Aligning academic progress with long-term career optionality.\n\nCore competencies: NCAA Clearinghouse rules, high school state association regulations, credit-to-GPA optimization, and leveraging university/school academic resources for professional advantage.\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 1: Foundational Executive Readiness · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 1: Foundational Executive Readiness", "grade_label": "9–12", "pathway": "The Athlete CEO Pathway", "focus": "Aligning academic progress with long-term career optionality.", "core": "NCAA Clearinghouse rules, high school state association regulations, credit-to-GPA optimization, and leveraging university/school academic resources for professional advantage.", "tags": ["Cool Nerds", "The Athlete CEO Pathway", "Level 1: Foundational Executive Readiness"]},
     {"code": "CEO-201", "title": "CEO-201: Personal Branding & Digital Asset Architecture", "category": "Professional", "description": "Transforming social media presence into high-value digital property.\n\nCore competencies: Audience demographic auditing, content monetization strategies, digital footprint cleanup, and personal brand guidelines/style sheets.\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 2: Business Operations, Branding & Compliance · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 2: Business Operations, Branding & Compliance", "grade_label": "9–12", "pathway": "The Athlete CEO Pathway", "focus": "Transforming social media presence into high-value digital property.", "core": "Audience demographic auditing, content monetization strategies, digital footprint cleanup, and personal brand guidelines/style sheets.", "tags": ["Cool Nerds", "The Athlete CEO Pathway", "Level 2: Business Operations, Branding & Compliance"]},
@@ -383,13 +394,6 @@ COOL_NERDS_COURSE_DEFS = [
     {"code": "MT-303", "title": "MT-303: The Capstone - Alpha Leadership & Team Psychology", "category": "Athletic", "description": "Projecting mental toughness outward to elevate the entire roster.\n\nCore competencies: Leading through adversity, confronting teammates constructively (the \"care enough to confront\" model), and becoming an extension of the coaching staff's culture.\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Elite Armor (Adversity & Leadership) · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Elite Armor (Adversity & Leadership)", "grade_label": "9–12", "pathway": "The Mental Toughness Pathway", "focus": "Projecting mental toughness outward to elevate the entire roster.", "core": "Leading through adversity, confronting teammates constructively (the \"care enough to confront\" model), and becoming an extension of the coaching staff's culture.", "tags": ["Cool Nerds", "The Mental Toughness Pathway", "Level 3: Elite Armor (Adversity & Leadership)"]},
 ]
 
-# The whole catalog: the client's thirty Cool Nerds courses first, then Numa's
-# 629. Order matters — `_create_course_content` consumes one shared RNG in this
-# order, so appending rather than interleaving keeps the Cool Nerds courses'
-# generated prices and quizzes identical to what they were before Numa's catalog
-# was restored alongside them.
-COURSE_DEFS = COOL_NERDS_COURSE_DEFS + NUMA_COURSE_DEFS
-
 # Distractor pools for the generated quiz's metadata questions (see
 # `_create_course_content`) — every distinct subject/provider/grade-label that actually
 # appears somewhere in COURSE_DEFS, so a wrong answer is always another real value from
@@ -399,9 +403,7 @@ ALL_PROVIDERS = sorted({course_def["provider"] for course_def in COURSE_DEFS})
 ALL_GRADE_LABELS = sorted({course_def["grade_label"] for course_def in COURSE_DEFS})
 # Every course's Focus line from the client's sheet — unique per course, so this
 # is the one pool that scales with the catalog rather than with its vocabulary.
-# Only the Cool Nerds defs carry one, so this is keyed off `.get`: a Numa course
-# simply gets no focus question (see `_create_quiz`).
-ALL_FOCUSES = sorted({cd["focus"] for cd in COURSE_DEFS if cd.get("focus")})
+ALL_FOCUSES = sorted({course_def["focus"] for course_def in COURSE_DEFS})
 
 # One correct answer plus three distractors. `_create_quiz` drops any question
 # whose pool cannot supply that many distinct values.
@@ -746,16 +748,16 @@ QUESTIONNAIRE = [
 
 class Command(BaseCommand):
     help = (
-        "Seeds the catalog: the canonical categories, teachers, students, 659 courses (the "
-        "client's 30 Cool Nerds courses plus Numa's 629-course catalog from "
-        "https://numaschool.com/curriculum, each with a downloaded provider-logo thumbnail, a "
-        "random-but-deterministic price, 1-2 modules, 1-2 lessons per module, one assignment and "
-        "one quiz), pathways, tiers, bundle pricing rules, the onboarding questionnaire, and the "
-        "Daily Drill bank. "
-        "ONLY the seeded pathways are deleted-and-rebuilt (see `_reset_pathway_catalog`); "
-        "everything else is upserted by its natural key, so existing courses, user accounts, "
-        "course enrollments, progress and students' own custom pathways all survive and this is "
-        "safe to run against a server that already holds real data. "
+        "Seeds the catalog: the canonical categories, teachers, students, the client's 30 Cool "
+        "Nerds courses (each with a random-but-deterministic price, 1-2 modules, 1-2 lessons per "
+        "module, one assignment and one quiz), 3 pathways, tiers, bundle pricing rules, the "
+        "onboarding questionnaire, and the Daily Drill bank. "
+        "By default only two things are deleted (see `_reset_catalog`): the 629 retired Numa "
+        "demo courses, and the seeded pathways, which are rebuilt from PATHWAY_DEFS. Everything "
+        "else is upserted by its natural key, so other courses, user accounts, course "
+        "enrollments, progress and students' own custom pathways all survive and this is safe "
+        "to run against a server that already holds real data. Pass --fresh to instead wipe "
+        "every row except admin accounts first, for a server you mean to rebuild from scratch. "
         "Student-course enrollments are intentionally NOT seeded — enroll students manually "
         "(e.g. via the admin portal) after seeding. Safe to re-run — every run produces the same "
         "dataset, and media files already on disk are reused rather than re-downloaded. Pass "
@@ -768,6 +770,16 @@ class Command(BaseCommand):
             "--noinput",
             action="store_true",
             help="Skip the confirmation prompt and seed immediately.",
+        )
+        parser.add_argument(
+            "--fresh",
+            action="store_true",
+            help=(
+                "Start from an empty database: delete EVERY row except admin accounts and "
+                "superusers, then seed. Destroys real student accounts, enrolments, purchases "
+                "and progress — only for a server you intend to rebuild from scratch. Without "
+                "it, the command preserves all of that (see `_reset_catalog`)."
+            ),
         )
         parser.add_argument(
             "--skip-assets",
@@ -784,16 +796,45 @@ class Command(BaseCommand):
         # is a one-line error rather than a half-finished seed.
         self._validate_course_defs()
 
+        fresh = options["fresh"]
+
         if not options["noinput"]:
+            if fresh:
+                others = User.objects.exclude(role=User.Roles.ADMIN).exclude(
+                    is_superuser=True
+                ).count()
+                prompt = (
+                    "--fresh: this DELETES EVERY ROW except admin accounts and superusers — "
+                    f"all {Course.objects.count()} course(s), {others} teacher/student "
+                    "account(s) and with them every enrolment, purchase, submission and "
+                    "progress record, plus all pathways (including students' own custom "
+                    "bundles), tiers, categories, tags, drills and onboarding answers.\n"
+                    "THIS DESTROYS REAL USER DATA. Only do it on a server you mean to rebuild "
+                    "from scratch; without --fresh the command preserves all of it.\n"
+                )
+            else:
+                retired = Course.objects.filter(code__in=RETIRED_COURSE_CODES).count()
+                stale = Pathway.objects.filter(is_custom=False).count()
+                prompt = (
+                    f"This DELETES {retired} retired Numa course(s) — along with their modules, "
+                    "lessons, enrolments and progress — and all "
+                    f"{stale} seeded pathway(s).\n"
+                    "PRESERVED: every other course (including any an admin added by hand), "
+                    "categories, tags, user accounts, course enrollments, progress, daily "
+                    "drills, onboarding answers, and students' own custom pathways. Everything "
+                    "else is upserted, so re-running only adds or updates.\n"
+                )
+
             confirm = input(
-                f"This DELETES the {Pathway.objects.filter(is_custom=False).count()} seeded "
-                "pathway(s) and rebuilds them from PATHWAY_DEFS. That also drops those pathways' "
-                "course lists, tier attachments and pathway purchases.\n"
-                "PRESERVED: courses, categories, tags, user accounts, course enrollments, "
-                "progress, daily drills, onboarding answers, and students' own custom pathways. "
-                "Everything else is upserted, so re-running only adds or updates.\n"
-                "The regular demo students will NOT be auto-enrolled in any course (only the demo "
-                "reviewers are, so instructor feedback matches real enrollments).\n"
+                prompt
+                + f"It then seeds {len(COURSE_DEFS)} Cool Nerds course(s), "
+                f"{len(PATHWAY_DEFS)} pathway(s), {len(TIER_DEFS)} tier(s), "
+                f"{len(TEACHER_NAMES)} teacher(s), "
+                f"{len(STUDENT_NAMES) + len(REVIEWER_NAMES)} student(s), the admin, bundle "
+                f"rules, {len(QUESTIONNAIRE)} onboarding question(s) and "
+                f"{len(DRILL_DEFS)} daily drill(s).\n"
+                "The regular demo students will NOT be auto-enrolled in any course (only the "
+                "demo reviewers are, so instructor feedback matches real enrollments).\n"
                 "Type 'yes' to continue: "
             )
             if confirm.strip().lower() != "yes":
@@ -806,12 +847,19 @@ class Command(BaseCommand):
         assets = self._download_assets(skip=options["skip_assets"])
 
         with transaction.atomic():
-            removed = self._reset_pathway_catalog()
-            self.stdout.write(
-                self.style.WARNING(
-                    f"Removed {removed} seeded pathway(s) — everything else preserved"
+            if fresh:
+                self._reset_everything()
+                self.stdout.write(
+                    self.style.WARNING("--fresh: cleared every row (admin accounts preserved)")
                 )
-            )
+            else:
+                retired_courses, removed_pathways = self._reset_catalog()
+                self.stdout.write(
+                    self.style.WARNING(
+                        f"Removed {retired_courses} retired course(s) and {removed_pathways} "
+                        "seeded pathway(s) — everything else preserved"
+                    )
+                )
 
             self._create_admin()
             self.stdout.write(self.style.SUCCESS("Ensured 1 admin"))
@@ -962,35 +1010,92 @@ class Command(BaseCommand):
                     + ("..." if len(duplicates) > 5 else "")
                 )
 
-    def _reset_pathway_catalog(self):
-        """Deletes the seeded pathways so PATHWAY_DEFS can rebuild them.
+    def _reset_everything(self):
+        """`--fresh`: wipes every row except admin accounts and superusers.
 
-        Deliberately narrow — this command used to wipe every row except the
-        admin, which made it unusable against a server holding real data.
-        Courses, categories, tags, user accounts, course enrollments, progress,
-        daily drills and onboarding answers are all left alone now; everything
-        the command seeds is upserted by its natural key, so only the pathways
-        themselves need clearing to be rebuilt from scratch.
+        For rebuilding a server from scratch. Deleting the non-admin users
+        cascades their enrolments, submissions, quiz attempts, progress, cart
+        items, drill attempts, pathway purchases and onboarding answers; the
+        explicit deletes below cover the same tables for rows an admin owns,
+        plus the content nobody owns at all. Students' custom pathways go with
+        their owners (`created_by` cascades) and the `Pathway` sweep catches any
+        an admin built.
 
-        Deleted by cascade along with the pathways:
-          - PathwayCourse — which courses each pathway bundles;
-          - TierPathway — the Tier rows survive and `_create_tiers` re-attaches;
-          - PathwayEnrollment for those pathways;
-          - QuestionOptionPathwayWeight pointing at them, which
-            `_seed_questionnaire` then re-creates against the new rows.
+        Order matters: Category is PROTECTed by both Course.category and
+        Tier.category, so every course and tier has to be gone before the
+        categories can be cleared.
+        """
+        User.objects.exclude(role=User.Roles.ADMIN).exclude(is_superuser=True).delete()
 
-        A PathwayEnrollment is the record of a *pathway* purchase. The course
-        Enrollments that purchase granted are separate rows and are NOT touched,
-        so a student who bought a pathway keeps access to every course in it.
+        # Learner-activity tables — anything still here belongs to an admin account.
+        EnrollmentHistory.objects.all().delete()
+        Enrollment.objects.all().delete()
+        LessonProgress.objects.all().delete()
+        ModuleProgress.objects.all().delete()
+        CourseProgress.objects.all().delete()
+        LearningActivity.objects.all().delete()
+        CartItem.objects.all().delete()
+        OnboardingProgress.objects.all().delete()
+        PathwayEnrollment.objects.all().delete()
+        TierProgress.objects.all().delete()
+
+        # Applications carry their own applicant details rather than an FK to a
+        # seeded user, so deleting users doesn't cascade them.
+        FutureClientApplication.objects.all().delete()
+        DrillQuestion.objects.all().delete()
+
+        Course.objects.all().delete()
+        Tier.objects.all().delete()
+        Pathway.objects.all().delete()
+        OnboardingQuestion.objects.all().delete()
+        PathwayBundleRule.objects.all().delete()
+
+        Category.objects.all().delete()
+        Tag.objects.all().delete()
+
+    def _reset_catalog(self):
+        """Clears the parts of the catalog that have to be rebuilt, and no more.
+
+        Two things are deleted; everything else this command seeds is upserted
+        by its natural key, so a reseed is safe to run against a server holding
+        real data.
+
+        1. The retired Numa courses (`_retired_courses.RETIRED_COURSE_CODES`).
+           The client replaced that 629-course demo catalog with their own
+           thirty courses, so an environment still holding it needs them gone.
+           They are deleted by exact code, never as "everything not in
+           COURSE_DEFS" — a course an admin added by hand through the portal is
+           not in COURSE_DEFS either and must survive. Deleting a course
+           cascades its modules, lessons, assignments, quizzes, cart items,
+           enrolments and progress, which is the point: there is nothing left to
+           study in a course that no longer exists.
+
+        2. Every seeded (non-custom) pathway, rebuilt straight after from
+           PATHWAY_DEFS. Pathways are the one thing not upserted, because the
+           client's three replace a catalog of fifteen and a stale pathway has
+           to actually disappear rather than linger unlisted. By cascade this
+           also drops those pathways' PathwayCourse rows, their TierPathway
+           attachments (the Tier rows themselves survive and `_create_tiers`
+           re-attaches them), their PathwayEnrollments, and the
+           QuestionOptionPathwayWeights that `_seed_questionnaire` re-creates.
+
+           A PathwayEnrollment is the record of a *pathway* purchase. The course
+           Enrollments that purchase granted are separate rows, so a student who
+           bought a pathway keeps access to every still-existing course in it.
 
         Students' own custom pathways (`is_custom`) are excluded: they are not
         part of the seeded catalog, and deleting one would destroy a bundle a
         student built and may have paid for.
         """
-        seeded = Pathway.objects.filter(is_custom=False)
-        removed = seeded.count()
-        seeded.delete()
-        return removed
+        retired = Course.objects.filter(code__in=RETIRED_COURSE_CODES)
+        retired_count = retired.count()
+        retired.delete()
+
+        seeded_pathways = Pathway.objects.filter(is_custom=False)
+        pathway_count = seeded_pathways.count()
+        seeded_pathways.delete()
+
+        return retired_count, pathway_count
 
     def _create_admin(self):
         user, created = User.objects.get_or_create(
@@ -1014,7 +1119,7 @@ class Command(BaseCommand):
     def _create_user(self, first_name, last_name, email, role):
         # Matched on email, so a re-seed reuses the existing account rather than
         # creating a second one. DEFAULT_PASSWORD is only set when the account is
-        # first created: now that `_reset_pathway_catalog` leaves users alone, a
+        # first created: now that `_reset_catalog` leaves users alone, a
         # seed must not reset the password of someone already using the system.
         user, created = User.objects.get_or_create(
             email=email,
@@ -1182,16 +1287,9 @@ class Command(BaseCommand):
         # choice that is also the answer. CANDIDATES is therefore filtered rather
         # than trimmed by hand, so this keeps working if the catalog grows a second
         # provider or shrinks to one subject.
-        # `subject` is a pathway level for a Cool Nerds course ("Level 2:
-        # Business Operations...") but a school subject for a Numa one
-        # ("English Language Arts"), so the question is worded from whichever
-        # it is. Only Cool Nerds defs carry a `focus`, so that question is
-        # offered only when there is one to ask about.
         candidates = [
             (
-                f'Which level of its pathway does "{course.title}" belong to?'
-                if course_def.get("pathway")
-                else f'Which subject does "{course.title}" belong to?',
+                f'Which level of its pathway does "{course.title}" belong to?',
                 course_def["subject"],
                 ALL_SUBJECTS,
             ),
@@ -1205,15 +1303,12 @@ class Command(BaseCommand):
                 f"Grades {course_def['grade_label']}",
                 [f"Grades {g}" for g in ALL_GRADE_LABELS],
             ),
+            (
+                f'What is the focus of "{course.title}"?',
+                course_def["focus"],
+                ALL_FOCUSES,
+            ),
         ]
-        if course_def.get("focus"):
-            candidates.append(
-                (
-                    f'What is the focus of "{course.title}"?',
-                    course_def["focus"],
-                    ALL_FOCUSES,
-                )
-            )
         questions = [
             (text, correct, pool)
             for text, correct, pool in candidates
@@ -1249,10 +1344,14 @@ class Command(BaseCommand):
             options = [correct_answer] + distractors
             # `options[0]` is always the correct answer before rotation, and Choice has
             # no Meta.ordering — inserting them as written would put the right answer
-            # first in every question. Rotating by the question's order spreads it
-            # across all four positions and stays deterministic, so re-seeding
-            # reproduces the same quiz.
-            rotation = order % len(options)
+            # first in every question. The rotation is drawn from the shared seeded
+            # RNG rather than from `order`: a one-provider catalog only yields three
+            # answerable questions per quiz (the provider one cannot fill four
+            # options), so `order % 4` would make the position a pure function of the
+            # question number — the first answer always "D", and never "A". Drawing it
+            # spreads the correct answer across all four positions across the catalog
+            # and stays deterministic, so re-seeding reproduces the same quiz.
+            rotation = rng.randrange(len(options))
             for option_text in options[rotation:] + options[:rotation]:
                 Choice.objects.get_or_create(
                     question=question,

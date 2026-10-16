@@ -26,6 +26,11 @@ def seed_offline(**kwargs):
     call_command("seeddata", noinput=True, skip_assets=True, **kwargs)
 
 
+def seed_offline_fresh(**kwargs):
+    """`--fresh`: wipe everything but the admins, then seed."""
+    seed_offline(fresh=True, **kwargs)
+
+
 class SeedDataCommandTests(TestCase):
     def test_seeds_the_full_dataset(self):
         seed_offline()
@@ -58,11 +63,13 @@ class SeedDataCommandTests(TestCase):
     def test_every_quiz_question_has_four_choices_with_exactly_one_correct(self):
         seed_offline()
 
+        # Three of the four candidate questions survive: Cool Nerds is the only
+        # provider in the catalog, so "which provider publishes this?" cannot be
+        # given four distinct options and `_create_quiz` drops it by design.
+        expected_count = 3
+
         for course in Course.objects.all():
             for quiz in course.quizzes.all():
-                # The restored catalog has subject/provider/grade questions;
-                # the new athlete courses also have a focus question.
-                expected_count = 4 if course.code in {cd["code"] for cd in seed.COOL_NERDS_COURSE_DEFS} else 3
                 self.assertEqual(quiz.questions.count(), expected_count, quiz.title)
                 self.assertEqual(quiz.number_of_questions, expected_count)
                 for question in quiz.questions.all():
@@ -180,6 +187,87 @@ class SeedDataCommandTests(TestCase):
         self.assertTrue(PathwayCourse.objects.filter(pk=link.pk, pathway=custom).exists())
         self.assertFalse(Pathway.objects.filter(pk=old.pk).exists())
         self.assertEqual(Pathway.objects.filter(is_custom=False).count(), len(seed.PATHWAY_DEFS))
+
+    def test_retired_numa_courses_are_deleted_but_hand_made_ones_are_not(self):
+        """The client replaced the 629-course Numa catalog with their own thirty."""
+        from courses.management.commands._retired_courses import RETIRED_COURSE_CODES
+
+        category, _ = Category.objects.get_or_create(name="Academic")
+        retired = Course.objects.create(
+            code=RETIRED_COURSE_CODES[0],
+            title="A retired Numa course",
+            slug="a-retired-numa-course",
+            category=category,
+        )
+        # Not in COURSE_DEFS either, but added by an admin through the portal —
+        # it must not be swept up with the retired catalog.
+        kept = Course.objects.create(
+            code="ADMIN-MADE-1",
+            title="Added by an administrator",
+            slug="added-by-an-administrator",
+            category=category,
+        )
+
+        seed_offline()
+
+        self.assertFalse(Course.objects.filter(pk=retired.pk).exists())
+        self.assertTrue(Course.objects.filter(pk=kept.pk).exists())
+        self.assertEqual(Course.objects.count(), len(seed.COURSE_DEFS) + 1)
+
+    def test_fresh_wipes_everything_except_admins_then_seeds(self):
+        category, _ = Category.objects.get_or_create(name="Academic")
+        admin = User.objects.create_user(
+            email="owner@example.com", username="owner@example.com", password="x",
+            gender=User.Gender.OTHER, role=User.Roles.ADMIN,
+        )
+        superuser = User.objects.create_superuser(
+            email="root@example.com", username="root@example.com", password="x",
+            gender=User.Gender.OTHER, role=User.Roles.STUDENT,
+        )
+        student = User.objects.create_user(
+            email="old-student@example.com", username="old-student@example.com", password="x",
+            gender=User.Gender.OTHER, role=User.Roles.STUDENT,
+        )
+        stale_course = Course.objects.create(
+            code="ADMIN-MADE-1", title="Added by an administrator",
+            slug="added-by-an-administrator", category=category,
+        )
+        custom = Pathway.objects.create(name="A custom bundle", is_custom=True, created_by=student)
+
+        seed_offline_fresh()
+
+        # Admins and superusers survive; everything else is rebuilt.
+        self.assertTrue(User.objects.filter(pk=admin.pk).exists())
+        self.assertTrue(User.objects.filter(pk=superuser.pk).exists())
+        self.assertFalse(User.objects.filter(pk=student.pk).exists())
+        self.assertFalse(Course.objects.filter(pk=stale_course.pk).exists())
+        self.assertFalse(Pathway.objects.filter(pk=custom.pk).exists())
+
+        # ...and the full dataset is there afterwards.
+        self.assertEqual(Course.objects.count(), len(seed.COURSE_DEFS))
+        self.assertEqual(Pathway.objects.count(), len(seed.PATHWAY_DEFS))
+        self.assertEqual(Tier.objects.count(), len(seed.TIER_DEFS))
+        self.assertEqual(OnboardingQuestion.objects.count(), len(seed.QUESTIONNAIRE))
+        self.assertEqual(DrillQuestion.objects.count(), len(seed.DRILL_DEFS))
+        self.assertEqual(
+            User.objects.filter(role=User.Roles.TEACHER).count(), len(seed.TEACHER_NAMES)
+        )
+        self.assertEqual(
+            sorted(Category.objects.values_list("name", flat=True)), sorted(seed.CATEGORY_NAMES)
+        )
+
+    def test_fresh_is_idempotent_too(self):
+        seed_offline_fresh()
+        counts = (Course.objects.count(), Pathway.objects.count(), Tier.objects.count(),
+                  User.objects.count(), PathwayCourse.objects.count())
+
+        seed_offline_fresh()
+
+        self.assertEqual(
+            counts,
+            (Course.objects.count(), Pathway.objects.count(), Tier.objects.count(),
+             User.objects.count(), PathwayCourse.objects.count()),
+        )
 
     def test_is_idempotent(self):
         seed_offline()
