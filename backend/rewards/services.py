@@ -40,7 +40,8 @@ _SCHEDULABLE_STATUSES = {RedemptionStatus.APPROVED, RedemptionStatus.SCHEDULED}
 
 
 def award_points(*, student, amount, transaction_type, reason="", drill_attempt=None,
-                  ai_drill_generation=None, admin_drill_progress=None, redemption=None, actor=None):
+                  ai_drill_generation=None, admin_drill_progress=None, quest_assignment=None,
+                  redemption=None, actor=None):
     """Creates exactly one PointsTransaction and updates the student's balance
     to match, atomically. `amount` may be negative (a spend/adjustment-down);
     a negative amount that would drop the balance below zero raises
@@ -74,6 +75,7 @@ def award_points(*, student, amount, transaction_type, reason="", drill_attempt=
             drill_attempt=drill_attempt,
             ai_drill_generation=ai_drill_generation,
             admin_drill_progress=admin_drill_progress,
+            quest_assignment=quest_assignment,
             redemption=redemption,
             actor=actor,
         )

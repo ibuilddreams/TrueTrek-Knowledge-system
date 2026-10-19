@@ -233,13 +233,17 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
     }
   }, [phase, job, onSaved, queryClient]);
 
-  // The Gemini call itself (the "Calling AI provider" step) can legitimately sit
-  // at a fixed server-reported percentage for up to ~2 minutes — there's no real
-  // sub-progress signal within one HTTP call to report. Left alone that reads as
-  // "frozen," not "working," so this ticks a cosmetic value upward within that one
-  // step only, always yielding immediately to a real, higher value from the server
-  // and capped well below the next real milestone (70%) so it never overstates
-  // actual progress.
+  // While the AI service is generating, the bar is driven by that service's own
+  // progress events, which can be coarse (or absent) and can sit at one value for
+  // a long stretch. Left alone that reads as "frozen," not "working," so this ticks
+  // a cosmetic value upward in the gaps, always yielding immediately to a real,
+  // higher value from the server and capped at 65 — the ceiling the backend maps
+  // the service's progress onto (ai_courses/services.py), so it can never run past
+  // the next real milestone (70%, validation) and overstate actual progress.
+  //
+  // Deliberately keyed on the status and the range rather than on a step label:
+  // the labels now come from the AI service, so matching one would silently stop
+  // working the day that service renames a stage.
   useEffect(() => {
     if (phase !== "generating") return;
     const interval = setInterval(() => {
@@ -249,7 +253,7 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
       setDisplayProgress((prev) => {
         const serverValue = job?.progress_percent ?? 5;
         if (serverValue > prev) return serverValue;
-        if (job?.step?.startsWith("Calling AI provider") && prev < 65) {
+        if (job?.status === "RUNNING" && prev >= 15 && prev < 65) {
           return Math.min(65, prev + 1);
         }
         return prev;
@@ -758,7 +762,7 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
             <div>
               <p className="text-sm font-semibold text-ink">{job?.step || "Starting..."}</p>
               <p className="text-xs font-mono text-muted mt-1">
-                This can take up to a couple of minutes — feel free to wait, generation continues even if you close this window.
+                This can take several minutes — feel free to wait, generation continues even if you close this window.
               </p>
             </div>
             <div className="w-full">

@@ -35,6 +35,8 @@ from pathways.models import (
 )
 from progress.models import CourseProgress, LearningActivity, LessonProgress, ModuleProgress
 
+from live_sessions.models import LiveSession, SessionSpeaker
+from quests.models import Quest
 from quizzes.models import Choice
 from quizzes.models import Question as QuizQuestion
 from quizzes.models import Quiz
@@ -746,6 +748,247 @@ QUESTIONNAIRE = [
 ]
 
 
+QUEST_DEFS = [
+    {
+        "title": "Audit your last 30 posts",
+        "instructions": (
+            "Scroll back through your last 30 posts. Delete or archive any that no longer "
+            "represent the athlete and person you want a sponsor to see."
+        ),
+        "category": "AUDIT",
+        "difficulty": "EASY",
+        "points_reward": 15,
+        "estimated_minutes": 15,
+        "proof_hint": "Screenshot your cleaned-up profile grid",
+    },
+    {
+        "title": "Rewrite your Instagram bio",
+        "instructions": (
+            "Rewrite your bio so it says who you are, what you play, your graduation year "
+            "and what you stand for — in that order. No empty quotes."
+        ),
+        "category": "PROFILE",
+        "difficulty": "EASY",
+        "points_reward": 10,
+        "estimated_minutes": 10,
+        "proof_hint": "Screenshot your updated bio",
+    },
+    {
+        "title": "Post a 15-second teammate highlight",
+        "instructions": (
+            "Record and post a 15-second video highlighting a teammate's work this week. "
+            "Name them, say exactly what they did well."
+        ),
+        "category": "CONTENT",
+        "difficulty": "MEDIUM",
+        "points_reward": 25,
+        "estimated_minutes": 20,
+        "proof_hint": "Link the post or attach the clip",
+    },
+    {
+        "title": "Reply to every comment from this week",
+        "instructions": (
+            "Go back through this week's posts and reply to every single comment. "
+            "Engagement rate is what a sponsor actually pays for."
+        ),
+        "category": "ENGAGEMENT",
+        "difficulty": "EASY",
+        "points_reward": 10,
+        "estimated_minutes": 15,
+        "proof_hint": "Screenshot a few of your replies",
+    },
+    {
+        "title": "Write down your three brand pillars",
+        "instructions": (
+            "Name the three things you want to be known for beyond your sport. Every post "
+            "you make from now on should ladder up to one of them."
+        ),
+        "category": "REFLECTION",
+        "difficulty": "EASY",
+        "points_reward": 10,
+        "estimated_minutes": 10,
+        "proof_hint": "",
+    },
+    {
+        "title": "Record your follower and engagement numbers",
+        "instructions": (
+            "Open the insights on each platform and write down your follower count, average "
+            "likes and average views. These are the numbers a sponsor asks for first."
+        ),
+        "category": "AUDIT",
+        "difficulty": "EASY",
+        "points_reward": 15,
+        "estimated_minutes": 10,
+        "proof_hint": "Screenshot your insights page",
+    },
+    {
+        "title": "Draft your one-line sponsorship pitch",
+        "instructions": (
+            "Write one sentence that tells a local business what they get by sponsoring you. "
+            "Not what you need — what they get."
+        ),
+        "category": "OUTREACH",
+        "difficulty": "MEDIUM",
+        "points_reward": 25,
+        "estimated_minutes": 20,
+        "proof_hint": "",
+    },
+    {
+        "title": "List five local businesses to approach",
+        "instructions": (
+            "Name five businesses within 20 minutes of you whose customers look like your "
+            "audience. Find the owner's name for each one."
+        ),
+        "category": "OUTREACH",
+        "difficulty": "MEDIUM",
+        "points_reward": 25,
+        "estimated_minutes": 25,
+        "proof_hint": "",
+    },
+    {
+        "title": "Post your training process, not just the result",
+        "instructions": (
+            "Post something from the unglamorous middle — the 6am session, the rehab, the "
+            "film study. Process content is what builds an audience that stays."
+        ),
+        "category": "CONTENT",
+        "difficulty": "MEDIUM",
+        "points_reward": 20,
+        "estimated_minutes": 20,
+        "proof_hint": "Link the post",
+    },
+    {
+        "title": "Thank someone who helped you this season",
+        "instructions": (
+            "Publicly thank a coach, trainer, parent or teammate. Be specific about what "
+            "they did. Gratitude is the most underrated brand move there is."
+        ),
+        "category": "ENGAGEMENT",
+        "difficulty": "EASY",
+        "points_reward": 15,
+        "estimated_minutes": 10,
+        "proof_hint": "Link the post",
+    },
+]
+
+
+SPEAKER_DEFS = [
+    {
+        "name": "Jordan Reyes",
+        "headline": "D1 Wide Receiver — University of Oregon",
+        "sport": "Football",
+        "school": "University of Oregon",
+        "graduation_year": 2027,
+        "bio": (
+            "Grew to 40k followers during his junior year of high school off film "
+            "clips alone. Now runs his own NIL deals and has strong opinions about "
+            "what he posted at 16."
+        ),
+        "instagram_handle": "@jordanreyes",
+    },
+    {
+        "name": "Maya Torres",
+        "headline": "D1 Track & Field — LSU",
+        "sport": "Track & Field",
+        "school": "Louisiana State University",
+        "graduation_year": 2026,
+        "bio": (
+            "Signed three local sponsorships before she ever left her home town by "
+            "treating her media kit like a business proposal, not a highlight reel."
+        ),
+        "instagram_handle": "@mayaruns",
+    },
+    {
+        "name": "Deshawn Carter",
+        "headline": "D1 Basketball — University of Kansas",
+        "sport": "Basketball",
+        "school": "University of Kansas",
+        "graduation_year": 2027,
+        "bio": (
+            "Lost a scholarship offer over an old post and rebuilt his presence from "
+            "scratch. Talks openly about the audit he wishes he had done earlier."
+        ),
+        "instagram_handle": "@dcarterhoops",
+    },
+    {
+        "name": "Alina Park",
+        "headline": "D1 Soccer — Stanford University",
+        "sport": "Soccer",
+        "school": "Stanford University",
+        "graduation_year": 2026,
+        "bio": (
+            "Built an audience of coaches and recruiters rather than chasing follower "
+            "count, and explains why the smaller number was worth more."
+        ),
+        "instagram_handle": "@alinapark",
+    },
+]
+
+# War Room Live runs monthly. Offsets are relative to the seed date so a fresh
+# environment always has one finished session (with a recording to watch) and
+# two scheduled ahead of it, rather than a wall of stale past dates.
+LIVE_SESSION_DEFS = [
+    {
+        "title": "Mistakes I Made Posting Online",
+        "topic": "Brand Audit",
+        "days_offset": -30,
+        "duration_minutes": 60,
+        "speakers": ["Deshawn Carter"],
+        "description": (
+            "An honest hour on the posts that cost him opportunities — what recruiters "
+            "actually look for, and how to audit years of history without deleting "
+            "everything that made you interesting."
+        ),
+        "talking_points": [
+            "The post that cost me an offer",
+            "How coaches really check your socials",
+            "Auditing without erasing your personality",
+            "Rebuilding after you've cleaned house",
+        ],
+        "recording_url": "https://example.com/warroom/mistakes-i-made-posting-online",
+        "recap": (
+            "Key takeaway: recruiters look for patterns, not single posts. Deshawn's "
+            "rule — if you would not say it in front of a coach, a parent and a "
+            "sponsor at the same time, it does not go up."
+        ),
+    },
+    {
+        "title": "Building Your Brand in High School",
+        "topic": "Getting Started",
+        "days_offset": 14,
+        "duration_minutes": 60,
+        "speakers": ["Jordan Reyes", "Alina Park"],
+        "description": (
+            "Two current college athletes on what actually worked for them before they "
+            "signed — and the things they wasted a year on."
+        ),
+        "talking_points": [
+            "What worked for me in high school",
+            "How I grew my following without going viral",
+            "Why follower count is the wrong target",
+            "What I wish I had done differently",
+        ],
+    },
+    {
+        "title": "Landing Your First Local Sponsor",
+        "topic": "Sponsorship",
+        "days_offset": 45,
+        "duration_minutes": 60,
+        "speakers": ["Maya Torres"],
+        "description": (
+            "How to approach a local business, what to put in front of them, and what "
+            "to do when they say no the first time."
+        ),
+        "talking_points": [
+            "Finding businesses whose customers are your audience",
+            "What a sponsor needs to see in your media kit",
+            "Pricing your first package",
+            "Following up without being annoying",
+        ],
+    },
+]
+
+
 class Command(BaseCommand):
     help = (
         "Seeds the catalog: the canonical categories, teachers, students, the client's 30 Cool "
@@ -913,6 +1156,17 @@ class Command(BaseCommand):
 
             self._seed_drills()
             self.stdout.write(self.style.SUCCESS(f"Seeded {len(DRILL_DEFS)} daily drill scenarios"))
+
+            self._seed_quests()
+            self.stdout.write(self.style.SUCCESS(f"Seeded {len(QUEST_DEFS)} daily quests"))
+
+            self._seed_war_room_live()
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Seeded {len(SPEAKER_DEFS)} War Room Live speakers and "
+                    f"{len(LIVE_SESSION_DEFS)} sessions"
+                )
+            )
 
             self._seed_instructor_profiles(teachers_by_code, assets["instructor_avatars"])
             feedback_count = self._seed_instructor_feedback(teachers, reviewers)
@@ -1538,4 +1792,76 @@ class Command(BaseCommand):
                         "rationale": option_def["rationale"],
                         "score": option_def["score"],
                     },
+                )
+
+    def _seed_quests(self):
+        """Upserts the starter Daily Quest catalog by title (its natural key).
+
+        Like every other upsert here, this never deletes: a quest an admin
+        added through the portal isn't in QUEST_DEFS and must survive, and a
+        seeded quest a student has already completed is referenced by a points
+        ledger entry (DailyQuestAssignment.quest is PROTECT). Admin edits to a
+        seeded quest's wording are overwritten on reseed, matching how
+        _seed_drills treats drill options."""
+        for quest_def in QUEST_DEFS:
+            Quest.objects.update_or_create(
+                title=quest_def["title"],
+                defaults={
+                    "instructions": quest_def["instructions"],
+                    "category": quest_def["category"],
+                    "difficulty": quest_def["difficulty"],
+                    "points_reward": quest_def["points_reward"],
+                    "estimated_minutes": quest_def["estimated_minutes"],
+                    "proof_hint": quest_def["proof_hint"],
+                    "status": Status.PUBLISHED,
+                },
+            )
+
+    def _seed_war_room_live(self):
+        """Upserts the War Room Live speaker roster and its monthly session
+        series.
+
+        Speakers are upserted by name — their bio is editorial copy and is
+        safe to refresh. Sessions use get_or_create by title and therefore
+        keep whatever `scheduled_at` they already have: moving a session an
+        admin has rescheduled, or that students have already RSVP'd to, would
+        send people to the wrong time. Nothing here is ever deleted."""
+        speakers_by_name = {}
+        for speaker_def in SPEAKER_DEFS:
+            speaker, _ = SessionSpeaker.objects.update_or_create(
+                name=speaker_def["name"],
+                defaults={
+                    "headline": speaker_def["headline"],
+                    "sport": speaker_def["sport"],
+                    "school": speaker_def["school"],
+                    "graduation_year": speaker_def["graduation_year"],
+                    "bio": speaker_def["bio"],
+                    "instagram_handle": speaker_def["instagram_handle"],
+                    "is_active": True,
+                },
+            )
+            speakers_by_name[speaker.name] = speaker
+
+        # 7pm local on the offset day — the hour these actually run.
+        base = timezone.localtime(timezone.now()).replace(
+            hour=19, minute=0, second=0, microsecond=0
+        )
+        for session_def in LIVE_SESSION_DEFS:
+            session, created = LiveSession.objects.get_or_create(
+                title=session_def["title"],
+                defaults={
+                    "topic": session_def["topic"],
+                    "description": session_def["description"],
+                    "talking_points": session_def["talking_points"],
+                    "scheduled_at": base + timedelta(days=session_def["days_offset"]),
+                    "duration_minutes": session_def["duration_minutes"],
+                    "meeting_method": LiveSession.MeetingMethod.ZOOM,
+                    "recording_url": session_def.get("recording_url"),
+                    "recap": session_def.get("recap", ""),
+                    "status": LiveSession.SessionStatus.SCHEDULED,
+                },
+            )
+            if created:
+                session.speakers.set(
+                    [speakers_by_name[name] for name in session_def["speakers"]]
                 )

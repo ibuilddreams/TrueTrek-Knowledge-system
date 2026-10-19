@@ -9,8 +9,18 @@ per-user guard, the global cap, the monthly spend counter, the stale-job
 reaper — is enforced against the AICourseGeneration table itself rather than a
 queue or a cache, because there is no CACHES setting and no cross-process shared
 memory (3 sync gunicorn worker processes).
+
+The content itself now comes from our own LLM service rather than Gemini. That
+service is a job API of its own (submit -> SSE progress -> read the finished
+structure), so this module runs *two* jobs side by side: the AICourseGeneration
+row the admin wizard polls, and the service-side job it mirrors. Everything
+around that — entitlement, quota, concurrency, cancellation, retry, validation,
+the ORM write — is unchanged, and so is every other AI feature in this backend
+(advisor chat, AI grading, content suggestions, the daily drill), which all
+still call Gemini through providers.get_provider().
 """
 
+import json
 import logging
 import random
 import threading
@@ -21,19 +31,39 @@ from django.conf import settings
 from django.db import connection
 from django.utils import timezone
 
+from .custom_llm_mapping import adapt_job_result, build_request_payload
 from .models import AICourseGeneration
-from .prompts.course import PROMPT_VERSION, RESPONSE_SCHEMA, build_prompt
-from .providers import get_provider
-from .providers.base import ProviderError, ProviderQuotaError, ProviderTransportError
+from .prompts.course import PROMPT_VERSION
+from .providers import get_course_provider
+from .providers.custom_llm import RAG_ENABLED
+from .providers.base import (
+    ProviderError,
+    ProviderJobFailedError,
+    ProviderQuotaError,
+    ProviderTransportError,
+)
 from .validators import PlanValidationError, validate_and_repair
 from .writer import write_course_tree
+
+# --- Gemini course generation (replaced by our own LLM service) --------------
+# The prompt template and its structured-output schema are kept intact so that
+# restoring this path is uncommenting, not rewriting. See also the commented
+# branch in ai_courses/providers/__init__.py::get_course_provider.
+# from .prompts.course import RESPONSE_SCHEMA, build_prompt
+# from .providers import get_provider
+# -----------------------------------------------------------------------------
 
 logger = logging.getLogger("ai_courses")
 
 GenerationStatus = AICourseGeneration.GenerationStatus
 
-# A transport error is the only failure worth retrying — retrying a schema
-# failure would just bill the same broken prompt twice for the same result.
+# These bound the retry budget for *submitting* the job to the AI service. A
+# transport error there is the only failure worth retrying — a rejected request
+# (bad payload, service misconfigured) would be rejected identically the second
+# time. Once the service has accepted the job there is nothing left to retry:
+# losing the progress stream falls back to polling the same job rather than
+# starting a second generation (see providers/custom_llm.py).
+#
 # Full-course generation gets a far larger retry budget than the smaller
 # per-answer/per-drill AI calls elsewhere in the app (those use a single flat
 # retry — see e.g. quizzes/ai_grading.py), because this is a background job the
@@ -43,23 +73,42 @@ GenerationStatus = AICourseGeneration.GenerationStatus
 MAX_TRANSPORT_ATTEMPTS = 5
 TRANSPORT_RETRY_BACKOFF_SECONDS = 2
 TRANSPORT_RETRY_MAX_BACKOFF_SECONDS = 20
-# Bounds one model's whole retry loop. A single attempt can itself burn up to
-# AI_REQUEST_TIMEOUT before failing (a 91s 503 was observed), so without a
-# deadline five attempts could stack into ten minutes of an admin watching a
-# spinner.
+# Bounds the whole submit-retry loop. A single attempt can itself burn up to
+# the provider's REQUEST_TIMEOUT_SECONDS before failing, so without a deadline five attempts
+# could stack into minutes of an admin watching a spinner before being told the
+# service is unreachable.
 TRANSPORT_RETRY_DEADLINE_SECONDS = 120
+
+# The slice of our 0-100 progress bar that the AI service's own progress drives.
+# Below the floor is our setup (building the request, submitting it); above the
+# ceiling is validation and the ORM write, which the service has no view of.
+GENERATION_PROGRESS_FLOOR = 15
+GENERATION_PROGRESS_CEILING = 65
+
+# Smallest gap between two progress writes for one job. An SSE stream can emit
+# events much faster than the wizard's 2s poll can show them, and every write is
+# an UPDATE on the row that poll reads.
+PROGRESS_WRITE_INTERVAL_SECONDS = 2
+
+# raw_response keeps the service's finished job body for debugging. A full course
+# is tens of KB of JSON, which is fine; this only guards against a pathological
+# payload (an embedded data URI, a repeated retrieval dump) bloating the row.
+RAW_RESPONSE_MAX_CHARS = 1_000_000
+
+# Written to AICourseGeneration.provider. Distinct from settings.AI_PROVIDER
+# ("gemini"), which still describes every other AI call in this backend, so an
+# old Gemini-generated job row stays distinguishable from a new one.
+COURSE_PROVIDER_NAME = "custom-llm"
 
 
 def _retry_delay(attempt):
     """Exponential backoff with jitter: ~2s, 4s, 8s, 16s (capped), so the whole
     retry window is ~30-40s instead of the flat 2s-per-retry it used to be.
 
-    A Gemini 503 means "the model is overloaded right now", which does not clear
-    in the 4 seconds three flat 2s retries used to allow — observed failures
-    burned all their attempts in ~14s total while successful generations on the
-    same prompt take 60-80s. The jitter keeps the (up to
-    AI_MAX_CONCURRENT_GENERATIONS) jobs in flight from retrying in lockstep and
-    re-colliding on the same overloaded model.
+    A 503 from an AI service means "overloaded right now", which does not clear
+    in the 4 seconds three flat 2s retries used to allow. The jitter keeps the
+    (up to AI_MAX_CONCURRENT_GENERATIONS) jobs in flight from retrying in
+    lockstep and re-colliding on the same overloaded service.
 
     This is deliberately more patient than the single flat retry used by the
     request-scoped AI calls elsewhere (quizzes/ai_grading.py, advisor, daily
@@ -159,8 +208,11 @@ def start_generation(user, validated_data):
         requested_by=user,
         status=GenerationStatus.PENDING,
         step="Queued",
-        provider=settings.AI_PROVIDER,
-        model_name=settings.AI_MODEL,
+        # Our own service, not settings.AI_PROVIDER/AI_MODEL (those still
+        # describe the Gemini calls the rest of the backend makes). The service
+        # picks its own model; model_name is filled in only if it reports one.
+        provider=COURSE_PROVIDER_NAME,
+        model_name="",
         input_payload=_serialize_input(validated_data),
         prompt_version=PROMPT_VERSION,
     )
@@ -223,70 +275,79 @@ def _humanize_seconds(seconds):
     return f"{minutes}m"
 
 
-def _join_models(models):
-    if len(models) == 1:
-        return models[0]
-    if len(models) == 2:
-        return f"both {models[0]} and {models[1]}"
-    return ", ".join(models[:-1]) + f" and {models[-1]}"
+# --- Gemini multi-model fallback (replaced by our own LLM service) -----------
+# Gemini answers 503 per model, so a failed primary model was retried on
+# settings.AI_FALLBACK_MODEL. Our own service chooses its own model, so there is
+# no second model here to fall back to and nothing for this helper to name.
+#
+# def _join_models(models):
+#     if len(models) == 1:
+#         return models[0]
+#     if len(models) == 2:
+#         return f"both {models[0]} and {models[1]}"
+#     return ", ".join(models[:-1]) + f" and {models[-1]}"
+# -----------------------------------------------------------------------------
 
 
-def _failure_message(exc, models_tried):
+def _failure_message(exc):
     """The sentence the admin actually reads in the generation modal.
 
-    The provider's own error text is a multi-sentence blob with doc links and an
+    A service's own error text is a multi-sentence blob with doc links and an
     embedded quota dump; rendered verbatim it filled the whole dialog. This keeps
     one plain explanation plus the short technical cause, and says what to do next.
     """
-    models = _join_models(models_tried)
+
+    if isinstance(exc, ProviderJobFailedError):
+        # The service took the job and broke while running it. Nothing about the
+        # admin's settings was refused, so saying "rejected" here would send them
+        # off editing a form that was never the problem.
+        return (
+            "The AI service accepted this course but failed while generating it. "
+            "That is a fault inside the generation service rather than anything in "
+            f"your course settings — the service reported: {exc}"
+        )
 
     if isinstance(exc, ProviderQuotaError):
         resets_in = _humanize_seconds(getattr(exc, "retry_after_seconds", None))
-        when = f" The provider reports it resets in about {resets_in}." if resets_in else ""
+        when = f" It reports that this resets in about {resets_in}." if resets_in else ""
         return (
-            f"The AI provider's request quota is used up for {models}.{when} Raise the "
-            f"API plan's limits or try again once the quota resets. ({exc})"
+            f"The AI service's request quota is used up.{when} Raise its limits or "
+            f"try again once the quota resets. ({exc})"
         )
 
     if isinstance(exc, ProviderTransportError):
         return (
-            f"The AI provider is temporarily unavailable — {models} did not answer "
-            "within the retry window. This is provider-side overload, not a problem "
-            f"with your course settings, so trying again in a few minutes usually "
-            f"works. ({exc})"
+            "The AI service is temporarily unreachable or did not finish in time. "
+            "This is a problem on the service side, not with your course settings, "
+            f"so trying again in a few minutes usually works. ({exc})"
         )
 
     return (
-        f"The AI provider rejected the request to {models}. This usually means the "
-        f"server's API credentials or model name need attention rather than anything "
-        f"in this form. ({exc})"
+        "The AI service rejected the request. This usually means the service "
+        "itself needs attention rather than anything in this form. "
+        f"({exc})"
     )
 
 
-def _call_model(job, model, prompt, step_label):
-    """Runs one model through the whole transport-retry budget.
+def _submit_with_retry(job, provider, request_payload):
+    """Submits the generation request, retrying only transport failures, and
+    returns the AI service's job id.
 
-    Returns (result, last_transport_error) — result is None when every attempt hit
-    a transport error, which is the caller's cue to try the fallback model. Raises
-    ProviderError for a permanent failure (bad key, rejected request) that no retry
-    and no other model would fix, and _JobCancelled if the admin cancelled during a
-    backoff."""
+    Raises the last ProviderTransportError when the budget is spent, ProviderError
+    for a permanent rejection no retry would fix, and _JobCancelled if the admin
+    cancelled during a backoff.
 
-    provider = get_provider(model=model)
+    A retry here can in principle leave an orphaned job running on the service
+    (the request was accepted but the response never arrived). That costs the
+    service some work, but it cannot produce a duplicate course: only the job id
+    this function returns is ever followed or written."""
+
     started = time.monotonic()
     last_transport_error = None
 
     for attempt in range(1, MAX_TRANSPORT_ATTEMPTS + 1):
         try:
-            return provider.generate_course(
-                prompt, RESPONSE_SCHEMA, settings.AI_REQUEST_TIMEOUT
-            ), None
-        except ProviderQuotaError as exc:
-            # Quota and rate limits are per model, so retrying this one is just a
-            # guaranteed second rejection — hand straight back so the caller can
-            # try the fallback model, which has its own quota.
-            logger.warning("Job %s: %s is out of quota (%s).", job.id, model, exc)
-            return None, exc
+            return provider.submit_course_job(request_payload)
         except ProviderTransportError as exc:
             last_transport_error = exc
             if attempt == MAX_TRANSPORT_ATTEMPTS:
@@ -295,32 +356,178 @@ def _call_model(job, model, prompt, step_label):
             delay = _retry_delay(attempt)
             if time.monotonic() - started + delay > TRANSPORT_RETRY_DEADLINE_SECONDS:
                 logger.warning(
-                    "Job %s: giving up on %s after %.0fs (retry deadline).",
-                    job.id, model, time.monotonic() - started,
+                    "Job %s: giving up on the AI service after %.0fs (retry deadline).",
+                    job.id, time.monotonic() - started,
                 )
                 break
 
             logger.warning(
-                "Transport error calling %s for job %s (attempt %d/%d) — retrying in %.1fs.",
-                model, job.id, attempt, MAX_TRANSPORT_ATTEMPTS, delay,
+                "Transport error submitting job %s to the AI service (attempt %d/%d) — "
+                "retrying in %.1fs.",
+                job.id, attempt, MAX_TRANSPORT_ATTEMPTS, delay,
             )
             time.sleep(delay)
 
             # The retry window is long enough that an admin can hit Cancel during
-            # it — check before spending another provider call, rather than only
-            # noticing once the whole loop is done.
+            # it — check before spending another call, rather than only noticing
+            # once the whole loop is done.
             job.refresh_from_db(fields=["status"])
             if job.status == GenerationStatus.CANCELLED:
                 raise _JobCancelled from exc
 
-            # A failed attempt that ran close to AI_REQUEST_TIMEOUT already consumed
-            # most of it without a heartbeat update. Refresh it before the next
-            # attempt (which can itself take up to AI_REQUEST_TIMEOUT again) so the
-            # stale-job reaper — which runs on every poll — can't mistake a
-            # legitimately-still-running retry for a job orphaned by a server restart.
-            _touch(job, step=f"{step_label} (retry {attempt}/{MAX_TRANSPORT_ATTEMPTS - 1})")
+            # Keep the heartbeat fresh across the backoff so the stale-job reaper —
+            # which runs on every poll — can't mistake a legitimately-still-retrying
+            # job for one orphaned by a server restart.
+            _touch(job, step=f"Retrying the AI service ({attempt}/{MAX_TRANSPORT_ATTEMPTS - 1})")
 
-    return None, last_transport_error
+    raise last_transport_error
+
+
+def _map_progress(service_percent):
+    """The AI service's own 0-100 maps onto the slice of our bar between
+    "request sent" and "validating" — our progress also covers validation and the
+    ORM write, which the service knows nothing about."""
+    fraction = max(0.0, min(float(service_percent), 100.0)) / 100
+    return int(GENERATION_PROGRESS_FLOOR + fraction * (GENERATION_PROGRESS_CEILING - GENERATION_PROGRESS_FLOOR))
+
+
+def _progress_handler(job):
+    """Builds the on_event callback the provider calls for every SSE event (or
+    poll). It does three things: mirror the service's stage onto the row the
+    wizard polls, keep heartbeat_at fresh, and notice a cancellation.
+
+    Writes are throttled because an SSE stream can be far chattier than the 2s
+    poll the wizard runs — without this, a talkative stream would turn into one
+    UPDATE per event for a step label nobody can read that fast. A heartbeat is
+    still written at least every PROGRESS_WRITE_INTERVAL_SECONDS, which is an
+    order of magnitude below AI_STALE_JOB_THRESHOLD_SECONDS."""
+
+    state = {"last_write": 0.0, "step": None, "percent": None}
+
+    def handle(event):
+        now = time.monotonic()
+        step = (event.label or "")[:255]
+        percent = _map_progress(event.progress) if event.progress is not None else None
+
+        # The service's progress is not monotonic — a real run reported
+        # 5% -> 10% -> 5% -> 0% as its pipeline moved between nodes. A bar that
+        # slides backwards reads as something going wrong, so the percentage only
+        # ever moves forward; the stage label still shows what is actually
+        # happening. (The job's *outcome* is never inferred from progress, so
+        # ignoring a decrease cannot hide a failure.)
+        if percent is not None and state["percent"] is not None and percent < state["percent"]:
+            percent = None
+
+        changed = (step and step != state["step"]) or (
+            percent is not None and percent != state["percent"]
+        )
+        if not changed and now - state["last_write"] < PROGRESS_WRITE_INTERVAL_SECONDS:
+            return
+
+        state["last_write"] = now
+
+        job.refresh_from_db(fields=["status"])
+        if job.status == GenerationStatus.CANCELLED:
+            raise _JobCancelled
+
+        fields = {}
+        if step and step != state["step"]:
+            state["step"] = step
+            fields["step"] = step
+        if percent is not None and percent != state["percent"]:
+            state["percent"] = percent
+            fields["progress_percent"] = percent
+
+        # Even with nothing new to report, this refreshes heartbeat_at.
+        _touch(job, **fields)
+
+    return handle
+
+
+def _usage_from_job(job_body):
+    """(input_tokens, output_tokens) if the service reports them, else (None, None).
+    Purely informational — a service that reports nothing is not an error."""
+
+    if not isinstance(job_body, dict):
+        return None, None
+
+    # The live service reports these under `metrics`; `usage` is the more common
+    # convention elsewhere. Both are checked before falling back to the top level.
+    usage = (
+        job_body.get("metrics")
+        or job_body.get("usage")
+        or job_body.get("token_usage")
+        or job_body.get("tokens")
+    )
+    if not isinstance(usage, dict):
+        usage = job_body
+
+    def _read(keys):
+        for key in keys:
+            value = usage.get(key)
+            if isinstance(value, bool):
+                continue
+            if isinstance(value, (int, float)) and value >= 0:
+                return int(value)
+        return None
+
+    return (
+        _read(("input_tokens", "prompt_tokens", "promptTokenCount", "tokens_in")),
+        _read(("output_tokens", "completion_tokens", "candidatesTokenCount", "tokens_out")),
+    )
+
+
+def _model_from_job(job_body):
+    """The model the service says it used, if it says. Recorded for traceability
+    the same way the Gemini model name used to be."""
+    if not isinstance(job_body, dict):
+        return ""
+
+    metrics = job_body.get("metrics")
+    sources = [job_body, metrics if isinstance(metrics, dict) else {}]
+    for source in sources:
+        for key in ("generation_model", "model", "model_name", "model_id", "llm_model"):
+            value = source.get(key)
+            if isinstance(value, str) and value.strip():
+                return value.strip()[:100]
+    return ""
+
+
+# --- Gemini single-call path (replaced by our own LLM service) ---------------
+# Gemini answered the whole course in one blocking generate_course() call, so the
+# retry loop wrapped the content call itself and a quota error handed back to the
+# caller to try settings.AI_FALLBACK_MODEL. Our service accepts the job and
+# streams progress instead, so submitting (above) and waiting (in the provider)
+# are separate concerns with separate failure handling.
+#
+# def _call_model(job, model, prompt, step_label):
+#     provider = get_provider(model=model)
+#     started = time.monotonic()
+#     last_transport_error = None
+#
+#     for attempt in range(1, MAX_TRANSPORT_ATTEMPTS + 1):
+#         try:
+#             return provider.generate_course(
+#                 prompt, RESPONSE_SCHEMA, settings.AI_REQUEST_TIMEOUT
+#             ), None
+#         except ProviderQuotaError as exc:
+#             logger.warning("Job %s: %s is out of quota (%s).", job.id, model, exc)
+#             return None, exc
+#         except ProviderTransportError as exc:
+#             last_transport_error = exc
+#             if attempt == MAX_TRANSPORT_ATTEMPTS:
+#                 break
+#             delay = _retry_delay(attempt)
+#             if time.monotonic() - started + delay > TRANSPORT_RETRY_DEADLINE_SECONDS:
+#                 break
+#             time.sleep(delay)
+#             job.refresh_from_db(fields=["status"])
+#             if job.status == GenerationStatus.CANCELLED:
+#                 raise _JobCancelled from exc
+#             _touch(job, step=f"{step_label} (retry {attempt}/{MAX_TRANSPORT_ATTEMPTS - 1})")
+#
+#     return None, last_transport_error
+# -----------------------------------------------------------------------------
 
 
 def _run_generation(job_id):
@@ -330,90 +537,87 @@ def _run_generation(job_id):
     _touch(
         job,
         status=GenerationStatus.RUNNING,
-        step="Building prompt",
+        step="Preparing request",
         progress_percent=5,
         started_at=timezone.now(),
     )
 
     try:
-        prompt = build_prompt(validated_data)
-        # Built and thrown away: this is the configuration pre-check (missing API
-        # key, unknown AI_PROVIDER), so a misconfigured server fails here with a
-        # clear message instead of inside the retry loop. _call_model builds its
-        # own provider per model.
-        get_provider()
+        # Constructing the provider is the configuration pre-check (missing
+        # service URL), so a misconfigured server fails here with a clear
+        # message instead of inside the retry loop.
+        provider = get_course_provider()
+        request_payload = build_request_payload(validated_data, rag_enabled=RAG_ENABLED)
     except ProviderError as exc:
         _fail(job, f"AI provider could not be configured: {exc}")
         return
 
-    # This is the longest step by far (the blocking Gemini call, up to
-    # AI_REQUEST_TIMEOUT) — held at a fixed value rather than faked upward on a
-    # timer, since there's no real signal of sub-progress within a single HTTP
-    # call. The step label is what actually communicates "still working."
-    _touch(job, step="Calling AI provider", progress_percent=15)
+    _touch(job, step="Sending the course brief to the AI service", progress_percent=10)
 
-    fallback_model = (getattr(settings, "AI_FALLBACK_MODEL", "") or "").strip()
-    fallback_note = None
-    models_tried = [settings.AI_MODEL]
     try:
-        result, last_error = _call_model(job, settings.AI_MODEL, prompt, "Calling AI provider")
-
-        if result is None and fallback_model and fallback_model != settings.AI_MODEL:
-            logger.warning(
-                "Job %s: %s was unusable (%s) — falling back to %s.",
-                job_id, settings.AI_MODEL, last_error, fallback_model,
-            )
-            _touch(job, step=f"Primary model unavailable — switching to {fallback_model}")
-            models_tried.append(fallback_model)
-            result, fallback_error = _call_model(
-                job, fallback_model, prompt, "Calling backup AI provider"
-            )
-            if result is None:
-                last_error = fallback_error or last_error
-            else:
-                fallback_note = (
-                    f"Generated with the backup model {fallback_model} because "
-                    f"{settings.AI_MODEL} was unavailable — give the content a closer "
-                    "read than usual before publishing."
-                )
+        external_job_id = _submit_with_retry(job, provider, request_payload)
     except _JobCancelled:
         return
-    except ProviderError as exc:
-        # A rejected request (bad key, bad model name) is the same rejection for
-        # every model, so there is nothing for the fallback to fix. Quota errors
-        # are the exception and never reach here — _call_model returns those so
-        # the fallback does get its turn.
-        _fail(job, _failure_message(exc, [settings.AI_MODEL]))
+    except (ProviderTransportError, ProviderError) as exc:
+        # Both are the end of the road here — the retry budget is spent, or the
+        # service rejected the request outright. ProviderTransportError does not
+        # subclass ProviderError, so both have to be named. _failure_message
+        # tells them apart for the admin.
+        _fail(job, _failure_message(exc))
         return
 
-    if result is None:
-        _fail(job, _failure_message(last_error, models_tried))
+    logger.info("Job %s: AI service accepted generation as job %s.", job_id, external_job_id)
+    _touch(
+        job,
+        step="Generating course",
+        progress_percent=GENERATION_PROGRESS_FLOOR,
+        external_job_id=str(external_job_id)[:128],
+    )
+
+    # The long wait. The provider follows the service's SSE stream (falling back
+    # to polling if it drops) and calls the handler for every update, which is
+    # what keeps step/progress_percent moving and heartbeat_at fresh — there is
+    # no fixed-value "still working" placeholder here any more.
+    try:
+        result_body = provider.await_course_job(external_job_id, on_event=_progress_handler(job))
+    except _JobCancelled:
+        return
+    except (ProviderTransportError, ProviderError) as exc:
+        _fail(job, _failure_message(exc))
         return
 
     job.refresh_from_db(fields=["status"])
     if job.status == GenerationStatus.CANCELLED:
         return
 
+    input_tokens, output_tokens = _usage_from_job(result_body)
     _touch(
         job,
         step="Validating response",
         progress_percent=70,
-        raw_response=result.text,
-        input_tokens=result.input_tokens,
-        output_tokens=result.output_tokens,
+        raw_response=json.dumps(result_body, default=str)[:RAW_RESPONSE_MAX_CHARS],
+        input_tokens=input_tokens,
+        output_tokens=output_tokens,
+        model_name=_model_from_job(result_body),
     )
+
+    # The service owns its own output schema, so everything it returns is mapped
+    # onto the plan shape validate_and_repair/write_course_tree already expect.
+    # Anything the mapping had to guess at becomes a warning on the draft course.
+    adapter_warnings = []
+    plan = adapt_job_result(result_body, adapter_warnings)
 
     try:
         normalized_plan, warnings = validate_and_repair(
-            result.text, validated_data, settings.AI_MAX_MODULES
+            json.dumps(plan), validated_data, settings.AI_MAX_MODULES
         )
     except PlanValidationError as exc:
         _fail(job, f"AI response could not be used: {exc}")
         return
 
-    if fallback_note:
-        # First, so it is the first thing the admin reads in the warnings panel.
-        warnings.insert(0, fallback_note)
+    # First, so mapping problems are the first thing the admin reads in the
+    # warnings panel — they explain anything validation then dropped.
+    warnings = adapter_warnings + warnings
 
     job.refresh_from_db(fields=["status"])
     if job.status == GenerationStatus.CANCELLED:

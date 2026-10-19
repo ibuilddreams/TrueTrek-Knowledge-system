@@ -1,9 +1,11 @@
 import tempfile
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.test import TestCase, override_settings
+from django.utils import timezone
 
 from courses.management.commands import seeddata as seed
 from courses.models import Category, Course
@@ -13,6 +15,8 @@ from instructors.models import InstructorFeedback
 from lessons.models import Lesson
 from onboarding.models import Question as OnboardingQuestion
 from pathways.models import Pathway, PathwayCourse
+from live_sessions.models import LiveSession, SessionSpeaker
+from quests.models import DailyQuestAssignment, Quest
 from quizzes.models import Question as QuizQuestion
 from tiers.models import Tier, TierPathway
 
@@ -281,6 +285,7 @@ class SeedDataCommandTests(TestCase):
             "questions": OnboardingQuestion.objects.count(),
             "drills": DrillQuestion.objects.count(),
             "drill_options": DrillOption.objects.count(),
+            "quests": Quest.objects.count(),
             "users": User.objects.count(),
         }
 
@@ -298,6 +303,7 @@ class SeedDataCommandTests(TestCase):
                 "questions": OnboardingQuestion.objects.count(),
                 "drills": DrillQuestion.objects.count(),
                 "drill_options": DrillOption.objects.count(),
+                "quests": Quest.objects.count(),
                 "users": User.objects.count(),
             },
         )
@@ -400,3 +406,83 @@ class SeedDataAssetTests(TestCase):
 
         self.assertEqual(Course.objects.count(), len(seed.COURSE_DEFS))
         self.assertFalse(Course.objects.exclude(thumbnail="").exists())
+
+
+class SeedDataQuestTests(TestCase):
+    """The Daily Quest catalog seeds like every other upsert here: it adds and
+    refreshes the seeded set, and never removes anything else."""
+
+    def test_seeds_the_starter_quest_catalog(self):
+        seed_offline()
+
+        self.assertEqual(Quest.objects.count(), len(seed.QUEST_DEFS))
+        self.assertTrue(Quest.objects.filter(title="Audit your last 30 posts").exists())
+
+    def test_reseeding_preserves_hand_made_quests_and_student_progress(self):
+        seed_offline()
+
+        hand_made = Quest.objects.create(
+            title="Admin-authored quest", instructions="Added through the portal.", points_reward=5
+        )
+        student = User.objects.filter(role=User.Roles.STUDENT).first()
+        seeded = Quest.objects.get(title="Audit your last 30 posts")
+        assignment = DailyQuestAssignment.objects.create(
+            student=student,
+            quest=seeded,
+            assigned_date="2026-01-01",
+            status=DailyQuestAssignment.AssignmentStatus.COMPLETED,
+            points_awarded=15,
+        )
+
+        seed_offline()
+
+        self.assertTrue(Quest.objects.filter(pk=hand_made.pk).exists())
+        self.assertTrue(Quest.objects.filter(pk=seeded.pk).exists())
+        assignment.refresh_from_db()
+        self.assertEqual(assignment.points_awarded, 15)
+        self.assertEqual(assignment.status, DailyQuestAssignment.AssignmentStatus.COMPLETED)
+
+
+class SeedDataWarRoomLiveTests(TestCase):
+    def test_seeds_the_speaker_roster_and_session_series(self):
+        seed_offline()
+
+        self.assertEqual(SessionSpeaker.objects.count(), len(seed.SPEAKER_DEFS))
+        self.assertEqual(LiveSession.objects.count(), len(seed.LIVE_SESSION_DEFS))
+
+        # One finished session with a recording, two still ahead of it.
+        past = LiveSession.objects.get(title="Mistakes I Made Posting Online")
+        self.assertTrue(past.recording_url)
+        self.assertTrue(past.recap)
+        self.assertEqual([s.name for s in past.speakers.all()], ["Deshawn Carter"])
+
+        upcoming = LiveSession.objects.get(title="Building Your Brand in High School")
+        self.assertEqual(upcoming.speakers.count(), 2)
+        self.assertIn("What worked for me in high school", upcoming.talking_points)
+
+    def test_reseeding_never_moves_an_already_scheduled_session(self):
+        """A session students may have RSVP'd to must keep its time — sending
+        people to the wrong hour would be worse than stale copy."""
+        seed_offline()
+        session = LiveSession.objects.get(title="Building Your Brand in High School")
+        session.scheduled_at = session.scheduled_at + timedelta(days=3)
+        session.save(update_fields=["scheduled_at"])
+        rescheduled_to = session.scheduled_at
+
+        seed_offline()
+
+        session.refresh_from_db()
+        self.assertEqual(session.scheduled_at, rescheduled_to)
+        self.assertEqual(LiveSession.objects.count(), len(seed.LIVE_SESSION_DEFS))
+
+    def test_reseeding_preserves_hand_made_sessions_and_speakers(self):
+        seed_offline()
+        hand_made = LiveSession.objects.create(
+            title="Admin-scheduled AMA", scheduled_at=timezone.now() + timedelta(days=5)
+        )
+        guest = SessionSpeaker.objects.create(name="Guest Coach")
+
+        seed_offline()
+
+        self.assertTrue(LiveSession.objects.filter(pk=hand_made.pk).exists())
+        self.assertTrue(SessionSpeaker.objects.filter(pk=guest.pk).exists())

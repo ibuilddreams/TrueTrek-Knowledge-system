@@ -18,8 +18,10 @@ import {
   Lock,
   MessageSquareQuote,
   Route,
+  Mic,
   Shield,
   ShieldAlert,
+  Swords,
   Tag,
   UserPlus,
   Users,
@@ -53,6 +55,8 @@ import RewardsTab from "@/components/features/admin/tabs/RewardsTab";
 import RedemptionsTab from "@/components/features/admin/tabs/RedemptionsTab";
 import StudentPointsTab from "@/components/features/admin/tabs/StudentPointsTab";
 import DailyDrillsTab from "@/components/features/admin/tabs/DailyDrillsTab";
+import QuestsTab from "@/components/features/admin/tabs/QuestsTab";
+import LiveSessionsTab from "@/components/features/admin/tabs/LiveSessionsTab";
 import InvitationsTab from "@/components/features/admin/tabs/InvitationsTab";
 import TestimonialsTab from "@/components/features/admin/tabs/TestimonialsTab";
 
@@ -74,6 +78,8 @@ const TABS = [
   { id: "pathways", label: "Pathways", icon: Route },
   { id: "questionnaire", label: "Questionnaire", icon: HelpCircle },
   { id: "daily-drills", label: "Daily Drills", icon: Calendar },
+  { id: "quests", label: "Daily Quests", icon: Swords },
+  { id: "live-sessions", label: "War Room Live", icon: Mic },
   { id: "rewards", label: "Rewards", icon: Gift },
   { id: "redemptions", label: "Redemptions", icon: ClipboardList },
   { id: "student-points", label: "Student Points", icon: Coins },
@@ -98,6 +104,8 @@ const TAB_COMPONENTS = {
   pathways: PathwaysTab,
   questionnaire: QuestionnaireTab,
   "daily-drills": DailyDrillsTab,
+  quests: QuestsTab,
+  "live-sessions": LiveSessionsTab,
   rewards: RewardsTab,
   redemptions: RedemptionsTab,
   "student-points": StudentPointsTab,
