@@ -15,10 +15,10 @@ export default function Footer() {
           <div className="space-y-4 md:col-span-1.5 col-span-1">
             <div className="flex w-fit items-center rounded-2xl bg-white px-3 py-2 shadow-soft">
               <img
-                src="/images/coolnerdz-stacked.png"
-                alt="Cool Nerds"
-                width={400}
-                height={316}
+                src="/images/coolnerdz-logo.png"
+                alt="Cool Nerdz"
+                width={800}
+                height={633}
                 className="h-20 w-auto object-contain"
               />
             </div>

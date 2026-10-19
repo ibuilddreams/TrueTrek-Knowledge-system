@@ -190,6 +190,7 @@ class PointsTransaction(BaseModel):
 
     class TransactionType(models.TextChoices):
         DRILL_REWARD = "DRILL_REWARD", "Daily Drill Reward"
+        QUEST_REWARD = "QUEST_REWARD", "Daily Quest Reward"
         REDEMPTION = "REDEMPTION", "Reward Redemption"
         REDEMPTION_REFUND = "REDEMPTION_REFUND", "Redemption Refund"
         MANUAL_ADJUSTMENT = "MANUAL_ADJUSTMENT", "Manual Adjustment"
@@ -222,6 +223,13 @@ class PointsTransaction(BaseModel):
         on_delete=models.SET_NULL,
         related_name="points_transactions",
     )
+    quest_assignment = models.ForeignKey(
+        "quests.DailyQuestAssignment",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="points_transactions",
+    )
     redemption = models.ForeignKey(
         RewardRedemption,
         null=True,
@@ -244,6 +252,14 @@ class PointsTransaction(BaseModel):
                 fields=["drill_attempt"],
                 condition=models.Q(drill_attempt__isnull=False),
                 name="one_points_transaction_per_drill_attempt",
+            ),
+            # Same double-award guard as drill_attempt above, for quests:
+            # even if complete_quest's select_for_update were bypassed, the
+            # DB refuses a second payout for the same assignment.
+            models.UniqueConstraint(
+                fields=["quest_assignment"],
+                condition=models.Q(quest_assignment__isnull=False),
+                name="one_points_transaction_per_quest_assignment",
             ),
         ]
 

@@ -28,6 +28,15 @@ class ProviderQuotaError(ProviderError):
         self.model = model
 
 
+class ProviderJobFailedError(ProviderError):
+    """A job-based provider accepted the request and then failed while running it.
+
+    Distinct from a plain ProviderError (which means the request was refused) so
+    the admin is told the truth: nothing about their course settings was
+    rejected, the generation itself broke on the service side. A subclass, so
+    every existing `except ProviderError` keeps working."""
+
+
 @dataclass
 class ProviderResult:
     text: str

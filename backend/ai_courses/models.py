@@ -33,6 +33,11 @@ class AICourseGeneration(BaseModel):
 
     provider = models.CharField(max_length=50, blank=True)
     model_name = models.CharField(max_length=100, blank=True)
+    # The course-generation service's own job id. Debug/traceability only — it is
+    # never serialized to the browser (the wizard polls this row's id, not the
+    # service's), but without it a job that went wrong upstream cannot be looked
+    # up on the service side afterwards.
+    external_job_id = models.CharField(max_length=128, blank=True)
 
     input_payload = models.JSONField()
     prompt_version = models.CharField(max_length=20, blank=True)

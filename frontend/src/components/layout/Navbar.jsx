@@ -36,10 +36,10 @@ export default function Navbar() {
         aria-label="Return to Cool Nerds home orientation page"
       >
         <img
-          src="/images/coolnerdz-stacked.png"
-          alt="Cool Nerds"
-          width={400}
-          height={316}
+          src="/images/coolnerdz-logo.png"
+          alt="Cool Nerdz"
+          width={800}
+          height={633}
           className="h-12 sm:h-14 lg:h-16 w-auto object-contain"
         />
       </Link>

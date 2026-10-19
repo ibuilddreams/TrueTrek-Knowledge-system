@@ -26,6 +26,9 @@ import AssignmentsTab from "./tabs/AssignmentsTab";
 import QuizzesTab from "./tabs/QuizzesTab";
 import CertificatesTab from "./tabs/CertificatesTab";
 import DrillTab from "./tabs/DrillTab";
+import QuestsTab from "./tabs/QuestsTab";
+import BrandValidatorTab from "./tabs/BrandValidatorTab";
+import WarRoomLiveTab from "./tabs/WarRoomLiveTab";
 import RewardsTab from "./tabs/RewardsTab";
 import StreakTab from "./tabs/StreakTab";
 import AskAdvisorTab from "./tabs/AskAdvisorTab";
@@ -247,6 +250,14 @@ function StudentPortalContent() {
               <CertificatesTab studentName={displayName} />
             )}
             {activeTab === "drill" && <DrillTab onNotify={setLastNotification} />}
+            {activeTab === "quests" && (
+              <QuestsTab
+                onNotify={setLastNotification}
+                onOpenRewards={() => setActiveTab("rewards")}
+              />
+            )}
+            {activeTab === "brand-validator" && <BrandValidatorTab />}
+            {activeTab === "warroom-live" && <WarRoomLiveTab />}
             {activeTab === "rewards" && <RewardsTab />}
             {activeTab === "warroom" && <WarRoomScreen />}
             {activeTab === "advisor" && <AskAdvisorTab />}

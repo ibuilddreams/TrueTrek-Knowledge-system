@@ -12,9 +12,12 @@ from ai_courses import services
 from ai_courses.models import AICourseGeneration
 from ai_courses.providers.base import (
     ProviderError,
+    ProviderJobFailedError,
     ProviderQuotaError,
-    ProviderResult,
+    ProviderTransportError,
 )
+from ai_courses.providers import custom_llm
+from ai_courses.providers.custom_llm import JobEvent
 from courses.models import Category, Course
 
 UserModel = get_user_model()
@@ -35,45 +38,65 @@ def _teacher(email="teacher@example.com"):
     )
 
 
-class StubProvider:
-    def __init__(self, text, raises=None):
-        self.text = text
-        self.raises = raises
+def _job_body(modules=None, status="completed", **extra):
+    """A finished job as the AI service returns it from GET /api/v1/jobs/<id>.
 
-    def generate_course(self, prompt, response_schema, timeout):
-        if self.raises:
-            raise self.raises
-        return ProviderResult(text=self.text, input_tokens=100, output_tokens=200)
+    Nested under `result` on purpose: the real contract is the service's, not
+    ours, so every service-shaped fixture here goes through the same envelope
+    search custom_llm_mapping does rather than being handed the plan directly."""
 
-
-class FlakyProvider:
-    """Raises a transport error on its first call, succeeds on the second —
-    simulates the exact retry-once path in _run_generation."""
-
-    def __init__(self, text, fail_times=1):
-        self.text = text
-        self.fail_times = fail_times
-        self.calls = 0
-
-    def generate_course(self, prompt, response_schema, timeout):
-        self.calls += 1
-        if self.calls <= self.fail_times:
-            from ai_courses.providers.base import ProviderTransportError
-
-            raise ProviderTransportError("simulated transient network error")
-        return ProviderResult(text=self.text, input_tokens=100, output_tokens=200)
+    body = {
+        "job_id": "svc-job-1",
+        "status": status,
+        "result": {
+            "summary": "s",
+            "objectives": [],
+            "learning_outcomes": ["Build a working plan"],
+            "modules": modules if modules is not None else [
+                {
+                    "title": "M1",
+                    "description": "",
+                    "lessons": [{"title": "L1", "content": "content", "duration_minutes": 10}],
+                }
+            ],
+        },
+    }
+    body.update(extra)
+    return body
 
 
-class RaisingProvider:
-    """Raises the same error on every call — for the permanent-failure paths."""
+class StubCourseProvider:
+    """Stands in for providers.custom_llm.CustomLLMProvider — only the two calls
+    services makes on it (submit, then follow) are implemented."""
 
-    def __init__(self, exc):
-        self.exc = exc
-        self.calls = 0
+    def __init__(self, job_body=None, submit_errors=None, await_error=None, events=()):
+        self.job_body = _job_body() if job_body is None else job_body
+        self.submit_errors = list(submit_errors or [])
+        self.await_error = await_error
+        self.events = list(events)
+        self.submit_calls = 0
+        self.await_calls = 0
+        self.payloads = []
 
-    def generate_course(self, prompt, response_schema, timeout):
-        self.calls += 1
-        raise self.exc
+    def submit_course_job(self, payload):
+        self.submit_calls += 1
+        self.payloads.append(payload)
+        if self.submit_errors:
+            raise self.submit_errors.pop(0)
+        return "svc-job-1"
+
+    def await_course_job(self, job_id, on_event=None):
+        self.await_calls += 1
+        for event in self.events:
+            if on_event is not None:
+                on_event(event)
+        if self.await_error:
+            raise self.await_error
+        return self.job_body
+
+
+def _transport_errors(count, message="simulated transient network error"):
+    return [ProviderTransportError(message) for _ in range(count)]
 
 
 class ConcurrencyAndQuotaTests(TestCase):
@@ -130,6 +153,15 @@ class ConcurrencyAndQuotaTests(TestCase):
                 with self.assertRaises(services.GenerationQuotaError):
                     services.start_generation(self.admin, self._validated_data(n=2))
 
+    def test_job_records_the_course_provider_not_the_chat_provider(self):
+        # settings.AI_PROVIDER/AI_MODEL still describe the Gemini calls the rest
+        # of the backend makes; a course job must not be labelled with them.
+        with patch("ai_courses.services.threading.Thread"):
+            job = services.start_generation(self.admin, self._validated_data(n=1))
+
+        self.assertEqual(job.provider, services.COURSE_PROVIDER_NAME)
+        self.assertEqual(job.model_name, "")
+
     def test_reap_stale_jobs_marks_stale_running_as_failed(self):
         job = AICourseGeneration.objects.create(
             requested_by=self.admin,
@@ -172,13 +204,14 @@ class ConcurrencyAndQuotaTests(TestCase):
         self.assertEqual(job.status, GenerationStatus.SUCCEEDED)
 
 
+@override_settings(AI_COURSE_SERVICE_URL="https://llm.example.test")
 class RunGenerationTests(TestCase):
     def setUp(self):
         self.admin = _admin()
         self.category = Category.objects.create(name="Cat")
         self.teacher = _teacher()
 
-    def _create_job(self):
+    def _create_job(self, **payload_overrides):
         validated_data = {
             "title": "Run Gen Course",
             "description": "",
@@ -197,33 +230,22 @@ class RunGenerationTests(TestCase):
             "weeks_between_modules": 2,
             "additional_instructions": "",
         }
+        validated_data.update(payload_overrides)
         return AICourseGeneration.objects.create(
             requested_by=self.admin,
             status=GenerationStatus.PENDING,
             input_payload=services._serialize_input(validated_data),
         )
 
-    def test_transport_error_retries_and_refreshes_heartbeat(self):
+    # -- submitting ---------------------------------------------------------
+
+    def test_transport_error_on_submit_retries_and_refreshes_heartbeat(self):
         # Regression test: a failed attempt that times out must not leave
         # heartbeat_at stale through the entire next attempt too — otherwise a
         # legitimately-still-retrying job can look "stale" to the reaper before
         # it's actually had AI_STALE_JOB_THRESHOLD_SECONDS to finish.
-        plan_json = json.dumps(
-            {
-                "summary": "s",
-                "objectives": [],
-                "learning_outcomes": ["Build a working plan"],
-                "modules": [
-                    {
-                        "title": "M1",
-                        "description": "",
-                        "items": [{"kind": "lesson", "title": "L1", "body": "content", "estimated_minutes": 10}],
-                    }
-                ],
-            }
-        )
         job = self._create_job()
-        provider = FlakyProvider(plan_json, fail_times=1)
+        provider = StubCourseProvider(submit_errors=_transport_errors(1))
         recorded_steps = []
         original_touch = services._touch
 
@@ -232,50 +254,31 @@ class RunGenerationTests(TestCase):
                 recorded_steps.append(fields["step"])
             return original_touch(job_arg, **fields)
 
-        with patch("ai_courses.services.get_provider", return_value=provider):
+        with patch("ai_courses.services.get_course_provider", return_value=provider):
             with patch("ai_courses.services.time.sleep"):
                 with patch("ai_courses.services._touch", side_effect=recording_touch):
                     services._run_generation(job.id)
 
-        self.assertEqual(provider.calls, 2)
+        self.assertEqual(provider.submit_calls, 2)
         # The fix under test: a heartbeat touch happens between the failed first
         # attempt and the retry, not just once before the whole retry loop.
-        self.assertTrue(any(step.startswith("Calling AI provider (retry") for step in recorded_steps))
+        self.assertTrue(any(step.startswith("Retrying the AI service") for step in recorded_steps))
         job.refresh_from_db()
         self.assertEqual(job.status, GenerationStatus.SUCCEEDED)
         self.assertIsNotNone(job.course)
 
     def test_survives_two_consecutive_transport_errors(self):
-        # Real-world testing against the live Gemini API showed two consecutive
-        # 503s before a third attempt succeeded on this prompt/schema — the whole
-        # reason MAX_TRANSPORT_ATTEMPTS was raised from 2 to 3. This is that case.
-        plan_json = json.dumps(
-            {
-                "summary": "s",
-                "objectives": [],
-                "learning_outcomes": ["Build a working plan"],
-                "modules": [
-                    {
-                        "title": "M1",
-                        "description": "",
-                        "items": [{"kind": "lesson", "title": "L1", "body": "content", "estimated_minutes": 10}],
-                    }
-                ],
-            }
-        )
         job = self._create_job()
-        provider = FlakyProvider(plan_json, fail_times=2)
-        with patch("ai_courses.services.get_provider", return_value=provider):
+        provider = StubCourseProvider(submit_errors=_transport_errors(2))
+        with patch("ai_courses.services.get_course_provider", return_value=provider):
             with patch("ai_courses.services.time.sleep"):
                 services._run_generation(job.id)
 
-        self.assertEqual(provider.calls, 3)
+        self.assertEqual(provider.submit_calls, 3)
         job.refresh_from_db()
         self.assertEqual(job.status, GenerationStatus.SUCCEEDED)
 
     def test_retry_delay_backs_off_exponentially_within_bounds(self):
-        # The 503s that motivated this: three flat 2s retries gave the overloaded
-        # model only ~4s to recover, so every attempt burned inside ~14s.
         delays = [services._retry_delay(attempt) for attempt in range(1, 6)]
 
         for attempt, delay in enumerate(delays, start=1):
@@ -288,19 +291,27 @@ class RunGenerationTests(TestCase):
             self.assertLessEqual(delay, base * 1.25)
 
         self.assertGreater(delays[3], delays[0])
-        # One backoff plus one full-length attempt must still leave the stale-job
+        # One backoff plus one full-length submit must still leave the stale-job
         # reaper unable to mistake a retrying job for an orphaned one.
         self.assertLess(
-            services.TRANSPORT_RETRY_MAX_BACKOFF_SECONDS * 1.25 + settings.AI_REQUEST_TIMEOUT,
+            services.TRANSPORT_RETRY_MAX_BACKOFF_SECONDS * 1.25
+            + custom_llm.REQUEST_TIMEOUT_SECONDS,
             settings.AI_STALE_JOB_THRESHOLD_SECONDS,
         )
 
-    @override_settings(AI_FALLBACK_MODEL="")
+    def test_a_silent_progress_stream_cannot_outlive_the_stale_job_reaper(self):
+        # The wait after submitting is unbounded in principle (a course can take
+        # minutes), so the only thing keeping the reaper off a healthy job is that
+        # the stream is abandoned for polling before the heartbeat goes stale.
+        self.assertLess(
+            custom_llm.STREAM_READ_TIMEOUT_SECONDS, settings.AI_STALE_JOB_THRESHOLD_SECONDS
+        )
+
     def test_every_retry_waits_longer_than_the_last(self):
         job = self._create_job()
-        provider = FlakyProvider("unused", fail_times=99)
+        provider = StubCourseProvider(submit_errors=_transport_errors(99))
         slept = []
-        with patch("ai_courses.services.get_provider", return_value=provider):
+        with patch("ai_courses.services.get_course_provider", return_value=provider):
             with patch("ai_courses.services.time.sleep", side_effect=slept.append):
                 services._run_generation(job.id)
 
@@ -309,255 +320,281 @@ class RunGenerationTests(TestCase):
 
     def test_cancelling_during_the_retry_window_stops_further_provider_calls(self):
         job = self._create_job()
-        provider = FlakyProvider("unused", fail_times=99)
+        provider = StubCourseProvider(submit_errors=_transport_errors(99))
 
         def cancel_instead_of_sleeping(_seconds):
             AICourseGeneration.objects.filter(pk=job.id).update(
                 status=GenerationStatus.CANCELLED
             )
 
-        with patch("ai_courses.services.get_provider", return_value=provider):
+        with patch("ai_courses.services.get_course_provider", return_value=provider):
             with patch("ai_courses.services.time.sleep", side_effect=cancel_instead_of_sleeping):
                 services._run_generation(job.id)
 
         # The first attempt failed, the admin cancelled during the backoff, and no
-        # second call was billed.
-        self.assertEqual(provider.calls, 1)
+        # second request was sent.
+        self.assertEqual(provider.submit_calls, 1)
         job.refresh_from_db()
         self.assertEqual(job.status, GenerationStatus.CANCELLED)
 
-    @override_settings(AI_FALLBACK_MODEL="")
     def test_transport_error_fails_cleanly_after_exhausting_all_retries(self):
         job = self._create_job()
-        provider = FlakyProvider("unused", fail_times=99)
-        with patch("ai_courses.services.get_provider", return_value=provider):
+        provider = StubCourseProvider(submit_errors=_transport_errors(99))
+        with patch("ai_courses.services.get_course_provider", return_value=provider):
             with patch("ai_courses.services.time.sleep"):
                 services._run_generation(job.id)
 
-        self.assertEqual(provider.calls, services.MAX_TRANSPORT_ATTEMPTS)
+        self.assertEqual(provider.submit_calls, services.MAX_TRANSPORT_ATTEMPTS)
         job.refresh_from_db()
         self.assertEqual(job.status, GenerationStatus.FAILED)
         self.assertIsNone(job.course)
         self.assertIn("simulated transient network error", job.error_message)
 
-    @override_settings(AI_MODEL="primary-model", AI_FALLBACK_MODEL="backup-model")
-    def test_falls_back_to_the_backup_model_when_the_primary_is_overloaded(self):
-        # The real failure this exists for: Gemini answers 503 "this model is
-        # currently experiencing high demand" per model, so the primary can be
-        # refusing every call while another model serves the same request fine.
-        plan_json = json.dumps(
-            {
-                "summary": "s",
-                "objectives": [],
-                "learning_outcomes": ["Build a working plan"],
-                "modules": [
-                    {
-                        "title": "M1",
-                        "description": "",
-                        "items": [{"kind": "lesson", "title": "L1", "body": "content", "estimated_minutes": 10}],
-                    }
-                ],
-            }
-        )
-        primary = FlakyProvider("unused", fail_times=99)
-        backup = StubProvider(plan_json)
-        providers = {"primary-model": primary, "backup-model": backup}
+    def test_a_rejected_request_is_not_retried(self):
+        # A rejected payload is rejected identically the second time — retrying it
+        # only delays the admin seeing why.
         job = self._create_job()
-
-        with patch(
-            "ai_courses.services.get_provider",
-            side_effect=lambda model=None: providers[model or "primary-model"],
-        ):
+        provider = StubCourseProvider(submit_errors=[ProviderError("unknown field 'wat'")])
+        with patch("ai_courses.services.get_course_provider", return_value=provider):
             with patch("ai_courses.services.time.sleep"):
                 services._run_generation(job.id)
 
-        self.assertEqual(primary.calls, services.MAX_TRANSPORT_ATTEMPTS)
-        job.refresh_from_db()
-        self.assertIsNotNone(job.course)
-        # Usable, but the admin is told a different model wrote it.
-        self.assertEqual(job.status, GenerationStatus.PARTIAL)
-        self.assertIn("backup-model", job.warnings[0])
-
-    @override_settings(AI_MODEL="primary-model", AI_FALLBACK_MODEL="backup-model")
-    def test_failure_message_names_both_models_when_neither_is_available(self):
-        primary = FlakyProvider("unused", fail_times=99)
-        backup = FlakyProvider("unused", fail_times=99)
-        providers = {"primary-model": primary, "backup-model": backup}
-        job = self._create_job()
-
-        with patch(
-            "ai_courses.services.get_provider",
-            side_effect=lambda model=None: providers[model or "primary-model"],
-        ):
-            with patch("ai_courses.services.time.sleep"):
-                services._run_generation(job.id)
-
-        self.assertEqual(primary.calls, services.MAX_TRANSPORT_ATTEMPTS)
-        self.assertEqual(backup.calls, services.MAX_TRANSPORT_ATTEMPTS)
+        self.assertEqual(provider.submit_calls, 1)
         job.refresh_from_db()
         self.assertEqual(job.status, GenerationStatus.FAILED)
-        self.assertIn("primary-model", job.error_message)
-        self.assertIn("backup-model", job.error_message)
+        self.assertIn("unknown field 'wat'", job.error_message)
 
-    @override_settings(AI_MODEL="primary-model", AI_FALLBACK_MODEL="backup-model")
-    def test_quota_error_skips_retries_and_goes_straight_to_the_backup_model(self):
-        # A 429 is per model and Google's own hint can be "retry in 13h" — retrying
-        # the same model is a guaranteed second rejection, but the backup model has
-        # its own quota.
-        plan_json = json.dumps(
-            {
-                "summary": "s",
-                "objectives": [],
-                "learning_outcomes": ["Build a working plan"],
-                "modules": [
-                    {
-                        "title": "M1",
-                        "description": "",
-                        "items": [{"kind": "lesson", "title": "L1", "body": "content", "estimated_minutes": 10}],
-                    }
-                ],
-            }
+    def test_the_request_payload_matches_the_service_contract(self):
+        tier = None
+        job = self._create_job(
+            title="NIL Basics",
+            description="A short course",
+            target_audience="Student athletes",
+            objectives=["Read a term sheet"],
+            tier=tier,
+            amount=Decimal("49.99"),
+            modules_count=4,
+            lessons_per_module=3,
+            include_quizzes=True,
+            questions_per_quiz=6,
+            include_assignments=True,
+            ai_grading=True,
+            weeks_between_modules=3,
+            additional_instructions="Use real examples",
+            difficulty=Course.Difficulty.INTERMEDIATE,
         )
-        primary = RaisingProvider(ProviderQuotaError("quota spent", retry_after_seconds=49225))
-        backup = StubProvider(plan_json)
-        providers = {"primary-model": primary, "backup-model": backup}
-        job = self._create_job()
+        provider = StubCourseProvider()
+        with patch("ai_courses.services.get_course_provider", return_value=provider):
+            services._run_generation(job.id)
 
-        with patch(
-            "ai_courses.services.get_provider",
-            side_effect=lambda model=None: providers[model or "primary-model"],
-        ):
-            with patch("ai_courses.services.time.sleep") as sleep:
+        payload = provider.payloads[0]
+        self.assertEqual(payload["title"], "NIL Basics")
+        self.assertEqual(payload["difficulty"], "intermediate")
+        self.assertEqual(payload["num_modules"], 4)
+        self.assertEqual(payload["lessons_per_module"], 3)
+        self.assertEqual(payload["questions_per_quiz"], 6)
+        self.assertEqual(payload["weeks_between_modules"], 3)
+        self.assertEqual(payload["learning_objectives"], ["Read a term sheet"])
+        self.assertEqual(payload["price"], 49.99)
+        self.assertEqual(payload["instructor_ids"], [str(self.teacher.id)])
+        self.assertEqual(payload["category_id"], str(self.category.id))
+        self.assertTrue(payload["ai_grading_enabled"])
+        self.assertIsNone(payload["callback_url"])
+        self.assertFalse(payload["rag_enabled"])
+
+    def test_rag_is_sent_as_the_integrations_constant_says(self):
+        # Off by default, and flipping the constant is the whole switch — the
+        # value is not silently hardcoded at the call site.
+        job = self._create_job()
+        provider = StubCourseProvider()
+        with patch("ai_courses.services.RAG_ENABLED", True):
+            with patch("ai_courses.services.get_course_provider", return_value=provider):
                 services._run_generation(job.id)
 
-        self.assertEqual(primary.calls, 1)
-        sleep.assert_not_called()
-        job.refresh_from_db()
-        self.assertIsNotNone(job.course)
-        self.assertEqual(job.status, GenerationStatus.PARTIAL)
+        self.assertTrue(provider.payloads[0]["rag_enabled"])
 
-    @override_settings(AI_MODEL="primary-model", AI_FALLBACK_MODEL="backup-model")
-    def test_quota_failure_message_is_readable_and_names_the_reset_time(self):
-        exc = ProviderQuotaError("You exceeded your current quota.", retry_after_seconds=49225)
-        providers = {
-            "primary-model": RaisingProvider(exc),
-            "backup-model": RaisingProvider(exc),
-        }
+    # -- following the job --------------------------------------------------
+
+    def test_progress_events_move_the_step_and_the_bar(self):
+        job = self._create_job()
+        provider = StubCourseProvider(
+            events=[
+                JobEvent(status="running", progress=0, stage="Planning modules"),
+                JobEvent(status="running", progress=50, stage="Writing lessons"),
+            ]
+        )
+        seen = []
+        original_touch = services._touch
+
+        def recording_touch(job_arg, **fields):
+            seen.append(fields)
+            return original_touch(job_arg, **fields)
+
+        with patch("ai_courses.services.get_course_provider", return_value=provider):
+            with patch("ai_courses.services._touch", side_effect=recording_touch):
+                services._run_generation(job.id)
+
+        steps = [fields.get("step") for fields in seen]
+        self.assertIn("Planning modules", steps)
+        self.assertIn("Writing lessons", steps)
+        # Halfway through the service's own work is halfway through our slice of
+        # the bar, not halfway through the whole bar — validation and the ORM
+        # write still have to happen.
+        self.assertIn(
+            services._map_progress(50), [fields.get("progress_percent") for fields in seen]
+        )
+        self.assertEqual(services._map_progress(0), services.GENERATION_PROGRESS_FLOOR)
+        self.assertEqual(services._map_progress(100), services.GENERATION_PROGRESS_CEILING)
+
+    def test_the_bar_never_slides_backwards(self):
+        # A real run reported 5% -> 10% -> 5% -> 0% as the service's pipeline moved
+        # between nodes. The stage label must keep updating, but a bar that goes
+        # backwards reads as something breaking.
+        job = self._create_job()
+        provider = StubCourseProvider(
+            events=[
+                JobEvent(status="running", progress=5, stage="starting"),
+                JobEvent(status="running", progress=10, stage="rag_retrieval"),
+                JobEvent(status="running", progress=5, stage="in_progress"),
+                JobEvent(status="running", progress=0, stage="drafting"),
+            ]
+        )
+        seen = []
+        original_touch = services._touch
+
+        def recording_touch(job_arg, **fields):
+            seen.append(fields)
+            return original_touch(job_arg, **fields)
+
+        with patch("ai_courses.services.get_course_provider", return_value=provider):
+            with patch("ai_courses.services._touch", side_effect=recording_touch):
+                services._run_generation(job.id)
+
+        percents = [
+            fields["progress_percent"] for fields in seen if "progress_percent" in fields
+        ]
+        self.assertEqual(percents, sorted(percents))
+        # The later stages are still reported even though their progress was lower.
+        steps = [fields.get("step") for fields in seen]
+        self.assertIn("in_progress", steps)
+        self.assertIn("drafting", steps)
+
+    def test_usage_and_model_are_read_from_the_services_metrics_block(self):
+        job = self._create_job()
+        body = _job_body(
+            metrics={
+                "prompt_tokens": 1200,
+                "completion_tokens": 8400,
+                "generation_model": "qwen3:8b",
+                "latency_ms": 90000,
+            }
+        )
+        self._run_provider(job, StubCourseProvider(job_body=body))
+
+        job.refresh_from_db()
+        self.assertEqual(job.input_tokens, 1200)
+        self.assertEqual(job.output_tokens, 8400)
+        self.assertEqual(job.model_name, "qwen3:8b")
+
+    def test_null_metrics_do_not_break_the_write(self):
+        # Every metric comes back null on a job that failed early, and the model
+        # is reported as null rather than omitted.
+        job = self._create_job()
+        body = _job_body(
+            metrics={"prompt_tokens": None, "completion_tokens": None, "generation_model": None}
+        )
+        self._run_provider(job, StubCourseProvider(job_body=body))
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, GenerationStatus.SUCCEEDED)
+        self.assertIsNone(job.input_tokens)
+        self.assertEqual(job.model_name, "")
+
+    def test_cancelling_mid_generation_stops_following_the_job(self):
         job = self._create_job()
 
-        with patch(
-            "ai_courses.services.get_provider",
-            side_effect=lambda model=None: providers[model or "primary-model"],
-        ):
+        def cancel(_event):
+            AICourseGeneration.objects.filter(pk=job.id).update(
+                status=GenerationStatus.CANCELLED
+            )
+
+        class CancellingProvider(StubCourseProvider):
+            def await_course_job(self, job_id, on_event=None):
+                self.await_calls += 1
+                cancel(None)
+                # The real provider calls this for every event; the handler is
+                # what notices the cancellation and aborts the wait.
+                on_event(JobEvent(status="running", progress=20, stage="Writing lessons"))
+                raise AssertionError("the wait should have been aborted")
+
+        provider = CancellingProvider()
+        with patch("ai_courses.services.get_course_provider", return_value=provider):
             services._run_generation(job.id)
 
         job.refresh_from_db()
-        self.assertEqual(job.status, GenerationStatus.FAILED)
-        self.assertIn("quota is used up", job.error_message)
-        self.assertIn("13h 40m", job.error_message)
-        self.assertIn("primary-model", job.error_message)
-        self.assertIn("backup-model", job.error_message)
+        self.assertEqual(job.status, GenerationStatus.CANCELLED)
+        self.assertIsNone(job.course)
 
-    @override_settings(AI_MODEL="primary-model", AI_FALLBACK_MODEL="backup-model")
-    def test_a_rejected_request_does_not_waste_a_call_on_the_backup_model(self):
-        # A bad key or bad request is rejected identically by every model.
-        primary = RaisingProvider(ProviderError("Gemini rejected the request (400): API key not valid."))
-        backup = RaisingProvider(ProviderError("should never be called"))
-        providers = {"primary-model": primary, "backup-model": backup}
+    def test_the_services_job_id_is_recorded_on_the_row(self):
         job = self._create_job()
+        self._run_provider(job, StubCourseProvider())
 
-        with patch(
-            "ai_courses.services.get_provider",
-            side_effect=lambda model=None: providers[model or "primary-model"],
-        ):
-            services._run_generation(job.id)
-
-        self.assertEqual(primary.calls, 1)
-        self.assertEqual(backup.calls, 0)
         job.refresh_from_db()
-        self.assertEqual(job.status, GenerationStatus.FAILED)
-        self.assertIn("API key not valid", job.error_message)
+        self.assertEqual(job.external_job_id, "svc-job-1")
 
-    def test_humanize_seconds_formats_quota_reset_hints(self):
-        self.assertEqual(services._humanize_seconds(49225), "13h 40m")
-        self.assertEqual(services._humanize_seconds(42), "42s")
-        self.assertEqual(services._humanize_seconds(600), "10m")
-        self.assertIsNone(services._humanize_seconds(0))
-        self.assertIsNone(services._humanize_seconds(None))
-
-    @override_settings(AI_MODEL="same-model", AI_FALLBACK_MODEL="same-model")
-    def test_fallback_is_skipped_when_it_is_the_same_model(self):
-        provider = FlakyProvider("unused", fail_times=99)
+    def test_the_model_the_service_used_is_recorded_when_it_reports_one(self):
         job = self._create_job()
+        self._run_provider(job, StubCourseProvider(job_body=_job_body(model="truetrek-course-v2")))
 
-        with patch("ai_courses.services.get_provider", return_value=provider):
+        job.refresh_from_db()
+        self.assertEqual(job.model_name, "truetrek-course-v2")
+
+    # -- results ------------------------------------------------------------
+
+    def _run_provider(self, job, provider):
+        with patch("ai_courses.services.get_course_provider", return_value=provider):
             with patch("ai_courses.services.time.sleep"):
                 services._run_generation(job.id)
-
-        self.assertEqual(provider.calls, services.MAX_TRANSPORT_ATTEMPTS)
 
     def test_successful_generation_links_course_and_sets_succeeded(self):
-        plan_json = json.dumps(
-            {
-                "summary": "s",
-                "objectives": [],
-                "learning_outcomes": ["Build a working plan"],
-                "modules": [
-                    {
-                        "title": "M1",
-                        "description": "",
-                        "items": [{"kind": "lesson", "title": "L1", "body": "content", "estimated_minutes": 10}],
-                    }
-                ],
-            }
-        )
         job = self._create_job()
-        with patch("ai_courses.services.get_provider", return_value=StubProvider(plan_json)):
-            services._run_generation(job.id)
+        self._run_provider(job, StubCourseProvider())
 
         job.refresh_from_db()
         self.assertEqual(job.status, GenerationStatus.SUCCEEDED)
         self.assertIsNotNone(job.course)
         self.assertEqual(job.warnings, [])
         self.assertEqual(job.progress_percent, 100)
+        self.assertEqual(job.course.modules.count(), 1)
+        self.assertEqual(job.course.modules.first().lessons.count(), 1)
+
+    def test_the_raw_job_body_is_kept_for_debugging(self):
+        job = self._create_job()
+        self._run_provider(job, StubCourseProvider())
+
+        job.refresh_from_db()
+        self.assertEqual(json.loads(job.raw_response)["job_id"], "svc-job-1")
 
     def test_generation_with_dropped_content_sets_partial(self):
-        plan_json = json.dumps(
-            {
-                "summary": "s",
-                "objectives": [],
-                "learning_outcomes": ["Build a working plan"],
-                "modules": [
-                    {
-                        "title": "M1",
-                        "description": "",
-                        "items": [
-                            {"kind": "lesson", "title": "L1", "body": "content", "estimated_minutes": 10},
-                            {
-                                "kind": "quiz",
-                                "questions": [
-                                    {"text": "Q", "question_type": "MCQ", "marks": 1, "choices": []}
-                                ],
-                            },
-                        ],
-                    }
-                ],
-            }
+        job = self._create_job(include_quizzes=True)
+        body = _job_body(
+            modules=[
+                {
+                    "title": "M1",
+                    "lessons": [{"title": "L1", "content": "content"}],
+                    "quiz": {"questions": [{"question": "Q", "type": "mcq", "options": []}]},
+                }
+            ]
         )
-        job = self._create_job()
-        job.input_payload["include_quizzes"] = True
-        job.save(update_fields=["input_payload"])
-        with patch("ai_courses.services.get_provider", return_value=StubProvider(plan_json)):
-            services._run_generation(job.id)
+        self._run_provider(job, StubCourseProvider(job_body=body))
 
         job.refresh_from_db()
         self.assertEqual(job.status, GenerationStatus.PARTIAL)
         self.assertTrue(job.warnings)
 
-    def test_malformed_json_response_fails_with_no_course(self):
+    def test_a_result_with_no_course_structure_fails_with_no_course(self):
         job = self._create_job()
-        with patch("ai_courses.services.get_provider", return_value=StubProvider("not json")):
-            services._run_generation(job.id)
+        self._run_provider(job, StubCourseProvider(job_body={"job_id": "x", "status": "completed"}))
 
         job.refresh_from_db()
         self.assertEqual(job.status, GenerationStatus.FAILED)
@@ -566,36 +603,59 @@ class RunGenerationTests(TestCase):
         # must reflect how far it actually got, not silently stay at 0.
         self.assertEqual(job.progress_percent, 70)
 
-    def test_provider_error_fails_with_honest_message(self):
-        from ai_courses.providers.base import ProviderError
+    def test_provider_error_while_waiting_fails_with_honest_message(self):
+        job = self._create_job()
+        self._run_provider(
+            job,
+            StubCourseProvider(await_error=ProviderError("the service ran out of context")),
+        )
 
+        job.refresh_from_db()
+        self.assertEqual(job.status, GenerationStatus.FAILED)
+        self.assertIn("the service ran out of context", job.error_message)
+        self.assertIsNone(job.course)
+
+    def test_a_timed_out_wait_fails_cleanly(self):
+        job = self._create_job()
+        self._run_provider(
+            job,
+            StubCourseProvider(
+                await_error=ProviderTransportError("did not finish within 900s")
+            ),
+        )
+
+        job.refresh_from_db()
+        self.assertEqual(job.status, GenerationStatus.FAILED)
+        self.assertIn("did not finish within 900s", job.error_message)
+        self.assertIsNone(job.course)
+
+    def test_get_course_provider_raising_directly_is_caught_cleanly(self):
+        # get_course_provider() runs outside the try/except around the actual
+        # service calls — a ProviderError raised at that point (an unconfigured
+        # empty AI_COURSE_SERVICE_URL, say) must still produce a clean FAILED job with no
+        # course, not bubble up uncaught.
         job = self._create_job()
         with patch(
-            "ai_courses.services.get_provider",
-            return_value=StubProvider(None, raises=ProviderError("GEMINI_API_KEY is not configured.")),
+            "ai_courses.services.get_course_provider",
+            side_effect=ProviderError("AI_COURSE_SERVICE_URL is not configured."),
         ):
             services._run_generation(job.id)
 
         job.refresh_from_db()
         self.assertEqual(job.status, GenerationStatus.FAILED)
-        self.assertIn("GEMINI_API_KEY", job.error_message)
+        self.assertIn("AI_COURSE_SERVICE_URL", job.error_message)
         self.assertIsNone(job.course)
 
-    def test_get_provider_raising_directly_is_caught_cleanly(self):
-        # get_provider()/build_prompt() run outside the try/except around the
-        # actual generate_course() call — a ProviderError raised at that point
-        # (e.g. provider construction itself, not the network call) must still
-        # produce a clean FAILED job with no course, not bubble up uncaught.
-        from ai_courses.providers.base import ProviderError
-
+    @override_settings(AI_COURSE_SERVICE_URL="")
+    def test_an_empty_service_url_fails_the_job_rather_than_the_thread(self):
+        # The real wiring, not a patched provider: an empty URL must surface as
+        # an admin-readable failure on the row, not an opaque thread crash.
         job = self._create_job()
-        with patch("ai_courses.services.get_provider", side_effect=ProviderError("bad provider config")):
-            services._run_generation(job.id)
+        services._run_generation(job.id)
 
         job.refresh_from_db()
         self.assertEqual(job.status, GenerationStatus.FAILED)
-        self.assertIn("bad provider config", job.error_message)
-        self.assertIsNone(job.course)
+        self.assertIn("AI_COURSE_SERVICE_URL", job.error_message)
 
     def test_unexpected_exception_is_reported_with_real_detail(self):
         # Anything not explicitly anticipated (ProviderError/ProviderTransportError/
@@ -609,7 +669,7 @@ class RunGenerationTests(TestCase):
         # TestCase's own transaction-backed connection, so it's stubbed out for
         # just this call.
         job = self._create_job()
-        with patch("ai_courses.services.get_provider", side_effect=RuntimeError("kaboom")):
+        with patch("ai_courses.services.get_course_provider", side_effect=RuntimeError("kaboom")):
             with patch.object(services.connection, "close"):
                 services._run_generation_safe(job.id)
 
@@ -618,3 +678,40 @@ class RunGenerationTests(TestCase):
         self.assertIn("RuntimeError", job.error_message)
         self.assertIn("kaboom", job.error_message)
         self.assertIsNone(job.course)
+
+
+class FailureMessageTests(TestCase):
+    def test_humanize_seconds_formats_quota_reset_hints(self):
+        self.assertEqual(services._humanize_seconds(45), "45s")
+        self.assertEqual(services._humanize_seconds(90), "1m")
+        self.assertEqual(services._humanize_seconds(49225), "13h 40m")
+        self.assertIsNone(services._humanize_seconds(0))
+        self.assertIsNone(services._humanize_seconds(None))
+
+    def test_quota_failure_message_is_readable_and_names_the_reset_time(self):
+        message = services._failure_message(
+            ProviderQuotaError("quota exceeded", retry_after_seconds=49225)
+        )
+        self.assertIn("quota is used up", message)
+        self.assertIn("13h 40m", message)
+
+    def test_transport_failure_message_blames_the_service_not_the_form(self):
+        message = services._failure_message(ProviderTransportError("read timed out"))
+        self.assertIn("not with your course settings", message)
+        self.assertIn("read timed out", message)
+
+    def test_a_job_that_broke_mid_generation_does_not_blame_the_form(self):
+        # The real failure seen against the live service: it accepted the course,
+        # then its planner crashed. Telling the admin their request was "rejected"
+        # would send them editing a form that was never the problem.
+        message = services._failure_message(
+            ProviderJobFailedError('PlannerAgent: time: missing unit in duration "-1"')
+        )
+        self.assertIn("accepted this course but failed while generating it", message)
+        self.assertIn("PlannerAgent", message)
+        self.assertNotIn("rejected", message)
+
+    def test_rejection_message_points_at_the_service_not_the_form(self):
+        message = services._failure_message(ProviderError("404 not found"))
+        self.assertIn("the service", message)
+        self.assertIn("404 not found", message)

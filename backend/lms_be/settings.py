@@ -70,6 +70,9 @@ INSTALLED_APPS = [
     'notifications',
     'student_concerns',
     'testimonials',
+    'quests',
+    'brand_validator',
+    'live_sessions',
 ]
 
 MIDDLEWARE = [
@@ -173,6 +176,7 @@ REST_FRAMEWORK = {
         'ai-quiz-regeneration': '10/hour',
         'ai-content-suggestions': '30/minute',
         'testimonial-submit': '5/hour',
+        'media-kit-review': '10/hour',
     },
 }
 
@@ -232,7 +236,11 @@ DEFAULT_FROM_EMAIL = os.getenv('DEFAULT_FROM_EMAIL', 'no-reply@truetrek.edu')
 GEMINI_API_KEY = os.getenv('GEMINI_API_KEY')
 AI_PROVIDER = os.getenv('AI_PROVIDER', 'gemini')
 AI_MODEL = os.getenv('AI_MODEL', 'gemini-3.6-flash')
-# Course generation only: a second model to try when AI_MODEL itself is
+# Currently unused: course generation moved off Gemini to our own LLM service
+# (AI_COURSE_SERVICE_URL below), which picks its own model, so there is no second model
+# to fall back to. Kept because restoring the Gemini course path — the commented
+# branches in ai_courses/providers/__init__.py and ai_courses/services.py — needs
+# it back. Course generation only: a second model to try when AI_MODEL itself is
 # unavailable. Gemini answers 503 "this model is currently experiencing high
 # demand" per model — measured directly against this key, gemini-3.6/3.7/3.8-flash
 # all refused the course-generation request within seconds while gemini-3.5-flash
@@ -257,6 +265,25 @@ AI_MAX_CONCURRENT_GENERATIONS = int(os.getenv('AI_MAX_CONCURRENT_GENERATIONS', 3
 AI_STALE_JOB_THRESHOLD_SECONDS = int(
     os.getenv('AI_STALE_JOB_THRESHOLD_SECONDS', max(300, AI_REQUEST_TIMEOUT * 2 + 60))
 )
+
+# The address of our course-generation LLM service. This is the single value to
+# change if that service ever moves; nothing else about it is configurable.
+AI_COURSE_SERVICE_DEFAULT_URL = 'https://llm.coolnerdz.com'
+
+# --- Self-hosted course-generation LLM (ai_courses) ---------------------------
+# Full-course generation calls our own LLM service instead of Gemini:
+#   POST /api/v1/generate/admin/course   -> job_id
+#   GET  /api/v1/jobs/<job_id>/events    -> SSE progress
+#   GET  /api/v1/jobs/<job_id>           -> the finished course structure
+# The service is unauthenticated and there is nothing to configure per
+# environment, so its address is the only value here and it has a default — the
+# env var exists purely so a staging box can be pointed elsewhere without a code
+# change. Everything else (timeouts, poll interval, RAG) lives as a documented
+# constant in ai_courses/providers/custom_llm.py.
+#
+# Every other AI feature — advisor chat, quiz/assignment AI grading, content
+# suggestions, the daily drill — still uses AI_PROVIDER/GEMINI_API_KEY above.
+AI_COURSE_SERVICE_URL = os.getenv('AI_COURSE_SERVICE_URL', AI_COURSE_SERVICE_DEFAULT_URL).strip().rstrip('/')
 
 # Daily Drill AI generation — a single small MCQ question, not a full course,
 # so it's generated synchronously (same pattern as advisor's live chat) on the
@@ -291,6 +318,12 @@ DAILY_DRILL_INACTIVITY_THRESHOLD_DAYS = int(os.getenv('DAILY_DRILL_INACTIVITY_TH
 DAILY_DRILL_REENGAGEMENT_REMINDER_INTERVAL_DAYS = int(
     os.getenv('DAILY_DRILL_REENGAGEMENT_REMINDER_INTERVAL_DAYS', 7)
 )
+
+# Daily Quests (quests/) — how many quests a student is handed each morning.
+# The set is drawn from the admin-authored catalog, preferring quests the
+# student hasn't seen (see quests/services.py::_pick_quests_for), so a
+# catalog smaller than this simply yields a shorter day rather than repeats.
+DAILY_QUEST_COUNT = int(os.getenv('DAILY_QUEST_COUNT', 3))
 
 # AI-graded assignment review (assignments/ai_review/) and quiz short-answer
 # grading (quizzes/ai_grading.py) — reuses AI_CHAT_MODEL (the fast path), same

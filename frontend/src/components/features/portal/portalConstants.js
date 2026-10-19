@@ -6,8 +6,11 @@ import {
   CircleHelp,
   ClipboardList,
   Gift,
+  Headphones,
   MessageCircleQuestion,
   Scale,
+  ShieldCheck,
+  Swords,
 } from "lucide-react";
 
 export const PORTAL_TABS = [
@@ -46,6 +49,24 @@ export const PORTAL_TABS = [
     label: "Daily Drill",
     icon: Brain,
     title: "Situational intelligence training drills",
+  },
+  {
+    id: "quests",
+    label: "Daily Quests",
+    icon: Swords,
+    title: "Daily real-world brand-building tasks",
+  },
+  {
+    id: "brand-validator",
+    label: "Brand Validator",
+    icon: ShieldCheck,
+    title: "AI critique of your sponsorship media kit",
+  },
+  {
+    id: "warroom-live",
+    label: "War Room Live",
+    icon: Headphones,
+    title: "Live audio sessions with college athletes",
   },
   {
     id: "rewards",
