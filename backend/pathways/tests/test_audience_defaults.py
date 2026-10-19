@@ -36,19 +36,19 @@ KNOWN_AUDIENCE_SLUGS = {
 # curated every card down to three or four, which held while the catalogue was
 # fifteen demo pathways across six cards.
 #
-# Those pathways went with the Numa catalog, leaving the client's three -- all
-# athlete-facing. The floor is therefore 1, not 3: it holds the review's actual
-# requirement, that every card leads somewhere, without pretending three
-# pathways can fill six cards four deep. Cool Nerds and Entrepreneurs are now
-# mapped by the subject each card advertises (see `audience_defaults`), and
-# Institutions & Academies leads to Athlete CEO alone.
+# Those pathways went with the Numa catalog, and the floor dropped to 1 while
+# the client's sheet had only delivered its three athlete pathways -- six cards
+# cannot be filled four deep out of three pathways. The rest of that sheet
+# (Branding & Marketing, Athlete Life Skills, Parent, Cool Nerds, Entrepreneur,
+# Coaching) is now transcribed, four of the six cards have curriculum written
+# for them, and the thinnest card leads to five pathways -- so this goes back to
+# the review's own number.
 #
-# Raise this back toward 3 as the client's curriculum grows past the athlete
-# track. The ceiling bites at the total number of pathways, so a card cannot
-# list the same pathway twice or drift past the catalogue, and
+# The ceiling bites at the total number of pathways, so a card cannot list the
+# same pathway twice or drift past the catalogue, and
 # `test_every_seeded_pathway_has_an_audience` guards the reverse direction:
 # no pathway is orphaned.
-MIN_PATHWAYS_PER_CARD = 1
+MIN_PATHWAYS_PER_CARD = 3
 
 
 class AudienceDefaultsTests(SimpleTestCase):
