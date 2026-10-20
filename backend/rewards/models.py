@@ -191,6 +191,7 @@ class PointsTransaction(BaseModel):
     class TransactionType(models.TextChoices):
         DRILL_REWARD = "DRILL_REWARD", "Daily Drill Reward"
         QUEST_REWARD = "QUEST_REWARD", "Daily Quest Reward"
+        ROLEPLAY_REWARD = "ROLEPLAY_REWARD", "Role-Play Simulator Reward"
         REDEMPTION = "REDEMPTION", "Reward Redemption"
         REDEMPTION_REFUND = "REDEMPTION_REFUND", "Redemption Refund"
         MANUAL_ADJUSTMENT = "MANUAL_ADJUSTMENT", "Manual Adjustment"
@@ -230,6 +231,13 @@ class PointsTransaction(BaseModel):
         on_delete=models.SET_NULL,
         related_name="points_transactions",
     )
+    roleplay_session = models.ForeignKey(
+        "wargamer.RolePlaySession",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="points_transactions",
+    )
     redemption = models.ForeignKey(
         RewardRedemption,
         null=True,
@@ -260,6 +268,14 @@ class PointsTransaction(BaseModel):
                 fields=["quest_assignment"],
                 condition=models.Q(quest_assignment__isnull=False),
                 name="one_points_transaction_per_quest_assignment",
+            ),
+            # And again for a scored role-play run: evaluation is idempotent
+            # and re-runnable after a provider failure, so the DB is what
+            # guarantees a scenario is only ever paid for once.
+            models.UniqueConstraint(
+                fields=["roleplay_session"],
+                condition=models.Q(roleplay_session__isnull=False),
+                name="one_points_transaction_per_roleplay_session",
             ),
         ]
 

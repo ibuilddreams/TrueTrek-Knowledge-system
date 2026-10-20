@@ -1,8 +1,10 @@
 import random
 from collections import Counter
 from datetime import timedelta
+from statistics import mean
 
 import requests
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.files.base import ContentFile
 from django.core.files.storage import default_storage
@@ -41,7 +43,10 @@ from quizzes.models import Choice
 from quizzes.models import Question as QuizQuestion
 from quizzes.models import Quiz
 from tiers.models import Tier, TierPathway, TierProgress
+from rewards.models import PointsTransaction
+from rewards.services import award_points
 from users.models import UserProfile
+from wargamer.models import RolePlayScenario, RolePlaySession, RolePlayTurn
 
 from ._retired_courses import RETIRED_COURSE_CODES
 
@@ -1280,6 +1285,7 @@ QUEST_DEFS = [
 ]
 
 
+
 SPEAKER_DEFS = [
     {
         "name": "Jordan Reyes",
@@ -1392,6 +1398,641 @@ LIVE_SESSION_DEFS = [
             "What a sponsor needs to see in your media kit",
             "Pricing your first package",
             "Following up without being annoying",
+        ],
+    },
+]
+
+
+# The client's LS-302 "No Muscle" module, verbatim in substance: three
+# pressure situations, one per relationship the brief names (family, friends,
+# community), each with the A.B.P. model answer it teaches.
+#
+# `opening_message` is the role-play prompt from the brief — the counterpart's
+# first line is authored rather than generated, so every student meets the
+# same pitch and starting a scene costs no model call (see
+# wargamer/models.py::RolePlayScenario).
+#
+# Every scenario uses the GUILT_TRIP persona. All three turn on emotional
+# debt, and a counterpart who is persistent without being hostile is what
+# keeps the exercise realistic — an admin can raise a single scenario to
+# AGGRESSIVE or PERSISTENT from the portal when they want it harder.
+ROLEPLAY_SCENARIO_DEFS = [
+    {
+        "code": "LS-302-S1",
+        "title": 'The Financial "Investment"',
+        "relationship": "FAMILY",
+        "pressure_type": "FINANCIAL",
+        "key_skill": "Financial boundaries",
+        "counterpart_role": "Your older cousin",
+        "setup": (
+            "You have just signed your first major NIL deal. At a family gathering, an older "
+            "cousin pulls you aside with a \u201cguaranteed\u201d business idea and asks you to put in "
+            "$10,000 to get it started \u2014 reminding you, more than once, how they looked out "
+            "for you growing up."
+        ),
+        "opening_message": (
+            "Look man, I\u2019ve got this apparel brand ready to launch. I just need $10k to get the "
+            "first inventory order. You know I bought your cleats back in middle school when "
+            "things were tight. This is family wealth we\u2019re building \u2014 I wouldn\u2019t ask if it "
+            "wasn\u2019t a sure thing."
+        ),
+        "exercise": (
+            "Decline the investment without insulting your cousin\u2019s business sense and without "
+            "sounding arrogant about your new income."
+        ),
+        "ideal_acknowledge": (
+            "I appreciate you bringing this to me, and I\u2019ll never forget how you looked out for "
+            "me when I was younger."
+        ),
+        "ideal_boundary": (
+            "Right now I have a rule I set with my family about money: nothing goes into private "
+            "businesses or loans outside my plan. That\u2019s not a this-deal thing, it\u2019s every deal."
+        ),
+        "ideal_pivot": (
+            "I can\u2019t put money in, but if you launch an online store, send me the link and I\u2019ll "
+            "share it on my socials to get some eyes on it."
+        ),
+        "persona": "GUILT_TRIP",
+        "difficulty": "MEDIUM",
+        "points_reward": 50,
+        "order": 1,
+    },
+    {
+        "code": "LS-302-S2",
+        "title": "The VIP Access Expectation",
+        "relationship": "FRIENDS",
+        "pressure_type": "ACCESS",
+        "key_skill": "Social boundaries",
+        "counterpart_role": "Three childhood friends",
+        "setup": (
+            "You have been invited to an exclusive recruiting event and you are allowed a strict "
+            "plus-one. Three childhood friends expect you to pull strings and get all of them in, "
+            "assuming your status means the rules bend for you."
+        ),
+        "opening_message": (
+            "Bro, just tell the bouncer or the event coordinator you\u2019re with us. You\u2019re the star "
+            "recruit \u2014 they aren\u2019t going to tell you no. If you go in there and leave us out "
+            "here, you\u2019re changing on us."
+        ),
+        "exercise": (
+            "Hold the line on the event\u2019s rules without folding to the accusation that you are "
+            "\u201cchanging\u201d or acting better than your hometown friends."
+        ),
+        "ideal_acknowledge": "I want you guys in there with me just as much as you want to be there.",
+        "ideal_boundary": (
+            "But I don\u2019t control the door, and this event has a strict security list. If I try to "
+            "force three extra people in, it makes me look unprofessional in front of the coaches "
+            "and organisers watching me tonight."
+        ),
+        "ideal_pivot": (
+            "I have to handle business inside tonight, but let\u2019s grab food tomorrow at our usual "
+            "spot and I\u2019ll fill you in on everything."
+        ),
+        "persona": "GUILT_TRIP",
+        "difficulty": "MEDIUM",
+        "points_reward": 50,
+        "order": 2,
+    },
+    {
+        "code": "LS-302-S3",
+        "title": "The Time & Energy Drain",
+        "relationship": "COMMUNITY",
+        "pressure_type": "TIME",
+        "key_skill": "Time and energy management",
+        "counterpart_role": "A community figure from your neighbourhood",
+        "setup": (
+            "It is 9:00 PM on a Thursday and you have a critical game tomorrow night that heavy "
+            "recruiters will be attending. An extended family member and local community figure "
+            "calls, demanding you show up to a late-night social event to \u201cshow face\u201d and take "
+            "pictures \u2014 implying that skipping it means you are arrogant."
+        ),
+        "opening_message": (
+            "We have the whole neighbourhood at the hall right now waiting for you. It\u2019s just for "
+            "an hour. People are saying you think you\u2019re too good for us now that you\u2019re getting "
+            "all these offers. Just come take some pictures and you can leave."
+        ),
+        "exercise": (
+            "Protect your sleep and your pre-game mental state, enforcing a hard cutoff time "
+            "against community pressure \u2014 without appearing ungrateful."
+        ),
+        "ideal_acknowledge": (
+            "It means a lot that everyone is there and wants to see me. I love representing our city."
+        ),
+        "ideal_boundary": (
+            "But I keep a 24-hour pre-game routine, and I\u2019m already in it for tomorrow night. I "
+            "don\u2019t make appearances inside that window \u2014 for anybody."
+        ),
+        "ideal_pivot": (
+            "I can\u2019t make it out tonight, but please tell everyone thank you for the support, and "
+            "I hope to see you all in the stands tomorrow."
+        ),
+        "persona": "GUILT_TRIP",
+        "difficulty": "HARD",
+        "points_reward": 60,
+        "order": 3,
+    },
+]
+
+
+# ---------------------------------------------------------------------------
+# Three more situations beyond the client's brief, which specified only the
+# three above. These exist so the other personas are exercisable without an
+# admin having to hand-write a scenario first: one each for the persistent
+# negotiator, the passive-aggressive and the aggressive counterpart. Delete
+# this block if the client wants LS-302 to stay at exactly three.
+# ---------------------------------------------------------------------------
+ROLEPLAY_SCENARIO_DEFS += [
+    {
+        "code": "LS-302-S4",
+        "title": "The Shrinking Ask",
+        "relationship": "FRIENDS",
+        "pressure_type": "FINANCIAL",
+        "key_skill": "Financial boundaries",
+        "counterpart_role": "A friend from your group chat",
+        "setup": (
+            "A friend wants you to bankroll a party bus for homecoming weekend. Every time "
+            "you say no, the number gets smaller \u2014 and the ask never actually ends."
+        ),
+        "opening_message": (
+            "So the bus is $2,000 for the night. If you cover it, everybody comes. You\u2019re the "
+            "only one of us who can even do that right now."
+        ),
+        "exercise": (
+            "End the negotiation instead of winning each round of it \u2014 a smaller number is "
+            "still the same ask."
+        ),
+        "ideal_acknowledge": "I know you\u2019ve been planning this weekend for months, and I want it to go off.",
+        "ideal_boundary": (
+            "I\u2019m not funding it, at any number. I put myself on a fixed monthly budget and "
+            "group spending isn\u2019t in it \u2014 that\u2019s the whole answer, not an opening offer."
+        ),
+        "ideal_pivot": (
+            "I\u2019ll be on the bus and I\u2019ll pay my own seat like everybody else. Put me down for one."
+        ),
+        "persona": "PERSISTENT",
+        "difficulty": "HARD",
+        "points_reward": 55,
+        "order": 4,
+    },
+    {
+        "code": "LS-302-S5",
+        "title": "The Favour That Was Never Asked For",
+        "relationship": "COMMUNITY",
+        "pressure_type": "ACCESS",
+        "key_skill": "Social boundaries",
+        "counterpart_role": "A local booster",
+        "setup": (
+            "A local businessman who sponsored your team\u2019s uniforms two years ago now wants "
+            "an introduction to your trainer and your contacts \u2014 and keeps implying you owe "
+            "him for it."
+        ),
+        "opening_message": (
+            "It\u2019s fine, don\u2019t worry about it. I just thought after the uniforms I\u2019d at least "
+            "get a phone number out of you. Everybody says you\u2019ve got a short memory now."
+        ),
+        "exercise": (
+            "Refuse to pass on contacts you don\u2019t control, without accepting a debt you never "
+            "agreed to."
+        ),
+        "ideal_acknowledge": "Those uniforms meant a lot to the team that year, and I\u2019ve said thank you publicly.",
+        "ideal_boundary": (
+            "I don\u2019t pass on my trainer\u2019s number, for anyone. He takes referrals through his "
+            "own office and that\u2019s his rule, not mine to bend."
+        ),
+        "ideal_pivot": "I\u2019ll send you his office page \u2014 you can reach out directly and say I sent you.",
+        "persona": "PASSIVE_AGGRESSIVE",
+        "difficulty": "MEDIUM",
+        "points_reward": 50,
+        "order": 5,
+    },
+    {
+        "code": "LS-302-S6",
+        "title": "The Weekend Shift",
+        "relationship": "FAMILY",
+        "pressure_type": "TIME",
+        "key_skill": "Time and energy management",
+        "counterpart_role": "Your uncle, who runs the family shop",
+        "setup": (
+            "Your uncle expects you back on weekend shifts at the family shop now that the "
+            "season has started \u2014 the same Saturdays you train and travel \u2014 and he is not "
+            "asking politely."
+        ),
+        "opening_message": (
+            "I had you on the schedule for Saturday. This shop paid for your equipment for six "
+            "years and now you\u2019re too busy? Be here at eight."
+        ),
+        "exercise": (
+            "Hold your training schedule against a direct order from someone with real "
+            "authority over you, without escalating it into a family fight."
+        ),
+        "ideal_acknowledge": "This shop is the reason I had anything to train with, and I\u2019m not pretending otherwise.",
+        "ideal_boundary": (
+            "I can\u2019t take Saturdays during the season. My travel and training schedule is set "
+            "by the programme through March and I don\u2019t get to move it."
+        ),
+        "ideal_pivot": "I can do Sunday evenings and the whole of spring break \u2014 put me on for those.",
+        "persona": "AGGRESSIVE",
+        "difficulty": "HARD",
+        "points_reward": 60,
+        "order": 6,
+    },
+]
+
+
+# ---------------------------------------------------------------------------
+# Demo role-play runs, so every Tactical Wargamer screen has something in it
+# on a fresh environment: the admin activity feed, a student's Past Runs
+# table, the module stat strip and the report card all read from session
+# rows, and a catalog alone leaves every one of them empty.
+#
+# Seeded against the demo students (student1@example.com upwards) only, the
+# same way _seed_instructor_feedback seeds reviews from the demo reviewers.
+# The opening counterpart line is NOT written out here \u2014 the seeder takes it
+# from the scenario, exactly as services.start_session does, so a transcript
+# can never drift from the catalog copy above it.
+#
+# Between them these cover every state the UI renders: a strong pass, a
+# failed run (with an empty strengths list, which is its own empty state), a
+# pass that leaned on an invented authority, a resumable conversation, one
+# the student walked away from, and one whose scoring call failed.
+# ---------------------------------------------------------------------------
+ROLEPLAY_RUN_DEFS = [
+    {
+        "scenario_code": "LS-302-S1",
+        "student_index": 0,
+        "days_ago": 9,
+        "status": "COMPLETED",
+        "conceded": True,
+        "turns": [
+            {
+                "speaker": "ATHLETE",
+                "seconds": 22,
+                "content": (
+                    "I appreciate you bringing this to me, and I\u2019ve never forgotten you buying "
+                    "my cleats when things were tight. But I can\u2019t put money into it. I set a "
+                    "rule with my family when the deal closed: nothing goes into private "
+                    "businesses or loans, no exceptions."
+                ),
+            },
+            {
+                "speaker": "COUNTERPART",
+                "seconds": 31,
+                "pressure": 4,
+                "content": (
+                    "Rules? Come on now, you\u2019re the one who makes the rules these days. I\u2019m not "
+                    "some stranger off the street asking you for a favour \u2014 I\u2019m family."
+                ),
+            },
+            {
+                "speaker": "ATHLETE",
+                "seconds": 58,
+                "content": (
+                    "That\u2019s exactly why I\u2019m telling you straight instead of ducking your calls. "
+                    "The rule isn\u2019t about you \u2014 it\u2019s so I never have to choose between family "
+                    "and a balance sheet. What I can do is put your launch in front of my "
+                    "followers the day it goes live."
+                ),
+            },
+            {
+                "speaker": "COUNTERPART",
+                "seconds": 70,
+                "pressure": 3,
+                "content": "So that\u2019s a no on the money. Just say it plain.",
+            },
+            {
+                "speaker": "ATHLETE",
+                "seconds": 88,
+                "content": (
+                    "That\u2019s a no on the money. The share is a yes and I mean it \u2014 send me the "
+                    "link when you\u2019ve got one."
+                ),
+            },
+            {
+                "speaker": "COUNTERPART",
+                "seconds": 96,
+                "pressure": 1,
+                "content": "Alright. I\u2019ll take the share. Appreciate you being straight with me.",
+            },
+        ],
+        "report": {
+            "time_to_boundary_score": 92,
+            "tone_control_score": 86,
+            "deflection_to_policy_score": 90,
+            "boundary_turn": 1,
+            "verdict": "Held the line",
+            "summary": (
+                "You refused in your first message, stayed warm the whole way through, and "
+                "closed the negotiation instead of leaving it hanging. That is what the method "
+                "looks like when it works."
+            ),
+            "criteria_notes": {
+                "time_to_boundary": "Your first message contained an unambiguous \u201cI can\u2019t put money into it\u201d.",
+                "tone_control": "You stayed steady when he called the rule an excuse, and never got defensive.",
+                "deflection_to_policy": "You pointed at a rule you already keep rather than judging his idea.",
+            },
+            "strengths": [
+                {
+                    "title": "Acknowledged something specific",
+                    "detail": "The cleats. Naming the real thing he did is what stopped the no from landing cold.",
+                },
+                {
+                    "title": "Repeated the boundary without changing it",
+                    "detail": "When he pushed, you restated the same rule in the same words instead of negotiating.",
+                },
+                {
+                    "title": "Closed it out",
+                    "detail": "\u201cSend me the link\u201d ends the conversation on something you can actually deliver.",
+                },
+            ],
+            "improvements": [
+                {
+                    "title": "Lead with the acknowledge, then stop",
+                    "detail": "Your first message ran four sentences. The same words in two would hit harder.",
+                },
+                {
+                    "title": "Name what the share is worth",
+                    "detail": "\u201cI\u2019ll put it in front of 14,000 people\u201d makes the pivot feel like a real offer, not a consolation prize.",
+                },
+            ],
+            "suggested_response": (
+                "You bought my cleats when nobody else was going to \u2014 I remember. I can\u2019t put "
+                "money in, though. I have a rule with my family that nothing goes into private "
+                "businesses, and that\u2019s every deal, not just this one. When you launch, send me "
+                "the link and I\u2019ll put it in front of my followers."
+            ),
+            "used_fabricated_excuse": False,
+            "fabrication_note": "",
+        },
+    },
+    {
+        "scenario_code": "LS-302-S1",
+        "student_index": 1,
+        "days_ago": 6,
+        "status": "COMPLETED",
+        "turns": [
+            {
+                "speaker": "ATHLETE",
+                "seconds": 41,
+                "content": (
+                    "Hey, that... I mean, that sounds cool honestly. Let me think about it? "
+                    "Maybe I could do something, I\u2019m not sure how much."
+                ),
+            },
+            {
+                "speaker": "COUNTERPART",
+                "seconds": 52,
+                "pressure": 5,
+                "content": (
+                    "What\u2019s there to think about? I\u2019m not asking for a handout, I\u2019m offering "
+                    "you a piece of it. You know I\u2019d do it for you in a heartbeat."
+                ),
+            },
+            {
+                "speaker": "ATHLETE",
+                "seconds": 96,
+                "content": (
+                    "I know, I know. I feel bad about it honestly. Maybe like a couple thousand? "
+                    "I\u2019d have to ask somebody first."
+                ),
+            },
+            {
+                "speaker": "COUNTERPART",
+                "seconds": 108,
+                "pressure": 5,
+                "content": (
+                    "A couple thousand doesn\u2019t get the order made. Do the ten and you\u2019ll have "
+                    "it back by spring. Ask whoever you need to ask and call me tonight."
+                ),
+            },
+            {
+                "speaker": "ATHLETE",
+                "seconds": 150,
+                "content": "Okay. Let me see what I can do and I\u2019ll text you.",
+            },
+        ],
+        "report": {
+            "time_to_boundary_score": 14,
+            "tone_control_score": 52,
+            "deflection_to_policy_score": 18,
+            "boundary_turn": 0,
+            "verdict": "Left the door wide open",
+            "summary": (
+                "You never actually said no. Every message was a softer version of maybe, and "
+                "by the end you had agreed to go and find the money. From his side of that "
+                "conversation, he got a yes."
+            ),
+            "criteria_notes": {
+                "time_to_boundary": "No refusal appears anywhere in the transcript \u2014 \u201clet me think about it\u201d is a delay, not a boundary.",
+                "tone_control": "You stayed calm, but the apologising (\u201cI feel bad\u201d) handed him the next move.",
+                "deflection_to_policy": "You reached for \u201cI\u2019d have to ask somebody\u201d, which invites him to wait rather than stop.",
+            },
+            "strengths": [],
+            "improvements": [
+                {
+                    "title": "Say the word no",
+                    "detail": "Nothing else in this exercise counts until a refusal is actually on the table.",
+                },
+                {
+                    "title": "Stop negotiating against yourself",
+                    "detail": "You offered two thousand before he asked for less. That tells him the number is movable.",
+                },
+                {
+                    "title": "Drop \u201cI\u2019d have to ask somebody\u201d",
+                    "detail": "It makes someone else the decision-maker and guarantees a second conversation.",
+                },
+                {
+                    "title": "Don\u2019t apologise for having a rule",
+                    "detail": "\u201cI feel bad\u201d is the opening he used to push again. Warm is good; sorry is not.",
+                },
+            ],
+            "suggested_response": (
+                "I appreciate you thinking of me first, I really do. I can\u2019t invest though \u2014 I "
+                "keep a hard line that none of my money goes into private businesses, and that "
+                "isn\u2019t going to change this month or next. If you get it off the ground, I\u2019ll "
+                "share it with my followers the day you launch."
+            ),
+            "used_fabricated_excuse": False,
+            "fabrication_note": "",
+        },
+    },
+    {
+        "scenario_code": "LS-302-S2",
+        "student_index": 0,
+        "days_ago": 4,
+        "status": "COMPLETED",
+        "conceded": True,
+        "turns": [
+            {
+                "speaker": "ATHLETE",
+                "seconds": 16,
+                "content": "My agent handles the guest list, I literally can\u2019t add names to it.",
+            },
+            {
+                "speaker": "COUNTERPART",
+                "seconds": 24,
+                "pressure": 4,
+                "content": (
+                    "Your agent? Two months ago you were riding with us in Marcus\u2019s car. Now "
+                    "you\u2019ve got people who handle things."
+                ),
+            },
+            {
+                "speaker": "ATHLETE",
+                "seconds": 49,
+                "content": (
+                    "I hear you. But I don\u2019t control that door tonight \u2014 there\u2019s a security "
+                    "list, and if I push three extra names onto it I\u2019m the one who looks "
+                    "unprofessional in front of the coaches who are in that room."
+                ),
+            },
+            {
+                "speaker": "COUNTERPART",
+                "seconds": 60,
+                "pressure": 3,
+                "content": "So we drove all the way out here for nothing.",
+            },
+            {
+                "speaker": "ATHLETE",
+                "seconds": 84,
+                "content": (
+                    "Not for nothing. I\u2019m out by ten \u2014 let\u2019s hit the usual spot after and I\u2019ll "
+                    "tell you everything that happened in there."
+                ),
+            },
+            {
+                "speaker": "COUNTERPART",
+                "seconds": 92,
+                "pressure": 1,
+                "content": "Fine. Ten o\u2019clock. Don\u2019t leave us sitting out here.",
+            },
+        ],
+        "report": {
+            "time_to_boundary_score": 88,
+            "tone_control_score": 76,
+            "deflection_to_policy_score": 64,
+            "boundary_turn": 1,
+            "verdict": "Held it, on the wrong foundation",
+            "summary": (
+                "You refused immediately and recovered well, and the pivot landed. The problem "
+                "is what you refused with: the first thing out of your mouth was an agent, and "
+                "the real reason \u2014 the security list \u2014 only arrived once he pushed."
+            ),
+            "criteria_notes": {
+                "time_to_boundary": "A clear no in your first message, inside twenty seconds.",
+                "tone_control": "Steady, though \u201cI hear you\u201d did a lot of work it shouldn\u2019t have had to.",
+                "deflection_to_policy": "The security list is a real constraint; the agent is not, and you led with the agent.",
+            },
+            "strengths": [
+                {
+                    "title": "Refused in one line",
+                    "detail": "No build-up, no hedging. He knew the answer before his second message.",
+                },
+                {
+                    "title": "The pivot was specific",
+                    "detail": "A time and a place beats \u201clet\u2019s link up sometime\u201d every single time.",
+                },
+            ],
+            "improvements": [
+                {
+                    "title": "Lead with the real constraint",
+                    "detail": "Your second message was the right first message. Open with the security list.",
+                },
+                {
+                    "title": "Acknowledge before you refuse",
+                    "detail": "You skipped the A entirely, which is why his comeback was about you changing.",
+                },
+            ],
+            "suggested_response": (
+                "I want you three in there with me as much as you want to be in there. I don\u2019t "
+                "control the door though \u2014 it\u2019s a security list and I\u2019m one name on it. If I "
+                "try to force three more, I look unprofessional in front of the people I came "
+                "here to impress. I\u2019m out by ten; usual spot, and I\u2019ll tell you everything."
+            ),
+            "used_fabricated_excuse": True,
+            "fabrication_note": (
+                "You opened with \u201cmy agent handles the guest list\u201d. A high-school athlete "
+                "very rarely has an agent, and the first time someone checks, the boundary "
+                "collapses and so does your credibility. The security list you reached for in "
+                "your second message was true and did exactly the same job \u2014 lead with that."
+            ),
+        },
+    },
+    {
+        "scenario_code": "LS-302-S3",
+        "student_index": 0,
+        "days_ago": 1,
+        "status": "IN_PROGRESS",
+        "turns": [
+            {
+                "speaker": "ATHLETE",
+                "seconds": 19,
+                "content": "It means a lot that everybody\u2019s out there \u2014 I love repping the city, you know that.",
+            },
+            {
+                "speaker": "COUNTERPART",
+                "seconds": 29,
+                "pressure": 4,
+                "content": "Then show your face. Twenty minutes, a few pictures, and you\u2019re gone. That\u2019s nothing.",
+            },
+        ],
+    },
+    {
+        "scenario_code": "LS-302-S3",
+        "student_index": 1,
+        "days_ago": 3,
+        "status": "ABANDONED",
+        "turns": [
+            {
+                "speaker": "ATHLETE",
+                "seconds": 27,
+                "content": "I can\u2019t come out tonight, I\u2019ve got a game tomorrow.",
+            },
+            {
+                "speaker": "COUNTERPART",
+                "seconds": 38,
+                "pressure": 5,
+                "content": (
+                    "One hour. The whole neighbourhood is sitting here. You can\u2019t give your own "
+                    "people one hour out of your night?"
+                ),
+            },
+        ],
+    },
+    {
+        "scenario_code": "LS-302-S4",
+        "student_index": 2,
+        "days_ago": 2,
+        "status": "EVALUATING",
+        "error_message": (
+            "The scoring service is busy right now. Try again in a moment \u2014 your conversation "
+            "is saved."
+        ),
+        "turns": [
+            {
+                "speaker": "ATHLETE",
+                "seconds": 24,
+                "content": "I\u2019m not covering the bus. I\u2019ll pay for my own seat like everybody else.",
+            },
+            {
+                "speaker": "COUNTERPART",
+                "seconds": 33,
+                "pressure": 4,
+                "content": "Okay, okay \u2014 what if it\u2019s just the deposit? Five hundred and the rest of us split the rest.",
+            },
+            {
+                "speaker": "ATHLETE",
+                "seconds": 61,
+                "content": (
+                    "Same answer. It\u2019s not the number, it\u2019s that group spending isn\u2019t in my "
+                    "budget at all. My seat, same as yours."
+                ),
+            },
+            {
+                "speaker": "COUNTERPART",
+                "seconds": 72,
+                "pressure": 3,
+                "content": "Then just cover the driver\u2019s tip. That\u2019s like sixty bucks, you won\u2019t even feel it.",
+            },
         ],
     },
 ]
@@ -1567,6 +2208,18 @@ class Command(BaseCommand):
 
             self._seed_quests()
             self.stdout.write(self.style.SUCCESS(f"Seeded {len(QUEST_DEFS)} daily quests"))
+
+            self._seed_roleplay_scenarios()
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Seeded {len(ROLEPLAY_SCENARIO_DEFS)} Tactical Wargamer role-play scenarios"
+                )
+            )
+
+            roleplay_runs = self._seed_roleplay_demo_runs(students)
+            self.stdout.write(
+                self.style.SUCCESS(f"Seeded {roleplay_runs} demo role-play run(s)")
+            )
 
             self._seed_war_room_live()
             self.stdout.write(
@@ -2231,6 +2884,175 @@ class Command(BaseCommand):
                     "status": Status.PUBLISHED,
                 },
             )
+
+    def _seed_roleplay_scenarios(self):
+        """Upserts the LS-302 role-play catalog by scenario code (its natural key).
+
+        Like every other upsert here, this never deletes: a scenario an admin
+        wrote through the portal isn't in ROLEPLAY_SCENARIO_DEFS and must
+        survive, and a seeded scenario a student has already run is referenced
+        by a points ledger entry (RolePlaySession.scenario is PROTECT). Admin
+        edits to a seeded scenario's wording are overwritten on reseed,
+        matching how _seed_quests and _seed_drills treat their copy.
+        """
+        for scenario_def in ROLEPLAY_SCENARIO_DEFS:
+            RolePlayScenario.objects.update_or_create(
+                code=scenario_def["code"],
+                defaults={
+                    "title": scenario_def["title"],
+                    "relationship": scenario_def["relationship"],
+                    "pressure_type": scenario_def["pressure_type"],
+                    "key_skill": scenario_def["key_skill"],
+                    "counterpart_role": scenario_def["counterpart_role"],
+                    "setup": scenario_def["setup"],
+                    "opening_message": scenario_def["opening_message"],
+                    "exercise": scenario_def["exercise"],
+                    "ideal_acknowledge": scenario_def["ideal_acknowledge"],
+                    "ideal_boundary": scenario_def["ideal_boundary"],
+                    "ideal_pivot": scenario_def["ideal_pivot"],
+                    "persona": scenario_def["persona"],
+                    "difficulty": scenario_def["difficulty"],
+                    "points_reward": scenario_def["points_reward"],
+                    "order": scenario_def["order"],
+                    "status": Status.PUBLISHED,
+                },
+            )
+
+    def _seed_roleplay_demo_runs(self, students):
+        """Demo transcripts and report cards for the Tactical Wargamer.
+
+        A catalog on its own leaves the admin activity feed, the student's
+        Past Runs table and every number in the module stat strip empty, so
+        there is nothing to look at until someone sits down and role-plays.
+        These give a fresh environment something on every screen, the same
+        way `_seed_instructor_feedback` gives the instructor pages reviews.
+
+        Idempotent by the only rule that makes sense here: a student who
+        already has *any* run of a scenario keeps what they have. Re-running
+        the command never stacks demo transcripts on top of each other and
+        never overwrites a run a real tester produced.
+
+        The derived fields are computed the same way `evaluate_session` does
+        rather than written into ROLEPLAY_RUN_DEFS by hand \u2014 the overall
+        score is the mean of the three criteria, the pass mark comes from
+        settings, and the points come from the scenario. A seeded pass is
+        paid through `rewards.services.award_points` like a real one, so the
+        ledger, the student's balance and `points_awarded` can't disagree.
+        """
+        if not students:
+            return 0
+
+        codes = {run_def["scenario_code"] for run_def in ROLEPLAY_RUN_DEFS}
+        scenarios = {
+            scenario.code: scenario
+            for scenario in RolePlayScenario.objects.filter(code__in=codes)
+        }
+        now = timezone.now()
+        created = 0
+
+        for run_def in ROLEPLAY_RUN_DEFS:
+            scenario = scenarios.get(run_def["scenario_code"])
+            if scenario is None:
+                continue
+
+            student = students[run_def["student_index"] % len(students)]
+            if RolePlaySession.objects.filter(student=student, scenario=scenario).exists():
+                continue
+
+            turns = run_def["turns"]
+            started = now - timedelta(days=run_def["days_ago"])
+            last_seconds = turns[-1]["seconds"] if turns else 0
+
+            session = RolePlaySession.objects.create(
+                student=student,
+                scenario=scenario,
+                persona=scenario.persona,
+                status=run_def["status"],
+                started_at=started,
+                last_activity_at=started + timedelta(seconds=last_seconds),
+                athlete_turn_count=sum(1 for turn in turns if turn["speaker"] == "ATHLETE"),
+                counterpart_conceded=run_def.get("conceded", False),
+                error_message=run_def.get("error_message", ""),
+            )
+
+            # The scene always opens on the scenario's own authored line, so
+            # it is taken from the catalog rather than repeated in the run
+            # definition — exactly what services.start_session does.
+            RolePlayTurn.objects.create(
+                session=session,
+                speaker=RolePlayTurn.Speaker.COUNTERPART,
+                content=scenario.opening_message,
+                order=0,
+                seconds_from_start=0,
+            )
+            for order, turn in enumerate(turns, start=1):
+                RolePlayTurn.objects.create(
+                    session=session,
+                    speaker=turn["speaker"],
+                    content=turn["content"],
+                    order=order,
+                    seconds_from_start=turn["seconds"],
+                    pressure_level=turn.get("pressure"),
+                )
+
+            report = run_def.get("report")
+            if session.status == RolePlaySession.SessionStatus.COMPLETED and report:
+                overall = round(
+                    mean(
+                        (
+                            report["time_to_boundary_score"],
+                            report["tone_control_score"],
+                            report["deflection_to_policy_score"],
+                        )
+                    )
+                )
+                passed = overall >= settings.ROLEPLAY_PASS_SCORE_PERCENT
+
+                athlete_seconds = [
+                    turn["seconds"] for turn in turns if turn["speaker"] == "ATHLETE"
+                ]
+                boundary_turn = report.get("boundary_turn") or None
+                if boundary_turn and boundary_turn <= len(athlete_seconds):
+                    session.boundary_seconds = athlete_seconds[boundary_turn - 1]
+                    session.boundary_turn = boundary_turn
+
+                for key, value in report.items():
+                    if key == "boundary_turn":
+                        continue
+                    setattr(session, key, value)
+
+                session.overall_score = overall
+                session.passed = passed
+                session.completed_at = started + timedelta(seconds=last_seconds + 6)
+                session.provider = settings.AI_PROVIDER
+                session.model_name = settings.AI_CHAT_MODEL
+
+                if passed and scenario.points_reward:
+                    session.points_awarded = scenario.points_reward
+                session.save()
+
+                if (
+                    session.points_awarded
+                    and not PointsTransaction.objects.filter(roleplay_session=session).exists()
+                ):
+                    award_points(
+                        student=student,
+                        amount=session.points_awarded,
+                        transaction_type=PointsTransaction.TransactionType.ROLEPLAY_REWARD,
+                        reason=f"Role-Play: {scenario.title}",
+                        roleplay_session=session,
+                    )
+
+            elif session.status == RolePlaySession.SessionStatus.ABANDONED:
+                session.completed_at = started + timedelta(seconds=last_seconds + 30)
+                session.save(update_fields=["completed_at", "updated_at"])
+
+            # created_at is auto_now_add, so the run dates are spread with an
+            # update — same trick as _seed_instructor_feedback.
+            RolePlaySession.objects.filter(pk=session.pk).update(created_at=started)
+            created += 1
+
+        return created
 
     def _seed_war_room_live(self):
         """Upserts the War Room Live speaker roster and its monthly session

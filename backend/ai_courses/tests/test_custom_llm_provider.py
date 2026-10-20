@@ -17,6 +17,9 @@ from ai_courses.providers.base import (
     ProviderTransportError,
 )
 from ai_courses.providers.custom_llm import (
+    BODY_LOG_MAX_CHARS,
+    MAX_CONSECUTIVE_POLL_ERRORS,
+    POLL_BACKOFF_AFTER_SECONDS,
     CustomLLMProvider,
     classify_status,
     iter_sse_events,
@@ -28,10 +31,14 @@ BASE_URL = "https://llm.example.test"
 
 
 class FakeResponse:
-    def __init__(self, status_code=200, json_body=None, text="", lines=None, raise_on_iter=None):
+    def __init__(
+        self, status_code=200, json_body=None, text="", lines=None, raise_on_iter=None, headers=None
+    ):
         self.status_code = status_code
         self._json_body = json_body
         self.text = text
+        # A real requests.Response always has these; the transport logs read them.
+        self.headers = headers or {}
         self._lines = lines or []
         self._raise_on_iter = raise_on_iter
 
@@ -74,7 +81,7 @@ def _provider(responses, **overrides):
     options = {
         "base_url": BASE_URL,
         "poll_interval": 0,
-        "job_timeout": 30,
+        "max_poll_interval": 0,
         "session": FakeSession(responses),
     }
     options.update(overrides)
@@ -251,7 +258,11 @@ class SseParsingTests(SimpleTestCase):
     def test_the_step_label_prefers_stage_then_detail_then_status(self):
         self.assertEqual(job_event_from_payload({"stage": "S", "detail": "D"}).label, "S")
         self.assertEqual(job_event_from_payload({"detail": "D"}).label, "D")
-        self.assertEqual(job_event_from_payload({"status": "running"}).label, "running")
+        # The status fallback is the one machine-readable value an admin sees,
+        # so it is tidied into a step label rather than shown as "in_progress".
+        self.assertEqual(job_event_from_payload({"status": "running"}).label, "Running")
+        self.assertEqual(job_event_from_payload({"status": "in_progress"}).label, "In progress")
+        self.assertEqual(job_event_from_payload({}).label, "")
 
 
 def _enveloped(job_record):
@@ -427,23 +438,119 @@ class FollowJobTests(SimpleTestCase):
         with self.assertRaises(Cancelled):
             provider.await_course_job("j1", on_event=handler)
 
-    def test_polling_gives_up_after_repeated_failures(self):
+    def test_polling_gives_up_only_after_a_sustained_outage(self):
+        # The one thing that still ends the wait without a verdict. It takes
+        # MAX_CONSECUTIVE_POLL_ERRORS tries — a couple of failed polls must not
+        # kill a generation the service is still running.
         provider = _provider(
             [FakeResponse(status_code=404)]
-            + [requests.ConnectionError("down")] * 5
+            + [requests.ConnectionError("down")] * MAX_CONSECUTIVE_POLL_ERRORS
         )
 
         with patch("ai_courses.providers.custom_llm.time.sleep"):
             with self.assertRaises(ProviderTransportError):
                 provider.await_course_job("j1")
 
-    def test_the_whole_job_has_a_deadline(self):
+    def test_a_poll_outage_that_recovers_does_not_fail_the_generation(self):
         provider = _provider(
-            [FakeResponse(status_code=404)] + [FakeResponse(json_body={"status": "running"})] * 3,
-            job_timeout=0,
+            [FakeResponse(status_code=404)]
+            + [requests.ConnectionError("down")] * (MAX_CONSECUTIVE_POLL_ERRORS - 1)
+            + [
+                FakeResponse(json_body={"status": "completed"}),
+                FakeResponse(json_body={"status": "completed", "result": {"modules": []}}),
+            ]
         )
 
         with patch("ai_courses.providers.custom_llm.time.sleep"):
-            with self.assertRaises(ProviderTransportError) as ctx:
-                provider.await_course_job("j1")
-        self.assertIn("did not finish", str(ctx.exception))
+            job = provider.await_course_job("j1")
+        self.assertEqual(job["result"], {"modules": []})
+
+    def test_a_slow_job_is_never_abandoned_for_taking_too_long(self):
+        # There is no whole-job deadline: a generation the service is still
+        # working on is waited on, however many polls that takes. The old
+        # behaviour failed it at 900s and told the admin the service "did not
+        # finish in time" while the service went on to finish the course.
+        running = [FakeResponse(json_body={"status": "running", "progress": 40})] * 200
+        provider = _provider(
+            [FakeResponse(status_code=404)]
+            + running
+            + [
+                FakeResponse(json_body={"status": "completed"}),
+                FakeResponse(json_body={"status": "completed", "result": {"modules": []}}),
+            ]
+        )
+
+        with patch("ai_courses.providers.custom_llm.time.sleep"):
+            job = provider.await_course_job("j1")
+        self.assertEqual(job["result"], {"modules": []})
+
+    def test_a_poll_outage_still_reports_to_the_handler(self):
+        # on_event is what keeps the job row's heartbeat fresh and what notices a
+        # cancellation, so it has to be called while the service is unreachable
+        # too — otherwise the stale-job reaper fails a job this loop is still
+        # waiting on, and Cancel does nothing until the service comes back.
+        events = []
+        provider = _provider(
+            [FakeResponse(status_code=404)]
+            + [requests.ConnectionError("down")] * 3
+            + [
+                FakeResponse(json_body={"status": "completed"}),
+                FakeResponse(json_body={"status": "completed", "result": {"modules": []}}),
+            ]
+        )
+
+        with patch("ai_courses.providers.custom_llm.time.sleep"):
+            provider.await_course_job("j1", on_event=events.append)
+
+        self.assertEqual(len(events), 4)
+        self.assertTrue(all(event.label == "" for event in events[:3]))
+        self.assertIsNone(events[0].outcome)
+
+    def test_the_raw_stream_is_logged_verbatim(self):
+        # The stream is parsed and thrown away, so this log is the only record of
+        # what the service actually sent. It has to be the raw line, not our
+        # interpretation of it — that is the whole point when a job goes wrong.
+        payload = '{"status":"running","progress":5,"stage":"starting","detail":"Pipeline starting"}'
+        provider = _provider(
+            [
+                FakeResponse(lines=_sse(("job_started", payload), ("complete", '{"status":"completed"}'))),
+                FakeResponse(json_body={"status": "completed", "result": {"modules": []}}),
+            ]
+        )
+
+        with self.assertLogs("ai_courses", level="INFO") as captured:
+            provider.await_course_job("j1")
+
+        logged = "\n".join(captured.output)
+        self.assertIn("SSE j1 | event: job_started", logged)
+        self.assertIn(f"SSE j1 | data: {payload}", logged)
+        # The keep-alive comment lines too: a silent job that is still connected
+        # looks exactly like a hung one without them.
+        self.assertIn("AI service <- stream 200", logged)
+
+    def test_requests_and_response_bodies_are_logged(self):
+        provider = _provider([FakeResponse(json_body={"job_id": "j9"}, text='{"job_id": "j9"}')])
+
+        with self.assertLogs("ai_courses", level="INFO") as captured:
+            provider.submit_course_job({"title": "Probe"})
+
+        logged = "\n".join(captured.output)
+        self.assertIn("AI service -> POST", logged)
+        self.assertIn('"title": "Probe"', logged)
+        self.assertIn('AI service <- POST', logged)
+        self.assertIn('{"job_id": "j9"}', logged)
+
+    def test_an_oversized_body_is_marked_as_truncated_not_silently_cut(self):
+        huge = "x" * (BODY_LOG_MAX_CHARS + 500)
+        provider = _provider([FakeResponse(json_body={"job_id": "j9"}, text=huge)])
+
+        with self.assertLogs("ai_courses", level="INFO") as captured:
+            provider.submit_course_job({"title": "Probe"})
+
+        self.assertIn("[+500 more chars]", "\n".join(captured.output))
+
+    def test_polling_eases_off_once_a_job_is_clearly_a_long_one(self):
+        provider = _provider([], poll_interval=3, max_poll_interval=15)
+        self.assertEqual(provider._poll_interval_for(0), 3)
+        self.assertEqual(provider._poll_interval_for(POLL_BACKOFF_AFTER_SECONDS - 1), 3)
+        self.assertEqual(provider._poll_interval_for(POLL_BACKOFF_AFTER_SECONDS), 15)

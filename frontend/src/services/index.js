@@ -16,6 +16,7 @@ export { getProfile, updateProfile } from "./profileService";
 export {
   startCourseGeneration,
   getCourseGeneration,
+  getLatestCourseGeneration,
   cancelCourseGeneration,
   retryCourseGeneration,
   listCourseGenerations,

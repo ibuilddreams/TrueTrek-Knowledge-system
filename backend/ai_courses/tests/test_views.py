@@ -1,13 +1,16 @@
+from datetime import timedelta
 from unittest.mock import patch
 
 from django.conf import settings as django_settings
 from django.contrib.auth import get_user_model
 from django.core.cache import cache
 from django.urls import reverse
+from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
 from ai_courses.models import AICourseGeneration
+from ai_courses.services import RESUMABLE_RESULT_WINDOW
 from courses.models import Category
 
 UserModel = get_user_model()
@@ -134,6 +137,85 @@ class GenerationDetailViewTests(APITestCase):
         data = response.data["data"]
         for field in ("id", "status", "step", "progress_percent", "warnings", "course"):
             self.assertIn(field, data)
+
+
+class GenerationLatestViewTests(APITestCase):
+    """The resume banner's source of truth — see GenerationLatestView."""
+
+    def setUp(self):
+        self.url = reverse("ai-course-generation-latest")
+        self.admin = _user("admin@example.com", UserModel.Roles.ADMIN)
+        self.other_admin = _user("other@example.com", UserModel.Roles.ADMIN)
+        self.teacher = _user("teacher@example.com", UserModel.Roles.TEACHER)
+
+    def _job(self, user=None, **fields):
+        fields.setdefault("input_payload", {"title": "x"})
+        return AICourseGeneration.objects.create(requested_by=user or self.admin, **fields)
+
+    def test_teacher_gets_403(self):
+        self.client.force_authenticate(user=self.teacher)
+        self.assertEqual(self.client.get(self.url).status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_nothing_to_resume_is_null_not_a_404(self):
+        self.client.force_authenticate(user=self.admin)
+        response = self.client.get(self.url)
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertIsNone(response.data["data"])
+
+    def test_a_running_generation_is_returned(self):
+        job = self._job(status=GenerationStatus.RUNNING, step="Generating course", progress_percent=40)
+        self.client.force_authenticate(user=self.admin)
+        data = self.client.get(self.url).data["data"]
+        self.assertEqual(data["id"], job.id)
+        self.assertEqual(data["progress_percent"], 40)
+
+    def test_another_admins_generation_is_not_offered(self):
+        self._job(user=self.other_admin, status=GenerationStatus.RUNNING)
+        self.client.force_authenticate(user=self.admin)
+        self.assertIsNone(self.client.get(self.url).data["data"])
+
+    def test_a_recently_failed_generation_is_still_offered(self):
+        # The whole point of the banner for a failure: the admin closed the
+        # wizard, the job failed, and the reason must still be reachable.
+        job = self._job(
+            status=GenerationStatus.FAILED,
+            error_message="The AI service could not be reached.",
+            finished_at=timezone.now(),
+        )
+        self.client.force_authenticate(user=self.admin)
+        data = self.client.get(self.url).data["data"]
+        self.assertEqual(data["id"], job.id)
+        self.assertIn("could not be reached", data["error_message"])
+
+    def test_a_running_generation_outranks_a_finished_one(self):
+        self._job(status=GenerationStatus.SUCCEEDED, finished_at=timezone.now())
+        running = self._job(status=GenerationStatus.RUNNING)
+        self.client.force_authenticate(user=self.admin)
+        self.assertEqual(self.client.get(self.url).data["data"]["id"], running.id)
+
+    def test_an_old_finished_generation_is_history_not_a_banner(self):
+        self._job(
+            status=GenerationStatus.SUCCEEDED,
+            finished_at=timezone.now() - RESUMABLE_RESULT_WINDOW - timedelta(minutes=1),
+        )
+        self.client.force_authenticate(user=self.admin)
+        self.assertIsNone(self.client.get(self.url).data["data"])
+
+    def test_a_generation_the_admin_cancelled_is_not_offered_back(self):
+        self._job(status=GenerationStatus.CANCELLED, finished_at=timezone.now())
+        self.client.force_authenticate(user=self.admin)
+        self.assertIsNone(self.client.get(self.url).data["data"])
+
+    def test_it_never_leaks_raw_response_or_normalized_plan(self):
+        self._job(
+            status=GenerationStatus.RUNNING,
+            raw_response="{secret raw provider payload}",
+            normalized_plan={"secret": "plan"},
+        )
+        self.client.force_authenticate(user=self.admin)
+        data = self.client.get(self.url).data["data"]
+        self.assertNotIn("raw_response", data)
+        self.assertNotIn("normalized_plan", data)
 
 
 class GenerationCancelViewTests(APITestCase):

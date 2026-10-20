@@ -87,6 +87,8 @@ class GenerationDetailSerializer(serializers.ModelSerializer):
             "id",
             "status",
             "step",
+            "step_detail",
+            "step_changed_at",
             "progress_percent",
             "warnings",
             "error_message",
