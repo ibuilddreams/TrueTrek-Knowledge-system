@@ -50,16 +50,21 @@ SUCCESS_STATUSES = {
 FAILURE_STATUSES = {"failed", "failure", "error", "errored", "fatal"}
 CANCELLED_STATUSES = {"cancelled", "canceled", "aborted", "stopped", "terminated"}
 
-# A poll that keeps failing is a real outage, not a blip — give up rather than
-# spin until the whole-job deadline with nothing to show for it.
-MAX_CONSECUTIVE_POLL_ERRORS = 5
+# A poll that keeps failing is a real outage, not a blip. This is the *only*
+# thing that ends the wait without a verdict from the service, so it is sized
+# generously: MAX_CONSECUTIVE_POLL_ERRORS tries POLL_ERROR_RETRY_SECONDS apart
+# is roughly five minutes of the job endpoint being unreachable before we accept
+# that the generation is gone. A reverse-proxy restart or a brief network blip
+# must never fail a generation the service is still happily running.
+MAX_CONSECUTIVE_POLL_ERRORS = 20
+POLL_ERROR_RETRY_SECONDS = 15
 
 # Tuning. These are constants rather than settings because the service is ours:
 # there is nothing an operator has to decide per environment, and a value that
 # ever needs changing should change for everyone, here, with its reason beside it.
 #
 # CONNECT/REQUEST bound the two short calls (submit, read the result). They are
-# NOT the budget for the generation itself — that is JOB_TIMEOUT.
+# NOT a budget for the generation itself — it has none; see await_course_job.
 CONNECT_TIMEOUT_SECONDS = 15
 REQUEST_TIMEOUT_SECONDS = 60
 # How long the SSE stream may go silent before we stop trusting it and switch to
@@ -68,9 +73,32 @@ REQUEST_TIMEOUT_SECONDS = 60
 # to kill a generation that is still running.
 STREAM_READ_TIMEOUT_SECONDS = 60
 POLL_INTERVAL_SECONDS = 3
-# Whole-generation budget, submit to finished structure. A full course is a far
-# longer job than a single chat completion, so this is minutes, not seconds.
-JOB_TIMEOUT_SECONDS = 900
+# There is deliberately no whole-generation budget. A full course is a far longer
+# job than a single chat completion and the service is free to take as long as it
+# needs; abandoning a job that is still running loses work nobody can get back —
+# the admin is told it failed while the service goes on to finish a course they
+# will never see. See await_course_job.
+#
+# What that costs is poll volume, so a job that is clearly a long one is polled
+# less often: POLL_INTERVAL_SECONDS for the first POLL_BACKOFF_AFTER_SECONDS,
+# then POLL_MAX_INTERVAL_SECONDS. Both stay an order of magnitude below
+# settings.AI_STALE_JOB_THRESHOLD_SECONDS, because a poll is also what refreshes
+# the job row's heartbeat (see services._progress_handler).
+POLL_BACKOFF_AFTER_SECONDS = 120
+POLL_MAX_INTERVAL_SECONDS = 15
+# Raw transport logging. Every request, every response body and every line of the
+# progress stream goes to the `ai_courses` logger at INFO, verbatim, so a
+# generation can be followed in the terminal while it runs (`tail -f` the Django
+# output). This is not debug scaffolding to remove later: the SSE stream is
+# consumed and discarded as it is parsed, and the job row keeps only the latest
+# step, so without this there is no record anywhere of what the service actually
+# said — which is exactly what you need when a generation stalls or fails.
+#
+# The caps exist only to stop one pathological body (a finished course is tens of
+# KB of JSON) from flooding the log; everything shorter is logged whole.
+STREAM_LOG_LINE_MAX_CHARS = 2000
+BODY_LOG_MAX_CHARS = 4000
+
 # Sent as `rag_enabled` on every request. Off by default: turning it on changes
 # what the service retrieves, so it is a deliberate switch rather than something
 # this integration decides on the service's behalf.
@@ -100,6 +128,29 @@ def classify_status(value):
     if key in CANCELLED_STATUSES:
         return "cancelled"
     return None
+
+
+def _truncate(text, limit=BODY_LOG_MAX_CHARS):
+    """The body as it came back, with a visible marker when it was too long to
+    log whole — never a silent cut, which would read as a malformed response."""
+    text = "" if text is None else str(text)
+    if len(text) <= limit:
+        return text
+    return f"{text[:limit]}... [+{len(text) - limit} more chars]"
+
+
+def _log_stream_lines(lines, job_id):
+    """Passes the stream through untouched, logging each line exactly as it
+    arrived on the way past — including the SSE comment keep-alives (`: ping`),
+    because those are the proof that a silent job is still connected rather than
+    hung."""
+    for raw_line in lines:
+        if isinstance(raw_line, bytes):
+            text = raw_line.decode("utf-8", errors="replace")
+        else:
+            text = "" if raw_line is None else str(raw_line)
+        logger.info("SSE %s | %s", job_id, _truncate(text, STREAM_LOG_LINE_MAX_CHARS))
+        yield raw_line
 
 
 def _first_present(payload, keys):
@@ -137,6 +188,18 @@ def _as_text(value):
     return str(value).strip()
 
 
+def _humanize_label(value):
+    """"in_progress" -> "In progress", "starting" -> "Starting".
+
+    The service's stage and status vocabularies are machine-readable — matched
+    that way everywhere else in this module — but the stage is also the line the
+    admin reads as the current step, so it is tidied on the way out. Verified
+    against the live service, which sends stage "starting" alongside detail
+    "Pipeline starting"."""
+    text = _as_text(value).replace("_", " ").replace("-", " ").strip()
+    return text[:1].upper() + text[1:] if text else ""
+
+
 @dataclass
 class JobEvent:
     """One progress update, from either an SSE payload or a polled job body —
@@ -152,10 +215,16 @@ class JobEvent:
 
     @property
     def label(self):
-        """What the admin reads in the generation modal. Prefers the coarse stage
-        over the chattier detail, and falls back to the raw status so the step
-        line is never blank."""
-        return self.stage or self.detail or self.status
+        """What the admin reads as the current step. Prefers the coarse stage over
+        the chattier detail, and falls back to the status so the step line is
+        never blank. Both are tidied: raw, these put "starting" or "in_progress"
+        in front of the admin as the name of a step.
+
+        `detail` is not folded in here — it is the service's fuller sentence for
+        the same moment ("Pipeline starting" against stage "starting") and is
+        carried separately on this event so the UI can show it as a second line
+        rather than lose one of the two."""
+        return _humanize_label(self.stage) or self.detail or _humanize_label(self.status)
 
 
 def job_event_from_payload(payload, event_name=""):
@@ -317,7 +386,7 @@ class CustomLLMProvider(AIProvider):
         request_timeout=REQUEST_TIMEOUT_SECONDS,
         stream_read_timeout=STREAM_READ_TIMEOUT_SECONDS,
         poll_interval=POLL_INTERVAL_SECONDS,
-        job_timeout=JOB_TIMEOUT_SECONDS,
+        max_poll_interval=POLL_MAX_INTERVAL_SECONDS,
         session=None,
     ):
         # Defaults to the configured service, so callers construct this with no
@@ -335,7 +404,7 @@ class CustomLLMProvider(AIProvider):
         self.request_timeout = request_timeout
         self.stream_read_timeout = stream_read_timeout
         self.poll_interval = poll_interval
-        self.job_timeout = job_timeout
+        self.max_poll_interval = max_poll_interval
         self.session = session or requests
 
     # -- Not applicable ------------------------------------------------------
@@ -367,10 +436,25 @@ class CustomLLMProvider(AIProvider):
         return {"Accept": accept}
 
     def _request(self, method, url, **kwargs):
+        body = kwargs.get("json")
+        if body is None:
+            logger.info("AI service -> %s %s", method, url)
+        else:
+            logger.info(
+                "AI service -> %s %s body=%s",
+                method, url, _truncate(json.dumps(body, default=str)),
+            )
+
         try:
             response = self.session.request(method, url, **kwargs)
         except requests.RequestException as exc:
+            logger.warning("AI service <- %s %s unreachable: %s", method, url, exc)
             raise ProviderTransportError(f"Could not reach the AI service at {url}: {exc}") from exc
+
+        logger.info(
+            "AI service <- %s %s %s body=%s",
+            method, url, response.status_code, _truncate(response.text),
+        )
 
         if response.status_code >= 500:
             raise ProviderTransportError(
@@ -429,13 +513,18 @@ class CustomLLMProvider(AIProvider):
             raise ProviderError("The AI service's job response was not a JSON object.")
         return unwrap_job(body)
 
-    def stream_job_events(self, job_id, on_event, deadline):
+    def stream_job_events(self, job_id, on_event):
         """Follows the SSE stream until the job reaches a terminal state.
 
         Returns the outcome ("succeeded"/"failed"/"cancelled"), or None if the
         stream ended without one — which is the caller's cue to poll instead.
         Raises ProviderTransportError/ProviderError only for stream-level
-        problems; the caller treats both as "fall back to polling"."""
+        problems; the caller treats both as "fall back to polling".
+
+        A stream that simply goes quiet is not a failed generation: the read
+        timeout fires, which lands here as a transport error and sends the
+        caller to polling. There is nothing in this loop that gives up on a job
+        for taking too long."""
 
         url = self._url(JOB_EVENTS_PATH.format(job_id=job_id))
         try:
@@ -450,13 +539,17 @@ class CustomLLMProvider(AIProvider):
             raise ProviderTransportError(f"Could not open the progress stream: {exc}") from exc
 
         with response:
+            logger.info(
+                "AI service <- stream %s %s (content-type %s)",
+                response.status_code, url, response.headers.get("Content-Type", "?"),
+            )
             if response.status_code >= 400:
                 raise ProviderTransportError(
                     f"The progress stream is unavailable ({response.status_code})."
                 )
 
             try:
-                lines = response.iter_lines(decode_unicode=False)
+                lines = _log_stream_lines(response.iter_lines(decode_unicode=False), job_id)
                 for event_name, data_text in iter_sse_events(lines):
                     try:
                         payload = json.loads(data_text)
@@ -470,27 +563,35 @@ class CustomLLMProvider(AIProvider):
                         on_event(event)
                     if event.outcome:
                         return event.outcome
-
-                    if time.monotonic() > deadline:
-                        raise ProviderTransportError(
-                            f"The AI service did not finish within {self.job_timeout}s."
-                        )
             except requests.RequestException as exc:
                 # Includes the read timeout that fires when the stream goes quiet.
                 raise ProviderTransportError(f"The progress stream dropped: {exc}") from exc
 
+        logger.info("SSE %s | stream ended without a verdict — falling back to polling.", job_id)
         return None
 
-    def poll_until_terminal(self, job_id, on_event, deadline):
+    def _poll_interval_for(self, waited_seconds):
+        """Eases off once the job is clearly a long one — see
+        POLL_BACKOFF_AFTER_SECONDS."""
+        if waited_seconds < POLL_BACKOFF_AFTER_SECONDS:
+            return self.poll_interval
+        return max(self.poll_interval, self.max_poll_interval)
+
+    def poll_until_terminal(self, job_id, on_event):
         """Fallback for when the SSE stream is unusable. Same outcome contract as
         stream_job_events, but it cannot return None — it either reaches a
-        terminal state or raises."""
+        terminal state or raises.
 
+        This loop has no deadline. The only thing that ends it without a verdict
+        is the job endpoint staying unreachable for MAX_CONSECUTIVE_POLL_ERRORS
+        tries in a row, which is an outage rather than a slow job."""
+
+        started = time.monotonic()
         consecutive_errors = 0
+
         while True:
             try:
                 job = self.fetch_job(job_id)
-                consecutive_errors = 0
             except ProviderTransportError as exc:
                 consecutive_errors += 1
                 if consecutive_errors >= MAX_CONSECUTIVE_POLL_ERRORS:
@@ -499,31 +600,45 @@ class CustomLLMProvider(AIProvider):
                     "Polling job %s failed (%s) — attempt %d/%d.",
                     job_id, exc, consecutive_errors, MAX_CONSECUTIVE_POLL_ERRORS,
                 )
-            else:
-                event = job_event_from_payload(job)
+                # An empty event says exactly what is true: nothing new, still
+                # waiting. It matters because on_event is also what refreshes the
+                # job row's heartbeat — an outage that wrote nothing for minutes
+                # would let the stale-job reaper fail a generation this loop is
+                # still waiting on — and it is what lets an admin's Cancel be
+                # noticed while the service is unreachable.
                 if on_event is not None:
-                    on_event(event)
-                if event.outcome:
-                    return event.outcome
+                    on_event(JobEvent())
+                time.sleep(POLL_ERROR_RETRY_SECONDS)
+                continue
 
-            if time.monotonic() > deadline:
-                raise ProviderTransportError(
-                    f"The AI service did not finish within {self.job_timeout}s."
-                )
-            time.sleep(self.poll_interval)
+            consecutive_errors = 0
+            event = job_event_from_payload(job)
+            if on_event is not None:
+                on_event(event)
+            if event.outcome:
+                return event.outcome
+
+            time.sleep(self._poll_interval_for(time.monotonic() - started))
 
     def await_course_job(self, job_id, on_event=None):
         """Follows `job_id` to completion and returns the finished job body.
+
+        This waits for as long as the service takes — there is no timeout, by
+        design. A generation we abandon is work nobody can get back: the service
+        carries on and finishes a course the admin is simultaneously being told
+        failed, and the retry they are offered starts the whole thing again. The
+        wait ends on the service's own verdict, on cancellation (`on_event`
+        raises), or on the job endpoint going unreachable for long enough to be a
+        real outage (see poll_until_terminal) — never on the clock.
 
         `on_event(JobEvent)` is called for every progress update, from the stream
         or from a poll; it may raise to abort the wait (that is how an admin's
         Cancel stops this) and anything it raises is left alone."""
 
-        deadline = time.monotonic() + self.job_timeout
         outcome = None
 
         try:
-            outcome = self.stream_job_events(job_id, on_event, deadline)
+            outcome = self.stream_job_events(job_id, on_event)
         except (ProviderTransportError, ProviderError) as exc:
             # The stream is only a nicer way to watch; losing it is not losing
             # the generation. Polling picks the same job up where it is.
@@ -533,7 +648,7 @@ class CustomLLMProvider(AIProvider):
             )
 
         if outcome is None:
-            outcome = self.poll_until_terminal(job_id, on_event, deadline)
+            outcome = self.poll_until_terminal(job_id, on_event)
 
         job = self.fetch_job(job_id)
 

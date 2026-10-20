@@ -73,6 +73,7 @@ INSTALLED_APPS = [
     'quests',
     'brand_validator',
     'live_sessions',
+    'wargamer',
 ]
 
 MIDDLEWARE = [
@@ -177,6 +178,15 @@ REST_FRAMEWORK = {
         'ai-content-suggestions': '30/minute',
         'testimonial-submit': '5/hour',
         'media-kit-review': '10/hour',
+        # One chat turn in the Tactical Wargamer role-play. Higher than
+        # advisor-chat's 15/minute because a role-play is a back-and-forth
+        # the student is actively typing through, not one-off questions.
+        'roleplay-turn': '40/minute',
+        # Scoring a finished scene. Bounded per hour rather than per minute:
+        # one evaluation per completed run is the expected shape, and the
+        # retry path (a failed scoring call) should not be the thing that
+        # locks a student out of their own report card.
+        'roleplay-evaluation': '40/hour',
     },
 }
 
@@ -324,6 +334,35 @@ DAILY_DRILL_REENGAGEMENT_REMINDER_INTERVAL_DAYS = int(
 # student hasn't seen (see quests/services.py::_pick_quests_for), so a
 # catalog smaller than this simply yields a shorter day rather than repeats.
 DAILY_QUEST_COUNT = int(os.getenv('DAILY_QUEST_COUNT', 3))
+
+# Tactical Wargamer (wargamer/) — the LS-302 "No Muscle" role-play simulator.
+# Both AI calls are synchronous and run on the fast AI_CHAT_MODEL, the same
+# arrangement advisor chat and the daily drill use: a student is watching a
+# typing indicator, so a backgrounded thread-and-poll (ai_courses,
+# brand_validator) would add latency without removing any wait.
+ROLEPLAY_TURN_TIMEOUT_SECONDS = int(os.getenv('ROLEPLAY_TURN_TIMEOUT_SECONDS', 20))
+# Scoring reads a whole transcript against a three-part rubric and writes a
+# report card, so it gets more room than a single in-character line — still
+# well under nginx's proxy_read_timeout (60s, deploy/nginx/truetrek.conf).
+ROLEPLAY_EVALUATION_TIMEOUT_SECONDS = int(os.getenv('ROLEPLAY_EVALUATION_TIMEOUT_SECONDS', 35))
+# How many messages the athlete gets in one scene. A real boundary
+# conversation is short; this is a pedagogical limit as much as a cap on AI
+# spend, and the counterpart is told to wind down as it approaches.
+ROLEPLAY_MAX_ATHLETE_TURNS = int(os.getenv('ROLEPLAY_MAX_ATHLETE_TURNS', 8))
+# Below this, there is nothing to grade against a three-part rubric — a single
+# "no" would score the same whatever the student wrote after it.
+ROLEPLAY_MIN_ATHLETE_TURNS = int(os.getenv('ROLEPLAY_MIN_ATHLETE_TURNS', 2))
+# The overall score a run needs before the scenario's points are paid. The
+# amount itself is never derived from the AI's output (same rule as
+# DAILY_DRILL_DEFAULT_AI_REWARD_POINTS): the model only decides whether this
+# threshold was met, never how much a pass is worth.
+ROLEPLAY_PASS_SCORE_PERCENT = int(os.getenv('ROLEPLAY_PASS_SCORE_PERCENT', 70))
+# The brief's own Time-to-Boundary target, shown to the student beside the
+# server-measured time they actually took. It is a display benchmark only —
+# the Time-to-Boundary *score* is judged on how early in the conversation an
+# unambiguous refusal appeared, not on a stopwatch, because a typed reply and
+# a spoken one take very different amounts of wall-clock time to produce.
+ROLEPLAY_TIME_TO_BOUNDARY_SECONDS = int(os.getenv('ROLEPLAY_TIME_TO_BOUNDARY_SECONDS', 15))
 
 # AI-graded assignment review (assignments/ai_review/) and quiz short-answer
 # grading (quizzes/ai_grading.py) — reuses AI_CHAT_MODEL (the fast path), same

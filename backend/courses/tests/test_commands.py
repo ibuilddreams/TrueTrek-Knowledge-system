@@ -2,6 +2,7 @@ import tempfile
 from datetime import timedelta
 from unittest.mock import patch
 
+from django.conf import settings
 from django.contrib.auth import get_user_model
 from django.core.management import call_command
 from django.test import TestCase, override_settings
@@ -18,7 +19,9 @@ from pathways.models import Pathway, PathwayCourse
 from live_sessions.models import LiveSession, SessionSpeaker
 from quests.models import DailyQuestAssignment, Quest
 from quizzes.models import Question as QuizQuestion
+from rewards.models import PointsTransaction, StudentPointsAccount
 from tiers.models import Tier, TierPathway
+from wargamer.models import RolePlayScenario, RolePlaySession, RolePlayTurn
 
 User = get_user_model()
 
@@ -486,3 +489,156 @@ class SeedDataWarRoomLiveTests(TestCase):
 
         self.assertTrue(LiveSession.objects.filter(pk=hand_made.pk).exists())
         self.assertTrue(SessionSpeaker.objects.filter(pk=guest.pk).exists())
+
+
+class SeedDataWargamerTests(TestCase):
+    """The LS-302 catalog upserts by scenario code like every other catalog
+    here; the demo runs exist only so a fresh environment has something on
+    every Tactical Wargamer screen."""
+
+    def test_seeds_the_scenario_catalog_by_code(self):
+        seed_offline()
+
+        self.assertEqual(RolePlayScenario.objects.count(), len(seed.ROLEPLAY_SCENARIO_DEFS))
+        scenario = RolePlayScenario.objects.get(code="LS-302-S1")
+        self.assertEqual(scenario.persona, RolePlayScenario.Persona.GUILT_TRIP)
+        self.assertTrue(scenario.opening_message)
+        self.assertTrue(scenario.ideal_boundary)
+
+    def test_every_persona_is_represented_so_all_four_are_testable(self):
+        seed_offline()
+
+        personas = set(RolePlayScenario.objects.values_list("persona", flat=True))
+        self.assertEqual(personas, set(RolePlayScenario.Persona.values))
+
+    def test_demo_runs_cover_every_state_the_ui_renders(self):
+        seed_offline()
+
+        statuses = set(RolePlaySession.objects.values_list("status", flat=True))
+        self.assertEqual(
+            statuses,
+            {
+                RolePlaySession.SessionStatus.COMPLETED,
+                RolePlaySession.SessionStatus.IN_PROGRESS,
+                RolePlaySession.SessionStatus.ABANDONED,
+                RolePlaySession.SessionStatus.EVALUATING,
+            },
+        )
+        self.assertEqual(RolePlaySession.objects.count(), len(seed.ROLEPLAY_RUN_DEFS))
+        self.assertTrue(RolePlaySession.objects.filter(passed=True).exists())
+        self.assertTrue(RolePlaySession.objects.filter(passed=False, overall_score__isnull=False).exists())
+        self.assertTrue(RolePlaySession.objects.filter(used_fabricated_excuse=True).exists())
+
+    def test_a_demo_transcript_opens_on_the_scenarios_own_authored_line(self):
+        seed_offline()
+
+        session = RolePlaySession.objects.filter(
+            scenario__code="LS-302-S1", status=RolePlaySession.SessionStatus.COMPLETED
+        ).first()
+        opening = session.turns.order_by("order").first()
+
+        self.assertEqual(opening.order, 0)
+        self.assertEqual(opening.speaker, RolePlayTurn.Speaker.COUNTERPART)
+        self.assertEqual(opening.content, session.scenario.opening_message)
+
+    def test_a_demo_score_is_derived_the_same_way_evaluate_session_derives_it(self):
+        seed_offline()
+
+        for session in RolePlaySession.objects.filter(
+            status=RolePlaySession.SessionStatus.COMPLETED
+        ):
+            expected = round(
+                (
+                    session.time_to_boundary_score
+                    + session.tone_control_score
+                    + session.deflection_to_policy_score
+                )
+                / 3
+            )
+            self.assertEqual(session.overall_score, expected)
+            self.assertEqual(
+                session.passed,
+                session.overall_score >= settings.ROLEPLAY_PASS_SCORE_PERCENT,
+            )
+
+    def test_a_demo_pass_is_paid_through_the_shared_ledger(self):
+        seed_offline()
+
+        passed = RolePlaySession.objects.filter(passed=True).first()
+        transaction = PointsTransaction.objects.get(roleplay_session=passed)
+
+        self.assertEqual(transaction.amount, passed.points_awarded)
+        self.assertEqual(
+            transaction.transaction_type, PointsTransaction.TransactionType.ROLEPLAY_REWARD
+        )
+        # The balance is what the student actually sees, so it has to match
+        # the sum of what the seeded runs claim to have paid them.
+        account = StudentPointsAccount.objects.get(student=passed.student)
+        their_paid_runs = RolePlaySession.objects.filter(student=passed.student, passed=True)
+        self.assertEqual(
+            account.balance, sum(their_paid_runs.values_list("points_awarded", flat=True))
+        )
+
+    def test_a_failed_run_is_scored_but_never_paid(self):
+        seed_offline()
+
+        failed = RolePlaySession.objects.filter(
+            status=RolePlaySession.SessionStatus.COMPLETED, passed=False
+        ).first()
+
+        self.assertIsNotNone(failed.overall_score)
+        self.assertEqual(failed.points_awarded, 0)
+        self.assertFalse(PointsTransaction.objects.filter(roleplay_session=failed).exists())
+
+    def test_reseeding_never_duplicates_a_run_or_pays_twice(self):
+        seed_offline()
+        before = RolePlaySession.objects.count()
+        balances = dict(StudentPointsAccount.objects.values_list("student_id", "balance"))
+
+        seed_offline()
+
+        self.assertEqual(RolePlaySession.objects.count(), before)
+        self.assertEqual(
+            dict(StudentPointsAccount.objects.values_list("student_id", "balance")), balances
+        )
+
+    def test_reseeding_preserves_hand_made_scenarios_and_real_runs(self):
+        seed_offline()
+
+        hand_made = RolePlayScenario.objects.create(
+            code="LS-302-X1",
+            title="Added through the portal",
+            relationship=RolePlayScenario.Relationship.FAMILY,
+            pressure_type=RolePlayScenario.PressureType.TIME,
+            key_skill="Time boundaries",
+            counterpart_role="An aunt",
+            setup="Something an admin wrote.",
+            opening_message="Come on, just this once.",
+            exercise="Say no.",
+        )
+        student = User.objects.filter(role=User.Roles.STUDENT).last()
+        seeded = RolePlayScenario.objects.get(code="LS-302-S6")
+        real_run = RolePlaySession.objects.create(
+            student=student,
+            scenario=seeded,
+            persona=seeded.persona,
+            status=RolePlaySession.SessionStatus.COMPLETED,
+            started_at=timezone.now(),
+            overall_score=91,
+            passed=True,
+            points_awarded=60,
+        )
+
+        seed_offline()
+
+        self.assertTrue(RolePlayScenario.objects.filter(pk=hand_made.pk).exists())
+        real_run.refresh_from_db()
+        self.assertEqual(real_run.overall_score, 91)
+        self.assertEqual(real_run.points_awarded, 60)
+
+    def test_fresh_rebuilds_the_demo_runs_from_scratch(self):
+        seed_offline()
+        seed_offline_fresh()
+
+        self.assertEqual(RolePlaySession.objects.count(), len(seed.ROLEPLAY_RUN_DEFS))
+        self.assertEqual(RolePlayScenario.objects.count(), len(seed.ROLEPLAY_SCENARIO_DEFS))

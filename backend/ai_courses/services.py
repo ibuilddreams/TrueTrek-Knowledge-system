@@ -90,6 +90,13 @@ GENERATION_PROGRESS_CEILING = 65
 # an UPDATE on the row that poll reads.
 PROGRESS_WRITE_INTERVAL_SECONDS = 2
 
+# How often an event that reports nothing new is still worth a log line. Every
+# change is logged; this is what keeps a long unchanging stage legible in the
+# log as "alive but not moving" rather than looking like the stream died. The
+# live service sends a keep-alive roughly every 15s and can sit on one stage for
+# tens of minutes, so without this the log would either spam or go silent.
+EVENT_LOG_REPEAT_SECONDS = 60
+
 # raw_response keeps the service's finished job body for debugging. A full course
 # is tens of KB of JSON, which is fine; this only guards against a pathological
 # payload (an embedded data URI, a repeated retrieval dump) bloating the row.
@@ -169,6 +176,45 @@ def reap_stale_jobs():
         logger.warning("Reaped %d stale AI generation job(s).", count)
 
 
+# How long after it finished a generation is still "the one you were waiting on"
+# rather than history. A generation now runs for as long as the service needs, so
+# an admin may well start one in the evening and first see its outcome the next
+# morning; past this window the Generations list is the right place to look.
+RESUMABLE_RESULT_WINDOW = timedelta(hours=24)
+
+
+def get_resumable_generation(user):
+    """The generation Admin -> Courses should offer to pick back up: the one still
+    running, or the one that finished recently and whose outcome this admin may
+    not have seen. None when there is nothing to show.
+
+    This exists because the wizard's job id lives in React state — switching admin
+    tab or reloading the page loses it, while the generation itself carries on on
+    the server. Without this the only way back to a running job was to leave the
+    modal open.
+
+    A job still in flight always wins; _check_concurrency allows the user only one
+    of those at a time, so there is never a second one to choose between. Jobs the
+    admin cancelled themselves are left out — they already know how that ended."""
+
+    jobs = AICourseGeneration.objects.select_related("course").filter(requested_by=user)
+
+    in_flight = (
+        jobs.filter(status__in=[GenerationStatus.PENDING, GenerationStatus.RUNNING])
+        .order_by("-created_at")
+        .first()
+    )
+    if in_flight:
+        return in_flight
+
+    return (
+        jobs.exclude(status=GenerationStatus.CANCELLED)
+        .filter(finished_at__gte=timezone.now() - RESUMABLE_RESULT_WINDOW)
+        .order_by("-finished_at")
+        .first()
+    )
+
+
 def _check_concurrency(user):
     if AICourseGeneration.objects.filter(
         requested_by=user, status__in=[GenerationStatus.PENDING, GenerationStatus.RUNNING]
@@ -235,6 +281,13 @@ def _serialize_input(validated_data):
 
 
 def _touch(job, **fields):
+    # A step/progress write is the only evidence that the generation is actually
+    # moving: heartbeat_at is refreshed on every pass, including the ones that
+    # report nothing new, so on its own it cannot tell "working" from "stuck on
+    # one stage" — and a real run on the live service sat on one stage for 25
+    # minutes.
+    if {"step", "step_detail", "progress_percent"} & set(fields):
+        fields.setdefault("step_changed_at", timezone.now())
     fields["heartbeat_at"] = timezone.now()
     for key, value in fields.items():
         setattr(job, key, value)
@@ -316,10 +369,13 @@ def _failure_message(exc):
         )
 
     if isinstance(exc, ProviderTransportError):
+        # Note this no longer covers "took too long": the wait has no deadline
+        # (providers/custom_llm.py::await_course_job), so reaching here means the
+        # service could not be reached at all, not that it was being slow.
         return (
-            "The AI service is temporarily unreachable or did not finish in time. "
-            "This is a problem on the service side, not with your course settings, "
-            f"so trying again in a few minutes usually works. ({exc})"
+            "The AI service could not be reached. This is a problem on the service "
+            "side, not with your course settings, so trying again in a few minutes "
+            f"usually works. ({exc})"
         )
 
     return (
@@ -391,22 +447,80 @@ def _map_progress(service_percent):
     return int(GENERATION_PROGRESS_FLOOR + fraction * (GENERATION_PROGRESS_CEILING - GENERATION_PROGRESS_FLOOR))
 
 
+def _log_event(job_id, event, state, now):
+    """One line per progress event, as *this app read it* — the parsed stage,
+    detail and progress that then become the step the admin sees.
+
+    The verbatim stream sits beside this in the log already
+    (providers/custom_llm.py logs every raw SSE line); this is the interpreted
+    view, which is what tells you whether a stage we are showing wrongly came
+    from a payload we misread. Changes go to INFO; an event repeating what the
+    last one said goes to DEBUG at most once every EVENT_LOG_REPEAT_SECONDS,
+    since the raw keep-alives are already on INFO and saying it twice helps
+    nobody.
+
+    `data` is the service's own per-event payload — empty or
+    {"keep_alive": true} on every event observed against the live instance, but
+    it is where anything richer (counts, per-module detail) would arrive, so it
+    is logged whenever it carries something other than the keep-alive flag."""
+
+    changed = (
+        event.stage != state.get("logged_stage")
+        or event.detail != state.get("logged_detail")
+        or event.progress != state.get("logged_progress")
+    )
+    if not changed and now - state.get("last_log", 0.0) < EVENT_LOG_REPEAT_SECONDS:
+        return
+
+    state["last_log"] = now
+    state["logged_stage"] = event.stage
+    state["logged_detail"] = event.detail
+    state["logged_progress"] = event.progress
+
+    payload = event.raw.get("data") if isinstance(event.raw, dict) else None
+    if isinstance(payload, dict):
+        payload = {key: value for key, value in payload.items() if key != "keep_alive"}
+
+    log = logger.info if changed else logger.debug
+    log(
+        "Job %s %s: stage=%r detail=%r progress=%r status=%r event=%r%s",
+        job_id,
+        "progress" if changed else "still",
+        event.stage,
+        event.detail,
+        event.progress,
+        event.status,
+        event.event_type,
+        f" data={json.dumps(payload, default=str)[:500]}" if payload else "",
+    )
+
+
 def _progress_handler(job):
     """Builds the on_event callback the provider calls for every SSE event (or
-    poll). It does three things: mirror the service's stage onto the row the
-    wizard polls, keep heartbeat_at fresh, and notice a cancellation.
+    poll). It does four things: log what the service reported, mirror its stage
+    onto the row the wizard polls, keep heartbeat_at fresh, and notice a
+    cancellation.
 
     Writes are throttled because an SSE stream can be far chattier than the 2s
     poll the wizard runs — without this, a talkative stream would turn into one
     UPDATE per event for a step label nobody can read that fast. A heartbeat is
     still written at least every PROGRESS_WRITE_INTERVAL_SECONDS, which is an
-    order of magnitude below AI_STALE_JOB_THRESHOLD_SECONDS."""
+    order of magnitude below AI_STALE_JOB_THRESHOLD_SECONDS. Logging is throttled
+    separately and more loosely — see _log_event."""
 
-    state = {"last_write": 0.0, "step": None, "percent": None}
+    state = {"last_write": 0.0, "step": None, "percent": None, "detail": None}
 
     def handle(event):
         now = time.monotonic()
+        _log_event(job.id, event, state, now)
+
         step = (event.label or "")[:255]
+        # Only when it says more than the step already does — the service sends
+        # stage "starting" with detail "Pipeline starting", and showing both
+        # would just be the same words twice.
+        detail = (event.detail or "")[:500]
+        if detail and detail.strip().lower() == step.strip().lower():
+            detail = ""
         percent = _map_progress(event.progress) if event.progress is not None else None
 
         # The service's progress is not monotonic — a real run reported
@@ -418,8 +532,10 @@ def _progress_handler(job):
         if percent is not None and state["percent"] is not None and percent < state["percent"]:
             percent = None
 
-        changed = (step and step != state["step"]) or (
-            percent is not None and percent != state["percent"]
+        changed = (
+            (step and step != state["step"])
+            or detail != state["detail"]
+            or (percent is not None and percent != state["percent"])
         )
         if not changed and now - state["last_write"] < PROGRESS_WRITE_INTERVAL_SECONDS:
             return
@@ -434,11 +550,15 @@ def _progress_handler(job):
         if step and step != state["step"]:
             state["step"] = step
             fields["step"] = step
+        if detail != state["detail"]:
+            state["detail"] = detail
+            fields["step_detail"] = detail
         if percent is not None and percent != state["percent"]:
             state["percent"] = percent
             fields["progress_percent"] = percent
 
-        # Even with nothing new to report, this refreshes heartbeat_at.
+        # Even with nothing new to report, this refreshes heartbeat_at (and
+        # _touch stamps step_changed_at whenever `fields` carries a real move).
         _touch(job, **fields)
 
     return handle
@@ -574,10 +694,14 @@ def _run_generation(job_id):
         external_job_id=str(external_job_id)[:128],
     )
 
-    # The long wait. The provider follows the service's SSE stream (falling back
-    # to polling if it drops) and calls the handler for every update, which is
-    # what keeps step/progress_percent moving and heartbeat_at fresh — there is
-    # no fixed-value "still working" placeholder here any more.
+    # The long wait — and it really is unbounded: the provider follows the job
+    # until the service gives a verdict, however long that takes, because this
+    # thread is not holding a request open and the admin is not holding a modal
+    # open either (the wizard can be closed and the banner on Admin -> Courses
+    # picks the same row back up). It follows the service's SSE stream (falling
+    # back to polling if it drops) and calls the handler for every update, which
+    # is what keeps step/progress_percent moving and heartbeat_at fresh — there
+    # is no fixed-value "still working" placeholder here any more.
     try:
         result_body = provider.await_course_job(external_job_id, on_event=_progress_handler(job))
     except _JobCancelled:

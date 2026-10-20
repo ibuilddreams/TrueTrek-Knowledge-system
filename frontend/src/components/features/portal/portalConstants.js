@@ -11,6 +11,7 @@ import {
   Scale,
   ShieldCheck,
   Swords,
+  Theater,
 } from "lucide-react";
 
 export const PORTAL_TABS = [
@@ -55,6 +56,12 @@ export const PORTAL_TABS = [
     label: "Daily Quests",
     icon: Swords,
     title: "Daily real-world brand-building tasks",
+  },
+  {
+    id: "wargamer",
+    label: "Tactical Wargamer",
+    icon: Theater,
+    title: "AI role-play practice for saying no without burning bridges",
   },
   {
     id: "brand-validator",

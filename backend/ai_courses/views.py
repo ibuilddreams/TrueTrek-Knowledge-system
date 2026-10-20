@@ -11,6 +11,7 @@ from .services import (
     GenerationQuotaError,
     cancel_generation,
     get_monthly_usage,
+    get_resumable_generation,
     reap_stale_jobs,
     retry_generation,
     start_generation,
@@ -79,6 +80,30 @@ class GenerationDetailView(generics.RetrieveAPIView):
 
         serializer = self.get_serializer(job)
         return success_response(serializer.data, message="Generation status fetched successfully")
+
+
+class GenerationLatestView(generics.GenericAPIView):
+    """The generation this admin should be offered on Admin -> Courses, or null.
+
+    Backs the resume banner there, which is what makes closing the wizard safe:
+    the job id the wizard held is gone the moment the admin switches tab or
+    reloads, but the generation is still running and this finds it again. Scoped
+    to the requesting admin — another admin's generation is not theirs to resume
+    or dismiss."""
+
+    permission_classes = [CanUseAICourseGeneration]
+    serializer_class = GenerationDetailSerializer
+
+    def get(self, request):
+        # Same reason as the detail view: this is polled while a generation runs,
+        # so a job orphaned by a mid-generation deploy restart gets noticed here
+        # too rather than showing a progress bar that will never move.
+        reap_stale_jobs()
+        job = get_resumable_generation(request.user)
+        return success_response(
+            self.get_serializer(job).data if job else None,
+            message="Latest AI course generation fetched successfully",
+        )
 
 
 class GenerationCancelView(generics.GenericAPIView):

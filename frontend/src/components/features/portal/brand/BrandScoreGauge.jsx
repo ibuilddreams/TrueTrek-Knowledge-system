@@ -11,7 +11,10 @@ const BANDS = [
 const RADIUS = 52;
 const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
 
-export default function BrandScoreGauge({ score = 0, verdict }) {
+// `caption` labels what the number measures. It defaults to the Brand
+// Validator's own wording so every existing call site is unchanged; the
+// Tactical Wargamer's report card passes its own.
+export default function BrandScoreGauge({ score = 0, verdict, caption = "Sponsor readiness", ariaLabel }) {
   const safeScore = Math.max(0, Math.min(100, Number(score) || 0));
   const band = BANDS.find((entry) => safeScore >= entry.min) || BANDS[BANDS.length - 1];
   const dashOffset = CIRCUMFERENCE * (1 - safeScore / 100);
@@ -23,7 +26,7 @@ export default function BrandScoreGauge({ score = 0, verdict }) {
           viewBox="0 0 120 120"
           className="w-full h-full -rotate-90"
           role="img"
-          aria-label={`Sponsor-readiness score: ${safeScore} out of 100`}
+          aria-label={ariaLabel || `${caption} score: ${safeScore} out of 100`}
         >
           <circle
             cx="60"
@@ -60,9 +63,7 @@ export default function BrandScoreGauge({ score = 0, verdict }) {
       {verdict && (
         <p className="text-sm font-serif font-bold text-ink leading-snug max-w-[220px]">{verdict}</p>
       )}
-      <p className="text-[10px] font-mono uppercase tracking-widest text-muted">
-        Sponsor readiness
-      </p>
+      <p className="text-[10px] font-mono uppercase tracking-widest text-muted">{caption}</p>
     </div>
   );
 }

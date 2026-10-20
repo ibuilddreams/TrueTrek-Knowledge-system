@@ -27,6 +27,11 @@ import {
   cancelCourseGeneration,
   retryCourseGeneration,
 } from "@/services/aiCoursesService";
+import {
+  STALLED_AFTER_SECONDS,
+  formatElapsed,
+  useElapsedSeconds,
+} from "@/hooks/admin/useAiCourseGeneration";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { sanitizeAmountInput, formatAmountOnBlur } from "@/lib/amountInput";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -89,12 +94,6 @@ const LABEL_CLASS =
 
 const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
 
-function formatElapsed(totalSeconds) {
-  const minutes = Math.floor(totalSeconds / 60);
-  const seconds = totalSeconds % 60;
-  return minutes > 0 ? `${minutes}m ${seconds}s` : `${seconds}s`;
-}
-
 function StepDots({ step }) {
   return (
     <div className="flex items-center gap-2 mb-5">
@@ -125,7 +124,23 @@ function StepDots({ step }) {
   );
 }
 
-export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse }) {
+export default function AiCourseModal({
+  isOpen,
+  onClose,
+  onSaved,
+  onReviewCourse,
+  // A generation already running (or just finished) that this wizard should open
+  // onto instead of a blank form — see AiGenerationBanner. The wizard no longer
+  // owns the only reference to a running job, which is what lets it be closed.
+  resumeJobId = null,
+  // Fired whenever the set of this admin's generations changes (started,
+  // retried, cancelled) so the banner picks the new one up immediately instead
+  // of on its next poll.
+  onJobChanged,
+  // Fired with the job id when the admin closes the wizard on a finished
+  // generation — they have now seen how it ended, so the banner can retire it.
+  onResultSeen,
+}) {
   const queryClient = useQueryClient();
 
   const [step, setStep] = useState(1);
@@ -135,18 +150,29 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
   const [selectedInstructorIds, setSelectedInstructorIds] = useState([]);
   const [objectives, setObjectives] = useState([]);
   const [fieldErrors, setFieldErrors] = useState({});
-  const [displayProgress, setDisplayProgress] = useState(5);
-  const [elapsedSeconds, setElapsedSeconds] = useState(0);
   const savedRef = useRef(false);
-  const generationStartRef = useRef(null);
 
   useEffect(() => {
     if (!isOpen) return;
-    // Skip the reset while a generation is still in flight, so "Hide" (which
-    // closes the modal without cancelling the job) can be undone by reopening
-    // it — otherwise the poll state and job_id would be wiped and the admin
-    // could never see the result of a generation they didn't explicitly cancel.
-    if (phase === "generating") return;
+    // Skip the reset while this wizard's own generation is still in flight, so
+    // "Hide" (which closes the modal without cancelling the job) can be undone
+    // by reopening it — otherwise the poll state and job_id would be wiped and
+    // the admin could never see the result of a generation they didn't
+    // explicitly cancel.
+    if (phase === "generating" && (!resumeJobId || resumeJobId === jobId)) return;
+
+    if (resumeJobId) {
+      // Opened onto an existing generation. "generating" is right even when that
+      // job has already finished: the first poll comes back terminal and the
+      // effect below moves it straight to "result", which is the same path a
+      // job that finishes while the modal is open takes.
+      setJobId(resumeJobId);
+      setPhase("generating");
+      setFieldErrors({});
+      savedRef.current = false;
+      return;
+    }
+
     setStep(1);
     setPhase("form");
     setJobId(null);
@@ -156,7 +182,7 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
     setFieldErrors({});
     savedRef.current = false;
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isOpen]);
+  }, [isOpen, resumeJobId]);
 
   const categoriesQuery = useQuery({
     queryKey: ["categories"],
@@ -221,6 +247,26 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
 
   const job = generationQuery.data;
 
+  // From the server's own timestamps, not from "we pressed Generate just now":
+  // a resumed generation may have been running long before this tab opened.
+  const elapsedSeconds = useElapsedSeconds(
+    job?.started_at || job?.created_at,
+    phase === "generating"
+  );
+  // The server's own number, nothing else. This used to tick a cosmetic value
+  // upward between progress events so the bar never looked frozen, but that
+  // value is also what AiGenerationBanner shows from the same row — and it ran
+  // far ahead of reality (65% in the wizard against 20% on the page behind it),
+  // then parked at its ceiling, which is the frozen bar it was meant to avoid
+  // plus a wrong number. The spinner, the stage label and the ticking elapsed
+  // time are what say "still working"; the bar says how far along it is.
+  const progressPercent = job?.progress_percent || 0;
+  // Seconds since the service last reported anything new — step_changed_at moves
+  // only on a real stage/progress change, unlike the row's heartbeat.
+  const sinceLastChange = useElapsedSeconds(job?.step_changed_at, phase === "generating");
+  const isStalled =
+    phase === "generating" && Boolean(job?.step_changed_at) && sinceLastChange >= STALLED_AFTER_SECONDS;
+
   useEffect(() => {
     if (phase !== "generating" || !job) return;
     if (!TERMINAL_STATUSES.includes(job.status)) return;
@@ -233,37 +279,9 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
     }
   }, [phase, job, onSaved, queryClient]);
 
-  // While the AI service is generating, the bar is driven by that service's own
-  // progress events, which can be coarse (or absent) and can sit at one value for
-  // a long stretch. Left alone that reads as "frozen," not "working," so this ticks
-  // a cosmetic value upward in the gaps, always yielding immediately to a real,
-  // higher value from the server and capped at 65 — the ceiling the backend maps
-  // the service's progress onto (ai_courses/services.py), so it can never run past
-  // the next real milestone (70%, validation) and overstate actual progress.
-  //
-  // Deliberately keyed on the status and the range rather than on a step label:
-  // the labels now come from the AI service, so matching one would silently stop
-  // working the day that service renames a stage.
-  useEffect(() => {
-    if (phase !== "generating") return;
-    const interval = setInterval(() => {
-      if (generationStartRef.current) {
-        setElapsedSeconds(Math.floor((Date.now() - generationStartRef.current) / 1000));
-      }
-      setDisplayProgress((prev) => {
-        const serverValue = job?.progress_percent ?? 5;
-        if (serverValue > prev) return serverValue;
-        if (job?.status === "RUNNING" && prev >= 15 && prev < 65) {
-          return Math.min(65, prev + 1);
-        }
-        return prev;
-      });
-    }, 1500);
-    return () => clearInterval(interval);
-  }, [phase, job]);
-
   const handleClose = () => {
     if (startMutation.isPending) return;
+    if (phase === "result" && jobId) onResultSeen?.(jobId);
     onClose();
   };
 
@@ -369,11 +387,9 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
 
     try {
       const response = await startMutation.mutateAsync(buildPayload());
-      generationStartRef.current = Date.now();
-      setDisplayProgress(5);
-      setElapsedSeconds(0);
       setJobId(response?.data?.job_id);
       setPhase("generating");
+      onJobChanged?.();
     } catch (error) {
       const apiFieldErrors = error?.data?.data;
       if (apiFieldErrors && typeof apiFieldErrors === "object") {
@@ -393,6 +409,7 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
     try {
       await cancelMutation.mutateAsync(jobId);
       toastSuccess("Generation cancelled.");
+      onJobChanged?.();
     } catch (error) {
       toastError(getApiErrorMessage(error, "Unable to cancel generation."));
     }
@@ -402,12 +419,10 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
     if (!jobId) return;
     try {
       const response = await retryMutation.mutateAsync(jobId);
-      generationStartRef.current = Date.now();
-      setDisplayProgress(5);
-      setElapsedSeconds(0);
       setJobId(response?.data?.job_id);
       savedRef.current = false;
       setPhase("generating");
+      onJobChanged?.();
     } catch (error) {
       toastError(getApiErrorMessage(error, "Unable to restart generation."));
     }
@@ -415,7 +430,7 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
 
   const handleReviewAndEdit = () => {
     if (job?.course) onReviewCourse?.(job.course);
-    onClose();
+    handleClose();
   };
 
   const isSubmitting = startMutation.isPending;
@@ -761,21 +776,36 @@ export default function AiCourseModal({ isOpen, onClose, onSaved, onReviewCourse
             <div className="w-14 h-14 rounded-full border-4 border-porcelain border-t-pine animate-spin" />
             <div>
               <p className="text-sm font-semibold text-ink">{job?.step || "Starting..."}</p>
+              {/* The AI service reports a coarse stage and a fuller sentence for
+                  the same moment; this is the sentence, shown only when it says
+                  more than the step above already does. */}
+              {job?.step_detail && (
+                <p className="text-xs text-ink/70 mt-1">{job.step_detail}</p>
+              )}
               <p className="text-xs font-mono text-muted mt-1">
-                This can take several minutes — feel free to wait, generation continues even if you close this window.
+                This can take a while, and it is never given up on. Hide this and keep
+                working — the Courses page tracks it and tells you how it ended.
               </p>
             </div>
             <div className="w-full">
               <div className="w-full h-2 bg-porcelain rounded-full overflow-hidden">
                 <div
                   className="h-full bg-pine transition-all duration-500"
-                  style={{ width: `${displayProgress}%` }}
+                  style={{ width: `${progressPercent}%` }}
                 />
               </div>
               <div className="flex items-center justify-between mt-2">
-                <span className="text-[11px] font-mono text-muted">{displayProgress}%</span>
+                <span className="text-[11px] font-mono text-muted">{progressPercent}%</span>
                 <span className="text-[11px] font-mono text-muted">{formatElapsed(elapsedSeconds)} elapsed</span>
               </div>
+              {isStalled && (
+                <p className="mt-3 text-[11px] font-mono text-gold leading-relaxed">
+                  The AI service has not reported new progress for{" "}
+                  {formatElapsed(sinceLastChange)}. The job is still being waited on —
+                  nothing is given up on a slow generation — but if this stays still for
+                  a long time the service itself is worth checking.
+                </p>
+              )}
             </div>
           </div>
 

@@ -29,7 +29,17 @@ class AICourseGeneration(BaseModel):
         max_length=20, choices=GenerationStatus.choices, default=GenerationStatus.PENDING
     )
     step = models.CharField(max_length=255, blank=True)
+    # The AI service reports two things for the same moment: a coarse stage
+    # ("starting") and a fuller sentence ("Pipeline starting"). `step` holds the
+    # tidied stage; this holds the sentence when it says more, so the wizard can
+    # show both instead of dropping one of them.
+    step_detail = models.CharField(max_length=500, blank=True)
     progress_percent = models.PositiveIntegerField(default=0)
+    # When step/progress last actually moved — not the same as heartbeat_at,
+    # which is refreshed by every poll whether anything changed or not. A real
+    # run on the live service sat on one stage for 25 minutes, so "still at 5%"
+    # and "stuck" look identical without this.
+    step_changed_at = models.DateTimeField(null=True, blank=True)
 
     provider = models.CharField(max_length=50, blank=True)
     model_name = models.CharField(max_length=100, blank=True)

@@ -474,10 +474,98 @@ class RunGenerationTests(TestCase):
             fields["progress_percent"] for fields in seen if "progress_percent" in fields
         ]
         self.assertEqual(percents, sorted(percents))
-        # The later stages are still reported even though their progress was lower.
+        # The later stages are still reported even though their progress was
+        # lower — tidied, because the service's stage vocabulary is machine
+        # spelling and this is the line the admin reads as the current step.
         steps = [fields.get("step") for fields in seen]
-        self.assertIn("in_progress", steps)
-        self.assertIn("drafting", steps)
+        self.assertIn("In progress", steps)
+        self.assertIn("Drafting", steps)
+        self.assertNotIn("in_progress", steps)
+
+    def test_the_services_fuller_detail_is_kept_beside_the_step(self):
+        # The live service sends both for the same moment: stage "starting" and
+        # detail "Pipeline starting". The wizard shows the stage as the step and
+        # the sentence under it, so neither is thrown away.
+        job = self._create_job()
+        provider = StubCourseProvider(
+            events=[
+                JobEvent(
+                    status="running",
+                    progress=20,
+                    stage="drafting",
+                    detail="Writing module 2 of 3",
+                )
+            ]
+        )
+        with patch("ai_courses.services.get_course_provider", return_value=provider):
+            services._run_generation(job.id)
+
+        job.refresh_from_db()
+        self.assertEqual(job.course.ai_generations.first().id, job.id)
+        history = AICourseGeneration.objects.get(pk=job.id)
+        self.assertIn("Writing module 2 of 3", history.step_detail)
+
+    def test_detail_that_only_repeats_the_step_is_not_stored_twice(self):
+        job = self._create_job()
+        provider = StubCourseProvider(
+            events=[
+                JobEvent(
+                    status="running", progress=20, stage="starting", detail="Starting"
+                )
+            ]
+        )
+        seen = []
+        original_touch = services._touch
+
+        def recording_touch(job_arg, **fields):
+            seen.append(fields)
+            return original_touch(job_arg, **fields)
+
+        with patch("ai_courses.services.get_course_provider", return_value=provider):
+            with patch("ai_courses.services._touch", side_effect=recording_touch):
+                services._run_generation(job.id)
+
+        details = [fields.get("step_detail") for fields in seen if "step_detail" in fields]
+        self.assertNotIn("Starting", details)
+
+    def test_step_changed_at_only_moves_when_something_actually_moved(self):
+        # heartbeat_at is written on every pass, including the ones reporting
+        # nothing new, so it cannot tell "working" from "stuck on one stage".
+        job = self._create_job()
+        services._touch(job, step="Generating course", progress_percent=15)
+        job.refresh_from_db()
+        moved_at = job.step_changed_at
+        self.assertIsNotNone(moved_at)
+
+        services._touch(job)
+        job.refresh_from_db()
+        self.assertEqual(job.step_changed_at, moved_at)
+        self.assertGreater(job.heartbeat_at, moved_at)
+
+    def test_every_progress_event_is_logged_so_a_run_can_be_followed(self):
+        job = self._create_job()
+        provider = StubCourseProvider(
+            events=[
+                JobEvent(status="running", progress=5, stage="starting", detail="Pipeline starting"),
+                JobEvent(
+                    status="running",
+                    progress=40,
+                    stage="drafting",
+                    detail="Writing module 2 of 3",
+                    raw={"data": {"modules_completed": 2, "modules_total": 3}},
+                ),
+            ]
+        )
+        with patch("ai_courses.services.get_course_provider", return_value=provider):
+            with self.assertLogs("ai_courses", level="INFO") as captured:
+                services._run_generation(job.id)
+
+        logged = "\n".join(captured.output)
+        self.assertIn("stage='starting'", logged)
+        self.assertIn("detail='Writing module 2 of 3'", logged)
+        # The service's own per-event payload is where anything richer would
+        # arrive, so it is logged rather than discarded with the event.
+        self.assertIn("modules_completed", logged)
 
     def test_usage_and_model_are_read_from_the_services_metrics_block(self):
         job = self._create_job()
@@ -615,18 +703,22 @@ class RunGenerationTests(TestCase):
         self.assertIn("the service ran out of context", job.error_message)
         self.assertIsNone(job.course)
 
-    def test_a_timed_out_wait_fails_cleanly(self):
+    def test_an_unreachable_service_while_waiting_fails_cleanly(self):
+        # Reaching here no longer means "the generation was slow" — the wait has
+        # no deadline — so the message must not tell the admin it timed out.
         job = self._create_job()
         self._run_provider(
             job,
             StubCourseProvider(
-                await_error=ProviderTransportError("did not finish within 900s")
+                await_error=ProviderTransportError("connection reset by peer")
             ),
         )
 
         job.refresh_from_db()
         self.assertEqual(job.status, GenerationStatus.FAILED)
-        self.assertIn("did not finish within 900s", job.error_message)
+        self.assertIn("could not be reached", job.error_message)
+        self.assertIn("connection reset by peer", job.error_message)
+        self.assertNotIn("did not finish", job.error_message)
         self.assertIsNone(job.course)
 
     def test_get_course_provider_raising_directly_is_caught_cleanly(self):

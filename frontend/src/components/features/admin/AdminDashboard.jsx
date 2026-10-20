@@ -23,6 +23,7 @@ import {
   ShieldAlert,
   Swords,
   Tag,
+  Theater,
   UserPlus,
   Users,
 } from "lucide-react";
@@ -56,6 +57,7 @@ import RedemptionsTab from "@/components/features/admin/tabs/RedemptionsTab";
 import StudentPointsTab from "@/components/features/admin/tabs/StudentPointsTab";
 import DailyDrillsTab from "@/components/features/admin/tabs/DailyDrillsTab";
 import QuestsTab from "@/components/features/admin/tabs/QuestsTab";
+import WargamerTab from "@/components/features/admin/tabs/WargamerTab";
 import LiveSessionsTab from "@/components/features/admin/tabs/LiveSessionsTab";
 import InvitationsTab from "@/components/features/admin/tabs/InvitationsTab";
 import TestimonialsTab from "@/components/features/admin/tabs/TestimonialsTab";
@@ -79,6 +81,7 @@ const TABS = [
   { id: "questionnaire", label: "Questionnaire", icon: HelpCircle },
   { id: "daily-drills", label: "Daily Drills", icon: Calendar },
   { id: "quests", label: "Daily Quests", icon: Swords },
+  { id: "wargamer", label: "Tactical Wargamer", icon: Theater },
   { id: "live-sessions", label: "War Room Live", icon: Mic },
   { id: "rewards", label: "Rewards", icon: Gift },
   { id: "redemptions", label: "Redemptions", icon: ClipboardList },
@@ -105,6 +108,7 @@ const TAB_COMPONENTS = {
   questionnaire: QuestionnaireTab,
   "daily-drills": DailyDrillsTab,
   quests: QuestsTab,
+  wargamer: WargamerTab,
   "live-sessions": LiveSessionsTab,
   rewards: RewardsTab,
   redemptions: RedemptionsTab,

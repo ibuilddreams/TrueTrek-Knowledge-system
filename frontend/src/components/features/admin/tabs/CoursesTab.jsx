@@ -13,6 +13,10 @@ import {
 } from "lucide-react";
 import { useAdminCourses } from "@/hooks/admin/useAdminCourses";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
+import {
+  isGenerationRunning,
+  useAiCourseGenerationWatcher,
+} from "@/hooks/admin/useAiCourseGeneration";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { useSortConfig } from "@/hooks/useSortConfig";
 import { sortRows } from "@/lib/sorting";
@@ -33,6 +37,7 @@ import CourseDetailModal from "@/components/features/admin/CourseDetailModal";
 import EnrollStudentModal from "@/components/features/admin/EnrollStudentModal";
 import CreateCourseModal from "@/components/features/admin/CreateCourseModal";
 import AiCourseModal from "@/components/features/admin/AiCourseModal";
+import AiGenerationBanner from "@/components/features/admin/AiGenerationBanner";
 import UpdateCourseStatusModal from "@/components/features/admin/UpdateCourseStatusModal";
 import ManageModulesModal from "@/components/features/admin/ManageModulesModal";
 
@@ -69,6 +74,7 @@ export default function CoursesTab() {
   const [isDeleting, setIsDeleting] = useState(false);
   const [isCreateModalOpen, setIsCreateModalOpen] = useState(false);
   const [isAiModalOpen, setIsAiModalOpen] = useState(false);
+  const [aiResumeJobId, setAiResumeJobId] = useState(null);
   const [managingModulesCourse, setManagingModulesCourse] = useState(null);
 
   useEffect(() => {
@@ -113,6 +119,37 @@ export default function CoursesTab() {
   useEffect(() => {
     setPage(1);
   }, [debouncedSearch, statusFilter, categoryFilter, tagFilter, sortConfig]);
+
+  // AI generation outlives the wizard that started it (the backend thread has no
+  // deadline and keeps running after the modal closes), so this asks the server
+  // what this admin has in flight rather than relying on state that a tab switch
+  // would throw away. onSucceeded is what puts a course generated while the
+  // wizard was closed into the table without a manual refresh.
+  const {
+    job: aiJob,
+    visibleJob: aiBannerJob,
+    dismiss: dismissAiGeneration,
+    refetch: refetchAiGeneration,
+  } = useAiCourseGenerationWatcher({ onSucceeded: () => refreshCourses() });
+
+  // A generation already in flight opens the wizard onto *that* job rather than
+  // a blank form: only one generation per admin is allowed at a time, so a
+  // second form could end only in a 409.
+  const openAiWizard = () => {
+    setAiResumeJobId(isGenerationRunning(aiJob) ? aiJob.id : null);
+    setIsAiModalOpen(true);
+  };
+
+  const openAiGeneration = () => {
+    if (!aiBannerJob) return;
+    setAiResumeJobId(aiBannerJob.id);
+    setIsAiModalOpen(true);
+  };
+
+  const closeAiModal = () => {
+    setIsAiModalOpen(false);
+    setAiResumeJobId(null);
+  };
 
   const categoryFilterOptions = [
     { value: "", label: "All Categories" },
@@ -301,7 +338,7 @@ export default function CoursesTab() {
         <div className="flex flex-col sm:flex-row gap-2 shrink-0">
           <button
             type="button"
-            onClick={() => setIsAiModalOpen(true)}
+            onClick={openAiWizard}
             className="px-4 py-2.5 bg-paper hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-xl tracking-wider border border-line shadow-sm transition-all flex items-center gap-2"
             title="Generate a complete draft course with AI"
             aria-label="Generate a complete draft course with AI"
@@ -321,6 +358,14 @@ export default function CoursesTab() {
           </button>
         </div>
       </div>
+
+      {aiBannerJob && (
+        <AiGenerationBanner
+          job={aiBannerJob}
+          onOpen={openAiGeneration}
+          onDismiss={() => dismissAiGeneration(aiBannerJob.id)}
+        />
+      )}
 
       <div className="bg-paper border border-line rounded-card shadow-soft p-6">
         <DataTable size="lg"
@@ -377,9 +422,12 @@ export default function CoursesTab() {
 
       <AiCourseModal
         isOpen={isAiModalOpen}
-        onClose={() => setIsAiModalOpen(false)}
+        resumeJobId={aiResumeJobId}
+        onClose={closeAiModal}
         onSaved={refreshCourses}
         onReviewCourse={(course) => setManagingModulesCourse(course)}
+        onJobChanged={refetchAiGeneration}
+        onResultSeen={dismissAiGeneration}
       />
 
       <UpdateCourseStatusModal

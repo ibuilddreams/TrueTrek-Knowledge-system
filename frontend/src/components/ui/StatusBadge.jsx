@@ -13,6 +13,7 @@ const STATUS_COLORS = {
   FAILED: "bg-rose/35 text-clay border-clay/25",
   NOT_ATTEMPTED: "bg-porcelain text-muted border-line",
   IN_PROGRESS: "bg-gold/12 text-gold border-gold/25",
+  EVALUATING: "bg-gold/12 text-gold border-gold/25",
   SUBMITTED: "bg-gold/12 text-gold border-gold/25",
   GRADED: "bg-sage/40 text-pine border-pine/20",
   EXPIRED: "bg-clay/12 text-clay border-clay/25",
