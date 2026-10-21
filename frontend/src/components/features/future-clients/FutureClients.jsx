@@ -221,10 +221,10 @@ export default function FutureClients() {
                 PORTFOLIO PLACEMENT PATHWAYS
               </span>
               <h3 className="text-2xl sm:text-3xl font-serif font-light tracking-tight leading-snug">
-                Why Submit Credentials For Cool Nerds Evaluation?
+                Why Submit Credentials For Cool Nerdz Evaluation?
               </h3>
               <p className="text-paper/75 text-sm sm:text-sm font-light leading-relaxed">
-                Cool Nerds represents the premier administrative and legal
+                Cool Nerdz represents the premier administrative and legal
                 compliance portal for selective high-performance
                 scholar-athletes. Because platform placement is protected by
                 strict scholastic quotas and regional compliance caps, we
@@ -412,7 +412,7 @@ export default function FutureClients() {
                       </button>
                     </div>
                     <p className="text-xs text-muted font-light">
-                      This becomes your Cool Nerds Portal login once your
+                      This becomes your Cool Nerdz Portal login once your
                       application is approved.
                     </p>
                   </div>
@@ -433,7 +433,7 @@ export default function FutureClients() {
                   <div className="p-3 bg-sage/25 border border-line rounded-card flex items-start gap-2.5 text-xs text-muted leading-relaxed font-light">
                     <ShieldAlert className="w-4 h-4 text-pine mt-0.5 shrink-0" />
                     <span>
-                      By submitting this application, you authorize Cool Nerds
+                      By submitting this application, you authorize Cool Nerdz
                       to review your information for admission. Your student
                       account is created only once an administrator approves
                       your application.
@@ -715,7 +715,7 @@ export default function FutureClients() {
         onClose={() => setIsTestimonialModalOpen(false)}
         icon={MessageSquarePlus}
         title="Share Your Experience"
-        subtitle="Tell future clients about your journey with Cool Nerds."
+        subtitle="Tell future clients about your journey with Cool Nerdz."
       >
         <TestimonialForm onSubmitted={() => setIsTestimonialModalOpen(false)} />
       </Modal>

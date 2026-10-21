@@ -150,7 +150,7 @@ export default function TestimonialForm({ onSubmitted }) {
         <textarea
           value={quote}
           onChange={(e) => setQuote(e.target.value)}
-          placeholder="Share your experience with Cool Nerds..."
+          placeholder="Share your experience with Cool Nerdz..."
           required
           rows={4}
           maxLength={2000}

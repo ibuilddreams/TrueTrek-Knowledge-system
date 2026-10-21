@@ -69,7 +69,7 @@ export default function Footer() {
 
         <div className="flex flex-col md:flex-row justify-between items-center gap-6 text-xs text-sage/60 font-sans">
           <p>
-            &copy; {new Date().getFullYear()} Cool Nerds. All rights
+            &copy; {new Date().getFullYear()} Cool Nerdz. All rights
             or covenants reserved. Developed with Google AI Studio.
           </p>
           <div className="flex gap-4">

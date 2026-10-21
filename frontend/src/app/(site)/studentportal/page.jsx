@@ -23,7 +23,7 @@ export default function StudentPortalPage() {
   }, [isResolving, isAuthenticated, role, router]);
 
   if (isResolving) {
-    return <Loader label="Loading Cool Nerds Portal..." />;
+    return <Loader label="Loading Cool Nerdz Portal..." />;
   }
 
   if (isAuthenticated && role !== AUTH_ROLES.STUDENT) {

@@ -1,7 +1,7 @@
 import WishlistPage from "@/components/features/wishlist/WishlistPage";
 
 export const metadata = {
-  title: "Wishlist | Cool Nerds",
+  title: "Wishlist | Cool Nerdz",
   description: "Courses you've saved to buy later",
 };
 

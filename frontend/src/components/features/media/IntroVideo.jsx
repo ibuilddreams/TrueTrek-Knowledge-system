@@ -25,13 +25,13 @@ const CHANNELS = [
     durationString: '06:12',
     videoUrl: '/welcome.mp4',
     chapters: [
-      { time: 0, title: 'Introduction to Cool Nerds' },
+      { time: 0, title: 'Introduction to Cool Nerdz' },
       { time: 45, title: 'The 9-Tier Framework Vision' },
       { time: 135, title: 'Bridging Law, Wealth, and Personal Drive' },
       { time: 270, title: 'Stewardship of Generational Legacies' }
     ],
     transcript: [
-      { time: 0, text: 'Welcome, pathfinders, to the core orientation walkthrough for Cool Nerds.' },
+      { time: 0, text: 'Welcome, pathfinders, to the core orientation walkthrough for Cool Nerdz.' },
       { time: 11, text: 'This platform is structured around a simple, powerful truth.' },
       { time: 22, text: 'Raw craft is not enough; survival in elite networks requires compliance readiness.' },
       { time: 33, text: 'We designed the 11 Tiers to serve of immediate, practical roadmap metrics.' },
@@ -41,7 +41,7 @@ const CHANNELS = [
       { time: 105, text: 'And independent venture founders formulate safe corporate structures.' },
       { time: 135, text: 'We do not sell general advice. We review redline contract covenants.' },
       { time: 160, text: 'Listen as Coach Vance Miller, Amanda Ross, Esq., and Simone Chen guide each scenario.' },
-      { time: 185, text: 'This video introduces how you can navigate the daily Cool Nerds Portal drills.' },
+      { time: 185, text: 'This video introduces how you can navigate the daily Cool Nerdz Portal drills.' },
       { time: 220, text: 'Make decisions on actual corporate, clinical, and administrative dilemmas.' },
       { time: 270, text: 'Our mission is simple: secure your eligibility, scale your assets, and build your legacy.' },
       { time: 310, text: 'We invite you to log into your portal today and begin your elite journey.' }
@@ -76,7 +76,7 @@ const CHANNELS = [
   },
   {
     id: 'ch-portal',
-    title: 'The Cool Nerds Portal & Live Drills Walkthrough',
+    title: 'The Cool Nerdz Portal & Live Drills Walkthrough',
     speaker: 'Dr. Simone Chen, Head of Neurobiology',
     durationString: '05:30',
     videoUrl: '/welcome.mp4',

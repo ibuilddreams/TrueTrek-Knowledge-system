@@ -6,6 +6,7 @@ import CurriculumFilters from "./CurriculumFilters";
 import CurriculumCourseCard from "./CurriculumCourseCard";
 import { getPublicCourses, getPublicCourseFilters } from "@/services/coursesService";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { usePaginationAnchor } from "@/hooks/usePaginationAnchor";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { useCart } from "@/hooks/useCart";
 import { useAuth } from "@/hooks/useAuth";
@@ -20,6 +21,7 @@ export default function Curriculum() {
   const query = useDebouncedValue(search);
   const [filters, setFilters] = useState(DEFAULT_FILTERS);
   const [page, setPage] = useState(1);
+  const [resultsRef, changePage] = usePaginationAnchor(setPage);
   const [saved, setSaved] = useState([]);
   const [savedOnly, setSavedOnly] = useState(false);
   const { isAuthenticated, isStudent } = useAuth();
@@ -73,7 +75,7 @@ export default function Curriculum() {
           onToggleSaved={() => setSavedOnly(!savedOnly)}
         />
         {facets.isError && <p role="alert" className="mt-3 text-sm text-red-700">Filters could not load. <button type="button" className="underline" onClick={() => facets.refetch()}>Retry filters</button></p>}
-        <p className="my-3 text-xs text-zinc-500" aria-live="polite">{coursesQuery.isLoading ? "Loading courses…" : `${count} course${count === 1 ? "" : "s"}`}{savedOnly ? " · Showing saved courses on this page" : ""}</p>
+        <p ref={resultsRef} className="my-3 scroll-mt-28 text-xs text-zinc-500" aria-live="polite">{coursesQuery.isLoading ? "Loading courses…" : `${count} course${count === 1 ? "" : "s"}`}{savedOnly ? " · Showing saved courses on this page" : ""}</p>
         {coursesQuery.isLoading ? <Loader fullScreen={false} label="Loading curriculum..." /> : coursesQuery.isError ? (
           <div role="alert" className="rounded-2xl border border-line bg-paper p-8 text-center"><p>{getApiErrorMessage(coursesQuery.error, "Unable to load curriculum.")}</p><button type="button" onClick={() => coursesQuery.refetch()} className="mt-4 text-pine underline">Try again</button></div>
         ) : courses.length === 0 ? (
@@ -94,7 +96,7 @@ export default function Curriculum() {
             ))}
           </div>
         )}
-        {!coursesQuery.isError && !savedOnly && count > PAGE_SIZE && <nav aria-label="Course pages" className="mt-8 flex items-center justify-center gap-5"><button type="button" disabled={page <= 1 || coursesQuery.isFetching} onClick={() => setPage(page - 1)} className="rounded-xl border border-line bg-paper px-4 py-2 disabled:opacity-40">Previous</button><span className="text-sm">Page {page} of {totalPages}</span><button type="button" disabled={page >= totalPages || coursesQuery.isFetching} onClick={() => setPage(page + 1)} className="rounded-xl border border-line bg-paper px-4 py-2 disabled:opacity-40">Next</button></nav>}
+        {!coursesQuery.isError && !savedOnly && count > PAGE_SIZE && <nav aria-label="Course pages" className="mt-8 flex items-center justify-center gap-5"><button type="button" disabled={page <= 1 || coursesQuery.isFetching} onClick={() => changePage(page - 1)} className="rounded-xl border border-line bg-paper px-4 py-2 disabled:opacity-40">Previous</button><span className="text-sm">Page {page} of {totalPages}</span><button type="button" disabled={page >= totalPages || coursesQuery.isFetching} onClick={() => changePage(page + 1)} className="rounded-xl border border-line bg-paper px-4 py-2 disabled:opacity-40">Next</button></nav>}
       </div>
     </div>
   );

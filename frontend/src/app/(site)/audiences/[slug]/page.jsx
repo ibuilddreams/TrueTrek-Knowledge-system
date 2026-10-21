@@ -13,11 +13,11 @@ export async function generateMetadata({ params }) {
   const profile = getAudienceProfile(slug);
 
   if (!profile) {
-    return { title: "Audience Not Found | Cool Nerds" };
+    return { title: "Audience Not Found | Cool Nerdz" };
   }
 
   return {
-    title: `${profile.title} | Cool Nerds`,
+    title: `${profile.title} | Cool Nerdz`,
     description: profile.description,
   };
 }

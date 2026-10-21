@@ -1,7 +1,7 @@
 import PathwaysStore from "@/components/features/pathways/PathwaysStore";
 
 export const metadata = {
-  title: "Pathways | Cool Nerds",
+  title: "Pathways | Cool Nerdz",
   description: "Bundled learning pathways across multiple courses",
 };
 

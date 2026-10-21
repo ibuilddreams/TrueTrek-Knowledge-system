@@ -18,6 +18,7 @@ import {
   useAiCourseGenerationWatcher,
 } from "@/hooks/admin/useAiCourseGeneration";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { usePaginationAnchor } from "@/hooks/usePaginationAnchor";
 import { useSortConfig } from "@/hooks/useSortConfig";
 import { sortRows } from "@/lib/sorting";
 import { deleteCourse } from "@/services/coursesService";
@@ -64,6 +65,7 @@ export default function CoursesTab() {
   const [categories, setCategories] = useState([]);
   const [tags, setTags] = useState([]);
   const [page, setPage] = useState(1);
+  const [tableRef, changePage] = usePaginationAnchor(setPage);
   const [sortConfig, toggleSort] = useSortConfig();
 
   const [viewCourseId, setViewCourseId] = useState(null);
@@ -367,7 +369,7 @@ export default function CoursesTab() {
         />
       )}
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
+      <div ref={tableRef} className="bg-paper border border-line rounded-card shadow-soft p-6 scroll-mt-28">
         <DataTable size="lg"
           columns={columns}
           rows={paginatedCourses}
@@ -382,7 +384,7 @@ export default function CoursesTab() {
         <Pagination size="lg"
           page={page}
           totalPages={totalPages}
-          onPageChange={setPage}
+          onPageChange={changePage}
           totalLabel={`${items.length} course${items.length === 1 ? "" : "s"}`}
         />
       </div>

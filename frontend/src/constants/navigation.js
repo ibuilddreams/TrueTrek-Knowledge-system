@@ -7,7 +7,7 @@ export const NAV_LINKS = [
     href: ROUTES.HOME,
     label: "Home",
     mobileLabel: "Home Orientation",
-    title: "View the Cool Nerds program orientation and overview",
+    title: "View the Cool Nerdz program orientation and overview",
   },
   {
     id: "nav-link-curriculum",
@@ -47,7 +47,7 @@ export const NAV_LINKS = [
     href: ROUTES.FAQ,
     label: "FAQ",
     mobileLabel: "FAQ & Support",
-    title: "Review frequently asked questions about Cool Nerds",
+    title: "Review frequently asked questions about Cool Nerdz",
   },
 ];
 
