@@ -29,9 +29,9 @@ export default function LmsAccessStep({ checkoutResult }) {
 
         <h2 className="text-2xl font-serif font-bold mb-2 text-stone-900">You&apos;re In!</h2>
         <p className="text-xs font-light leading-relaxed text-stone-500 mb-8 max-w-md mx-auto">
-          Welcome to Cool Nerds, {user?.name || user?.email}. Your account is ready
+          Welcome to Cool Nerdz, {user?.name || user?.email}. Your account is ready
           {unlocked.length > 0
-            ? ` and your pathway${unlocked.length === 1 ? " is" : "s are"} unlocked in your Cool Nerds Portal.`
+            ? ` and your pathway${unlocked.length === 1 ? " is" : "s are"} unlocked in your Cool Nerdz Portal.`
             : "."}
         </p>
 

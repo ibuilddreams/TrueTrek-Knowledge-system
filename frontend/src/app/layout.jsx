@@ -21,7 +21,7 @@ const spaceGrotesk = Space_Grotesk({
 });
 
 export const metadata = {
-  title: "Cool Nerds",
+  title: "Cool Nerdz",
   description: "Elite Masterminds Life Education LMS",
 };
 

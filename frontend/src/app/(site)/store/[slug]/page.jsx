@@ -1,7 +1,7 @@
 import StoreCourseDetailPage from "@/components/features/store/detail/StoreCourseDetailPage";
 
 export const metadata = {
-  title: "Course Details | Cool Nerds",
+  title: "Course Details | Cool Nerdz",
   description: "Course overview, what you'll learn, content, and instructors.",
 };
 

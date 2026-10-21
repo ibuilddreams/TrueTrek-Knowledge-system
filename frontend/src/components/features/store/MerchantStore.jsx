@@ -16,6 +16,7 @@ import { getPublicCourseFilters, getPublicCourses } from "@/services/coursesServ
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { useCart } from "@/hooks/useCart";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
+import { usePaginationAnchor } from "@/hooks/usePaginationAnchor";
 import { useWishlist } from "@/hooks/useWishlist";
 import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
@@ -43,6 +44,7 @@ export default function MerchantStore() {
   const [selectedCategoryId, setSelectedCategoryId] = useState(null);
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
+  const [resultsRef, changePage] = usePaginationAnchor(setPage);
 
   // Debounced so typing doesn't fire a request per keystroke; trimmed so
   // trailing whitespace doesn't look like a different search to the query cache.
@@ -149,7 +151,7 @@ export default function MerchantStore() {
               The Strategic Store
             </h2>
             <p className="text-paper/70 text-sm md:text-sm font-light max-w-xl leading-relaxed">
-              Browse every course on Cool Nerds, add it to your cart,
+              Browse every course on Cool Nerdz, add it to your cart,
               and check out to enroll instantly.
             </p>
           </div>
@@ -201,7 +203,7 @@ export default function MerchantStore() {
         </div>
 
         {(!isError || activeFilterCount > 0) && (
-          <div className="mb-6 flex items-center gap-4">
+          <div ref={resultsRef} className="mb-6 flex scroll-mt-28 items-center gap-4">
             {!isError && (
               <p
                 id="store-results-summary"
@@ -324,7 +326,7 @@ export default function MerchantStore() {
             <Pagination
               page={page}
               totalPages={totalPages}
-              onPageChange={setPage}
+              onPageChange={changePage}
               totalLabel={`${totalCourses} course${totalCourses === 1 ? "" : "s"}`}
               size="lg"
             />

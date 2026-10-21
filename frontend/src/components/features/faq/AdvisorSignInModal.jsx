@@ -19,7 +19,7 @@ export default function AdvisorSignInModal({ isOpen, onClose }) {
       <div className="space-y-5">
         <p className="text-sm text-muted font-light leading-relaxed">
           Sign in to your student account to ask an advisor directly — you&apos;ll find
-          &quot;Ask an Advisor&quot; in your Cool Nerds Portal once you&apos;re signed in.
+          &quot;Ask an Advisor&quot; in your Cool Nerdz Portal once you&apos;re signed in.
         </p>
 
         <div className="flex flex-col gap-3">

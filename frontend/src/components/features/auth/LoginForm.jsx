@@ -70,7 +70,7 @@ export default function LoginForm() {
     <AuthGateCard
       icon={Lock}
       title="Sign In"
-      subtitle="Enter your credentials to access your Cool Nerds account."
+      subtitle="Enter your credentials to access your Cool Nerdz account."
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         <AuthField
@@ -130,7 +130,7 @@ export default function LoginForm() {
         <GoogleSignInButton onSuccess={handleGoogleSuccess} disabled={isSubmitting} />
 
         <p className="text-center text-xs font-light text-muted">
-          New to Cool Nerds?{" "}
+          New to Cool Nerdz?{" "}
           <Link
             href={buildAuthUrl(ROUTES.SIGNUP, nextPath)}
             className="font-semibold transition text-pine hover:text-moss"

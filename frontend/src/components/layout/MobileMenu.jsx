@@ -47,8 +47,8 @@ export default function MobileMenu() {
             href={ROUTES.LOGIN}
             onClick={closeMenu}
             className="w-full text-center py-3.5 rounded-full mt-3 bg-pine text-paper font-semibold"
-            title="Access the secure Cool Nerds Portal simulator with interactive drills"
-            aria-label="Access the secure Cool Nerds Portal simulator with interactive drills"
+            title="Access the secure Cool Nerdz Portal simulator with interactive drills"
+            aria-label="Access the secure Cool Nerdz Portal simulator with interactive drills"
           >
             Access Simulated Vault
           </Link>

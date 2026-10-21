@@ -10,9 +10,9 @@ export const FAQ_CATEGORIES = [
     tint: "bg-gold/15 text-[#8a6f2e]",
     items: [
       {
-        question: "What exactly is the Cool Nerds Incubator?",
+        question: "What exactly is the Cool Nerdz Incubator?",
         answer:
-          "Cool Nerds is a progressive, multi-tier educational incubator built for high-performance scholars, athletic prospects, and young founders. Each tier delivers structured modules spanning NCAA/NIL compliance, athletic recruiting, academic positioning, early-stage venture mechanics, and multi-generational family office organization.",
+          "Cool Nerdz is a progressive, multi-tier educational incubator built for high-performance scholars, athletic prospects, and young founders. Each tier delivers structured modules spanning NCAA/NIL compliance, athletic recruiting, academic positioning, early-stage venture mechanics, and multi-generational family office organization.",
       },
       {
         question: "How is the curriculum structured across tiers?",
@@ -20,14 +20,14 @@ export const FAQ_CATEGORIES = [
           "The curriculum is organized into sequential tiers, each with its own focus areas, estimated duration, and outcomes. Earlier tiers build foundational scholastic and athletic readiness, while later tiers introduce venture formation, trust structures, and advanced compliance scenarios. You can review every tier's breakdown on the Curriculum page.",
       },
       {
-        question: "Is Cool Nerds only for student-athletes?",
+        question: "Is Cool Nerdz only for student-athletes?",
         answer:
-          "No. Cool Nerds features parallel development paths. While early tiers cover athlete scouting, highlighting, and NIL contract rules, several tiers are dedicated entirely to academic positioning, Ivy-level essay review, pre-seed startup templates, and elite cognitive performance strategies.",
+          "No. Cool Nerdz features parallel development paths. While early tiers cover athlete scouting, highlighting, and NIL contract rules, several tiers are dedicated entirely to academic positioning, Ivy-level essay review, pre-seed startup templates, and elite cognitive performance strategies.",
       },
       {
         question: "How long does it take to complete a tier?",
         answer:
-          "Pacing is self-directed. Most scholars complete a tier's modules and daily drills within a few weeks when working consistently, but there is no hard deadline — progress is tracked per student in the Cool Nerds Portal and you can move at the pace that fits your schedule.",
+          "Pacing is self-directed. Most scholars complete a tier's modules and daily drills within a few weeks when working consistently, but there is no hard deadline — progress is tracked per student in the Cool Nerdz Portal and you can move at the pace that fits your schedule.",
       },
     ],
   },
@@ -55,7 +55,7 @@ export const FAQ_CATEGORIES = [
       {
         question: "What happens after I submit my intake dossier?",
         answer:
-          "Your submission is reviewed against current cohort capacity. If a seat is available, you'll receive onboarding instructions to access the Cool Nerds Portal; if your region or cohort is at capacity, you're placed on a prioritized waitlist and notified as spots open.",
+          "Your submission is reviewed against current cohort capacity. If a seat is available, you'll receive onboarding instructions to access the Cool Nerdz Portal; if your region or cohort is at capacity, you're placed on a prioritized waitlist and notified as spots open.",
       },
     ],
   },
@@ -68,7 +68,7 @@ export const FAQ_CATEGORIES = [
       {
         question: "How does school or institutional licensing work?",
         answer:
-          "We license the complete Cool Nerds digital framework to select high schools, prep schools, collegiate athletic conferences, and regional sports academies. Partner institutions receive full system guides, classroom-ready materials, and progress dashboards to reduce institutional liability and track compliance outcomes.",
+          "We license the complete Cool Nerdz digital framework to select high schools, prep schools, collegiate athletic conferences, and regional sports academies. Partner institutions receive full system guides, classroom-ready materials, and progress dashboards to reduce institutional liability and track compliance outcomes.",
       },
       {
         question: "What's the difference between the licensing tiers?",
@@ -89,14 +89,14 @@ export const FAQ_CATEGORIES = [
   },
   {
     id: "portal",
-    label: "Cool Nerds Portal & Technology",
+    label: "Cool Nerdz Portal & Technology",
     icon: "LayoutDashboard",
     tint: "bg-lavender text-pine",
     items: [
       {
-        question: "What is the Cool Nerds Portal and what are daily drills?",
+        question: "What is the Cool Nerdz Portal and what are daily drills?",
         answer:
-          "The Cool Nerds Portal is where enrolled scholars apply what they've learned through interactive, scenario-based drills — such as redline contract auditing, LLC setup reviews, and recovery checklists — to build real-world compliance readiness and earn verifiable credentials.",
+          "The Cool Nerdz Portal is where enrolled scholars apply what they've learned through interactive, scenario-based drills — such as redline contract auditing, LLC setup reviews, and recovery checklists — to build real-world compliance readiness and earn verifiable credentials.",
       },
       {
         question: "What credentials or badges can students earn?",
@@ -109,7 +109,7 @@ export const FAQ_CATEGORIES = [
           "Yes. Every portal experience, including white-labeled institutional deployments, is built to operate within FERPA and COPPA student privacy requirements, and access is protected behind authenticated, role-based accounts.",
       },
       {
-        question: "Can I use the Cool Nerds Portal on mobile devices?",
+        question: "Can I use the Cool Nerdz Portal on mobile devices?",
         answer:
           "Yes. The portal is fully responsive and works in any modern mobile browser, so students can complete drills and review curriculum content from a phone or tablet as well as desktop.",
       },
@@ -132,7 +132,7 @@ export const FAQ_CATEGORIES = [
           "You can reach our advisory team through the Future Clients intake flow, or use the live concierge chat available from the homepage for a quicker, conversational answer to program and enrollment questions.",
       },
       {
-        question: "Does Cool Nerds offer refunds or plan changes?",
+        question: "Does Cool Nerdz offer refunds or plan changes?",
         answer:
           "Plan and licensing terms are confirmed during onboarding or the licensing briefing for institutional partners. If your circumstances change, reach out through the Future Clients intake flow and our advisory team will work with you on adjusting your plan.",
       },
@@ -147,9 +147,9 @@ export const FAQ_CATEGORIES = [
 
 export const INDEX_FAQ_ITEMS = [
   {
-    question: "What is the Cool Nerds Incubator & 9-Tier Curriculum?",
+    question: "What is the Cool Nerdz Incubator & 9-Tier Curriculum?",
     answer:
-      "Cool Nerds is a progressive, 9-Tier educational incubator designed for high-performance scholars, athletic prospects, and young founders. Our curriculum bridges the massive gaps between raw potential and professional execution—delivering highly structured modules on NCAA/NIL compliance, athletic recruiting, academic college spikes, early-stage venture mechanics (such as SAFE agreements), and multi-generational family office/trust organization rules.",
+      "Cool Nerdz is a progressive, 9-Tier educational incubator designed for high-performance scholars, athletic prospects, and young founders. Our curriculum bridges the massive gaps between raw potential and professional execution—delivering highly structured modules on NCAA/NIL compliance, athletic recruiting, academic college spikes, early-stage venture mechanics (such as SAFE agreements), and multi-generational family office/trust organization rules.",
   },
   {
     question: "How does the school licensing and partnership model work?",
@@ -157,14 +157,14 @@ export const INDEX_FAQ_ITEMS = [
       "We license our digital curriculum and framework to select High Schools, Prep Schools, Collegiate Athletic Conferences, Regional Sports Academies, and private networks seeking to maximize student-athlete success. Partner institutions receive full system guides, classroom-ready slide decks, print-ready legacy syllabus packages, and progress dashboards to reduce institutional liability and secure candidate compliance track records.",
   },
   {
-    question: "What is the role of the Cool Nerds Portal and daily compliance drills?",
+    question: "What is the role of the Cool Nerdz Portal and daily compliance drills?",
     answer:
-      "The interactive Cool Nerds Portal allows registered scholars and athletes to apply knowledge or certified progress with interactive modules. By completing tactical scenario-based drills—such as redline contract auditing, LLC setup reserves, and mental recovery checklists—users build real-world compliance readiness, receive diagnostic badges, and generate verifiable credentials.",
+      "The interactive Cool Nerdz Portal allows registered scholars and athletes to apply knowledge or certified progress with interactive modules. By completing tactical scenario-based drills—such as redline contract auditing, LLC setup reserves, and mental recovery checklists—users build real-world compliance readiness, receive diagnostic badges, and generate verifiable credentials.",
   },
   {
     question: "Is this curriculum focused strictly on sports and athletic recruits?",
     answer:
-      "No. Cool Nerds features parallel development paths. While early athlete scouting, highlighting, and NIL contract rules are prominent under certain tiers, many tiers (such as Tiers 3, 4, 7, and 8) focus entirely on academic college statement spikes, Ivy-scout essay reviews, pre-seed startup SAFE template models, and elite cognitive behavioral focus strategies.",
+      "No. Cool Nerdz features parallel development paths. While early athlete scouting, highlighting, and NIL contract rules are prominent under certain tiers, many tiers (such as Tiers 3, 4, 7, and 8) focus entirely on academic college statement spikes, Ivy-scout essay reviews, pre-seed startup SAFE template models, and elite cognitive behavioral focus strategies.",
   },
   {
     question: "How are regional caps and vacancy quotas managed for prospective cohorts?",

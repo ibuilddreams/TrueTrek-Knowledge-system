@@ -14,6 +14,7 @@ from daily_drill.models import DrillOption, DrillQuestion
 from enrollments.models import Enrollment
 from instructors.models import InstructorFeedback
 from lessons.models import Lesson
+from modules.models import Module
 from onboarding.models import Question as OnboardingQuestion
 from pathways.models import Pathway, PathwayCourse
 from live_sessions.models import LiveSession, SessionSpeaker
@@ -56,11 +57,17 @@ class SeedDataCommandTests(TestCase):
             sorted(Category.objects.values_list("name", flat=True)), sorted(seed.CATEGORY_NAMES)
         )
 
-    def test_every_module_has_one_or_two_distinct_supported_lessons(self):
+    def test_every_generated_module_has_one_or_two_distinct_supported_lessons(self):
+        """The shape of the placeholder content, for the courses that still have it.
+
+        A course with hand-authored curriculum in `_course_content` is excluded
+        here and covered by the authored-content tests below — it has three
+        lessons per module, one of which is TEXT.
+        """
         seed_offline()
 
         supported = {Lesson.ContentType.VIDEO, Lesson.ContentType.PDF, Lesson.ContentType.DOCUMENT}
-        for course in Course.objects.all():
+        for course in Course.objects.exclude(code__in=seed.COURSE_CONTENT):
             for module in course.modules.all():
                 content_types = list(module.lessons.values_list("content_type", flat=True))
                 self.assertIn(len(content_types), (1, 2), f"{course.code} / {module.title}")
@@ -70,20 +77,166 @@ class SeedDataCommandTests(TestCase):
     def test_every_quiz_question_has_four_choices_with_exactly_one_correct(self):
         seed_offline()
 
-        # Three of the four candidate questions survive: Cool Nerds is the only
-        # provider in the catalog, so "which provider publishes this?" cannot be
-        # given four distinct options and `_create_quiz` drops it by design.
-        expected_count = 3
+        # Three of the four candidate questions survive on a generated quiz: Cool
+        # Nerds is the only provider in the catalog, so "which provider publishes
+        # this?" cannot be given four distinct options and `_create_quiz` drops it
+        # by design. An authored quiz has however many questions were written for
+        # it.
+        authored_codes = set(seed.COURSE_CONTENT)
 
         for course in Course.objects.all():
+            authored = course.code in authored_codes
             for quiz in course.quizzes.all():
-                self.assertEqual(quiz.questions.count(), expected_count, quiz.title)
-                self.assertEqual(quiz.number_of_questions, expected_count)
+                if not authored:
+                    self.assertEqual(quiz.questions.count(), 3, quiz.title)
+                self.assertEqual(quiz.number_of_questions, quiz.questions.count(), quiz.title)
                 for question in quiz.questions.all():
                     self.assertEqual(question.choices.count(), 4, question.text)
                     self.assertEqual(
                         question.choices.filter(is_correct=True).count(), 1, question.text
                     )
+
+    def test_authored_courses_get_their_written_curriculum(self):
+        """A course listed in `_course_content` is seeded from that file, not from
+        the two-module placeholder template."""
+        seed_offline()
+
+        self.assertTrue(seed.COURSE_CONTENT, "no authored curriculum is wired up")
+
+        for code, modules_def in seed.COURSE_CONTENT.items():
+            course = Course.objects.get(code=code)
+            modules = list(course.modules.order_by("order"))
+            self.assertEqual(len(modules), len(modules_def), code)
+
+            for order, (module, module_def) in enumerate(zip(modules, modules_def), start=1):
+                where = f"{code} / {module_def['title']}"
+                self.assertEqual(module.title, module_def["title"], where)
+                self.assertEqual(module.description, module_def["description"], where)
+                self.assertEqual(module.order, order, where)
+
+                lessons = list(module.lessons.order_by("order"))
+                self.assertEqual(len(lessons), len(module_def["lessons"]), where)
+                for lesson, lesson_def in zip(lessons, module_def["lessons"]):
+                    self.assertEqual(lesson.title, lesson_def["title"], where)
+                    self.assertEqual(lesson.content_type, lesson_def["type"], where)
+                    self.assertEqual(lesson.content_data, lesson_def["body"], where)
+
+                # One assignment and one quiz per module, both published.
+                assignment = module.assignments.get()
+                self.assertEqual(assignment.title, module_def["assignment"]["title"], where)
+                self.assertEqual(assignment.course_id, course.id, where)
+                self.assertEqual(assignment.status, seed.Status.PUBLISHED, where)
+
+                quiz = module.quizzes.get()
+                self.assertEqual(quiz.title, module_def["quiz"]["title"], where)
+                self.assertEqual(quiz.course_id, course.id, where)
+                self.assertEqual(quiz.status, seed.Status.PUBLISHED, where)
+
+                questions = list(quiz.questions.order_by("order"))
+                self.assertEqual(len(questions), len(module_def["quiz"]["questions"]), where)
+                for question, question_def in zip(questions, module_def["quiz"]["questions"]):
+                    self.assertEqual(question.text, question_def["text"], where)
+                    choices = question.choices.all()
+                    self.assertEqual(
+                        sorted(choices.values_list("text", flat=True)),
+                        sorted(question_def["choices"]),
+                        where,
+                    )
+                    self.assertEqual(
+                        choices.get(is_correct=True).text,
+                        question_def["choices"][question_def["answer"]],
+                        where,
+                    )
+
+    def test_authored_text_lessons_carry_prose_and_no_file(self):
+        """TEXT lessons are the written half of an authored module: Markdown in
+        content_data and never a file."""
+        seed_offline()
+
+        text_lessons = Lesson.objects.filter(
+            module__course__code__in=seed.COURSE_CONTENT,
+            content_type=Lesson.ContentType.TEXT,
+        )
+        self.assertTrue(text_lessons.exists())
+        for lesson in text_lessons:
+            self.assertTrue(lesson.content_data.strip(), lesson.title)
+            self.assertEqual(lesson.content_format, Lesson.ContentFormat.MARKDOWN, lesson.title)
+            self.assertFalse(lesson.file, lesson.title)
+            self.assertFalse(lesson.video_url, lesson.title)
+
+        # Every authored module pairs that prose with a downloadable handout.
+        for code in seed.COURSE_CONTENT:
+            for module in Course.objects.get(code=code).modules.all():
+                types = set(module.lessons.values_list("content_type", flat=True))
+                self.assertIn(Lesson.ContentType.TEXT, types, f"{code} / {module.title}")
+                self.assertTrue(
+                    types & {Lesson.ContentType.PDF, Lesson.ContentType.DOCUMENT},
+                    f"{code} / {module.title}",
+                )
+
+    def test_placeholder_modules_are_replaced_but_hand_made_ones_survive(self):
+        """An environment seeded before the curriculum was written still holds the
+        generated shell; the next reseed removes it and leaves everything else."""
+        seed_offline()
+
+        code = next(iter(seed.COURSE_CONTENT))
+        course = Course.objects.get(code=code)
+        placeholder = Module.objects.create(
+            course=course, title=seed.GENERATED_MODULE_TITLES[0], description="generated", order=99
+        )
+        hand_made = Module.objects.create(
+            course=course, title="Added by an administrator", description="keep me", order=100
+        )
+        authored_ids = list(
+            course.modules.exclude(pk__in=[placeholder.pk, hand_made.pk]).values_list(
+                "id", flat=True
+            )
+        )
+
+        seed_offline()
+
+        self.assertFalse(Module.objects.filter(pk=placeholder.pk).exists())
+        self.assertTrue(Module.objects.filter(pk=hand_made.pk).exists())
+        self.assertEqual(
+            list(
+                course.modules.exclude(pk=hand_made.pk).order_by("order").values_list(
+                    "id", flat=True
+                )
+            ),
+            authored_ids,
+        )
+
+    def test_reseeding_refreshes_authored_copy_without_moving_rows_or_deadlines(self):
+        """Authored curriculum is editorial copy, so a correction lands on the next
+        reseed — but the row keeps its id, and an assignment's deadline does not
+        move under a student already working to it."""
+        seed_offline()
+
+        code = next(iter(seed.COURSE_CONTENT))
+        course = Course.objects.get(code=code)
+        module = course.modules.order_by("order").first()
+        lesson = module.lessons.order_by("order").first()
+        assignment = module.assignments.get()
+        quiz = module.quizzes.get()
+        question = quiz.questions.order_by("order").first()
+        original_body = lesson.content_data
+        due_date = assignment.due_date
+
+        lesson.content_data = "scribbled over"
+        lesson.save()
+
+        seed_offline()
+
+        lesson.refresh_from_db()
+        assignment.refresh_from_db()
+        self.assertEqual(lesson.content_data, original_body)
+        self.assertEqual(due_date, assignment.due_date)
+        # Same rows, so progress, submissions and attempts still point at them.
+        self.assertEqual(module.lessons.order_by("order").first().pk, lesson.pk)
+        self.assertEqual(module.assignments.get().pk, assignment.pk)
+        self.assertEqual(module.quizzes.get().pk, quiz.pk)
+        self.assertEqual(quiz.questions.order_by("order").first().pk, question.pk)
+        self.assertEqual(question.choices.filter(is_correct=True).count(), 1)
 
     def test_correct_answers_are_not_always_the_first_choice(self):
         seed_offline()
@@ -194,6 +347,70 @@ class SeedDataCommandTests(TestCase):
         self.assertTrue(PathwayCourse.objects.filter(pk=link.pk, pathway=custom).exists())
         self.assertFalse(Pathway.objects.filter(pk=old.pk).exists())
         self.assertEqual(Pathway.objects.filter(is_custom=False).count(), len(seed.PATHWAY_DEFS))
+
+    def test_reseeding_keeps_pathway_ids_purchases_and_onboarding_progress(self):
+        """The seeded pathways are upserted in place, not rebuilt.
+
+        Rebuilding them cascaded away every `PathwayEnrollment` and left the raw
+        ids in `OnboardingProgress.selected_pathway_ids` pointing at rows that no
+        longer existed, which sent finished students back through the wizard on
+        every reseed.
+        """
+        from onboarding.models import OnboardingProgress, QuestionnaireAnswer
+        from pathways.models import PathwayEnrollment
+
+        seed_offline()
+
+        before = dict(Pathway.objects.filter(is_custom=False).values_list("name", "id"))
+        student = User.objects.filter(role=User.Roles.STUDENT).first()
+        pathway = Pathway.objects.filter(is_custom=False).order_by("id").first()
+        purchase = PathwayEnrollment.objects.create(
+            user=student, pathway=pathway, price_paid=199
+        )
+        progress = OnboardingProgress.objects.create(
+            user=student,
+            step=OnboardingProgress.Step.CHECKOUT,
+            selected_pathway_ids=[pathway.id],
+        )
+        question = OnboardingQuestion.objects.first()
+        answer = QuestionnaireAnswer.objects.create(
+            user=student, question=question, option=question.options.first()
+        )
+        stale = Pathway.objects.create(name="Pathway the client dropped")
+
+        seed_offline()
+
+        # Same rows, same ids.
+        self.assertEqual(dict(Pathway.objects.filter(is_custom=False).values_list("name", "id")), before)
+        # The purchase, the wizard state and the answers all still resolve.
+        self.assertTrue(PathwayEnrollment.objects.filter(pk=purchase.pk).exists())
+        progress.refresh_from_db()
+        self.assertEqual(progress.step, OnboardingProgress.Step.CHECKOUT)
+        self.assertEqual(progress.selected_pathway_ids, [pathway.id])
+        self.assertEqual(
+            Pathway.objects.filter(id__in=progress.selected_pathway_ids).count(), 1
+        )
+        answer.refresh_from_db()
+        self.assertEqual(answer.option_id, question.options.first().id)
+        # A pathway that has fallen out of PATHWAY_DEFS still disappears.
+        self.assertFalse(Pathway.objects.filter(pk=stale.pk).exists())
+
+    def test_reseeding_keeps_a_course_an_admin_attached_to_a_seeded_pathway(self):
+        seed_offline()
+
+        pathway = Pathway.objects.filter(is_custom=False).first()
+        course = Course.objects.exclude(
+            id__in=pathway.pathway_courses.values_list("course_id", flat=True)
+        ).first()
+        link = PathwayCourse.objects.create(
+            pathway=pathway,
+            course=course,
+            order=seed.get_next_order(PathwayCourse.objects.filter(pathway=pathway)),
+        )
+
+        seed_offline()
+
+        self.assertTrue(PathwayCourse.objects.filter(pk=link.pk).exists())
 
     def test_retired_numa_courses_are_deleted_but_hand_made_ones_are_not(self):
         """The client replaced the 629-course Numa catalog with their own thirty."""
@@ -389,11 +606,15 @@ class SeedDataAssetTests(TestCase):
         for teacher in User.objects.filter(role=User.Roles.TEACHER):
             self.assertTrue(teacher.profile.avatar, teacher.email)
 
+        # The shared demo files back the courses that have no written curriculum.
+        # An authored course's handout is generated per module, not downloaded,
+        # and is covered by the test below.
+        generated = Lesson.objects.exclude(module__course__code__in=seed.COURSE_CONTENT)
         pdf_files = set(
-            Lesson.objects.filter(content_type=Lesson.ContentType.PDF).values_list("file", flat=True)
+            generated.filter(content_type=Lesson.ContentType.PDF).values_list("file", flat=True)
         )
         doc_files = set(
-            Lesson.objects.filter(content_type=Lesson.ContentType.DOCUMENT).values_list(
+            generated.filter(content_type=Lesson.ContentType.DOCUMENT).values_list(
                 "file", flat=True
             )
         )
@@ -401,6 +622,66 @@ class SeedDataAssetTests(TestCase):
         self.assertEqual(doc_files, {seed.LESSON_ASSET_PATHS["docx"]})
         self.assertFalse(
             Lesson.objects.filter(content_type=Lesson.ContentType.VIDEO).exclude(file="").exists()
+        )
+
+    def test_every_authored_module_gets_its_own_rendered_handout(self):
+        """The written courses do not share the demo document: each module's
+        worksheet is rendered from the same file that authored the module."""
+        response = type("Response", (), {"content": b"stub-bytes", "raise_for_status": lambda self: None})
+
+        with patch.object(seed.requests, "get", return_value=response()):
+            call_command("seeddata", noinput=True)
+
+        shared = set(seed.LESSON_ASSET_PATHS.values())
+        seen = set()
+
+        for code, modules_def in seed.COURSE_CONTENT.items():
+            for order, module_def in enumerate(modules_def, start=1):
+                lesson_def = next(
+                    lesson
+                    for lesson in module_def["lessons"]
+                    if lesson["type"] in seed.AUTHORED_HANDOUT_TYPES
+                )
+                lesson = Lesson.objects.get(
+                    module__course__code=code, module__title=module_def["title"],
+                    title=lesson_def["title"],
+                )
+                where = f"{code} / {module_def['title']}"
+
+                self.assertEqual(
+                    lesson.file.name, seed.handout_path(code, order, lesson_def["type"]), where
+                )
+                self.assertNotIn(lesson.file.name, shared, where)
+                self.assertNotIn(lesson.file.name, seen, f"{where} shares a file with another module")
+                seen.add(lesson.file.name)
+
+                with lesson.file.open("rb") as handle:
+                    content = handle.read()
+                self.assertGreater(len(content), 1000, where)
+                if lesson_def["type"] == Lesson.ContentType.PDF:
+                    self.assertTrue(content.startswith(b"%PDF"), where)
+                else:
+                    # .docx is a zip container; PK is its signature.
+                    self.assertTrue(content.startswith(b"PK"), where)
+
+        self.assertEqual(len(seen), sum(len(m) for m in seed.COURSE_CONTENT.values()))
+
+    def test_a_handout_that_cannot_be_rendered_does_not_abort_the_seed(self):
+        response = type("Response", (), {"content": b"stub-bytes", "raise_for_status": lambda self: None})
+
+        with patch.object(seed.requests, "get", return_value=response()):
+            with patch.object(seed, "build_handout_pdf", side_effect=ValueError("boom")):
+                call_command("seeddata", noinput=True)
+
+        self.assertEqual(Course.objects.count(), len(seed.COURSE_DEFS))
+        # The DOCX handouts still rendered; the PDF lessons simply have no file.
+        self.assertTrue(
+            Lesson.objects.filter(
+                module__course__code__in=seed.COURSE_CONTENT,
+                content_type=Lesson.ContentType.DOCUMENT,
+            )
+            .exclude(file="")
+            .exists()
         )
 
     def test_a_failed_download_does_not_abort_the_seed(self):

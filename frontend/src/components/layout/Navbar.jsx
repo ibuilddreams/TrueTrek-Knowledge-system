@@ -32,8 +32,8 @@ export default function Navbar() {
         id="logo-combo"
         href={ROUTES.HOME}
         className="inline-flex items-center px-1 py-0.5 rounded-2xl cursor-pointer select-none"
-        title="Return to Cool Nerds home orientation page"
-        aria-label="Return to Cool Nerds home orientation page"
+        title="Return to Cool Nerdz home orientation page"
+        aria-label="Return to Cool Nerdz home orientation page"
       >
         <img
           src="/images/coolnerdz-logo.png"
@@ -70,8 +70,8 @@ export default function Navbar() {
           id="nav-portal-login-btn"
           href={ROUTES.LOGIN}
           className="font-sans text-[13px] px-3.5 min-h-10 rounded-[14px] font-extrabold transition duration-200 shadow-[0_12px_26px_rgba(22,33,29,0.17)] hover:-translate-y-0.5 flex items-center gap-2 select-none bg-ink hover:bg-pine text-white"
-          title="Access the secure Cool Nerds Portal simulator with interactive drills"
-          aria-label="Access the secure Cool Nerds Portal simulator with interactive drills"
+          title="Access the secure Cool Nerdz Portal simulator with interactive drills"
+          aria-label="Access the secure Cool Nerdz Portal simulator with interactive drills"
         >
           <User className="w-3.5 h-3.5" />
           Portal Access

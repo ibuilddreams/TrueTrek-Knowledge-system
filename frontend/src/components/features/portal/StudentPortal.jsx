@@ -180,7 +180,7 @@ function StudentPortalContent() {
             <Lock className="w-6 h-6" />
           </div>
           <h2 className="text-2xl font-serif font-bold text-ink mb-1.5">
-            Cool Nerds Access Required
+            Cool Nerdz Access Required
           </h2>
           <p className="text-sm text-muted font-light mb-6">
             Sign in with a student account to open your courses, drills, and
@@ -236,7 +236,7 @@ function StudentPortalContent() {
             tabs={PORTAL_TABS}
             activeTab={activeTab}
             onChange={setActiveTab}
-            ariaLabel="Cool Nerds Portal sections"
+            ariaLabel="Cool Nerdz Portal sections"
             size="lg"
           />
         </div>
@@ -275,7 +275,7 @@ function StudentPortalContent() {
 
 export default function StudentPortal() {
   return (
-    <Suspense fallback={<Loader label="Loading Cool Nerds Portal..." />}>
+    <Suspense fallback={<Loader label="Loading Cool Nerdz Portal..." />}>
       <StudentPortalContent />
     </Suspense>
   );

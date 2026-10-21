@@ -1,7 +1,7 @@
 import Partnerships from "@/components/features/partnerships/Partnerships";
 
 export const metadata = {
-  title: "For Schools | Cool Nerds",
+  title: "For Schools | Cool Nerdz",
   description: "Institutional licenses and school partnerships",
 };
 

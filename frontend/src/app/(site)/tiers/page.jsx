@@ -1,7 +1,7 @@
 import TierRoadmap from "@/components/features/tiers/TierRoadmap";
 
 export const metadata = {
-  title: "Tier Roadmap | Cool Nerds",
+  title: "Tier Roadmap | Cool Nerdz",
   description: "Progress through the Life Education tier system, one pathway at a time",
 };
 

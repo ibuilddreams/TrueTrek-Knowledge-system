@@ -44,7 +44,7 @@ export default function AskAdvisorModal({ isOpen, onClose }) {
       onClose={handleClose}
       icon={MessageCircleQuestion}
       title="Ask an Advisor"
-      subtitle="An advisor will reply in your Cool Nerds Portal"
+      subtitle="An advisor will reply in your Cool Nerdz Portal"
       maxWidth="max-w-md"
     >
       <form onSubmit={handleSubmit} className="space-y-5">

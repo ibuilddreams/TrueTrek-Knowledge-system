@@ -1,6 +1,7 @@
 import random
 from collections import Counter
 from datetime import timedelta
+from io import BytesIO
 from statistics import mean
 
 import requests
@@ -48,6 +49,8 @@ from rewards.services import award_points
 from users.models import UserProfile
 from wargamer.models import RolePlayScenario, RolePlaySession, RolePlayTurn
 
+from ._course_content import COURSE_CONTENT
+from ._handouts import PDF_AVAILABLE, build_handout_docx, build_handout_pdf
 from ._retired_courses import RETIRED_COURSE_CODES
 
 User = get_user_model()
@@ -346,6 +349,41 @@ MODULE_DEFS = [
         "description": "Applies the concepts from {title} through guided practice and review.",
     },
 ]
+
+# The two titles `_create_modules` generates. A course that has since been given
+# hand-authored curriculum in `_course_content` keeps none of them: they are the
+# placeholder shell that content replaces (`_replace_generated_modules`), so this
+# set is what that delete is keyed on. Deleting by an explicit title list, rather
+# than "every module that isn't authored", is the same rule `_reset_catalog`
+# follows for the retired courses — a module an admin added by hand is not in the
+# authored list either and must survive.
+GENERATED_MODULE_TITLES = [module_def["title"] for module_def in MODULE_DEFS]
+
+# Lesson content types a `_course_content` lesson may declare. TEXT lessons carry
+# their prose in `content_data` and no file; the other two carry the module's own
+# generated handout (see below) and use `content_data` for its summary.
+AUTHORED_LESSON_TYPES = (
+    Lesson.ContentType.TEXT,
+    Lesson.ContentType.PDF,
+    Lesson.ContentType.DOCUMENT,
+)
+AUTHORED_HANDOUT_TYPES = (Lesson.ContentType.PDF, Lesson.ContentType.DOCUMENT)
+
+# Where a generated handout is stored, and the extension per content type. These
+# are written fresh on every seed rather than reused like a downloaded asset,
+# because the handout is rendered from `_course_content` and has to change when
+# the file that authored it does.
+HANDOUT_DIR = "lessons/handouts"
+HANDOUT_EXTENSIONS = {Lesson.ContentType.PDF: "pdf", Lesson.ContentType.DOCUMENT: "docx"}
+
+
+def handout_path(code, module_order, content_type):
+    """Deterministic storage path, so a reseed overwrites rather than piling up
+    `…-module-1_a1b2c3.pdf` copies beside the one the lesson points at."""
+    return (
+        f"{HANDOUT_DIR}/{slugify(code)}-module-{module_order}."
+        f"{HANDOUT_EXTENSIONS[content_type]}"
+    )
 
 # Random but deterministic course price, in whole-dollar steps.
 COURSE_AMOUNT_CHOICES = list(range(20, 300, 10))
@@ -2087,6 +2125,7 @@ class Command(BaseCommand):
         # Before anything is written, and before the prompt, so a broken catalog
         # is a one-line error rather than a half-finished seed.
         self._validate_course_defs()
+        self._validate_course_content()
 
         fresh = options["fresh"]
 
@@ -2106,16 +2145,31 @@ class Command(BaseCommand):
                 )
             else:
                 retired = Course.objects.filter(code__in=RETIRED_COURSE_CODES).count()
-                stale = Pathway.objects.filter(is_custom=False).count()
+                stale = (
+                    Pathway.objects.filter(is_custom=False)
+                    .exclude(name__in=[pathway_def["name"] for pathway_def in PATHWAY_DEFS])
+                    .count()
+                )
                 prompt = (
                     f"This DELETES {retired} retired Numa course(s) — along with their modules, "
-                    "lessons, enrolments and progress — and all "
-                    f"{stale} seeded pathway(s).\n"
+                    "lessons, enrolments and progress — and "
+                    f"{stale} stale seeded pathway(s) that are no longer in the catalog.\n"
                     "PRESERVED: every other course (including any an admin added by hand), "
-                    "categories, tags, user accounts, course enrollments, progress, daily "
-                    "drills, onboarding answers, and students' own custom pathways. Everything "
-                    "else is upserted, so re-running only adds or updates.\n"
+                    "the nine current pathways and their ids, pathway purchases, categories, "
+                    "tags, user accounts, course enrollments, progress, daily drills, "
+                    "onboarding answers and progress, and students' own custom pathways. "
+                    "Everything else is upserted, so re-running only adds or updates.\n"
                 )
+                placeholders = Module.objects.filter(
+                    course__code__in=COURSE_CONTENT, title__in=GENERATED_MODULE_TITLES
+                ).count()
+                if placeholders:
+                    prompt += (
+                        f"It also replaces {placeholders} auto-generated placeholder module(s) "
+                        f"in the {len(COURSE_CONTENT)} course(s) that now carry written "
+                        "curriculum, deleting their lessons, assignments, quizzes and any "
+                        "progress or submissions against them.\n"
+                    )
 
             confirm = input(
                 prompt
@@ -2149,7 +2203,7 @@ class Command(BaseCommand):
                 self.stdout.write(
                     self.style.WARNING(
                         f"Removed {retired_courses} retired course(s) and {removed_pathways} "
-                        "seeded pathway(s) — everything else preserved"
+                        "stale pathway(s) — everything else preserved"
                     )
                 )
 
@@ -2248,13 +2302,20 @@ class Command(BaseCommand):
         simply absent from the result, and its courses are seeded without a
         thumbnail; a failed lesson-asset download leaves the affected lessons
         without a file."""
-        assets = {"provider_thumbnails": {}, "lessons": {}, "instructor_avatars": []}
+        assets = {
+            "provider_thumbnails": {},
+            "lessons": {},
+            "instructor_avatars": [],
+            "handouts": {},
+        }
 
         if skip:
             self.stdout.write(
                 self.style.WARNING("--skip-assets: seeding without thumbnails or lesson files")
             )
             return assets
+
+        assets["handouts"] = self._build_handouts()
 
         for name, url in LESSON_ASSET_URLS.items():
             path = self._store_asset(LESSON_ASSET_PATHS[name], url)
@@ -2281,11 +2342,72 @@ class Command(BaseCommand):
         self.stdout.write(
             self.style.SUCCESS(
                 f"Prepared {len(assets['instructor_avatars'])} instructor photo(s), "
-                f"{len(assets['lessons'])} lesson file(s) and "
+                f"{len(assets['lessons'])} shared lesson file(s), "
+                f"{len(assets['handouts'])} course handout(s) and "
                 f"{len(assets['provider_thumbnails'])} provider thumbnail(s) in media storage"
             )
         )
         return assets
+
+    def _build_handouts(self):
+        """Renders the handout every authored module carries, into media storage.
+
+        The 210 courses without written curriculum still share one demo PDF and
+        one demo DOCX, which is honest filler for a lesson nobody has authored.
+        An authored module is different: its third lesson is a named worksheet
+        that the two lessons beside it tell the student to fill in, so it is
+        rendered from the same `_course_content` entry that wrote them
+        (`_handouts.py`). Returns {(course code, module order): stored path};
+        a handout that could not be rendered is simply absent and its lesson
+        seeds without a file, the same degradation as a failed download.
+        """
+        built = {}
+        failures = 0
+
+        for code, modules_def in COURSE_CONTENT.items():
+            for module_order, module_def in enumerate(modules_def, start=1):
+                lesson_def = next(
+                    lesson
+                    for lesson in module_def["lessons"]
+                    if lesson["type"] in AUTHORED_HANDOUT_TYPES
+                )
+                is_pdf = lesson_def["type"] == Lesson.ContentType.PDF
+                if is_pdf and not PDF_AVAILABLE:
+                    failures += 1
+                    continue
+
+                subtitle = f"{code} \u00b7 Module {module_order} \u00b7 {module_def['title']}"
+                buffer = BytesIO()
+                try:
+                    render = build_handout_pdf if is_pdf else build_handout_docx
+                    render(lesson_def["handout"], lesson_def["title"], subtitle, buffer)
+                except Exception as exc:  # noqa: BLE001 - one bad handout must not abort the seed
+                    self.stdout.write(
+                        self.style.WARNING(
+                            f"Could not render the handout for {code} module {module_order} "
+                            f"({exc}) — that lesson will seed without a file."
+                        )
+                    )
+                    failures += 1
+                    continue
+
+                path = handout_path(code, module_order, lesson_def["type"])
+                # Overwritten rather than reused: unlike a downloaded asset, this
+                # file's content changes whenever `_course_content` does.
+                if default_storage.exists(path):
+                    default_storage.delete(path)
+                built[(code, module_order)] = default_storage.save(
+                    path, ContentFile(buffer.getvalue())
+                )
+
+        if failures and not PDF_AVAILABLE:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"reportlab is not installed — {failures} PDF handout(s) were skipped. "
+                    "Install it (it is in requirements.txt) to seed them."
+                )
+            )
+        return built
 
     def _store_asset(self, path, url):
         """Downloads `url` to MEDIA_ROOT/<path> once and returns the stored name to
@@ -2324,6 +2446,106 @@ class Command(BaseCommand):
                     + ", ".join(duplicates[:5])
                     + ("..." if len(duplicates) > 5 else "")
                 )
+
+    def _validate_course_content(self):
+        """Fails fast on an unusable `_course_content` entry.
+
+        Every mistake below is one the seed would otherwise carry into the
+        database and only show up in a student's browser: a module titled like
+        a generated placeholder would be deleted by `_replace_generated_modules`
+        the moment it was written, two lessons sharing a title would collapse
+        into one row on upsert, and a quiz question with a bad answer index
+        would be unanswerable.
+        """
+        unknown = sorted(set(COURSE_CONTENT) - {cd["code"] for cd in COURSE_DEFS})
+        if unknown:
+            raise CommandError(
+                "COURSE_CONTENT has curriculum for course code(s) that are not in "
+                "COURSE_DEFS: " + ", ".join(unknown)
+            )
+
+        for code, modules_def in COURSE_CONTENT.items():
+            if not modules_def:
+                raise CommandError(f"COURSE_CONTENT[{code}] has no modules")
+
+            titles = [module_def["title"] for module_def in modules_def]
+            duplicates = sorted(t for t, n in Counter(titles).items() if n > 1)
+            if duplicates:
+                raise CommandError(
+                    f"COURSE_CONTENT[{code}] repeats module title(s): " + ", ".join(duplicates)
+                )
+            clashes = sorted(set(titles) & set(GENERATED_MODULE_TITLES))
+            if clashes:
+                raise CommandError(
+                    f"COURSE_CONTENT[{code}] uses the generated placeholder module title(s) "
+                    + ", ".join(clashes)
+                    + " — `_replace_generated_modules` would delete them on the next reseed"
+                )
+
+            for module_def in modules_def:
+                where = f"COURSE_CONTENT[{code}] / {module_def['title']}"
+                lessons = module_def["lessons"]
+                if not lessons:
+                    raise CommandError(f"{where} has no lessons")
+
+                lesson_titles = [lesson_def["title"] for lesson_def in lessons]
+                if len(set(lesson_titles)) != len(lesson_titles):
+                    raise CommandError(f"{where} repeats a lesson title")
+
+                for lesson_def in lessons:
+                    if lesson_def["type"] not in AUTHORED_LESSON_TYPES:
+                        raise CommandError(
+                            f"{where} / {lesson_def['title']} has unsupported content type "
+                            f"{lesson_def['type']}"
+                        )
+                    if not lesson_def["body"].strip():
+                        raise CommandError(f"{where} / {lesson_def['title']} has no content")
+                    if lesson_def["type"] in AUTHORED_HANDOUT_TYPES:
+                        self._validate_handout(f"{where} / {lesson_def['title']}", lesson_def)
+
+                for index, question_def in enumerate(module_def["quiz"]["questions"], start=1):
+                    choices = question_def["choices"]
+                    if len(choices) != CHOICES_PER_QUESTION or len(set(choices)) != len(choices):
+                        raise CommandError(
+                            f"{where} quiz question {index} needs "
+                            f"{CHOICES_PER_QUESTION} distinct choices"
+                        )
+                    if not 0 <= question_def["answer"] < len(choices):
+                        raise CommandError(
+                            f"{where} quiz question {index} has an out-of-range answer index"
+                        )
+
+    def _validate_handout(self, where, lesson_def):
+        """A handout renders straight into a student's download, so a spec that
+        is missing a heading or has a ragged table is caught here rather than in
+        reportlab's traceback halfway through a seed."""
+        handout = lesson_def.get("handout")
+        if not handout or not handout.get("intro", "").strip():
+            raise CommandError(f"{where} has no handout intro")
+        if not handout.get("sections"):
+            raise CommandError(f"{where} has a handout with no sections")
+
+        for index, section in enumerate(handout["sections"], start=1):
+            if not section.get("heading", "").strip():
+                raise CommandError(f"{where} handout section {index} has no heading")
+            if not any(
+                section.get(key) for key in ("paragraphs", "bullets", "fields", "table")
+            ):
+                raise CommandError(f"{where} handout section {index} is empty")
+
+            table = section.get("table")
+            if table:
+                if not table.get("columns") or not table.get("rows"):
+                    raise CommandError(
+                        f"{where} handout section {index} has a table with no columns or rows"
+                    )
+                width = len(table["columns"])
+                for row_index, row in enumerate(table["rows"], start=1):
+                    if len(row) != width:
+                        raise CommandError(
+                            f"{where} handout section {index} table row {row_index} has "
+                            f"{len(row)} cell(s) for {width} column(s)"
+                        )
 
     def _reset_everything(self):
         """`--fresh`: wipes every row except admin accounts and superusers.
@@ -2385,18 +2607,25 @@ class Command(BaseCommand):
            enrolments and progress, which is the point: there is nothing left to
            study in a course that no longer exists.
 
-        2. Every seeded (non-custom) pathway, rebuilt straight after from
-           PATHWAY_DEFS. Pathways are the one thing not upserted, because the
-           client's three replace a catalog of fifteen and a stale pathway has
-           to actually disappear rather than linger unlisted. By cascade this
-           also drops those pathways' PathwayCourse rows, their TierPathway
-           attachments (the Tier rows themselves survive and `_create_tiers`
-           re-attaches them), their PathwayEnrollments, and the
-           QuestionOptionPathwayWeights that `_seed_questionnaire` re-creates.
+        2. **Stale** seeded pathways only — a non-custom pathway whose name is no
+           longer in PATHWAY_DEFS. The client's nine replaced a catalog of
+           fifteen and a pathway that is gone from the sheet has to actually
+           disappear rather than linger unlisted, but the nine that remain are
+           upserted in place by `_seed_pathways` and keep their primary keys.
 
-           A PathwayEnrollment is the record of a *pathway* purchase. The course
-           Enrollments that purchase granted are separate rows, so a student who
-           bought a pathway keeps access to every still-existing course in it.
+           That distinction is load-bearing rather than cosmetic. This used to
+           delete *every* seeded pathway and rebuild it, which quietly reset
+           real users on every run: `PathwayEnrollment` — the record of a
+           pathway purchase — cascades with its pathway, and
+           `OnboardingProgress.selected_pathway_ids` stores raw ids in a
+           JSONField, so a rebuilt catalog left every student's finished
+           onboarding pointing at pathways that no longer existed and sent them
+           back through the wizard. Keeping the rows keeps both.
+
+           Deleting a stale pathway still cascades its PathwayCourse rows, its
+           TierPathway attachments (the Tier rows themselves survive and
+           `_create_tiers` re-attaches them), its PathwayEnrollments and its
+           QuestionOptionPathwayWeights.
 
         Students' own custom pathways (`is_custom`) are excluded: they are not
         part of the seeded catalog, and deleting one would destroy a bundle a
@@ -2406,9 +2635,11 @@ class Command(BaseCommand):
         retired_count = retired.count()
         retired.delete()
 
-        seeded_pathways = Pathway.objects.filter(is_custom=False)
-        pathway_count = seeded_pathways.count()
-        seeded_pathways.delete()
+        stale_pathways = Pathway.objects.filter(is_custom=False).exclude(
+            name__in=[pathway_def["name"] for pathway_def in PATHWAY_DEFS]
+        )
+        pathway_count = stale_pathways.count()
+        stale_pathways.delete()
 
         return retired_count, pathway_count
 
@@ -2507,17 +2738,27 @@ class Command(BaseCommand):
             )
             courses_by_code[course_def["code"]] = course
 
+            authored = COURSE_CONTENT.get(course_def["code"])
             # Existing catalog content may have been edited or purchased. Only
-            # generate demo content for newly created courses.
-            if not created:
+            # generate demo content for newly created courses. An authored
+            # course is the exception: its curriculum is seeded on every run,
+            # because a course whose placeholder modules were already generated
+            # into an existing environment has to pick the real ones up (the
+            # upserts below make the second run a no-op).
+            if not created and not authored:
                 continue
 
             teacher = teachers_by_code[course_def["code"]]
-            CourseInstructor.objects.update_or_create(
-                course=course, instructor=teacher, defaults={"is_lead": True}
-            )
 
-            course.tags.set(get_tag(name) for name in course_def["tags"])
+            if created:
+                CourseInstructor.objects.update_or_create(
+                    course=course, instructor=teacher, defaults={"is_lead": True}
+                )
+                course.tags.set(get_tag(name) for name in course_def["tags"])
+
+            if authored:
+                self._create_authored_content(course, authored, teacher, assets["handouts"])
+                continue
 
             modules = self._create_modules(course, course_def, rng, assets["lessons"])
             # One assignment and one quiz in EVERY module, not just the first:
@@ -2531,6 +2772,154 @@ class Command(BaseCommand):
                 self._create_quiz(module, course, course_def, rng)
 
         return courses_by_code
+
+    def _create_authored_content(self, course, modules_def, teacher, handouts):
+        """Seeds the hand-written curriculum carried by `_course_content`.
+
+        A course listed there gets real modules, lessons, assignments and
+        quizzes written against its own description instead of the generic
+        two-module shell `_create_modules` builds, so the placeholder shell is
+        removed first (`_replace_generated_modules`).
+
+        Everything here is upserted by natural key rather than created once:
+        this is editorial copy maintained in this repo (the same rule
+        SPEAKER_DEFS follows), so correcting a lesson lands on the next reseed
+        while the row keeps its id — and with it every LessonProgress,
+        submission and quiz attempt pointing at it. The create-only exceptions
+        are an assignment's due date and author and a module's assignment/quiz
+        `order`: a reseed must not move a deadline out from under a student
+        already working to it, nor undo an admin's reordering.
+        """
+        self._replace_generated_modules(course)
+
+        for module_order, module_def in enumerate(modules_def, start=1):
+            module, _ = Module.objects.update_or_create(
+                course=course,
+                title=module_def["title"],
+                defaults={
+                    "description": module_def["description"],
+                    "order": module_order,
+                },
+            )
+            handout_file = handouts.get((course.code, module_order), "")
+            for lesson_order, lesson_def in enumerate(module_def["lessons"], start=1):
+                self._create_authored_lesson(module, lesson_def, lesson_order, handout_file)
+            self._create_authored_assignment(module, course, module_def["assignment"], teacher)
+            self._create_authored_quiz(module, course, module_def["quiz"])
+
+    def _replace_generated_modules(self, course):
+        """Drops the placeholder modules `_create_modules` wrote for a course
+        that now has authored curriculum.
+
+        Keyed on the exact generated titles rather than "every module that is
+        not in the authored list" — the same rule `_reset_catalog` follows for
+        the retired courses, because a module an admin added by hand through
+        the portal is not in the authored list either and must survive. The
+        delete cascades the placeholder's lessons, assignments, quizzes and the
+        progress/submissions hanging off them, which is the point: that content
+        was filler generated from the course's metadata, and leaving it beside
+        the real curriculum would show students two parallel syllabi. It runs
+        on every reseed and matches nothing after the first.
+        """
+        Module.objects.filter(course=course, title__in=GENERATED_MODULE_TITLES).delete()
+
+    def _create_authored_lesson(self, module, lesson_def, order, handout_file):
+        content_type = lesson_def["type"]
+        defaults = {
+            "description": lesson_def["description"],
+            "content_type": content_type,
+            "content_data": lesson_def["body"],
+            "content_format": Lesson.ContentFormat.MARKDOWN,
+            "video_url": None,
+            "duration_minutes": lesson_def["minutes"],
+            "order": order,
+        }
+        is_handout = content_type in AUTHORED_HANDOUT_TYPES
+        stored = handout_file if is_handout else ""
+        if not is_handout or stored:
+            # A TEXT lesson carries its prose in content_data and never a file.
+            defaults["file"] = stored
+        # `file` is left out of `defaults` only when this module's handout could
+        # not be rendered this run (or was skipped with --skip-assets), so the row
+        # keeps whatever file it already has instead of having it cleared. On
+        # creation there is nothing to keep, so it is written either way.
+
+        Lesson.objects.update_or_create(
+            module=module,
+            title=lesson_def["title"],
+            defaults=defaults,
+            create_defaults={**defaults, "file": stored},
+        )
+
+    def _create_authored_assignment(self, module, course, assignment_def, teacher):
+        shared = {
+            "course": course,
+            "description": assignment_def["description"],
+            "total_marks": assignment_def["total_marks"],
+            "status": Status.PUBLISHED,
+            "grading_mode": Assignment.GradingMode.MANUAL,
+            "allow_resubmission": True,
+        }
+        Assignment.objects.update_or_create(
+            module=module,
+            title=assignment_def["title"],
+            defaults=shared,
+            create_defaults={
+                **shared,
+                "due_date": timezone.now() + timedelta(days=assignment_def["due_in_days"]),
+                "order": get_next_order(Assignment.objects.filter(module=module)),
+                "created_by": teacher,
+            },
+        )
+
+    def _create_authored_quiz(self, module, course, quiz_def):
+        questions_def = quiz_def["questions"]
+        shared = {
+            "course": course,
+            "description": quiz_def["description"],
+            "passing_score": quiz_def["passing_score"],
+            "time_limit_minutes": quiz_def["minutes"],
+            "number_of_questions": len(questions_def),
+            "status": Status.PUBLISHED,
+        }
+        quiz, _ = Quiz.objects.update_or_create(
+            module=module,
+            title=quiz_def["title"],
+            defaults=shared,
+            create_defaults={
+                **shared,
+                "order": get_next_order(Quiz.objects.filter(module=module)),
+            },
+        )
+
+        for order, question_def in enumerate(questions_def, start=1):
+            # Keyed on `order`, not on the text, so rewording a question edits
+            # the existing row instead of leaving the old wording behind as an
+            # extra question. `attempt=None` is what makes it a template
+            # question (see quizzes.models.Question) — the AI-regenerated
+            # per-attempt ones must never be touched here.
+            question, _ = QuizQuestion.objects.update_or_create(
+                quiz=quiz,
+                attempt=None,
+                order=order,
+                defaults={
+                    "text": question_def["text"],
+                    "question_type": QuizQuestion.QuestionType.MCQ,
+                    "marks": 1,
+                },
+            )
+            choices = question_def["choices"]
+            answer = question_def["answer"]
+            for index, text in enumerate(choices):
+                Choice.objects.update_or_create(
+                    question=question, text=text, defaults={"is_correct": index == answer}
+                )
+            # Options dropped by a later edit go with it. QuizAnswer.selected_choice
+            # is SET_NULL, so a student's past attempt keeps its row.
+            question.choices.exclude(text__in=choices).delete()
+
+        quiz.questions.filter(attempt__isnull=True, order__gt=len(questions_def)).delete()
+        return quiz
 
     def _create_modules(self, course, course_def, rng, lesson_assets):
         num_modules = rng.randint(1, 2)
@@ -2683,6 +3072,21 @@ class Command(BaseCommand):
         return quiz
 
     def _seed_pathways(self, courses_by_code):
+        """Upserts the nine seeded pathways by name, into the rows that are
+        already there.
+
+        `_reset_catalog` only removes pathways that have fallen out of
+        PATHWAY_DEFS, so these keep their primary keys across a reseed — which
+        is what keeps a student's pathway purchase (`PathwayEnrollment`) and the
+        ids stored in `OnboardingProgress.selected_pathway_ids` pointing at
+        something real.
+
+        Course attachments are added, never removed: an admin may have attached
+        a course to a seeded pathway by hand through the portal, and that is
+        indistinguishable here from one the sheet dropped. A course the client
+        removes from a pathway is detached in the admin, the same way a course
+        an admin added is kept.
+        """
         pathways_by_key = {}
         for pathway_def in PATHWAY_DEFS:
             pathway, created = Pathway.objects.update_or_create(

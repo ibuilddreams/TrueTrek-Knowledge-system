@@ -47,7 +47,7 @@ export const AUDIENCE_PROFILES = [
     slug: "cool-nerds",
     code: "CNS",
     tag: "Academics & Life Skills",
-    title: "Cool Nerds",
+    title: "Cool Nerdz",
     description:
       "Combine rigorous academics with critical thinking, financial literacy, decision-making, stress management, and practical life skills.",
     icon: GraduationCap,

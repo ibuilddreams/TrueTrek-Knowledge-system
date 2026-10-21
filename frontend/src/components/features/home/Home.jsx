@@ -213,7 +213,7 @@ How can I help you map out your high-compliance curriculum track or resolve spec
       ADVISOR_PERSONAS[0];
     const systemPrompt = `${advisor.systemPrompt}
 
-You are serving as the Senior Advisor on the Cool Nerds Academy Home Screen.
+You are serving as the Senior Advisor on the Cool Nerdz Academy Home Screen.
 Your goal is to guide prospective or active students, parents, and partners.
 Analyze their query, provide a professional, specific analysis report, and recommend:
 - At least one specific **Curriculum Tier** (Tiers 1 to 9) that matches their goals. Explain specifically why.
@@ -411,7 +411,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
             onClick={onNavigateToPortal}
             className="w-full sm:w-auto bg-paper hover:bg-porcelain text-ink border border-line px-8 py-3.5 rounded-full text-sm font-semibold transition duration-300 tracking-wide"
           >
-            Enter Cool Nerds Portal
+            Enter Cool Nerdz Portal
           </button>
         </motion.div>
 
@@ -613,7 +613,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           <SectionHeading
             className="mb-12"
             eyebrow="Custom Diagnostics"
-            heading="Determine Your Cool Nerds Pathway"
+            heading="Determine Your Cool Nerdz Pathway"
             subtitle="Select your high-potential profile archetype below and see your recommended developmental curriculum, custom metrics, and action blueprint."
           />
 
@@ -1054,7 +1054,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
               Syllabus & Partnership Intelligence
             </h2>
             <p className="text-muted text-sm font-light leading-relaxed">
-              Have specific inquiries regarding Cool Nerds&apos;s curriculum
+              Have specific inquiries regarding Cool Nerdz&apos;s curriculum
               modules, security compliance pathways, and school licensing
               structures? Review our comprehensive advisory dossier.
             </p>
