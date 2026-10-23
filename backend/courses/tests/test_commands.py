@@ -10,6 +10,7 @@ from django.utils import timezone
 
 from courses.management.commands import seeddata as seed
 from common.models import Status
+from courses.grades import ADULT, FILTER_GRADES, GRADUATE_SCHOOL, UNDERGRADUATE, grade_name
 from courses.models import Category, Course
 from daily_drill.models import DrillOption, DrillQuestion
 from enrollments.models import Enrollment
@@ -124,32 +125,58 @@ class SeedDataCommandTests(TestCase):
             # The sheet named no pathway, so nothing bundles them.
             self.assertFalse(course.pathway_courses.exists(), course.code)
 
-    def test_a_course_past_school_age_is_labelled_by_stage_not_by_grade(self):
+    def test_a_course_past_school_age_lands_on_the_grade_axis_as_its_stage(self):
         """`grade_label` is "Undergraduate"/"Graduate School" on the top two Cool
-        Nerds bands. Nothing may render those as "Grades Graduate School" — not
-        the course page, and not a distractor on some other course's quiz — and
-        a course belonging to no school grade must stay out of the grade filter.
+        Nerds bands. Those are grade levels like any other as far as the catalog
+        is concerned, so they get their own points on the axis and show up in the
+        filter — what they must never do is render as "Grades Graduate School",
+        on the course page or as a distractor on some other course's quiz.
         """
         seed_offline()
 
         undergraduate = Course.objects.get(code="CN-402")
-        self.assertIsNone(undergraduate.grade_min)
-        self.assertIsNone(undergraduate.grade_max)
-        self.assertIn("Written for undergraduate students", undergraduate.learning_outcomes)
-        self.assertIn(
-            "Written for graduate students",
-            Course.objects.get(code="CN-509").learning_outcomes,
-        )
-        # A school-age band still parses into the grade filter's range query.
         self.assertEqual(
-            (Course.objects.get(code="CN-101").grade_min, Course.objects.get(code="CN-101").grade_max),
-            (4, 5),
+            (undergraduate.grade_min, undergraduate.grade_max), (UNDERGRADUATE, UNDERGRADUATE)
         )
+        self.assertEqual(undergraduate.grade_label, "Undergraduate")
+        self.assertIn("Written for undergraduate students", undergraduate.learning_outcomes)
+
+        graduate = Course.objects.get(code="CN-509")
+        self.assertEqual((graduate.grade_min, graduate.grade_max), (GRADUATE_SCHOOL, GRADUATE_SCHOOL))
+        self.assertEqual(graduate.grade_label, "Graduate School")
+        self.assertIn("Written for graduate students", graduate.learning_outcomes)
+
+        adult = Course.objects.get(code="CN-601")
+        self.assertEqual((adult.grade_min, adult.grade_max), (ADULT, ADULT))
+        self.assertEqual(adult.grade_label, "Adult")
+        self.assertIn("Written for adults", adult.learning_outcomes)
+
+        # Every seeded course sits somewhere on the axis, and a school-age band
+        # still parses into the same range query it always did.
+        self.assertFalse(Course.objects.filter(grade_min__isnull=True).exists())
+        elementary = Course.objects.get(code="CN-101")
+        self.assertEqual((elementary.grade_min, elementary.grade_max), (4, 5))
 
         nonsense = [f"Grades {label}" for label in seed.NON_GRADE_LEVELS]
         for text in Choice.objects.values_list("text", flat=True):
             for phrase in nonsense:
                 self.assertNotIn(phrase, text)
+
+    def test_the_curriculum_filter_offers_every_stage_and_finds_its_courses(self):
+        """The dropdown the public curriculum page renders is built from
+        FILTER_GRADES, so a stage that is not in it is a stage no visitor can
+        browse to however many courses sit behind it."""
+        seed_offline()
+
+        for grade, name, expected in (
+            (UNDERGRADUATE, "Undergraduate", 10),
+            (GRADUATE_SCHOOL, "Graduate School", 9),
+            (ADULT, "Adult", 55),
+        ):
+            self.assertIn(grade, FILTER_GRADES)
+            self.assertEqual(grade_name(grade), name)
+            matched = Course.objects.filter(grade_min__lte=grade, grade_max__gte=grade)
+            self.assertEqual(matched.count(), expected, name)
 
     def test_authored_courses_get_their_written_curriculum(self):
         """A course listed in `_course_content` is seeded from that file, not from

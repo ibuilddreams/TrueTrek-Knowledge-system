@@ -227,8 +227,8 @@ class PublicCourseListView(generics.ListAPIView):
                 pathway_courses__pathway__tier_pathways__tier__slug=tier_param,
             )
 
-        # A single grade (Pre-K = -1, K = 0, 1-12) matches every course whose
-        # grade range includes it.
+        # A single grade level (Pre-K = -1, K = 0, 1-12, Undergraduate = 13,
+        # Graduate School = 14) matches every course whose range includes it.
         grade_param = params.get("grade")
         if grade_param not in (None, ""):
             try:
