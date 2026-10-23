@@ -5,7 +5,6 @@ import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
 import {
-  Target,
   ArrowRight,
   Award,
   BookOpen,
@@ -19,6 +18,7 @@ import {
   Sparkles,
   HelpCircle,
   ChevronDown,
+  Lock,
   // Layers, // Restore with the Learning Pathways Showcase.
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
@@ -35,6 +35,9 @@ import {
   getPublicPathways,
 } from "@/services/pathwaysService";
 import { formatCoursePrice } from "@/lib/store";
+import { toPathwayParagraphs } from "@/lib/pathwayDescription";
+import { usePathwayPricing } from "@/hooks/usePathwayPricing";
+import SignInToSelectModal from "@/components/features/pathways/SignInToSelectModal";
 import SectionHeading from "@/components/ui/SectionHeading";
 import PingDotSpinner from "@/components/ui/PingDotSpinner";
 import PresetPromptPills from "@/components/ui/PresetPromptPills";
@@ -55,6 +58,29 @@ function useDelayedFlag(active, delayMs) {
   }, [active, delayMs]);
 
   return isSlow;
+}
+
+const PATHWAY_DIFFICULTY_LABELS = {
+  BEGINNER: "Beginner",
+  INTERMEDIATE: "Intermediate",
+  ADVANCED: "Advanced",
+};
+
+// How much of a pathway the recommendation panel previews. A pathway can hold
+// fifty courses; listing them all buried the panel's own CTA under a wall of
+// titles, so it shows the opening run and links out for the rest.
+const PATHWAY_PREVIEW_COURSES = 4;
+
+// One cell of the recommended pathway's at-a-glance strip.
+function PathwayFact({ label, value }) {
+  return (
+    <div className="px-3 py-3 text-center">
+      <dt className="font-sans text-[10px] font-semibold uppercase tracking-widest text-muted">
+        {label}
+      </dt>
+      <dd className="mt-1 font-sans text-sm font-semibold text-ink">{value}</dd>
+    </div>
+  );
 }
 
 // Cycled per advisor card index purely for visual variety in the consult board.
@@ -153,6 +179,11 @@ export default function Home() {
   const onStartOnboarding = () => router.push(ROUTES.ONBOARDING);
   const [selectedPathwayId, setSelectedPathwayId] = useState(null);
   const [activeFaqIndex, setActiveFaqIndex] = useState(null);
+
+  // Bundle pricing is members-only, here as everywhere else a pathway is
+  // shown; the recommendation panel offers the sign-in instead of the number.
+  const { canSeePrice, isResolved: isPriceResolved } = usePathwayPricing();
+  const [isPriceSignInOpen, setIsPriceSignInOpen] = useState(false);
 
   // Inline Interactive Consultation Board states
   const [selectedConsultAdvisorId, setSelectedConsultAdvisorId] =
@@ -333,6 +364,21 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
     (a, b) => a.order - b.order,
   );
 
+  // The list row already carries the name, price and course count, so the
+  // panel can render them the moment a pathway is picked instead of blanking
+  // out while its detail request is in flight. Detail fields win where both
+  // have one.
+  const selectedPathwayRow = pathways.find(
+    (pathway) => pathway.id === selectedPathwayId,
+  );
+  const recommended = { ...(selectedPathwayRow || {}), ...(selectedPathway || {}) };
+
+  const recommendedParagraphs = toPathwayParagraphs(
+    recommended.description || recommended.summary,
+  );
+  const previewCourses = pathwayCourses.slice(0, PATHWAY_PREVIEW_COURSES);
+  const remainingCourseCount = pathwayCourses.length - previewCourses.length;
+
   return (
     <div
       id="home-container"
@@ -485,6 +531,324 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
         </div>
       </section>
 
+      {/* Curated Core Philosophies */}
+      <section
+        id="philosophies-section"
+        className="py-14 md:py-16 px-6 max-w-6xl mx-auto"
+      >
+        <SectionHeading
+          className="mb-10"
+          eyebrow="Our Approach"
+          heading="Principles That Shape Every Tier"
+          subtitle="Three commitments run through the entire 9-tier curriculum, from the first orientation module to the final legacy briefing."
+        />
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+          <div className="relative overflow-hidden isolate p-7 border border-line bg-paper rounded-panel text-left">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-10 -bottom-12 w-36 h-36 rounded-full bg-sky/60"
+            ></div>
+            <div className="absolute top-7 right-7 px-3 py-1 rounded-full bg-paper/90 border border-line text-[10px] font-sans uppercase tracking-widest text-muted font-bold">
+              Structured Rigor
+            </div>
+            <span className="relative w-11 h-11 rounded-2xl bg-sky text-pine flex items-center justify-center font-serif font-light text-lg mb-5">
+              I
+            </span>
+            <h4 className="relative text-xl font-serif font-light leading-[0.95] tracking-tight text-ink mb-2.5">
+              Architectural Integrity
+            </h4>
+            <p className="relative text-muted text-sm leading-relaxed">
+              We provide real tactical metrics, redline contract examples, and
+              legal codes. No placeholders or shallow advice blocks.
+            </p>
+          </div>
+          <div className="relative overflow-hidden isolate p-7 border border-line bg-paper rounded-panel text-left">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-10 -bottom-12 w-36 h-36 rounded-full bg-sage/60"
+            ></div>
+            <div className="absolute top-7 right-7 px-3 py-1 rounded-full bg-paper/90 border border-line text-[10px] font-sans uppercase tracking-widest text-muted font-bold">
+              Human Performance
+            </div>
+            <span className="relative w-11 h-11 rounded-2xl bg-sage text-pine flex items-center justify-center font-serif font-light text-lg mb-5">
+              II
+            </span>
+            <h4 className="relative text-xl font-serif font-light leading-[0.95] tracking-tight text-ink mb-2.5">
+              Cognitive Science First
+            </h4>
+            <p className="relative text-muted text-sm leading-relaxed">
+              Mental capacity, diagnostic evaluation scores, and nervous system
+              recovery habits drive genuine career longevity.
+            </p>
+          </div>
+          <div className="relative overflow-hidden isolate p-7 border border-line bg-paper rounded-panel text-left">
+            <div
+              aria-hidden="true"
+              className="pointer-events-none absolute -right-10 -bottom-12 w-36 h-36 rounded-full bg-gold/20"
+            ></div>
+            <div className="absolute top-7 right-7 px-3 py-1 rounded-full bg-paper/90 border border-line text-[10px] font-sans uppercase tracking-widest text-muted font-bold">
+              Legacy Design
+            </div>
+            <span className="relative w-11 h-11 rounded-2xl bg-gold/10 text-gold flex items-center justify-center font-serif font-light text-lg mb-5">
+              III
+            </span>
+            <h4 className="relative text-xl font-serif font-light leading-[0.95] tracking-tight text-ink mb-2.5">
+              Multi-Generation Focus
+            </h4>
+            <p className="relative text-muted text-sm leading-relaxed">
+              NIL deals and admission spikes are merely entry gates. We prepare
+              you to build robust, generational wealth offices.
+            </p>
+          </div>
+        </div>
+      </section>
+
+      {/* Profile Discovery Segment (Bento Panel) */}
+      <section
+        id="pathway-audit-section"
+        className="bg-transparent border-t border-line py-14 md:py-16 px-6"
+      >
+        <div className="max-w-6xl mx-auto">
+          <SectionHeading
+            className="mb-12"
+            eyebrow="Custom Diagnostics"
+            heading="Determine Your Cool Nerdz Pathway"
+            subtitle="Select your high-potential profile archetype below and see your recommended developmental curriculum, custom metrics, and action blueprint."
+          />
+
+          {isPathwaysLoading && (
+            <div className="flex items-center justify-center min-h-[200px] text-muted font-sans uppercase tracking-widest text-xs font-medium">
+              Loading pathways...
+            </div>
+          )}
+
+          {!isPathwaysLoading && pathways.length === 0 && (
+            <div className="flex items-center justify-center min-h-[200px] text-muted font-sans uppercase tracking-widest text-xs font-medium">
+              No pathways published yet — check back soon.
+            </div>
+          )}
+
+          {!isPathwaysLoading && pathways.length > 0 && (
+            // Both columns share the row's height (no items-start), so the
+            // profile list runs the full depth of the panel beside it rather
+            // than stopping short of it. The list is capped at a page of
+            // pathways, so it can only ever overrun the panel slightly — and
+            // scrolls within its own column if it does.
+            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+              {/* Left Selection Columns */}
+              <div
+                id="audit-selector-group"
+                className="lg:col-span-4 space-y-3 lg:h-full lg:overflow-y-auto pr-1"
+              >
+                {pathways.map((pathway) => (
+                  <button
+                    id={`audit-profile-btn-${pathway.id}`}
+                    key={pathway.id}
+                    type="button"
+                    onClick={() => setSelectedPathwayId(pathway.id)}
+                    aria-pressed={selectedPathwayId === pathway.id}
+                    className={`w-full text-left p-3 rounded-card border transition-all duration-300 flex items-center gap-3 ${
+                      selectedPathwayId === pathway.id
+                        ? "bg-pine/10 border-pine/60 text-ink shadow-soft"
+                        : "bg-paper border-line text-muted hover:bg-porcelain hover:border-pine/30"
+                    }`}
+                  >
+                    <span
+                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-300 ${
+                        selectedPathwayId === pathway.id
+                          ? "bg-pine text-paper"
+                          : "bg-gold/10 text-gold"
+                      }`}
+                    >
+                      <BookOpen className="w-4 h-4" />
+                    </span>
+                    <span className="flex flex-col gap-1 min-w-0">
+                      <span className="font-medium text-sm text-ink truncate">
+                        {pathway.name}
+                      </span>
+                      <span
+                        className={`font-sans uppercase tracking-widest text-xs font-medium ${
+                          selectedPathwayId === pathway.id
+                            ? "text-pine"
+                            : "text-muted"
+                        }`}
+                      >
+                        {pathway.course_count} Course
+                        {pathway.course_count === 1 ? "" : "s"} Bundle
+                      </span>
+                    </span>
+                  </button>
+                ))}
+              </div>
+
+              {/* Right Audit Recommendation Container */}
+              <div
+                id="audit-results-container"
+                className="lg:col-span-8 bg-paper border border-line rounded-panel p-6 md:p-8 relative overflow-hidden isolate min-h-[380px] flex flex-col justify-between"
+              >
+                <div
+                  aria-hidden="true"
+                  className="pointer-events-none absolute -right-20 -top-20 w-72 h-72 rounded-full bg-rose/25 blur-2xl"
+                ></div>
+                <div className="relative">
+                  <div className="flex flex-wrap items-start justify-between gap-4 border-b border-line pb-5 mb-6">
+                    <div className="min-w-0">
+                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky/60 text-pine font-sans uppercase tracking-widest text-[10px] font-bold mb-2.5">
+                        Recommended Pathway
+                      </span>
+                      <h3 className="text-xl md:text-2xl font-serif font-light tracking-tight text-ink">
+                        {recommended.name || "..."}
+                      </h3>
+                    </div>
+                    {!isPriceResolved ? (
+                      <span
+                        aria-hidden="true"
+                        className="h-8 w-28 rounded-lg bg-porcelain"
+                      />
+                    ) : canSeePrice ? (
+                      <div className="bg-gold/15 border border-gold/20 px-3 py-1.5 rounded-lg text-gold font-sans text-sm font-semibold">
+                        {formatCoursePrice(recommended.base_price)} Bundle
+                      </div>
+                    ) : (
+                      <button
+                        id="btn-recommendation-price"
+                        type="button"
+                        onClick={() => setIsPriceSignInOpen(true)}
+                        className="flex items-center gap-2 rounded-lg border border-dashed border-gold/40 bg-gold/10 px-3 py-1.5 font-sans text-xs font-semibold text-gold transition hover:bg-gold/20"
+                      >
+                        <Lock aria-hidden="true" className="h-3.5 w-3.5" />
+                        Sign in to view price
+                      </button>
+                    )}
+                  </div>
+
+                  {/* At a glance, in place of the comma-joined dump of every
+                      course title this panel used to open with. */}
+                  <dl className="mb-6 grid grid-cols-3 divide-x divide-line rounded-card border border-line bg-porcelain/60">
+                    <PathwayFact
+                      label="Courses"
+                      value={recommended.course_count ?? pathwayCourses.length}
+                    />
+                    <PathwayFact
+                      label="Level"
+                      value={
+                        PATHWAY_DIFFICULTY_LABELS[recommended.difficulty] ||
+                        "All levels"
+                      }
+                    />
+                    {recommended.duration_weeks > 0 ? (
+                      <PathwayFact
+                        label="Duration"
+                        value={`${recommended.duration_weeks} week${
+                          recommended.duration_weeks === 1 ? "" : "s"
+                        }`}
+                      />
+                    ) : (
+                      <PathwayFact label="Access" value="Lifetime" />
+                    )}
+                  </dl>
+
+                  <div className="mb-7">
+                    <p className="font-sans uppercase text-muted tracking-widest text-xs font-medium mb-3">
+                      What this pathway covers
+                    </p>
+                    {recommendedParagraphs.length > 0 ? (
+                      <div className="space-y-3">
+                        {recommendedParagraphs.map((paragraph, index) => (
+                          <p
+                            key={index}
+                            className={
+                              index === 0
+                                ? "text-[15px] leading-relaxed text-ink/90"
+                                : "text-sm leading-relaxed text-muted"
+                            }
+                          >
+                            {paragraph}
+                          </p>
+                        ))}
+                      </div>
+                    ) : (
+                      <p className="text-sm text-muted">
+                        Loading pathway details...
+                      </p>
+                    )}
+                  </div>
+
+                  <div>
+                    <div className="mb-3 flex items-baseline justify-between gap-3">
+                      <p className="font-sans uppercase text-muted tracking-widest text-xs font-medium">
+                        Where you start
+                      </p>
+                      {previewCourses.length > 0 && (
+                        <span className="font-sans text-[11px] text-muted tabular-nums">
+                          First {previewCourses.length} of {pathwayCourses.length}
+                        </span>
+                      )}
+                    </div>
+
+                    {previewCourses.length > 0 ? (
+                      <ol className="space-y-2">
+                        {previewCourses.map(({ course }, index) => (
+                          <li
+                            key={course.id}
+                            className="flex items-center gap-3 rounded-xl border border-line bg-porcelain/50 px-3.5 py-2.5"
+                          >
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-pine/10 font-sans text-[11px] font-bold text-pine tabular-nums">
+                              {String(index + 1).padStart(2, "0")}
+                            </span>
+                            <span
+                              title={course.title}
+                              className="min-w-0 flex-1 truncate text-sm text-ink"
+                            >
+                              {course.title}
+                            </span>
+                            <ShieldCheck className="h-4 w-4 shrink-0 text-pine/70" />
+                          </li>
+                        ))}
+                      </ol>
+                    ) : (
+                      <p className="flex items-center gap-2.5 text-sm text-muted">
+                        <BookOpen className="h-4 w-4 shrink-0 text-muted/70" />
+                        No courses attached to this pathway yet.
+                      </p>
+                    )}
+
+                    {remainingCourseCount > 0 && recommended.slug && (
+                      <Link
+                        id="link-recommendation-full-curriculum"
+                        href={`${ROUTES.PATHWAYS}/${recommended.slug}`}
+                        className="mt-3.5 inline-flex items-center gap-1.5 font-sans text-[11px] font-semibold uppercase tracking-widest text-moss transition-all hover:gap-2.5 hover:text-pine"
+                      >
+                        +{remainingCourseCount} more course
+                        {remainingCourseCount === 1 ? "" : "s"} · See the full
+                        curriculum
+                        <ArrowRight className="h-3.5 w-3.5" />
+                      </Link>
+                    )}
+                  </div>
+                </div>
+
+                <div className="relative border-t border-line pt-6 mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <span className="text-muted text-sm font-light">
+                    Licensed across 40+ educational administrations. Verified
+                    athletic and academic compliance.
+                  </span>
+                  <button
+                    id="btn-recommendation-cta"
+                    type="button"
+                    onClick={onStartOnboarding}
+                    className="bg-pine hover:bg-moss text-paper text-sm font-semibold px-5 py-2.5 rounded-full flex items-center gap-1.5 transition duration-350 shrink-0 shadow-sm"
+                  >
+                    Explore {recommended.name || "This Pathway"}
+                    <Zap className="w-3.5 h-3.5 text-gold" />
+                  </button>
+                </div>
+              </div>
+            </div>
+          )}
+        </div>
+      </section>
+
       {/* Learning Pathways Showcase — temporarily hidden; preserved for future use.
       <section
         id="learning-pathways-section"
@@ -601,167 +965,6 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           />
 
           <IntroVideo />
-        </div>
-      </section>
-
-      {/* Profile Discovery Segment (Bento Panel) */}
-      <section
-        id="pathway-audit-section"
-        className="bg-transparent border-t border-line py-14 md:py-16 px-6"
-      >
-        <div className="max-w-6xl mx-auto">
-          <SectionHeading
-            className="mb-12"
-            eyebrow="Custom Diagnostics"
-            heading="Determine Your Cool Nerdz Pathway"
-            subtitle="Select your high-potential profile archetype below and see your recommended developmental curriculum, custom metrics, and action blueprint."
-          />
-
-          {isPathwaysLoading && (
-            <div className="flex items-center justify-center min-h-[200px] text-muted font-sans uppercase tracking-widest text-xs font-medium">
-              Loading pathways...
-            </div>
-          )}
-
-          {!isPathwaysLoading && pathways.length === 0 && (
-            <div className="flex items-center justify-center min-h-[200px] text-muted font-sans uppercase tracking-widest text-xs font-medium">
-              No pathways published yet — check back soon.
-            </div>
-          )}
-
-          {!isPathwaysLoading && pathways.length > 0 && (
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-              {/* Left Selection Columns */}
-              <div
-                id="audit-selector-group"
-                className="lg:col-span-4 space-y-3 lg:max-h-128 lg:overflow-y-auto pr-1"
-              >
-                {pathways.map((pathway) => (
-                  <button
-                    id={`audit-profile-btn-${pathway.id}`}
-                    key={pathway.id}
-                    onClick={() => setSelectedPathwayId(pathway.id)}
-                    className={`w-full text-left p-4 rounded-card border transition-all duration-300 flex items-center gap-3.5 ${
-                      selectedPathwayId === pathway.id
-                        ? "bg-pine/10 border-pine/60 text-ink shadow-soft"
-                        : "bg-paper border-line text-muted hover:bg-porcelain hover:border-pine/30"
-                    }`}
-                  >
-                    <span
-                      className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-300 ${
-                        selectedPathwayId === pathway.id
-                          ? "bg-pine text-paper"
-                          : "bg-gold/10 text-gold"
-                      }`}
-                    >
-                      <BookOpen className="w-4 h-4" />
-                    </span>
-                    <span className="flex flex-col gap-1 min-w-0">
-                      <span className="font-medium text-sm text-ink truncate">
-                        {pathway.name}
-                      </span>
-                      <span
-                        className={`font-sans uppercase tracking-widest text-xs font-medium ${
-                          selectedPathwayId === pathway.id
-                            ? "text-pine"
-                            : "text-muted"
-                        }`}
-                      >
-                        {pathway.course_count} Course
-                        {pathway.course_count === 1 ? "" : "s"} Bundle
-                      </span>
-                    </span>
-                  </button>
-                ))}
-              </div>
-
-              {/* Right Audit Recommendation Container */}
-              <div
-                id="audit-results-container"
-                className="lg:col-span-8 bg-paper border border-line rounded-panel p-6 md:p-8 relative overflow-hidden isolate min-h-[380px] flex flex-col justify-between"
-              >
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-20 -top-20 w-72 h-72 rounded-full bg-rose/25 blur-2xl"
-                ></div>
-                <div className="relative">
-                  <div className="flex flex-wrap items-center justify-between gap-4 border-b border-line pb-4 mb-6">
-                    <div>
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky/60 text-pine font-sans uppercase tracking-widest text-[10px] font-bold mb-2.5">
-                        Recommended Pathway
-                      </span>
-                      <h3 className="text-xl md:text-2xl font-serif font-light tracking-tight text-ink">
-                        {selectedPathway?.name || "..."}
-                      </h3>
-                    </div>
-                    <div className="bg-gold/15 border border-gold/20 px-3 py-1.5 rounded-lg text-gold font-sans text-sm font-semibold">
-                      {formatCoursePrice(selectedPathway?.base_price)} Bundle
-                    </div>
-                  </div>
-
-                  <div className="mb-6">
-                    <p className="text-muted text-sm leading-relaxed mb-6">
-                      <span className="font-semibold text-ink">
-                        Objective Profile Target:
-                      </span>{" "}
-                      {selectedPathway?.description ||
-                        selectedPathway?.summary ||
-                        "Loading pathway details..."}
-                    </p>
-                    <div className="bg-porcelain p-3 rounded-lg border border-line mb-6 flex gap-2.5 items-center">
-                      <Target className="text-pine w-5 h-5 shrink-0" />
-                      <p className="text-sm text-muted">
-                        <span className="font-sans font-medium text-pine block uppercase tracking-widest text-[11px]">
-                          Primary Core Curriculum Licensing
-                        </span>
-                        {pathwayCourses.length > 0
-                          ? pathwayCourses
-                              .map(({ course }) => course.title)
-                              .join(", ")
-                          : "Course lineup coming soon."}
-                      </p>
-                    </div>
-
-                    <p className="font-sans uppercase text-muted tracking-widest text-xs font-medium mb-3">
-                      Included In This Pathway
-                    </p>
-                    <ul className="space-y-2.5">
-                      {pathwayCourses.map(({ course }) => (
-                        <li
-                          key={course.id}
-                          className="flex items-start gap-2.5 text-muted text-sm leading-relaxed"
-                        >
-                          <ShieldCheck className="w-4 h-4 text-pine mt-0.5 shrink-0" />
-                          <span>{course.title}</span>
-                        </li>
-                      ))}
-                      {pathwayCourses.length === 0 && (
-                        <li className="flex items-start gap-2.5 text-muted text-sm leading-relaxed">
-                          <BookOpen className="w-4 h-4 text-muted/70 mt-0.5 shrink-0" />
-                          <span>No courses attached to this pathway yet.</span>
-                        </li>
-                      )}
-                    </ul>
-                  </div>
-                </div>
-
-                <div className="border-t border-line text-right pt-6 mt-8 flex flex-col sm:flex-row items-center justify-between gap-4">
-                  <span className="text-muted text-sm font-light text-left">
-                    Licensed across 40+ educational administrations. Verified
-                    athletic and academic compliance.
-                  </span>
-                  <button
-                    id="btn-recommendation-cta"
-                    onClick={onStartOnboarding}
-                    className="bg-pine hover:bg-moss text-paper text-sm font-semibold px-5 py-2.5 rounded-full flex items-center gap-1.5 transition duration-350 shrink-0 shadow-sm"
-                  >
-                    Explore {selectedPathway?.name || "This Pathway"}
-                    <Zap className="w-3.5 h-3.5 text-gold" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          )}
         </div>
       </section>
 
@@ -963,78 +1166,6 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                 )}
               </AnimatePresence>
             </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Curated Core Philosophies */}
-      <section
-        id="philosophies-section"
-        className="py-14 md:py-16 px-6 max-w-6xl mx-auto"
-      >
-        <SectionHeading
-          className="mb-10"
-          eyebrow="Our Approach"
-          heading="Principles That Shape Every Tier"
-          subtitle="Three commitments run through the entire 9-tier curriculum, from the first orientation module to the final legacy briefing."
-        />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="relative overflow-hidden isolate p-7 border border-line bg-paper rounded-panel text-left">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -right-10 -bottom-12 w-36 h-36 rounded-full bg-sky/60"
-            ></div>
-            <div className="absolute top-7 right-7 px-3 py-1 rounded-full bg-paper/90 border border-line text-[10px] font-sans uppercase tracking-widest text-muted font-bold">
-              Structured Rigor
-            </div>
-            <span className="relative w-11 h-11 rounded-2xl bg-sky text-pine flex items-center justify-center font-serif font-light text-lg mb-5">
-              I
-            </span>
-            <h4 className="relative text-xl font-serif font-light leading-[0.95] tracking-tight text-ink mb-2.5">
-              Architectural Integrity
-            </h4>
-            <p className="relative text-muted text-sm leading-relaxed">
-              We provide real tactical metrics, redline contract examples, and
-              legal codes. No placeholders or shallow advice blocks.
-            </p>
-          </div>
-          <div className="relative overflow-hidden isolate p-7 border border-line bg-paper rounded-panel text-left">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -right-10 -bottom-12 w-36 h-36 rounded-full bg-sage/60"
-            ></div>
-            <div className="absolute top-7 right-7 px-3 py-1 rounded-full bg-paper/90 border border-line text-[10px] font-sans uppercase tracking-widest text-muted font-bold">
-              Human Performance
-            </div>
-            <span className="relative w-11 h-11 rounded-2xl bg-sage text-pine flex items-center justify-center font-serif font-light text-lg mb-5">
-              II
-            </span>
-            <h4 className="relative text-xl font-serif font-light leading-[0.95] tracking-tight text-ink mb-2.5">
-              Cognitive Science First
-            </h4>
-            <p className="relative text-muted text-sm leading-relaxed">
-              Mental capacity, diagnostic evaluation scores, and nervous system
-              recovery habits drive genuine career longevity.
-            </p>
-          </div>
-          <div className="relative overflow-hidden isolate p-7 border border-line bg-paper rounded-panel text-left">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -right-10 -bottom-12 w-36 h-36 rounded-full bg-gold/20"
-            ></div>
-            <div className="absolute top-7 right-7 px-3 py-1 rounded-full bg-paper/90 border border-line text-[10px] font-sans uppercase tracking-widest text-muted font-bold">
-              Legacy Design
-            </div>
-            <span className="relative w-11 h-11 rounded-2xl bg-gold/10 text-gold flex items-center justify-center font-serif font-light text-lg mb-5">
-              III
-            </span>
-            <h4 className="relative text-xl font-serif font-light leading-[0.95] tracking-tight text-ink mb-2.5">
-              Multi-Generation Focus
-            </h4>
-            <p className="relative text-muted text-sm leading-relaxed">
-              NIL deals and admission spikes are merely entry gates. We prepare
-              you to build robust, generational wealth offices.
-            </p>
           </div>
         </div>
       </section>
@@ -1439,6 +1570,17 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           </span>
         </button>
       </div>
+
+      {/* `next` is the homepage, so a visitor who signs in from the withheld
+          price lands back on the section they were reading. */}
+      <SignInToSelectModal
+        isOpen={isPriceSignInOpen}
+        pathwayName={recommended.name}
+        intent="price"
+        closeLabel="Keep Browsing"
+        nextPath={ROUTES.HOME}
+        onClose={() => setIsPriceSignInOpen(false)}
+      />
     </div>
   );
 }

@@ -49,6 +49,7 @@ function PathwayDetailBody({ pathway }) {
       <SignInToSelectModal
         isOpen={purchase.isSignInOpen}
         pathwayName={pathway.name}
+        intent={purchase.signInIntent}
         nextPath={`${ROUTES.PATHWAYS}/${pathway.slug}`}
         onClose={purchase.closeSignIn}
       />

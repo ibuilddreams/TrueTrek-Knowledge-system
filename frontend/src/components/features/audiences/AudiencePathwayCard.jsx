@@ -4,8 +4,8 @@ import Link from "next/link";
 import styles from "../pathways/PathwayCard.module.css";
 import { ArrowUpRight, Clock, Layers } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
-import { formatCoursePrice } from "@/lib/store";
 import { pathwayAccentStyle } from "@/lib/pathwayAccents";
+import PathwayPriceTag from "../pathways/PathwayPriceTag";
 
 // A browse-only pathway card for the audience pages. Deliberately not
 // PathwayCard: that one carries the select/checkout flow of the /pathways
@@ -14,7 +14,11 @@ import { pathwayAccentStyle } from "@/lib/pathwayAccents";
 // page, where buying already works.
 //
 // It shares PathwayCard's stylesheet so both grids stay the same card.
-export default function AudiencePathwayCard({ pathway, accentIndex = 0 }) {
+export default function AudiencePathwayCard({
+  pathway,
+  accentIndex = 0,
+  onRequestSignIn,
+}) {
   const courseCount = pathway.course_count ?? 0;
 
   return (
@@ -56,8 +60,10 @@ export default function AudiencePathwayCard({ pathway, accentIndex = 0 }) {
       </div>
 
       <div className={styles.footer}>
-        <span className={styles.priceLabel}>Bundle price</span>
-        <span className={styles.price}>{formatCoursePrice(pathway.base_price)}</span>
+        <PathwayPriceTag
+          price={pathway.base_price}
+          onRequestSignIn={() => onRequestSignIn?.(pathway)}
+        />
 
         <span aria-hidden="true" className={`${styles.action} ${styles.browseAction}`}>
           Explore pathway

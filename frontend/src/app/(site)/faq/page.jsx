@@ -1,9 +1,9 @@
 import Faq from "@/components/features/faq/Faq";
 
 export const metadata = {
-  title: "FAQ | Cool Nerdz",
+  title: "FAQ & User Guides | Cool Nerdz",
   description:
-    "Frequently asked questions about the Cool Nerdz curriculum, admissions, school licensing, the Cool Nerdz Portal, and billing.",
+    "Step-by-step user guides for the Cool Nerdz Student and Teacher Portals, plus answers about the curriculum, admissions, school licensing and billing.",
 };
 
 export default function FaqPage() {

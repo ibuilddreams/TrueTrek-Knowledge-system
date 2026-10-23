@@ -310,12 +310,17 @@ class PublicCourseGradeFilterTests(APITestCase):
     def test_difficulty_filter(self):
         self.assertEqual(self._titles(difficulty="advanced"), ["High School Math"])
 
-    def test_filters_endpoint_lists_available_grades_and_difficulties(self):
+    def test_filters_endpoint_offers_every_school_grade_and_present_difficulties(self):
         data = self.client.get(self.filters_url).data["data"]
 
+        # Grades 1-12 are offered whatever the catalog holds, so the dropdown
+        # does not gain and lose options as courses are published: no course
+        # here covers grades 3-8 and they are listed all the same. Difficulty
+        # still narrows to what is actually present.
         grade_values = [grade["value"] for grade in data["grades"]]
-        self.assertEqual(grade_values, [0, 1, 2, 9, 10, 11, 12])
-        self.assertEqual(data["grades"][0]["label"], "Kindergarten")
+        self.assertEqual(grade_values, list(range(1, 13)))
+        self.assertEqual(data["grades"][0]["label"], "Grade 1")
+        self.assertEqual(data["grades"][-1]["label"], "Grade 12")
         self.assertEqual(
             [difficulty["value"] for difficulty in data["difficulties"]],
             ["BEGINNER", "ADVANCED"],

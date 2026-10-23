@@ -1,8 +1,15 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
-import { CalendarCheck, Headphones, Mic, PlayCircle, Radio } from "lucide-react";
+import {
+  CalendarCheck,
+  CalendarDays,
+  Headphones,
+  Mic,
+  PlayCircle,
+  Radio,
+} from "lucide-react";
 import {
   cancelSessionRsvp,
   getSessionJoinLink,
@@ -17,11 +24,13 @@ import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 import StatCard from "@/components/ui/StatCard";
 import TabNav from "@/components/ui/TabNav";
+import SessionCalendar from "../live/SessionCalendar";
 import SessionList from "../live/SessionList";
 import SessionDetailModal from "../live/SessionDetailModal";
 
 const SECTIONS = [
   { id: "upcoming", label: "Upcoming Sessions", icon: Radio },
+  { id: "calendar", label: "Calendar", icon: CalendarDays },
   { id: "past", label: "Past & Recordings", icon: PlayCircle },
 ];
 
@@ -31,8 +40,20 @@ export default function WarRoomLiveTab() {
   const [detailSession, setDetailSession] = useState(null);
 
   const upcoming = useUpcomingSessions();
-  const past = usePastSessions({ enabled: activeSection === "past" });
+  // The calendar plots finished sessions beside the scheduled ones, so it
+  // needs the past list too — fetched as soon as either section is open and
+  // then served from the same cache when the student switches between them.
+  const past = usePastSessions({
+    enabled: activeSection === "past" || activeSection === "calendar",
+  });
   const { data: stats } = useSessionStats();
+
+  // Memoised because SessionCalendar's "open on the next session" effect takes
+  // this array as a dependency, and a fresh array every render would re-run it.
+  const calendarSessions = useMemo(
+    () => [...(upcoming.data || []), ...(past.data || [])],
+    [upcoming.data, past.data],
+  );
 
   const refreshSessions = () => {
     queryClient.invalidateQueries({ queryKey: ["live-sessions"] });
@@ -156,6 +177,20 @@ export default function WarRoomLiveTab() {
           onRetry={upcoming.refetch}
           emptyLabel="No sessions scheduled yet."
           emptyDescription="New War Room Live sessions are announced monthly. Check back soon."
+          {...sharedHandlers}
+        />
+      )}
+
+      {activeSection === "calendar" && (
+        <SessionCalendar
+          sessions={calendarSessions}
+          isLoading={upcoming.isLoading || past.isLoading}
+          isError={upcoming.isError || past.isError}
+          error={upcoming.error || past.error}
+          onRetry={() => {
+            upcoming.refetch();
+            past.refetch();
+          }}
           {...sharedHandlers}
         />
       )}

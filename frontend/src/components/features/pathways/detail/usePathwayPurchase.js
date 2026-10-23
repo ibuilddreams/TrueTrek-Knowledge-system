@@ -17,6 +17,10 @@ export function usePathwayPurchase(pathway) {
   const { status, isAuthenticated, isStudent, role } = useAuth();
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
+  // What the guest was reaching for — "select" or the withheld "price" — which
+  // is all the prompt needs to word itself. Held separately from the open flag,
+  // and kept after closing, so the copy doesn't change mid fade-out.
+  const [signInIntent, setSignInIntent] = useState("select");
 
   const isAuthResolved = status !== "idle" && status !== "loading";
 
@@ -84,6 +88,7 @@ export function usePathwayPurchase(pathway) {
     // Guests get the sign-in prompt rather than an abrupt redirect; it carries
     // `?next=` so they return to this pathway once signed in.
     if (mode === "guest") {
+      setSignInIntent("select");
       setIsSignInOpen(true);
       return;
     }
@@ -98,6 +103,18 @@ export function usePathwayPurchase(pathway) {
     label: COPY[mode].label,
     note: COPY[mode].note,
     isDisabled: mode === "loading",
+    // The bundle price is withheld from guests; tapping where it would be
+    // opens the same prompt, worded for pricing rather than checkout. Read off
+    // the session rather than `mode`, which also waits on the ownership
+    // lookup — that decides the CTA, but a price only needs to know who is
+    // looking.
+    canSeePrice: isAuthResolved && isAuthenticated,
+    isPriceResolved: isAuthResolved,
+    requestPrice: () => {
+      setSignInIntent("price");
+      setIsSignInOpen(true);
+    },
+    signInIntent,
     isSignInOpen,
     closeSignIn: () => setIsSignInOpen(false),
     isCheckoutOpen,

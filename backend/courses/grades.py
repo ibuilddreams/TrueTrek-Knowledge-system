@@ -66,3 +66,15 @@ def grade_range_label(grade_min, grade_max):
     if grade_min == grade_max:
         return grade_name(grade_min)
     return f"Grades {_short(grade_min)}–{_short(grade_max)}"
+
+
+# Grades offered by the public curriculum filter. The dropdown lists the whole
+# school range rather than only the grades some published course happens to
+# cover: an option set that silently gains and loses entries as the catalog is
+# edited is harder to use than a fixed one, and a grade with nothing behind it
+# yet answers with an empty result, which is the truth. Pre-K and K are left
+# out because this catalog is grades 1-12; `parse_grade_range` still stores
+# them, so a Pre-K course is matched by the range query and only misses a
+# dropdown entry.
+FILTER_MIN_GRADE = 1
+FILTER_GRADES = list(range(FILTER_MIN_GRADE, MAX_GRADE + 1))

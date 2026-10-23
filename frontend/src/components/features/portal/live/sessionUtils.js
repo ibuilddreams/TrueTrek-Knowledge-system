@@ -10,6 +10,15 @@ export const LIVE_STATE_TONE = {
   CANCELLED: "bg-porcelain text-muted border-line",
 };
 
+// Solid fill for the small square/dot that marks a session on the calendar
+// grid, where a tinted badge would be too faint to read at 6px.
+export const LIVE_STATE_DOT = {
+  LIVE: "bg-clay",
+  UPCOMING: "bg-gold",
+  ENDED: "bg-muted/70",
+  CANCELLED: "bg-muted/50",
+};
+
 export const LIVE_STATE_LABEL = {
   LIVE: "Live now",
   UPCOMING: "Upcoming",

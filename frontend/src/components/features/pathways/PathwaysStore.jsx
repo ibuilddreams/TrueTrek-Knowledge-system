@@ -47,12 +47,19 @@ export default function PathwaysStore() {
 
   const [page, setPage] = useState(1);
   const [isCheckoutOpen, setIsCheckoutOpen] = useState(false);
-  // The pathway a guest tried to select — drives the sign-in prompt and
-  // names it in the copy.
-  const [pendingSignInPathway, setPendingSignInPathway] = useState(null);
+  // What a guest tried to do with a pathway — select it, or read its withheld
+  // price. Names the pathway in the prompt's copy and picks which of the two
+  // the prompt answers; kept after closing so neither changes mid fade-out.
+  const [signInPrompt, setSignInPrompt] = useState(null);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
   // Keyed by id so a selection made on one page survives paginating away
   // from it — there's no server-side cart for pathways to persist this.
   const [selectedMap, setSelectedMap] = useState(new Map());
+
+  function promptSignIn(pathway, intent) {
+    setSignInPrompt({ pathway, intent });
+    setIsSignInOpen(true);
+  }
 
   const { data, isLoading, isFetching, isError, error, refetch } = useQuery({
     queryKey: ["public-pathways", page],
@@ -91,7 +98,7 @@ export default function PathwaysStore() {
     // Guests get a prompt rather than an abrupt redirect; signing in from it
     // carries `?next=` so they land back on this page.
     if (!isAuthenticated) {
-      setPendingSignInPathway(pathway);
+      promptSignIn(pathway, "select");
       return;
     }
 
@@ -237,7 +244,7 @@ export default function PathwaysStore() {
                   [BROWSING AS GUEST]
                 </span>
                 Pathways are visible to everyone. Sign in as a student to
-                select and purchase them.
+                see bundle pricing and purchase them.
               </p>
               <button
                 type="button"
@@ -314,6 +321,7 @@ export default function PathwaysStore() {
                   isOwned={ownedPathwayIds.has(pathway.id)}
                   canSelect={canSelect}
                   onToggleSelect={toggleSelect}
+                  onRequestSignIn={(selected) => promptSignIn(selected, "price")}
                 />
               ))}
             </motion.div>
@@ -362,10 +370,11 @@ export default function PathwaysStore() {
       </AnimatePresence>
 
       <SignInToSelectModal
-        isOpen={Boolean(pendingSignInPathway)}
-        pathwayName={pendingSignInPathway?.name}
+        isOpen={isSignInOpen}
+        pathwayName={signInPrompt?.pathway?.name}
+        intent={signInPrompt?.intent}
         nextPath={ROUTES.PATHWAYS}
-        onClose={() => setPendingSignInPathway(null)}
+        onClose={() => setIsSignInOpen(false)}
       />
 
       <PathwayCheckoutModal
