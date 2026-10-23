@@ -12,6 +12,7 @@ import {
   LifeBuoy,
   ArrowRight,
   ArrowUpRight,
+  BookOpenCheck,
   MessageCircleQuestion,
   Sparkles,
   ShieldCheck,
@@ -23,6 +24,7 @@ import { motion, AnimatePresence } from "motion/react";
 import { FAQ_CATEGORIES } from "@/constants/faq";
 import { ROUTES } from "@/constants/routes";
 import ContactAdvisorEntry from "./ContactAdvisorEntry";
+import UserGuides from "./guides/UserGuides";
 
 const CATEGORY_ICONS = {
   GraduationCap,
@@ -162,8 +164,32 @@ export default function Faq() {
           >
             Curriculum structure, admissions, school licensing, the Student
             Portal, and billing — everything prospective scholars, parents,
-            and partner institutions ask us most.
+            and partner institutions ask us most, plus complete step-by-step
+            guides for students and teachers.
           </motion.p>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.8, delay: 0.45 }}
+            className="flex flex-col sm:flex-row items-center gap-3 mt-7"
+          >
+            <a
+              id="btn-faq-hero-guides"
+              href="#user-guides"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-pine hover:bg-moss text-paper font-sans font-semibold uppercase tracking-widest text-xs px-7 py-3.5 rounded-full transition-colors duration-300 shadow-soft"
+            >
+              <BookOpenCheck className="w-4 h-4" />
+              Read the User Guides
+            </a>
+            <a
+              id="btn-faq-hero-questions"
+              href="#faq-topics"
+              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-paper hover:border-pine/30 text-ink border border-line font-sans font-semibold uppercase tracking-widest text-xs px-7 py-3.5 rounded-full transition-colors duration-300"
+            >
+              Browse {TOTAL_QUESTIONS} Questions
+            </a>
+          </motion.div>
         </div>
       </section>
 
@@ -206,6 +232,25 @@ export default function Faq() {
             </div>
           </div>
         )}
+
+        {/* Step-by-step portal walkthroughs for students and teachers */}
+        <UserGuides />
+
+        {/* Section header for the Q&A below, so it reads as its own half of
+            the page now that the guides sit above it. */}
+        <div id="faq-topics" data-reveal className="scroll-mt-24 max-w-2xl mb-8">
+          <span className="inline-flex items-center gap-2 text-gold font-sans uppercase tracking-widest text-xs font-medium mb-3">
+            <MessageCircleQuestion className="w-3.5 h-3.5" />
+            Frequently Asked Questions
+          </span>
+          <h2 className="text-2xl md:text-4xl font-serif font-light tracking-tight text-ink leading-[1.05]">
+            Still have a question? Start here.
+          </h2>
+          <p className="mt-3 font-sans text-sm md:text-base text-muted leading-relaxed">
+            {TOTAL_QUESTIONS} answers across {FAQ_CATEGORIES.length} topics,
+            covering the program, enrollment, licensing, the portal and billing.
+          </p>
+        </div>
 
         {/* Content: sticky category rail + accordions */}
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">

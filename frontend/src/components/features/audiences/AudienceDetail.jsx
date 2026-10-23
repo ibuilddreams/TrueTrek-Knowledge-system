@@ -24,6 +24,7 @@ import { getApiErrorMessage } from "@/lib/apiErrors";
 import EmptyState from "@/components/ui/EmptyState";
 import Pagination from "@/components/ui/Pagination";
 import StoreCourseCard from "@/components/features/store/StoreCourseCard";
+import SignInToSelectModal from "@/components/features/pathways/SignInToSelectModal";
 import AudienceCardGridSkeleton from "./AudienceCardGridSkeleton";
 import AudiencePathwayCard from "./AudiencePathwayCard";
 import AudienceSectionHeader from "./AudienceSectionHeader";
@@ -112,6 +113,11 @@ export default function AudienceDetail({ slug }) {
 
   const [pathwayPage, setPathwayPage] = useState(1);
   const [coursePage, setCoursePage] = useState(1);
+  // The pathway whose withheld bundle price a guest tapped — bundle pricing is
+  // members-only, so the card asks rather than showing a number. The pathway
+  // is kept after closing so its name doesn't vanish mid fade-out.
+  const [pricePromptPathway, setPricePromptPathway] = useState(null);
+  const [isSignInOpen, setIsSignInOpen] = useState(false);
 
   // Both lists are scoped server-side to this audience: pathways by their own
   // audience link, courses by the published pathways that carry them.
@@ -267,6 +273,10 @@ export default function AudienceDetail({ slug }) {
                   key={pathway.id}
                   pathway={pathway}
                   accentIndex={index}
+                  onRequestSignIn={(selected) => {
+                    setPricePromptPathway(selected);
+                    setIsSignInOpen(true);
+                  }}
                 />
               ))}
             </motion.div>
@@ -365,6 +375,16 @@ export default function AudienceDetail({ slug }) {
           </>
         )}
       </section>
+
+      {/* `next` is this audience page, so signing in from here lands the
+          visitor back on the grid they were reading, price in view. */}
+      <SignInToSelectModal
+        isOpen={isSignInOpen}
+        pathwayName={pricePromptPathway?.name}
+        intent="price"
+        nextPath={`${ROUTES.AUDIENCES}/${profile.slug}`}
+        onClose={() => setIsSignInOpen(false)}
+      />
     </div>
   );
 }

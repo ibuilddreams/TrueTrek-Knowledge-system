@@ -1,41 +1,59 @@
 "use client";
 
 import Link from "next/link";
-import { LogIn, ShieldCheck, UserPlus } from "lucide-react";
+import { LogIn, ShieldCheck, Tag, UserPlus } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import { ROUTES } from "@/constants/routes";
 import { buildAuthUrl } from "@/lib/authRedirect";
 
-// Shown when a guest tries to select or enroll in a pathway, instead of
-// bouncing them straight to /login. Mirrors the cart's SignInToPurchaseModal;
-// `nextPath` is carried as `?next=` so useGuestOnlyRoute returns them to this
-// exact page once they've signed in.
+// Shown when a guest tries to select or enroll in a pathway, or taps a bundle
+// price that is only shown to signed-in accounts, instead of bouncing them
+// straight to /login. Mirrors the cart's SignInToPurchaseModal; `nextPath` is
+// carried as `?next=` so useGuestOnlyRoute returns them to this exact page
+// once they've signed in.
+//
+// `intent` only changes the wording — both routes end in the same account, so
+// a guest who clicked a withheld price isn't told they tried to buy something.
 export default function SignInToSelectModal({
   isOpen,
   onClose,
   pathwayName,
   nextPath = ROUTES.PATHWAYS,
+  intent = "select",
+  closeLabel = "Keep Browsing Pathways",
 }) {
+  const isPriceIntent = intent === "price";
+
   return (
     <Modal
       isOpen={isOpen}
       onClose={onClose}
-      icon={ShieldCheck}
-      title="Sign in to select this pathway"
-      subtitle="A student account is needed to enroll"
+      icon={isPriceIntent ? Tag : ShieldCheck}
+      title={isPriceIntent ? "Sign in to view pricing" : "Sign in to select this pathway"}
+      subtitle={
+        isPriceIntent
+          ? "Bundle pricing is shown to members"
+          : "A student account is needed to enroll"
+      }
       maxWidth="max-w-md"
     >
       <div className="space-y-5">
         <p className="text-sm font-light leading-relaxed text-muted">
           {pathwayName ? (
             <>
-              <span className="font-medium text-ink">{pathwayName}</span> is purchased
-              with a student account.
+              <span className="font-medium text-ink">{pathwayName}</span>
+              {isPriceIntent
+                ? " is priced for signed-in accounts."
+                : " is purchased with a student account."}
             </>
+          ) : isPriceIntent ? (
+            "Pathway pricing is shown to signed-in accounts."
           ) : (
             "Pathways are purchased with a student account."
           )}{" "}
-          Sign in and we&apos;ll bring you straight back here to finish.
+          {isPriceIntent
+            ? "Sign in or create an account and we'll bring you straight back here with the price in view."
+            : "Sign in and we'll bring you straight back here to finish."}
         </p>
 
         <div className="flex flex-col gap-3">
@@ -60,7 +78,7 @@ export default function SignInToSelectModal({
           onClick={onClose}
           className="w-full text-center text-xs font-sans font-medium uppercase tracking-widest text-muted hover:text-ink transition-colors"
         >
-          Keep Browsing Pathways
+          {closeLabel}
         </button>
       </div>
     </Modal>

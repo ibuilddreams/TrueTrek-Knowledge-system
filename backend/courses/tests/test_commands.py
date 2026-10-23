@@ -9,6 +9,7 @@ from django.test import TestCase, override_settings
 from django.utils import timezone
 
 from courses.management.commands import seeddata as seed
+from common.models import Status
 from courses.models import Category, Course
 from daily_drill.models import DrillOption, DrillQuestion
 from enrollments.models import Enrollment
@@ -19,7 +20,7 @@ from onboarding.models import Question as OnboardingQuestion
 from pathways.models import Pathway, PathwayCourse
 from live_sessions.models import LiveSession, SessionSpeaker
 from quests.models import DailyQuestAssignment, Quest
-from quizzes.models import Question as QuizQuestion
+from quizzes.models import Choice, Question as QuizQuestion
 from rewards.models import PointsTransaction, StudentPointsAccount
 from tiers.models import Tier, TierPathway
 from wargamer.models import RolePlayScenario, RolePlaySession, RolePlayTurn
@@ -95,6 +96,60 @@ class SeedDataCommandTests(TestCase):
                     self.assertEqual(
                         question.choices.filter(is_correct=True).count(), 1, question.text
                     )
+
+    def test_catalog_only_courses_are_pages_with_no_generated_curriculum(self):
+        """The Cool Nerds academy sheet gave a focus and a competency line per
+        course and no curriculum, so those courses seed as published course pages
+        and the generic two-module shell is deliberately not built for them —
+        placeholder modules would stand in front of content still being written.
+        Everything that makes the page browsable is still seeded.
+        """
+        seed_offline()
+
+        catalog_only = [cd for cd in seed.COURSE_DEFS if cd.get("catalog_only")]
+        self.assertTrue(catalog_only)
+
+        for course_def in catalog_only:
+            course = Course.objects.get(code=course_def["code"])
+            self.assertEqual(course.modules.count(), 0, course.code)
+            self.assertEqual(course.quizzes.count(), 0, course.code)
+            self.assertEqual(course.assignments.count(), 0, course.code)
+            self.assertEqual(Lesson.objects.filter(module__course=course).count(), 0, course.code)
+
+            self.assertEqual(course.status, Status.PUBLISHED, course.code)
+            self.assertTrue(course.instructors.exists(), course.code)
+            self.assertTrue(course.tags.exists(), course.code)
+            self.assertTrue(course.learning_outcomes, course.code)
+            self.assertGreater(course.amount, 0, course.code)
+            # The sheet named no pathway, so nothing bundles them.
+            self.assertFalse(course.pathway_courses.exists(), course.code)
+
+    def test_a_course_past_school_age_is_labelled_by_stage_not_by_grade(self):
+        """`grade_label` is "Undergraduate"/"Graduate School" on the top two Cool
+        Nerds bands. Nothing may render those as "Grades Graduate School" — not
+        the course page, and not a distractor on some other course's quiz — and
+        a course belonging to no school grade must stay out of the grade filter.
+        """
+        seed_offline()
+
+        undergraduate = Course.objects.get(code="CN-402")
+        self.assertIsNone(undergraduate.grade_min)
+        self.assertIsNone(undergraduate.grade_max)
+        self.assertIn("Written for undergraduate students", undergraduate.learning_outcomes)
+        self.assertIn(
+            "Written for graduate students",
+            Course.objects.get(code="CN-509").learning_outcomes,
+        )
+        # A school-age band still parses into the grade filter's range query.
+        self.assertEqual(
+            (Course.objects.get(code="CN-101").grade_min, Course.objects.get(code="CN-101").grade_max),
+            (4, 5),
+        )
+
+        nonsense = [f"Grades {label}" for label in seed.NON_GRADE_LEVELS]
+        for text in Choice.objects.values_list("text", flat=True):
+            for phrase in nonsense:
+                self.assertNotIn(phrase, text)
 
     def test_authored_courses_get_their_written_curriculum(self):
         """A course listed in `_course_content` is seeded from that file, not from

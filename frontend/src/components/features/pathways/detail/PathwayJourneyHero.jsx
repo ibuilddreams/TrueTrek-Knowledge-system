@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { ChevronRight, Infinity as InfinityIcon, Layers, Signal, Timer } from "lucide-react";
+import { ChevronRight, Infinity as InfinityIcon, Layers, Lock, Signal, Timer } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { formatCoursePrice } from "@/lib/store";
 import PathwayCtaButton from "./PathwayCtaButton";
@@ -14,6 +14,10 @@ const DIFFICULTY_LABELS = {
 
 const PILL =
   "rounded-full border border-white/20 bg-white/10 px-3 py-1 text-[10px] font-sans font-bold uppercase tracking-widest text-paper/85";
+
+// The guest's stand-in for the price, on the hero's dark panel.
+const LOCKED_PRICE =
+  "mt-2 inline-flex items-center gap-2 rounded-full border border-dashed border-paper/30 bg-white/[0.06] px-4 py-2.5 font-sans text-xs font-semibold text-paper transition hover:bg-white/[0.12] focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-gold";
 
 const PRIMARY_CTA =
   "inline-flex items-center justify-center gap-2 rounded-full bg-gold px-7 py-3.5 text-xs font-sans font-bold uppercase tracking-widest text-ink shadow-elevated transition hover:brightness-95 disabled:opacity-60 disabled:cursor-not-allowed";
@@ -109,9 +113,20 @@ export default function PathwayJourneyHero({ pathway, purchase, ctaRef }) {
             <p className="text-[10px] font-sans font-medium uppercase tracking-widest text-paper/55">
               Bundle price
             </p>
-            <p className="mt-1.5 font-sans text-4xl font-semibold leading-none text-paper">
-              {formatCoursePrice(pathway.base_price)}
-            </p>
+            {!purchase.isPriceResolved ? (
+              // Held open while the session resolves, so the panel doesn't
+              // reflow under a visitor who turns out to be signed in.
+              <span aria-hidden="true" className="mt-2 block h-9 w-40 rounded-xl bg-white/10" />
+            ) : purchase.canSeePrice ? (
+              <p className="mt-1.5 font-sans text-4xl font-semibold leading-none text-paper">
+                {formatCoursePrice(pathway.base_price)}
+              </p>
+            ) : (
+              <button type="button" onClick={purchase.requestPrice} className={LOCKED_PRICE}>
+                <Lock aria-hidden="true" className="h-3.5 w-3.5" />
+                Sign in to view price
+              </button>
+            )}
             <p className="mt-2 text-[11px] text-paper/50">
               {courseCount} course{courseCount === 1 ? "" : "s"}, billed once
             </p>

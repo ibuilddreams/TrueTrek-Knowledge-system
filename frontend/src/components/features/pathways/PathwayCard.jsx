@@ -10,8 +10,8 @@ import {
   Layers,
 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
-import { formatCoursePrice } from "@/lib/store";
 import { pathwayAccentStyle } from "@/lib/pathwayAccents";
+import PathwayPriceTag from "./PathwayPriceTag";
 
 function getTierLabel(tiers) {
   if (!tiers || tiers.length === 0) return "Standalone";
@@ -31,6 +31,7 @@ export default function PathwayCard({
   canSelect = true,
   accentIndex = 0,
   onToggleSelect,
+  onRequestSignIn,
 }) {
   const courseCount = pathway.course_count ?? 0;
 
@@ -86,10 +87,10 @@ export default function PathwayCard({
       </div>
 
       <div className={styles.footer}>
-        <span className={styles.priceLabel}>Bundle price</span>
-        <span className={styles.price}>
-          {formatCoursePrice(pathway.base_price)}
-        </span>
+        <PathwayPriceTag
+          price={pathway.base_price}
+          onRequestSignIn={() => onRequestSignIn?.(pathway)}
+        />
 
         {/* Above the stretched link, so the action is not a navigation. */}
         <div className="relative z-10">

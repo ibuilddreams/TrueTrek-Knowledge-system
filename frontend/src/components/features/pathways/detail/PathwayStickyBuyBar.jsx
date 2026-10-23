@@ -8,8 +8,9 @@ const CTA =
   "inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-gold px-6 py-3 text-xs font-sans font-bold uppercase tracking-widest text-ink transition hover:brightness-95 disabled:opacity-60 disabled:cursor-not-allowed";
 
 // Takes over from the hero's inline CTA once that scrolls out of view, so the
-// price stays reachable while reading the roadmap without copying the course
-// page's sticky right-hand rail.
+// price — or, for a guest, the sign-in that reveals it — stays reachable while
+// reading the roadmap, without copying the course page's sticky right-hand
+// rail.
 export default function PathwayStickyBuyBar({ pathway, purchase, watchRef }) {
   const [isVisible, setIsVisible] = useState(false);
 
@@ -37,7 +38,11 @@ export default function PathwayStickyBuyBar({ pathway, purchase, watchRef }) {
             {pathway.name}
           </p>
           <p className="text-xs font-sans text-muted">
-            {formatCoursePrice(pathway.base_price)} · lifetime access
+            {!purchase.isPriceResolved
+              ? "Lifetime access"
+              : purchase.canSeePrice
+                ? `${formatCoursePrice(pathway.base_price)} · lifetime access`
+                : "Lifetime access · sign in to view price"}
           </p>
         </div>
         <PathwayCtaButton

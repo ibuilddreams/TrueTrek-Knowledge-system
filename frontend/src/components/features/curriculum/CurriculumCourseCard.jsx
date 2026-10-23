@@ -1,14 +1,47 @@
 "use client";
 
 import Link from "next/link";
-import { ArrowUpRight, BookOpen, Check, Clock3, Heart, KeyRound, ShoppingCart } from "lucide-react";
+import {
+  ArrowUpRight,
+  Blocks,
+  BookMarked,
+  BookOpen,
+  Briefcase,
+  Building2,
+  Check,
+  Clock3,
+  GraduationCap,
+  Heart,
+  KeyRound,
+  Landmark,
+  Rocket,
+  ShoppingCart,
+  Trophy,
+  Users,
+  Wrench,
+} from "lucide-react";
 import { formatDuration } from "./CourseCatalogParts";
 import { formatCoursePrice } from "@/lib/store";
 
-const CATEGORY_ICONS = {
-  Academic: "🎓", Athletic: "🏆", Professional: "📈", Foundation: "📚",
-  Vocational: "🧭", Legacy: "🏛️", Leadership: "🛡️", Personal: "🌱",
+// One crest per seeded category (`CATEGORY_NAMES` in seeddata.py). These were
+// emoji, which the OS draws in its own style and colour — "Professional" came
+// out as a jagged little chart bitmap that read as a broken image. A Lucide
+// glyph in a tinted tile is drawn by the app, stays sharp at any zoom, and
+// matches the icons already used further down the card. The two largest
+// categories (Coaches & Mentors, Scholars & Founders) had no emoji at all and
+// were falling through to the generic book.
+const CATEGORY_CRESTS = {
+  Academic: { Icon: GraduationCap, tint: "bg-indigo-50 text-indigo-600" },
+  Athletic: { Icon: Trophy, tint: "bg-amber-50 text-amber-600" },
+  Foundation: { Icon: Blocks, tint: "bg-sky-50 text-sky-600" },
+  Legacy: { Icon: Landmark, tint: "bg-stone-100 text-stone-600" },
+  Professional: { Icon: Briefcase, tint: "bg-violet-50 text-violet-600" },
+  Vocational: { Icon: Wrench, tint: "bg-orange-50 text-orange-600" },
+  "Scholars & Founders": { Icon: Rocket, tint: "bg-fuchsia-50 text-fuchsia-600" },
+  "Coaches & Mentors": { Icon: Users, tint: "bg-emerald-50 text-emerald-600" },
+  "Legacy & Family Offices": { Icon: Building2, tint: "bg-slate-100 text-slate-600" },
 };
+const DEFAULT_CREST = { Icon: BookMarked, tint: "bg-zinc-100 text-zinc-500" };
 const DIFFICULTIES = { BEGINNER: "Beginner", INTERMEDIATE: "Intermediate", ADVANCED: "Advanced" };
 
 export default function CurriculumCourseCard({ course, isSaved, onToggleSaved, canUseCart, inCart, cartPending, onToggleCart }) {
@@ -16,11 +49,14 @@ export default function CurriculumCourseCard({ course, isSaved, onToggleSaved, c
   const duration = formatDuration(course.duration_minutes);
   const description = course.description?.split(/\n\s*\nProvider:/)[0];
   const href = `/curriculum/${course.slug}`;
+  const { Icon: CategoryIcon, tint } = CATEGORY_CRESTS[course.category?.name] || DEFAULT_CREST;
 
   return (
     <article className="flex min-w-0 flex-col rounded-[28px] border border-zinc-100 bg-white p-7 shadow-[0_6px_32px_-16px_rgba(24,24,27,0.12)] transition-shadow hover:shadow-[0_14px_40px_-18px_rgba(24,24,27,0.2)] sm:p-8">
       <div className="flex items-start justify-between gap-4">
-        <span aria-hidden="true" className="text-[42px] leading-none">{CATEGORY_ICONS[course.category?.name] || "📖"}</span>
+        <span aria-hidden="true" className={`flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl ${tint}`}>
+          <CategoryIcon className="h-6 w-6" strokeWidth={1.75} />
+        </span>
         <div className="flex min-w-0 items-center gap-2">
           <span className="truncate text-[10px] font-semibold uppercase tracking-[0.12em] text-zinc-400" title={course.code}>{course.code}</span>
           <button type="button" onClick={onToggleSaved} aria-pressed={isSaved} aria-label={`${isSaved ? "Unsave" : "Save"} ${course.title}`} className="shrink-0 rounded-full p-2 text-zinc-400 transition hover:bg-rose-50 hover:text-rose-600 focus-visible:outline-2 focus-visible:outline-indigo-500">

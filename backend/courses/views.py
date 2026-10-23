@@ -11,7 +11,7 @@ from enrollments.serializers import CourseEnrolledStudentSerializer
 from users.permissions import IsAdmin, IsTeacher
 from tiers.models import Tier
 
-from .grades import MAX_GRADE, MIN_GRADE, grade_name
+from .grades import FILTER_GRADES, MAX_GRADE, MIN_GRADE, grade_name
 from .models import Category, Course, Tag
 from .serializers import (
     CategorySerializer,
@@ -373,11 +373,6 @@ class PublicCourseFiltersView(generics.GenericAPIView):
     def get(self, request):
         courses = Course.objects.filter(status=Status.PUBLISHED)
 
-        ranges = courses.exclude(grade_min__isnull=True).exclude(grade_max__isnull=True).values_list(
-            "grade_min", "grade_max"
-        ).distinct()
-        grades = sorted({g for low, high in ranges for g in range(low, high + 1)})
-
         present_difficulties = set(courses.values_list("difficulty", flat=True).distinct())
         difficulties = [
             {"value": value, "label": label}
@@ -400,7 +395,7 @@ class PublicCourseFiltersView(generics.GenericAPIView):
             ).order_by("level").values(
                 "id", "slug", "name", "level", "audience", "focus_description", "estimated_duration", "course_count"
             )),
-            "grades": [{"value": grade, "label": grade_name(grade)} for grade in grades],
+            "grades": [{"value": grade, "label": grade_name(grade)} for grade in FILTER_GRADES],
             "difficulties": difficulties,
         }, message="Curriculum filters fetched successfully")
 

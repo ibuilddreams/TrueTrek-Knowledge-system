@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { BookOpen, ChevronDown } from "lucide-react";
 import { formatCoursePrice } from "@/lib/store";
+import { usePathwayPricing } from "@/hooks/usePathwayPricing";
 import PathwayCourseOutline from "./PathwayCourseOutline";
 import PathwaySectionHeading from "./PathwaySectionHeading";
 
@@ -11,6 +12,9 @@ import PathwaySectionHeading from "./PathwaySectionHeading";
 // deliberate — clicking a stop shows what's inside rather than navigating away
 // to the course's own store page, so the pathway stays the thing being read.
 export default function PathwayRoadmap({ courses }) {
+  // "$X separately" only exists to frame what the bundle saves, so it follows
+  // the bundle price: a guest who can't see one shouldn't be shown the other.
+  const { canSeePrice } = usePathwayPricing();
   const ordered = [...(courses || [])].sort((a, b) => a.order - b.order);
   const [openIds, setOpenIds] = useState(() => new Set(ordered.slice(0, 1).map((e) => e.id)));
 
@@ -107,7 +111,9 @@ export default function PathwayRoadmap({ courses }) {
                         <span className="mt-1 block text-xs font-sans text-muted">
                           <span className="sm:hidden">Step {index + 1} · </span>
                           {course.code ? `${course.code} · ` : ""}
-                          {formatCoursePrice(course.amount)} separately
+                          {canSeePrice
+                            ? `${formatCoursePrice(course.amount)} separately`
+                            : "Included in this pathway"}
                         </span>
                       </span>
 

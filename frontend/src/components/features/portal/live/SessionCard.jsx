@@ -1,6 +1,7 @@
 "use client";
 
-import { Calendar, CalendarCheck, Clock, Mic, PlayCircle, Radio, Users } from "lucide-react";
+import { Calendar, CalendarCheck, Clock, Mic, Radio, Users } from "lucide-react";
+import SessionActionButton from "./SessionActionButton";
 import SpeakerChip from "./SpeakerChip";
 import {
   formatCountdown,
@@ -23,7 +24,6 @@ export default function SessionCard({
   const isEnded = state === "ENDED";
   const isCancelled = state === "CANCELLED";
   const countdown = formatCountdown(session.scheduled_at);
-  const isFull = session.seats_remaining === 0 && !session.is_rsvped;
 
   return (
     <div
@@ -129,62 +129,13 @@ export default function SessionCard({
               : countdown || "Starting soon"}
         </span>
 
-        {isEnded || isCancelled ? (
-          session.recording_url ? (
-            <a
-              href={session.recording_url}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold font-mono uppercase tracking-wider rounded-lg border border-line text-ink hover:bg-porcelain transition"
-            >
-              <PlayCircle className="w-3.5 h-3.5" />
-              Recording
-            </a>
-          ) : (
-            <span className="text-[11px] font-mono uppercase tracking-wider text-muted">
-              {isCancelled ? "Cancelled" : "No recording"}
-            </span>
-          )
-        ) : isLive && !session.can_join ? (
-          // Live right now, but the admin hasn't published a link yet —
-          // offering "Save my spot" here would be nonsense.
-          <span className="text-[11px] font-mono uppercase tracking-wider text-clay">
-            Link coming soon
-          </span>
-        ) : session.can_join ? (
-          <button
-            type="button"
-            onClick={() => onJoin?.(session)}
-            disabled={isBusy}
-            className="inline-flex items-center gap-1.5 px-5 py-2 text-xs font-semibold font-mono uppercase tracking-wider rounded-lg bg-clay hover:bg-clay/90 text-paper shadow-sm transition disabled:opacity-50 cursor-pointer"
-          >
-            <Radio className="w-3.5 h-3.5" />
-            Join Live
-          </button>
-        ) : session.is_rsvped ? (
-          <button
-            type="button"
-            onClick={() => onCancelRsvp?.(session)}
-            disabled={isBusy}
-            className="inline-flex items-center gap-1.5 px-4 py-2 text-xs font-semibold font-mono uppercase tracking-wider rounded-lg border border-line text-muted hover:text-ink hover:bg-porcelain transition disabled:opacity-50 cursor-pointer"
-          >
-            Cancel RSVP
-          </button>
-        ) : (
-          <button
-            type="button"
-            onClick={() => onRsvp?.(session)}
-            disabled={isBusy || isFull}
-            className={`inline-flex items-center gap-1.5 px-5 py-2 text-xs font-semibold font-mono uppercase tracking-wider rounded-lg shadow-sm transition ${
-              isFull
-                ? "bg-porcelain text-muted cursor-not-allowed"
-                : "bg-pine hover:bg-moss text-paper cursor-pointer disabled:opacity-50"
-            }`}
-          >
-            <CalendarCheck className="w-3.5 h-3.5" />
-            {isFull ? "Full" : "Save my spot"}
-          </button>
-        )}
+        <SessionActionButton
+          session={session}
+          onRsvp={onRsvp}
+          onCancelRsvp={onCancelRsvp}
+          onJoin={onJoin}
+          isBusy={isBusy}
+        />
       </div>
     </div>
   );

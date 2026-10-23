@@ -1,9 +1,13 @@
-// Catalog descriptions end with a metadata line such as
-// "Provider: X · 1 credit · Grades K · Subject: Y · Format: Textbook".
-// Split it from the prose so the page can show the prose as a description and
-// the metadata as a tidy "Course details" list.
+// Catalog descriptions are authored as several paragraphs: a focus statement,
+// one or more labelled sections such as "Core competencies: ...", and a final
+// metadata line "Provider: X · 1 credit · Grades K · Subject: Y · Format: Textbook".
+// Split them apart so a page can render the prose as paragraphs and the
+// metadata as a tidy "Course details" list.
 const CREDIT_PATTERN = /^(\d+(?:\.\d+)?)\s+credits?$/i;
 const GRADES_PATTERN = /^grades?\s+(.+)$/i;
+// A leading "Core competencies:"-style label: short, no sentence punctuation
+// before the colon, so a paragraph that merely contains a colon stays prose.
+const LABEL_PATTERN = /^([^.:\n]{3,40}):\s+(\S[\s\S]*)$/;
 
 function parseFact(segment) {
   const text = segment.trim();
@@ -24,6 +28,12 @@ function parseFact(segment) {
   return null;
 }
 
+function parseParagraph(text) {
+  const labelled = text.match(LABEL_PATTERN);
+  if (!labelled) return { label: null, text };
+  return { label: labelled[1].trim(), text: labelled[2].trim() };
+}
+
 export function parseCourseDescription(description) {
   const paragraphs = (description || "")
     .split(/\n{2,}|\n/)
@@ -31,12 +41,11 @@ export function parseCourseDescription(description) {
     .filter(Boolean);
 
   const metaIndex = paragraphs.findIndex((part) => /^provider:/i.test(part));
-  if (metaIndex === -1) return { summary: paragraphs.join("\n\n"), facts: [] };
+  const prose = metaIndex === -1 ? paragraphs : paragraphs.filter((_, index) => index !== metaIndex);
+  const facts =
+    metaIndex === -1
+      ? []
+      : paragraphs[metaIndex].split("·").map(parseFact).filter(Boolean);
 
-  const facts = paragraphs[metaIndex]
-    .split("·")
-    .map(parseFact)
-    .filter(Boolean);
-  const summary = paragraphs.filter((_, index) => index !== metaIndex).join("\n\n");
-  return { summary, facts };
+  return { summary: prose.join("\n\n"), paragraphs: prose.map(parseParagraph), facts };
 }

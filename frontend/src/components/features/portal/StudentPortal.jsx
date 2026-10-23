@@ -12,7 +12,7 @@ import TabNav from "@/components/ui/TabNav";
 import TabTransition from "@/components/ui/TabTransition";
 import Loader from "@/components/ui/Loader";
 import {
-  PORTAL_TABS,
+  PORTAL_NAV,
   VALID_PORTAL_TABS,
   DEFAULT_PORTAL_TAB,
   resolvePortalTab,
@@ -233,7 +233,7 @@ function StudentPortalContent() {
         <div className="lg:col-span-1 lg:sticky lg:top-24">
           <TabNav
             variant="sidebar"
-            tabs={PORTAL_TABS}
+            tabs={PORTAL_NAV}
             activeTab={activeTab}
             onChange={setActiveTab}
             ariaLabel="Cool Nerdz Portal sections"

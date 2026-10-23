@@ -102,6 +102,42 @@
   font-variant-numeric: tabular-nums;
 }
 
+/* Guest state: the bundle price is withheld until sign-in. Positioned so it
+   sits above the card's stretched link — clicking it opens the sign-in prompt
+   instead of navigating to the pathway. */
+.lockedPrice {
+  position: relative;
+  z-index: 2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  margin-top: 7px;
+  padding: 7px 15px;
+  border: 1px dashed rgba(9, 45, 41, 0.3);
+  border-color: color-mix(in srgb, var(--pathway-accent, var(--color-pine)) 42%, transparent);
+  border-radius: 999px;
+  background: var(--color-porcelain);
+  color: var(--color-pine);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  transition: background 180ms ease;
+}
+.lockedPrice:hover { background: var(--color-sage); }
+.lockedPrice:focus-visible { outline: 2px solid var(--color-pine); outline-offset: 3px; }
+
+/* Holds the price line's height while the session is being restored, so a
+   grid of cards doesn't reflow once it resolves. */
+.pricePlaceholder {
+  display: block;
+  width: 118px;
+  height: 31px;
+  margin: 5px auto 0;
+  border-radius: 10px;
+  background: var(--color-porcelain);
+}
+
 .action {
   display: flex;
   align-items: center;
@@ -153,7 +189,7 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .card, .action, .detail { transition: none; }
+  .card, .action, .detail, .lockedPrice { transition: none; }
   .card:hover { transform: none; }
   .card:hover .detail { gap: 6px; }
 }

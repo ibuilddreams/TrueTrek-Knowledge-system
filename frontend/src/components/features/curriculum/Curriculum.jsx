@@ -14,7 +14,7 @@ import Loader from "@/components/ui/Loader";
 
 const SAVED_KEY = "truetrek-saved-curriculum";
 const PAGE_SIZE = 24;
-const DEFAULT_FILTERS = { category: "", tier: "", difficulty: "", sort: "title" };
+const DEFAULT_FILTERS = { grade: "", tier: "", difficulty: "", sort: "title" };
 
 export default function Curriculum() {
   const [search, setSearch] = useState("");
@@ -52,14 +52,14 @@ export default function Curriculum() {
   }
   function clearFilters() { setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort })); setPage(1); }
   const tiers = facets.data?.tiers || [];
-  const subjects = facets.data?.subjects || [];
+  const grades = facets.data?.grades || [];
   const difficulties = facets.data?.difficulties || [];
   return (
     <div className="min-h-screen bg-[#fafafa] px-5 py-10 font-sans text-zinc-900 md:px-8 md:py-12" id="curriculum-container">
       <div className="mx-auto max-w-7xl">
         <header className="mx-auto mb-7 max-w-3xl text-center md:mb-8">
           <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-[56px] md:leading-[1.15]">The 9-Tier Curriculum</h1>
-          <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-zinc-500">Explore courses built around your next chapter. Filter by tier, subject, or difficulty to find your next course and discover what you’ll learn.</p>
+          <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-zinc-500">Explore courses built around your next chapter. Filter by tier, grade level, or difficulty to find your next course and discover what you’ll learn.</p>
         </header>
         <CurriculumFilters
           filters={filters}
@@ -67,7 +67,7 @@ export default function Curriculum() {
           onSearchChange={(value) => { setSearch(value); setPage(1); }}
           onFilterChange={updateFilter}
           onClear={clearFilters}
-          subjects={subjects}
+          grades={grades}
           tiers={tiers}
           difficulties={difficulties}
           savedCount={saved.length}

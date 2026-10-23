@@ -16,9 +16,15 @@ correcting a line here lands on the next reseed without orphaning a student's
 progress — see its docstring for what is deliberately create-only.
 
 The catalog is being written a pathway at a time. The Athlete CEO Pathway
-(CEO-101…CEO-304) and The Recruiting Pathway (REC-101…REC-303) are done — twenty
-courses — and every other course still seeds the generated shell. Adding a course
-is adding a module here and a line in COURSE_CONTENT below.
+(CEO-101…CEO-304), The Recruiting Pathway (REC-101…REC-303) and The Mental
+Toughness Pathway (MT-101…MT-303) are done — thirty courses — and every other
+course still seeds the generated shell. Adding a course is adding a module here
+and a line in COURSE_CONTENT below.
+
+The Mental Toughness courses teach performance psychology, not therapy. Each one
+states that boundary and hands over to a professional where the material touches
+genuine distress; that framing is deliberate and should be kept if those files
+are edited.
 
 Shape of one module, all keys required:
 
@@ -111,6 +117,26 @@ from .rec_302 import HANDOUTS as REC_302_HANDOUTS
 from .rec_302 import MODULES as REC_302
 from .rec_303 import HANDOUTS as REC_303_HANDOUTS
 from .rec_303 import MODULES as REC_303
+from .mt_101 import HANDOUTS as MT_101_HANDOUTS
+from .mt_101 import MODULES as MT_101
+from .mt_102 import HANDOUTS as MT_102_HANDOUTS
+from .mt_102 import MODULES as MT_102
+from .mt_103 import HANDOUTS as MT_103_HANDOUTS
+from .mt_103 import MODULES as MT_103
+from .mt_201 import HANDOUTS as MT_201_HANDOUTS
+from .mt_201 import MODULES as MT_201
+from .mt_202 import HANDOUTS as MT_202_HANDOUTS
+from .mt_202 import MODULES as MT_202
+from .mt_203 import HANDOUTS as MT_203_HANDOUTS
+from .mt_203 import MODULES as MT_203
+from .mt_204 import HANDOUTS as MT_204_HANDOUTS
+from .mt_204 import MODULES as MT_204
+from .mt_301 import HANDOUTS as MT_301_HANDOUTS
+from .mt_301 import MODULES as MT_301
+from .mt_302 import HANDOUTS as MT_302_HANDOUTS
+from .mt_302 import MODULES as MT_302
+from .mt_303 import HANDOUTS as MT_303_HANDOUTS
+from .mt_303 import MODULES as MT_303
 
 # Lesson content types whose file is the module's generated handout rather than
 # prose in `content_data`.
@@ -167,4 +193,14 @@ COURSE_CONTENT = {
     "REC-301": _with_handouts("REC-301", REC_301, REC_301_HANDOUTS),
     "REC-302": _with_handouts("REC-302", REC_302, REC_302_HANDOUTS),
     "REC-303": _with_handouts("REC-303", REC_303, REC_303_HANDOUTS),
+    "MT-101": _with_handouts("MT-101", MT_101, MT_101_HANDOUTS),
+    "MT-102": _with_handouts("MT-102", MT_102, MT_102_HANDOUTS),
+    "MT-103": _with_handouts("MT-103", MT_103, MT_103_HANDOUTS),
+    "MT-201": _with_handouts("MT-201", MT_201, MT_201_HANDOUTS),
+    "MT-202": _with_handouts("MT-202", MT_202, MT_202_HANDOUTS),
+    "MT-203": _with_handouts("MT-203", MT_203, MT_203_HANDOUTS),
+    "MT-204": _with_handouts("MT-204", MT_204, MT_204_HANDOUTS),
+    "MT-301": _with_handouts("MT-301", MT_301, MT_301_HANDOUTS),
+    "MT-302": _with_handouts("MT-302", MT_302, MT_302_HANDOUTS),
+    "MT-303": _with_handouts("MT-303", MT_303, MT_303_HANDOUTS),
 }

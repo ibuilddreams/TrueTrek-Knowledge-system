@@ -29,6 +29,7 @@ import {
 import { AnimatePresence, motion } from "motion/react";
 import { getStudentEnrolledCourseDetail } from "@/services/studentCoursesService";
 import CourseFeedSection from "@/components/features/portal/course-detail/CourseFeedSection";
+import CourseOverview from "@/components/features/portal/course-detail/CourseOverview";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatDate, formatDateTime } from "@/lib/adminFormatters";
 import { useModuleLessons } from "@/hooks/student/useModuleLessons";
@@ -671,9 +672,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
             <div className="lg:col-span-2 space-y-6 min-w-0">
               <div className="rounded-card border border-line bg-paper shadow-soft p-5 sm:p-6 space-y-4">
-                <p className="text-sm text-muted font-light leading-relaxed">
-                  {course.description || "No course description has been added yet."}
-                </p>
+                <CourseOverview description={course.description} />
 
                 {!canInteract ? (
                   <div className="flex items-start gap-2 rounded-xl border border-line bg-porcelain px-3.5 py-3 text-sm text-muted">

@@ -144,6 +144,32 @@ ADULT_READER_PATHWAYS = {
     "The Coaching Pathway",
 }
 
+# `grade_label` is not always a grade range. The Cool Nerds academy catalog
+# (CN-101...CN-509) runs past school age, so two of its bands name a stage of
+# life instead -- "Undergraduate" and "Graduate School". Every string that
+# renders a grade label goes through one of the two helpers below, so nothing
+# can read "Grades Graduate School" (which is what a bare f-string produced
+# before these courses existed, both on the course page and as a distractor in
+# every other course's generated quiz). The numeric labels render exactly as
+# they always did.
+NON_GRADE_LEVELS = {
+    # grade_label: (how it is named on its own, how it names its reader)
+    "Undergraduate": ("Undergraduate", "undergraduate students"),
+    "Graduate School": ("Graduate School", "graduate students"),
+}
+
+
+def grade_level_label(grade_label):
+    """How a grade label is named on its own: "Grades 9-12", "Graduate School"."""
+    stage = NON_GRADE_LEVELS.get(grade_label)
+    return stage[0] if stage else f"Grades {grade_label}"
+
+
+def grade_level_audience(grade_label):
+    """How a grade label names its reader: "Grades 9-12", "graduate students"."""
+    stage = NON_GRADE_LEVELS.get(grade_label)
+    return stage[1] if stage else f"Grades {grade_label}"
+
 
 def build_learning_outcomes(course_def):
     """"What you'll learn" points for a seeded course, taken from the client's own
@@ -151,8 +177,15 @@ def build_learning_outcomes(course_def):
     deterministic). Every field is read with .get so a course def written before
     one of them existed still produces a sensible list rather than a KeyError."""
     outcomes = []
-    if course_def.get("focus"):
-        outcomes.append(course_def["focus"])
+    focus = course_def.get("focus")
+    if focus:
+        # The client's two sheets spell Focus differently: the athlete sheet gives a
+        # full sentence ("Aligning academic progress with long-term career
+        # optionality."), the Cool Nerds academy sheet a bare subject area
+        # ("Decision Making"). A bare area needs its label to read as a bullet, so a
+        # def carrying one says so with `focus_is_area` rather than this guessing
+        # from punctuation.
+        outcomes.append(f"Focus area: {focus}" if course_def.get("focus_is_area") else focus)
     if course_def.get("core"):
         outcomes.append(f"Core competencies: {course_def['core']}")
     # `subject` holds the sheet's full Level label, e.g. "Level 1: Foundational
@@ -164,9 +197,11 @@ def build_learning_outcomes(course_def):
     grade_label = course_def.get("grade_label")
     if grade_label:
         if course_def.get("pathway") in ADULT_READER_PATHWAYS:
-            outcomes.append(f"Covers the Grades {grade_label} years of an athlete's career")
+            outcomes.append(
+                f"Covers the {grade_level_label(grade_label)} years of an athlete's career"
+            )
         else:
-            outcomes.append(f"Written for Grades {grade_label}")
+            outcomes.append(f"Written for {grade_level_audience(grade_label)}")
     outcomes.append("Track your progress module by module and review at your own pace")
     return outcomes
 
@@ -368,6 +403,18 @@ AUTHORED_LESSON_TYPES = (
     Lesson.ContentType.DOCUMENT,
 )
 AUTHORED_HANDOUT_TYPES = (Lesson.ContentType.PDF, Lesson.ContentType.DOCUMENT)
+
+# The keys each authored structure may carry. Unknown keys are rejected rather
+# than ignored: a misspelled or stray key is silently dropped by the renderer and
+# the writer, so the only symptom would be a section quietly missing from a
+# student's handout.
+AUTHORED_MODULE_KEYS = {"title", "description", "lessons", "assignment", "quiz"}
+AUTHORED_LESSON_KEYS = {"title", "description", "type", "minutes", "body", "handout"}
+AUTHORED_ASSIGNMENT_KEYS = {"title", "description", "total_marks", "due_in_days"}
+AUTHORED_QUIZ_KEYS = {"title", "description", "passing_score", "minutes", "questions"}
+AUTHORED_QUESTION_KEYS = {"text", "choices", "answer"}
+HANDOUT_KEYS = {"intro", "sections"}
+HANDOUT_SECTION_KEYS = {"heading", "paragraphs", "bullets", "fields", "table"}
 
 # Where a generated handout is stored, and the extension per content type. These
 # are written fresh on every seed rather than reused like a downloaded asset,
@@ -667,6 +714,107 @@ COURSE_DEFS = [
     {"code": "COH-410", "title": "COH-410: Financial Literacy for Coaches", "category": "Coaches & Mentors", "description": "Managing irregular coaching income and retirement planning.\n\nCore competencies: Pension management, private camps revenue, long-term wealth building.\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 4: Advanced Legacy, Career Progression, & Multi-Sport Mastery · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 4: Advanced Legacy, Career Progression, & Multi-Sport Mastery", "grade_label": "9–12", "pathway": "The Coaching Pathway", "focus": "Managing irregular coaching income and retirement planning.", "core": "Pension management, private camps revenue, long-term wealth building.", "tags": ["Cool Nerds", "The Coaching Pathway", "Level 4: Advanced Legacy, Career Progression, & Multi-Sport Mastery"]},
     {"code": "COH-411", "title": "COH-411: Designing a Coaching Mentorship Tree", "category": "Coaches & Mentors", "description": "Giving back by developing the next generation of coaches.\n\nCore competencies: Mentoring assistants, writing recommendations, open-door staff policies.\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 4: Advanced Legacy, Career Progression, & Multi-Sport Mastery · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 4: Advanced Legacy, Career Progression, & Multi-Sport Mastery", "grade_label": "9–12", "pathway": "The Coaching Pathway", "focus": "Giving back by developing the next generation of coaches.", "core": "Mentoring assistants, writing recommendations, open-door staff policies.", "tags": ["Cool Nerds", "The Coaching Pathway", "Level 4: Advanced Legacy, Career Progression, & Multi-Sport Mastery"]},
     {"code": "COH-412", "title": "COH-412: The Coaching Exit Strategy", "category": "Coaches & Mentors", "description": "Knowing when and how to walk away on your own terms.\n\nCore competencies: Honoring your legacy, succession planning, post-coaching career opportunities.\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 4: Advanced Legacy, Career Progression, & Multi-Sport Mastery · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 4: Advanced Legacy, Career Progression, & Multi-Sport Mastery", "grade_label": "9–12", "pathway": "The Coaching Pathway", "focus": "Knowing when and how to walk away on your own terms.", "core": "Honoring your legacy, succession planning, post-coaching career opportunities.", "tags": ["Cool Nerds", "The Coaching Pathway", "Level 4: Advanced Legacy, Career Progression, & Multi-Sport Mastery"]},
+
+    # The Cool Nerds academy catalog -- the client's second sheet ("Course Name /
+    # Course Focus / Course Competencies / Grade Level"), 60 courses running from
+    # Grades 4-5 up through graduate school. Three things about it are different
+    # from the 220 above, and all three are the sheet's doing rather than ours:
+    #
+    # 1. It names no pathway, so these carry no `pathway` key and no PATHWAY_DEFS
+    #    entry attaches them. They are browsed through the course catalog and its
+    #    grade/category filters, not through a bundle, and they are deliberately
+    #    not reachable from an audience card (which routes through published
+    #    pathways). Giving them a pathway here would invent a bundle -- and a price
+    #    for it -- the client never asked for.
+    # 2. It names no course codes. The CN codes below are ours -- one series per
+    #    grade band (CN-1xx elementary through CN-5xx graduate school), numbered
+    #    in sheet order -- so `title` is the client's course name alone rather
+    #    than "CODE: Name" like the athlete sheet's, and `build_course_slug`
+    #    appends the code to keep the URL unique.
+    # 3. Its Focus column is a subject area ("Decision Making"), not a sentence, so
+    #    these set `focus_is_area` and `build_learning_outcomes` labels the bullet.
+    #
+    # `subject` is ours too: the sheet groups only by Grade Level, so each band
+    # becomes one level of the academy, phrased like every other level label in
+    # this list. Two of those bands are past school age, which is why
+    # `grade_label` here can read "Undergraduate"/"Graduate School" and why
+    # everything that renders it goes through `grade_level_label` -- note the
+    # description's metadata segment says "Audience: Undergraduate" rather than
+    # "Grades ...", because `courses.grades.parse_grade_range` reads that segment
+    # to fill `Course.grade_min`/`grade_max` and an undergraduate course belongs
+    # in no school grade.
+    #
+    # `catalog_only` is what the client asked for next: the sheet gives a focus and
+    # a competency line per course and no curriculum, so these seed as published
+    # course pages with no modules, lessons, assignments or quizzes -- the generic
+    # two-module shell `_create_modules` builds would be filler standing in for
+    # content that is still being written. Content arrives later either through
+    # `_course_content` or through the admin portal.
+    #
+    # Keep this block LAST in COURSE_DEFS: the seed RNG is consumed in list order
+    # (prices, module counts, quiz distractors) and teachers are handed out by
+    # index, so appending leaves all 220 courses above reproducing exactly what
+    # they did before.
+    {"code": "CN-101", "title": "The Cool Nerdz Guide to Awesome Choices", "category": "Scholars & Founders", "description": "Focus area: Decision Making\n\nCore competencies: Identifying options, evaluating consequences, making informed choices\n\nProvider: Cool Nerds · 1 credit · Grades 4–5 · Level 1: Cool Nerds Elementary · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 1: Cool Nerds Elementary", "grade_label": "4–5", "focus": "Decision Making", "focus_is_area": True, "core": "Identifying options, evaluating consequences, making informed choices", "catalog_only": True, "tags": ["Cool Nerds", "Level 1: Cool Nerds Elementary", "Decision Making"]},
+    {"code": "CN-102", "title": "Piggy Banks to Bank Accounts", "category": "Scholars & Founders", "description": "Focus area: Finance\n\nCore competencies: Basic saving, distinguishing needs vs. wants, value of money\n\nProvider: Cool Nerds · 1 credit · Grades 4–5 · Level 1: Cool Nerds Elementary · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 1: Cool Nerds Elementary", "grade_label": "4–5", "focus": "Finance", "focus_is_area": True, "core": "Basic saving, distinguishing needs vs. wants, value of money", "catalog_only": True, "tags": ["Cool Nerds", "Level 1: Cool Nerds Elementary", "Finance"]},
+    {"code": "CN-103", "title": "Community Superheroes: Respect in Action", "category": "Scholars & Founders", "description": "Focus area: Respecting Community\n\nCore competencies: Empathy, active listening, community service, respecting elders/parents\n\nProvider: Cool Nerds · 1 credit · Grades 4–5 · Level 1: Cool Nerds Elementary · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 1: Cool Nerds Elementary", "grade_label": "4–5", "focus": "Respecting Community", "focus_is_area": True, "core": "Empathy, active listening, community service, respecting elders/parents", "catalog_only": True, "tags": ["Cool Nerds", "Level 1: Cool Nerds Elementary", "Respecting Community"]},
+    {"code": "CN-104", "title": "Creative Storytelling for Young Geniuses", "category": "Scholars & Founders", "description": "Focus area: Creative Writing\n\nCore competencies: Plot development, character creation, expressive writing\n\nProvider: Cool Nerds · 1 credit · Grades 4–5 · Level 1: Cool Nerds Elementary · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 1: Cool Nerds Elementary", "grade_label": "4–5", "focus": "Creative Writing", "focus_is_area": True, "core": "Plot development, character creation, expressive writing", "catalog_only": True, "tags": ["Cool Nerds", "Level 1: Cool Nerds Elementary", "Creative Writing"]},
+    {"code": "CN-105", "title": "Change is an Adventure!", "category": "Scholars & Founders", "description": "Focus area: Embrace Change\n\nCore competencies: Adaptability, resilience, positive framing of new situations\n\nProvider: Cool Nerds · 1 credit · Grades 4–5 · Level 1: Cool Nerds Elementary · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 1: Cool Nerds Elementary", "grade_label": "4–5", "focus": "Embrace Change", "focus_is_area": True, "core": "Adaptability, resilience, positive framing of new situations", "catalog_only": True, "tags": ["Cool Nerds", "Level 1: Cool Nerds Elementary", "Embrace Change"]},
+    {"code": "CN-106", "title": "Fearless Speakers: Stage Confidence", "category": "Scholars & Founders", "description": "Focus area: Public Speaking\n\nCore competencies: Posture, voice projection, overcoming stage fright\n\nProvider: Cool Nerds · 1 credit · Grades 4–5 · Level 1: Cool Nerds Elementary · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 1: Cool Nerds Elementary", "grade_label": "4–5", "focus": "Public Speaking", "focus_is_area": True, "core": "Posture, voice projection, overcoming stage fright", "catalog_only": True, "tags": ["Cool Nerds", "Level 1: Cool Nerds Elementary", "Public Speaking"]},
+    {"code": "CN-107", "title": "Curious Minds: Why Learning Never Stops", "category": "Scholars & Founders", "description": "Focus area: Endless Learning\n\nCore competencies: Curiosity building, asking good questions, self-directed research\n\nProvider: Cool Nerds · 1 credit · Grades 4–5 · Level 1: Cool Nerds Elementary · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 1: Cool Nerds Elementary", "grade_label": "4–5", "focus": "Endless Learning", "focus_is_area": True, "core": "Curiosity building, asking good questions, self-directed research", "catalog_only": True, "tags": ["Cool Nerds", "Level 1: Cool Nerds Elementary", "Endless Learning"]},
+    {"code": "CN-108", "title": "Smart is the New Cool", "category": "Scholars & Founders", "description": "Focus area: Being Cool & Smart\n\nCore competencies: Self-confidence, peer support, celebrating academic achievements\n\nProvider: Cool Nerds · 1 credit · Grades 4–5 · Level 1: Cool Nerds Elementary · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 1: Cool Nerds Elementary", "grade_label": "4–5", "focus": "Being Cool & Smart", "focus_is_area": True, "core": "Self-confidence, peer support, celebrating academic achievements", "catalog_only": True, "tags": ["Cool Nerds", "Level 1: Cool Nerds Elementary", "Being Cool & Smart"]},
+    {"code": "CN-109", "title": "Situational Awareness: Notice Your World", "category": "Scholars & Founders", "description": "Focus area: Situational Awareness\n\nCore competencies: Observation skills, environmental awareness, personal safety\n\nProvider: Cool Nerds · 1 credit · Grades 4–5 · Level 1: Cool Nerds Elementary · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 1: Cool Nerds Elementary", "grade_label": "4–5", "focus": "Situational Awareness", "focus_is_area": True, "core": "Observation skills, environmental awareness, personal safety", "catalog_only": True, "tags": ["Cool Nerds", "Level 1: Cool Nerds Elementary", "Situational Awareness"]},
+    {"code": "CN-110", "title": "Teamwork & Making Friends", "category": "Scholars & Founders", "description": "Focus area: Networking\n\nCore competencies: Basic communication, sharing, introducing oneself\n\nProvider: Cool Nerds · 1 credit · Grades 4–5 · Level 1: Cool Nerds Elementary · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 1: Cool Nerds Elementary", "grade_label": "4–5", "focus": "Networking", "focus_is_area": True, "core": "Basic communication, sharing, introducing oneself", "catalog_only": True, "tags": ["Cool Nerds", "Level 1: Cool Nerds Elementary", "Networking"]},
+    {"code": "CN-201", "title": "The Young Investor's Sandbox", "category": "Scholars & Founders", "description": "Focus area: Investing\n\nCore competencies: Concept of interest, basics of stocks, long-term saving\n\nProvider: Cool Nerds · 1 credit · Grades 6–8 · Level 2: Cool Nerds Middle School · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 2: Cool Nerds Middle School", "grade_label": "6–8", "focus": "Investing", "focus_is_area": True, "core": "Concept of interest, basics of stocks, long-term saving", "catalog_only": True, "tags": ["Cool Nerds", "Level 2: Cool Nerds Middle School", "Investing"]},
+    {"code": "CN-202", "title": "Credit Cards: Magic Plastic or Trap?", "category": "Scholars & Founders", "description": "Focus area: Credit Card Responsibility\n\nCore competencies: Understanding interest, debt basics, responsible borrowing\n\nProvider: Cool Nerds · 1 credit · Grades 6–8 · Level 2: Cool Nerds Middle School · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 2: Cool Nerds Middle School", "grade_label": "6–8", "focus": "Credit Card Responsibility", "focus_is_area": True, "core": "Understanding interest, debt basics, responsible borrowing", "catalog_only": True, "tags": ["Cool Nerds", "Level 2: Cool Nerds Middle School", "Credit Card Responsibility"]},
+    {"code": "CN-203", "title": "Critical Thinking in a Digital World", "category": "Scholars & Founders", "description": "Focus area: Critical Thinking\n\nCore competencies: Media literacy, fact-checking, logical reasoning\n\nProvider: Cool Nerds · 1 credit · Grades 6–8 · Level 2: Cool Nerds Middle School · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 2: Cool Nerds Middle School", "grade_label": "6–8", "focus": "Critical Thinking", "focus_is_area": True, "core": "Media literacy, fact-checking, logical reasoning", "catalog_only": True, "tags": ["Cool Nerds", "Level 2: Cool Nerds Middle School", "Critical Thinking"]},
+    {"code": "CN-204", "title": "Nerdz Make Money: Early Entrepreneurship", "category": "Scholars & Founders", "description": "Focus area: Nerds Make Money\n\nCore competencies: Idea generation, basic profit/loss, valuing intelligence\n\nProvider: Cool Nerds · 1 credit · Grades 6–8 · Level 2: Cool Nerds Middle School · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 2: Cool Nerds Middle School", "grade_label": "6–8", "focus": "Nerds Make Money", "focus_is_area": True, "core": "Idea generation, basic profit/loss, valuing intelligence", "catalog_only": True, "tags": ["Cool Nerds", "Level 2: Cool Nerds Middle School", "Nerds Make Money"]},
+    {"code": "CN-205", "title": "Navigating Middle School Social Dynamics", "category": "Scholars & Founders", "description": "Focus area: Networking & Respect\n\nCore competencies: Peer conflict resolution, boundaries, respectful disagreement\n\nProvider: Cool Nerds · 1 credit · Grades 6–8 · Level 2: Cool Nerds Middle School · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 2: Cool Nerds Middle School", "grade_label": "6–8", "focus": "Networking & Respect", "focus_is_area": True, "core": "Peer conflict resolution, boundaries, respectful disagreement", "catalog_only": True, "tags": ["Cool Nerds", "Level 2: Cool Nerds Middle School", "Networking & Respect"]},
+    {"code": "CN-206", "title": "Embracing the Unknown: Fear as Fuel", "category": "Scholars & Founders", "description": "Focus area: Embrace Fear\n\nCore competencies: Risk assessment, stepping out of comfort zones, growth mindset\n\nProvider: Cool Nerds · 1 credit · Grades 6–8 · Level 2: Cool Nerds Middle School · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 2: Cool Nerds Middle School", "grade_label": "6–8", "focus": "Embrace Fear", "focus_is_area": True, "core": "Risk assessment, stepping out of comfort zones, growth mindset", "catalog_only": True, "tags": ["Cool Nerds", "Level 2: Cool Nerds Middle School", "Embrace Fear"]},
+    {"code": "CN-207", "title": "The Art of the Persuasive Pitch", "category": "Scholars & Founders", "description": "Focus area: Public Speaking\n\nCore competencies: Structuring an argument, audience engagement, rhetoric\n\nProvider: Cool Nerds · 1 credit · Grades 6–8 · Level 2: Cool Nerds Middle School · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 2: Cool Nerds Middle School", "grade_label": "6–8", "focus": "Public Speaking", "focus_is_area": True, "core": "Structuring an argument, audience engagement, rhetoric", "catalog_only": True, "tags": ["Cool Nerds", "Level 2: Cool Nerds Middle School", "Public Speaking"]},
+    {"code": "CN-208", "title": "Designing Your First Resume", "category": "Scholars & Founders", "description": "Focus area: Resume Creation\n\nCore competencies: Identifying strengths, formatting extracurriculars, goal setting\n\nProvider: Cool Nerds · 1 credit · Grades 6–8 · Level 2: Cool Nerds Middle School · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 2: Cool Nerds Middle School", "grade_label": "6–8", "focus": "Resume Creation", "focus_is_area": True, "core": "Identifying strengths, formatting extracurriculars, goal setting", "catalog_only": True, "tags": ["Cool Nerds", "Level 2: Cool Nerds Middle School", "Resume Creation"]},
+    {"code": "CN-209", "title": "Decision Matrix: Thinking Like a CEO", "category": "Scholars & Founders", "description": "Focus area: Decision Making\n\nCore competencies: Pros/cons analysis, understanding bias, objective analysis\n\nProvider: Cool Nerds · 1 credit · Grades 6–8 · Level 2: Cool Nerds Middle School · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 2: Cool Nerds Middle School", "grade_label": "6–8", "focus": "Decision Making", "focus_is_area": True, "core": "Pros/cons analysis, understanding bias, objective analysis", "catalog_only": True, "tags": ["Cool Nerds", "Level 2: Cool Nerds Middle School", "Decision Making"]},
+    {"code": "CN-210", "title": "Situational Awareness 2.0: Street Smart", "category": "Scholars & Founders", "description": "Focus area: Situational Awareness\n\nCore competencies: Reading body language, spatial awareness, safe navigation\n\nProvider: Cool Nerds · 1 credit · Grades 6–8 · Level 2: Cool Nerds Middle School · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 2: Cool Nerds Middle School", "grade_label": "6–8", "focus": "Situational Awareness", "focus_is_area": True, "core": "Reading body language, spatial awareness, safe navigation", "catalog_only": True, "tags": ["Cool Nerds", "Level 2: Cool Nerds Middle School", "Situational Awareness"]},
+    {"code": "CN-211", "title": "Writing Worlds: Creative Fiction Masterclass", "category": "Scholars & Founders", "description": "Focus area: Creative Writing\n\nCore competencies: World-building, narrative arcs, creative expression\n\nProvider: Cool Nerds · 1 credit · Grades 6–8 · Level 2: Cool Nerds Middle School · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 2: Cool Nerds Middle School", "grade_label": "6–8", "focus": "Creative Writing", "focus_is_area": True, "core": "World-building, narrative arcs, creative expression", "catalog_only": True, "tags": ["Cool Nerds", "Level 2: Cool Nerds Middle School", "Creative Writing"]},
+    {"code": "CN-212", "title": "Lifelong Learner Mindset Hacks", "category": "Scholars & Founders", "description": "Focus area: Learning Never Stops\n\nCore competencies: Study habits, exploring passions outside school, autodidacticism\n\nProvider: Cool Nerds · 1 credit · Grades 6–8 · Level 2: Cool Nerds Middle School · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 2: Cool Nerds Middle School", "grade_label": "6–8", "focus": "Learning Never Stops", "focus_is_area": True, "core": "Study habits, exploring passions outside school, autodidacticism", "catalog_only": True, "tags": ["Cool Nerds", "Level 2: Cool Nerds Middle School", "Learning Never Stops"]},
+    {"code": "CN-213", "title": "Family & Community Ties", "category": "Scholars & Founders", "description": "Focus area: Respecting Parents & Community\n\nCore competencies: Intergenerational communication, household contributions, volunteering\n\nProvider: Cool Nerds · 1 credit · Grades 6–8 · Level 2: Cool Nerds Middle School · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 2: Cool Nerds Middle School", "grade_label": "6–8", "focus": "Respecting Parents & Community", "focus_is_area": True, "core": "Intergenerational communication, household contributions, volunteering", "catalog_only": True, "tags": ["Cool Nerds", "Level 2: Cool Nerds Middle School", "Respecting Parents & Community"]},
+    {"code": "CN-214", "title": "Pivot & Adapt: Thriving in Change", "category": "Scholars & Founders", "description": "Focus area: Change is Not Bad\n\nCore competencies: Coping mechanisms, reframing change, adaptability\n\nProvider: Cool Nerds · 1 credit · Grades 6–8 · Level 2: Cool Nerds Middle School · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 2: Cool Nerds Middle School", "grade_label": "6–8", "focus": "Change is Not Bad", "focus_is_area": True, "core": "Coping mechanisms, reframing change, adaptability", "catalog_only": True, "tags": ["Cool Nerds", "Level 2: Cool Nerds Middle School", "Change is Not Bad"]},
+    {"code": "CN-215", "title": "Cool Nerdz Identity: Owning Your Genius", "category": "Scholars & Founders", "description": "Focus area: Being Cool & Smart\n\nCore competencies: Identity formation, defying stereotypes, intellectual confidence\n\nProvider: Cool Nerds · 1 credit · Grades 6–8 · Level 2: Cool Nerds Middle School · Format: Online", "difficulty": Course.Difficulty.BEGINNER, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 2: Cool Nerds Middle School", "grade_label": "6–8", "focus": "Being Cool & Smart", "focus_is_area": True, "core": "Identity formation, defying stereotypes, intellectual confidence", "catalog_only": True, "tags": ["Cool Nerds", "Level 2: Cool Nerds Middle School", "Being Cool & Smart"]},
+    {"code": "CN-301", "title": "Credit Scores 101: The Adult GPA", "category": "Scholars & Founders", "description": "Focus area: Credit Score Awareness\n\nCore competencies: FICO scores, building credit history, repairing bad credit\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Cool Nerds High School · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Cool Nerds High School", "grade_label": "9–12", "focus": "Credit Score Awareness", "focus_is_area": True, "core": "FICO scores, building credit history, repairing bad credit", "catalog_only": True, "tags": ["Cool Nerds", "Level 3: Cool Nerds High School", "Credit Score Awareness"]},
+    {"code": "CN-302", "title": "Tax Basics for Teen Earners", "category": "Scholars & Founders", "description": "Focus area: Taxes\n\nCore competencies: W-4s, 1040 basics, understanding pay stubs, income tax\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Cool Nerds High School · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Cool Nerds High School", "grade_label": "9–12", "focus": "Taxes", "focus_is_area": True, "core": "W-4s, 1040 basics, understanding pay stubs, income tax", "catalog_only": True, "tags": ["Cool Nerds", "Level 3: Cool Nerds High School", "Taxes"]},
+    {"code": "CN-303", "title": "Smart Investing & Compound Interest", "category": "Scholars & Founders", "description": "Focus area: Investing\n\nCore competencies: Index funds, compound interest, risk tolerance, ETFs\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Cool Nerds High School · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Cool Nerds High School", "grade_label": "9–12", "focus": "Investing", "focus_is_area": True, "core": "Index funds, compound interest, risk tolerance, ETFs", "catalog_only": True, "tags": ["Cool Nerds", "Level 3: Cool Nerds High School", "Investing"]},
+    {"code": "CN-304", "title": "Credit Card Mastery & Pitfalls", "category": "Scholars & Founders", "description": "Focus area: Credit Card Responsibility\n\nCore competencies: APRs, rewards programs, avoiding revolving debt\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Cool Nerds High School · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Cool Nerds High School", "grade_label": "9–12", "focus": "Credit Card Responsibility", "focus_is_area": True, "core": "APRs, rewards programs, avoiding revolving debt", "catalog_only": True, "tags": ["Cool Nerds", "Level 3: Cool Nerds High School", "Credit Card Responsibility"]},
+    {"code": "CN-305", "title": "Networking for Introverts and Geeks", "category": "Scholars & Founders", "description": "Focus area: Networking\n\nCore competencies: Elevator pitches, LinkedIn for teens, informational interviews\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Cool Nerds High School · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Cool Nerds High School", "grade_label": "9–12", "focus": "Networking", "focus_is_area": True, "core": "Elevator pitches, LinkedIn for teens, informational interviews", "catalog_only": True, "tags": ["Cool Nerds", "Level 3: Cool Nerds High School", "Networking"]},
+    {"code": "CN-306", "title": "Acing the First Job Interview", "category": "Scholars & Founders", "description": "Focus area: Interview Techniques\n\nCore competencies: Behavioral questions, mock interviews, professional attire\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Cool Nerds High School · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Cool Nerds High School", "grade_label": "9–12", "focus": "Interview Techniques", "focus_is_area": True, "core": "Behavioral questions, mock interviews, professional attire", "catalog_only": True, "tags": ["Cool Nerds", "Level 3: Cool Nerds High School", "Interview Techniques"]},
+    {"code": "CN-307", "title": "Crafting a Standout High School Resume", "category": "Scholars & Founders", "description": "Focus area: Resume Creation\n\nCore competencies: Action verbs, quantifying achievements, formatting\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Cool Nerds High School · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Cool Nerds High School", "grade_label": "9–12", "focus": "Resume Creation", "focus_is_area": True, "core": "Action verbs, quantifying achievements, formatting", "catalog_only": True, "tags": ["Cool Nerds", "Level 3: Cool Nerds High School", "Resume Creation"]},
+    {"code": "CN-308", "title": "Monetizing Your Brain: Nerds Make Money", "category": "Scholars & Founders", "description": "Focus area: Nerds Make Money\n\nCore competencies: Side hustles, freelancing, intellectual property basics\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Cool Nerds High School · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Cool Nerds High School", "grade_label": "9–12", "focus": "Nerds Make Money", "focus_is_area": True, "core": "Side hustles, freelancing, intellectual property basics", "catalog_only": True, "tags": ["Cool Nerds", "Level 3: Cool Nerds High School", "Nerds Make Money"]},
+    {"code": "CN-309", "title": "Public Speaking: TED Style", "category": "Scholars & Founders", "description": "Focus area: Public Speaking\n\nCore competencies: Storytelling in presentations, slide design, vocal variety\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Cool Nerds High School · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Cool Nerds High School", "grade_label": "9–12", "focus": "Public Speaking", "focus_is_area": True, "core": "Storytelling in presentations, slide design, vocal variety", "catalog_only": True, "tags": ["Cool Nerds", "Level 3: Cool Nerds High School", "Public Speaking"]},
+    {"code": "CN-310", "title": "Advanced Critical Thinking: Fallacies & Logic", "category": "Scholars & Founders", "description": "Focus area: Critical Thinking\n\nCore competencies: Logical fallacies, debate skills, analyzing arguments\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Cool Nerds High School · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Cool Nerds High School", "grade_label": "9–12", "focus": "Critical Thinking", "focus_is_area": True, "core": "Logical fallacies, debate skills, analyzing arguments", "catalog_only": True, "tags": ["Cool Nerds", "Level 3: Cool Nerds High School", "Critical Thinking"]},
+    {"code": "CN-311", "title": "Situational Awareness: Reading the Room", "category": "Scholars & Founders", "description": "Focus area: Situational Awareness\n\nCore competencies: Social cues, emotional intelligence, adapting to environments\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Cool Nerds High School · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Cool Nerds High School", "grade_label": "9–12", "focus": "Situational Awareness", "focus_is_area": True, "core": "Social cues, emotional intelligence, adapting to environments", "catalog_only": True, "tags": ["Cool Nerds", "Level 3: Cool Nerds High School", "Situational Awareness"]},
+    {"code": "CN-312", "title": "Fear Setting vs Goal Setting", "category": "Scholars & Founders", "description": "Focus area: Embrace Fear\n\nCore competencies: Tim Ferriss's fear setting, mitigating risks, taking the leap\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Cool Nerds High School · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Cool Nerds High School", "grade_label": "9–12", "focus": "Embrace Fear", "focus_is_area": True, "core": "Tim Ferriss's fear setting, mitigating risks, taking the leap", "catalog_only": True, "tags": ["Cool Nerds", "Level 3: Cool Nerds High School", "Embrace Fear"]},
+    {"code": "CN-313", "title": "Disruptive Innovation: Embracing Change", "category": "Scholars & Founders", "description": "Focus area: Change is Not Bad\n\nCore competencies: Innovation history, future trends, pivoting strategies\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Cool Nerds High School · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Cool Nerds High School", "grade_label": "9–12", "focus": "Change is Not Bad", "focus_is_area": True, "core": "Innovation history, future trends, pivoting strategies", "catalog_only": True, "tags": ["Cool Nerds", "Level 3: Cool Nerds High School", "Change is Not Bad"]},
+    {"code": "CN-314", "title": "Creative Non-Fiction & College Essays", "category": "Scholars & Founders", "description": "Focus area: Creative Writing\n\nCore competencies: Memoir writing, personal statements, voice development\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Cool Nerds High School · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Cool Nerds High School", "grade_label": "9–12", "focus": "Creative Writing", "focus_is_area": True, "core": "Memoir writing, personal statements, voice development", "catalog_only": True, "tags": ["Cool Nerds", "Level 3: Cool Nerds High School", "Creative Writing"]},
+    {"code": "CN-315", "title": "The Cool Nerdz Mentorship Program", "category": "Scholars & Founders", "description": "Focus area: Being Cool & Smart\n\nCore competencies: Mentoring younger students, leadership, community building\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Cool Nerds High School · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Cool Nerds High School", "grade_label": "9–12", "focus": "Being Cool & Smart", "focus_is_area": True, "core": "Mentoring younger students, leadership, community building", "catalog_only": True, "tags": ["Cool Nerds", "Level 3: Cool Nerds High School", "Being Cool & Smart"]},
+    {"code": "CN-316", "title": "Honor Your Roots: Community Leadership", "category": "Scholars & Founders", "description": "Focus area: Respecting Parents & Community\n\nCore competencies: Civic engagement, local politics, family heritage projects\n\nProvider: Cool Nerds · 1 credit · Grades 9–12 · Level 3: Cool Nerds High School · Format: Online", "difficulty": Course.Difficulty.INTERMEDIATE, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 3: Cool Nerds High School", "grade_label": "9–12", "focus": "Respecting Parents & Community", "focus_is_area": True, "core": "Civic engagement, local politics, family heritage projects", "catalog_only": True, "tags": ["Cool Nerds", "Level 3: Cool Nerds High School", "Respecting Parents & Community"]},
+    {"code": "CN-401", "title": "Financial Independence: The Post-Grad Plan", "category": "Scholars & Founders", "description": "Focus area: Finance\n\nCore competencies: Budgeting software, loan repayment, 401(k) vs IRA\n\nProvider: Cool Nerds · 1 credit · Audience: Undergraduate · Level 4: Cool Nerds Undergraduate · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 4: Cool Nerds Undergraduate", "grade_label": "Undergraduate", "focus": "Finance", "focus_is_area": True, "core": "Budgeting software, loan repayment, 401(k) vs IRA", "catalog_only": True, "tags": ["Cool Nerds", "Level 4: Cool Nerds Undergraduate", "Finance"]},
+    {"code": "CN-402", "title": "Advanced Tax Strategies for Young Professionals", "category": "Scholars & Founders", "description": "Focus area: Taxes\n\nCore competencies: Deductions, gig economy taxes, capital gains\n\nProvider: Cool Nerds · 1 credit · Audience: Undergraduate · Level 4: Cool Nerds Undergraduate · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 4: Cool Nerds Undergraduate", "grade_label": "Undergraduate", "focus": "Taxes", "focus_is_area": True, "core": "Deductions, gig economy taxes, capital gains", "catalog_only": True, "tags": ["Cool Nerds", "Level 4: Cool Nerds Undergraduate", "Taxes"]},
+    {"code": "CN-403", "title": "Building Your Wealth Portfolio", "category": "Scholars & Founders", "description": "Focus area: Investing\n\nCore competencies: Real estate basics, stock analysis, diversification\n\nProvider: Cool Nerds · 1 credit · Audience: Undergraduate · Level 4: Cool Nerds Undergraduate · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 4: Cool Nerds Undergraduate", "grade_label": "Undergraduate", "focus": "Investing", "focus_is_area": True, "core": "Real estate basics, stock analysis, diversification", "catalog_only": True, "tags": ["Cool Nerds", "Level 4: Cool Nerds Undergraduate", "Investing"]},
+    {"code": "CN-404", "title": "Strategic Networking: The Hidden Job Market", "category": "Scholars & Founders", "description": "Focus area: Networking\n\nCore competencies: Alumni networks, professional associations, cold emailing\n\nProvider: Cool Nerds · 1 credit · Audience: Undergraduate · Level 4: Cool Nerds Undergraduate · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 4: Cool Nerds Undergraduate", "grade_label": "Undergraduate", "focus": "Networking", "focus_is_area": True, "core": "Alumni networks, professional associations, cold emailing", "catalog_only": True, "tags": ["Cool Nerds", "Level 4: Cool Nerds Undergraduate", "Networking"]},
+    {"code": "CN-405", "title": "The Executive Interview: Case Studies & More", "category": "Scholars & Founders", "description": "Focus area: Interview Techniques\n\nCore competencies: Case interviews, salary negotiation, technical interviews\n\nProvider: Cool Nerds · 1 credit · Audience: Undergraduate · Level 4: Cool Nerds Undergraduate · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 4: Cool Nerds Undergraduate", "grade_label": "Undergraduate", "focus": "Interview Techniques", "focus_is_area": True, "core": "Case interviews, salary negotiation, technical interviews", "catalog_only": True, "tags": ["Cool Nerds", "Level 4: Cool Nerds Undergraduate", "Interview Techniques"]},
+    {"code": "CN-406", "title": "Modern Resume & Portfolio Design", "category": "Scholars & Founders", "description": "Focus area: Resume Creation\n\nCore competencies: Applicant Tracking Systems (ATS), online portfolios, GitHub/Behance\n\nProvider: Cool Nerds · 1 credit · Audience: Undergraduate · Level 4: Cool Nerds Undergraduate · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 4: Cool Nerds Undergraduate", "grade_label": "Undergraduate", "focus": "Resume Creation", "focus_is_area": True, "core": "Applicant Tracking Systems (ATS), online portfolios, GitHub/Behance", "catalog_only": True, "tags": ["Cool Nerds", "Level 4: Cool Nerds Undergraduate", "Resume Creation"]},
+    {"code": "CN-407", "title": "Cognitive Flexibility and Lifelong Learning", "category": "Scholars & Founders", "description": "Focus area: Learning Never Stops\n\nCore competencies: Upskilling, online certifications, neuroplasticity\n\nProvider: Cool Nerds · 1 credit · Audience: Undergraduate · Level 4: Cool Nerds Undergraduate · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 4: Cool Nerds Undergraduate", "grade_label": "Undergraduate", "focus": "Learning Never Stops", "focus_is_area": True, "core": "Upskilling, online certifications, neuroplasticity", "catalog_only": True, "tags": ["Cool Nerds", "Level 4: Cool Nerds Undergraduate", "Learning Never Stops"]},
+    {"code": "CN-408", "title": "Complex Decision Making Under Uncertainty", "category": "Scholars & Founders", "description": "Focus area: Decision Making\n\nCore competencies: Game theory basics, risk matrices, expected value\n\nProvider: Cool Nerds · 1 credit · Audience: Undergraduate · Level 4: Cool Nerds Undergraduate · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 4: Cool Nerds Undergraduate", "grade_label": "Undergraduate", "focus": "Decision Making", "focus_is_area": True, "core": "Game theory basics, risk matrices, expected value", "catalog_only": True, "tags": ["Cool Nerds", "Level 4: Cool Nerds Undergraduate", "Decision Making"]},
+    {"code": "CN-409", "title": "Situational Leadership and Dynamics", "category": "Scholars & Founders", "description": "Focus area: Situational Awareness\n\nCore competencies: Organizational behavior, power dynamics, conflict mediation\n\nProvider: Cool Nerds · 1 credit · Audience: Undergraduate · Level 4: Cool Nerds Undergraduate · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 4: Cool Nerds Undergraduate", "grade_label": "Undergraduate", "focus": "Situational Awareness", "focus_is_area": True, "core": "Organizational behavior, power dynamics, conflict mediation", "catalog_only": True, "tags": ["Cool Nerds", "Level 4: Cool Nerds Undergraduate", "Situational Awareness"]},
+    {"code": "CN-410", "title": "Cool Nerdz: Cultivating a Personal Brand", "category": "Scholars & Founders", "description": "Focus area: Being Cool & Smart\n\nCore competencies: Thought leadership, social media branding, authenticity\n\nProvider: Cool Nerds · 1 credit · Audience: Undergraduate · Level 4: Cool Nerds Undergraduate · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 4: Cool Nerds Undergraduate", "grade_label": "Undergraduate", "focus": "Being Cool & Smart", "focus_is_area": True, "core": "Thought leadership, social media branding, authenticity", "catalog_only": True, "tags": ["Cool Nerds", "Level 4: Cool Nerds Undergraduate", "Being Cool & Smart"]},
+    {"code": "CN-501", "title": "Venture Capital & High-Level Investing", "category": "Scholars & Founders", "description": "Focus area: Investing\n\nCore competencies: Angel investing, startup valuation, term sheets\n\nProvider: Cool Nerds · 1 credit · Audience: Graduate School · Level 5: Cool Nerds Graduate School · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 5: Cool Nerds Graduate School", "grade_label": "Graduate School", "focus": "Investing", "focus_is_area": True, "core": "Angel investing, startup valuation, term sheets", "catalog_only": True, "tags": ["Cool Nerds", "Level 5: Cool Nerds Graduate School", "Investing"]},
+    {"code": "CN-502", "title": "Mastering the Tax Code for Entrepreneurs", "category": "Scholars & Founders", "description": "Focus area: Taxes\n\nCore competencies: Business structures (LLC/S-Corp), corporate tax, write-offs\n\nProvider: Cool Nerds · 1 credit · Audience: Graduate School · Level 5: Cool Nerds Graduate School · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 5: Cool Nerds Graduate School", "grade_label": "Graduate School", "focus": "Taxes", "focus_is_area": True, "core": "Business structures (LLC/S-Corp), corporate tax, write-offs", "catalog_only": True, "tags": ["Cool Nerds", "Level 5: Cool Nerds Graduate School", "Taxes"]},
+    {"code": "CN-503", "title": "C-Suite Public Speaking & Media Training", "category": "Scholars & Founders", "description": "Focus area: Public Speaking\n\nCore competencies: Crisis communication, media interviews, keynote mastery\n\nProvider: Cool Nerds · 1 credit · Audience: Graduate School · Level 5: Cool Nerds Graduate School · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 5: Cool Nerds Graduate School", "grade_label": "Graduate School", "focus": "Public Speaking", "focus_is_area": True, "core": "Crisis communication, media interviews, keynote mastery", "catalog_only": True, "tags": ["Cool Nerds", "Level 5: Cool Nerds Graduate School", "Public Speaking"]},
+    {"code": "CN-504", "title": "Leveraging Intellectual Capital", "category": "Scholars & Founders", "description": "Focus area: Nerds Make Money\n\nCore competencies: Patents, commercializing research, consulting\n\nProvider: Cool Nerds · 1 credit · Audience: Graduate School · Level 5: Cool Nerds Graduate School · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 5: Cool Nerds Graduate School", "grade_label": "Graduate School", "focus": "Nerds Make Money", "focus_is_area": True, "core": "Patents, commercializing research, consulting", "catalog_only": True, "tags": ["Cool Nerds", "Level 5: Cool Nerds Graduate School", "Nerds Make Money"]},
+    {"code": "CN-505", "title": "Navigating Paradigm Shifts in Industry", "category": "Scholars & Founders", "description": "Focus area: Change is Not Bad\n\nCore competencies: Change management, disruptive tech integration\n\nProvider: Cool Nerds · 1 credit · Audience: Graduate School · Level 5: Cool Nerds Graduate School · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 5: Cool Nerds Graduate School", "grade_label": "Graduate School", "focus": "Change is Not Bad", "focus_is_area": True, "core": "Change management, disruptive tech integration", "catalog_only": True, "tags": ["Cool Nerds", "Level 5: Cool Nerds Graduate School", "Change is Not Bad"]},
+    {"code": "CN-506", "title": "Global Networking & Strategic Alliances", "category": "Scholars & Founders", "description": "Focus area: Networking\n\nCore competencies: International business etiquette, board placements, partnerships\n\nProvider: Cool Nerds · 1 credit · Audience: Graduate School · Level 5: Cool Nerds Graduate School · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 5: Cool Nerds Graduate School", "grade_label": "Graduate School", "focus": "Networking", "focus_is_area": True, "core": "International business etiquette, board placements, partnerships", "catalog_only": True, "tags": ["Cool Nerds", "Level 5: Cool Nerds Graduate School", "Networking"]},
+    {"code": "CN-507", "title": "Legacy Building & Community Philanthropy", "category": "Scholars & Founders", "description": "Focus area: Respecting Community\n\nCore competencies: Endowments, board service, giving back, intergenerational wealth\n\nProvider: Cool Nerds · 1 credit · Audience: Graduate School · Level 5: Cool Nerds Graduate School · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 5: Cool Nerds Graduate School", "grade_label": "Graduate School", "focus": "Respecting Community", "focus_is_area": True, "core": "Endowments, board service, giving back, intergenerational wealth", "catalog_only": True, "tags": ["Cool Nerds", "Level 5: Cool Nerds Graduate School", "Respecting Community"]},
+    {"code": "CN-508", "title": "Creative Thinking for Complex Problem Solving", "category": "Scholars & Founders", "description": "Focus area: Creative Writing\n\nCore competencies: Design thinking, innovation frameworks, narrative strategy\n\nProvider: Cool Nerds · 1 credit · Audience: Graduate School · Level 5: Cool Nerds Graduate School · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 5: Cool Nerds Graduate School", "grade_label": "Graduate School", "focus": "Creative Writing", "focus_is_area": True, "core": "Design thinking, innovation frameworks, narrative strategy", "catalog_only": True, "tags": ["Cool Nerds", "Level 5: Cool Nerds Graduate School", "Creative Writing"]},
+    {"code": "CN-509", "title": "Fearless Innovation: Taking Moonshots", "category": "Scholars & Founders", "description": "Focus area: Embrace Fear\n\nCore competencies: High-stakes risk-taking, failure analysis, psychological safety\n\nProvider: Cool Nerds · 1 credit · Audience: Graduate School · Level 5: Cool Nerds Graduate School · Format: Online", "difficulty": Course.Difficulty.ADVANCED, "provider": "Cool Nerds", "provider_thumbnail_url": None, "subject": "Level 5: Cool Nerds Graduate School", "grade_label": "Graduate School", "focus": "Embrace Fear", "focus_is_area": True, "core": "High-stakes risk-taking, failure analysis, psychological safety", "catalog_only": True, "tags": ["Cool Nerds", "Level 5: Cool Nerds Graduate School", "Embrace Fear"]},
 ]
 
 # Distractor pools for the generated quiz's metadata questions (see
@@ -2447,6 +2595,19 @@ class Command(BaseCommand):
                     + ("..." if len(duplicates) > 5 else "")
                 )
 
+        # `catalog_only` says "this course has no curriculum yet"; COURSE_CONTENT
+        # says "here is its curriculum". A def claiming both would quietly seed the
+        # written content and ignore the flag, so it is a mistake worth naming:
+        # dropping the flag is the fix.
+        contradictory = sorted(
+            cd["code"] for cd in COURSE_DEFS if cd.get("catalog_only") and cd["code"] in COURSE_CONTENT
+        )
+        if contradictory:
+            raise CommandError(
+                "COURSE_DEFS marks course(s) catalog_only that have written curriculum in "
+                "COURSE_CONTENT: " + ", ".join(contradictory)
+            )
+
     def _validate_course_content(self):
         """Fails fast on an unusable `_course_content` entry.
 
@@ -2484,6 +2645,9 @@ class Command(BaseCommand):
 
             for module_def in modules_def:
                 where = f"COURSE_CONTENT[{code}] / {module_def['title']}"
+                self._check_keys(where, module_def, AUTHORED_MODULE_KEYS)
+                self._check_keys(f"{where} assignment", module_def["assignment"], AUTHORED_ASSIGNMENT_KEYS)
+                self._check_keys(f"{where} quiz", module_def["quiz"], AUTHORED_QUIZ_KEYS)
                 lessons = module_def["lessons"]
                 if not lessons:
                     raise CommandError(f"{where} has no lessons")
@@ -2493,6 +2657,9 @@ class Command(BaseCommand):
                     raise CommandError(f"{where} repeats a lesson title")
 
                 for lesson_def in lessons:
+                    self._check_keys(
+                        f"{where} / {lesson_def['title']}", lesson_def, AUTHORED_LESSON_KEYS
+                    )
                     if lesson_def["type"] not in AUTHORED_LESSON_TYPES:
                         raise CommandError(
                             f"{where} / {lesson_def['title']} has unsupported content type "
@@ -2504,6 +2671,9 @@ class Command(BaseCommand):
                         self._validate_handout(f"{where} / {lesson_def['title']}", lesson_def)
 
                 for index, question_def in enumerate(module_def["quiz"]["questions"], start=1):
+                    self._check_keys(
+                        f"{where} quiz question {index}", question_def, AUTHORED_QUESTION_KEYS
+                    )
                     choices = question_def["choices"]
                     if len(choices) != CHOICES_PER_QUESTION or len(set(choices)) != len(choices):
                         raise CommandError(
@@ -2515,17 +2685,30 @@ class Command(BaseCommand):
                             f"{where} quiz question {index} has an out-of-range answer index"
                         )
 
+    def _check_keys(self, where, entry, allowed):
+        """Rejects a key the writer would silently ignore, which is how a typo
+        becomes a section missing from a student's handout rather than an
+        error."""
+        unknown = sorted(set(entry) - allowed)
+        if unknown:
+            raise CommandError(f"{where} has unknown key(s): " + ", ".join(unknown))
+
     def _validate_handout(self, where, lesson_def):
         """A handout renders straight into a student's download, so a spec that
         is missing a heading or has a ragged table is caught here rather than in
         reportlab's traceback halfway through a seed."""
         handout = lesson_def.get("handout")
+        if handout:
+            self._check_keys(f"{where} handout", handout, HANDOUT_KEYS)
         if not handout or not handout.get("intro", "").strip():
             raise CommandError(f"{where} has no handout intro")
         if not handout.get("sections"):
             raise CommandError(f"{where} has a handout with no sections")
 
         for index, section in enumerate(handout["sections"], start=1):
+            self._check_keys(
+                f"{where} handout section {index}", section, HANDOUT_SECTION_KEYS
+            )
             if not section.get("heading", "").strip():
                 raise CommandError(f"{where} handout section {index} has no heading")
             if not any(
@@ -2704,7 +2887,9 @@ class Command(BaseCommand):
         level, pathway and grade data — plus a small amount of platform content so
         every course is actually usable in the LMS: a random-but-deterministic
         price, 1-2 modules, and in each module 1-2 lessons, an assignment and a
-        quiz. None of that generated content is real curriculum material (the
+        quiz. A `catalog_only` def is the exception and gets the course row, its
+        instructor, tags and price alone. None of that generated content is real
+        curriculum material (the
         sheet gives a Focus and a Core Competencies line per course, not lesson
         prose), so the quiz is grounded in the course's own real metadata
         (level/grade/focus) rather than inventing subject-matter questions."""
@@ -2758,6 +2943,16 @@ class Command(BaseCommand):
 
             if authored:
                 self._create_authored_content(course, authored, teacher, assets["handouts"])
+                continue
+
+            # A `catalog_only` def (the Cool Nerds academy block) is a course page
+            # and nothing else: the client sent its focus and competencies but no
+            # curriculum, so it gets its instructor, tags and price and stops
+            # there. The generated shell below would otherwise stand two
+            # placeholder modules in front of content that is still being
+            # written. Its `amount` is still drawn above, in list order, so the
+            # shared RNG keeps producing the same values for every other course.
+            if course_def.get("catalog_only"):
                 continue
 
             modules = self._create_modules(course, course_def, rng, assets["lessons"])
@@ -2972,7 +3167,7 @@ class Command(BaseCommand):
                 "course": course,
                 "description": (
                     f"Complete the exercises for {module.title} in {course.title} "
-                    f"({course_def['subject']}, Grades {course_def['grade_label']})."
+                    f"({course_def['subject']}, {grade_level_label(course_def['grade_label'])})."
                 ),
                 "due_date": timezone.now() + timedelta(days=14),
                 "total_marks": 100,
@@ -3011,8 +3206,8 @@ class Command(BaseCommand):
             ),
             (
                 f'What grade level is "{course.title}" recommended for?',
-                f"Grades {course_def['grade_label']}",
-                [f"Grades {g}" for g in ALL_GRADE_LABELS],
+                grade_level_label(course_def["grade_label"]),
+                [grade_level_label(g) for g in ALL_GRADE_LABELS],
             ),
             (
                 f'What is the focus of "{course.title}"?',

@@ -11,9 +11,9 @@ export default function CurriculumFilterSelect({
   allLabel,
   disabled = false,
 }) {
-  // Selects without an "all" option (e.g. sort) are never shown as an active filter.
-  const isActive = allLabel !== undefined && value !== "";
-
+  // Every select is styled identically whether or not it is narrowing the
+  // results. The "Reset (n)" button beside them already says how many filters
+  // are on, so a separately coloured control only read as out of place.
   return (
     <div className="flex min-w-0 flex-col gap-1">
       <label
@@ -28,9 +28,7 @@ export default function CurriculumFilterSelect({
           value={value}
           disabled={disabled}
           onChange={(event) => onChange(event.target.value)}
-          className={`h-10 w-full truncate appearance-none rounded-lg border pl-3 pr-8 text-xs font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60 ${
-            isActive ? "border-indigo-200 bg-indigo-50 text-indigo-800" : "border-zinc-200 bg-zinc-50/70 text-zinc-700 hover:border-zinc-300"
-          }`}
+          className="h-10 w-full truncate appearance-none rounded-lg border border-zinc-200 bg-zinc-50/70 pl-3 pr-8 text-xs font-medium text-zinc-700 transition hover:border-zinc-300 focus:outline-none focus-visible:ring-2 focus-visible:ring-indigo-200 disabled:cursor-not-allowed disabled:opacity-60"
         >
           {allLabel !== undefined && <option value="">{allLabel}</option>}
           {options.map((option) => (
