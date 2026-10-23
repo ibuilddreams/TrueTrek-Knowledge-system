@@ -79,6 +79,42 @@ class ParseGradeRangeTests(TestCase):
         self.assertEqual(parse_grade_range("x · Grades 6 · y"), (6, 6))
         self.assertEqual(parse_grade_range("x · Grades 1-3 · y"), (1, 3))
 
+    def test_parses_the_post_school_stages_by_name(self):
+        """"Grades Undergraduate" is not a sentence, so a post-school course
+        writes its stage under the sheet's own column heading instead. It still
+        lands on the same integer axis, which is what keeps those courses in the
+        grade filter rather than out of every grade-based surface."""
+        from courses.grades import (
+            ADULT,
+            GRADUATE_SCHOOL,
+            UNDERGRADUATE,
+            parse_grade_range,
+        )
+
+        self.assertEqual(
+            parse_grade_range("x · Grade Level: Undergraduate · y"),
+            (UNDERGRADUATE, UNDERGRADUATE),
+        )
+        self.assertEqual(
+            parse_grade_range("x · Grade Level: Graduate School · y"),
+            (GRADUATE_SCHOOL, GRADUATE_SCHOOL),
+        )
+        self.assertEqual(parse_grade_range("x · Grade Level: Adult · y"), (ADULT, ADULT))
+        # The stage segment wins over an incidental "Grades ..." elsewhere.
+        self.assertEqual(
+            parse_grade_range("Follows Grades 9–12 work. · Grade Level: Undergraduate · y"),
+            (UNDERGRADUATE, UNDERGRADUATE),
+        )
+
+    def test_a_numeric_token_is_still_only_read_as_a_school_grade(self):
+        """13 and 14 are the stages' ids, not grades anyone writes: "Grades 13"
+        is a typo and must not quietly become an undergraduate course."""
+        from courses.grades import parse_grade_range
+
+        self.assertIsNone(parse_grade_range("x · Grades 13 · y"))
+        self.assertIsNone(parse_grade_range("x · Grades 14 · y"))
+        self.assertIsNone(parse_grade_range("x · Grades 15 · y"))
+
     def test_prefers_structured_segment_over_incidental_mentions(self):
         from courses.grades import parse_grade_range
 

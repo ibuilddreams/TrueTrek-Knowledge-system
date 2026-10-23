@@ -61,8 +61,9 @@ class Course(BaseModel):
     amount = models.DecimalField(max_digits=10, decimal_places=2, default=0)
     # "What you'll learn" bullet points shown on the course detail page.
     learning_outcomes = models.JSONField(default=list, blank=True)
-    # Inclusive grade range (Pre-K = -1, K = 0, 1-12); null when unknown.
-    # Derived from the description's "Grades X–Y" segment on save.
+    # Inclusive grade range (Pre-K = -1, K = 0, 1-12, then Undergraduate = 13
+    # and Graduate School = 14); null when unknown. Derived on save from the
+    # description's "Grades X–Y" segment, or its "Grade Level: <stage>" one.
     grade_min = models.SmallIntegerField(
         null=True,
         blank=True,
