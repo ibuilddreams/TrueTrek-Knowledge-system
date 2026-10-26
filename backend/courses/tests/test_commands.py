@@ -246,14 +246,23 @@ class SeedDataCommandTests(TestCase):
             self.assertFalse(lesson.file, lesson.title)
             self.assertFalse(lesson.video_url, lesson.title)
 
-        # Every authored module pairs that prose with a downloadable handout.
-        for code in seed.COURSE_CONTENT:
-            for module in Course.objects.get(code=code).modules.all():
+        # Every authored module is built on that prose. The full-shape courses
+        # pair it with a downloadable handout; the short-shape ones (whose files
+        # set HANDOUTS = []) are text-only, so what is pinned here is that the
+        # seeded module matches the shape its own definition asked for.
+        for code, modules_def in seed.COURSE_CONTENT.items():
+            for module_def in modules_def:
+                module = Course.objects.get(code=code).modules.get(title=module_def["title"])
                 types = set(module.lessons.values_list("content_type", flat=True))
-                self.assertIn(Lesson.ContentType.TEXT, types, f"{code} / {module.title}")
-                self.assertTrue(
-                    types & {Lesson.ContentType.PDF, Lesson.ContentType.DOCUMENT},
-                    f"{code} / {module.title}",
+                where = f"{code} / {module.title}"
+                self.assertIn(Lesson.ContentType.TEXT, types, where)
+                self.assertEqual(
+                    bool(types & {Lesson.ContentType.PDF, Lesson.ContentType.DOCUMENT}),
+                    any(
+                        lesson["type"] in seed.AUTHORED_HANDOUT_TYPES
+                        for lesson in module_def["lessons"]
+                    ),
+                    where,
                 )
 
     def test_placeholder_modules_are_replaced_but_hand_made_ones_survive(self):
@@ -720,10 +729,17 @@ class SeedDataAssetTests(TestCase):
         for code, modules_def in seed.COURSE_CONTENT.items():
             for order, module_def in enumerate(modules_def, start=1):
                 lesson_def = next(
-                    lesson
-                    for lesson in module_def["lessons"]
-                    if lesson["type"] in seed.AUTHORED_HANDOUT_TYPES
+                    (
+                        lesson
+                        for lesson in module_def["lessons"]
+                        if lesson["type"] in seed.AUTHORED_HANDOUT_TYPES
+                    ),
+                    None,
                 )
+                if lesson_def is None:
+                    # A short-shape module: text-only, so there is no handout to
+                    # render and nothing here to check.
+                    continue
                 lesson = Lesson.objects.get(
                     module__course__code=code, module__title=module_def["title"],
                     title=lesson_def["title"],
@@ -746,7 +762,18 @@ class SeedDataAssetTests(TestCase):
                     # .docx is a zip container; PK is its signature.
                     self.assertTrue(content.startswith(b"PK"), where)
 
-        self.assertEqual(len(seen), sum(len(m) for m in seed.COURSE_CONTENT.values()))
+        self.assertEqual(
+            len(seen),
+            sum(
+                1
+                for modules_def in seed.COURSE_CONTENT.values()
+                for module_def in modules_def
+                if any(
+                    lesson["type"] in seed.AUTHORED_HANDOUT_TYPES
+                    for lesson in module_def["lessons"]
+                )
+            ),
+        )
 
     def test_a_handout_that_cannot_be_rendered_does_not_abort_the_seed(self):
         response = type("Response", (), {"content": b"stub-bytes", "raise_for_status": lambda self: None})
