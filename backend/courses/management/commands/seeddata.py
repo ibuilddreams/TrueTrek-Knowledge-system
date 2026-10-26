@@ -2570,16 +2570,19 @@ class Command(BaseCommand):
         return assets
 
     def _build_handouts(self):
-        """Renders the handout every authored module carries, into media storage.
+        """Renders the handouts authored modules carry, into media storage.
 
-        The 210 courses without written curriculum still share one demo PDF and
-        one demo DOCX, which is honest filler for a lesson nobody has authored.
-        An authored module is different: its third lesson is a named worksheet
-        that the two lessons beside it tell the student to fill in, so it is
-        rendered from the same `_course_content` entry that wrote them
-        (`_handouts.py`). Returns {(course code, module order): stored path};
-        a handout that could not be rendered is simply absent and its lesson
-        seeds without a file, the same degradation as a failed download.
+        The courses without written curriculum still share one demo PDF and one
+        demo DOCX, which is honest filler for a lesson nobody has authored. An
+        authored module's handout is different: it is a named worksheet the
+        lessons beside it tell the student to fill in, so it is rendered from
+        the same `_course_content` entry that wrote them (`_handouts.py`).
+
+        A module may have **no** handout lesson — the shorter, text-only courses
+        do — and is skipped here rather than treated as malformed. Returns
+        {(course code, module order): stored path}; a handout that could not be
+        rendered is simply absent and its lesson seeds without a file, the same
+        degradation as a failed download.
         """
         built = {}
         failures = 0
@@ -2587,10 +2590,15 @@ class Command(BaseCommand):
         for code, modules_def in COURSE_CONTENT.items():
             for module_order, module_def in enumerate(modules_def, start=1):
                 lesson_def = next(
-                    lesson
-                    for lesson in module_def["lessons"]
-                    if lesson["type"] in AUTHORED_HANDOUT_TYPES
+                    (
+                        lesson
+                        for lesson in module_def["lessons"]
+                        if lesson["type"] in AUTHORED_HANDOUT_TYPES
+                    ),
+                    None,
                 )
+                if lesson_def is None:
+                    continue
                 is_pdf = lesson_def["type"] == Lesson.ContentType.PDF
                 if is_pdf and not PDF_AVAILABLE:
                     failures += 1
