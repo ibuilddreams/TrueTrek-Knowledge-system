@@ -1,4 +1,5 @@
 import tempfile
+from collections import Counter
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -8,10 +9,14 @@ from django.core.management import call_command
 from django.test import TestCase, override_settings
 from django.utils import timezone
 
+from class_sessions import services as class_services
+from class_sessions.exceptions import SessionScheduleError
+from class_sessions.models import ClassSession, ClassSessionAttendance
 from courses.management.commands import seeddata as seed
 from common.models import Status
 from courses.grades import ADULT, FILTER_GRADES, GRADUATE_SCHOOL, UNDERGRADUATE, grade_name
 from courses.models import Category, Course
+from courses.services import is_course_instructor
 from daily_drill.models import DrillOption, DrillQuestion
 from enrollments.models import Enrollment
 from instructors.models import InstructorFeedback
@@ -598,6 +603,9 @@ class SeedDataCommandTests(TestCase):
             "drill_options": DrillOption.objects.count(),
             "quests": Quest.objects.count(),
             "users": User.objects.count(),
+            "class_sessions": ClassSession.objects.count(),
+            "class_attendance": ClassSessionAttendance.objects.count(),
+            "enrollments": Enrollment.objects.count(),
         }
 
         seed_offline()
@@ -616,6 +624,9 @@ class SeedDataCommandTests(TestCase):
                 "drill_options": DrillOption.objects.count(),
                 "quests": Quest.objects.count(),
                 "users": User.objects.count(),
+                "class_sessions": ClassSession.objects.count(),
+                "class_attendance": ClassSessionAttendance.objects.count(),
+                "enrollments": Enrollment.objects.count(),
             },
         )
 
@@ -625,13 +636,31 @@ class SeedDataCommandTests(TestCase):
         self.assertFalse(Course.objects.exclude(thumbnail="").exists())
         self.assertFalse(Lesson.objects.exclude(file="").exists())
 
-    def test_students_are_not_auto_enrolled(self):
+    def test_students_are_not_auto_enrolled_beyond_the_live_class_roster(self):
         seed_offline()
 
-        # Only the demo reviewers (who back the seeded instructor feedback) are enrolled.
-        self.assertFalse(Enrollment.objects.filter(student__email__startswith="student").exists())
+        # Two deliberate exceptions, and nothing else: the demo reviewers, who
+        # back the seeded instructor feedback, and the small slice of demo
+        # students the seeded live classes need a roster for.
+        class_course_codes = {
+            session_def["course_code"] for session_def in seed.CLASS_SESSION_DEFS
+        }
+        roster_emails = {
+            f"student{index}@example.com"
+            for index in range(1, seed.CLASS_DEMO_STUDENT_COUNT + 1)
+        }
+
+        for enrollment in Enrollment.objects.select_related("student", "course"):
+            if enrollment.student.email.startswith("reviewer"):
+                continue
+            self.assertIn(enrollment.student.email, roster_emails)
+            self.assertIn(enrollment.course.code, class_course_codes)
+
+        # Every student past that slice is still left for an admin to enroll.
         self.assertFalse(
-            Enrollment.objects.exclude(student__email__startswith="reviewer").exists()
+            Enrollment.objects.filter(
+                student__email=f"student{seed.CLASS_DEMO_STUDENT_COUNT + 1}@example.com"
+            ).exists()
         )
 
     def test_every_instructor_gets_profile_details_and_enrolled_feedback(self):
@@ -879,6 +908,241 @@ class SeedDataWarRoomLiveTests(TestCase):
 
         self.assertTrue(LiveSession.objects.filter(pk=hand_made.pk).exists())
         self.assertTrue(SessionSpeaker.objects.filter(pk=guest.pk).exists())
+
+
+class SeedDataLiveClassTests(TestCase):
+    """The demo classes in `class_sessions`.
+
+    They exist so both halves of the feature have something to exercise the
+    moment a server is seeded — including the states that are awkward to
+    produce by hand: a class live right now, one whose host door is open
+    while its students' is still shut, a cancelled one, and finished ones
+    with and without a register.
+    """
+
+    LIVE_NOW = "Live Workshop: Building Your First OKR Sheet"
+    HOST_DOOR_OPEN = "Capstone Clinic: Your Post-Career Venture, Out Loud"
+    CANCELLED = "Guest Session: An Admissions Officer Answers"
+    FINISHED_WITH_REGISTER = "Office Hours: Time & Energy Management"
+    FINISHED_EMPTY = "Content Monetization Walkthrough"
+
+    def test_every_class_is_hosted_by_an_instructor_of_its_own_course(self):
+        """Hosting is resolved from the course's instructor list, not from
+        `session.teacher` — a seeded class whose teacher does not instruct its
+        course could never actually be opened."""
+        seed_offline()
+
+        self.assertEqual(ClassSession.objects.count(), len(seed.CLASS_SESSION_DEFS))
+
+        hosts = Counter()
+        for session in ClassSession.objects.select_related("course", "teacher"):
+            self.assertTrue(
+                is_course_instructor(session.teacher, session.course), session.title
+            )
+            hosts[session.teacher.email] += 1
+
+        # Teachers are dealt out to courses by list index, so this also pins
+        # the course codes in CLASS_SESSION_DEFS to the first three teachers:
+        # reordering COURSE_DEFS moves them, and this is what says so.
+        self.assertEqual(
+            dict(hosts),
+            {
+                "teacher1@example.com": 3,
+                "teacher2@example.com": 3,
+                "teacher3@example.com": 3,
+            },
+        )
+
+    def test_covers_live_upcoming_cancelled_and_finished_states(self):
+        seed_offline()
+        student = User.objects.get(email="student1@example.com")
+
+        live = ClassSession.objects.get(title=self.LIVE_NOW)
+        self.assertEqual(class_services.live_state(live), class_services.LIVE)
+        self.assertTrue(class_services.can_join_now(live, student))
+
+        # The host's door opens an hour early, a student's fifteen minutes
+        # before — this one is seeded into the gap between the two.
+        soon = ClassSession.objects.get(title=self.HOST_DOOR_OPEN)
+        self.assertEqual(class_services.live_state(soon), class_services.UPCOMING)
+        self.assertFalse(class_services.can_join_now(soon, student))
+        self.assertTrue(class_services.can_join_now(soon, soon.teacher))
+
+        cancelled = ClassSession.objects.get(title=self.CANCELLED)
+        self.assertEqual(cancelled.status, ClassSession.SessionStatus.CANCELLED)
+        self.assertTrue(cancelled.cancellation_reason)
+        self.assertEqual(class_services.live_state(cancelled), class_services.CANCELLED)
+
+        finished = ClassSession.objects.get(title=self.FINISHED_WITH_REGISTER)
+        self.assertEqual(class_services.live_state(finished), class_services.ENDED)
+
+    def test_a_finished_class_has_an_honest_register(self):
+        seed_offline()
+
+        finished = ClassSession.objects.get(title=self.FINISHED_WITH_REGISTER)
+        attendance = finished.attendances.all()
+        # The four demo students the def asks for, plus the host.
+        self.assertEqual(attendance.count(), 5)
+        self.assertEqual(
+            attendance.filter(role=ClassSessionAttendance.ParticipantRole.HOST).count(), 1
+        )
+        # A reconnection and a laptop closed without ever reporting a leave —
+        # both are what the real data looks like.
+        self.assertTrue(attendance.filter(join_count=2).exists())
+        self.assertTrue(attendance.filter(left_at__isnull=True).exists())
+
+        # And a finished class nobody turned up to, for the empty state.
+        self.assertEqual(
+            ClassSession.objects.get(title=self.FINISHED_EMPTY).attendances.count(), 0
+        )
+
+    def test_enrols_a_roster_on_every_course_that_carries_a_class(self):
+        seed_offline()
+
+        for code in {d["course_code"] for d in seed.CLASS_SESSION_DEFS}:
+            self.assertEqual(
+                Enrollment.objects.filter(
+                    course__code=code,
+                    status=Enrollment.EnrollmentStatus.ACTIVE,
+                    student__email__startswith="student",
+                ).count(),
+                seed.CLASS_DEMO_STUDENT_COUNT,
+                code,
+            )
+
+        # Which is what makes every seeded class visible to a demo student.
+        student = User.objects.get(email="student1@example.com")
+        self.assertEqual(
+            class_services.student_sessions(student).count(), len(seed.CLASS_SESSION_DEFS)
+        )
+
+    def test_no_teacher_is_ever_double_booked(self):
+        """The defs are laid out so they never overlap — a clash would only
+        surface later, as a rejected edit to a class that seeded fine."""
+        seed_offline()
+
+        for session in ClassSession.objects.filter(
+            status=ClassSession.SessionStatus.SCHEDULED
+        ):
+            try:
+                class_services.assert_no_clash(
+                    teacher=session.teacher,
+                    scheduled_at=session.scheduled_at,
+                    duration_minutes=session.duration_minutes,
+                    exclude_pk=session.pk,
+                )
+            except SessionScheduleError as error:
+                self.fail(f"{session.title}: {error}")
+
+    def test_reseeding_repositions_a_class_nobody_joined(self):
+        """Their whole value is being relative to now — a "live now" demo
+        class left three weeks in the past is worth nothing."""
+        seed_offline()
+        session = ClassSession.objects.get(title=self.LIVE_NOW)
+        ClassSession.objects.filter(pk=session.pk).update(
+            scheduled_at=session.scheduled_at - timedelta(days=30)
+        )
+
+        seed_offline()
+
+        session.refresh_from_db()
+        self.assertEqual(class_services.live_state(session), class_services.LIVE)
+        self.assertEqual(ClassSession.objects.count(), len(seed.CLASS_SESSION_DEFS))
+
+    def test_reseeding_moves_a_finished_class_register_and_all(self):
+        """A repositioned class takes its register with it — otherwise a
+        finished class reseeded a week forward shows people who arrived
+        before it started."""
+        seed_offline()
+        session = ClassSession.objects.get(title=self.FINISHED_WITH_REGISTER)
+        ClassSession.objects.filter(pk=session.pk).update(
+            scheduled_at=session.scheduled_at - timedelta(days=40)
+        )
+        for attendance in session.attendances.all():
+            ClassSessionAttendance.objects.filter(pk=attendance.pk).update(
+                first_joined_at=attendance.first_joined_at - timedelta(days=40),
+                last_joined_at=attendance.last_joined_at - timedelta(days=40),
+            )
+
+        seed_offline()
+
+        session.refresh_from_db()
+        self.assertEqual(class_services.live_state(session), class_services.ENDED)
+        for attendance in session.attendances.all():
+            self.assertGreaterEqual(
+                attendance.first_joined_at, session.scheduled_at - timedelta(minutes=10)
+            )
+            self.assertLessEqual(
+                attendance.first_joined_at,
+                session.scheduled_at + timedelta(minutes=session.duration_minutes),
+            )
+
+    def test_reseeding_never_moves_a_class_a_real_participant_joined(self):
+        """A non-demo attendance row is evidence a real person was told to be
+        in that room at that hour: moving the class would falsify the register
+        and send them somewhere else."""
+        seed_offline()
+        session = ClassSession.objects.get(title=self.HOST_DOOR_OPEN)
+        real_student = User.objects.create(
+            username="real.student@school.example",
+            email="real.student@school.example",
+            first_name="Real",
+            last_name="Student",
+            gender=User.Gender.OTHER,
+            role=User.Roles.STUDENT,
+            is_verified=True,
+        )
+        joined_at = timezone.now()
+        ClassSessionAttendance.objects.create(
+            session=session,
+            user=real_student,
+            first_joined_at=joined_at,
+            last_joined_at=joined_at,
+        )
+        slot = session.scheduled_at
+
+        seed_offline()
+
+        session.refresh_from_db()
+        self.assertEqual(session.scheduled_at, slot)
+
+    def test_a_demo_account_joining_does_not_cost_the_next_reseed_its_live_class(self):
+        """Opening the demo classroom is the testing this data exists for —
+        it must not be what stops the command handing back a live class."""
+        seed_offline()
+        session = ClassSession.objects.get(title=self.LIVE_NOW)
+        joined_at = timezone.now()
+        ClassSessionAttendance.objects.create(
+            session=session,
+            user=User.objects.get(email="teacher1@example.com"),
+            role=ClassSessionAttendance.ParticipantRole.HOST,
+            first_joined_at=joined_at,
+            last_joined_at=joined_at,
+        )
+        ClassSession.objects.filter(pk=session.pk).update(
+            scheduled_at=session.scheduled_at - timedelta(days=30)
+        )
+
+        seed_offline()
+
+        session.refresh_from_db()
+        self.assertEqual(class_services.live_state(session), class_services.LIVE)
+
+    def test_reseeding_preserves_a_class_a_teacher_scheduled_by_hand(self):
+        seed_offline()
+        hand_made = ClassSession.objects.create(
+            course=Course.objects.get(code="CEO-101"),
+            teacher=User.objects.get(email="teacher1@example.com"),
+            title="Admin-scheduled catch-up",
+            scheduled_at=timezone.now() + timedelta(days=9),
+        )
+
+        seed_offline()
+
+        self.assertTrue(ClassSession.objects.filter(pk=hand_made.pk).exists())
+        self.assertEqual(
+            ClassSession.objects.count(), len(seed.CLASS_SESSION_DEFS) + 1
+        )
 
 
 class SeedDataWargamerTests(TestCase):

@@ -16,6 +16,7 @@ import {
   Scale,
   ShieldAlert,
   UserRound,
+  Video,
 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useTeacherEnrolledStudents } from "@/hooks/useTeacherEnrolledStudents";
@@ -36,6 +37,7 @@ import RequestsTab from "./tabs/RequestsTab";
 import StudentConcernsTab from "./tabs/StudentConcernsTab";
 import InstructorProfileTab from "./tabs/InstructorProfileTab";
 import AdvisorQuestionsTab from "./tabs/AdvisorQuestionsTab";
+import LiveClassesTab from "./tabs/LiveClassesTab";
 
 const TEACHER_TABS = [
   {
@@ -74,6 +76,12 @@ const TEACHER_TABS = [
     icon: Users,
     title:
       "Switch tab to Scholar-Athlete Enrollment Slots and Compliance Scores",
+  },
+  {
+    id: "classes",
+    label: "Live Classes",
+    icon: Video,
+    title: "Schedule a live video class for a course and take attendance",
   },
   {
     id: "warroom",
@@ -260,6 +268,7 @@ function TeacherPortalContent() {
         {activeTab === "dashboard" && <DashboardTab students={students} />}
         {activeTab === "courses" && <MyCoursesTab />}
         {activeTab === "students" && <EnrollmentScoresTab />}
+        {activeTab === "classes" && <LiveClassesTab />}
         {activeTab === "warroom" && <WarRoomScreen />}
         {activeTab === "advisor" && user?.isAdvisor && <AdvisorQuestionsTab />}
         {activeTab === "progress" && <ProgressTab />}

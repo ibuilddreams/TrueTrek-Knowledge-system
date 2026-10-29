@@ -16,6 +16,7 @@ from django.utils.text import slugify
 
 from assignments.models import Assignment
 from carts.models import CartItem
+from class_sessions.models import ClassSession, ClassSessionAttendance
 from common.models import Status
 from common.ordering import get_next_order
 from courses.grades import STAGE_AUDIENCES, STAGE_NAMES
@@ -1661,6 +1662,188 @@ LIVE_SESSION_DEFS = [
 ]
 
 
+# Live Classes (`class_sessions`) — demo classes on courses teachers 1-3
+# already instruct, so both portals have something to exercise the moment a
+# server is seeded: one class live right now, one whose host door is open
+# while its students' is not, upcoming ones near and far, a cancelled one,
+# and finished ones with and without a register.
+#
+# Keyed by `course_code` rather than by teacher name, because only a course's
+# instructors can host (`class_sessions.services.is_host`) and
+# `teachers_by_code` is what decides who instructs a course — deriving the
+# host from the course is what keeps a seeded class actually openable. The
+# codes below are chosen so that the current COURSE_DEFS order hands them to
+# teacher1 (CEO-101/CEO-304), teacher2 (CEO-102/REC-101) and teacher3
+# (CEO-201/REC-102) — teachers are dealt out by list index, so reordering the
+# catalog moves them, and `SeedDataLiveClassTests` pins the three.
+#
+# `starts_in_minutes` is relative to the moment of seeding, which is the
+# whole point of these rows — "live now" has to mean live now, so unlike the
+# War Room series above they are *repositioned* on every reseed, register and
+# all; the one class that is not is one a real, non-demo participant joined
+# (see `_seed_class_sessions`). No two defs overlap in
+# time, so no teacher is ever double-booked whatever a future catalog
+# reordering does to the course→teacher mapping
+# (`class_sessions.services.assert_no_clash`).
+#
+# `attendees` is how many of the demo students the register should show for a
+# finished class; the host is added on top of them.
+CLASS_SESSION_DEFS = [
+    # --- teacher1 ---------------------------------------------------------
+    {
+        "course_code": "CEO-101",
+        "title": "Live Workshop: Building Your First OKR Sheet",
+        "starts_in_minutes": -10,
+        "duration_minutes": 45,
+        "description": (
+            "Open the OKR template and fill it in together — bring one athletic, "
+            "one academic and one business goal for the next twelve months."
+        ),
+        "agenda": [
+            "Why a goal without a metric is a wish",
+            "Writing one objective and three key results",
+            "Live review: three volunteers share their sheet",
+            "Setting your weekly check-in",
+        ],
+    },
+    {
+        "course_code": "CEO-304",
+        "title": "Capstone Clinic: Your Post-Career Venture, Out Loud",
+        "starts_in_minutes": 40,
+        "duration_minutes": 45,
+        "description": (
+            "Bring the venture idea from your capstone draft and say it out loud "
+            "in ninety seconds. The room asks the questions an investor would."
+        ),
+        "agenda": [
+            "Ninety seconds, no slides",
+            "The three questions every first pitch gets",
+            "What a capstone needs before it is finished",
+        ],
+    },
+    {
+        "course_code": "CEO-101",
+        "title": "Office Hours: Time & Energy Management",
+        "starts_in_minutes": -7 * 24 * 60,
+        "duration_minutes": 60,
+        "description": (
+            "Drop-in session on the energy matrix from Module 2 — bring the week "
+            "you actually had, not the one you planned."
+        ),
+        "agenda": [
+            "Reading your own week back",
+            "The three things that always get cut",
+            "Protecting recovery like a training block",
+        ],
+        "attendees": 4,
+    },
+    # --- teacher2 ---------------------------------------------------------
+    {
+        "course_code": "CEO-102",
+        "title": "Transcript Audit Lab",
+        "starts_in_minutes": 26 * 60,
+        "duration_minutes": 60,
+        "description": (
+            "Bring your current transcript. We map it against core course "
+            "requirements and find the gaps while there is still time to fix them."
+        ),
+        "agenda": [
+            "Reading a transcript the way a clearinghouse does",
+            "Spotting a course that will not count",
+            "Planning next semester backwards from the requirement",
+        ],
+    },
+    {
+        "course_code": "REC-101",
+        "title": "Eligibility Center Clinic: Registering Step by Step",
+        "starts_in_minutes": -3 * 24 * 60,
+        "duration_minutes": 60,
+        "description": (
+            "Screen-share walkthrough of the NCAA Eligibility Center registration, "
+            "with time at the end for your own account questions."
+        ),
+        "agenda": [
+            "What you need before you start",
+            "Filling the account out line by line",
+            "Core course mistakes that cost people a year",
+            "Q&A",
+        ],
+        "attendees": 3,
+    },
+    {
+        "course_code": "CEO-102",
+        "title": "Guest Session: An Admissions Officer Answers",
+        "starts_in_minutes": 2 * 24 * 60,
+        "duration_minutes": 60,
+        "status": ClassSession.SessionStatus.CANCELLED,
+        "cancellation_reason": "Our guest had to travel — rescheduling for the week after next.",
+        "description": (
+            "A university admissions officer on what the academic side of a "
+            "recruiting file looks like from their desk."
+        ),
+        "agenda": [
+            "What an admissions file actually contains",
+            "Where athletics is and is not a factor",
+            "Questions from the group",
+        ],
+    },
+    # --- teacher3 ---------------------------------------------------------
+    {
+        "course_code": "CEO-201",
+        "title": "Brand Audit Live: Clean Up Your Feed",
+        "starts_in_minutes": 90,
+        "duration_minutes": 60,
+        "description": (
+            "Work through the audit checklist on your own account with the class. "
+            "Nothing is shared on screen unless you volunteer it."
+        ),
+        "agenda": [
+            "The audit checklist, top to bottom",
+            "Archive, delete, or leave it: deciding fast",
+            "Writing a bio a sponsor can read in four seconds",
+        ],
+    },
+    {
+        "course_code": "REC-102",
+        "title": "Film Review: Your First 30 Seconds",
+        "starts_in_minutes": 4 * 24 * 60,
+        "duration_minutes": 75,
+        "description": (
+            "We watch the opening of submitted highlight reels and cut them down "
+            "to the plays a coach would actually keep watching."
+        ),
+        "agenda": [
+            "The first 30 seconds rule",
+            "Live cut-downs on three submitted reels",
+            "Stats that belong on screen, and the ones that do not",
+            "What to re-upload before Friday",
+        ],
+    },
+    {
+        "course_code": "CEO-201",
+        "title": "Content Monetization Walkthrough",
+        "starts_in_minutes": -10 * 24 * 60,
+        "duration_minutes": 45,
+        "description": (
+            "How a following becomes an asset — audience demographics, what a "
+            "brand pays for, and the numbers to track before you pitch anyone."
+        ),
+        "agenda": [
+            "Who is actually following you",
+            "What a local brand is buying",
+            "The three numbers to track from today",
+        ],
+    },
+]
+
+# Demo students enrolled on the courses that carry a seeded live class, so the
+# student side of the classroom has a roster the moment the server is seeded.
+# Deliberately a small slice of STUDENT_NAMES rather than all of them: the
+# rest stay un-enrolled, which is what the rest of the seed assumes.
+CLASS_DEMO_STUDENT_COUNT = 6
+
+
+
 # The client's LS-302 "No Muscle" module, verbatim in substance: three
 # pressure situations, one per relationship the brief names (family, friends,
 # community), each with the A.B.P. model answer it teaches.
@@ -2308,8 +2491,10 @@ class Command(BaseCommand):
         "enrollments, progress and students' own custom pathways all survive and this is safe "
         "to run against a server that already holds real data. Pass --fresh to instead wipe "
         "every row except admin accounts first, for a server you mean to rebuild from scratch. "
-        "Student-course enrollments are intentionally NOT seeded — enroll students manually "
-        "(e.g. via the admin portal) after seeding. Safe to re-run — every run produces the same "
+        "Student-course enrollments are intentionally NOT seeded in general — enroll students "
+        "manually (e.g. via the admin portal) after seeding; the exceptions are the few demo "
+        "students put on the courses that carry a seeded live class, which otherwise has no "
+        "roster to show. Safe to re-run — every run produces the same "
         "dataset, and media files already on disk are reused rather than re-downloaded. Pass "
         "--noinput to skip the confirmation prompt (e.g. for CI/deploy scripts) and --skip-assets "
         "to seed without network access."
@@ -2399,8 +2584,13 @@ class Command(BaseCommand):
                 f"{len(STUDENT_NAMES) + len(REVIEWER_NAMES)} student(s), the admin, bundle "
                 f"rules, {len(QUESTIONNAIRE)} onboarding question(s) and "
                 f"{len(DRILL_DEFS)} daily drill(s).\n"
-                "The regular demo students will NOT be auto-enrolled in any course (only the "
-                "demo reviewers are, so instructor feedback matches real enrollments).\n"
+                f"It also seeds {len(CLASS_SESSION_DEFS)} demo live class(es) for the first "
+                "three teachers, repositioned relative to now on each run unless somebody "
+                "outside the demo accounts has joined one.\n"
+                "The regular demo students will NOT be auto-enrolled in any course, apart from "
+                f"the first {CLASS_DEMO_STUDENT_COUNT} being enrolled on the courses those demo "
+                "live classes are on (only the demo reviewers are otherwise, so instructor "
+                "feedback matches real enrollments).\n"
                 "Type 'yes' to continue: "
             )
             if confirm.strip().lower() != "yes":
@@ -2500,6 +2690,18 @@ class Command(BaseCommand):
                 self.style.SUCCESS(
                     f"Seeded {len(SPEAKER_DEFS)} War Room Live speakers and "
                     f"{len(LIVE_SESSION_DEFS)} sessions"
+                )
+            )
+
+            enrolled, new_classes, moved, kept = self._seed_class_sessions(
+                teachers_by_code, courses_by_code, students, teachers + students + reviewers
+            )
+            self.stdout.write(
+                self.style.SUCCESS(
+                    f"Seeded {len(CLASS_SESSION_DEFS)} demo live class(es) "
+                    f"({new_classes} new, {moved} repositioned, {kept} left in place "
+                    f"because a real participant had joined) and {enrolled} demo enrolment(s) "
+                    "on the courses carrying them"
                 )
             )
 
@@ -3457,6 +3659,169 @@ class Command(BaseCommand):
                         pathway=pathways_by_key[pathway_key],
                         defaults={"weight": weight},
                     )
+
+    def _seed_class_sessions(self, teachers_by_code, courses_by_code, students, demo_users):
+        """Seeds the demo live classes and the enrolments that make them visible.
+
+        The enrolments are the reason this does more than write rows: a class
+        is addressed to a *course*, and who may see or join one is resolved
+        live from that course's ACTIVE enrolments
+        (`class_sessions.services.can_attend`), so without a roster the
+        student half of the feature has nothing to show and the video tiles
+        have nobody to name. They are created with get_or_create and never
+        updated — a demo enrolment somebody cancelled by hand stays cancelled.
+
+        Unlike the War Room series above, a class is **repositioned on every
+        reseed**: its offsets are relative to the moment of seeding, and a
+        "live now" demo class that a reseed leaves three weeks in the past is
+        worth nothing — the whole reason to re-run the command is to get one
+        back. Its register is shifted by the same amount, so a finished class
+        never ends up with people who arrived before it started.
+
+        The exception is a class somebody **outside the seeded demo accounts**
+        has joined, which keeps its slot and its status. That distinction is
+        the point rather than a detail: on a server carrying real data, a real
+        participant's attendance row is evidence a real person was told to be
+        in that room at that hour, and moving the class would both falsify the
+        register and send them somewhere else. A demo teacher or student
+        opening the demo classroom is the testing this data exists for, and
+        must not cost the next reseed its live class.
+        """
+        now = timezone.now()
+        roster = students[:CLASS_DEMO_STUDENT_COUNT]
+        demo_user_ids = {user.pk for user in demo_users}
+
+        enrolled = 0
+        for code in sorted({session_def["course_code"] for session_def in CLASS_SESSION_DEFS}):
+            course = courses_by_code.get(code)
+            if course is None:
+                continue
+            teacher = teachers_by_code.get(code)
+            for student in roster:
+                _, created = Enrollment.objects.get_or_create(
+                    student=student, course=course, defaults={"teacher": teacher}
+                )
+                if created:
+                    enrolled += 1
+
+        created_count = moved = kept = 0
+        for session_def in CLASS_SESSION_DEFS:
+            course = courses_by_code.get(session_def["course_code"])
+            if course is None:
+                continue
+            teacher = teachers_by_code.get(session_def["course_code"])
+
+            copy = {
+                "description": session_def["description"],
+                "agenda": session_def["agenda"],
+                "teacher": teacher,
+            }
+            slot = {
+                "scheduled_at": now + timedelta(minutes=session_def["starts_in_minutes"]),
+                "duration_minutes": session_def["duration_minutes"],
+                "status": session_def.get("status", ClassSession.SessionStatus.SCHEDULED),
+                "cancellation_reason": session_def.get("cancellation_reason", ""),
+            }
+
+            # A title is only unique per course by convention here, so match
+            # the oldest row rather than risk MultipleObjectsReturned against
+            # a class an admin happened to give the same name.
+            session = (
+                ClassSession.objects.filter(course=course, title=session_def["title"])
+                .order_by("pk")
+                .first()
+            )
+            if session is None:
+                session = ClassSession.objects.create(
+                    course=course, title=session_def["title"], **copy, **slot
+                )
+                created_count += 1
+                # Only ever written with the row, so the register can never
+                # contradict a slot that moved underneath it.
+                self._seed_class_attendance(session, session_def, roster, teacher)
+                continue
+
+            fields = dict(copy)
+            if session.attendances.exclude(user_id__in=demo_user_ids).exists():
+                kept += 1
+            else:
+                shift = slot["scheduled_at"] - session.scheduled_at
+                fields.update(slot)
+                self._shift_class_attendance(session, shift)
+                moved += 1
+            for field, value in fields.items():
+                setattr(session, field, value)
+            session.save()
+
+        return enrolled, created_count, moved, kept
+
+    def _shift_class_attendance(self, session, shift):
+        """Moves a repositioned class's register with it.
+
+        Only ever runs for a class no real participant attended, so what is
+        being kept coherent here is the seeded demo register: without it a
+        finished class reseeded a week forward would show people who arrived
+        before it started.
+        """
+        if not shift:
+            return
+        for attendance in session.attendances.all():
+            attendance.first_joined_at += shift
+            attendance.last_joined_at += shift
+            if attendance.left_at is not None:
+                attendance.left_at += shift
+            attendance.save(
+                update_fields=["first_joined_at", "last_joined_at", "left_at", "updated_at"]
+            )
+
+    def _seed_class_attendance(self, session, session_def, roster, teacher):
+        """The register for a finished demo class.
+
+        The shapes are deliberate rather than uniform: the host arrives before
+        the class and leaves after it, one student reconnects mid-way
+        (`join_count` 2) and one never reports leaving at all. That last one
+        is the normal case for a closed laptop, and it is exactly why these
+        fields are presented to the teacher as arrival rather than as minutes
+        attended (see `ClassSessionAttendance`)."""
+        attendee_count = session_def.get("attendees", 0)
+        if not attendee_count:
+            return 0
+
+        starts_at = session.scheduled_at
+        ends_at = starts_at + timedelta(minutes=session.duration_minutes)
+        written = 0
+
+        if teacher is not None:
+            opened_room = starts_at - timedelta(minutes=5)
+            ClassSessionAttendance.objects.get_or_create(
+                session=session,
+                user=teacher,
+                defaults={
+                    "role": ClassSessionAttendance.ParticipantRole.HOST,
+                    "first_joined_at": opened_room,
+                    "last_joined_at": opened_room,
+                    "left_at": ends_at + timedelta(minutes=2),
+                },
+            )
+            written += 1
+
+        for index, student in enumerate(roster[:attendee_count]):
+            joined = starts_at + timedelta(minutes=2 * index)
+            reconnected = index == 1
+            ClassSessionAttendance.objects.get_or_create(
+                session=session,
+                user=student,
+                defaults={
+                    "role": ClassSessionAttendance.ParticipantRole.STUDENT,
+                    "first_joined_at": joined,
+                    "last_joined_at": joined + timedelta(minutes=12) if reconnected else joined,
+                    "left_at": None if index == 2 else ends_at - timedelta(minutes=3),
+                    "join_count": 2 if reconnected else 1,
+                },
+            )
+            written += 1
+
+        return written
 
     def _seed_instructor_profiles(self, teachers_by_code, avatars=()):
         """Public instructor details (bio, headline, skills, photo) for every teacher
