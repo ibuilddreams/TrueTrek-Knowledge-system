@@ -58,6 +58,7 @@ urlpatterns = [
     path('api/brand-validator/', include('brand_validator.urls')),
     path('api/live-sessions/', include('live_sessions.urls')),
     path('api/wargamer/', include('wargamer.urls')),
+    path('api/class-sessions/', include('class_sessions.urls')),
     path('api/auth/login/', CustomTokenObtainPairView.as_view()),
     path('api/auth/signup/', SignupView.as_view()),
     path('api/auth/google/', GoogleAuthView.as_view()),

@@ -13,6 +13,7 @@ import {
   ShieldCheck,
   Swords,
   Theater,
+  Video,
 } from "lucide-react";
 
 // The sidebar is a two-level nav: a few entries own a collapsible group of
@@ -83,6 +84,12 @@ export const PORTAL_NAV = [
     label: "Certificates",
     icon: Award,
     title: "Certificates from completed courses",
+  },
+  {
+    id: "live-classes",
+    label: "Live Classes",
+    icon: Video,
+    title: "Video classes your instructors run for your courses",
   },
   {
     id: "wargamer",

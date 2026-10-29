@@ -74,6 +74,7 @@ INSTALLED_APPS = [
     'brand_validator',
     'live_sessions',
     'wargamer',
+    'class_sessions',
 ]
 
 MIDDLEWARE = [
@@ -363,6 +364,19 @@ ROLEPLAY_PASS_SCORE_PERCENT = int(os.getenv('ROLEPLAY_PASS_SCORE_PERCENT', 70))
 # unambiguous refusal appeared, not on a stopwatch, because a typed reply and
 # a spoken one take very different amounts of wall-clock time to produce.
 ROLEPLAY_TIME_TO_BOUNDARY_SECONDS = int(os.getenv('ROLEPLAY_TIME_TO_BOUNDARY_SECONDS', 15))
+
+# Agora RTC (class_sessions/) — the live classroom a teacher schedules for a
+# course and their enrolled students join. Both values belong to the same
+# Agora project; the App ID is a public identifier the browser also carries as
+# NEXT_PUBLIC_AGORA_APP_ID, while the App Certificate is the signing secret
+# that must never reach the frontend. The backend needs both because a join
+# token is signed *for* an App ID (class_sessions/agora.py).
+#
+# With either unset, scheduling still works and joining fails with an honest
+# "not configured" message rather than a broken video tile — the same loud
+# failure GEMINI_API_KEY gets, never a placeholder credential.
+AGORA_APP_ID = os.getenv('AGORA_APP_ID', '')
+AGORA_APP_CERTIFICATE = os.getenv('AGORA_APP_CERTIFICATE', '')
 
 # AI-graded assignment review (assignments/ai_review/) and quiz short-answer
 # grading (quizzes/ai_grading.py) — reuses AI_CHAT_MODEL (the fast path), same

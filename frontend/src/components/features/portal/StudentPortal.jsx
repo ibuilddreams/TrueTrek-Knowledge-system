@@ -28,6 +28,7 @@ import CertificatesTab from "./tabs/CertificatesTab";
 import DrillTab from "./tabs/DrillTab";
 import QuestsTab from "./tabs/QuestsTab";
 import WargamerTab from "./tabs/WargamerTab";
+import LiveClassesTab from "./tabs/LiveClassesTab";
 import BrandValidatorTab from "./tabs/BrandValidatorTab";
 import WarRoomLiveTab from "./tabs/WarRoomLiveTab";
 import RewardsTab from "./tabs/RewardsTab";
@@ -257,6 +258,7 @@ function StudentPortalContent() {
                 onOpenRewards={() => setActiveTab("rewards")}
               />
             )}
+            {activeTab === "live-classes" && <LiveClassesTab />}
             {activeTab === "wargamer" && <WargamerTab />}
             {activeTab === "brand-validator" && <BrandValidatorTab />}
             {activeTab === "warroom-live" && <WarRoomLiveTab />}
