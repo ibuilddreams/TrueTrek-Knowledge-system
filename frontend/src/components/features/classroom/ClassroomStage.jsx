@@ -8,6 +8,7 @@ import { useAgoraCall, CALL_STATUS } from "@/hooks/useAgoraCall";
 import ClassroomControls from "./ClassroomControls";
 import ClassroomParticipantsPanel from "./ClassroomParticipantsPanel";
 import VideoTile from "./VideoTile";
+import WhiteboardPanel from "./WhiteboardPanel";
 import { formatClassTime } from "./classSessionUtils";
 
 /**
@@ -19,9 +20,17 @@ import { formatClassTime } from "./classSessionUtils";
  * unmounts when a tab changes is a call that drops, and a `position: fixed`
  * overlay inside the portals' animated containers would be trapped in them
  * (see FullScreenPortal).
+ *
+ * The whiteboard takes the stage when it is open and the faces drop to a
+ * strip along the bottom, because that is the order of attention in a class
+ * being presented to: what is being explained is the board, and the people
+ * are context. Closing it puts the spotlight back exactly as it was — the
+ * call is untouched either way, since the board is a separate connection
+ * with its own credential (`useWhiteboard`).
  */
 export default function ClassroomStage({ session, onClose }) {
   const [isParticipantsOpen, setIsParticipantsOpen] = useState(false);
+  const [isWhiteboardOpen, setIsWhiteboardOpen] = useState(false);
   const call = useAgoraCall(session.id);
   const { join, leave, status } = call;
 
@@ -172,7 +181,29 @@ export default function ClassroomStage({ session, onClose }) {
               </div>
             )}
 
-            {status === CALL_STATUS.CONNECTED && (
+            {status === CALL_STATUS.CONNECTED && isWhiteboardOpen && (
+              <>
+                {/* Keyed on the class so switching classes never hands a
+                    board's connection to a different room. */}
+                <WhiteboardPanel
+                  key={session.id}
+                  sessionId={session.id}
+                  onClose={() => setIsWhiteboardOpen(false)}
+                />
+
+                {/* Smaller squares than the spotlight layout uses, and more
+                    of them: while the board is up the faces are context, and
+                    every row of pixels they take is a row the thing being
+                    explained does not get. */}
+                {presentUids.length > 0 && (
+                  <div className="shrink-0 grid grid-cols-4 sm:grid-cols-6 xl:grid-cols-8 gap-2">
+                    {presentUids.slice(0, 8).map((uid) => renderTile(uid))}
+                  </div>
+                )}
+              </>
+            )}
+
+            {status === CALL_STATUS.CONNECTED && !isWhiteboardOpen && (
               <>
                 <div className="flex-1 min-h-0">
                   {spotlightUid != null && renderTile(spotlightUid, { large: true })}
@@ -217,9 +248,12 @@ export default function ClassroomStage({ session, onClose }) {
             isConnected={status === CALL_STATUS.CONNECTED}
             participantCount={presentUids.length}
             isParticipantsOpen={isParticipantsOpen}
+            isWhiteboardOpen={isWhiteboardOpen}
+            isWhiteboardAvailable={Boolean(session.whiteboard_available)}
             onToggleMic={call.toggleMic}
             onToggleCamera={call.toggleCamera}
             onToggleScreenShare={call.toggleScreenShare}
+            onToggleWhiteboard={() => setIsWhiteboardOpen((open) => !open)}
             onToggleParticipants={() => setIsParticipantsOpen((open) => !open)}
             onLeave={handleLeave}
           />

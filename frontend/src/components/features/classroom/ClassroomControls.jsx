@@ -4,6 +4,7 @@ import {
   Mic,
   MicOff,
   MonitorUp,
+  PenTool,
   PhoneOff,
   Users,
   Video,
@@ -18,6 +19,12 @@ import ClassroomControlButton from "./ClassroomControlButton";
  * take the wall is a class the teacher has to police. The backend hands
  * everyone a publisher token precisely so this stays a product choice that
  * can be relaxed later, rather than something baked into the credential.
+ *
+ * The whiteboard is offered to *everyone*, which is the opposite choice and
+ * deliberate: it is one shared board rather than a wall somebody takes, and a
+ * student who opens it sees what the teacher has already drawn. Who may draw
+ * on it is a separate question, answered by the server in the room token
+ * (class_sessions/services.py::whiteboard_role), not by hiding this button.
  */
 export default function ClassroomControls({
   isMicOn,
@@ -29,9 +36,12 @@ export default function ClassroomControls({
   isConnected,
   participantCount,
   isParticipantsOpen,
+  isWhiteboardOpen,
+  isWhiteboardAvailable,
   onToggleMic,
   onToggleCamera,
   onToggleScreenShare,
+  onToggleWhiteboard,
   onToggleParticipants,
   onLeave,
 }) {
@@ -90,6 +100,30 @@ export default function ClassroomControls({
           <MonitorUp className="w-5 h-5" />
         </ClassroomControlButton>
       )}
+
+      {/* Shown even on a server with no whiteboard credentials, and disabled
+          with the reason instead of hidden. Hiding it was the first instinct
+          — a greyed-out button invites a teacher to keep pressing it — but it
+          makes a missing credential indistinguishable from a feature that was
+          never built, which is a day lost to the wrong question. The video
+          path already answers this the same way: the join button is always
+          there and says 503 if the server has no Agora keys. */}
+      <ClassroomControlButton
+        onClick={onToggleWhiteboard}
+        active={!isWhiteboardOpen}
+        disabled={!isConnected || !isWhiteboardAvailable}
+        title={
+          !isWhiteboardAvailable
+            ? "The whiteboard isn't set up on this server (AGORA_WHITEBOARD_* in backend/.env)"
+            : !isConnected
+              ? "Connecting to the classroom…"
+              : isWhiteboardOpen
+                ? "Close the whiteboard"
+                : "Open the whiteboard"
+        }
+      >
+        <PenTool className="w-5 h-5" />
+      </ClassroomControlButton>
 
       <ClassroomControlButton
         onClick={onToggleParticipants}

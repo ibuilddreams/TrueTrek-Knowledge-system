@@ -10,6 +10,8 @@ from .exceptions import (
     SessionAccessDeniedError,
     SessionNotJoinableError,
     SessionScheduleError,
+    WhiteboardNotConfiguredError,
+    WhiteboardUnavailableError,
 )
 from .permissions import IsTeacherOrAdmin
 from .serializers import (
@@ -25,10 +27,12 @@ from .services import (
     can_manage,
     cancel_class,
     issue_join_credentials,
+    issue_whiteboard_credentials,
     live_state,
     past,
     record_leave,
     schedule_class,
+    set_whiteboard_access,
     student_sessions,
     teacher_sessions,
     upcoming,
@@ -289,3 +293,69 @@ class ClassSessionLeaveView(APIView):
 
         record_leave(session=session, user=request.user)
         return success_response({}, message="Left the classroom")
+
+
+class ClassSessionWhiteboardView(APIView):
+    """The classroom whiteboard — one URL, two verbs.
+
+    `POST` mints this user's Netless room token, creating the class's board
+    on the first call (`services.issue_whiteboard_credentials`). It is behind
+    exactly the same door as the video call, and is safe to call again: it
+    never creates a second room and writes nothing to the register, so the
+    frontend uses it both to open the board and to pick a fresh token up
+    after the teacher changed who may draw.
+
+    `PATCH` is the teacher handing the pen to the class, or taking it back —
+    `{"whiteboard_access": "HOST_ONLY" | "EVERYONE"}`. It returns the updated
+    class so both portals can render the new state without a second fetch.
+    """
+
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["post", "patch", "head", "options"]
+
+    def _session(self, request, pk):
+        return visible_sessions(request.user).filter(pk=pk).first()
+
+    def post(self, request, pk, *args, **kwargs):
+        session = self._session(request, pk)
+        if session is None:
+            return error_response(message="Class does not exist.", status_code=404)
+
+        try:
+            credentials = issue_whiteboard_credentials(session=session, user=request.user)
+        except SessionAccessDeniedError as exc:
+            return error_response(message=str(exc), status_code=403)
+        except SessionNotJoinableError as exc:
+            # 403 rather than 404, same as joining the call: the student may
+            # know the class exists — they just can't open its board yet.
+            return error_response(message=str(exc), status_code=403)
+        except (WhiteboardNotConfiguredError, WhiteboardUnavailableError) as exc:
+            # Both are 503: one is a server missing its keys and the other is
+            # Netless being unreachable, and in both cases the class itself is
+            # fine and the board is what cannot be served.
+            return error_response(message=str(exc), status_code=503)
+
+        return success_response(credentials, message="Whiteboard opened")
+
+    def patch(self, request, pk, *args, **kwargs):
+        session = self._session(request, pk)
+        if session is None:
+            return error_response(message="Class does not exist.", status_code=404)
+
+        access = request.data.get("whiteboard_access")
+        try:
+            session = set_whiteboard_access(session=session, user=request.user, access=access)
+        except SessionAccessDeniedError as exc:
+            return error_response(message=str(exc), status_code=403)
+        except SessionScheduleError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        message = (
+            "Students can now draw on the whiteboard."
+            if session.whiteboard_access == session.WhiteboardAccess.EVERYONE
+            else "The whiteboard is yours to present on again."
+        )
+        return success_response(
+            ClassSessionSerializer(session, context={"request": request}).data,
+            message=message,
+        )

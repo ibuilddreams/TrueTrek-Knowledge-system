@@ -27,6 +27,12 @@ class ClassSession(BaseModel):
     Agora credential is stored — a join token is minted per user, per join,
     and only while the room is open (`services.issue_join_credentials`).
 
+    The whiteboard the teacher presents on runs on Agora's Interactive
+    Whiteboard, which is a separate product with separate credentials
+    (`whiteboard.py`), and is linked by `whiteboard_room_uuid` in exactly the
+    same way: an identifier, no credential, and a room token minted per user,
+    per open, behind the same door (`services.issue_whiteboard_credentials`).
+
     `status` holds only the teacher's own decision (scheduled or cancelled).
     Whether a session is upcoming / live / ended is **derived from the clock**
     by `services.live_state`, the same way `live_sessions` does it, because a
@@ -43,6 +49,21 @@ class ClassSession(BaseModel):
     class SessionStatus(models.TextChoices):
         SCHEDULED = "SCHEDULED", "Scheduled"
         CANCELLED = "CANCELLED", "Cancelled"
+
+    class WhiteboardAccess(models.TextChoices):
+        """Who may draw on this class's whiteboard.
+
+        The teacher presents by default and hands the pen over deliberately.
+        It is stored rather than held in the browser because it decides the
+        *role inside the room token* every participant is minted
+        (`services.issue_whiteboard_credentials`) — a student who joins ten
+        minutes after the board was opened up has to arrive able to draw, and
+        a page that merely behaved as though it couldn't would be one console
+        command away from scribbling over the lesson.
+        """
+
+        HOST_ONLY = "HOST_ONLY", "Teacher only"
+        EVERYONE = "EVERYONE", "Everyone in the class"
 
     course = models.ForeignKey(Course, on_delete=models.CASCADE, related_name="class_sessions")
     # Who scheduled and hosts it. SET_NULL rather than CASCADE so removing a
@@ -67,6 +88,25 @@ class ClassSession(BaseModel):
     duration_minutes = models.PositiveIntegerField(default=60)
 
     channel_name = models.CharField(max_length=64, unique=True, default=generate_channel_name)
+
+    # The Agora Interactive Whiteboard room this class presents on, created
+    # lazily the first time somebody opens the board (`services.
+    # ensure_whiteboard_room`) rather than when the class is scheduled: a room
+    # is a third-party resource asked for over HTTP, and most classes never
+    # need one. Empty means "no board has been opened on this class yet",
+    # which is a state both portals render.
+    #
+    # The region is stored beside the uuid, not read from settings at join
+    # time, because a room lives in exactly one data centre and a browser
+    # pointed at another simply never finds it — so moving
+    # AGORA_WHITEBOARD_REGION must not orphan the boards already drawn on.
+    whiteboard_room_uuid = models.CharField(max_length=64, blank=True, default="")
+    whiteboard_region = models.CharField(max_length=20, blank=True, default="")
+    whiteboard_access = models.CharField(
+        max_length=20,
+        choices=WhiteboardAccess.choices,
+        default=WhiteboardAccess.HOST_ONLY,
+    )
 
     status = models.CharField(
         max_length=20, choices=SessionStatus.choices, default=SessionStatus.SCHEDULED

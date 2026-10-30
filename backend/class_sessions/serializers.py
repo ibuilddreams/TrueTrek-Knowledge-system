@@ -10,6 +10,7 @@ from .services import (
     can_join_now,
     host_opens_at,
     is_host,
+    is_whiteboard_configured,
     live_state,
     session_window,
 )
@@ -21,7 +22,10 @@ class ClassSessionSerializer(serializers.ModelSerializer):
     `channel_name` is intentionally absent, along with any Agora credential:
     a channel is only identified to a browser by `POST /<id>/join/`, once
     that user has been checked against the course's roster and the clock
-    (`services.issue_join_credentials`).
+    (`services.issue_join_credentials`). The whiteboard's room uuid is absent
+    for the same reason — only `POST /<id>/whiteboard/` releases it — while
+    `whiteboard_*` below say what the board's *state* is, which is what the
+    classroom needs to render a button rather than a dead end.
     """
 
     course_title = serializers.CharField(source="course.title", read_only=True)
@@ -33,6 +37,8 @@ class ClassSessionSerializer(serializers.ModelSerializer):
     ends_at = serializers.SerializerMethodField()
     join_opens_at = serializers.SerializerMethodField()
     attendee_count = serializers.IntegerField(read_only=True, default=0)
+    whiteboard_available = serializers.SerializerMethodField()
+    whiteboard_started = serializers.SerializerMethodField()
 
     class Meta:
         model = ClassSession
@@ -56,9 +62,13 @@ class ClassSessionSerializer(serializers.ModelSerializer):
             "can_join",
             "is_host",
             "attendee_count",
+            "whiteboard_access",
+            "whiteboard_available",
+            "whiteboard_started",
             "created_at",
             "updated_at",
         ]
+        read_only_fields = ["whiteboard_access"]
 
     def _request_user(self):
         request = self.context.get("request")
@@ -82,6 +92,25 @@ class ClassSessionSerializer(serializers.ModelSerializer):
     def get_ends_at(self, obj):
         _, _, ends_at = session_window(obj)
         return ends_at
+
+    def get_whiteboard_available(self, obj):
+        """Whether this server has whiteboard credentials at all.
+
+        A property of the environment rather than of the class, but it is
+        carried on the class because that is where the classroom asks the
+        question — and a button that opens a board which cannot exist is
+        worse than no button.
+        """
+        return is_whiteboard_configured()
+
+    def get_whiteboard_started(self, obj):
+        """Whether a board has ever been opened on this class.
+
+        The room is created on first use, so this doubles as "is there
+        anything drawn on it" — which is what lets a student who joins late
+        be told there is a board to look at rather than having to guess.
+        """
+        return bool(obj.whiteboard_room_uuid)
 
     def get_join_opens_at(self, obj):
         """The door this particular viewer is standing at — the host's opens

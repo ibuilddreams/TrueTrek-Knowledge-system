@@ -1,0 +1,5 @@
+
+# Vendored by scripts/copy-whiteboard-sdk.mjs — the whiteboard SDK browser
+# bundle, copied out of node_modules so package.json stays the one place its
+# version is pinned.
+/public/vendor/

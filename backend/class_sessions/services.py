@@ -8,11 +8,15 @@ Three things live here:
    enrolments (`can_manage` / `can_attend`) — the same rule
    `warroom.services.can_access_room` uses, so a class and its course group
    chat can never disagree about who is in the room.
-3. The only place an Agora token is minted (`issue_join_credentials`), gated
-   on both of the above.
+3. The only places a credential is minted — `issue_join_credentials` for the
+   Agora RTC call and `issue_whiteboard_credentials` for the Interactive
+   Whiteboard the teacher presents on — both gated on the same door
+   (`_assert_room_open`), so video and board can never disagree about who is
+   allowed into a class or when.
 """
 
 import logging
+import re
 from datetime import timedelta
 
 from django.conf import settings
@@ -30,8 +34,21 @@ from .exceptions import (
     SessionAccessDeniedError,
     SessionNotJoinableError,
     SessionScheduleError,
+    WhiteboardNotConfiguredError,
 )
 from .models import ClassSession, ClassSessionAttendance
+from .whiteboard import (
+    MAX_LIFESPAN_SECONDS,
+    ROLE_ADMIN,
+    ROLE_NAMES,
+    ROLE_READER,
+    ROLE_WRITER,
+    WHITEBOARD_REGIONS,
+    WhiteboardTokenError,
+    build_room_token,
+    build_sdk_token,
+)
+from .whiteboard_api import create_room
 
 logger = logging.getLogger(__name__)
 
@@ -419,18 +436,20 @@ def _agora_credentials():
     return app_id, app_certificate
 
 
-def _token_lifetime(session, now):
+def _token_lifetime(session, now, ceiling=MAX_EXPIRE_SECONDS):
     """Seconds of validity for a token minted at `now`.
 
     Covers the rest of the class, its overrun grace and a further buffer, so
-    an ordinary class never reaches the renewal path at all; clamped to
-    Agora's 24-hour maximum, and floored so that joining in the last minute
-    of a class still yields a usable token.
+    an ordinary class never reaches the renewal path at all; clamped to the
+    issuing service's own maximum, and floored so that joining in the last
+    minute of a class still yields a usable token. Both credentials a class
+    hands out are measured the same way — a whiteboard token that outlived
+    the video token would leave a board open on a class nobody is in.
     """
     _, _, ends_at = session_window(session)
     remaining = (ends_at - now).total_seconds()
     lifetime = int(remaining) + LIVE_GRACE_MINUTES_AFTER * 60 + TOKEN_TAIL_BUFFER_SECONDS
-    return max(MIN_TOKEN_SECONDS, min(lifetime, MAX_EXPIRE_SECONDS))
+    return max(MIN_TOKEN_SECONDS, min(lifetime, ceiling))
 
 
 def _record_attendance(session, user, role, now):
@@ -460,16 +479,15 @@ def _record_attendance(session, user, role, now):
     return attendance
 
 
-def issue_join_credentials(*, session, user, now=None):
-    """Mints the Agora token for one person joining one class.
+def _assert_room_open(session, user, now):
+    """The classroom door, in one place: may this person be let in right now?
 
-    This is the only place a token is created, and every gate lives here
-    rather than in the view, so there is no route to a credential that skips
-    one. The token is bound to this channel *and* to this user's uid, so it
-    cannot be passed to a classmate who was never enrolled.
+    Returns whether they are a host, which is the other thing every caller
+    needs. Raises rather than returning a verdict so there is no route to a
+    credential that forgets to check one of these — every surface a class has
+    (the video call and the whiteboard) goes through here, so they can never
+    disagree about who is in the room or when it opened.
     """
-    now = now or timezone.now()
-
     if not can_attend(user, session):
         raise SessionAccessDeniedError("You're not enrolled in this class.")
 
@@ -493,6 +511,21 @@ def issue_join_credentials(*, session, user, now=None):
         raise SessionNotJoinableError(
             f"The classroom opens {minutes} minutes before the class starts."
         )
+
+    return host
+
+
+def issue_join_credentials(*, session, user, now=None):
+    """Mints the Agora token for one person joining one class.
+
+    This is the only place an RTC token is created, and the gate lives in
+    `_assert_room_open` rather than in the view, so there is no route to a
+    credential that skips it. The token is bound to this channel *and* to
+    this user's uid, so it cannot be passed to a classmate who was never
+    enrolled.
+    """
+    now = now or timezone.now()
+    _assert_room_open(session, user, now)
 
     app_id, app_certificate = _agora_credentials()
     expire_seconds = _token_lifetime(session, now)
@@ -536,3 +569,254 @@ def record_leave(*, session, user, now=None):
     attendance.left_at = now
     attendance.save(update_fields=["left_at", "updated_at"])
     return attendance
+
+
+# ---------------------------------------------------------------------------
+# Whiteboard credentials
+# ---------------------------------------------------------------------------
+
+# An Agora whiteboard App Identifier is `<team>/<app>`, and the SDK enforces
+# exactly this pattern before it will even construct. Checked here so a
+# mistyped value is a log line and an honest 503 rather than an exception
+# thrown from inside the bundle in somebody's browser.
+APP_IDENTIFIER_PATTERN = re.compile(r"^[0-9a-zA-Z\-_]+/[0-9a-zA-Z\-_]+$")
+
+# How long the SDK token used to create a room is good for. It never leaves
+# this process and is used within milliseconds of being signed, so it is given
+# the shortest lifetime that survives a slow clock between us and Netless
+# rather than a convenient one.
+WHITEBOARD_SDK_TOKEN_SECONDS = 10 * 60
+
+
+def _read_whiteboard_settings():
+    """`(values, problem)` — the four configured values and what's wrong.
+
+    Silent on purpose. Every serialized class asks whether a board could be
+    opened (`is_whiteboard_configured`), so complaining here would put one log
+    line per row of every listing on a server that simply doesn't use the
+    whiteboard. The complaint belongs with the request that was actually
+    refused, which is `_whiteboard_settings` below.
+    """
+    values = (
+        (getattr(settings, "AGORA_WHITEBOARD_APP_IDENTIFIER", "") or "").strip(),
+        (getattr(settings, "AGORA_WHITEBOARD_ACCESS_KEY", "") or "").strip(),
+        (getattr(settings, "AGORA_WHITEBOARD_SECRET_KEY", "") or "").strip(),
+        (getattr(settings, "AGORA_WHITEBOARD_REGION", "") or "").strip(),
+    )
+    app_identifier, access_key, secret_key, region = values
+
+    if not app_identifier or not access_key or not secret_key:
+        return values, "missing_keys"
+    if not APP_IDENTIFIER_PATTERN.match(app_identifier):
+        return values, "bad_identifier"
+    if region not in WHITEBOARD_REGIONS:
+        return values, "unknown_region"
+    return values, None
+
+
+def is_whiteboard_configured():
+    """Whether a board could be opened at all on this server.
+
+    A plain boolean for the serializers, which have to render a button or an
+    explanation and must not raise — or log — while doing it.
+    """
+    return _read_whiteboard_settings()[1] is None
+
+
+def _whiteboard_settings():
+    """The four configured values, or an honest refusal.
+
+    Deliberately separate from `_agora_credentials`: a server can perfectly
+    well have working video and no whiteboard, and conflating the two would
+    report a missing board as a broken classroom.
+    """
+    values, problem = _read_whiteboard_settings()
+
+    if problem == "missing_keys":
+        logger.error(
+            "class_sessions: AGORA_WHITEBOARD_APP_IDENTIFIER / _ACCESS_KEY / _SECRET_KEY "
+            "are not all set — the classroom whiteboard stays unavailable until they are. "
+            "They come from the Whiteboard panel of the Agora Console, not from the RTC project."
+        )
+        raise WhiteboardNotConfiguredError(
+            "The classroom whiteboard isn't configured on this server yet."
+        )
+
+    if problem == "bad_identifier":
+        # Caught here rather than in the browser. The SDK validates this shape
+        # itself and refuses with `find invalid appIdentifier`, thrown from a
+        # constructor three layers inside a 2.8 MB bundle — which reads as a
+        # broken whiteboard rather than as a mistyped environment variable.
+        logger.error(
+            "class_sessions: AGORA_WHITEBOARD_APP_IDENTIFIER=%r is not of the form "
+            "<team>/<app>. The Agora Console shows it with the slash in it; copying "
+            "only the half after it is the usual mistake.",
+            values[0],
+        )
+        raise WhiteboardNotConfiguredError(
+            "The classroom whiteboard's App Identifier is not in the expected format."
+        )
+
+    if problem == "unknown_region":
+        # Loud rather than silently falling back to a default: a room created
+        # in the wrong data centre works, but works badly, from the far side
+        # of the planet — and the symptom (a slow, jittery board) never points
+        # back at a typo in an environment variable.
+        logger.error(
+            "class_sessions: AGORA_WHITEBOARD_REGION=%r is not one of %s.",
+            values[3],
+            ", ".join(sorted(WHITEBOARD_REGIONS)),
+        )
+        raise WhiteboardNotConfiguredError(
+            "The classroom whiteboard is configured with an unknown region."
+        )
+
+    return values
+
+
+def ensure_whiteboard_room(session, *, access_key, secret_key, region):
+    """The class's whiteboard room, created on first use.
+
+    Rooms are made lazily rather than when a class is scheduled, because a
+    room is somebody else's resource asked for over HTTP and most classes
+    never carry a board. Once made it is kept for the life of the class, so
+    the teacher can set a board up an hour early and everything drawn on it
+    survives a dropped connection, a reload and a student arriving late.
+
+    The row is locked across the HTTP call on purpose. A race here — two
+    people opening the board in the same second — would otherwise create two
+    rooms and leave one of them orphaned at Netless forever, with half the
+    class drawing on a board the other half cannot see. The wait is bounded
+    by `whiteboard_api.REQUEST_TIMEOUT_SECONDS` and only ever affects people
+    opening the same class's board at the same moment.
+    """
+    if session.whiteboard_room_uuid:
+        return session.whiteboard_room_uuid, session.whiteboard_region or region
+
+    with transaction.atomic():
+        locked = ClassSession.objects.select_for_update().get(pk=session.pk)
+        if locked.whiteboard_room_uuid:
+            session.whiteboard_room_uuid = locked.whiteboard_room_uuid
+            session.whiteboard_region = locked.whiteboard_region
+            return locked.whiteboard_room_uuid, locked.whiteboard_region or region
+
+        sdk_token = build_sdk_token(
+            access_key=access_key,
+            secret_key=secret_key,
+            lifespan_seconds=WHITEBOARD_SDK_TOKEN_SECONDS,
+            role=ROLE_ADMIN,
+        )
+        room_uuid = create_room(sdk_token=sdk_token, region=region)
+
+        locked.whiteboard_room_uuid = room_uuid
+        locked.whiteboard_region = region
+        locked.save(update_fields=["whiteboard_room_uuid", "whiteboard_region", "updated_at"])
+
+    session.whiteboard_room_uuid = room_uuid
+    session.whiteboard_region = region
+    return room_uuid, region
+
+
+def whiteboard_role(user, session):
+    """Netless role for one person on this class's board.
+
+    The teacher presents and the class watches, until the teacher hands the
+    pen over (`ClassSession.WhiteboardAccess`). This is the *only* thing that
+    decides whether a student can draw: a reader's token is refused by
+    Netless itself, so no amount of persuading the page changes it.
+    """
+    if is_host(user, session):
+        return ROLE_WRITER
+    if session.whiteboard_access == ClassSession.WhiteboardAccess.EVERYONE:
+        return ROLE_WRITER
+    return ROLE_READER
+
+
+def issue_whiteboard_credentials(*, session, user, now=None):
+    """Mints the room token for one person opening one class's whiteboard.
+
+    Behind the same door as the video call (`_assert_room_open`), so a board
+    cannot be opened on a class that was cancelled, hasn't opened yet or
+    finished an hour ago — and a student who was never enrolled gets nothing
+    whichever surface they ask for.
+
+    Unlike `issue_join_credentials` this writes **no attendance row**: opening
+    a board is not arriving at a class, and stamping someone as present
+    because they looked at the whiteboard would quietly make the register say
+    something it cannot know.
+
+    The App Identifier and the region travel in this payload rather than being
+    configured into the frontend the way the RTC App ID is. They are not
+    secret — but a room token, the identifier it was signed under and the data
+    centre its room lives in only work as a set, and serving all three
+    together is what makes it impossible for a browser pointed at one
+    environment to half-work against another's board.
+    """
+    now = now or timezone.now()
+    _assert_room_open(session, user, now)
+
+    app_identifier, access_key, secret_key, region = _whiteboard_settings()
+    room_uuid, room_region = ensure_whiteboard_room(
+        session,
+        access_key=access_key,
+        secret_key=secret_key,
+        region=region,
+    )
+
+    expire_seconds = _token_lifetime(session, now, ceiling=MAX_LIFESPAN_SECONDS)
+    role = whiteboard_role(user, session)
+
+    try:
+        token = build_room_token(
+            access_key=access_key,
+            secret_key=secret_key,
+            lifespan_seconds=expire_seconds,
+            room_uuid=room_uuid,
+            role=role,
+        )
+    except WhiteboardTokenError:
+        logger.exception(
+            "class_sessions: failed to sign a whiteboard room token for session %s", session.pk
+        )
+        raise WhiteboardNotConfiguredError(
+            "The classroom whiteboard isn't configured correctly on this server."
+        )
+
+    return {
+        "app_identifier": app_identifier,
+        "region": room_region,
+        "room_uuid": room_uuid,
+        "room_token": token,
+        # Netless identifies a participant by an opaque string, where Agora
+        # RTC wants a number. It is the same user id underneath, so the two
+        # rosters line up, but it has to be sent as the string the whiteboard
+        # SDK will compare against.
+        "uid": str(user.pk),
+        "role": ROLE_NAMES[role],
+        "writable": role != ROLE_READER,
+        "access": session.whiteboard_access,
+        "is_host": is_host(user, session),
+        "display_name": user.name or user.username,
+        "expires_at": now + timedelta(seconds=expire_seconds),
+        "expires_in": expire_seconds,
+    }
+
+
+def set_whiteboard_access(*, session, user, access):
+    """Hands the pen to the class, or takes it back. Hosts only.
+
+    Persisted rather than announced over the board's own realtime state,
+    because it has to survive everyone currently in the room: a student who
+    opens the board after the teacher opened it up must be minted a writer's
+    token, and one who reloads after it was closed again must not.
+    """
+    if not can_manage(user, session):
+        raise SessionAccessDeniedError("Only the teacher can change who may draw.")
+
+    valid = {choice for choice, _ in ClassSession.WhiteboardAccess.choices}
+    if access not in valid:
+        raise SessionScheduleError("Unknown whiteboard access setting.")
+
+    session.whiteboard_access = access
+    session.save(update_fields=["whiteboard_access", "updated_at"])
+    return session
