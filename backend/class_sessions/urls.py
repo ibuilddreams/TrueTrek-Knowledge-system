@@ -4,6 +4,7 @@ from .views import (
     ClassSessionDetailView,
     ClassSessionJoinView,
     ClassSessionLeaveView,
+    ClassSessionWhiteboardView,
     StudentPastClassesView,
     StudentUpcomingClassesView,
     TeacherClassSessionAttendanceView,
@@ -31,4 +32,11 @@ urlpatterns = [
     path("<int:pk>/", ClassSessionDetailView.as_view(), name="class-sessions-detail"),
     path("<int:pk>/join/", ClassSessionJoinView.as_view(), name="class-sessions-join"),
     path("<int:pk>/leave/", ClassSessionLeaveView.as_view(), name="class-sessions-leave"),
+    # POST mints a room token (creating the board on first use), PATCH is
+    # the teacher handing the pen to the class.
+    path(
+        "<int:pk>/whiteboard/",
+        ClassSessionWhiteboardView.as_view(),
+        name="class-sessions-whiteboard",
+    ),
 ]

@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.test import override_settings
@@ -7,6 +8,7 @@ from django.utils import timezone
 from rest_framework import status
 from rest_framework.test import APITestCase
 
+from ..exceptions import WhiteboardUnavailableError
 from ..models import ClassSession, ClassSessionAttendance
 from .factories import assign_teacher, enrol, make_course, make_session, make_user
 
@@ -299,3 +301,125 @@ class JoinTests(ClassSessionViewTestCase):
             reverse("class-sessions-join", args=[self.live_session.pk])
         )
         self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+
+
+WHITEBOARD_SETTINGS = {
+    "AGORA_WHITEBOARD_APP_IDENTIFIER": "cool-nerds-team/wb-app-identifier",
+    "AGORA_WHITEBOARD_ACCESS_KEY": "wb-access-key",
+    "AGORA_WHITEBOARD_SECRET_KEY": "wb-secret-key",
+    "AGORA_WHITEBOARD_REGION": "us-sv",
+}
+
+
+@override_settings(**WHITEBOARD_SETTINGS)
+class WhiteboardEndpointTests(ClassSessionViewTestCase):
+    """`POST /<id>/whiteboard/` opens a board; `PATCH` hands the pen over."""
+
+    def setUp(self):
+        super().setUp()
+        self.url = reverse("class-sessions-whiteboard", args=[self.live_session.id])
+
+    def _post(self, user, room_uuid="netless-room-uuid"):
+        self.client.force_authenticate(user=user)
+        with mock.patch("class_sessions.services.create_room", return_value=room_uuid):
+            return self.client.post(self.url)
+
+    def test_the_teacher_gets_a_writers_board(self):
+        response = self._post(self.teacher)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()["data"]
+        self.assertEqual(data["role"], "writer")
+        self.assertTrue(data["writable"])
+        self.assertEqual(data["room_uuid"], "netless-room-uuid")
+        self.assertEqual(data["app_identifier"], "cool-nerds-team/wb-app-identifier")
+        self.assertEqual(data["region"], "us-sv")
+        self.assertTrue(data["room_token"].startswith("NETLESSROOM_"))
+
+    def test_an_enrolled_student_gets_a_readers_board(self):
+        response = self._post(self.student)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.json()["data"]
+        self.assertEqual(data["role"], "reader")
+        self.assertFalse(data["writable"])
+
+    def test_the_signing_secret_never_reaches_the_browser(self):
+        """The payload carries the public half of the credential and nothing else."""
+        body = self._post(self.teacher).content.decode()
+
+        self.assertNotIn(WHITEBOARD_SETTINGS["AGORA_WHITEBOARD_SECRET_KEY"], body)
+        self.assertNotIn(APP_CERTIFICATE, body)
+
+    def test_a_student_on_another_course_cannot_find_the_board(self):
+        self.client.force_authenticate(user=self.outsider)
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_a_board_cannot_be_opened_before_the_classroom_does(self):
+        url = reverse("class-sessions-whiteboard", args=[self.session.id])
+        self.client.force_authenticate(user=self.student)
+        with mock.patch("class_sessions.services.create_room") as create:
+            response = self.client.post(url)
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(create.call_count, 0)
+
+    @override_settings(AGORA_WHITEBOARD_ACCESS_KEY="")
+    def test_an_unconfigured_server_says_so_rather_than_erroring(self):
+        response = self._post(self.teacher)
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+
+    def test_the_board_being_unreachable_is_503_and_leaves_no_room_behind(self):
+        self.client.force_authenticate(user=self.teacher)
+        with mock.patch(
+            "class_sessions.services.create_room",
+            side_effect=WhiteboardUnavailableError("The whiteboard service didn't respond."),
+        ):
+            response = self.client.post(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+        self.live_session.refresh_from_db()
+        self.assertEqual(self.live_session.whiteboard_room_uuid, "")
+
+    def test_the_teacher_can_hand_the_pen_to_the_class(self):
+        self.client.force_authenticate(user=self.teacher)
+        response = self.client.patch(self.url, {"whiteboard_access": "EVERYONE"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.assertEqual(response.json()["data"]["whiteboard_access"], "EVERYONE")
+
+        student_board = self._post(self.student)
+        self.assertEqual(student_board.json()["data"]["role"], "writer")
+
+    def test_a_student_cannot_hand_themselves_the_pen(self):
+        self.client.force_authenticate(user=self.student)
+        response = self.client.patch(self.url, {"whiteboard_access": "EVERYONE"}, format="json")
+
+        self.assertEqual(response.status_code, status.HTTP_403_FORBIDDEN)
+        self.live_session.refresh_from_db()
+        self.assertEqual(self.live_session.whiteboard_access, "HOST_ONLY")
+
+    def test_an_unknown_access_setting_is_rejected(self):
+        self.client.force_authenticate(user=self.teacher)
+        response = self.client.patch(self.url, {"whiteboard_access": "EVERYBODY"}, format="json")
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_a_listing_says_whether_a_board_exists_without_naming_its_room(self):
+        self.client.force_authenticate(user=self.student)
+        before = self.client.get(reverse("class-sessions-detail", args=[self.live_session.id]))
+        self.assertTrue(before.json()["data"]["whiteboard_available"])
+        self.assertFalse(before.json()["data"]["whiteboard_started"])
+
+        self._post(self.teacher)
+
+        self.client.force_authenticate(user=self.student)
+        after = self.client.get(reverse("class-sessions-detail", args=[self.live_session.id]))
+        self.assertTrue(after.json()["data"]["whiteboard_started"])
+        self.assertNotIn("netless-room-uuid", after.content.decode())
+
+    @override_settings(AGORA_WHITEBOARD_APP_IDENTIFIER="")
+    def test_a_server_without_a_whiteboard_tells_the_classroom_not_to_offer_one(self):
+        self.client.force_authenticate(user=self.student)
+        response = self.client.get(reverse("class-sessions-detail", args=[self.live_session.id]))
+        self.assertFalse(response.json()["data"]["whiteboard_available"])

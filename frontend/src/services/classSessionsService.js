@@ -74,3 +74,24 @@ export async function getClassSessionAttendance(id, { page = 1, pageSize = 100 }
     `/class-sessions/teacher/${id}/attendance/?${params.toString()}`,
   );
 }
+
+// The classroom whiteboard (Agora Interactive Whiteboard). Like joining the
+// call, this is the only thing that releases a room uuid and a token, and only
+// while the class is open (class_sessions/services.py::
+// issue_whiteboard_credentials). The class's board is created on the first
+// call, so it is also what "open the whiteboard" means.
+//
+// Safe to call again mid-class: it never creates a second room and never
+// touches the register. That is how a student picks up a writer's token after
+// the teacher opens the board up to everyone.
+export async function openClassWhiteboard(id) {
+  return backendClient.post(`/class-sessions/${id}/whiteboard/`);
+}
+
+// Teacher-only — hands the pen to the class, or takes it back.
+// `access` is "HOST_ONLY" or "EVERYONE"; the updated class comes back.
+export async function setClassWhiteboardAccess(id, access) {
+  return backendClient.patch(`/class-sessions/${id}/whiteboard/`, {
+    whiteboard_access: access,
+  });
+}

@@ -1,4 +1,5 @@
 from datetime import timedelta
+from unittest import mock
 
 from django.contrib.auth import get_user_model
 from django.test import TestCase, override_settings
@@ -13,6 +14,7 @@ from ..exceptions import (
     SessionAccessDeniedError,
     SessionNotJoinableError,
     SessionScheduleError,
+    WhiteboardNotConfiguredError,
 )
 from ..models import ClassSession, ClassSessionAttendance
 from ..services import (
@@ -25,16 +27,20 @@ from ..services import (
     can_manage,
     cancel_class,
     get_roster,
+    is_whiteboard_configured,
     issue_join_credentials,
+    issue_whiteboard_credentials,
     live_state,
     past,
     record_leave,
     schedule_class,
+    set_whiteboard_access,
     student_sessions,
     teacher_sessions,
     upcoming,
     update_class,
 )
+from ..whiteboard import decode_token
 from .factories import assign_teacher, enrol, make_course, make_session, make_user
 
 UserModel = get_user_model()
@@ -380,3 +386,172 @@ class UnconfiguredAgoraTests(ClassroomTestCase):
         live = make_session(course=self.course, teacher=self.teacher, starts_in_minutes=-10)
         with self.assertRaises(AgoraNotConfiguredError):
             issue_join_credentials(session=live, user=self.student)
+
+
+WHITEBOARD_SETTINGS = {
+    "AGORA_WHITEBOARD_APP_IDENTIFIER": "cool-nerds-team/wb-app-identifier",
+    "AGORA_WHITEBOARD_ACCESS_KEY": "wb-access-key",
+    "AGORA_WHITEBOARD_SECRET_KEY": "wb-secret-key",
+    "AGORA_WHITEBOARD_REGION": "us-sv",
+}
+
+
+@override_settings(**WHITEBOARD_SETTINGS)
+class WhiteboardCredentialTests(TestCase):
+    """Who gets a pen, and who cannot get one however they ask."""
+
+    def setUp(self):
+        self.teacher = make_user("wbteacher", UserModel.Roles.TEACHER)
+        self.student = make_user("wbstudent", UserModel.Roles.STUDENT)
+        self.outsider = make_user("wboutsider", UserModel.Roles.STUDENT)
+
+        self.course = make_course(code="WB-101", title="Whiteboard course")
+        assign_teacher(self.course, self.teacher)
+        enrol(self.course, self.student)
+
+        self.session = make_session(
+            course=self.course, teacher=self.teacher, starts_in_minutes=-5
+        )
+
+    def _issue(self, user, room_uuid="room-created-once"):
+        with mock.patch(
+            "class_sessions.services.create_room", return_value=room_uuid
+        ) as create:
+            credentials = issue_whiteboard_credentials(session=self.session, user=user)
+        return credentials, create
+
+    def test_the_teacher_is_minted_a_writers_token(self):
+        credentials, _ = self._issue(self.teacher)
+
+        self.assertEqual(credentials["role"], "writer")
+        self.assertTrue(credentials["writable"])
+        self.assertTrue(credentials["is_host"])
+        decoded = decode_token(credentials["room_token"], WHITEBOARD_SETTINGS["AGORA_WHITEBOARD_SECRET_KEY"])
+        self.assertEqual(decoded["role_name"], "writer")
+        self.assertTrue(decoded["signature_valid"])
+
+    def test_a_student_is_minted_a_readers_token_while_the_teacher_presents(self):
+        credentials, _ = self._issue(self.student)
+
+        self.assertEqual(credentials["role"], "reader")
+        self.assertFalse(credentials["writable"])
+        self.assertEqual(
+            decode_token(credentials["room_token"])["role_name"], "reader"
+        )
+
+    def test_a_student_is_minted_a_writers_token_once_the_board_is_opened_up(self):
+        set_whiteboard_access(
+            session=self.session,
+            user=self.teacher,
+            access=ClassSession.WhiteboardAccess.EVERYONE,
+        )
+        credentials, _ = self._issue(self.student)
+
+        self.assertEqual(credentials["role"], "writer")
+        self.assertTrue(credentials["writable"])
+
+    def test_the_token_is_bound_to_this_classs_room(self):
+        credentials, _ = self._issue(self.teacher, room_uuid="only-this-room")
+        self.assertEqual(decode_token(credentials["room_token"])["uuid"], "only-this-room")
+
+    def test_the_room_is_created_once_and_then_remembered(self):
+        _, first = self._issue(self.teacher)
+        self.session.refresh_from_db()
+        _, second = self._issue(self.student)
+
+        self.assertEqual(first.call_count, 1)
+        self.assertEqual(second.call_count, 0)
+        self.assertEqual(self.session.whiteboard_room_uuid, "room-created-once")
+        self.assertEqual(self.session.whiteboard_region, "us-sv")
+
+    def test_the_region_a_room_was_created_in_is_what_is_served_afterwards(self):
+        """Settings move; a room does not.
+
+        A board created in Silicon Valley is invisible from Frankfurt, so a
+        later change to AGORA_WHITEBOARD_REGION must not quietly orphan every
+        class that already has one.
+        """
+        self._issue(self.teacher)
+        self.session.refresh_from_db()
+
+        with override_settings(AGORA_WHITEBOARD_REGION="eu"):
+            credentials, create = self._issue(self.student)
+
+        self.assertEqual(credentials["region"], "us-sv")
+        self.assertEqual(create.call_count, 0)
+
+    def test_a_student_who_is_not_enrolled_gets_nothing(self):
+        with self.assertRaises(SessionAccessDeniedError):
+            self._issue(self.outsider)
+
+    def test_the_board_is_behind_the_same_door_as_the_call(self):
+        far_off = make_session(
+            course=self.course, teacher=self.teacher, starts_in_minutes=180
+        )
+        with mock.patch("class_sessions.services.create_room") as create:
+            with self.assertRaises(SessionNotJoinableError):
+                issue_whiteboard_credentials(session=far_off, user=self.student)
+        self.assertEqual(create.call_count, 0)
+
+    def test_a_cancelled_class_has_no_board(self):
+        cancel_class(self.session, "Snow day")
+        with self.assertRaises(SessionNotJoinableError):
+            self._issue(self.teacher)
+
+    def test_opening_the_board_does_not_mark_anybody_present(self):
+        """A register says who came to class, not who looked at the board."""
+        self._issue(self.student)
+        self.assertFalse(
+            ClassSessionAttendance.objects.filter(session=self.session).exists()
+        )
+
+    def test_only_a_host_may_hand_the_pen_over(self):
+        with self.assertRaises(SessionAccessDeniedError):
+            set_whiteboard_access(
+                session=self.session,
+                user=self.student,
+                access=ClassSession.WhiteboardAccess.EVERYONE,
+            )
+
+    def test_an_unknown_access_setting_is_refused(self):
+        with self.assertRaises(SessionScheduleError):
+            set_whiteboard_access(
+                session=self.session, user=self.teacher, access="ANYONE_ON_THE_INTERNET"
+            )
+
+    @override_settings(AGORA_WHITEBOARD_SECRET_KEY="")
+    def test_a_server_without_whiteboard_keys_says_so(self):
+        self.assertFalse(is_whiteboard_configured())
+        with self.assertRaises(WhiteboardNotConfiguredError):
+            self._issue(self.teacher)
+
+    @override_settings(AGORA_WHITEBOARD_REGION="mars")
+    def test_an_unknown_region_is_a_configuration_error_not_a_silent_fallback(self):
+        self.assertFalse(is_whiteboard_configured())
+        with self.assertRaises(WhiteboardNotConfiguredError):
+            self._issue(self.teacher)
+
+    def test_video_credentials_still_work_without_whiteboard_keys(self):
+        """The two products are configured separately and fail separately."""
+        with override_settings(
+            AGORA_WHITEBOARD_APP_IDENTIFIER="",
+            AGORA_WHITEBOARD_ACCESS_KEY="",
+            AGORA_WHITEBOARD_SECRET_KEY="",
+            AGORA_APP_ID="2f0e20ac920f4bcdb342451a6653358e",
+            AGORA_APP_CERTIFICATE="9b86a609600d427cbe3cd2f7dd6e4a93",
+        ):
+            credentials = issue_join_credentials(session=self.session, user=self.student)
+        self.assertTrue(credentials["token"])
+
+    @override_settings(AGORA_WHITEBOARD_APP_IDENTIFIER="wb-app-identifier")
+    def test_an_app_identifier_without_a_team_half_is_refused_here(self):
+        """`<team>/<app>`, which the SDK enforces in the browser.
+
+        Copying only the half after the slash out of the Agora Console is the
+        usual mistake, and left to the SDK it surfaces as an exception thrown
+        from inside a 2.8 MB bundle — which reads as a broken whiteboard
+        rather than as a mistyped environment variable.
+        """
+        self.assertFalse(is_whiteboard_configured())
+        with self.assertRaises(WhiteboardNotConfiguredError):
+            self._issue(self.teacher)

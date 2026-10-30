@@ -3,7 +3,10 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
+    "postinstall": "node scripts/copy-whiteboard-sdk.mjs",
+    "predev": "node scripts/copy-whiteboard-sdk.mjs",
     "dev": "next dev",
+    "prebuild": "node scripts/copy-whiteboard-sdk.mjs",
     "build": "next build",
     "start": "next start",
     "lint": "eslint \"src/**/*.{js,jsx}\""
@@ -37,7 +40,8 @@
     "recharts": "^3.9.2",
     "remark-gfm": "^4.0.1",
     "sonner": "^2.0.7",
-    "sonnet": "^0.0.1"
+    "sonnet": "^0.0.1",
+    "white-web-sdk": "^2.16.60"
   },
   "devDependencies": {
     "@eslint/eslintrc": "^3",

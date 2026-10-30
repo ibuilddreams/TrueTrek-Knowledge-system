@@ -378,6 +378,28 @@ ROLEPLAY_TIME_TO_BOUNDARY_SECONDS = int(os.getenv('ROLEPLAY_TIME_TO_BOUNDARY_SEC
 AGORA_APP_ID = os.getenv('AGORA_APP_ID', '')
 AGORA_APP_CERTIFICATE = os.getenv('AGORA_APP_CERTIFICATE', '')
 
+# Agora Interactive Whiteboard (class_sessions/whiteboard.py) — the board a
+# teacher presents on during a live class. A *different* Agora product from
+# the RTC credentials above, with its own section of the console and its own
+# keys: the App Identifier is a public value the browser is handed with its
+# room token, while the Access Key / Secret Key pair is the signing secret
+# that never leaves the server. They must all belong to the same whiteboard
+# app — a room token signed by one team's keys is meaningless under another
+# App Identifier, and Netless says so only as a failed join.
+#
+# The region is where a whiteboard room physically lives. It is read here only
+# when a room is *created*; the one a room was actually created in is stored
+# on the session (`ClassSession.whiteboard_region`), so changing this later
+# moves new boards without orphaning old ones.
+#
+# All three unset is an ordinary, supported state: video classes run exactly
+# as before and the whiteboard button says it isn't configured, rather than
+# failing inside the whiteboard SDK.
+AGORA_WHITEBOARD_APP_IDENTIFIER = os.getenv('AGORA_WHITEBOARD_APP_IDENTIFIER', '')
+AGORA_WHITEBOARD_ACCESS_KEY = os.getenv('AGORA_WHITEBOARD_ACCESS_KEY', '')
+AGORA_WHITEBOARD_SECRET_KEY = os.getenv('AGORA_WHITEBOARD_SECRET_KEY', '')
+AGORA_WHITEBOARD_REGION = os.getenv('AGORA_WHITEBOARD_REGION', 'us-sv')
+
 # AI-graded assignment review (assignments/ai_review/) and quiz short-answer
 # grading (quizzes/ai_grading.py) — reuses AI_CHAT_MODEL (the fast path), same
 # rationale as DAILY_DRILL_AI_TIMEOUT_SECONDS above, but a submission can

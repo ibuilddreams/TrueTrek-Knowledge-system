@@ -1,5 +1,5 @@
 import tempfile
-from collections import Counter
+from collections import Counter, defaultdict
 from datetime import timedelta
 from unittest.mock import patch
 
@@ -942,16 +942,51 @@ class SeedDataLiveClassTests(TestCase):
             hosts[session.teacher.email] += 1
 
         # Teachers are dealt out to courses by list index, so this also pins
-        # the course codes in CLASS_SESSION_DEFS to the first three teachers:
-        # reordering COURSE_DEFS moves them, and this is what says so.
+        # the course codes in CLASS_SESSION_DEFS to particular teachers:
+        # reordering COURSE_DEFS moves them, and this is what says so. Every
+        # demo teacher hosts something, because signing in as any of them and
+        # finding an empty timetable is the thing this data exists to prevent.
         self.assertEqual(
             dict(hosts),
             {
                 "teacher1@example.com": 3,
                 "teacher2@example.com": 3,
                 "teacher3@example.com": 3,
+                "teacher4@example.com": 2,
+                "teacher5@example.com": 2,
+                "teacher6@example.com": 2,
+                "teacher7@example.com": 2,
+                "teacher8@example.com": 2,
+                "teacher9@example.com": 2,
             },
         )
+
+    def test_no_demo_teacher_is_double_booked(self):
+        """Seeding writes rows directly, so `assert_no_clash` never runs here.
+
+        Defs for *different* teachers overlap on purpose — several classes
+        have to be live at once — so what has to hold is the narrower rule:
+        no teacher is ever in two rooms at the same hour. Checked against the
+        seeded rows rather than the defs, because it is the course→teacher
+        mapping (which a catalog reorder moves) that decides it.
+        """
+        seed_offline()
+
+        by_teacher = defaultdict(list)
+        for session in ClassSession.objects.select_related("teacher"):
+            ends_at = session.scheduled_at + timedelta(minutes=session.duration_minutes)
+            by_teacher[session.teacher.email].append(
+                (session.scheduled_at, ends_at, session.title)
+            )
+
+        for email, slots in by_teacher.items():
+            slots.sort()
+            for earlier, later in zip(slots, slots[1:]):
+                self.assertLessEqual(
+                    earlier[1],
+                    later[0],
+                    f"{email} hosts {earlier[2]!r} and {later[2]!r} at the same time",
+                )
 
     def test_covers_live_upcoming_cancelled_and_finished_states(self):
         seed_offline()

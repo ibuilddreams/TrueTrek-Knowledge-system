@@ -1662,29 +1662,34 @@ LIVE_SESSION_DEFS = [
 ]
 
 
-# Live Classes (`class_sessions`) — demo classes on courses teachers 1-3
-# already instruct, so both portals have something to exercise the moment a
-# server is seeded: one class live right now, one whose host door is open
-# while its students' is not, upcoming ones near and far, a cancelled one,
-# and finished ones with and without a register.
+# Live Classes (`class_sessions`) — demo classes spread across courses all
+# nine teachers already instruct, so both portals have something to exercise
+# the moment a server is seeded, whichever demo teacher you sign in as:
+# several classes live right now, ones whose host door is open while their
+# students' is not, upcoming ones near and far, cancelled ones, and finished
+# ones with and without a register.
 #
 # Keyed by `course_code` rather than by teacher name, because only a course's
 # instructors can host (`class_sessions.services.is_host`) and
 # `teachers_by_code` is what decides who instructs a course — deriving the
 # host from the course is what keeps a seeded class actually openable. The
-# codes below are chosen so that the current COURSE_DEFS order hands them to
-# teacher1 (CEO-101/CEO-304), teacher2 (CEO-102/REC-101) and teacher3
-# (CEO-201/REC-102) — teachers are dealt out by list index, so reordering the
-# catalog moves them, and `SeedDataLiveClassTests` pins the three.
+# codes below are chosen so that the current COURSE_DEFS order deals them out
+# one teacher at a time — teacher1 (CEO-101/CEO-304), teacher2
+# (CEO-102/REC-101), teacher3 (CEO-201/REC-102) and then two each for
+# teachers 4-9 — because teachers are dealt to courses by list index, so
+# reordering the catalog moves them and `SeedDataLiveClassTests` pins who
+# ends up hosting what.
 #
 # `starts_in_minutes` is relative to the moment of seeding, which is the
 # whole point of these rows — "live now" has to mean live now, so unlike the
 # War Room series above they are *repositioned* on every reseed, register and
 # all; the one class that is not is one a real, non-demo participant joined
-# (see `_seed_class_sessions`). No two defs overlap in
-# time, so no teacher is ever double-booked whatever a future catalog
-# reordering does to the course→teacher mapping
-# (`class_sessions.services.assert_no_clash`).
+# (see `_seed_class_sessions`). **No two defs belonging to the same teacher
+# overlap in time**, so no demo teacher is ever double-booked
+# (`class_sessions.services.assert_no_clash`, which seeding does not call —
+# this is kept by hand, and `SeedDataLiveClassTests` checks it). Defs for
+# *different* teachers deliberately do overlap: several classes have to be
+# live at once, or only one demo teacher ever has something to open.
 #
 # `attendees` is how many of the demo students the register should show for a
 # finished class; the host is added on top of them.
@@ -1834,13 +1839,210 @@ CLASS_SESSION_DEFS = [
             "The three numbers to track from today",
         ],
     },
+    # --- teacher4 ---------------------------------------------------------
+    {
+        "course_code": "CEO-202",
+        "title": "NIL Contract Clinic: Read It Before You Sign",
+        "starts_in_minutes": -15,
+        "duration_minutes": 60,
+        "description": (
+            "We read a real-shaped NIL agreement clause by clause and mark every "
+            "line you would want a lawyer to look at before anybody signs."
+        ),
+        "agenda": [
+            "Who the parties actually are",
+            "Exclusivity, term and the right to walk away",
+            "The clauses that outlive the deal",
+            "What to send your guardian and your compliance office",
+        ],
+    },
+    {
+        "course_code": "REC-103",
+        "title": "Fit Matrix Workshop: Building Your Target List",
+        "starts_in_minutes": 180,
+        "duration_minutes": 60,
+        "description": (
+            "Build the target matrix from Module 2 live — academics, playing time, "
+            "distance and money, scored honestly."
+        ),
+        "agenda": [
+            "The four columns and why money is not the first one",
+            "Scoring a school you have already fallen for",
+            "Cutting the list to twelve",
+        ],
+    },
+    # --- teacher5 ---------------------------------------------------------
+    {
+        "course_code": "CEO-203",
+        "title": "Money Lab: Your First Real Budget",
+        "starts_in_minutes": -25,
+        "duration_minutes": 90,
+        "description": (
+            "Open a blank sheet and build a budget around the money you actually "
+            "have. Education, not advice — nothing here is a recommendation."
+        ),
+        "agenda": [
+            "Income that is not guaranteed",
+            "Fixed, variable, and the one nobody plans for",
+            "Paying tax on money you already spent",
+            "Where to take the real questions",
+        ],
+    },
+    {
+        "course_code": "REC-201",
+        "title": "Cold Email Teardown: Why Coaches Don't Reply",
+        "starts_in_minutes": -2 * 24 * 60,
+        "duration_minutes": 60,
+        "description": (
+            "We read submitted emails to coaches out loud, anonymously, and rewrite "
+            "the three that were closest to working."
+        ),
+        "agenda": [
+            "The subject line a coach opens",
+            "Six sentences, no attachments",
+            "Following up twice and then stopping",
+        ],
+        "attendees": 5,
+    },
+    # --- teacher6 ---------------------------------------------------------
+    {
+        "course_code": "CEO-204",
+        "title": "Press Conference Simulator",
+        "starts_in_minutes": 24 * 60,
+        "duration_minutes": 60,
+        "description": (
+            "You take the podium and the room asks the questions you are hoping "
+            "nobody asks. Cameras off unless you volunteer."
+        ),
+        "agenda": [
+            "Answering the question you were actually asked",
+            "The bridge back to what you came to say",
+            "What not to say about a teammate",
+        ],
+    },
+    {
+        "course_code": "REC-202",
+        "title": "Camp ROI: Picking the Right Three",
+        "starts_in_minutes": 5 * 60,
+        "duration_minutes": 60,
+        "description": (
+            "Showcases and camps cost real money. We work out which three are "
+            "worth it for your position, level and region — and which are a tax."
+        ),
+        "agenda": [
+            "What a camp is selling, and to whom",
+            "Checking who is actually going to be there",
+            "The spreadsheet: cost, travel, and who sees you",
+        ],
+    },
+    # --- teacher7 ---------------------------------------------------------
+    {
+        "course_code": "CEO-301",
+        "title": "Term Sheet Teardown, Live",
+        "starts_in_minutes": -30,
+        "duration_minutes": 75,
+        "description": (
+            "A commercial term sheet on screen, read end to end, with the "
+            "negotiating room marked on every line."
+        ),
+        "agenda": [
+            "Reading a term sheet in the order that matters",
+            "The three terms worth trading away",
+            "Where a professional has to be involved",
+        ],
+    },
+    {
+        "course_code": "REC-203",
+        "title": "Campus Visit Debrief Workshop",
+        "starts_in_minutes": 3 * 24 * 60 + 120,
+        "duration_minutes": 60,
+        "description": (
+            "Bring the notes from a visit you have already taken. We turn them "
+            "into the comparison you will actually decide from."
+        ),
+        "agenda": [
+            "What you were shown, and what you were not",
+            "The questions to ask the players, not the staff",
+            "Writing the debrief within 24 hours",
+        ],
+    },
+    # --- teacher8 ---------------------------------------------------------
+    {
+        "course_code": "CEO-302",
+        "title": "Ops Lab: Building a Training Week That Survives",
+        "starts_in_minutes": 6 * 60,
+        "duration_minutes": 60,
+        "description": (
+            "Lay out a real week — training, school, travel, recovery — and find "
+            "the two places it breaks before the season does it for you."
+        ),
+        "agenda": [
+            "Mapping the week you actually have",
+            "Recovery as a scheduled block, not what is left",
+            "The two failure points in every athlete's week",
+        ],
+    },
+    {
+        "course_code": "REC-204",
+        "title": "Parent & Guardian Q&A: The Recruiting Year",
+        "starts_in_minutes": -6 * 24 * 60,
+        "duration_minutes": 60,
+        "description": (
+            "An open session for the adults in the process — what they can do, "
+            "what they should not do, and when to step in."
+        ),
+        "agenda": [
+            "Who may contact whom, and when",
+            "The parent's job on a call with a coach",
+            "Staying the parent rather than becoming the agent",
+            "Open questions",
+        ],
+        "attendees": 6,
+    },
+    # --- teacher9 ---------------------------------------------------------
+    {
+        "course_code": "CEO-303",
+        "title": "EQ Live: The Conversation You Have Been Avoiding",
+        "starts_in_minutes": 12 * 60,
+        "duration_minutes": 45,
+        "description": (
+            "Role-play the hard conversation — with a coach, a teammate or a "
+            "parent — in a room where getting it wrong costs nothing."
+        ),
+        "agenda": [
+            "Naming the thing without an accusation",
+            "Listening past the first answer",
+            "Leaving with something agreed",
+        ],
+    },
+    {
+        "course_code": "REC-301",
+        "title": "Offer Deconstruction Clinic",
+        "starts_in_minutes": 7 * 24 * 60,
+        "duration_minutes": 60,
+        "status": ClassSession.SessionStatus.CANCELLED,
+        "cancellation_reason": (
+            "Moved to the following week so it lands after the signing period opens."
+        ),
+        "description": (
+            "What an offer actually says, what it leaves out, and what a walk-on "
+            "spot is really worth."
+        ),
+        "agenda": [
+            "Reading an offer line by line",
+            "Equivalency sports and the fraction nobody mentions",
+            "Walk-on, preferred walk-on, and the difference",
+        ],
+    },
 ]
 
 # Demo students enrolled on the courses that carry a seeded live class, so the
 # student side of the classroom has a roster the moment the server is seeded.
-# Deliberately a small slice of STUDENT_NAMES rather than all of them: the
-# rest stay un-enrolled, which is what the rest of the seed assumes.
-CLASS_DEMO_STUDENT_COUNT = 6
+# Deliberately a slice of STUDENT_NAMES rather than all of them: the rest stay
+# un-enrolled, which is what the rest of the seed assumes — and what
+# `test_does_not_enrol_students_beyond_the_demo_roster` checks by looking at
+# the first student *outside* this slice.
+CLASS_DEMO_STUDENT_COUNT = 10
 
 
 
@@ -2584,8 +2786,8 @@ class Command(BaseCommand):
                 f"{len(STUDENT_NAMES) + len(REVIEWER_NAMES)} student(s), the admin, bundle "
                 f"rules, {len(QUESTIONNAIRE)} onboarding question(s) and "
                 f"{len(DRILL_DEFS)} daily drill(s).\n"
-                f"It also seeds {len(CLASS_SESSION_DEFS)} demo live class(es) for the first "
-                "three teachers, repositioned relative to now on each run unless somebody "
+                f"It also seeds {len(CLASS_SESSION_DEFS)} demo live class(es) spread across "
+                "every demo teacher, repositioned relative to now on each run unless somebody "
                 "outside the demo accounts has joined one.\n"
                 "The regular demo students will NOT be auto-enrolled in any course, apart from "
                 f"the first {CLASS_DEMO_STUDENT_COUNT} being enrolled on the courses those demo "
