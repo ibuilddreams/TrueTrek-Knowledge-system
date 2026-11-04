@@ -1,3 +1,4 @@
+from django.http import FileResponse
 from rest_framework import generics
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.views import APIView
@@ -7,6 +8,10 @@ from common.response import error_response, success_response
 
 from .exceptions import (
     AgoraNotConfiguredError,
+    NotesNotConfiguredError,
+    NotesUnavailableError,
+    RecordingNotConfiguredError,
+    RecordingUnavailableError,
     SessionAccessDeniedError,
     SessionNotJoinableError,
     SessionScheduleError,
@@ -26,13 +31,21 @@ from .services import (
     can_attend,
     can_manage,
     cancel_class,
+    is_host,
     issue_join_credentials,
     issue_whiteboard_credentials,
+    latest_available_notes,
     live_state,
+    notes_state,
     past,
     record_leave,
+    recording_state,
     schedule_class,
     set_whiteboard_access,
+    start_notes,
+    start_recording,
+    stop_notes,
+    stop_recording,
     student_sessions,
     teacher_sessions,
     upcoming,
@@ -359,3 +372,217 @@ class ClassSessionWhiteboardView(APIView):
             ClassSessionSerializer(session, context={"request": request}).data,
             message=message,
         )
+
+
+class ClassSessionRecordingView(APIView):
+    """This class's recording — one URL, three verbs.
+
+    `GET` is what every surface reads: the classroom's REC indicator while a
+    class runs, and the student's "Watch recording" button afterwards. It is
+    the **only** thing that releases a playback link, and the link is signed
+    fresh on each call and expires in hours, so a recording is exactly as
+    private as the class it is of — the same rule that keeps a channel name
+    and a whiteboard room uuid out of every listing.
+
+    `POST` starts a recording and `DELETE` asks the running one to stop. Both
+    are the host's alone: a student cannot start a recorder in a class, and
+    cannot switch one off either.
+
+    Stopping is deliberately not instant. The server flips the recording to
+    PROCESSING and the monitor thread that owns it does the rest — reading the
+    final file list, waiting for the file to land in the bucket and notifying
+    the class — so there is one path that finishes a recording however it was
+    ended, rather than two that can disagree.
+    """
+
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["get", "post", "delete", "head", "options"]
+
+    def _session(self, request, pk):
+        return visible_sessions(request.user).filter(pk=pk).first()
+
+    def get(self, request, pk, *args, **kwargs):
+        session = self._session(request, pk)
+        # 404 rather than 403 for a class on a course this user has nothing to
+        # do with — they aren't entitled to learn it exists, let alone that it
+        # was recorded.
+        if session is None or not can_attend(request.user, session):
+            return error_response(message="Class does not exist.", status_code=404)
+
+        return success_response(
+            recording_state(session=session, user=request.user),
+            message="Recording state fetched successfully",
+        )
+
+    def post(self, request, pk, *args, **kwargs):
+        session = self._session(request, pk)
+        if session is None:
+            return error_response(message="Class does not exist.", status_code=404)
+        if not is_host(request.user, session):
+            return error_response(
+                message="Only this class's teacher can start a recording.", status_code=403
+            )
+
+        try:
+            start_recording(session=session, user=request.user)
+        except RecordingNotConfiguredError as exc:
+            return error_response(message=str(exc), status_code=503)
+        except RecordingUnavailableError as exc:
+            return error_response(message=str(exc), status_code=503)
+
+        return success_response(
+            recording_state(session=session, user=request.user),
+            message="Recording started — everyone in the class is shown that it is on.",
+        )
+
+    def delete(self, request, pk, *args, **kwargs):
+        session = self._session(request, pk)
+        if session is None:
+            return error_response(message="Class does not exist.", status_code=404)
+        if not is_host(request.user, session):
+            return error_response(
+                message="Only this class's teacher can stop the recording.", status_code=403
+            )
+
+        stopped = stop_recording(session=session, user=request.user, reason="the teacher stopped it")
+        return success_response(
+            recording_state(session=session, user=request.user),
+            message=(
+                "Recording stopped — your students are notified once it has finished processing."
+                if stopped
+                else "This class isn't being recorded."
+            ),
+        )
+
+
+class ClassSessionNotesView(APIView):
+    """This class's AI meeting notes — one URL, three verbs.
+
+    Deliberately a separate URL from `/recording/`, backed by a separate
+    Agora product and a separate switch on the class. A class can be written
+    up without being filmed and filmed without being written up, and nothing
+    in either path can break the other or the class itself.
+
+    `GET` is what every surface reads: the "taking notes" indicator while a
+    class runs, and the notes themselves afterwards. The write-up goes to
+    anyone who may attend the class; the **verbatim transcript goes only to
+    the course's teachers**, because it is a record of who said what in a
+    room that may be full of minors, kept so the person who taught the class
+    can check the notes against it.
+
+    `POST` starts transcribing and `DELETE` asks the running transcription to
+    stop. Both are the host's alone: a student cannot start a bot listening to
+    a class, and cannot switch one off either.
+
+    Stopping is deliberately not instant. The server flips the run to
+    COLLECTING and the thread that owns it does the rest — pulling the bot out,
+    waiting for the last caption slice to land, stitching the transcript,
+    writing the notes up and telling the class — so there is one path that
+    finishes a run however it was ended, rather than several that can
+    disagree.
+    """
+
+    permission_classes = [IsAuthenticated]
+    http_method_names = ["get", "post", "delete", "head", "options"]
+
+    def _session(self, request, pk):
+        return visible_sessions(request.user).filter(pk=pk).first()
+
+    def get(self, request, pk, *args, **kwargs):
+        session = self._session(request, pk)
+        # 404 rather than 403 for a class on a course this user has nothing to
+        # do with — they aren't entitled to learn it exists, let alone what
+        # was said in it.
+        if session is None or not can_attend(request.user, session):
+            return error_response(message="Class does not exist.", status_code=404)
+
+        return success_response(
+            notes_state(session=session, user=request.user),
+            message="Class notes fetched successfully",
+        )
+
+    def post(self, request, pk, *args, **kwargs):
+        session = self._session(request, pk)
+        if session is None:
+            return error_response(message="Class does not exist.", status_code=404)
+        if not is_host(request.user, session):
+            return error_response(
+                message="Only this class's teacher can start taking notes.",
+                status_code=403,
+            )
+
+        try:
+            start_notes(session=session, user=request.user)
+        except NotesNotConfiguredError as exc:
+            return error_response(message=str(exc), status_code=503)
+        except NotesUnavailableError as exc:
+            return error_response(message=str(exc), status_code=503)
+
+        return success_response(
+            notes_state(session=session, user=request.user),
+            message="Taking notes — everyone in the class is shown that it is on.",
+        )
+
+    def delete(self, request, pk, *args, **kwargs):
+        session = self._session(request, pk)
+        if session is None:
+            return error_response(message="Class does not exist.", status_code=404)
+        if not is_host(request.user, session):
+            return error_response(
+                message="Only this class's teacher can stop the notes.", status_code=403
+            )
+
+        stopped = stop_notes(
+            session=session, user=request.user, reason="the teacher stopped them"
+        )
+        return success_response(
+            notes_state(session=session, user=request.user),
+            message=(
+                "Notes stopped — your students are notified once they're written up."
+                if stopped
+                else "This class isn't taking notes."
+            ),
+        )
+
+
+class ClassSessionNotesDocumentView(APIView):
+    """The notes as a PDF to keep.
+
+    The file lives in MEDIA_ROOT, so this view is what makes it as private as
+    the class it is of: the same roster check as the classroom door, on every
+    download, and a random tail in the stored file name so the MEDIA path
+    behind it is not a second way in that checks nothing. That is the same
+    reasoning that keeps a recording's bucket private — the mechanism differs
+    because the renderer is ours and the recorder's bucket is not.
+
+    Streamed rather than redirected to for the same reason: a redirect would
+    hand out a URL that outlives the check.
+    """
+
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request, pk, *args, **kwargs):
+        session = visible_sessions(request.user).filter(pk=pk).first()
+        if session is None or not can_attend(request.user, session):
+            return error_response(message="Class does not exist.", status_code=404)
+
+        notes = latest_available_notes(session)
+        if notes is None or not notes.document:
+            return error_response(
+                message="There's no notes document for this class.", status_code=404
+            )
+
+        try:
+            handle = notes.document.open("rb")
+        except (FileNotFoundError, OSError):
+            # The row says there is a document and the disk disagrees — a
+            # restored database against a fresh media volume, most often. The
+            # notes themselves are still on screen, so this is a missing
+            # download rather than missing notes.
+            return error_response(
+                message="This notes document is no longer on the server.",
+                status_code=404,
+            )
+
+        filename = f"{session.course.code}-{session.scheduled_at:%Y-%m-%d}-notes.pdf"
+        return FileResponse(handle, as_attachment=True, filename=filename)

@@ -86,9 +86,9 @@ export default function LiveClassesTab() {
                 Live Classes
               </h2>
               <p className="text-sm text-muted font-light mt-1 leading-relaxed">
-                Schedule a video class for one of your courses. Everyone enrolled is
-                notified, and the room opens 15 minutes before the start — an hour
-                early for you.
+                Schedule a video class for one of your courses. Everyone enrolled
+                is notified, and the room opens at the scheduled start time — for
+                you and for them.
               </p>
             </div>
           </div>

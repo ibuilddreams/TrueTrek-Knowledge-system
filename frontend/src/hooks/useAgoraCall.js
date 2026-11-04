@@ -7,6 +7,7 @@ import {
   leaveClassSession,
 } from "@/services/classSessionsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
+import { isServiceUid } from "@/components/features/classroom/classSessionUtils";
 
 /**
  * Owns one Agora RTC call for one class session.
@@ -106,6 +107,8 @@ export function useAgoraCall(sessionId) {
   // Present only while the camera is live; the local tile renders it directly.
   const [localVideoTrack, setLocalVideoTrack] = useState(null);
   const [activeSpeakerUid, setActiveSpeakerUid] = useState(null);
+  const [wasRecordingAtJoin, setWasRecordingAtJoin] = useState(false);
+  const [wasTakingNotesAtJoin, setWasTakingNotesAtJoin] = useState(false);
 
   const clientRef = useRef(null);
   const micTrackRef = useRef(null);
@@ -140,7 +143,18 @@ export function useAgoraCall(sessionId) {
     const client = clientRef.current;
     // A new array identity each time: the SDK mutates the user objects in
     // place, so React would otherwise never see a track appear.
-    setRemoteUsers(client ? [...client.remoteUsers] : []);
+    //
+    // Agora puts bots of its own in the channel as ordinary remote users:
+    // the cloud recorder while a class is being recorded, and the
+    // transcription bot while it is being written up. Neither publishes
+    // anything anyone can watch, so each would sit in the grid forever as a
+    // nameless black square and inflate the participant count — they are
+    // filtered out here, once, rather than in each of the three components
+    // that read this list. What is being done to the room is said plainly in
+    // the header instead.
+    setRemoteUsers(
+      client ? client.remoteUsers.filter((user) => !isServiceUid(user.uid)) : [],
+    );
   }, []);
 
   const releaseLocalTracks = useCallback(() => {
@@ -297,6 +311,12 @@ export function useAgoraCall(sessionId) {
 
       setLocalUid(credentials.uid);
       setRoster(credentials.roster || []);
+      // What the server knew at the moment of joining. `useClassRecording`
+      // keeps it honest from then on; this is only so the first frame of the
+      // classroom already says the class is being recorded, rather than
+      // admitting it a poll later.
+      setWasRecordingAtJoin(Boolean(credentials.is_recording));
+      setWasTakingNotesAtJoin(Boolean(credentials.is_taking_notes));
 
       // Microphone and camera are requested separately so that a student with
       // no webcam — or who denied only the camera — still joins and can talk,
@@ -512,6 +532,8 @@ export function useAgoraCall(sessionId) {
     leave,
     remoteUsers,
     roster,
+    wasRecordingAtJoin,
+    wasTakingNotesAtJoin,
     localUid,
     localVideoTrack,
     isMicOn,

@@ -726,9 +726,20 @@ class SeedDataAssetTests(TestCase):
         for teacher in User.objects.filter(role=User.Roles.TEACHER):
             self.assertTrue(teacher.profile.avatar, teacher.email)
 
-        # The shared demo files back the courses that have no written curriculum.
+        # The shared demo files back a course that has no written curriculum.
         # An authored course's handout is generated per module, not downloaded,
         # and is covered by the test below.
+        #
+        # These two sets are currently EMPTY, and that is the correct result
+        # rather than a gap: every def in COURSE_DEFS now either carries authored
+        # curriculum or is `catalog_only` (which seeds no modules at all), so
+        # `_create_modules` builds nothing on a default seed. The files are still
+        # downloaded because the shell is what the next unwritten def gets, which
+        # is how every pathway in this catalog started — so the rule being pinned
+        # is the one that survives that: however many generated PDF/DOCX lessons
+        # exist, they all share the ONE downloaded file rather than fetching
+        # their own. A subset assertion holds in both states; an equality one
+        # only held while something was unwritten.
         generated = Lesson.objects.exclude(module__course__code__in=seed.COURSE_CONTENT)
         pdf_files = set(
             generated.filter(content_type=Lesson.ContentType.PDF).values_list("file", flat=True)
@@ -738,8 +749,8 @@ class SeedDataAssetTests(TestCase):
                 "file", flat=True
             )
         )
-        self.assertEqual(pdf_files, {seed.LESSON_ASSET_PATHS["pdf"]})
-        self.assertEqual(doc_files, {seed.LESSON_ASSET_PATHS["docx"]})
+        self.assertLessEqual(pdf_files, {seed.LESSON_ASSET_PATHS["pdf"]})
+        self.assertLessEqual(doc_files, {seed.LESSON_ASSET_PATHS["docx"]})
         self.assertFalse(
             Lesson.objects.filter(content_type=Lesson.ContentType.VIDEO).exclude(file="").exists()
         )
@@ -921,7 +932,7 @@ class SeedDataLiveClassTests(TestCase):
     """
 
     LIVE_NOW = "Live Workshop: Building Your First OKR Sheet"
-    HOST_DOOR_OPEN = "Capstone Clinic: Your Post-Career Venture, Out Loud"
+    UPCOMING_SOON = "Capstone Clinic: Your Post-Career Venture, Out Loud"
     CANCELLED = "Guest Session: An Admissions Officer Answers"
     FINISHED_WITH_REGISTER = "Office Hours: Time & Energy Management"
     FINISHED_EMPTY = "Content Monetization Walkthrough"
@@ -996,12 +1007,12 @@ class SeedDataLiveClassTests(TestCase):
         self.assertEqual(class_services.live_state(live), class_services.LIVE)
         self.assertTrue(class_services.can_join_now(live, student))
 
-        # The host's door opens an hour early, a student's fifteen minutes
-        # before — this one is seeded into the gap between the two.
-        soon = ClassSession.objects.get(title=self.HOST_DOOR_OPEN)
+        # Due in forty minutes. Both doors stand at the scheduled start, so
+        # this one is shut to its host exactly as it is to the students.
+        soon = ClassSession.objects.get(title=self.UPCOMING_SOON)
         self.assertEqual(class_services.live_state(soon), class_services.UPCOMING)
         self.assertFalse(class_services.can_join_now(soon, student))
-        self.assertTrue(class_services.can_join_now(soon, soon.teacher))
+        self.assertFalse(class_services.can_join_now(soon, soon.teacher))
 
         cancelled = ClassSession.objects.get(title=self.CANCELLED)
         self.assertEqual(cancelled.status, ClassSession.SessionStatus.CANCELLED)
@@ -1117,7 +1128,7 @@ class SeedDataLiveClassTests(TestCase):
         in that room at that hour: moving the class would falsify the register
         and send them somewhere else."""
         seed_offline()
-        session = ClassSession.objects.get(title=self.HOST_DOOR_OPEN)
+        session = ClassSession.objects.get(title=self.UPCOMING_SOON)
         real_student = User.objects.create(
             username="real.student@school.example",
             email="real.student@school.example",

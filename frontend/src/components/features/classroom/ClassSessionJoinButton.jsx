@@ -7,10 +7,12 @@ import { formatCountdown } from "./classSessionUtils";
  * The one button that opens a classroom.
  *
  * Whether it works is `session.can_join`, which the server answers for this
- * particular viewer — a teacher's door opens an hour early and a student's
- * fifteen minutes before, so the same class at the same moment legitimately
- * shows a live button to one and a countdown to the other. Nothing here
- * re-derives that from the clock.
+ * particular viewer and from its own clock — both doors stand at the
+ * scheduled start today, but they are two separate constants and a card that
+ * re-derived either from the browser's clock would be wrong the day one of
+ * them moves. `useClassSessionDoor` is what re-asks the server on the stroke
+ * of that door, so the countdown below becomes a button at the advertised
+ * time rather than at the list's next poll.
  */
 export default function ClassSessionJoinButton({ session, onJoin, isBusy = false }) {
   const state = session.live_state;

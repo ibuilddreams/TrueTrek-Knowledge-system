@@ -1,10 +1,17 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertTriangle, Radio } from "lucide-react";
+import { AlertTriangle, Circle, NotebookPen, Radio } from "lucide-react";
 import FullScreenPortal from "@/components/features/portal/lesson-view/FullScreenPortal";
 import PingDotSpinner from "@/components/ui/PingDotSpinner";
 import { useAgoraCall, CALL_STATUS } from "@/hooks/useAgoraCall";
+import { useClassNotes, useClassNotesControls } from "@/hooks/useClassNotes";
+import {
+  useClassRecording,
+  useClassRecordingControls,
+} from "@/hooks/useClassRecording";
+import { getApiErrorMessage } from "@/lib/apiErrors";
+import { toastError, toastSuccess } from "@/lib/toast";
 import ClassroomControls from "./ClassroomControls";
 import ClassroomParticipantsPanel from "./ClassroomParticipantsPanel";
 import VideoTile from "./VideoTile";
@@ -33,6 +40,74 @@ export default function ClassroomStage({ session, onClose }) {
   const [isWhiteboardOpen, setIsWhiteboardOpen] = useState(false);
   const call = useAgoraCall(session.id);
   const { join, leave, status } = call;
+
+  // Whether the class is being recorded is the server's answer, not the
+  // browser's: the recorder is a participant Agora puts in the channel, and
+  // the teacher can start or stop it from another device. Polled only while
+  // connected, and seeded by what the join call already said, so the REC
+  // indicator is right on the very first frame rather than a poll later.
+  const recording = useClassRecording(session.id, {
+    poll: status === CALL_STATUS.CONNECTED,
+  });
+  const recordingControls = useClassRecordingControls(session.id);
+  const isRecording = recording.data
+    ? Boolean(recording.data.is_recording)
+    : call.wasRecordingAtJoin;
+  const isRecordingProcessing = Boolean(recording.data?.is_processing);
+
+  // Notes are fetched separately from the recording and never derived from
+  // it: they are a different Agora product on a different per-class switch,
+  // so a class can be transcribed and not filmed, filmed and not
+  // transcribed, or one of the two can be unavailable on this server while
+  // the other works.
+  const notes = useClassNotes(session.id, {
+    poll: status === CALL_STATUS.CONNECTED,
+  });
+  const notesControls = useClassNotesControls(session.id);
+  const isTakingNotes = notes.data
+    ? Boolean(notes.data.is_transcribing)
+    : call.wasTakingNotesAtJoin;
+  const isWritingNotes = Boolean(notes.data?.is_writing);
+
+  const handleToggleRecording = async () => {
+    const mutation = isRecording ? recordingControls.stop : recordingControls.start;
+    try {
+      const response = await mutation.mutateAsync();
+      toastSuccess(
+        response?.message ||
+          (isRecording ? "Recording stopped." : "Recording started."),
+      );
+    } catch (error) {
+      toastError(
+        getApiErrorMessage(
+          error,
+          isRecording
+            ? "Couldn't stop the recording."
+            : "Couldn't start recording this class.",
+        ),
+      );
+    }
+  };
+
+  const handleToggleNotes = async () => {
+    const mutation = isTakingNotes ? notesControls.stop : notesControls.start;
+    try {
+      const response = await mutation.mutateAsync();
+      toastSuccess(
+        response?.message ||
+          (isTakingNotes ? "Notes stopped." : "Taking notes."),
+      );
+    } catch (error) {
+      toastError(
+        getApiErrorMessage(
+          error,
+          isTakingNotes
+            ? "Couldn't stop taking notes."
+            : "Couldn't start taking notes on this class.",
+        ),
+      );
+    }
+  };
 
   // One join per opening of the classroom — `join` itself guards a second
   // call, which is what makes React's development double-mount harmless.
@@ -130,6 +205,56 @@ export default function ClassroomStage({ session, onClose }) {
                 {formatClassTime(session.scheduled_at)}
               </p>
             </div>
+          </div>
+
+          {/* Everyone in the room is told, in words, for as long as it is
+              running. Agora tells nobody that a recorder has joined, and the
+              people in this class may be minors — a recording that is not
+              announced is one nobody consented to. It sits in the header
+              rather than the control bar because it is a fact about the room,
+              not a button, and a student has no way to switch it off. */}
+          <div className="ml-auto shrink-0 flex items-center gap-2">
+            {(isRecording || isRecordingProcessing) && (
+              <span
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-[11px] font-mono uppercase tracking-wider ${
+                  isRecording
+                    ? "bg-clay/25 border-clay/40 text-rose"
+                    : "bg-paper/10 border-paper/20 text-paper/70"
+                }`}
+              >
+                <Circle
+                  className={`w-2.5 h-2.5 fill-current ${isRecording ? "animate-pulse" : ""}`}
+                />
+                <span className="hidden sm:inline">
+                  {isRecording ? "This class is being recorded" : "Saving recording"}
+                </span>
+                <span className="sm:hidden">{isRecording ? "Rec" : "Saving"}</span>
+              </span>
+            )}
+
+            {/* Said separately from the recording, and in its own words,
+                because it is a separate thing being done to the room: a
+                class can be written up and not filmed. Both sit here rather
+                than in the control bar for the same reason — they are facts
+                about the room, not buttons, and a student has no way to
+                switch either off. */}
+            {(isTakingNotes || isWritingNotes) && (
+              <span
+                className={`inline-flex items-center gap-2 px-3 py-1.5 rounded-full border text-[11px] font-mono uppercase tracking-wider ${
+                  isTakingNotes
+                    ? "bg-gold/20 border-gold/40 text-gold"
+                    : "bg-paper/10 border-paper/20 text-paper/70"
+                }`}
+              >
+                <NotebookPen className="w-3 h-3" />
+                <span className="hidden sm:inline">
+                  {isTakingNotes
+                    ? "Notes are being taken"
+                    : "Writing up the notes"}
+                </span>
+                <span className="sm:hidden">Notes</span>
+              </span>
+            )}
           </div>
         </header>
 
@@ -250,6 +375,26 @@ export default function ClassroomStage({ session, onClose }) {
             isParticipantsOpen={isParticipantsOpen}
             isWhiteboardOpen={isWhiteboardOpen}
             isWhiteboardAvailable={Boolean(session.whiteboard_available)}
+            isRecording={isRecording}
+            isRecordingProcessing={isRecordingProcessing}
+            isRecordingAvailable={Boolean(
+              recording.data?.configured ?? session.recording_configured,
+            )}
+            isRecordingAllowed={Boolean(
+              recording.data?.is_recorded ?? session.is_recorded,
+            )}
+            isRecordingBusy={recordingControls.isBusy}
+            isTakingNotes={isTakingNotes}
+            isWritingNotes={isWritingNotes}
+            isNotesAvailable={Boolean(
+              notes.data?.configured ?? session.notes_configured,
+            )}
+            isNotesAllowed={Boolean(
+              notes.data?.takes_notes ?? session.takes_notes,
+            )}
+            isNotesBusy={notesControls.isBusy}
+            onToggleRecording={handleToggleRecording}
+            onToggleNotes={handleToggleNotes}
             onToggleMic={call.toggleMic}
             onToggleCamera={call.toggleCamera}
             onToggleScreenShare={call.toggleScreenShare}

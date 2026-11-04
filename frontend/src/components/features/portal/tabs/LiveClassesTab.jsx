@@ -54,8 +54,8 @@ export default function LiveClassesTab() {
             </h2>
             <p className="text-sm text-muted font-light mt-1 leading-relaxed">
               Video classes your instructors run for the courses you&apos;re enrolled
-              in. The room opens 15 minutes before the start — you&apos;ll need to
-              allow your camera and microphone.
+              in. The room opens at the scheduled start time — you&apos;ll need
+              to allow your camera and microphone.
             </p>
           </div>
         </div>
