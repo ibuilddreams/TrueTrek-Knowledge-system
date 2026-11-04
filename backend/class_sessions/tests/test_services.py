@@ -78,9 +78,17 @@ class LiveStateTests(ClassroomTestCase):
             LIVE,
         )
 
-    def test_the_room_opens_before_the_advertised_start(self):
+    def test_a_class_about_to_start_is_still_upcoming(self):
+        """The room opens on the advertised time, not before it: ten minutes
+        out, the card counts down rather than calling the class live."""
         soon = make_session(course=self.course, teacher=self.teacher, starts_in_minutes=10)
-        self.assertEqual(live_state(soon), LIVE)
+        self.assertEqual(live_state(soon), UPCOMING)
+
+    def test_a_class_is_live_from_its_start_time(self):
+        just_started = make_session(
+            course=self.course, teacher=self.teacher, starts_in_minutes=0
+        )
+        self.assertEqual(live_state(just_started), LIVE)
 
     def test_a_finished_class_has_ended(self):
         finished = make_session(
@@ -92,12 +100,17 @@ class LiveStateTests(ClassroomTestCase):
         self.session.status = ClassSession.SessionStatus.CANCELLED
         self.assertEqual(live_state(self.session), CANCELLED)
 
-    def test_the_host_door_opens_earlier_than_the_students(self):
-        # 30 minutes out: inside the teacher's hour, outside the student's
-        # quarter hour. The same class, the same moment, two answers.
+    def test_nobody_is_let_in_before_the_start_time(self):
+        """Both doors stand at the scheduled start — the teacher waits for it
+        exactly as the students do."""
         session = make_session(course=self.course, teacher=self.teacher, starts_in_minutes=30)
-        self.assertTrue(can_join_now(session, self.teacher))
+        self.assertFalse(can_join_now(session, self.teacher))
         self.assertFalse(can_join_now(session, self.student))
+
+    def test_both_doors_open_on_the_stroke_of_the_start(self):
+        session = make_session(course=self.course, teacher=self.teacher, starts_in_minutes=0)
+        self.assertTrue(can_join_now(session, self.teacher))
+        self.assertTrue(can_join_now(session, self.student))
 
     def test_nobody_joins_a_cancelled_class(self):
         session = make_session(
@@ -269,6 +282,17 @@ class SchedulingTests(ClassroomTestCase):
         update_class(self.session, title="Film Review: Week 4 (corrected)")
         self.assertFalse(Notification.objects.exists())
 
+    def test_posting_the_same_slot_back_is_not_a_reschedule(self):
+        """The teacher's picker cannot express the seconds, so an edit that
+        moved nothing returns the start time a fraction off itself. That must
+        not read as a move and send everyone a "class rescheduled" notice."""
+        Notification.objects.all().delete()
+        same_slot = self.session.scheduled_at.replace(second=0, microsecond=0)
+
+        update_class(self.session, scheduled_at=same_slot, title="Retitled")
+
+        self.assertFalse(Notification.objects.exists())
+
     def test_cancelling_tells_the_students_why(self):
         Notification.objects.all().delete()
         cancel_class(self.session, "Coach is travelling")
@@ -312,9 +336,14 @@ class JoinCredentialTests(ClassroomTestCase):
         with self.assertRaises(SessionNotJoinableError):
             issue_join_credentials(session=early, user=self.student)
 
-    def test_the_teacher_can_open_the_room_early(self):
+    def test_not_even_the_teacher_gets_in_early(self):
         early = make_session(course=self.course, teacher=self.teacher, starts_in_minutes=45)
-        self.assertTrue(issue_join_credentials(session=early, user=self.teacher)["token"])
+        with self.assertRaises(SessionNotJoinableError):
+            issue_join_credentials(session=early, user=self.teacher)
+
+    def test_the_teacher_gets_a_token_the_moment_the_class_is_due(self):
+        due = make_session(course=self.course, teacher=self.teacher, starts_in_minutes=0)
+        self.assertTrue(issue_join_credentials(session=due, user=self.teacher)["token"])
 
     def test_nobody_can_join_a_finished_class(self):
         finished = make_session(

@@ -1,11 +1,15 @@
 "use client";
 
 import {
+  Circle,
+  Loader2,
   Mic,
   MicOff,
   MonitorUp,
+  NotebookPen,
   PenTool,
   PhoneOff,
+  Square,
   Users,
   Video,
   VideoOff,
@@ -25,6 +29,22 @@ import ClassroomControlButton from "./ClassroomControlButton";
  * student who opens it sees what the teacher has already drawn. Who may draw
  * on it is a separate question, answered by the server in the room token
  * (class_sessions/services.py::whiteboard_role), not by hiding this button.
+ *
+ * Recording is the host's alone, and the server enforces that — a student
+ * cannot start a recorder in someone's class and cannot switch one off
+ * either. The button is only ever a convenience: a class the teacher set to
+ * be recorded starts recording by itself the moment they open the room, so
+ * this is for stopping one, or starting it again afterwards. That a class is
+ * being recorded is announced in the header to everybody, not here, because
+ * it is a fact about the room rather than a control.
+ *
+ * Meeting notes get a button of their own beside it, under the same rules and
+ * for the same reasons, because they are a genuinely separate thing: a
+ * different Agora product on a different per-class switch, so a teacher can
+ * be recording and not transcribing, or transcribing and not recording, and
+ * the control bar has to be able to say so. Merging the two into one "capture"
+ * button would make the commonest case — notes on, camera off the record —
+ * impossible to express.
  */
 export default function ClassroomControls({
   isMicOn,
@@ -38,13 +58,49 @@ export default function ClassroomControls({
   isParticipantsOpen,
   isWhiteboardOpen,
   isWhiteboardAvailable,
+  isRecording,
+  isRecordingProcessing,
+  isRecordingAvailable,
+  isRecordingAllowed,
+  isRecordingBusy,
+  isTakingNotes,
+  isWritingNotes,
+  isNotesAvailable,
+  isNotesAllowed,
+  isNotesBusy,
+  onToggleRecording,
+  onToggleNotes,
+  onToggleParticipants,
   onToggleMic,
   onToggleCamera,
   onToggleScreenShare,
   onToggleWhiteboard,
-  onToggleParticipants,
   onLeave,
 }) {
+  const recordingTitle = !isRecordingAvailable
+    ? "Recording isn't set up on this server (AGORA_RECORDING_* in backend/.env)"
+    : !isRecordingAllowed
+      ? "This class was scheduled not to be recorded"
+      : !isConnected
+        ? "Connecting to the classroom…"
+        : isRecordingProcessing
+          ? "Saving the recording — your students are notified when it's ready"
+          : isRecording
+            ? "Stop recording this class"
+            : "Record this class";
+
+  const notesTitle = !isNotesAvailable
+    ? "Class notes aren't set up on this server (AGORA_STT_* and GEMINI_API_KEY in backend/.env)"
+    : !isNotesAllowed
+      ? "This class was scheduled not to take notes"
+      : !isConnected
+        ? "Connecting to the classroom…"
+        : isWritingNotes
+          ? "Writing the notes up — your students are notified when they're ready"
+          : isTakingNotes
+            ? "Stop taking notes"
+            : "Take notes on this class";
+
   return (
     <div className="flex items-center justify-center gap-2 sm:gap-3 flex-wrap">
       <ClassroomControlButton
@@ -124,6 +180,60 @@ export default function ClassroomControls({
       >
         <PenTool className="w-5 h-5" />
       </ClassroomControlButton>
+
+      {/* Shown to the host on every server, and disabled with the reason
+          rather than hidden — the same choice the whiteboard button makes,
+          for the same reason: a missing credential and a feature that was
+          never built look identical once a button disappears. */}
+      {isHost && (
+        <ClassroomControlButton
+          onClick={onToggleRecording}
+          active={!isRecording}
+          danger={isRecording}
+          disabled={
+            !isConnected ||
+            !isRecordingAvailable ||
+            !isRecordingAllowed ||
+            isRecordingBusy ||
+            isRecordingProcessing
+          }
+          title={recordingTitle}
+        >
+          {isRecordingBusy || isRecordingProcessing ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : isRecording ? (
+            <Square className="w-5 h-5 fill-current" />
+          ) : (
+            <Circle className="w-5 h-5" />
+          )}
+        </ClassroomControlButton>
+      )}
+
+      {/* Shown to the host on every server and disabled with the reason
+          rather than hidden, exactly like the record button beside it. It is
+          a separate button because it is a separate feature: the server will
+          happily transcribe a class it is not recording. */}
+      {isHost && (
+        <ClassroomControlButton
+          onClick={onToggleNotes}
+          active={!isTakingNotes}
+          danger={isTakingNotes}
+          disabled={
+            !isConnected ||
+            !isNotesAvailable ||
+            !isNotesAllowed ||
+            isNotesBusy ||
+            isWritingNotes
+          }
+          title={notesTitle}
+        >
+          {isNotesBusy || isWritingNotes ? (
+            <Loader2 className="w-5 h-5 animate-spin" />
+          ) : (
+            <NotebookPen className="w-5 h-5" />
+          )}
+        </ClassroomControlButton>
+      )}
 
       <ClassroomControlButton
         onClick={onToggleParticipants}

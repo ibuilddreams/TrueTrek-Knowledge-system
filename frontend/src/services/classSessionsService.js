@@ -95,3 +95,73 @@ export async function setClassWhiteboardAccess(id, access) {
     whiteboard_access: access,
   });
 }
+
+// The class's recording (Agora Cloud Recording → a bucket we own).
+//
+// This GET is the only thing that ever releases a playback link, and the link
+// it returns is signed for a few hours and never stored
+// (class_sessions/services.py::recording_playback_url) — a recording is as
+// private as the class it is of, which is why "Watch recording" asks for a
+// fresh one on every click rather than caching a URL.
+//
+// It doubles as the classroom's REC indicator while a class is running, so it
+// is cheap on purpose and safe to poll.
+export async function getClassRecording(id) {
+  return backendClient.get(`/class-sessions/${id}/recording/`);
+}
+
+// Teacher-only. Starting is also automatic the moment the host opens the room
+// (class_sessions/services.py::maybe_start_recording); this is the button for
+// a class where it was stopped and is wanted again.
+export async function startClassRecording(id) {
+  return backendClient.post(`/class-sessions/${id}/recording/`);
+}
+
+// Teacher-only. Deliberately not instant: the server marks the recording as
+// processing and finishes it on its own thread, which is also what notifies
+// the class once the file has landed.
+export async function stopClassRecording(id) {
+  return backendClient.delete(`/class-sessions/${id}/recording/`);
+}
+
+// The class's AI meeting notes (Agora Real-Time Transcription → a bucket we
+// own → the AI provider).
+//
+// A separate feature from the recording above, on a separate Agora product
+// and a separate per-class switch: a class can be written up without ever
+// being filmed, and either one can be unavailable on a server while the other
+// works. That is why these are their own endpoints rather than fields on the
+// recording's.
+//
+// This GET doubles as the classroom's "taking notes" indicator while a class
+// is running, so it is cheap on purpose and safe to poll. Once the notes are
+// written it carries them in full — and, for a teacher only, the verbatim
+// transcript they were written from.
+export async function getClassNotes(id) {
+  return backendClient.get(`/class-sessions/${id}/notes/`);
+}
+
+// Teacher-only. Starting is also automatic the moment the host opens the room
+// (class_sessions/services.py::maybe_start_notes); this is the button for a
+// class where notes were stopped and are wanted again.
+export async function startClassNotes(id) {
+  return backendClient.post(`/class-sessions/${id}/notes/`);
+}
+
+// Teacher-only. Deliberately not instant: the server pulls the transcription
+// bot out, waits for the last caption slice to land, writes the class up on
+// its own thread and notifies everyone when it is done.
+export async function stopClassNotes(id) {
+  return backendClient.delete(`/class-sessions/${id}/notes/`);
+}
+
+// The notes as a PDF. Streamed through the API behind the same roster check
+// as the classroom door rather than served from a MEDIA path, so there is
+// never a URL to the document that outlives the check — the same rule that
+// keeps a recording's bucket private, by a different mechanism because this
+// file is one we rendered ourselves.
+export async function downloadClassNotesDocument(id) {
+  return backendClient.get(`/class-sessions/${id}/notes/document/`, {
+    responseType: "blob",
+  });
+}

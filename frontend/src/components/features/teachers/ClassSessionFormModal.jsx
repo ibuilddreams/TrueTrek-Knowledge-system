@@ -21,6 +21,14 @@ const INITIAL_FORM = {
   agenda: "",
   scheduledAt: "",
   durationMinutes: "60",
+  // On by default. A class nobody thought to record is one the students who
+  // missed it can never get back, and the teacher can still stop a running
+  // recording from inside the classroom.
+  isRecorded: true,
+  // Also on by default, and deliberately a separate decision: notes run on a
+  // different Agora product with a different bill, and the class that most
+  // wants a write-up is often the one that least wants a tape of itself.
+  takesNotes: true,
 };
 
 const FIELD_CLASS =
@@ -30,6 +38,28 @@ const LABEL_CLASS =
   "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
 
 const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
+
+// The form's own fields are camelCase while the API answers under the
+// serializer's snake_case names, so a message for one input can arrive under
+// either spelling. Editing a field clears both — clearing only the form's
+// spelling left a server-side (or already-corrected) complaint sitting under
+// the input for as long as the modal stayed open.
+const API_ERROR_KEY = {
+  scheduledAt: "scheduled_at",
+  durationMinutes: "duration_minutes",
+};
+
+function withoutError(errors, field) {
+  return { ...errors, [field]: null, [API_ERROR_KEY[field] || field]: null };
+}
+
+// Mirrors `class_sessions/services.SCHEDULE_PAST_GRACE_MINUTES`. A start time
+// is only refused for being in the *past*, and "now" is read with slack
+// either side: the picker resolves to the minute, the teacher goes on filling
+// the form after choosing a time, and their clock and the server's are never
+// exactly in step. Picking a slot a couple of minutes out must not be refused
+// by the time they reach the save button.
+const START_PAST_GRACE_MS = 2 * 60 * 1000;
 
 function extractFieldErrors(error) {
   const apiFieldErrors = error?.data?.data;
@@ -86,6 +116,8 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
         agenda: (editingSession.agenda || []).join("\n"),
         scheduledAt: toDateTimeLocalValue(editingSession.scheduled_at),
         durationMinutes: String(editingSession.duration_minutes ?? 60),
+        isRecorded: editingSession.is_recorded !== false,
+        takesNotes: editingSession.takes_notes !== false,
       });
     } else {
       setForm(INITIAL_FORM);
@@ -100,7 +132,7 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
 
   const updateField = (field) => (event) => {
     setForm((prev) => ({ ...prev, [field]: event.target.value }));
-    setFieldErrors((prev) => ({ ...prev, [field]: null }));
+    setFieldErrors((prev) => withoutError(prev, field));
   };
 
   const handleSubmit = async (event) => {
@@ -108,17 +140,28 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
 
     const title = form.title.trim();
     const duration = Number(form.durationMinutes);
+    // Compared as the picker's own minute-resolution string on both sides,
+    // since that is all `toDateTimeLocalValue` put in the input.
+    const isStartUnchanged =
+      isEditMode && form.scheduledAt === toDateTimeLocalValue(editingSession.scheduled_at);
     const errors = {};
 
     if (!isEditMode && !form.course) errors.course = "Pick the course this class is for.";
     if (!title) errors.title = "Give the class a title.";
-    if (!form.scheduledAt) errors.scheduled_at = "Pick a start date and time.";
     if (!Number.isFinite(duration) || duration < 5 || duration > 480) {
       errors.duration_minutes = "A class runs between 5 minutes and 8 hours.";
     }
-    // The server rejects a past start too; checking here saves a round trip
-    // and points at the field instead of a banner.
-    if (form.scheduledAt && new Date(form.scheduledAt).getTime() <= Date.now()) {
+
+    // A `datetime-local` value carries no timezone, so `new Date` reads it on
+    // the teacher's own clock — which is what they meant by it.
+    const startMs = form.scheduledAt ? new Date(form.scheduledAt).getTime() : Number.NaN;
+    if (!Number.isFinite(startMs)) {
+      errors.scheduled_at = "Pick a start date and time.";
+    } else if (!isStartUnchanged && startMs < Date.now() - START_PAST_GRACE_MS) {
+      // Only a slot actually being *moved* has to be in the future: editing
+      // a class that has already started posts its existing start time back
+      // with the rest of the form. The server applies the same rule, so this
+      // only saves the round trip and points at the field.
       errors.scheduled_at = "Pick a start time in the future.";
     }
 
@@ -138,6 +181,8 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
       // clock, so it's converted here rather than being sent as a naive string.
       scheduled_at: new Date(form.scheduledAt).toISOString(),
       duration_minutes: duration,
+      is_recorded: Boolean(form.isRecorded),
+      takes_notes: Boolean(form.takesNotes),
     };
     if (!isEditMode) payload.course = Number(form.course);
 
@@ -197,7 +242,7 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
               value={form.course}
               onChange={(value) => {
                 setForm((prev) => ({ ...prev, course: value }));
-                setFieldErrors((prev) => ({ ...prev, course: null }));
+                setFieldErrors((prev) => withoutError(prev, "course"));
               }}
               loading={isCoursesLoading}
               disabled={isSubmitting}
@@ -251,7 +296,7 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
               className={FIELD_CLASS}
             />
             <p className="mt-1.5 text-[11px] font-mono text-muted">
-              The room opens 15 min early for students
+              The room opens at the start time
             </p>
             {fieldErrors.duration_minutes && (
               <p className={ERROR_CLASS}>{fieldErrors.duration_minutes}</p>
@@ -270,6 +315,58 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
             className={`${FIELD_CLASS} resize-none`}
           />
           {fieldErrors.description && <p className={ERROR_CLASS}>{fieldErrors.description}</p>}
+        </div>
+
+        <div>
+          <label className="flex items-start gap-3 px-4 py-3 bg-porcelain border border-line rounded-xl cursor-pointer hover:border-pine/40 transition-colors">
+            <input
+              type="checkbox"
+              checked={form.isRecorded}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, isRecorded: event.target.checked }))
+              }
+              disabled={isSubmitting}
+              className="mt-0.5 w-4 h-4 accent-pine cursor-pointer"
+            />
+            <span className="min-w-0">
+              <span className="block text-sm font-mono text-ink">
+                Record this class
+              </span>
+              <span className="block text-[11px] font-light text-muted mt-0.5 leading-relaxed">
+                Recording starts when you open the room and stops when you
+                leave. Everyone in the class is shown that it is on, and the
+                students on this course are notified when the recording is
+                ready to watch back.
+              </span>
+            </span>
+          </label>
+        </div>
+
+        <div>
+          <label className="flex items-start gap-3 px-4 py-3 bg-porcelain border border-line rounded-xl cursor-pointer hover:border-pine/40 transition-colors">
+            <input
+              type="checkbox"
+              checked={form.takesNotes}
+              onChange={(event) =>
+                setForm((prev) => ({ ...prev, takesNotes: event.target.checked }))
+              }
+              disabled={isSubmitting}
+              className="mt-0.5 w-4 h-4 accent-pine cursor-pointer"
+            />
+            <span className="min-w-0">
+              <span className="block text-sm font-mono text-ink">
+                Take AI notes on this class
+              </span>
+              <span className="block text-[11px] font-light text-muted mt-0.5 leading-relaxed">
+                The class is transcribed while you teach and written up into
+                notes afterwards — a summary, what was covered, the key points
+                and any homework you set. Everyone in the class is shown that
+                notes are being taken, and the students on this course get
+                them when they&apos;re ready. This is separate from recording:
+                you can have either, both or neither.
+              </span>
+            </span>
+          </label>
         </div>
 
         <div>

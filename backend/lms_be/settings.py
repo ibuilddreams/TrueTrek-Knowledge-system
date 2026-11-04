@@ -93,7 +93,9 @@ ROOT_URLCONF = 'lms_be.urls'
 TEMPLATES = [
     {
         'BACKEND': 'django.template.backends.django.DjangoTemplates',
-        'DIRS': [],
+        # Project-level overrides (admin/ holds the changelist that carries the
+        # CSV export button) are searched before any app's own templates.
+        'DIRS': [BASE_DIR / 'templates'],
         'APP_DIRS': True,
         'OPTIONS': {
             'context_processors': [
@@ -399,6 +401,140 @@ AGORA_WHITEBOARD_APP_IDENTIFIER = os.getenv('AGORA_WHITEBOARD_APP_IDENTIFIER', '
 AGORA_WHITEBOARD_ACCESS_KEY = os.getenv('AGORA_WHITEBOARD_ACCESS_KEY', '')
 AGORA_WHITEBOARD_SECRET_KEY = os.getenv('AGORA_WHITEBOARD_SECRET_KEY', '')
 AGORA_WHITEBOARD_REGION = os.getenv('AGORA_WHITEBOARD_REGION', 'us-sv')
+
+# Agora Cloud Recording (class_sessions/recording_api.py) — the recording of a
+# live class that enrolled students watch afterwards. A *third* Agora product
+# alongside the two above, with a third set of credentials: the Customer ID /
+# Customer Secret pair is the console's RESTful API key, and it is unrelated to
+# both the RTC App Certificate and the whiteboard's Access Key. All three fail
+# independently, which is the point — a server that can run classes but cannot
+# record them is an ordinary state, and the classroom simply doesn't offer the
+# button (`services.is_recording_configured`).
+# The Agora console's RESTful API key. There is exactly **one per account**,
+# not one per product: Cloud Recording and Real-Time Transcription (and every
+# other Agora REST API) authenticate with the same pair, which is why this is
+# named for the account rather than for a feature.
+#
+# `class_sessions/services.py::_customer_key` resolves it, preferring a
+# product-specific pair where one is set — AGORA_RECORDING_* for recording and
+# AGORA_STT_* for transcription — so a deployment that was issued a second key,
+# or that wants to revoke one product's access without touching the other, can
+# say so. Those two exist only for that; the ordinary case is this pair alone.
+AGORA_CUSTOMER_ID = os.getenv('AGORA_CUSTOMER_ID', '')
+AGORA_CUSTOMER_SECRET = os.getenv('AGORA_CUSTOMER_SECRET', '')
+
+# Recording-only override of the pair above. Also the name this setting had
+# before transcription existed, so an older .env keeps working unchanged.
+AGORA_RECORDING_CUSTOMER_ID = os.getenv('AGORA_RECORDING_CUSTOMER_ID', '')
+AGORA_RECORDING_CUSTOMER_SECRET = os.getenv('AGORA_RECORDING_CUSTOMER_SECRET', '')
+
+# Where the recordings land. Agora does not host them: the recorder uploads
+# straight into a bucket we own, and these credentials are handed to Agora in
+# the start request so it can write there. The same pair signs the playback
+# URLs below, because it is the same bucket and the same object.
+#
+# VENDOR and STORAGE_REGION are *Agora's own integer enums*, from the
+# `storageConfig` section of its cloud-recording start API. Vendor 1 is
+# Amazon S3; a store that merely speaks S3 (Cloudflare R2, MinIO,
+# DigitalOcean Spaces, Wasabi) is vendor 11 and additionally needs
+# AGORA_RECORDING_S3_ENDPOINT, which `services._storage_config` forwards as
+# `extensionParams.endpoint`. STORAGE_REGION's numbering is Agora's own and
+# is not documented on the same page — look it up before changing it from 0.
+#
+# S3_REGION is the same region written the way AWS itself writes it, used to
+# sign playback URLs. Both are asked for rather than one derived from the
+# other because Agora's enum is theirs to renumber and a mapping baked in
+# here would silently rot — they must describe the same region, or recordings
+# upload to one place and play back from another.
+AGORA_RECORDING_VENDOR = int(os.getenv('AGORA_RECORDING_VENDOR', 1))
+AGORA_RECORDING_STORAGE_REGION = int(os.getenv('AGORA_RECORDING_STORAGE_REGION', 0))
+AGORA_RECORDING_BUCKET = os.getenv('AGORA_RECORDING_BUCKET', '')
+AGORA_RECORDING_ACCESS_KEY = os.getenv('AGORA_RECORDING_ACCESS_KEY', '')
+AGORA_RECORDING_SECRET_KEY = os.getenv('AGORA_RECORDING_SECRET_KEY', '')
+
+# Playback (class_sessions/storage.py). The bucket stays **private**: a
+# recording is released only as a short-lived signed URL, minted per viewer by
+# `GET /class-sessions/<id>/recording/` behind the same enrolment check that
+# guards the class itself — exactly how `live_sessions` withholds a meeting
+# link from a listing. A public bucket would make every class recording a URL
+# anybody can forward.
+#
+# Signing is plain AWS SigV4, so any S3-compatible store works (S3, Cloudflare
+# R2, DigitalOcean Spaces, MinIO, Wasabi) by pointing S3_ENDPOINT at it; leave
+# it empty for AWS itself. PATH_STYLE is what MinIO and some R2 setups need.
+AGORA_RECORDING_S3_REGION = os.getenv('AGORA_RECORDING_S3_REGION', 'us-east-1')
+AGORA_RECORDING_S3_ENDPOINT = os.getenv('AGORA_RECORDING_S3_ENDPOINT', '')
+AGORA_RECORDING_S3_PATH_STYLE = os.getenv('AGORA_RECORDING_S3_PATH_STYLE', 'false').lower() == 'true'
+
+# Optional CDN in front of the bucket. When set, playback URLs are this base
+# plus the object key and nothing is signed — which means the objects behind
+# it are public, so set it only if that is what you intend.
+AGORA_RECORDING_PUBLIC_BASE_URL = os.getenv('AGORA_RECORDING_PUBLIC_BASE_URL', '')
+
+# How long a playback URL stays valid. Short on purpose: the student's "Watch
+# recording" button asks for a fresh one every time, so a link that leaks has
+# a few hours of life rather than the life of the course.
+AGORA_RECORDING_URL_TTL_SECONDS = int(os.getenv('AGORA_RECORDING_URL_TTL_SECONDS', 6 * 60 * 60))
+
+# Recording is billed by the minute on top of the class's own RTC minutes, so
+# it can be switched off for the whole deployment without unpicking the
+# per-class setting teachers see (`ClassSession.is_recorded`).
+AGORA_RECORDING_ENABLED = os.getenv('AGORA_RECORDING_ENABLED', 'true').lower() == 'true'
+
+# Whether a finished recording is emailed to the class as well as announced in
+# the portal. The email carries a link to the class in the portal, never the
+# recording's own URL: a playback link is signed and expires in hours, while
+# an email outlives it and can be forwarded to anyone.
+CLASS_RECORDING_EMAIL_ENABLED = os.getenv('CLASS_RECORDING_EMAIL_ENABLED', 'true').lower() == 'true'
+
+# Where that email points. One screen holds both the class and its recording,
+# so there is one link rather than a route per notification type.
+CLASS_RECORDING_PORTAL_PATH = os.getenv(
+    'CLASS_RECORDING_PORTAL_PATH', '/studentportal?tab=live-classes'
+)
+CLASS_RECORDING_TEACHER_PORTAL_PATH = os.getenv(
+    'CLASS_RECORDING_TEACHER_PORTAL_PATH', '/teacherportal?tab=classes'
+)
+
+# Agora Real-Time Transcription — the AI meeting notes a class is written up
+# into afterwards (class_sessions/transcription_api.py). A FOURTH Agora
+# product beside the RTC call, the whiteboard and Cloud Recording, enabled
+# separately on an Agora project and failing separately here: a server that
+# can run and record a class but not write it up is an ordinary state, and
+# the classroom simply shows the notes button disabled with the reason.
+#
+# It needs no bucket settings of its own. Agora writes a class's captions
+# into storage we own, exactly as its recorder writes the video there, so the
+# AGORA_RECORDING_BUCKET / _ACCESS_KEY / _SECRET_KEY / _VENDOR /
+# _STORAGE_REGION / _S3_ENDPOINT block above serves both — one bucket, one
+# place to get it right.
+#
+# It needs no RESTful key of its own either: AGORA_CUSTOMER_ID / _SECRET above
+# is the account's one key and every Agora REST product uses it. These two
+# exist only for a deployment that was issued a second one, or that wants to
+# revoke transcription's access without touching recording's; left empty,
+# which is the normal case, the account pair is used.
+AGORA_STT_CUSTOMER_ID = os.getenv('AGORA_STT_CUSTOMER_ID', '')
+AGORA_STT_CUSTOMER_SECRET = os.getenv('AGORA_STT_CUSTOMER_SECRET', '')
+
+# Transcription is billed by the minute on top of the class's own RTC minutes
+# — and separately from recording — so it can be switched off for the whole
+# deployment without unpicking the per-class setting teachers see
+# (`ClassSession.takes_notes`).
+CLASS_NOTES_ENABLED = os.getenv('CLASS_NOTES_ENABLED', 'true').lower() == 'true'
+
+# What Agora is asked to listen for, comma-separated BCP-47 tags. It accepts
+# at most four and refuses the whole request when given more, so the list is
+# clamped (`class_sessions/services.py::notes_languages`) rather than passed
+# through. Every extra language costs accuracy on the others, so this is a
+# deliberate choice rather than a net to cast wide.
+CLASS_NOTES_LANGUAGES = os.getenv('CLASS_NOTES_LANGUAGES', 'en-US')
+
+# Whether finished notes are emailed to the class as well as announced in the
+# portal. The email carries a link to the class in the portal, never to the
+# notes document: the document is served behind the class's own roster, and
+# an email outlives any check and forwards to anyone.
+CLASS_NOTES_EMAIL_ENABLED = os.getenv('CLASS_NOTES_EMAIL_ENABLED', 'true').lower() == 'true'
 
 # AI-graded assignment review (assignments/ai_review/) and quiz short-answer
 # grading (quizzes/ai_grading.py) — reuses AI_CHAT_MODEL (the fast path), same

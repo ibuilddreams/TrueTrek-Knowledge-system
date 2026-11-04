@@ -87,3 +87,41 @@ export function willCancelRatherThanDelete(session) {
   if (!session) return false;
   return session.attendee_count > 0 || session.live_state !== "UPCOMING";
 }
+
+/**
+ * The uid floor above which a channel participant is one of Agora's bots
+ * rather than a person.
+ *
+ * Two of them can be in a class: the cloud recorder, and the transcription
+ * bot behind the meeting notes. Both arrive as ordinary remote users — so
+ * without this the classroom would render a nameless, permanently black video
+ * tile for each and count them in the participant badge. Real uids are
+ * `user.pk`, so the server draws both from a range nothing else can reach
+ * (class_sessions/services.py::SERVICE_UID_MIN) and both sides agree on the
+ * floor here rather than passing it around per recording.
+ *
+ * One floor, not two, because the only question a browser ever asks before
+ * drawing a tile is "is this a person?" — a nameless black square is just as
+ * wrong whichever robot is behind it. What each bot is doing is said in
+ * words in the classroom header instead.
+ */
+export const SERVICE_UID_MIN = 2_000_000_000;
+
+export function isServiceUid(uid) {
+  const value = Number(uid);
+  return Number.isFinite(value) && value >= SERVICE_UID_MIN;
+}
+
+/** "48 min" / "1 hr 12 min" — the length of a finished recording. */
+export function formatRecordingLength(seconds) {
+  const total = Number(seconds);
+  if (!Number.isFinite(total) || total <= 0) return "";
+
+  const minutes = Math.max(1, Math.round(total / 60));
+  if (minutes < 60) return `${minutes} min`;
+
+  const hours = Math.floor(minutes / 60);
+  const remainder = minutes % 60;
+  return remainder ? `${hours} hr ${remainder} min` : `${hours} hr`;
+}
+

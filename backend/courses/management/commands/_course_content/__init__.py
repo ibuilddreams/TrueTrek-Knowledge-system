@@ -19,17 +19,24 @@ the generated shell the first time it runs and upserts everything afterwards, so
 correcting a line here lands on the next reseed without orphaning a student's
 progress — see its docstring for what is deliberately create-only.
 
-The catalog is being written a pathway at a time. One hundred and eighty
-courses are done. The Athlete CEO Pathway (CEO-101…CEO-304), The Recruiting
-Pathway (REC-101…REC-303) and The Mental Toughness Pathway (MT-101…MT-303) are
-written in the full shape; The Branding & Marketing Pathway (BM-101…BM-303), the
-whole Athlete Life Skills & Transition Pathway (LS-101…LS-404), the whole Parent
-Pathway (PAR-101…PAR-308), the whole Cool Nerds Pathway (STU-101…STU-405, all
-four levels, 36 courses), the **whole Entrepreneur Pathway** (ENT-101…ENT-412,
-all four levels, 55 courses) and the first ten of the Coaching Pathway
-(COH-101…COH-110) are written in the short one.
-Every other course still seeds the generated shell. Adding a course is adding a
-module here and a line in COURSE_CONTENT below.
+**320 of the catalog's 335 courses are written.** The Athlete CEO
+Pathway (CEO-101…CEO-304), The Recruiting Pathway (REC-101…REC-303) and The
+Mental Toughness Pathway (MT-101…MT-303) are written in the full shape; The
+Branding & Marketing Pathway (BM-101…BM-303), the whole Athlete Life Skills &
+Transition Pathway (LS-101…LS-404), the whole Parent Pathway (PAR-101…PAR-308),
+the whole Cool Nerds Pathway (STU-101…STU-405, all four levels, 36 courses), the
+whole Entrepreneur Pathway (ENT-101…ENT-412, all four levels, 55 courses) and
+the whole Coaching Pathway (COH-101…COH-412, all four levels, 50 courses) are
+written in the short one, as are the **first hundred Cool Nerds academy
+courses** — the whole of Levels 1 to 5 plus the first forty of Level 6:
+CN-101…CN-110 (Grades 4-5), CN-201…CN-215 (Grades 6-8), CN-301…CN-316
+(Grades 9-12), CN-401…CN-410 (Undergraduate), CN-501…CN-509 (Graduate School)
+and CN-601…CN-640 (Adult). The remaining 15 academy courses
+(CN-641…CN-655, the rest of the Adult band) are still `catalog_only` and seed
+no curriculum at all by design. Adding a course is adding a module here and a
+line in COURSE_CONTENT below — and, for a CN course, dropping `catalog_only`
+from its def in `seeddata.COURSE_DEFS`, because `_validate_course_defs` rejects
+a def that claims both.
 
 The catalog has three audiences. Most files address the **athlete**. The PAR
 files address a **parent or guardian** directly as "you" and the young person
@@ -112,7 +119,7 @@ the course's ethical spine, not a presentation note.
 **The Coaching Pathway (COH) opens a fifth audience: the coach**, usually
 part-time, usually with no formal coach education, usually coaching the way they
 were coached. COH-101 establishes the register and every other COH file refers
-back to it. Three things run through all ten and must survive an edit.
+back to it. Three things run through all fifty and must survive an edit.
 **Safeguarding is named in the first module of the first course, not deferred** —
 a coach holds power over minors, the duty of care comes before the sport, and no
 philosophy justifies how somebody is treated. **Nothing is stated as a universal
@@ -143,6 +150,260 @@ friendship or the possibility of being wrong, and is never handled by speaking
 to the person. **COH-110** treats the coach's own sustainability as a risk to
 the athletes rather than self-care advice, because an exhausted coach reverts to
 the default model.
+
+Levels 2 to 4 extend the same register outwards — the session (COH-111…COH-213),
+the adults around it (COH-301…COH-313) and the programme (COH-401…COH-412) — and
+several files there carry framings that are the course rather than a caveat on
+it. **COH-208** refuses hazing, initiation and "earning your place" outright
+rather than tolerating a harmless version. **COH-209** separates athlete leaders
+from adult staff (COH-303 is the adult version) and states that welfare is the
+one thing that can never be delegated to a young person. **COH-210** keeps
+return-to-play a clinical decision only, never the coach's and never the
+family's, and **COH-211** gives no nutritional or conditioning prescription,
+refuses supplements, and routes disordered eating as COH-108 routes distress.
+**COH-304** teaches a coach to find and verify their own NIL and eligibility
+rules exactly as PAR-301 does for a parent. **COH-303**'s reference rule — never
+a positive reference for somebody whose conduct towards young people has
+concerned you — is repeated in **COH-411**, because that is the point at which a
+safeguarding problem is passed to another club. **COH-312** is secure, report,
+do not investigate. **COH-407** routes international moves, trafficking risk and
+immigration to the destination government for the athlete's own nationality, in
+the pattern STU-204 set, and refuses to proceed where legal responsibility for a
+young person cannot be established in writing. **COH-410** carries the catalog's
+financial disclaimer for a coach's own income. And **COH-412** closes the
+pathway on leaving well — the records, standards and successor that must exist
+before a departure, and the fact that an unreported safeguarding concern remains
+reportable however long ago it was and whether or not the coach is still in the
+sport.
+
+**The CN files open a sixth audience: a child, addressed by school band.**
+CN-101…CN-110 are written for a reader of roughly nine to eleven — short
+sentences, examples from a classroom, a playground and a kitchen table, never an
+office — and CN-201…CN-210 for roughly eleven to fourteen. They are not the
+athlete, the parent, the older self-directed STU student, the founder or the
+coach. Two framings run through the whole band and must survive an edit: **a
+child's own judgement is never the last line of defence** (every file names
+going to a trusted adult as the strong move, and each one carries three named
+adults rather than one), and **nothing shames a child for how they feel**.
+
+Six CN files carry framings a careless edit would invert, and in two cases the
+course's own title is the thing it has to be written against. **CN-103** is the
+most dangerous file in the band: "respecting elders" written carelessly teaches
+a nine-year-old to comply with an adult who means them harm, so respect is
+defined as *how you treat people* and separated explicitly, in every module,
+from doing what an adult says — it must never become "always do as you are
+told". **CN-109** is the band's safeguarding core: awareness never fear, warning
+signs about **behaviour rather than strangers or appearance**, the child's job
+is notice-get-away-tell and never confront or investigate, the uh-oh feeling is
+sufficient on its own, and body safety is named in plain words with no euphemism
+that would leave a child unable to describe what happened. **CN-105** ("Change
+is an Adventure!") separates changes a child can prepare for from changes that
+have happened to them, and refuses to tell a child whose family is coming apart
+to look on the bright side. **CN-106** says in its first lesson that "fearless"
+is the wrong word and that nobody is forced to speak. **CN-108** states that
+using cleverness to make other people feel small is the opposite of what it
+teaches, and that a child hiding their ability is being bullied rather than
+choosing. **CN-210** carries CN-109 forward to an age with real independence,
+and its Module 3 on being drawn into something — kindness first, then a
+manufactured debt — is the part most likely to matter.
+
+The CN-2xx money courses (**CN-201**, **CN-202**) carry the catalog's financial
+disclaimer in its strict form, as LS-201/202/203 and STU-401/403 do: no product,
+provider, platform or rate named, every figure labelled as a made-up
+illustration, and every real decision routed to a parent or carer and a
+regulated professional. **CN-203** states no changeable fact as fact and names
+no source as reliable, teaching the reader to find whoever is responsible for an
+answer instead, and it refuses the cynical failure mode — believing nothing can
+be known makes somebody easier to fool, not harder. **CN-204** and **CN-207**
+carry ENT-205/206/207's ethics line pitched younger, and **CN-205** refuses
+STU-304's "cut people off" framing and keeps conflict and bullying separate
+throughout. Every CN file that touches work, money, earning or format routes the
+rules to the reader's own country, because they differ everywhere and change.
+
+**CN-301…CN-315 address a reader of roughly fourteen to eighteen** for whom this
+becomes real within a year or two. The money courses (**CN-301** credit records,
+**CN-302** tax, **CN-303** investing, **CN-304** cards) carry the disclaimer in
+its strictest form and name the sheet's US instruments — FICO, W-4, 1040 — only
+as that country's instance of a general shape, routing every specific to the
+reader's own revenue authority and financial regulator. **CN-303 is the
+strictest file in the band**, because this age group is sold trading and crypto
+harder than any other: it teaches the shapes, states that most active traders
+lose, explains what leverage actually does, and keeps "anything guaranteed is
+the warning, not the offer". **CN-306**, **CN-307** and **CN-314** carry
+CN-208's honesty rule forward to documents and interviews that are now checkable
+— an invention is the one error that cannot be recovered from — and CN-307 adds
+that **the applicant pool is not a level field**, naming caring
+responsibilities, paid work and the absence of unpaid internships as the
+ordinary reasons a strong candidate looks thin on paper. **CN-310** refuses
+fallacy-spotting as a weapon and keeps CN-203's refusal of the cynical endpoint.
+**CN-311** refuses the manipulation reading of reading people and separates
+adjusting register from changing substance. **CN-312** names fear setting's
+source accurately, states no fact about the person it names, and keeps CN-206's
+gate: the second kind of fear is never a planning problem. **CN-315 is the most
+safeguarding-critical file in the band** — the only one where the reader holds
+power over younger children — and carries COH-101's structure: safeguarding
+named first, nothing stated as a universal rule, the mentor never the last line,
+boundaries as what makes closeness safe, and the duty to report another person's
+conduct never weighed against the scheme or a friendship.
+
+**CN-401…CN-405 open the band's second audience: an adult.** The guardian
+routing that runs from CN-101 to CN-315 is gone; what replaces it is routing to
+**regulated professionals, official sources and free advice services**. CN-401
+and CN-402 keep the financial disclaimer and treat **student debt and tax
+without moralising** — repayment systems differ enormously and "pay it off fast"
+is wrong in some of them. CN-403 states plainly that **individual stock
+selection is a professional activity** taught here as comprehension rather than
+edge, and refuses the property-seminar framing. CN-404 is **honest that the
+hidden job market is an advantage unevenly distributed** and names the access
+schemes that exist for readers without a network. CN-405 is **honest about
+leverage in pay negotiation** — a graduate frequently has little, and much
+advice assumes a market they are not in. **CN-406…CN-410** complete the band:
+CN-406 is honest about what is and is not known about applicant tracking
+systems and carries CN-308's ownership rules into portfolios (employer work,
+client work and real data are frequently not yours to publish); **CN-407**
+corrects the popular misuse of neuroplasticity and states that brain-training
+largely does not transfer; **CN-408** formalises CN-312's rule as *never take a
+positive expected value if a possible outcome is one you cannot recover from*
+and refuses the cynical reading of game theory, since repeated games and
+reputation are the actual condition of working life; **CN-409** never treats
+harassment, bullying or discrimination as conflict to be mediated, which is the
+central error a course on organisational dynamics can make; and **CN-410**
+refuses the claim that everybody needs a personal brand and treats
+"authenticity" as the marketed performance it is.
+
+**CN-501…CN-509 open the band's third audience: a graduate**, roughly
+twenty-two to thirty, with more capability and frequently more money. Several
+files carry framings a careless edit would invert. **CN-501** states that the
+base rate in early-stage investing is loss, that the available material is
+survivorship, that diversification there is structural rather than optional,
+and that for most people the correct allocation is zero — ENT-403's framing from
+the investor's side. **CN-502** is written against its own title: "mastering the
+tax code" is the belief that produces expensive errors, so it teaches the
+questions and states that an accountant is not optional. **CN-503** carries
+COH-308's order — act, tell the people affected, report, then communicate — and
+says plainly that communications is not the remedy. **CN-504** states that
+disclosure before filing can destroy patentability and that confidentiality
+obligations survive a relationship. **CN-505** names the change-management
+folklore (the unsourced failure rate, the unvalidated models, the grief-stage
+framing) and insists that "resistance" is frequently information. **CN-506**
+treats anti-bribery as the course rather than a caveat — the laws are
+extraterritorial, individuals are imprisoned, and "it is how business is done
+there" has never been a defence — and refuses national stereotyping. **CN-507**
+carries ENT-411 and BM-204's absolute rule that people receiving help are never
+photographed or identified for the giver's benefit, and is honest that
+philanthropy is not neutral. **CN-508** states that innovation frameworks are
+structuring devices rather than findings and names the consent, data-protection
+and ethical-review obligations that user research carries. And **CN-509** is
+written against *Fearless Innovation*: CN-408's rule governs it, the question is
+always whose risk it is and whether they could absorb it, and safety-critical
+and regulated contexts are excluded entirely, because "move fast" there is a
+choice to accept a rate of harm.
+
+**CN-601…CN-620 open the band's fourth audience: an adult at any age.** Level 6
+is not a school level — it is the part of the catalog that addresses what
+actually happens across a life (career change, redundancy, divorce,
+bereavement, caring for parents, debt, retirement, ageing), and its readers are
+thirty, fifty and seventy as readily as twenty-five. Four things run through
+all twenty and must survive an edit. **Nothing is stated as a universal rule**:
+employment law, family law, inheritance, tax, benefits, insolvency, care
+funding and retirement systems differ completely by country, so each file
+routes to the reader's own authority and to a qualified professional, and the
+sheet's US instruments (filing status, 401(k)/IRA, catch-up contributions,
+FICO) are named only as that country's instance in the pattern CN-301 and
+CN-303 set. **The reader may be in difficulty right now**, so free confidential
+services are named rather than implied, and the crisis instruction appears in
+every module of the files that need it. **Circumstances are named honestly** —
+age discrimination, the career-break penalty, the unequal distribution of
+caring, pay gaps and damaged finances are structural rather than attitude
+problems, and saying otherwise is the edit that would make the band dishonest.
+And **no product, provider, scheme, rate or figure is named or quoted as
+current** anywhere in it. Eleven files carry framings a careless edit would
+invert. **CN-602/CN-604** are honest about applicant tracking systems and about
+gaps, and CN-604 states that being behind is structural rather than a
+discipline failure. **CN-603** names the unadvertised route as an advantage
+unevenly distributed — CN-404's rule — and insists an informational
+conversation is never a disguised request for a job. **CN-607 is the strictest
+file in the band**: it never advises concealing or moving assets, names
+financial abuse in the first module and routes it to a specialist domestic
+abuse service before a solicitor, and states that mediation is inappropriate
+where there is abuse — the single most dangerous piece of generic divorce
+advice. **CN-608** makes every piece of co-parenting advice explicitly
+conditional on there being no abuse, and refuses CN-304 and STU-304's "cut
+people off" framing. **CN-609** is safety-first by design (romance fraud,
+meeting safely, image-based abuse, coercive control) and is written against its
+own title, since introversion is not a defect to be performed away.
+**CN-610/CN-611** name the cohabiting trap, the capacity-document window that
+closes silently, executor personal liability, and correct the five stages of
+grief, which were never a description of how the bereaved grieve. **CN-612**
+states that nobody is obliged to speak, that breaking down is not failing, that
+a complicated or abusive relationship does not require a false tribute, and
+follows the established convention on a death by suicide. **CN-614** is the
+strictest financial file: being behind is never a reason to take more risk, and
+CN-408's unrecoverable-outcome rule governs it. **CN-615** owns the free debt
+advice instruction the rest of the band points to, and names debt as a
+recognised risk factor for suicide. **CN-617** corrects the midlife-crisis
+script and the contested U-shaped curve, and names ageism as structural rather
+than fixable by attitude. **CN-618** refuses the assumption that every reader's
+children left in the ordinary way — some never leave, some return, some will
+never leave, some are estranged and some have died — and names where each of
+those readers should go instead. And **CN-620** carries CN-103's rule into
+adulthood: respecting parents is never obedience, nobody is obliged to care for
+somebody who harmed them, and the carer's own health is treated as a condition
+of the caring continuing rather than as self-care advice, in COH-110's framing.
+
+**CN-621…CN-640 complete the Adult band's named territory** — community,
+health systems, crisis, technology, social media, AI and later-life housing —
+under the same four band-wide rules. Many of them carry framings a careless
+edit would invert. **CN-621** is written against "respected elder": respect is
+not conferred by age, the mentor who is there to be important is the first
+failure mode, and mentoring a young person goes through an organisation with
+COH-101's safeguarding structure attached. **CN-622** makes CN-507 and
+ENT-411's rule its first lesson — the people an organisation helps are never
+photographed or named for the giver's benefit — names donor-advised funds as
+one country's instrument, and refuses the overhead ratio as a measure.
+**CN-623** gives no clinical advice, names Medicare and health savings accounts
+as United States instruments, and states that cost must never be a silent
+reason to go without care. **CN-624** routes every hazard to the reader's own
+emergency agency, refuses the prepper framing, and makes the
+vulnerable-household plan the centre rather than an afterthought — including
+that prescription medication is never stockpiled. **CN-625** does not teach
+medical triage and says so, and applies CN-408's unrecoverable-outcome rule by
+shrinking decisions rather than making better ones. **CN-626** refuses the
+cynical position outright — institutional distrust is the sales pitch every
+unregulated seller runs on — and makes "how are you paid" the central question.
+**CN-627** carries CN-212 and CN-407's correction in full: brain-training
+transfer is weak, neuroplasticity is oversold, and **risk reduction is not
+prevention**, because the opposite framing blames people who develop dementia.
+**CN-628** is written against its own title and treats mindfulness honestly,
+including the adverse effects its marketing never mentions. **CN-629** says
+plainly that writing about trauma can destabilise, and makes other people's
+privacy the central constraint. **CN-630** refuses the condescension that older
+people are inherently gullible, and gives the two rules — never remote access,
+never move money — that prevent the large losses. **CN-631**'s spine is that a
+child is not content: the parents decide, the child's own say grows, and the
+assembly problem is what a sequence of ordinary posts reveals. **CN-632** makes
+running a group a duty of care, carries CN-409's rule that harassment is never
+mediated, and refuses local-group vigilantism because identification from an
+image is unreliable and people are misidentified. **CN-633** puts
+safety-driven invisibility first — for an abuse survivor the aim is to be hard
+to find, and the "build a presence" advice does not apply. **CN-634** carries
+CN-606's permissions and tax rules in full, treats disclosure as a legal
+requirement, and refuses three categories outright: financial, health and
+anything needing an authorisation the reader does not hold. **CN-635** states
+that fluency is not accuracy and names the absolute limits — never medical,
+legal, financial, dosage or a named real person. **CN-636** refuses images of
+real people, names synthetic intimate imagery as criminal in a growing number
+of places and any sexual imagery of a child as criminal virtually everywhere,
+and presents the training and livelihood objections honestly. **CN-637** makes
+CN-203's rule its spine — believing nothing makes you easier to fool — teaches
+provenance rather than visual detection, and states that AI detectors must
+never be used to accuse anybody. **CN-638** routes entry requirements to the
+destination government's own site for the reader's own nationality, dated, in
+STU-204 and COH-407's pattern, and names an AI assistant as a source that must
+never be used for it. **CN-639** names Medicare as one country's system and
+makes under-claiming the central problem. And **CN-640** states that the person
+whose home it is decides while they have capacity, names deliberate
+deprivation, and carries COH-109's reporting rule into care settings.
 
 Several PAR courses overlap each other by design, and each file's docstring
 states the angle that makes it distinct — PAR-102 is the parent's behaviour as
@@ -585,6 +846,286 @@ from .coh_109 import HANDOUTS as COH_109_HANDOUTS
 from .coh_109 import MODULES as COH_109
 from .coh_110 import HANDOUTS as COH_110_HANDOUTS
 from .coh_110 import MODULES as COH_110
+from .coh_111 import HANDOUTS as COH_111_HANDOUTS
+from .coh_111 import MODULES as COH_111
+from .coh_112 import HANDOUTS as COH_112_HANDOUTS
+from .coh_112 import MODULES as COH_112
+from .coh_201 import HANDOUTS as COH_201_HANDOUTS
+from .coh_201 import MODULES as COH_201
+from .coh_202 import HANDOUTS as COH_202_HANDOUTS
+from .coh_202 import MODULES as COH_202
+from .coh_203 import HANDOUTS as COH_203_HANDOUTS
+from .coh_203 import MODULES as COH_203
+from .coh_204 import HANDOUTS as COH_204_HANDOUTS
+from .coh_204 import MODULES as COH_204
+from .coh_205 import HANDOUTS as COH_205_HANDOUTS
+from .coh_205 import MODULES as COH_205
+from .coh_206 import HANDOUTS as COH_206_HANDOUTS
+from .coh_206 import MODULES as COH_206
+from .coh_207 import HANDOUTS as COH_207_HANDOUTS
+from .coh_207 import MODULES as COH_207
+from .coh_208 import HANDOUTS as COH_208_HANDOUTS
+from .coh_208 import MODULES as COH_208
+from .coh_209 import HANDOUTS as COH_209_HANDOUTS
+from .coh_209 import MODULES as COH_209
+from .coh_210 import HANDOUTS as COH_210_HANDOUTS
+from .coh_210 import MODULES as COH_210
+from .coh_211 import HANDOUTS as COH_211_HANDOUTS
+from .coh_211 import MODULES as COH_211
+from .coh_212 import HANDOUTS as COH_212_HANDOUTS
+from .coh_212 import MODULES as COH_212
+from .coh_213 import HANDOUTS as COH_213_HANDOUTS
+from .coh_213 import MODULES as COH_213
+from .coh_301 import HANDOUTS as COH_301_HANDOUTS
+from .coh_301 import MODULES as COH_301
+from .coh_302 import HANDOUTS as COH_302_HANDOUTS
+from .coh_302 import MODULES as COH_302
+from .coh_303 import HANDOUTS as COH_303_HANDOUTS
+from .coh_303 import MODULES as COH_303
+from .coh_304 import HANDOUTS as COH_304_HANDOUTS
+from .coh_304 import MODULES as COH_304
+from .coh_305 import HANDOUTS as COH_305_HANDOUTS
+from .coh_305 import MODULES as COH_305
+from .coh_306 import HANDOUTS as COH_306_HANDOUTS
+from .coh_306 import MODULES as COH_306
+from .coh_307 import HANDOUTS as COH_307_HANDOUTS
+from .coh_307 import MODULES as COH_307
+from .coh_308 import HANDOUTS as COH_308_HANDOUTS
+from .coh_308 import MODULES as COH_308
+from .coh_309 import HANDOUTS as COH_309_HANDOUTS
+from .coh_309 import MODULES as COH_309
+from .coh_310 import HANDOUTS as COH_310_HANDOUTS
+from .coh_310 import MODULES as COH_310
+from .coh_311 import HANDOUTS as COH_311_HANDOUTS
+from .coh_311 import MODULES as COH_311
+from .coh_312 import HANDOUTS as COH_312_HANDOUTS
+from .coh_312 import MODULES as COH_312
+from .coh_313 import HANDOUTS as COH_313_HANDOUTS
+from .coh_313 import MODULES as COH_313
+from .coh_401 import HANDOUTS as COH_401_HANDOUTS
+from .coh_401 import MODULES as COH_401
+from .coh_402 import HANDOUTS as COH_402_HANDOUTS
+from .coh_402 import MODULES as COH_402
+from .coh_403 import HANDOUTS as COH_403_HANDOUTS
+from .coh_403 import MODULES as COH_403
+from .coh_404 import HANDOUTS as COH_404_HANDOUTS
+from .coh_404 import MODULES as COH_404
+from .coh_405 import HANDOUTS as COH_405_HANDOUTS
+from .coh_405 import MODULES as COH_405
+from .coh_406 import HANDOUTS as COH_406_HANDOUTS
+from .coh_406 import MODULES as COH_406
+from .coh_407 import HANDOUTS as COH_407_HANDOUTS
+from .coh_407 import MODULES as COH_407
+from .coh_408 import HANDOUTS as COH_408_HANDOUTS
+from .coh_408 import MODULES as COH_408
+from .coh_409 import HANDOUTS as COH_409_HANDOUTS
+from .coh_409 import MODULES as COH_409
+from .coh_410 import HANDOUTS as COH_410_HANDOUTS
+from .coh_410 import MODULES as COH_410
+from .coh_411 import HANDOUTS as COH_411_HANDOUTS
+from .coh_411 import MODULES as COH_411
+from .coh_412 import HANDOUTS as COH_412_HANDOUTS
+from .coh_412 import MODULES as COH_412
+from .cn_101 import HANDOUTS as CN_101_HANDOUTS
+from .cn_101 import MODULES as CN_101
+from .cn_102 import HANDOUTS as CN_102_HANDOUTS
+from .cn_102 import MODULES as CN_102
+from .cn_103 import HANDOUTS as CN_103_HANDOUTS
+from .cn_103 import MODULES as CN_103
+from .cn_104 import HANDOUTS as CN_104_HANDOUTS
+from .cn_104 import MODULES as CN_104
+from .cn_105 import HANDOUTS as CN_105_HANDOUTS
+from .cn_105 import MODULES as CN_105
+from .cn_106 import HANDOUTS as CN_106_HANDOUTS
+from .cn_106 import MODULES as CN_106
+from .cn_107 import HANDOUTS as CN_107_HANDOUTS
+from .cn_107 import MODULES as CN_107
+from .cn_108 import HANDOUTS as CN_108_HANDOUTS
+from .cn_108 import MODULES as CN_108
+from .cn_109 import HANDOUTS as CN_109_HANDOUTS
+from .cn_109 import MODULES as CN_109
+from .cn_110 import HANDOUTS as CN_110_HANDOUTS
+from .cn_110 import MODULES as CN_110
+from .cn_201 import HANDOUTS as CN_201_HANDOUTS
+from .cn_201 import MODULES as CN_201
+from .cn_202 import HANDOUTS as CN_202_HANDOUTS
+from .cn_202 import MODULES as CN_202
+from .cn_203 import HANDOUTS as CN_203_HANDOUTS
+from .cn_203 import MODULES as CN_203
+from .cn_204 import HANDOUTS as CN_204_HANDOUTS
+from .cn_204 import MODULES as CN_204
+from .cn_205 import HANDOUTS as CN_205_HANDOUTS
+from .cn_205 import MODULES as CN_205
+from .cn_206 import HANDOUTS as CN_206_HANDOUTS
+from .cn_206 import MODULES as CN_206
+from .cn_207 import HANDOUTS as CN_207_HANDOUTS
+from .cn_207 import MODULES as CN_207
+from .cn_208 import HANDOUTS as CN_208_HANDOUTS
+from .cn_208 import MODULES as CN_208
+from .cn_209 import HANDOUTS as CN_209_HANDOUTS
+from .cn_209 import MODULES as CN_209
+from .cn_210 import HANDOUTS as CN_210_HANDOUTS
+from .cn_210 import MODULES as CN_210
+from .cn_301 import HANDOUTS as CN_301_HANDOUTS
+from .cn_301 import MODULES as CN_301
+from .cn_302 import HANDOUTS as CN_302_HANDOUTS
+from .cn_302 import MODULES as CN_302
+from .cn_303 import HANDOUTS as CN_303_HANDOUTS
+from .cn_303 import MODULES as CN_303
+from .cn_304 import HANDOUTS as CN_304_HANDOUTS
+from .cn_304 import MODULES as CN_304
+from .cn_305 import HANDOUTS as CN_305_HANDOUTS
+from .cn_305 import MODULES as CN_305
+from .cn_306 import HANDOUTS as CN_306_HANDOUTS
+from .cn_306 import MODULES as CN_306
+from .cn_307 import HANDOUTS as CN_307_HANDOUTS
+from .cn_307 import MODULES as CN_307
+from .cn_308 import HANDOUTS as CN_308_HANDOUTS
+from .cn_308 import MODULES as CN_308
+from .cn_309 import HANDOUTS as CN_309_HANDOUTS
+from .cn_309 import MODULES as CN_309
+from .cn_310 import HANDOUTS as CN_310_HANDOUTS
+from .cn_310 import MODULES as CN_310
+from .cn_311 import HANDOUTS as CN_311_HANDOUTS
+from .cn_311 import MODULES as CN_311
+from .cn_312 import HANDOUTS as CN_312_HANDOUTS
+from .cn_312 import MODULES as CN_312
+from .cn_313 import HANDOUTS as CN_313_HANDOUTS
+from .cn_313 import MODULES as CN_313
+from .cn_314 import HANDOUTS as CN_314_HANDOUTS
+from .cn_314 import MODULES as CN_314
+from .cn_315 import HANDOUTS as CN_315_HANDOUTS
+from .cn_315 import MODULES as CN_315
+from .cn_401 import HANDOUTS as CN_401_HANDOUTS
+from .cn_401 import MODULES as CN_401
+from .cn_402 import HANDOUTS as CN_402_HANDOUTS
+from .cn_402 import MODULES as CN_402
+from .cn_403 import HANDOUTS as CN_403_HANDOUTS
+from .cn_403 import MODULES as CN_403
+from .cn_404 import HANDOUTS as CN_404_HANDOUTS
+from .cn_404 import MODULES as CN_404
+from .cn_405 import HANDOUTS as CN_405_HANDOUTS
+from .cn_405 import MODULES as CN_405
+from .cn_211 import HANDOUTS as CN_211_HANDOUTS
+from .cn_211 import MODULES as CN_211
+from .cn_212 import HANDOUTS as CN_212_HANDOUTS
+from .cn_212 import MODULES as CN_212
+from .cn_213 import HANDOUTS as CN_213_HANDOUTS
+from .cn_213 import MODULES as CN_213
+from .cn_214 import HANDOUTS as CN_214_HANDOUTS
+from .cn_214 import MODULES as CN_214
+from .cn_215 import HANDOUTS as CN_215_HANDOUTS
+from .cn_215 import MODULES as CN_215
+from .cn_316 import HANDOUTS as CN_316_HANDOUTS
+from .cn_316 import MODULES as CN_316
+from .cn_406 import HANDOUTS as CN_406_HANDOUTS
+from .cn_406 import MODULES as CN_406
+from .cn_407 import HANDOUTS as CN_407_HANDOUTS
+from .cn_407 import MODULES as CN_407
+from .cn_408 import HANDOUTS as CN_408_HANDOUTS
+from .cn_408 import MODULES as CN_408
+from .cn_409 import HANDOUTS as CN_409_HANDOUTS
+from .cn_409 import MODULES as CN_409
+from .cn_410 import HANDOUTS as CN_410_HANDOUTS
+from .cn_410 import MODULES as CN_410
+from .cn_501 import HANDOUTS as CN_501_HANDOUTS
+from .cn_501 import MODULES as CN_501
+from .cn_502 import HANDOUTS as CN_502_HANDOUTS
+from .cn_502 import MODULES as CN_502
+from .cn_503 import HANDOUTS as CN_503_HANDOUTS
+from .cn_503 import MODULES as CN_503
+from .cn_504 import HANDOUTS as CN_504_HANDOUTS
+from .cn_504 import MODULES as CN_504
+from .cn_505 import HANDOUTS as CN_505_HANDOUTS
+from .cn_505 import MODULES as CN_505
+from .cn_506 import HANDOUTS as CN_506_HANDOUTS
+from .cn_506 import MODULES as CN_506
+from .cn_507 import HANDOUTS as CN_507_HANDOUTS
+from .cn_507 import MODULES as CN_507
+from .cn_508 import HANDOUTS as CN_508_HANDOUTS
+from .cn_508 import MODULES as CN_508
+from .cn_509 import HANDOUTS as CN_509_HANDOUTS
+from .cn_509 import MODULES as CN_509
+from .cn_601 import HANDOUTS as CN_601_HANDOUTS
+from .cn_601 import MODULES as CN_601
+from .cn_602 import HANDOUTS as CN_602_HANDOUTS
+from .cn_602 import MODULES as CN_602
+from .cn_603 import HANDOUTS as CN_603_HANDOUTS
+from .cn_603 import MODULES as CN_603
+from .cn_604 import HANDOUTS as CN_604_HANDOUTS
+from .cn_604 import MODULES as CN_604
+from .cn_605 import HANDOUTS as CN_605_HANDOUTS
+from .cn_605 import MODULES as CN_605
+from .cn_606 import HANDOUTS as CN_606_HANDOUTS
+from .cn_606 import MODULES as CN_606
+from .cn_607 import HANDOUTS as CN_607_HANDOUTS
+from .cn_607 import MODULES as CN_607
+from .cn_608 import HANDOUTS as CN_608_HANDOUTS
+from .cn_608 import MODULES as CN_608
+from .cn_609 import HANDOUTS as CN_609_HANDOUTS
+from .cn_609 import MODULES as CN_609
+from .cn_610 import HANDOUTS as CN_610_HANDOUTS
+from .cn_610 import MODULES as CN_610
+from .cn_611 import HANDOUTS as CN_611_HANDOUTS
+from .cn_611 import MODULES as CN_611
+from .cn_612 import HANDOUTS as CN_612_HANDOUTS
+from .cn_612 import MODULES as CN_612
+from .cn_613 import HANDOUTS as CN_613_HANDOUTS
+from .cn_613 import MODULES as CN_613
+from .cn_614 import HANDOUTS as CN_614_HANDOUTS
+from .cn_614 import MODULES as CN_614
+from .cn_615 import HANDOUTS as CN_615_HANDOUTS
+from .cn_615 import MODULES as CN_615
+from .cn_616 import HANDOUTS as CN_616_HANDOUTS
+from .cn_616 import MODULES as CN_616
+from .cn_617 import HANDOUTS as CN_617_HANDOUTS
+from .cn_617 import MODULES as CN_617
+from .cn_618 import HANDOUTS as CN_618_HANDOUTS
+from .cn_618 import MODULES as CN_618
+from .cn_619 import HANDOUTS as CN_619_HANDOUTS
+from .cn_619 import MODULES as CN_619
+from .cn_620 import HANDOUTS as CN_620_HANDOUTS
+from .cn_620 import MODULES as CN_620
+from .cn_621 import HANDOUTS as CN_621_HANDOUTS
+from .cn_621 import MODULES as CN_621
+from .cn_622 import HANDOUTS as CN_622_HANDOUTS
+from .cn_622 import MODULES as CN_622
+from .cn_623 import HANDOUTS as CN_623_HANDOUTS
+from .cn_623 import MODULES as CN_623
+from .cn_624 import HANDOUTS as CN_624_HANDOUTS
+from .cn_624 import MODULES as CN_624
+from .cn_625 import HANDOUTS as CN_625_HANDOUTS
+from .cn_625 import MODULES as CN_625
+from .cn_626 import HANDOUTS as CN_626_HANDOUTS
+from .cn_626 import MODULES as CN_626
+from .cn_627 import HANDOUTS as CN_627_HANDOUTS
+from .cn_627 import MODULES as CN_627
+from .cn_628 import HANDOUTS as CN_628_HANDOUTS
+from .cn_628 import MODULES as CN_628
+from .cn_629 import HANDOUTS as CN_629_HANDOUTS
+from .cn_629 import MODULES as CN_629
+from .cn_630 import HANDOUTS as CN_630_HANDOUTS
+from .cn_630 import MODULES as CN_630
+from .cn_631 import HANDOUTS as CN_631_HANDOUTS
+from .cn_631 import MODULES as CN_631
+from .cn_632 import HANDOUTS as CN_632_HANDOUTS
+from .cn_632 import MODULES as CN_632
+from .cn_633 import HANDOUTS as CN_633_HANDOUTS
+from .cn_633 import MODULES as CN_633
+from .cn_634 import HANDOUTS as CN_634_HANDOUTS
+from .cn_634 import MODULES as CN_634
+from .cn_635 import HANDOUTS as CN_635_HANDOUTS
+from .cn_635 import MODULES as CN_635
+from .cn_636 import HANDOUTS as CN_636_HANDOUTS
+from .cn_636 import MODULES as CN_636
+from .cn_637 import HANDOUTS as CN_637_HANDOUTS
+from .cn_637 import MODULES as CN_637
+from .cn_638 import HANDOUTS as CN_638_HANDOUTS
+from .cn_638 import MODULES as CN_638
+from .cn_639 import HANDOUTS as CN_639_HANDOUTS
+from .cn_639 import MODULES as CN_639
+from .cn_640 import HANDOUTS as CN_640_HANDOUTS
+from .cn_640 import MODULES as CN_640
 
 # Lesson content types whose file is the module's generated handout rather than
 # prose in `content_data`.
@@ -812,4 +1353,144 @@ COURSE_CONTENT = {
     "COH-108": _with_handouts("COH-108", COH_108, COH_108_HANDOUTS),
     "COH-109": _with_handouts("COH-109", COH_109, COH_109_HANDOUTS),
     "COH-110": _with_handouts("COH-110", COH_110, COH_110_HANDOUTS),
+    "COH-111": _with_handouts("COH-111", COH_111, COH_111_HANDOUTS),
+    "COH-112": _with_handouts("COH-112", COH_112, COH_112_HANDOUTS),
+    "COH-201": _with_handouts("COH-201", COH_201, COH_201_HANDOUTS),
+    "COH-202": _with_handouts("COH-202", COH_202, COH_202_HANDOUTS),
+    "COH-203": _with_handouts("COH-203", COH_203, COH_203_HANDOUTS),
+    "COH-204": _with_handouts("COH-204", COH_204, COH_204_HANDOUTS),
+    "COH-205": _with_handouts("COH-205", COH_205, COH_205_HANDOUTS),
+    "COH-206": _with_handouts("COH-206", COH_206, COH_206_HANDOUTS),
+    "COH-207": _with_handouts("COH-207", COH_207, COH_207_HANDOUTS),
+    "COH-208": _with_handouts("COH-208", COH_208, COH_208_HANDOUTS),
+    "COH-209": _with_handouts("COH-209", COH_209, COH_209_HANDOUTS),
+    "COH-210": _with_handouts("COH-210", COH_210, COH_210_HANDOUTS),
+    "COH-211": _with_handouts("COH-211", COH_211, COH_211_HANDOUTS),
+    "COH-212": _with_handouts("COH-212", COH_212, COH_212_HANDOUTS),
+    "COH-213": _with_handouts("COH-213", COH_213, COH_213_HANDOUTS),
+    "COH-301": _with_handouts("COH-301", COH_301, COH_301_HANDOUTS),
+    "COH-302": _with_handouts("COH-302", COH_302, COH_302_HANDOUTS),
+    "COH-303": _with_handouts("COH-303", COH_303, COH_303_HANDOUTS),
+    "COH-304": _with_handouts("COH-304", COH_304, COH_304_HANDOUTS),
+    "COH-305": _with_handouts("COH-305", COH_305, COH_305_HANDOUTS),
+    "COH-306": _with_handouts("COH-306", COH_306, COH_306_HANDOUTS),
+    "COH-307": _with_handouts("COH-307", COH_307, COH_307_HANDOUTS),
+    "COH-308": _with_handouts("COH-308", COH_308, COH_308_HANDOUTS),
+    "COH-309": _with_handouts("COH-309", COH_309, COH_309_HANDOUTS),
+    "COH-310": _with_handouts("COH-310", COH_310, COH_310_HANDOUTS),
+    "COH-311": _with_handouts("COH-311", COH_311, COH_311_HANDOUTS),
+    "COH-312": _with_handouts("COH-312", COH_312, COH_312_HANDOUTS),
+    "COH-313": _with_handouts("COH-313", COH_313, COH_313_HANDOUTS),
+    "COH-401": _with_handouts("COH-401", COH_401, COH_401_HANDOUTS),
+    "COH-402": _with_handouts("COH-402", COH_402, COH_402_HANDOUTS),
+    "COH-403": _with_handouts("COH-403", COH_403, COH_403_HANDOUTS),
+    "COH-404": _with_handouts("COH-404", COH_404, COH_404_HANDOUTS),
+    "COH-405": _with_handouts("COH-405", COH_405, COH_405_HANDOUTS),
+    "COH-406": _with_handouts("COH-406", COH_406, COH_406_HANDOUTS),
+    "COH-407": _with_handouts("COH-407", COH_407, COH_407_HANDOUTS),
+    "COH-408": _with_handouts("COH-408", COH_408, COH_408_HANDOUTS),
+    "COH-409": _with_handouts("COH-409", COH_409, COH_409_HANDOUTS),
+    "COH-410": _with_handouts("COH-410", COH_410, COH_410_HANDOUTS),
+    "COH-411": _with_handouts("COH-411", COH_411, COH_411_HANDOUTS),
+    "COH-412": _with_handouts("COH-412", COH_412, COH_412_HANDOUTS),
+    "CN-101": _with_handouts("CN-101", CN_101, CN_101_HANDOUTS),
+    "CN-102": _with_handouts("CN-102", CN_102, CN_102_HANDOUTS),
+    "CN-103": _with_handouts("CN-103", CN_103, CN_103_HANDOUTS),
+    "CN-104": _with_handouts("CN-104", CN_104, CN_104_HANDOUTS),
+    "CN-105": _with_handouts("CN-105", CN_105, CN_105_HANDOUTS),
+    "CN-106": _with_handouts("CN-106", CN_106, CN_106_HANDOUTS),
+    "CN-107": _with_handouts("CN-107", CN_107, CN_107_HANDOUTS),
+    "CN-108": _with_handouts("CN-108", CN_108, CN_108_HANDOUTS),
+    "CN-109": _with_handouts("CN-109", CN_109, CN_109_HANDOUTS),
+    "CN-110": _with_handouts("CN-110", CN_110, CN_110_HANDOUTS),
+    "CN-201": _with_handouts("CN-201", CN_201, CN_201_HANDOUTS),
+    "CN-202": _with_handouts("CN-202", CN_202, CN_202_HANDOUTS),
+    "CN-203": _with_handouts("CN-203", CN_203, CN_203_HANDOUTS),
+    "CN-204": _with_handouts("CN-204", CN_204, CN_204_HANDOUTS),
+    "CN-205": _with_handouts("CN-205", CN_205, CN_205_HANDOUTS),
+    "CN-206": _with_handouts("CN-206", CN_206, CN_206_HANDOUTS),
+    "CN-207": _with_handouts("CN-207", CN_207, CN_207_HANDOUTS),
+    "CN-208": _with_handouts("CN-208", CN_208, CN_208_HANDOUTS),
+    "CN-209": _with_handouts("CN-209", CN_209, CN_209_HANDOUTS),
+    "CN-210": _with_handouts("CN-210", CN_210, CN_210_HANDOUTS),
+    "CN-301": _with_handouts("CN-301", CN_301, CN_301_HANDOUTS),
+    "CN-302": _with_handouts("CN-302", CN_302, CN_302_HANDOUTS),
+    "CN-303": _with_handouts("CN-303", CN_303, CN_303_HANDOUTS),
+    "CN-304": _with_handouts("CN-304", CN_304, CN_304_HANDOUTS),
+    "CN-305": _with_handouts("CN-305", CN_305, CN_305_HANDOUTS),
+    "CN-306": _with_handouts("CN-306", CN_306, CN_306_HANDOUTS),
+    "CN-307": _with_handouts("CN-307", CN_307, CN_307_HANDOUTS),
+    "CN-308": _with_handouts("CN-308", CN_308, CN_308_HANDOUTS),
+    "CN-309": _with_handouts("CN-309", CN_309, CN_309_HANDOUTS),
+    "CN-310": _with_handouts("CN-310", CN_310, CN_310_HANDOUTS),
+    "CN-311": _with_handouts("CN-311", CN_311, CN_311_HANDOUTS),
+    "CN-312": _with_handouts("CN-312", CN_312, CN_312_HANDOUTS),
+    "CN-313": _with_handouts("CN-313", CN_313, CN_313_HANDOUTS),
+    "CN-314": _with_handouts("CN-314", CN_314, CN_314_HANDOUTS),
+    "CN-315": _with_handouts("CN-315", CN_315, CN_315_HANDOUTS),
+    "CN-401": _with_handouts("CN-401", CN_401, CN_401_HANDOUTS),
+    "CN-402": _with_handouts("CN-402", CN_402, CN_402_HANDOUTS),
+    "CN-403": _with_handouts("CN-403", CN_403, CN_403_HANDOUTS),
+    "CN-404": _with_handouts("CN-404", CN_404, CN_404_HANDOUTS),
+    "CN-405": _with_handouts("CN-405", CN_405, CN_405_HANDOUTS),
+    "CN-211": _with_handouts("CN-211", CN_211, CN_211_HANDOUTS),
+    "CN-212": _with_handouts("CN-212", CN_212, CN_212_HANDOUTS),
+    "CN-213": _with_handouts("CN-213", CN_213, CN_213_HANDOUTS),
+    "CN-214": _with_handouts("CN-214", CN_214, CN_214_HANDOUTS),
+    "CN-215": _with_handouts("CN-215", CN_215, CN_215_HANDOUTS),
+    "CN-316": _with_handouts("CN-316", CN_316, CN_316_HANDOUTS),
+    "CN-406": _with_handouts("CN-406", CN_406, CN_406_HANDOUTS),
+    "CN-407": _with_handouts("CN-407", CN_407, CN_407_HANDOUTS),
+    "CN-408": _with_handouts("CN-408", CN_408, CN_408_HANDOUTS),
+    "CN-409": _with_handouts("CN-409", CN_409, CN_409_HANDOUTS),
+    "CN-410": _with_handouts("CN-410", CN_410, CN_410_HANDOUTS),
+    "CN-501": _with_handouts("CN-501", CN_501, CN_501_HANDOUTS),
+    "CN-502": _with_handouts("CN-502", CN_502, CN_502_HANDOUTS),
+    "CN-503": _with_handouts("CN-503", CN_503, CN_503_HANDOUTS),
+    "CN-504": _with_handouts("CN-504", CN_504, CN_504_HANDOUTS),
+    "CN-505": _with_handouts("CN-505", CN_505, CN_505_HANDOUTS),
+    "CN-506": _with_handouts("CN-506", CN_506, CN_506_HANDOUTS),
+    "CN-507": _with_handouts("CN-507", CN_507, CN_507_HANDOUTS),
+    "CN-508": _with_handouts("CN-508", CN_508, CN_508_HANDOUTS),
+    "CN-509": _with_handouts("CN-509", CN_509, CN_509_HANDOUTS),
+    "CN-601": _with_handouts("CN-601", CN_601, CN_601_HANDOUTS),
+    "CN-602": _with_handouts("CN-602", CN_602, CN_602_HANDOUTS),
+    "CN-603": _with_handouts("CN-603", CN_603, CN_603_HANDOUTS),
+    "CN-604": _with_handouts("CN-604", CN_604, CN_604_HANDOUTS),
+    "CN-605": _with_handouts("CN-605", CN_605, CN_605_HANDOUTS),
+    "CN-606": _with_handouts("CN-606", CN_606, CN_606_HANDOUTS),
+    "CN-607": _with_handouts("CN-607", CN_607, CN_607_HANDOUTS),
+    "CN-608": _with_handouts("CN-608", CN_608, CN_608_HANDOUTS),
+    "CN-609": _with_handouts("CN-609", CN_609, CN_609_HANDOUTS),
+    "CN-610": _with_handouts("CN-610", CN_610, CN_610_HANDOUTS),
+    "CN-611": _with_handouts("CN-611", CN_611, CN_611_HANDOUTS),
+    "CN-612": _with_handouts("CN-612", CN_612, CN_612_HANDOUTS),
+    "CN-613": _with_handouts("CN-613", CN_613, CN_613_HANDOUTS),
+    "CN-614": _with_handouts("CN-614", CN_614, CN_614_HANDOUTS),
+    "CN-615": _with_handouts("CN-615", CN_615, CN_615_HANDOUTS),
+    "CN-616": _with_handouts("CN-616", CN_616, CN_616_HANDOUTS),
+    "CN-617": _with_handouts("CN-617", CN_617, CN_617_HANDOUTS),
+    "CN-618": _with_handouts("CN-618", CN_618, CN_618_HANDOUTS),
+    "CN-619": _with_handouts("CN-619", CN_619, CN_619_HANDOUTS),
+    "CN-620": _with_handouts("CN-620", CN_620, CN_620_HANDOUTS),
+    "CN-621": _with_handouts("CN-621", CN_621, CN_621_HANDOUTS),
+    "CN-622": _with_handouts("CN-622", CN_622, CN_622_HANDOUTS),
+    "CN-623": _with_handouts("CN-623", CN_623, CN_623_HANDOUTS),
+    "CN-624": _with_handouts("CN-624", CN_624, CN_624_HANDOUTS),
+    "CN-625": _with_handouts("CN-625", CN_625, CN_625_HANDOUTS),
+    "CN-626": _with_handouts("CN-626", CN_626, CN_626_HANDOUTS),
+    "CN-627": _with_handouts("CN-627", CN_627, CN_627_HANDOUTS),
+    "CN-628": _with_handouts("CN-628", CN_628, CN_628_HANDOUTS),
+    "CN-629": _with_handouts("CN-629", CN_629, CN_629_HANDOUTS),
+    "CN-630": _with_handouts("CN-630", CN_630, CN_630_HANDOUTS),
+    "CN-631": _with_handouts("CN-631", CN_631, CN_631_HANDOUTS),
+    "CN-632": _with_handouts("CN-632", CN_632, CN_632_HANDOUTS),
+    "CN-633": _with_handouts("CN-633", CN_633, CN_633_HANDOUTS),
+    "CN-634": _with_handouts("CN-634", CN_634, CN_634_HANDOUTS),
+    "CN-635": _with_handouts("CN-635", CN_635, CN_635_HANDOUTS),
+    "CN-636": _with_handouts("CN-636", CN_636, CN_636_HANDOUTS),
+    "CN-637": _with_handouts("CN-637", CN_637, CN_637_HANDOUTS),
+    "CN-638": _with_handouts("CN-638", CN_638, CN_638_HANDOUTS),
+    "CN-639": _with_handouts("CN-639", CN_639, CN_639_HANDOUTS),
+    "CN-640": _with_handouts("CN-640", CN_640, CN_640_HANDOUTS),
 }

@@ -111,6 +111,57 @@ class TeacherSchedulingTests(ClassSessionViewTestCase):
         )
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
 
+    def test_a_class_may_start_right_about_now(self):
+        """The picker only resolves to the minute and the teacher keeps
+        filling the form after choosing a slot, so a start a moment either
+        side of now is a class starting now, not a class in the past."""
+        ClassSession.objects.all().delete()
+        self.client.force_authenticate(user=self.teacher)
+
+        response = self.client.post(
+            reverse("class-sessions-teacher-list"),
+            {
+                "course": self.course.pk,
+                "title": "Starting now",
+                "scheduled_at": (timezone.now() - timedelta(seconds=30)).isoformat(),
+                "duration_minutes": 30,
+            },
+            format="json",
+        )
+        self.assertEqual(response.status_code, status.HTTP_201_CREATED)
+
+    def test_a_class_that_has_already_started_can_still_be_edited(self):
+        """The form posts every field back, so an edit to the title of a
+        running class carries that class's start time with it. Only a slot
+        being moved has to be in the future."""
+        self.client.force_authenticate(user=self.teacher)
+        response = self.client.patch(
+            reverse("class-sessions-teacher-detail", args=[self.live_session.pk]),
+            {
+                "title": "Live now (corrected)",
+                "scheduled_at": self.live_session.scheduled_at.isoformat(),
+                "takes_notes": False,
+            },
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.live_session.refresh_from_db()
+        self.assertEqual(self.live_session.title, "Live now (corrected)")
+        self.assertFalse(self.live_session.takes_notes)
+
+    def test_an_edit_still_cannot_move_a_class_into_the_past(self):
+        self.client.force_authenticate(user=self.teacher)
+        response = self.client.patch(
+            reverse("class-sessions-teacher-detail", args=[self.session.pk]),
+            {"scheduled_at": (timezone.now() - timedelta(days=1)).isoformat()},
+            format="json",
+        )
+
+        self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
+        self.session.refresh_from_db()
+        self.assertGreater(self.session.scheduled_at, timezone.now())
+
     def test_a_double_booking_is_refused_with_an_explanation(self):
         self.client.force_authenticate(user=self.teacher)
         response = self.client.post(

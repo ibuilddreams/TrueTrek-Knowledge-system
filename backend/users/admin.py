@@ -1,6 +1,8 @@
 from django.contrib import admin
 from django.contrib.auth.admin import UserAdmin
 
+from common.admin_export import ExportCsvMixin
+
 from .forms import CustomAdminAuthenticationForm
 from .models import CustomUser, UserProfile
 
@@ -16,7 +18,7 @@ class UserProfileInline(admin.StackedInline):
 
 
 @admin.register(CustomUser)
-class CustomUserAdmin(UserAdmin):
+class CustomUserAdmin(ExportCsvMixin, UserAdmin):
     model = CustomUser
     inlines = (UserProfileInline,)
 
@@ -75,6 +77,54 @@ class CustomUserAdmin(UserAdmin):
             },
         ),
     )
+
+    export_filename_prefix = "users"
+    # The account, then the profile attached to it. Nothing from the password
+    # column: an export is a file that gets emailed around, and a hash is still
+    # a credential.
+    export_fields = (
+        ("ID", "id"),
+        ("Username", "username"),
+        ("Email", "email"),
+        ("First name", "first_name"),
+        ("Last name", "last_name"),
+        ("Full name", "name"),
+        ("Role", "get_role_display"),
+        ("Gender", "get_gender_display"),
+        ("Account status", "get_account_status_display"),
+        ("Verified", "is_verified"),
+        ("Advisor", "is_advisor"),
+        ("Active", "is_active"),
+        ("Staff", "is_staff"),
+        ("Superuser", "is_superuser"),
+        ("Groups", "export_groups"),
+        ("Date joined", "date_joined"),
+        ("Last login", "last_login"),
+        ("Last login IP", "last_login_ip"),
+        ("Created at", "created_at"),
+        ("Updated at", "updated_at"),
+        ("Phone number", "profile__phone_number"),
+        ("Date of birth", "profile__date_of_birth"),
+        ("Address", "profile__address"),
+        ("City", "profile__city"),
+        ("Country", "profile__country"),
+        ("Website", "profile__website"),
+        ("Bio", "profile__bio"),
+    )
+
+    def get_export_queryset(self, request, queryset):
+        # A profile and the groups per row, or the export would be one query
+        # per user per column. `profile` is missing on accounts created before
+        # the row existed, which the accessor reads as an empty cell.
+        return queryset.select_related("profile").prefetch_related("groups")
+
+    def get_export_object_label(self, obj):
+        # `str(user)` is "<username> (ROLE)", and the role in a filename is
+        # noise beside a username that is already unique.
+        return obj.get_username()
+
+    def export_groups(self, obj):
+        return [group.name for group in obj.groups.all()]
 
 
 @admin.register(UserProfile)
