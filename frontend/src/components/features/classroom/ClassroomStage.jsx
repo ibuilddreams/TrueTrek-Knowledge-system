@@ -6,12 +6,14 @@ import FullScreenPortal from "@/components/features/portal/lesson-view/FullScree
 import PingDotSpinner from "@/components/ui/PingDotSpinner";
 import { useAgoraCall, CALL_STATUS } from "@/hooks/useAgoraCall";
 import { useClassNotes, useClassNotesControls } from "@/hooks/useClassNotes";
+import { useClassNotesRecorder } from "@/hooks/useClassNotesRecorder";
+import { useClassroomClosing } from "@/hooks/useClassroomClosing";
 import {
   useClassRecording,
   useClassRecordingControls,
 } from "@/hooks/useClassRecording";
 import { getApiErrorMessage } from "@/lib/apiErrors";
-import { toastError, toastSuccess } from "@/lib/toast";
+import { toastError, toastInfo, toastSuccess } from "@/lib/toast";
 import ClassroomControls from "./ClassroomControls";
 import ClassroomParticipantsPanel from "./ClassroomParticipantsPanel";
 import VideoTile from "./VideoTile";
@@ -56,10 +58,12 @@ export default function ClassroomStage({ session, onClose }) {
   const isRecordingProcessing = Boolean(recording.data?.is_processing);
 
   // Notes are fetched separately from the recording and never derived from
-  // it: they are a different Agora product on a different per-class switch,
-  // so a class can be transcribed and not filmed, filmed and not
-  // transcribed, or one of the two can be unavailable on this server while
-  // the other works.
+  // it: different feature, different bill, different per-class switch — so a
+  // class can be written up and not filmed, filmed and not written up, or
+  // one of the two can be unavailable on this server while the other works.
+  // They do not even share a source: a recording always comes from Agora,
+  // while the notes are written from whatever this server is configured to
+  // listen with (`capture.mode` below).
   const notes = useClassNotes(session.id, {
     poll: status === CALL_STATUS.CONNECTED,
   });
@@ -68,6 +72,38 @@ export default function ClassroomStage({ session, onClose }) {
     ? Boolean(notes.data.is_transcribing)
     : call.wasTakingNotesAtJoin;
   const isWritingNotes = Boolean(notes.data?.is_writing);
+
+  // On a server that writes classes up from their own audio rather than from
+  // a transcription service, the recorder *is this browser* — but only for
+  // the one person the run nominated. Everybody else in the class watches the
+  // same "notes are being taken" badge and records nothing, which is what
+  // stops a co-instructor's classroom posting a second copy of the hour.
+  // The join payload answers this too, and answers it first — the notes
+  // query is a second request racing the same page load, and the seconds
+  // between them are the start of the lesson. Whichever has arrived wins,
+  // with the polled answer taking over once it has.
+  const notesCapture = notes.data?.capture || call.notesCaptureAtJoin || null;
+  const isNotesCapturer =
+    notesCapture?.mode === "local" &&
+    call.localUid != null &&
+    notesCapture.capturer_id === call.localUid;
+
+  const notesRecorder = useClassNotesRecorder({
+    sessionId: session.id,
+    active:
+      isNotesCapturer && isTakingNotes && status === CALL_STATUS.CONNECTED,
+    runId: notesCapture?.run_id ?? null,
+    segmentSeconds: notesCapture?.segment_seconds,
+    audioBitrate: notesCapture?.audio_bitrate,
+    mimeTypes: notesCapture?.mime_types,
+    localAudioTrack: call.localAudioTrack,
+    // The uid the recorder files the teacher's own turns under — the same
+    // number the roster names them by, which is what lets the transcript say
+    // "Michael:" instead of "Speaker:".
+    localUid: call.localUid,
+    isMicOn: call.isMicOn,
+    remoteUsers: call.remoteUsers,
+  });
 
   const handleToggleRecording = async () => {
     const mutation = isRecording ? recordingControls.stop : recordingControls.start;
@@ -90,6 +126,14 @@ export default function ClassroomStage({ session, onClose }) {
   };
 
   const handleToggleNotes = async () => {
+    // Stopping mid-class is a **pause**, not the end of the notes: the last
+    // piece of audio goes up without `end`, so it joins everything else on
+    // this run and the next stretch appends to it. One class taken in two
+    // sittings comes out as one set of notes. Awaited, not fired off — the
+    // segment has to be on the server before the server is told to park it.
+    if (isTakingNotes) {
+      await notesRecorder.stopAndFlush();
+    }
     const mutation = isTakingNotes ? notesControls.stop : notesControls.start;
     try {
       const response = await mutation.mutateAsync();
@@ -114,6 +158,14 @@ export default function ClassroomStage({ session, onClose }) {
   useEffect(() => {
     join();
   }, [join]);
+
+  // A browser that cannot record is the one failure in this path the teacher
+  // has to hear about while there is still time to act on it — the class
+  // would otherwise run to the end and produce nothing, and nobody would
+  // know until the notes never arrived. Said once, not on every poll.
+  useEffect(() => {
+    if (notesRecorder.error) toastError(notesRecorder.error);
+  }, [notesRecorder.error]);
 
   const rosterByUid = useMemo(() => {
     const map = new Map();
@@ -157,9 +209,47 @@ export default function ClassroomStage({ session, onClose }) {
   ]);
 
   const handleLeave = async () => {
-    await leave();
+    // The board goes down first, on purpose. Leaving the call flips the
+    // status, which drops `WhiteboardPanel` from the tree — so the room
+    // would otherwise be torn down by an unmount racing the classroom's own
+    // teardown, and a Netless room asked for anything after it has begun
+    // disconnecting logs the complaint whether or not the caller catches it.
+    // Closing it here means it closes while everything is still up.
+    setIsWhiteboardOpen(false);
+
+    // `end: true` — unlike the stop button, this really is the end of the
+    // class, and that closing upload is what starts the write-up. It has to
+    // be on the server before the leave ping, which is the other thing that
+    // finishes the notes. A failure to flush must never trap somebody in a
+    // call they are trying to leave.
+    try {
+      await notesRecorder.stopAndFlush({ end: true });
+    } catch {
+      // The server's own deadline finishes a run whose last upload never
+      // landed (`_ensure_local_notes_progress`).
+    }
+    // `ended: true` — this is somebody actually leaving, not a reload or a
+    // remount, and it is what lets the server finish the notes and stop the
+    // recording rather than parking them for a rejoin that is not coming.
+    await leave({ ended: true });
     onClose?.();
   };
+
+  // A class booked for an hour is over after an hour. The server shuts its
+  // door on the stroke of the end, so the room has to close with it rather
+  // than leaving everyone in a call they could never rejoin — and for the
+  // teacher, this is also what sets the notes going. Warned twice on the way
+  // there, because being cut off mid-sentence without notice is worse than
+  // the overrun it prevents.
+  useClassroomClosing({
+    endsAt: session.ends_at,
+    enabled: status === CALL_STATUS.CONNECTED,
+    onWarn: (message) => toastInfo(message),
+    onClose: async () => {
+      toastInfo("This class has ended.");
+      await handleLeave();
+    },
+  });
 
   const renderTile = (uid, { large = false } = {}) => {
     const isLocal = uid === call.localUid;
@@ -380,17 +470,12 @@ export default function ClassroomStage({ session, onClose }) {
             isRecordingAvailable={Boolean(
               recording.data?.configured ?? session.recording_configured,
             )}
-            isRecordingAllowed={Boolean(
-              recording.data?.is_recorded ?? session.is_recorded,
-            )}
             isRecordingBusy={recordingControls.isBusy}
             isTakingNotes={isTakingNotes}
+            isNotesPaused={Boolean(notes.data?.is_paused)}
             isWritingNotes={isWritingNotes}
             isNotesAvailable={Boolean(
               notes.data?.configured ?? session.notes_configured,
-            )}
-            isNotesAllowed={Boolean(
-              notes.data?.takes_notes ?? session.takes_notes,
             )}
             isNotesBusy={notesControls.isBusy}
             onToggleRecording={handleToggleRecording}

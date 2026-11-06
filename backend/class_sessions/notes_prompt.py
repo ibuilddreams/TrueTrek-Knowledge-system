@@ -181,3 +181,173 @@ def build_prompt(*, session, transcript, agenda=None):
         "contain mishearings. Write the notes from this and from nothing else.\n\n"
         f"{transcript}\n"
     )
+
+
+# ---------------------------------------------------------------------------
+# Turning the class's own audio into a transcript
+# ---------------------------------------------------------------------------
+#
+# Only used by the **local** notes source, where there is no transcription
+# service in the path at all: the teacher's browser records the room and the
+# model is asked to write down what it hears. Everything downstream — the
+# prompt above, the schema, the document, the emails — is identical, because
+# this step produces exactly what Agora's captions produced: a transcript.
+#
+# Two rules here are the same two that govern the notes, for the same reasons,
+# and are if anything more easily broken at this step:
+#
+# * **Nothing may be added.** A model asked to "transcribe" a muffled sentence
+#   will cheerfully produce a fluent one. A transcript is evidence — the
+#   teacher reads it to check the notes against — so an unclear passage is
+#   marked unclear rather than smoothed over.
+#
+# * **A name is used only where it was measured, never where it was guessed.**
+#   What reaches the model is one mixed track, and no amount of listening to
+#   a mix tells you which of three voices belongs to whom. So the browser
+#   that did the mixing writes down who was speaking when
+#   (`ClassSessionNotesAudio.speakers`), and that table — not the model's ear
+#   — is what puts a name on a line. Where the table does not say, or two
+#   people talk over each other, the turn is "Speaker". A name attached to
+#   the wrong voice is worse than no name at all, and this is a record of a
+#   room that may be full of minors.
+
+TRANSCRIPT_SCHEMA = {
+    "type": "object",
+    "properties": {
+        "has_speech": {
+            "type": "boolean",
+            "description": (
+                "False if this recording contains no speech at all — silence, room "
+                "noise, a held microphone. True if anybody said anything."
+            ),
+        },
+        "transcript": {
+            "type": "string",
+            "description": (
+                "What was said, verbatim, as plain text. One line per turn, each "
+                "beginning with the speaker's name and a colon — 'Manan: ', "
+                "'Ali: ' — taken from the list of who was speaking when, or "
+                "'Speaker: ' where that list does not say. Empty if has_speech "
+                "is false."
+            ),
+        },
+    },
+    "required": ["has_speech", "transcript"],
+}
+
+TRANSCRIPT_FRAMING = (
+    "You are transcribing a recording of a school or college class. The audio is "
+    "everybody in a video call mixed into one track, so voices overlap, some "
+    "people are far from their microphone and the quality varies.\n\n"
+    "Write down what was said and nothing else. This is a record, not a "
+    "summary: do not shorten it, do not tidy the grammar into something nobody "
+    "said, and do not complete or correct an explanation from your own "
+    "knowledge even when you can hear that it is wrong or unfinished. Where you "
+    "genuinely cannot make out a word, write [inaudible] rather than guessing — "
+    "somebody will read this to check what the class was actually told.\n\n"
+    "Lay it out as a conversation, one line per turn, each beginning with the "
+    "speaker's name and a colon:\n\n"
+    "Manan: so the first thing we need to do is set the course up\n"
+    "Ali: do we do that before or after the enrolment?\n"
+    "Manan: after, always after\n\n"
+    "Start a new line every time the speaker changes, and keep the turns in the "
+    "order they happened.\n\n"
+    "**Use only the names in the list below**, which was measured by the "
+    "software while the class was running — it is not a guess and it is not "
+    "something to improve on. Where the list does not cover a moment, where two "
+    "people are talking over each other, or where you are not confident which "
+    "of them is speaking, write 'Speaker: ' instead. Never invent a name, never "
+    "use a name you merely heard somebody say, and never move a line to a "
+    "different speaker because it sounds more like something they would say. A "
+    "sentence filed under the wrong person is worse than one filed under "
+    "nobody.\n\n"
+    "If there is no speech in this recording at all, set has_speech to false "
+    "and leave the transcript empty. Do not describe the silence."
+)
+
+
+def _speaker_block(speakers):
+    """Who was speaking when, as a table the model reads alongside the audio.
+
+    `speakers` is `[(seconds_from_the_start_of_this_recording, name), ...]`
+    already resolved to names by the caller. Consecutive entries for the same
+    person are collapsed, because the browser samples several times a second
+    and the model does not need to be told four times that Ali is still
+    talking.
+    """
+    lines = []
+    last_name = None
+    for at, name in speakers or []:
+        if name == last_name:
+            continue
+        last_name = name
+        minutes, seconds = divmod(int(max(0, at)), 60)
+        lines.append(f"{minutes:d}:{seconds:02d} — {name}")
+    return "\n".join(lines)
+
+
+def build_transcript_prompt(
+    *, session, part_index, part_count, previous_tail="", speakers=None
+):
+    """The instruction for one segment of a class's audio.
+
+    The class's own title and agenda are given for the same reason they are
+    given to the notes: they tell the model which technical terms and proper
+    nouns are likely in this room, which is most of the difference between
+    "first normal form" and "first normal form" misheard. They are context for
+    listening, never something to write up.
+
+    `previous_tail` is the last few lines of the previous segment. A class is
+    cut on a timer, so a sentence genuinely straddles two recordings — handing
+    the model the end of the last one is what stops the first line of this one
+    starting mid-thought. It is explicitly marked as *not* to be repeated.
+
+    `speakers` is `[(seconds, name), ...]` for this recording, measured by the
+    browser that mixed it. Without it every turn is "Speaker", which is the
+    honest answer for a single mixed track — the model cannot hear whose
+    voice is whose, and must not pretend otherwise.
+    """
+    position = (
+        f"This is part {part_index + 1} of {part_count} of one class."
+        if part_count > 1
+        else "This is the recording of one class."
+    )
+    continuation = (
+        "\n\nThe previous part ended with the lines below. They are here only so "
+        "you can hear where this part picks up — do NOT repeat them in your "
+        "answer, which must contain only what is said in this recording.\n\n"
+        f"{previous_tail}\n"
+        if previous_tail
+        else ""
+    )
+
+    agenda_lines = [str(line).strip() for line in (session.agenda or []) if str(line).strip()]
+    agenda_block = (
+        "\n".join(f"- {line}" for line in agenda_lines) if agenda_lines else "(none given)"
+    )
+
+    timeline = _speaker_block(speakers)
+    speaker_section = (
+        "WHO WAS SPEAKING, AND WHEN — measured by the software while the class "
+        "ran, as minutes:seconds from the start of *this* recording. These are "
+        "the only names you may use.\n\n"
+        f"{timeline}\n"
+        if timeline
+        else "WHO WAS SPEAKING — not known for this recording. Begin every turn "
+        "with 'Speaker: '.\n"
+    )
+
+    return (
+        f"{TRANSCRIPT_FRAMING}\n\n"
+        "---\n"
+        f"{position}\n\n"
+        f"{speaker_section}\n"
+        "---\n"
+        "CONTEXT — what this class was scheduled to be. Use it only to hear the "
+        "words better: it tells you which subject terms are likely. Do not write "
+        "any of it down, and do not assume the class stuck to it.\n\n"
+        f"Course: {session.course.code} — {session.course.title}\n"
+        f"Scheduled title: {session.title}\n"
+        f"Planned agenda:\n{agenda_block}"
+        f"{continuation}"
+    )

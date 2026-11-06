@@ -336,7 +336,9 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
                 Recording starts when you open the room and stops when you
                 leave. Everyone in the class is shown that it is on, and the
                 students on this course are notified when the recording is
-                ready to watch back.
+                ready to watch back. Leave it unticked and nothing starts by
+                itself — you can still start and stop recording whenever you
+                like from inside the class.
               </span>
             </span>
           </label>
@@ -362,8 +364,10 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
                 notes afterwards — a summary, what was covered, the key points
                 and any homework you set. Everyone in the class is shown that
                 notes are being taken, and the students on this course get
-                them when they&apos;re ready. This is separate from recording:
-                you can have either, both or neither.
+                them when they&apos;re ready. Leave it unticked and nothing
+                starts by itself — you can still start and stop the notes
+                whenever you like from inside the class. This is separate from
+                recording: you can have either, both or neither.
               </span>
             </span>
           </label>

@@ -112,6 +112,28 @@ class LiveStateTests(ClassroomTestCase):
         self.assertTrue(can_join_now(session, self.teacher))
         self.assertTrue(can_join_now(session, self.student))
 
+    def test_a_class_is_over_the_moment_its_time_is_up(self):
+        """A class booked for an hour is over after an hour.
+
+        There is no overrun grace (`LIVE_GRACE_MINUTES_AFTER` is zero): the
+        card says ENDED, the door shuts, and the classroom closes itself on
+        the stroke of it. All three read that one number, so they can never
+        disagree about whether a class is still on.
+        """
+        just_over = make_session(
+            course=self.course, teacher=self.teacher, starts_in_minutes=-61, duration=60
+        )
+        self.assertEqual(live_state(just_over), ENDED)
+        self.assertFalse(can_join_now(just_over, self.teacher))
+        self.assertFalse(can_join_now(just_over, self.student))
+
+    def test_a_class_is_still_live_in_its_last_minute(self):
+        nearly_over = make_session(
+            course=self.course, teacher=self.teacher, starts_in_minutes=-59, duration=60
+        )
+        self.assertEqual(live_state(nearly_over), LIVE)
+        self.assertTrue(can_join_now(nearly_over, self.student))
+
     def test_nobody_joins_a_cancelled_class(self):
         session = make_session(
             course=self.course,

@@ -23,6 +23,8 @@ risk lives:
 """
 
 import json
+import shutil
+import tempfile
 from datetime import timedelta
 from unittest import mock
 
@@ -42,10 +44,29 @@ from .factories import assign_teacher, enrol, make_course, make_session, make_us
 APP_ID = "a" * 32
 APP_CERTIFICATE = "b" * 32
 
+_MEDIA_ROOT = tempfile.mkdtemp(prefix="class-notes-tests-")
+
+
+def tearDownModule():
+    shutil.rmtree(_MEDIA_ROOT, ignore_errors=True)
+
+
 NOTES_SETTINGS = dict(
+    # Everything this module renders or uploads lands here and is
+    # thrown away with it. Without this a suite run leaves hundreds of
+    # orphaned .webm segments and .pdf write-ups in the real media
+    # folder, which is both litter and a confusing thing to find there
+    # when debugging a class that genuinely produced nothing.
+    MEDIA_ROOT=_MEDIA_ROOT,
     AGORA_APP_ID=APP_ID,
     AGORA_APP_CERTIFICATE=APP_CERTIFICATE,
     CLASS_NOTES_ENABLED=True,
+    # This module is the *Agora* transcription path throughout: the bot in
+    # the channel, the captions in the bucket, the folder that is listed
+    # until it stops growing. The deployment default is the local source
+    # (the classroom's own audio, no bucket at all) and is covered by
+    # test_local_notes.py — so it is named here rather than relied on.
+    CLASS_NOTES_SOURCE="agora",
     CLASS_NOTES_LANGUAGES="en-US",
     CLASS_NOTES_EMAIL_ENABLED=True,
     AGORA_CUSTOMER_ID="",
@@ -316,13 +337,25 @@ class StartNotesTests(NotesTestCase):
         self.assertEqual(first.pk, second.pk)
         self.assertEqual(self.session.notes_runs.count(), 1)
 
-    def test_a_class_set_not_to_take_notes_refuses(self):
+    def test_a_class_set_not_to_take_notes_can_still_be_written_up(self):
+        """`takes_notes` says whether a class starts writing itself up the
+        moment its teacher opens the room — not whether it is allowed to.
+
+        A teacher who left the box unticked when they scheduled the class has
+        to be able to press the button during it, and one who decides halfway
+        through that the rest is worth keeping has to be able to say so. The
+        automatic half is pinned by
+        `ClassroomIntegrationTests.test_a_class_set_not_to_take_notes_is_still_recorded`
+        and its sibling, which is where that flag really does decide.
+        """
         self.session.takes_notes = False
         self.session.save(update_fields=["takes_notes"])
 
-        with self.assertRaises(NotesNotConfiguredError):
-            services.start_notes(session=self.session, user=self.teacher)
-        self.assertEqual(self.session.notes_runs.count(), 0)
+        with mock.patch.object(services, "_spawn"):
+            notes = services.start_notes(session=self.session, user=self.teacher)
+
+        self.assertEqual(notes.status, ClassSessionNotes.NotesStatus.STARTING)
+        self.assertEqual(self.session.notes_runs.count(), 1)
 
     def test_a_cancelled_class_refuses(self):
         self.session.status = ClassSession.SessionStatus.CANCELLED
@@ -446,12 +479,23 @@ class ClassroomIntegrationTests(NotesTestCase):
         self.assertFalse(credentials["is_taking_notes"])
         self.assertTrue(credentials["is_recording"])
 
-    def test_the_teacher_leaving_stops_the_notes(self):
+    def test_the_teacher_leaving_for_good_stops_the_notes(self):
+        services.issue_join_credentials(session=self.session, user=self.teacher)
+        services.record_leave(session=self.session, user=self.teacher, ended=True)
+
+        notes = self.session.notes_runs.first()
+        self.assertEqual(notes.status, ClassSessionNotes.NotesStatus.COLLECTING)
+
+    def test_a_reload_does_not_end_the_notes(self):
+        """A page reload, a navigation and React's development double-mount
+        all send the same "left" ping as the red button. Treating them alike
+        wrote a class up two seconds into it, before its teacher's browser
+        had recorded a word."""
         services.issue_join_credentials(session=self.session, user=self.teacher)
         services.record_leave(session=self.session, user=self.teacher)
 
         notes = self.session.notes_runs.first()
-        self.assertEqual(notes.status, ClassSessionNotes.NotesStatus.COLLECTING)
+        self.assertEqual(notes.status, ClassSessionNotes.NotesStatus.STARTING)
 
     def test_a_student_leaving_changes_nothing(self):
         services.issue_join_credentials(session=self.session, user=self.teacher)
@@ -464,7 +508,7 @@ class ClassroomIntegrationTests(NotesTestCase):
     def test_leaving_succeeds_even_when_stopping_the_notes_throws(self):
         services.issue_join_credentials(session=self.session, user=self.teacher)
         with mock.patch.object(services, "stop_notes", side_effect=ValueError("boom")):
-            services.record_leave(session=self.session, user=self.teacher)
+            services.record_leave(session=self.session, user=self.teacher, ended=True)
         self.assertTrue(
             self.session.attendances.filter(user=self.teacher).exists()
         )
@@ -854,6 +898,18 @@ class PublishNotesTests(NotesTestCase):
         notes.refresh_from_db()
         self.addCleanup(notes.document.delete, save=False)
 
+    def test_a_class_where_nothing_was_taught_still_has_a_document(self):
+        """The card and the reader both offer the notes as a file. Skipping
+        the render for an empty class left those buttons promising something
+        that was deliberately never made."""
+        notes = self.make_notes(status=ClassSessionNotes.NotesStatus.COLLECTING)
+        self._collect(notes, answer={**MODEL_ANSWER, "has_content": False})
+
+        notes.refresh_from_db()
+        self.assertEqual(notes.status, ClassSessionNotes.NotesStatus.AVAILABLE)
+        self.assertTrue(notes.document)
+        self.addCleanup(notes.document.delete, save=False)
+
     def test_a_class_where_nothing_was_taught_tells_only_the_teacher(self):
         """Thirty people pulled back to a page that says "nothing was taught"
         is noise they did not ask for."""
@@ -875,7 +931,15 @@ class PublishNotesTests(NotesTestCase):
         notes.refresh_from_db()
         self.assertEqual(notes.status, ClassSessionNotes.NotesStatus.FAILED)
         self.assertIn("Nothing was transcribed", notes.error_message)
-        self.assertEqual(Notification.objects.count(), 0)
+
+        # The teacher hears about it, and only the teacher: a failed run is
+        # neither running nor available, so it leaves no trace anywhere they
+        # look, while the students can do nothing with the reason.
+        told = Notification.objects.all()
+        self.assertEqual(told.count(), 1)
+        self.assertEqual(told.first().recipient, self.teacher)
+        self.assertEqual(told.first().verb, "class_notes_failed")
+        self.assertEqual(len(mail.outbox), 0)
 
     def test_an_adopted_run_never_pays_for_the_transcript_twice(self):
         """The transcript is kept on the row the moment it is assembled, so a

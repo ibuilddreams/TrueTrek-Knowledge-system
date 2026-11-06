@@ -32,19 +32,29 @@ import ClassroomControlButton from "./ClassroomControlButton";
  *
  * Recording is the host's alone, and the server enforces that — a student
  * cannot start a recorder in someone's class and cannot switch one off
- * either. The button is only ever a convenience: a class the teacher set to
- * be recorded starts recording by itself the moment they open the room, so
- * this is for stopping one, or starting it again afterwards. That a class is
- * being recorded is announced in the header to everybody, not here, because
- * it is a fact about the room rather than a control.
+ * either. It is a live control rather than a report of what was decided at
+ * scheduling time: a class the teacher ticked "record" for starts recording
+ * by itself the moment they open the room, and a class they did not is one
+ * they can still start recording from here. Pressing it writes that decision
+ * back onto the class, so a recording switched off mid-class does not come
+ * back by itself the next time the classroom renews its pass. The only thing
+ * that greys it out is a server with no recording credentials at all. That a
+ * class is being recorded is announced in the header to everybody, not here,
+ * because it is a fact about the room rather than a control.
  *
  * Meeting notes get a button of their own beside it, under the same rules and
  * for the same reasons, because they are a genuinely separate thing: a
- * different Agora product on a different per-class switch, so a teacher can
- * be recording and not transcribing, or transcribing and not recording, and
- * the control bar has to be able to say so. Merging the two into one "capture"
+ * different feature on a different per-class switch, so a teacher can be
+ * recording and not taking notes, or taking notes and not recording, and the
+ * control bar has to be able to say so. Merging the two into one "capture"
  * button would make the commonest case — notes on, camera off the record —
  * impossible to express.
+ *
+ * The notes button is a **pause**, and the title says so. Pressing it does
+ * not end the write-up: the class is still going, what has been said is kept,
+ * and pressing it again carries on into the same notes. Nothing here spins
+ * while that is true — a teacher who paused for an exercise should find the
+ * button ready, not greyed out behind a write-up of the first ten minutes.
  */
 export default function ClassroomControls({
   isMicOn,
@@ -61,12 +71,11 @@ export default function ClassroomControls({
   isRecording,
   isRecordingProcessing,
   isRecordingAvailable,
-  isRecordingAllowed,
   isRecordingBusy,
   isTakingNotes,
+  isNotesPaused,
   isWritingNotes,
   isNotesAvailable,
-  isNotesAllowed,
   isNotesBusy,
   onToggleRecording,
   onToggleNotes,
@@ -79,26 +88,24 @@ export default function ClassroomControls({
 }) {
   const recordingTitle = !isRecordingAvailable
     ? "Recording isn't set up on this server (AGORA_RECORDING_* in backend/.env)"
-    : !isRecordingAllowed
-      ? "This class was scheduled not to be recorded"
-      : !isConnected
-        ? "Connecting to the classroom…"
-        : isRecordingProcessing
-          ? "Saving the recording — your students are notified when it's ready"
-          : isRecording
-            ? "Stop recording this class"
-            : "Record this class";
+    : !isConnected
+      ? "Connecting to the classroom…"
+      : isRecordingProcessing
+        ? "Saving the recording — your students are notified when it's ready"
+        : isRecording
+          ? "Stop recording this class"
+          : "Record this class";
 
   const notesTitle = !isNotesAvailable
-    ? "Class notes aren't set up on this server (AGORA_STT_* and GEMINI_API_KEY in backend/.env)"
-    : !isNotesAllowed
-      ? "This class was scheduled not to take notes"
-      : !isConnected
-        ? "Connecting to the classroom…"
-        : isWritingNotes
-          ? "Writing the notes up — your students are notified when they're ready"
-          : isTakingNotes
-            ? "Stop taking notes"
+    ? "Class notes aren't set up on this server (GEMINI_API_KEY in backend/.env)"
+    : !isConnected
+      ? "Connecting to the classroom…"
+      : isWritingNotes
+        ? "Writing the notes up — your students are notified when they're ready"
+        : isTakingNotes
+          ? "Pause the notes — the class carries on and the write-up waits for the end"
+          : isNotesPaused
+            ? "Carry on taking notes — this picks up the same notes, it doesn't start a second set"
             : "Take notes on this class";
 
   return (
@@ -193,7 +200,6 @@ export default function ClassroomControls({
           disabled={
             !isConnected ||
             !isRecordingAvailable ||
-            !isRecordingAllowed ||
             isRecordingBusy ||
             isRecordingProcessing
           }
@@ -219,11 +225,7 @@ export default function ClassroomControls({
           active={!isTakingNotes}
           danger={isTakingNotes}
           disabled={
-            !isConnected ||
-            !isNotesAvailable ||
-            !isNotesAllowed ||
-            isNotesBusy ||
-            isWritingNotes
+            !isConnected || !isNotesAvailable || isNotesBusy || isWritingNotes
           }
           title={notesTitle}
         >

@@ -106,9 +106,21 @@ export function useAgoraCall(sessionId) {
   const [isSharingScreen, setIsSharingScreen] = useState(false);
   // Present only while the camera is live; the local tile renders it directly.
   const [localVideoTrack, setLocalVideoTrack] = useState(null);
+  // The microphone, as state rather than only as a ref, because something
+  // outside the call needs to read it: the notes recorder taps this track
+  // into its mixer (`useClassNotesRecorder`) and has to be told when it is
+  // replaced. `setEnabled` releases the device and re-acquires it, so the
+  // underlying MediaStreamTrack after an unmute is a different object from
+  // the one before the mute — a ref would never say so.
+  const [localAudioTrack, setLocalAudioTrack] = useState(null);
   const [activeSpeakerUid, setActiveSpeakerUid] = useState(null);
   const [wasRecordingAtJoin, setWasRecordingAtJoin] = useState(false);
   const [wasTakingNotesAtJoin, setWasTakingNotesAtJoin] = useState(false);
+  // What the server said, at the moment of joining, about recording this
+  // class for its notes. Carried in the join payload rather than waited for
+  // on a second request: those two race on the way into a classroom, and the
+  // seconds between them are the first thing the teacher says.
+  const [notesCaptureAtJoin, setNotesCaptureAtJoin] = useState(null);
 
   const clientRef = useRef(null);
   const micTrackRef = useRef(null);
@@ -166,6 +178,7 @@ export function useAgoraCall(sessionId) {
       }
     });
     setLocalVideoTrack(null);
+    setLocalAudioTrack(null);
   }, []);
 
   /**
@@ -189,7 +202,7 @@ export function useAgoraCall(sessionId) {
     // `nextStatus` exists because tearing a failed call down must not erase
     // the reason it failed: a plain leave lands on IDLE, while the two
     // failure paths below hand over to ERROR so the panel stays on screen.
-    async ({ notifyServer = true, nextStatus = CALL_STATUS.IDLE } = {}) => {
+    async ({ notifyServer = true, ended = false, nextStatus = CALL_STATUS.IDLE } = {}) => {
       const client = clientRef.current;
       // Nothing to report if we never got as far as a client — a join that
       // was refused, or that found no camera or microphone, never entered the
@@ -215,7 +228,12 @@ export function useAgoraCall(sessionId) {
 
       if (notifyServer && hadJoined && sessionIdRef.current) {
         try {
-          await leaveClassSession(sessionIdRef.current);
+          // `ended` only when the person actually left — see
+          // `leaveClassSession`. The unmount path below is deliberately not
+          // that: it also fires on a reload and on React's development
+          // double-mount, and treating either as the end of the class ends
+          // its notes before anything has been recorded.
+          await leaveClassSession(sessionIdRef.current, { ended });
         } catch {
           // Best-effort attendance ping — a failure here must not stop a
           // student from closing the classroom.
@@ -225,6 +243,11 @@ export function useAgoraCall(sessionId) {
     [releaseLocalTracks],
   );
 
+  /**
+   * Leaves the call. `{ended: true}` says this was deliberate — the red
+   * button or the classroom closing itself — which is what the server needs
+   * in order to tell it apart from a reload (see `leaveClassSession`).
+   */
   const leave = useCallback((options) => enqueue(() => runLeave(options)), [enqueue, runLeave]);
 
   const runJoin = useCallback(async () => {
@@ -317,6 +340,7 @@ export function useAgoraCall(sessionId) {
       // admitting it a poll later.
       setWasRecordingAtJoin(Boolean(credentials.is_recording));
       setWasTakingNotesAtJoin(Boolean(credentials.is_taking_notes));
+      setNotesCaptureAtJoin(credentials.notes_capture || null);
 
       // Microphone and camera are requested separately so that a student with
       // no webcam — or who denied only the camera — still joins and can talk,
@@ -325,8 +349,10 @@ export function useAgoraCall(sessionId) {
       try {
         micTrackRef.current = await AgoraRTC.createMicrophoneAudioTrack();
         publishable.push(micTrackRef.current);
+        setLocalAudioTrack(micTrackRef.current);
         setIsMicOn(true);
       } catch {
+        setLocalAudioTrack(null);
         setIsMicOn(false);
       }
       try {
@@ -534,8 +560,10 @@ export function useAgoraCall(sessionId) {
     roster,
     wasRecordingAtJoin,
     wasTakingNotesAtJoin,
+    notesCaptureAtJoin,
     localUid,
     localVideoTrack,
+    localAudioTrack,
     isMicOn,
     isCameraOn,
     isSharingScreen,

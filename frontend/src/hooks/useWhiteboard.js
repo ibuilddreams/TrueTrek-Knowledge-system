@@ -152,6 +152,36 @@ function toRgb(hex) {
   ];
 }
 
+/**
+ * The room's own phases, as Netless spells them.
+ *
+ * `ROOM_PHASE.CONNECTED` is the only one in which a room accepts anything.
+ * Four dozen of its methods — `setMemberState`, `setViewMode`, `moveCamera`,
+ * `setSceneIndex`, `setGlobalState`, `cleanCurrentScene`, the
+ * `disableSerialization` setter — run through `assertRoomIsConnected`, which
+ * **logs and then throws**. The log is the part that matters here: catching
+ * the throw does not unsay it, so a call made a moment too late still puts a
+ * red "you can only call it when room is connected. the phase of room is
+ * disconnecting" in front of whoever is watching. The only way not to see it
+ * is not to make the call.
+ */
+const ROOM_PHASE = {
+  CONNECTING: "connecting",
+  CONNECTED: "connected",
+  RECONNECTING: "reconnecting",
+  DISCONNECTING: "disconnecting",
+  DISCONNECTED: "disconnected",
+};
+
+/** Whether this room will accept a call at all. Never throws. */
+function isLiveRoom(room) {
+  try {
+    return Boolean(room) && room.phase === ROOM_PHASE.CONNECTED;
+  } catch {
+    return false;
+  }
+}
+
 /** Netless reports problems as plain errors; these are the ones a user can act on. */
 function describeBoardError(error) {
   const message = error?.message || "";
@@ -275,6 +305,13 @@ export function useWhiteboard(sessionId) {
     roomRef.current = null;
 
     if (room) {
+      let phase = null;
+      try {
+        phase = room.phase;
+      } catch {
+        // A room too far gone to answer is a room with nothing left to do.
+      }
+
       try {
         // Unbinding first: `disconnect` tears the room down, and a canvas
         // still attached to a node React is about to unmount throws on the
@@ -283,10 +320,19 @@ export function useWhiteboard(sessionId) {
       } catch {
         // Already unbound.
       }
-      try {
-        await room.disconnect();
-      } catch {
-        // Already disconnected — nothing left to tidy up on this side.
+
+      // `disconnect` on a room that has already gone logs "[API] disconnect
+      // called, but room did disconnect" at error level and throws — and a
+      // room that is *mid*-disconnect is on its way there without being
+      // asked twice. Both reach here on the ordinary path: a board that
+      // dropped by itself calls `close` from `onPhaseChanged`, and the panel
+      // unmounting calls it again a frame later.
+      if (phase !== ROOM_PHASE.DISCONNECTED && phase !== ROOM_PHASE.DISCONNECTING) {
+        try {
+          await room.disconnect();
+        } catch {
+          // Went down underneath us — nothing left to tidy up on this side.
+        }
       }
     }
 
@@ -414,6 +460,28 @@ export function useWhiteboard(sessionId) {
         },
       );
 
+      // A board that went down between `joinRoom` resolving and this line —
+      // a class that ended, a token refused, a panel unmounted while the
+      // handshake was in flight — must not be written to. Every line below
+      // is one of the methods that logs and throws off a disconnected room.
+      if (!isCurrent() || !isLiveRoom(room)) {
+        const superseded = !isCurrent();
+        try {
+          if (isLiveRoom(room)) await room.disconnect();
+        } catch {
+          // Already gone; nothing to release.
+        }
+        // A newer open owns the panel and will say what happened to it.
+        // Nothing newer means this board really did drop on the way in, and
+        // leaving the panel on its spinner would be the one outcome with no
+        // way out of it.
+        if (!superseded) {
+          setError("The whiteboard dropped while it was opening. Try again.");
+          setStatus(BOARD_STATUS.ERROR);
+        }
+        return;
+      }
+
       roomRef.current = room;
       setIsWritable(writable);
       setIsHost(host);
@@ -496,7 +564,10 @@ export function useWhiteboard(sessionId) {
 
   const withRoom = useCallback((action) => {
     const room = roomRef.current;
-    if (!room || !isWritableRef.current) return;
+    // The phase, not just the room: a board that is closing is still an
+    // object with every method on it, and calling one logs the SDK's
+    // complaint whether or not we catch what it throws (see `isLiveRoom`).
+    if (!isLiveRoom(room) || !isWritableRef.current) return;
     try {
       action(room);
     } catch {
@@ -578,7 +649,7 @@ export function useWhiteboard(sessionId) {
   /** Page navigation is a view change, so a reader may do it too. */
   const goToPage = useCallback((index) => {
     const room = roomRef.current;
-    if (!room) return;
+    if (!isLiveRoom(room)) return;
     try {
       room.setSceneIndex(index);
     } catch {
@@ -607,8 +678,9 @@ export function useWhiteboard(sessionId) {
    * stroke somewhere other than where the pointer was.
    */
   const refreshView = useCallback(() => {
+    if (!isLiveRoom(roomRef.current)) return;
     try {
-      roomRef.current?.refreshViewSize();
+      roomRef.current.refreshViewSize();
     } catch {
       // Not bound yet; the observer will catch the next change.
     }
@@ -616,7 +688,7 @@ export function useWhiteboard(sessionId) {
 
   const resetView = useCallback(() => {
     const room = roomRef.current;
-    if (!room) return;
+    if (!isLiveRoom(room)) return;
     try {
       room.moveCamera({ centerX: 0, centerY: 0, scale: 1, animationMode: "continuous" });
     } catch {
@@ -626,8 +698,11 @@ export function useWhiteboard(sessionId) {
 
   const toggleFollowHost = useCallback(async () => {
     const room = roomRef.current;
-    if (!room) return;
+    if (!isLiveRoom(room)) return;
     const { ViewMode } = sdkExports(await loadWhiteboard());
+    // Awaiting the SDK is a chance for the board to have gone in the
+    // meantime, so the phase is worth asking about twice.
+    if (!isLiveRoom(roomRef.current)) return;
     const next = !isFollowingHost;
     try {
       room.setViewMode(next ? ViewMode.Follower : ViewMode.Freedom);
@@ -652,7 +727,7 @@ export function useWhiteboard(sessionId) {
         setAccess(nextAccess);
 
         const room = roomRef.current;
-        if (room && isWritableRef.current) {
+        if (isLiveRoom(room) && isWritableRef.current) {
           try {
             room.setGlobalState({ [ACCESS_STATE_KEY]: nextAccess });
           } catch {
