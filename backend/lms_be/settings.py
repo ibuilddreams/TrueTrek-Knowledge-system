@@ -536,6 +536,58 @@ CLASS_NOTES_LANGUAGES = os.getenv('CLASS_NOTES_LANGUAGES', 'en-US')
 # an email outlives any check and forwards to anyone.
 CLASS_NOTES_EMAIL_ENABLED = os.getenv('CLASS_NOTES_EMAIL_ENABLED', 'true').lower() == 'true'
 
+# Where the audio a class is written up from actually comes from. Two sources,
+# one pipeline from the transcript onwards:
+#
+#   'local'  (the default) — the **teacher's own browser** mixes everybody's
+#            audio, records it in segments and uploads them to this server,
+#            where they are kept in MEDIA_ROOT (`class-audio/`) and handed to
+#            the AI model to transcribe. Nothing leaves this machine except
+#            the model call, and **no bucket of any kind is needed** — which is
+#            the point: a deployment with no S3 can still take notes today,
+#            and the files are ordinary Django FileFields, so pointing them at
+#            a bucket later is a storage change rather than a rewrite.
+#
+#   'agora'  — Agora Real-Time Transcription sends a bot into the channel and
+#            writes WebVTT captions into the bucket above. Needs the AGORA_STT
+#            / AGORA_CUSTOMER key *and* the AGORA_RECORDING_BUCKET block to be
+#            filled in, and bills per minute on top of the call.
+#
+# Both end at the same place: a transcript on the row, the same model prompt,
+# the same notes, the same PDF, the same emails.
+CLASS_NOTES_SOURCE = os.getenv('CLASS_NOTES_SOURCE', 'local').strip().lower()
+
+# How long each recorded segment of a class is, in seconds ('local' only).
+# Segments exist for two reasons and both are worth keeping: a browser that
+# crashes mid-class loses only the slice it was recording rather than the
+# whole class, and a model call is given minutes of audio rather than hours,
+# which keeps every request well inside the inline-upload limit.
+#
+# Four minutes, for two reasons beyond the two above. A segment has to stay
+# inside nginx's *default* client_max_body_size of 1 MB — a proxy left at
+# that rejects every upload with a 413 before Django ever sees it, and the
+# only symptom is classes that quietly produce no notes — and this number and
+# the bitrate below are what decide that: 24 kbps x 240 s / 8 = **720 KB**.
+# Move one and check the other. And a class shorter than one segment never
+# rotates at all, so everything rides on the closing flush; at four minutes
+# even a short lesson gets audio onto the server while it is still running.
+CLASS_NOTES_AUDIO_SEGMENT_SECONDS = int(os.getenv('CLASS_NOTES_AUDIO_SEGMENT_SECONDS', 240))
+
+# The bitrate the browser records at, in bits per second ('local' only). Low,
+# because this is mono speech being read by a model rather than music — but
+# not as low as it can go. A classroom is a far-field recording of several
+# people at different distances from different microphones, and the first
+# real transcripts off 16 kbps came back peppered with [inaudible]. 24 kbps
+# buys that back for half as many bytes again, which the segment length above
+# is sized around.
+CLASS_NOTES_AUDIO_BITRATE = int(os.getenv('CLASS_NOTES_AUDIO_BITRATE', 24000))
+
+# The largest single segment this server will accept, in megabytes ('local'
+# only). A ceiling on what one request can push onto the disk, not a tuning
+# knob — at the bitrate above a ten-minute segment is about 1.2 MB, so
+# anything near this is a client sending something it should not.
+CLASS_NOTES_AUDIO_MAX_MB = int(os.getenv('CLASS_NOTES_AUDIO_MAX_MB', 40))
+
 # AI-graded assignment review (assignments/ai_review/) and quiz short-answer
 # grading (quizzes/ai_grading.py) — reuses AI_CHAT_MODEL (the fast path), same
 # rationale as DAILY_DRILL_AI_TIMEOUT_SECONDS above, but a submission can

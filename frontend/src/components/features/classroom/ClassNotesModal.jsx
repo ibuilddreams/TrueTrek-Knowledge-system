@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   AlertTriangle,
   CheckSquare,
@@ -55,6 +55,23 @@ export default function ClassNotesModal({ session, isOpen, onClose }) {
 
   const notes = data?.notes || null;
   const transcript = data?.transcript || "";
+  // "Manan: so the first thing" → a name and what they said, so the two can
+  // be set apart. A line without that shape is shown as it stands rather
+  // than forced into a speaker it does not have.
+  const transcriptTurns = useMemo(
+    () =>
+      transcript
+        .split("\n")
+        .map((line) => line.trim())
+        .filter(Boolean)
+        .map((line) => {
+          const match = line.match(/^([^:]{1,60}?):\s*(.*)$/);
+          return match
+            ? { speaker: match[1], words: match[2] }
+            : { speaker: "", words: line };
+        }),
+    [transcript],
+  );
   const isPending = Boolean(data?.is_transcribing || data?.is_writing);
 
   const handleDownload = async () => {
@@ -122,7 +139,11 @@ export default function ClassNotesModal({ session, isOpen, onClose }) {
                 ? getApiErrorMessage(error, "These notes couldn't be loaded.")
                 : isPending
                   ? "This class has finished and the notes are still being written. You'll get a notification the moment they're ready."
-                  : "There are no notes from this class."}
+                  : // Why the last attempt came to nothing, when there is a
+                    // reason to give. The server only ever puts one here for
+                    // a teacher (class_sessions/services.py::notes_state), so
+                    // a student still sees the plain sentence below.
+                    data?.error || "There are no notes from this class."}
             </p>
           </div>
         )}
@@ -213,24 +234,47 @@ export default function ClassNotesModal({ session, isOpen, onClose }) {
             {/* Teachers only — the server simply doesn't send this to anyone
                 else, so there is no role check to keep in step here. */}
             {transcript && (
-              <Section icon={ScrollText} title="Transcript">
-                <button
-                  type="button"
-                  onClick={() => setIsTranscriptOpen((open) => !open)}
-                  className="text-[11px] font-mono uppercase tracking-wider text-muted hover:text-ink transition-colors cursor-pointer"
-                >
-                  {isTranscriptOpen ? "Hide" : "Show"} what was said
-                </button>
+              <section className="space-y-2">
+                {/* The heading and its toggle share a row rather than both
+                    being inline-level in a stacked section, which ran them
+                    together as "TRANSCRIPTSHOW WHAT WAS SAID". */}
+                <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
+                  <h3 className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest text-gold">
+                    <ScrollText className="w-3.5 h-3.5" />
+                    Transcript
+                  </h3>
+                  <button
+                    type="button"
+                    onClick={() => setIsTranscriptOpen((open) => !open)}
+                    aria-expanded={isTranscriptOpen}
+                    className="text-[11px] font-mono uppercase tracking-wider text-muted hover:text-ink transition-colors cursor-pointer"
+                  >
+                    {isTranscriptOpen ? "Hide" : "Show"} what was said
+                  </button>
+                </div>
                 {isTranscriptOpen && (
-                  <pre className="mt-2 max-h-72 overflow-auto rounded-xl bg-porcelain border border-line p-4 text-xs text-ink font-light leading-relaxed whitespace-pre-wrap">
-                    {transcript}
-                  </pre>
+                  <div className="max-h-72 overflow-auto rounded-xl bg-porcelain border border-line p-4 space-y-2">
+                    {transcriptTurns.map((turn, index) => (
+                      <p
+                        key={`turn-${index}`}
+                        className="text-xs text-ink font-light leading-relaxed"
+                      >
+                        {turn.speaker && (
+                          <span className="font-mono font-bold text-ink">
+                            {turn.speaker}:{" "}
+                          </span>
+                        )}
+                        {turn.words}
+                      </p>
+                    ))}
+                  </div>
                 )}
                 <p className="text-[11px] font-light text-muted leading-relaxed">
                   Only this course&apos;s teachers can see the transcript. Your
-                  students get the notes above.
+                  students get the notes above, and your copy of the PDF has
+                  the conversation under them.
                 </p>
-              </Section>
+              </section>
             )}
 
             <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-line">

@@ -201,7 +201,10 @@ class ClassSessionSerializer(serializers.ModelSerializer):
         annotated = getattr(obj, "notes_in_progress", None)
         if annotated is not None:
             return bool(annotated)
-        return active_notes(obj) is not None
+        running = active_notes(obj)
+        # `is_working` rather than merely existing: a run the teacher paused
+        # mid-class is still this class's run, but nothing is happening to it.
+        return bool(running and running.is_working)
 
     def get_notes_configured(self, obj):
         """Whether this server can take notes at all.

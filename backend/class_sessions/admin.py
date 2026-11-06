@@ -4,6 +4,7 @@ from .models import (
     ClassSession,
     ClassSessionAttendance,
     ClassSessionNotes,
+    ClassSessionNotesAudio,
     ClassSessionRecording,
 )
 
@@ -100,6 +101,38 @@ class ClassSessionNotesAdmin(admin.ModelAdmin):
         "duration_seconds",
         "notified_at",
         "error_message",
+    )
+
+    def has_add_permission(self, request):
+        return False
+
+
+@admin.register(ClassSessionNotesAudio)
+class ClassSessionNotesAudioAdmin(admin.ModelAdmin):
+    """The audio a class was written up from, read-only like everything else
+    here.
+
+    Worth having a page at all for one reason: when notes come out wrong or
+    empty, this is where you find out whether the class was actually recorded
+    — how many segments arrived, how big they were, and which of them the
+    model managed to read. The file itself is a record of a room that may be
+    full of minors, so nothing on this page is editable and nothing about it
+    is linked from either portal.
+    """
+
+    list_display = ("notes", "index", "size_bytes", "duration_seconds", "transcribed_at")
+    list_filter = ("content_type",)
+    search_fields = ("notes__session__title", "notes__session__course__code", "client_key")
+    readonly_fields = (
+        "notes",
+        "index",
+        "client_key",
+        "file",
+        "content_type",
+        "size_bytes",
+        "duration_seconds",
+        "transcript",
+        "transcribed_at",
     )
 
     def has_add_permission(self, request):

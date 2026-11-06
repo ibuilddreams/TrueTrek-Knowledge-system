@@ -343,11 +343,20 @@ class ClassSessionNotes(BaseModel):
     (`services._monitor_notes` and `services._collect_and_summarize` walk it):
 
         STARTING      accepted by Agora, the bot is on its way into the channel
-        TRANSCRIBING  running; the bot is listening and writing caption slices
-        COLLECTING    stopped; waiting for the last caption slice to land
+        TRANSCRIBING  running; the class is being listened to
+        PAUSED        the teacher stopped mid-class; the audio so far is kept
+        COLLECTING    finished; waiting for the last of the audio to land
         SUMMARIZING   transcript assembled, the model is writing the notes up
         AVAILABLE     notes written and the class has been told, exactly once
         FAILED        gave up, with a reason — the class itself was unaffected
+
+    PAUSED is what makes "stop" mean *pause* rather than *finish*. A teacher
+    who takes notes for the first ten minutes, stops while the class does an
+    exercise and starts again for the last ten expects **one** set of notes
+    covering twenty minutes — not two write-ups, the second of which replaces
+    the first on the card. So a run is only ever written up when the class
+    itself ends, and everything recorded across every stretch belongs to the
+    one run (`services.pause_notes` / `start_notes` / `_finish_local_notes`).
 
     `notified_at` is what makes the fan-out happen exactly once, for the same
     reason it does on a recording: notes reach AVAILABLE from more than one
@@ -359,24 +368,37 @@ class ClassSessionNotes(BaseModel):
     class NotesStatus(models.TextChoices):
         STARTING = "STARTING", "Starting"
         TRANSCRIBING = "TRANSCRIBING", "Transcribing"
+        PAUSED = "PAUSED", "Paused"
         COLLECTING = "COLLECTING", "Collecting the transcript"
         SUMMARIZING = "SUMMARIZING", "Writing the notes"
         AVAILABLE = "AVAILABLE", "Available"
         FAILED = "FAILED", "Failed"
 
-    # The states in which Agora still has a bot of ours in a channel, or work
-    # of ours still in flight. One of these per class at a time — see the
-    # constraint below.
+    # The states in which a run is still this class's one notes run. One of
+    # these per class at a time — see the constraint below.
     IN_FLIGHT_STATUSES = (
+        NotesStatus.STARTING,
+        NotesStatus.TRANSCRIBING,
+        NotesStatus.PAUSED,
+        NotesStatus.COLLECTING,
+        NotesStatus.SUMMARIZING,
+    )
+
+    # The states in which something is actually *happening* — in flight minus
+    # paused. This is what the cards and the classroom badge read: a paused
+    # run is the teacher's bookmark in a class that is still going, and
+    # announcing "notes are being taken" over it would be a lie.
+    WORKING_STATUSES = (
         NotesStatus.STARTING,
         NotesStatus.TRANSCRIBING,
         NotesStatus.COLLECTING,
         NotesStatus.SUMMARIZING,
     )
 
-    # The states in which Agora's bot is still sitting in the channel. Narrower
-    # than IN_FLIGHT_STATUSES: once the captions are being collected the bot
-    # has already left, and only our own work is outstanding.
+    # The states in which the class is actually being listened to. Narrower
+    # than WORKING_STATUSES: once the captions are being collected the bot has
+    # already left (or the browser has stopped recording), and only our own
+    # work is outstanding.
     LISTENING_STATUSES = (NotesStatus.STARTING, NotesStatus.TRANSCRIBING)
 
     session = models.ForeignKey(
@@ -468,7 +490,13 @@ class ClassSessionNotes(BaseModel):
             models.UniqueConstraint(
                 fields=["session"],
                 condition=models.Q(
-                    status__in=["STARTING", "TRANSCRIBING", "COLLECTING", "SUMMARIZING"]
+                    status__in=[
+                        "STARTING",
+                        "TRANSCRIBING",
+                        "PAUSED",
+                        "COLLECTING",
+                        "SUMMARIZING",
+                    ]
                 ),
                 name="one_in_flight_notes_run_per_class",
             ),
@@ -482,9 +510,101 @@ class ClassSessionNotes(BaseModel):
         return self.status in self.IN_FLIGHT_STATUSES
 
     @property
+    def is_working(self):
+        return self.status in self.WORKING_STATUSES
+
+    @property
     def is_listening(self):
         return self.status in self.LISTENING_STATUSES
 
     @property
+    def is_paused(self):
+        return self.status == self.NotesStatus.PAUSED
+
+    @property
     def is_available(self):
         return self.status == self.NotesStatus.AVAILABLE and bool(self.summary)
+
+
+class ClassSessionNotesAudio(BaseModel):
+    """One slice of the audio a class was written up from.
+
+    Only ever written in the **local** notes source (`settings
+    .CLASS_NOTES_SOURCE`), where the class's own audio never leaves this
+    deployment: the teacher's browser mixes everybody who is speaking into one
+    stream, records it in segments and posts each one here, where it is kept
+    as an ordinary Django file under `MEDIA_ROOT/class-audio/` and handed to
+    the AI model to transcribe. There is no bucket in that path at all — and
+    because these are plain `FileField`s, moving them into one later is a
+    storage change rather than a rewrite.
+
+    The audio arrives in **segments rather than as one file at the end**, and
+    both halves of that matter. A browser that crashes, a laptop lid closed or
+    a tab reloaded mid-class loses only the slice that was in progress instead
+    of the whole hour; and a model is handed minutes of audio per call, which
+    keeps every request well inside the inline-upload limit however long the
+    class ran.
+
+    `index` is assigned **by the server, in arrival order**, never taken from
+    the client: a capturer that crashed and came back would otherwise restart
+    its own numbering and overwrite the first half of its class. `client_key`
+    is what makes an upload safe to retry — a segment that timed out on its
+    way up but landed anyway is recognised rather than stored twice.
+
+    `transcript` is kept per segment rather than only on the run, so a write-up
+    that died halfway resumes at the first segment nobody has read yet instead
+    of paying the model for the whole class again — the same reasoning that
+    keeps `ClassSessionNotes.transcript` on the row in the Agora path.
+    """
+
+    notes = models.ForeignKey(
+        ClassSessionNotes, on_delete=models.CASCADE, related_name="audio_segments"
+    )
+
+    # Arrival order, assigned by `services.store_notes_audio` under a lock.
+    index = models.PositiveIntegerField()
+
+    # The capturing browser's own id for this blob. Unique per run, so the
+    # same segment sent twice (a retry after a timeout) is one row.
+    client_key = models.CharField(max_length=64)
+
+    file = models.FileField(upload_to="class-audio/")
+    content_type = models.CharField(max_length=100, blank=True, default="")
+    size_bytes = models.PositiveBigIntegerField(default=0)
+    # What the browser says it recorded. Evidence for the teacher, never
+    # arithmetic: a tab throttled in the background records less wall clock
+    # than it claims.
+    duration_seconds = models.PositiveIntegerField(null=True, blank=True)
+
+    # Who was speaking, and when, through this segment: a list of
+    # `{"at": <seconds from the start of this segment>, "uid": <user id>}`
+    # sampled by the capturing browser from the individual audio tracks it
+    # is mixing (`useClassNotesRecorder`).
+    #
+    # This exists because the thing that reaches the model is **one mixed
+    # track**, and no amount of listening to a mix tells you which of three
+    # voices belongs to which person in the room. The browser is the only
+    # place that knows — it holds every participant's track separately
+    # before they are added together — so it writes down what it measured
+    # and the model is handed the answer rather than asked to guess it.
+    # Guessing is what produces a quote filed under the wrong student's
+    # name, which is worse than a quote filed under nobody's.
+    speakers = models.JSONField(default=list, blank=True)
+
+    transcript = models.TextField(blank=True, default="")
+    transcribed_at = models.DateTimeField(null=True, blank=True)
+
+    class Meta:
+        ordering = ["index"]
+        constraints = [
+            models.UniqueConstraint(
+                fields=["notes", "index"], name="one_audio_segment_per_index_per_run"
+            ),
+            models.UniqueConstraint(
+                fields=["notes", "client_key"],
+                name="one_audio_segment_per_client_key_per_run",
+            ),
+        ]
+
+    def __str__(self):
+        return f"Audio {self.index} of notes run {self.notes_id}"

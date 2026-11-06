@@ -27,8 +27,13 @@ export async function joinClassSession(id) {
   return backendClient.post(`/class-sessions/${id}/join/`);
 }
 
-export async function leaveClassSession(id) {
-  return backendClient.post(`/class-sessions/${id}/leave/`);
+// `ended` is the browser saying this was a deliberate exit — the red button,
+// or the classroom closing itself at the advertised end — rather than a
+// reload, a navigation or a dropped connection, which look identical from the
+// server. Only a deliberate exit ends a recording or writes the notes up; an
+// ambiguous one parks the notes so the rejoin a moment later carries on.
+export async function leaveClassSession(id, { ended = false } = {}) {
+  return backendClient.post(`/class-sessions/${id}/leave/`, { ended });
 }
 
 // Teacher — scheduling
@@ -153,6 +158,52 @@ export async function startClassNotes(id) {
 // its own thread and notifies everyone when it is done.
 export async function stopClassNotes(id) {
   return backendClient.delete(`/class-sessions/${id}/notes/`);
+}
+
+// The file extension for a recorded blob's media type. The browser puts the
+// type in the part's own header, so this is belt and braces — but a file
+// called `.webm` that is actually MP4 is a confusing thing to find on a
+// server months later, and the extension is what the stored name keeps.
+function audioExtension(mimeType) {
+  const base = String(mimeType || "").split(";")[0].trim().toLowerCase();
+  if (base === "audio/mp4" || base === "audio/x-m4a") return "m4a";
+  if (base === "audio/ogg" || base === "audio/opus") return "ogg";
+  if (base === "audio/wav" || base === "audio/x-wav") return "wav";
+  return "webm";
+}
+
+// One segment of the class's own audio, on its way to becoming the notes.
+//
+// Only used by the local notes source (the deployment default), where there
+// is no transcription service and no bucket in the path at all: the teacher's
+// browser mixes everybody who is speaking, records the class in slices and
+// posts them here while the class is still running. They land in this
+// project's own media folder and the AI model reads them from there.
+//
+// Teacher-only, and narrower still — the server accepts segments from exactly
+// one browser per class. Safe to send twice: `client_key` is what makes a
+// retried upload one segment rather than two.
+//
+// `end` is the browser saying "the class is over" — the classroom closing or
+// the teacher leaving — and is what actually starts the write-up. Pressing
+// stop does NOT set it: that is a pause in a class that is still running, and
+// the segment it sends is simply the last of that stretch. Everything
+// recorded across every stretch belongs to one run and comes out as one set
+// of notes.
+export async function uploadClassNotesAudio(
+  id,
+  { blob, clientKey, durationSeconds, end = false, speakers } = {},
+) {
+  const form = new FormData();
+  form.append("audio", blob, `class-${id}-${clientKey}.${audioExtension(blob?.type)}`);
+  form.append("client_key", clientKey);
+  if (durationSeconds != null) form.append("duration_seconds", String(durationSeconds));
+  form.append("end", end ? "true" : "false");
+  // Who was speaking and when, measured from the individual tracks before
+  // they were mixed. The server resolves the uids against the class roster;
+  // it is what puts a name in front of a line instead of "Speaker".
+  if (speakers?.length) form.append("speakers", JSON.stringify(speakers));
+  return backendClient.post(`/class-sessions/${id}/notes/audio/`, form);
 }
 
 // The notes as a PDF. Streamed through the API behind the same roster check

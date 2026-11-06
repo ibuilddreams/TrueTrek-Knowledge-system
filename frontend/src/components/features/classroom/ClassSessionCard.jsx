@@ -11,6 +11,8 @@ import {
   Clock,
   GraduationCap,
   NotebookPen,
+  Download,
+  Loader2,
   Pencil,
   Radio,
   Users,
@@ -20,6 +22,9 @@ import ClassNotesModal from "./ClassNotesModal";
 import ClassRecordingModal from "./ClassRecordingModal";
 import ClassSessionJoinButton from "./ClassSessionJoinButton";
 import { useClassSessionDoor } from "@/hooks/useClassSessionDoor";
+import { downloadClassNotesDocument } from "@/services/classSessionsService";
+import { getApiErrorMessage } from "@/lib/apiErrors";
+import { toastError } from "@/lib/toast";
 import {
   CLASS_STATE_LABEL,
   CLASS_STATE_TONE,
@@ -56,6 +61,7 @@ export default function ClassSessionCard({
 }) {
   const [isRecordingOpen, setIsRecordingOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
+  const [isDownloadingNotes, setIsDownloadingNotes] = useState(false);
   // Everything below reads the state the server put on this row, so the card
   // re-asks for it the moment the class is due rather than counting down
   // past its own start time until the next poll.
@@ -70,6 +76,39 @@ export default function ClassSessionCard({
   const isBeingRecorded = Boolean(session.recording_in_progress);
   const hasNotes = Boolean(session.notes_available);
   const isBeingNoted = Boolean(session.notes_in_progress);
+
+  /**
+   * The notes PDF, straight off the card.
+   *
+   * The reader beside it has the same download inside it, but the document
+   * is the thing most people actually want from a class that has finished —
+   * it is what was emailed to them, and this is where they come looking for
+   * it afterwards. One click rather than two.
+   *
+   * No separate flag decides whether to offer it: the server answers that on
+   * the request (a class whose notes have no rendered PDF gets a plain 404
+   * with a sentence saying so), which is a message on the rare path rather
+   * than another subquery on every row of every listing.
+   */
+  const handleDownloadNotes = async () => {
+    if (isDownloadingNotes) return;
+    setIsDownloadingNotes(true);
+    try {
+      const { blob, filename } = await downloadClassNotesDocument(session.id);
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = filename || "class-notes.pdf";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      URL.revokeObjectURL(url);
+    } catch (error) {
+      toastError(getApiErrorMessage(error, "Couldn't download these notes."));
+    } finally {
+      setIsDownloadingNotes(false);
+    }
+  };
 
   return (
     <div
@@ -209,6 +248,22 @@ export default function ClassSessionCard({
               Class notes
             </button>
           )}
+          {hasNotes && (
+            <button
+              type="button"
+              onClick={handleDownloadNotes}
+              disabled={isDownloadingNotes}
+              title="Download the notes as a PDF"
+              aria-label="Download the notes as a PDF"
+              className="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-line hover:bg-porcelain text-ink shadow-sm transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
+            >
+              {isDownloadingNotes ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Download className="w-3.5 h-3.5" />
+              )}
+            </button>
+          )}
           {hasRecording && (
             <button
               type="button"
@@ -245,7 +300,14 @@ export default function ClassSessionCard({
               Edit
             </button>
           )}
-          {onCancel && !isCancelled && (
+          {/* Not offered on a class that has already finished. "Cancel" means
+              "this is not going to happen" — a message the students who sat
+              through it would be sent, against a class that did. The backend
+              agrees (a taught class is cancelled rather than deleted, keeping
+              its register), so a button here could only ever stamp the wrong
+              word on the record. What an ended class offers instead is what
+              it actually has: its register, its notes and its recording. */}
+          {onCancel && !isCancelled && !isEnded && (
             <button
               type="button"
               onClick={() => onCancel(session)}

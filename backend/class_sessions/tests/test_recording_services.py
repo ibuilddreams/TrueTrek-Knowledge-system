@@ -196,13 +196,22 @@ class StartRecordingTests(RecordingTestCase):
         self.assertEqual(self.session.recordings.count(), 2)
         self.assertTrue(recording.is_in_flight)
 
-    def test_a_class_marked_not_to_be_recorded_is_not_recorded(self):
+    def test_a_class_marked_not_to_be_recorded_can_still_be_recorded(self):
+        """`is_recorded` says whether a class starts recording the moment its
+        teacher opens the room — not whether it is allowed to.
+
+        A teacher who left the box unticked has to be able to press record
+        during the class. The automatic half is pinned separately, by the
+        `maybe_start_recording` tests, which is where that flag really does
+        decide.
+        """
         self.session.is_recorded = False
         self.session.save(update_fields=["is_recorded"])
 
-        with self.assertRaises(RecordingNotConfiguredError):
-            services.start_recording(session=self.session, user=self.teacher)
-        self.assertEqual(self.session.recordings.count(), 0)
+        recording = services.start_recording(session=self.session, user=self.teacher)
+
+        self.assertTrue(recording.is_in_flight)
+        self.assertEqual(self.session.recordings.count(), 1)
 
     def test_a_cancelled_class_is_not_recorded(self):
         self.session.status = ClassSession.SessionStatus.CANCELLED
@@ -396,12 +405,22 @@ class StopRecordingTests(RecordingTestCase):
     def test_stopping_a_class_that_is_not_recording_is_not_an_error(self):
         self.assertIsNone(services.stop_recording(session=self.session, user=self.teacher))
 
-    def test_the_teacher_leaving_ends_the_recording(self):
+    def test_the_teacher_leaving_for_good_ends_the_recording(self):
+        recording = self.make_recording()
+        services.record_leave(session=self.session, user=self.teacher, ended=True)
+
+        recording.refresh_from_db()
+        self.assertEqual(recording.status, ClassSessionRecording.RecordingStatus.PROCESSING)
+
+    def test_a_reload_does_not_end_the_recording(self):
+        """A reload sends the same "left" ping as the red button. Ending the
+        tape on it would stop a recording mid-class and start a second one
+        beside it the moment the page came back."""
         recording = self.make_recording()
         services.record_leave(session=self.session, user=self.teacher)
 
         recording.refresh_from_db()
-        self.assertEqual(recording.status, ClassSessionRecording.RecordingStatus.PROCESSING)
+        self.assertEqual(recording.status, ClassSessionRecording.RecordingStatus.RECORDING)
 
     def test_a_student_leaving_does_not_end_the_recording(self):
         """The class continues without them."""

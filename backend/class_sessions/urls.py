@@ -4,6 +4,7 @@ from .views import (
     ClassSessionDetailView,
     ClassSessionJoinView,
     ClassSessionLeaveView,
+    ClassSessionNotesAudioView,
     ClassSessionNotesDocumentView,
     ClassSessionNotesView,
     ClassSessionRecordingView,
@@ -58,6 +59,15 @@ urlpatterns = [
         "<int:pk>/notes/",
         ClassSessionNotesView.as_view(),
         name="class-sessions-notes",
+    ),
+    # Where the class's own audio arrives, one segment at a time, while the
+    # class is still running — the local notes source's equivalent of Agora
+    # writing caption slices into a bucket, except that the bucket is this
+    # server's own media folder and the teacher's browser is the recorder.
+    path(
+        "<int:pk>/notes/audio/",
+        ClassSessionNotesAudioView.as_view(),
+        name="class-sessions-notes-audio",
     ),
     # The notes as a PDF. Behind the same roster check, streamed rather than
     # redirected to, so nothing forwardable is ever handed out.

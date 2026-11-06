@@ -26,6 +26,7 @@ Three things live here:
    touches the other or the class itself.
 """
 
+import base64
 import io
 import json
 import logging
@@ -37,7 +38,7 @@ from datetime import timedelta
 
 from django.conf import settings
 from django.core.files.base import ContentFile
-from django.core.mail import send_mass_mail
+from django.core.mail import EmailMessage, send_mass_mail
 from django.db import IntegrityError, close_old_connections, transaction
 from django.db.models import (
     Count,
@@ -45,6 +46,7 @@ from django.db.models import (
     Exists,
     ExpressionWrapper,
     F,
+    Max,
     OuterRef,
     Q,
     Value,
@@ -58,6 +60,7 @@ from enrollments.models import Enrollment
 from notifications.services import create_notifications_for_users
 
 from . import (
+    notes_audio,
     notes_document,
     notes_prompt,
     notes_validators,
@@ -90,6 +93,7 @@ from .models import (
     ClassSession,
     ClassSessionAttendance,
     ClassSessionNotes,
+    ClassSessionNotesAudio,
     ClassSessionRecording,
 )
 from .whiteboard import (
@@ -118,8 +122,20 @@ logger = logging.getLogger(__name__)
 # number here, and the host's can differ from the students' again.
 STUDENT_JOIN_WINDOW_MINUTES_BEFORE = 0
 HOST_JOIN_WINDOW_MINUTES_BEFORE = 0
-# A class stays joinable a little past its scheduled end — these run over.
-LIVE_GRACE_MINUTES_AFTER = 15
+# How long a class stays open past its advertised end, in minutes. **Zero**:
+# a class booked for an hour is over after an hour, the room shuts on both
+# sides, and the classroom closes itself (`useClassroomClosing` warns the room
+# twice on the way there, so nobody is cut off without notice). Anything else
+# needs the whole of this number — a room that is shut while the card still
+# says LIVE, or a class in "upcoming" that nobody can get into, is a worse
+# state than either end of the choice.
+#
+# Still a named number rather than a deleted one: a grace period is the thing
+# most likely to be wanted back, and everything that asks when a class is over
+# (`live_state`, `can_join_now`, `_assert_room_open`, `_list_cutoff`,
+# `_token_lifetime`, and both monitors' deadlines) reads it here rather than
+# the clock, so handing one back is changing this line.
+LIVE_GRACE_MINUTES_AFTER = 0
 
 MIN_DURATION_MINUTES = 5
 MAX_DURATION_MINUTES = 8 * 60
@@ -307,7 +323,11 @@ def _annotated(queryset):
         notes_in_progress=Exists(
             ClassSessionNotes.objects.filter(
                 session=OuterRef("pk"),
-                status__in=list(ClassSessionNotes.IN_FLIGHT_STATUSES),
+                # Working, not merely in flight: a paused run is a teacher's
+                # bookmark in a class that is still going, and a "Notes" badge
+                # over it would tell the room it is being listened to when it
+                # is not.
+                status__in=list(ClassSessionNotes.WORKING_STATUSES),
             )
         ),
     ).select_related("course", "teacher")
@@ -724,23 +744,51 @@ def issue_join_credentials(*, session, user, now=None):
         # everybody in it should know on their first frame rather than on the
         # next poll.
         "is_taking_notes": bool(notes and notes.is_listening),
+        # And everything the capturing browser needs to start recording,
+        # here rather than only on the notes endpoint. The two requests race
+        # on the way into a classroom, and the seconds between them are the
+        # start of the lesson — a recorder that has to wait for a second
+        # round trip is a recorder that misses the first thing said.
+        "notes_capture": notes_capture_config(session, notes),
     }
 
 
-def record_leave(*, session, user, now=None):
+def record_leave(*, session, user, now=None, ended=False):
     """Best-effort: a browser that crashes never gets here, which is why
     attendance is presented as arrival rather than as minutes attended.
 
-    It is also where a recording and a transcription normally end: the teacher
-    leaving is the end of the class. A student leaving changes nothing, and a
-    teacher whose browser never sends this is caught by each monitor's own
-    deadline instead (`RECORDING_STOP_MARGIN_MINUTES` / `NOTES_STOP_MARGIN_MINUTES`
-    past the end of the class). Both are swallowed into a log line: leaving a
-    class must always succeed.
+    **`ended` is the whole of the difference between walking out and blinking.**
+    A browser says "left" for several reasons that look identical from here —
+    the red button, the classroom closing itself at the advertised end, a page
+    reload, a navigation, and React's development double-mount, which mounts,
+    joins, unmounts and leaves inside a single frame. Only the first two are
+    the class being over, and only they set this flag.
+
+    Getting that wrong is not a small thing, and it is worth saying why: when
+    every leave ended the class's notes, a reload two seconds into a lesson
+    finished the run before the teacher's browser had recorded a syllable,
+    and the rejoin found a run already being written up — so the classroom
+    sat on "writing up the notes" for the rest of the hour and the class got
+    a failure saying no audio ever arrived. The same leave would have stopped
+    a recording and started a second one beside it.
+
+    So an ambiguous leave only **pauses** the notes, which a rejoin resumes
+    (`start_notes`), and leaves a recording running. Nothing is lost either
+    way: a teacher who really has gone is caught by each monitor's own
+    deadline a few minutes past the end of the class
+    (`RECORDING_STOP_MARGIN_MINUTES` / `NOTES_STOP_MARGIN_MINUTES`), and by
+    Agora's own idle timer once the channel is empty.
+
+    Every call is swallowed into a log line: leaving a class must always
+    succeed.
     """
     now = now or timezone.now()
-    maybe_stop_recording(session, user)
-    maybe_stop_notes(session, user)
+
+    if ended:
+        maybe_stop_recording(session, user)
+        maybe_stop_notes(session, user)
+    else:
+        maybe_pause_notes(session, user, reason="the host's browser disconnected")
 
     attendance = ClassSessionAttendance.objects.filter(session=session, user=user).first()
     if attendance is None:
@@ -1317,14 +1365,19 @@ def start_recording(*, session, user=None, now=None):
     is two round trips to Agora and this is called from inside a teacher's
     join, which must not wait for them.
 
+    `session.is_recorded` is deliberately **not** checked. It says whether
+    this class starts recording by itself when its teacher opens the room
+    (`maybe_start_recording`), not whether recording is permitted at all — a
+    teacher who left the box unticked when they scheduled the class must
+    still be able to press the button during it, and one who decides halfway
+    through that the rest is worth keeping must be able to say so.
+
     Idempotent by database constraint rather than by checking first: two
     co-instructors arriving in the same second would otherwise bill two
     recorders into one channel.
     """
     now = now or timezone.now()
 
-    if not session.is_recorded:
-        raise RecordingNotConfiguredError("This class is set not to be recorded.")
     if session.status == ClassSession.SessionStatus.CANCELLED:
         raise RecordingNotConfiguredError("This class was cancelled.")
 
@@ -2177,6 +2230,29 @@ def _stt_customer_key():
     return _customer_key("AGORA_STT", "AGORA", "AGORA_RECORDING")
 
 
+def notes_source():
+    """Where a class's audio comes from — `"local"` or `"agora"`.
+
+    `"local"` is the default and the one that needs nothing but an AI key: the
+    teacher's browser records the room and posts the audio here (see "Notes
+    from the classroom's own audio" below). `"agora"` is the transcription
+    service writing captions into a bucket. Read through this function rather
+    than from settings directly, so the spelling is normalised in one place.
+    """
+    return (getattr(settings, "CLASS_NOTES_SOURCE", "local") or "local").strip().lower()
+
+
+def is_local_notes():
+    """Whether this server writes classes up from their own audio.
+
+    Anything other than an explicit `"agora"` is local, deliberately: a typo
+    in the setting falls back to the path that works with no bucket, no
+    transcription product and no second bill, rather than to the one that
+    silently needs four more values filled in.
+    """
+    return notes_source() != "agora"
+
+
 def is_notes_configured():
     """Whether this server can take notes on a class at all.
 
@@ -2184,9 +2260,16 @@ def is_notes_configured():
     complains nowhere — the logging belongs on the request that was actually
     refused (`_notes_credentials`), exactly as `is_recording_configured` is
     quiet and `_recording_credentials` is not.
+
+    The local source needs **only an AI provider**: the audio is recorded by
+    the teacher's own browser and stored on this server, so there is no
+    transcription product to enable, no RESTful key to issue and no bucket to
+    point at. That is the whole reason it exists.
     """
     if not getattr(settings, "CLASS_NOTES_ENABLED", True):
         return False
+    if is_local_notes():
+        return _summariser_configured()
     customer_id, customer_secret = _stt_customer_key()
     app_id = (getattr(settings, "AGORA_APP_ID", "") or "").strip()
     app_certificate = (getattr(settings, "AGORA_APP_CERTIFICATE", "") or "").strip()
@@ -2211,6 +2294,22 @@ def _notes_credentials():
     """
     if not getattr(settings, "CLASS_NOTES_ENABLED", True):
         raise NotesNotConfiguredError("Class notes are switched off on this server.")
+
+    if is_local_notes():
+        # Nothing here is reachable in the local source — there is no service
+        # to command and no bucket to write into — but the model that writes
+        # the notes still has to exist, and a teacher is better told that
+        # before the class than after it.
+        if not _summariser_configured():
+            logger.error(
+                "class_sessions: no AI provider is configured (GEMINI_API_KEY) — a "
+                "class could be recorded but nothing could transcribe it or write "
+                "the notes up, so notes are refused before anybody is recorded."
+            )
+            raise NotesNotConfiguredError(
+                "The AI that writes class notes isn't set up on this server yet."
+            )
+        return None, None, None
 
     app_id, app_certificate = _agora_credentials()
 
@@ -2342,7 +2441,16 @@ def start_notes(*, session, user=None, now=None):
     The row is created up front and the work happens on a thread — the same
     shape as recording, `ai_courses` and `brand_validator` — because sending a
     bot into a channel is a round trip to Agora and this is called from inside
-    a teacher's join, which must not wait for it.
+    a teacher's join, which must not wait for it. The local source has no bot
+    to send and so no thread to start here: the row *is* the instruction, and
+    the teacher's browser acts on it the moment it sees it.
+
+    `session.takes_notes` is deliberately **not** checked. It says whether
+    this class starts taking notes by itself when its teacher opens the room
+    (`maybe_start_notes`), not whether notes are permitted at all — a teacher
+    who left the box unticked when they scheduled the class must still be able
+    to press the button during it, and one who changes their mind halfway
+    through a class must be able to start a write-up of the rest of it.
 
     Idempotent by database constraint rather than by checking first: two
     co-instructors arriving in the same second would otherwise put two bots in
@@ -2350,8 +2458,6 @@ def start_notes(*, session, user=None, now=None):
     """
     now = now or timezone.now()
 
-    if not session.takes_notes:
-        raise NotesNotConfiguredError("This class is set not to take notes.")
     if session.status == ClassSession.SessionStatus.CANCELLED:
         raise NotesNotConfiguredError("This class was cancelled.")
 
@@ -2361,16 +2467,45 @@ def start_notes(*, session, user=None, now=None):
 
     existing = active_notes(session)
     if existing is not None:
+        if existing.is_paused:
+            # Resuming, not starting: everything recorded before the teacher
+            # paused belongs to this run, and a class taken in two stretches
+            # has to come out as one set of notes covering both. A second run
+            # would write up the second half and replace the first half on
+            # the card — see `ClassSessionNotes`'s docstring.
+            ClassSessionNotes.objects.filter(
+                pk=existing.pk, status=ClassSessionNotes.NotesStatus.PAUSED
+            ).update(
+                status=ClassSessionNotes.NotesStatus.TRANSCRIBING,
+                stopped_at=None,
+                updated_at=timezone.now(),
+            )
+            existing.refresh_from_db()
+            logger.info(
+                "class_sessions: resuming notes run %s on class %s",
+                existing.pk,
+                session.pk,
+            )
+            return existing
         _ensure_notes_monitored(existing)
         return existing
 
+    local = is_local_notes()
     try:
         with transaction.atomic():
             notes = ClassSessionNotes.objects.create(
                 session=session,
                 started_by=user if (user is not None and user.is_authenticated) else None,
-                status=ClassSessionNotes.NotesStatus.STARTING,
-                bot_uid=_new_notes_bot_uid(),
+                # A local run is listening from the instant it exists: the row
+                # is what tells the teacher's browser to start recording, so
+                # there is no "being admitted by Agora" stage to sit in.
+                status=(
+                    ClassSessionNotes.NotesStatus.TRANSCRIBING
+                    if local
+                    else ClassSessionNotes.NotesStatus.STARTING
+                ),
+                started_at=now if local else None,
+                bot_uid=None if local else _new_notes_bot_uid(),
             )
     except IntegrityError:
         # Lost the race to the partial unique constraint — the other request's
@@ -2381,15 +2516,78 @@ def start_notes(*, session, user=None, now=None):
         raise
 
     logger.info(
-        "class_sessions: starting notes on class %s (notes run %s)", session.pk, notes.pk
+        "class_sessions: starting notes on class %s (notes run %s, source %s)",
+        session.pk,
+        notes.pk,
+        notes_source(),
     )
+    if local:
+        # Nothing to spawn and nothing to call: the capturing browser polls
+        # the notes endpoint, sees this row and starts recording.
+        return notes
+
     _mark_notes_monitored(notes.pk)
     _spawn(_run_notes_safe, notes.pk)
     return notes
 
 
 def stop_notes(*, session, user=None, reason=""):
-    """Asks the running transcription to finish.
+    """The teacher's stop button — **pause**, on the source that can pause.
+
+    The two sources genuinely differ here and the difference is the feature.
+    On the **local** source the audio is ours and pausing costs nothing, so
+    stopping mid-class is a bookmark: the run stays this class's run, what
+    was recorded stays on it, and pressing the button again resumes the same
+    row. A class taken in two stretches comes out as one set of notes
+    covering both, which is what a teacher who stopped for an exercise
+    expects — two runs would write up the second stretch and replace the
+    first on the card.
+
+    On the **Agora** source there is a bot in the channel being billed by the
+    minute and writing captions into a folder belonging to this run. It
+    cannot be parked, so stopping ends the run there, exactly as it always
+    did.
+
+    Either way the class itself is untouched, and nothing here waits: the
+    work that follows belongs to a thread.
+    """
+    notes = active_notes(session)
+    if notes is None:
+        return None
+
+    if is_local_notes():
+        if not notes.is_listening:
+            # Already paused, or already past the point a stop would change
+            # anything.
+            _ensure_notes_monitored(notes)
+            return notes
+        return _pause_local_notes(notes, reason=reason)
+
+    return _end_agora_notes(notes, session=session, reason=reason)
+
+
+def finish_notes(*, session, user=None, reason=""):
+    """Ends this class's notes for good and starts the write-up.
+
+    The counterpart to `stop_notes`: that is a teacher pausing inside a class
+    that is still going, this is the class being over — the host leaving, the
+    classroom closing itself at the advertised end, or the deadline catching a
+    laptop that was simply shut. It is the only thing that turns a run into
+    notes, which is why a paused run is finished by it as readily as a
+    listening one: the twenty minutes already recorded are still a class.
+    """
+    notes = active_notes(session)
+    if notes is None:
+        return None
+
+    if is_local_notes():
+        return _finish_local_notes(notes, reason=reason)
+
+    return _end_agora_notes(notes, session=session, reason=reason)
+
+
+def _end_agora_notes(notes, *, session, reason=""):
+    """Asks the transcription bot to leave and hands the rest to the monitor.
 
     Only ever *asks*: the monitor thread owns the call to Agora and everything
     after it, so there is one path that ends a transcription, collects its
@@ -2397,10 +2595,6 @@ def stop_notes(*, session, user=None, reason=""):
     row flips to COLLECTING immediately, which is what both portals show while
     the notes are being put together.
     """
-    notes = active_notes(session)
-    if notes is None:
-        return None
-
     if not notes.is_listening:
         # Already collecting or summarising — the thread is past the point a
         # stop would change anything.
@@ -2449,19 +2643,75 @@ def maybe_start_notes(session, user, now=None):
     return None
 
 
-def maybe_stop_notes(session, user, reason="the host left"):
-    """Ends the transcription when the teacher leaves — the end of the class.
+def maybe_pause_notes(session, user, reason="the host left"):
+    """Parks the notes when the host's browser goes quiet without saying why.
 
-    A student leaving changes nothing. If the teacher's browser never says
-    goodbye, the monitor's own deadline catches it.
+    A reload, a navigation or a dropped connection all arrive here, and none
+    of them is the class being over — so the run is parked rather than
+    written up, and the rejoin that follows a moment later picks it straight
+    back up with everything recorded so far still on it. A host who really
+    has gone leaves it parked until the class's own deadline finishes it.
+
+    Local source only: there is no way to park a transcription bot that Agora
+    is billing by the minute, so on that source an ambiguous leave is left
+    alone entirely and the deadline does the work.
+    """
+    if not is_host(user, session) or not is_local_notes():
+        return None
+    try:
+        notes = active_notes(session)
+        if notes is None or not notes.is_listening:
+            return None
+        return _pause_local_notes(notes, reason=reason)
+    except Exception:  # noqa: BLE001 - leaving a class must always succeed
+        logger.exception("class_sessions: unexpected error pausing notes on class %s", session.pk)
+    return None
+
+
+def maybe_stop_notes(session, user, reason="the host left"):
+    """Ends the notes when the teacher leaves — the end of the class.
+
+    `finish_notes`, never `stop_notes`: the host walking out is not a pause,
+    and a run left parked would never become notes. A student leaving changes
+    nothing. If the teacher's browser never says goodbye, the deadline in
+    `_ensure_local_notes_progress` (or the Agora monitor's) catches it.
     """
     if not is_host(user, session):
         return None
     try:
-        return stop_notes(session=session, user=user, reason=reason)
+        return finish_notes(session=session, user=user, reason=reason)
     except Exception:  # noqa: BLE001 - leaving a class must always succeed
         logger.exception("class_sessions: unexpected error stopping notes on class %s", session.pk)
     return None
+
+
+def set_capture_preference(session, *, is_recorded=None, takes_notes=None):
+    """Remembers that the teacher turned recording or notes on or off here.
+
+    `is_recorded` and `takes_notes` are *this class's* switches, not
+    permissions: they decide whether a class starts recording and writing
+    itself up the moment its teacher opens the room. The teacher sets them
+    when they schedule the class and can change their mind inside it, and
+    pressing a button in the control bar is exactly that — changing their
+    mind — so it is written down rather than treated as a one-off override.
+
+    Writing it down is also what stops a stopped recording from coming back
+    by itself. `maybe_start_recording` runs inside every host join, and a
+    classroom re-joins on its own whenever Agora renews a token, so a switch
+    left on would quietly restart the thing the teacher had just switched
+    off, minutes after they switched it off.
+    """
+    changed = []
+    if is_recorded is not None and session.is_recorded != bool(is_recorded):
+        session.is_recorded = bool(is_recorded)
+        changed.append("is_recorded")
+    if takes_notes is not None and session.takes_notes != bool(takes_notes):
+        session.takes_notes = bool(takes_notes)
+        changed.append("takes_notes")
+
+    if changed:
+        session.save(update_fields=[*changed, "updated_at"])
+    return session
 
 
 # ---------------------------------------------------------------------------
@@ -2494,6 +2744,9 @@ def _ensure_notes_monitored(notes):
     """
     if not notes or not notes.is_in_flight:
         return False
+
+    if is_local_notes():
+        return _ensure_local_notes_progress(notes)
 
     status = notes.status
     if notes.is_listening and not notes.agent_id:
@@ -2565,11 +2818,57 @@ def _collect_notes_safe(notes_id):
 
 
 def _fail_notes(notes_id, message):
-    ClassSessionNotes.objects.filter(pk=notes_id).exclude(status=_NOTES_AVAILABLE).update(
+    """Gives up on a run, with a reason, and tells the teacher — once.
+
+    The notification matters more than it looks. A failed run is neither
+    running nor available, so it leaves no trace anywhere a teacher looks: no
+    card button, no reader, nothing on the class at all. Somebody who took
+    notes on an hour's lesson and got silence has no way to find out whether
+    the notes are still coming, and the first thing they do is take notes on
+    another class the same way.
+
+    Only the teacher. The reason names providers, quotas and files, and
+    thirty students pulled to a page that says a write-up failed is noise
+    they can do nothing with.
+    """
+    updated = ClassSessionNotes.objects.filter(pk=notes_id).exclude(
+        status__in=[_NOTES_AVAILABLE, ClassSessionNotes.NotesStatus.FAILED]
+    ).update(
         status=ClassSessionNotes.NotesStatus.FAILED,
         error_message=str(message)[:500],
         updated_at=timezone.now(),
     )
+    # Not the first failure of this run: the reason already on the row is the
+    # specific one, and this is the generic unwinding behind it.
+    if not updated:
+        return
+
+    notes = (
+        ClassSessionNotes.objects.select_related("session", "session__course")
+        .filter(pk=notes_id)
+        .first()
+    )
+    if notes is None or notes.session.teacher_id is None:
+        return
+
+    session = notes.session
+    try:
+        create_notifications_for_users(
+            [session.teacher_id],
+            verb="class_notes_failed",
+            title=f"Class notes couldn't be written: {session.title}",
+            message=(
+                f"{session.course.title} — {str(message)[:200]} Your students "
+                "haven't been told."
+            ),
+            related_object_type="class_session",
+            related_object_id=session.pk,
+        )
+    except Exception:  # noqa: BLE001 - a failed run must not fail twice
+        logger.exception(
+            "class_sessions: could not tell the teacher that notes run %s failed",
+            notes_id,
+        )
 
 
 def _touch_notes(notes):
@@ -2770,6 +3069,713 @@ def _leave_at_agora(*, notes, agent, app_id, auth_header):
         pass
     except NotesUnavailableError as exc:
         logger.warning("class_sessions: leave for notes run %s failed: %s", notes.pk, exc)
+
+
+# ---------------------------------------------------------------------------
+# Notes from the classroom's own audio
+# ---------------------------------------------------------------------------
+#
+# The default source, and the one that needs nothing but an AI key. Instead of
+# sending a transcription bot into the channel and reading what it wrote into
+# a bucket, the **teacher's own browser** mixes everybody who is speaking into
+# one track, records it in segments and posts them here, where they are kept
+# as ordinary Django files under `MEDIA_ROOT/class-audio/`. The model
+# transcribes each segment, the transcript is stitched together, and from
+# there everything is identical to the Agora path: same prompt, same schema,
+# same repair, same document, same notifications, same emails.
+#
+# Four consequences shape what follows.
+#
+# **There is no third party in the loop, so there is nothing to poll.** No
+# agent to admit, no agent to pull out, no folder to list until it stops
+# growing. The row *is* the instruction — a run in TRANSCRIBING means "record
+# this class" and the capturing browser acts on it — which is why
+# `start_notes` spawns no thread here and `stop_notes` makes no call.
+#
+# **The browser is the only thing that can end a run cleanly**, by posting its
+# last segment. Everything else is a backstop: `_ensure_local_notes_progress`
+# is what finishes a class whose teacher closed their laptop, and it is
+# reached from the same request that adopts an orphaned Agora run, for the
+# same reason — there is no scheduler in this codebase.
+#
+# **Exactly one browser captures a class.** The run's `started_by` is the
+# nominated capturer and `notes_capture_config` says so to every client, so a
+# co-instructor opening the same classroom listens rather than recording a
+# second, overlapping copy of the hour.
+#
+# **A write-up that dies halfway must not pay twice.** Each segment keeps its
+# own transcript, so an adopted run resumes at the first segment nobody has
+# read yet rather than re-reading the whole class — the same reasoning that
+# keeps `ClassSessionNotes.transcript` on the row in the Agora path.
+
+# How long after a run stops listening the server waits for the last segment
+# to arrive before giving up on it. Generous, because the segment being
+# uploaded is the one the teacher just finished talking over and a classroom
+# uplink is the slowest link in this chain — and because the cost of waiting
+# is a progress badge, while the cost of not waiting is the end of the class
+# missing from its notes.
+LOCAL_NOTES_UPLOAD_GRACE_SECONDS = 3 * 60
+
+# How long one segment's transcription may take. Longer than the write-up's
+# own call: a model reading ten minutes of audio is doing more work than one
+# reading the text it produced, and nobody is watching either.
+LOCAL_NOTES_TRANSCRIBE_TIMEOUT_SECONDS = 10 * 60
+
+# How long a local write-up may be quiet before another request decides it has
+# been orphaned by a restart and adopts it.
+#
+# **Derived, not chosen.** A local run makes one model call per segment and
+# only refreshes its heartbeat between them, so the quietest a *healthy* run
+# can be is one segment stalling for its full timeout and every retry. The
+# Agora path's 15 minutes is far under that — a 60-minute class is fifteen
+# segments, and fifteen chances for one of them to sit on a slow response for
+# half an hour — and a window shorter than the work it is watching does not
+# recover an orphan, it starts a second thread transcribing the same class
+# beside the first and bills the model twice for it.
+LOCAL_NOTES_ORPHAN_AFTER_SECONDS = (
+    LOCAL_NOTES_TRANSCRIBE_TIMEOUT_SECONDS * NOTES_MAX_TRANSPORT_ATTEMPTS
+    + sum(NOTES_TRANSPORT_BACKOFF_SECONDS)
+    # Enough slack that a run which really is dead is still picked up before
+    # anybody goes looking for notes that never arrived.
+    + 10 * 60
+)
+
+# How much of the previous segment the model is shown as context for the next
+# one. A class is cut on a timer, so a sentence really does straddle two
+# recordings; this is enough to hear where the thread was, and far too little
+# to be worth repeating.
+LOCAL_NOTES_TAIL_CHARS = 600
+
+
+def notes_capture_config(session, running):
+    """What a client needs in order to record this class.
+
+    Carried on `notes_state` rather than hard-coded in the browser so the
+    recording settings live beside the server that has to accept the result —
+    a bitrate the server would refuse as too large is not a decision to make
+    in two places. `capturer_id` is the whole of the "only one browser
+    records" rule: every client is told which one of them it is.
+
+    Keyed on *listening*, not on the run existing: a run the teacher paused
+    nominates nobody and carries no id, which is what makes the capturing
+    browser stop recording — and start again, into the same run, the moment
+    the teacher presses the button and `capturer_id` comes back.
+
+    `running` is passed in rather than looked up, because the one caller has
+    already asked and a listing renders a lot of these.
+    """
+    if not is_local_notes():
+        return {"mode": "agora"}
+
+    listening = bool(running and running.is_listening)
+    return {
+        "mode": "local",
+        "run_id": running.pk if listening else None,
+        # The user whose browser should be recording. `None` while nothing is
+        # running, and never a student: a run is only ever started by a host.
+        "capturer_id": running.started_by_id if listening else None,
+        "segment_seconds": max(
+            30, int(getattr(settings, "CLASS_NOTES_AUDIO_SEGMENT_SECONDS", 600))
+        ),
+        "audio_bitrate": max(
+            8000, int(getattr(settings, "CLASS_NOTES_AUDIO_BITRATE", 16000))
+        ),
+        "max_bytes": _local_audio_max_bytes(),
+        "mime_types": list(notes_audio.PREFERRED_RECORDING_TYPES),
+    }
+
+
+def _local_audio_max_bytes():
+    return max(1, int(getattr(settings, "CLASS_NOTES_AUDIO_MAX_MB", 40))) * 1024 * 1024
+
+
+# How many speaker samples one segment may carry. The browser samples a few
+# times a second and only writes a line when the speaker changes, so a busy
+# four-minute segment is a few dozen — this is a ceiling on what one request
+# can put in a JSON column, not a budget anybody should be near.
+MAX_SPEAKER_SAMPLES = 2000
+
+
+def _clean_speaker_timeline(raw):
+    """The browser's "who was speaking when", trusted no further than it needs
+    to be.
+
+    Shape only: a list of `{at: seconds, uid: user id}`. Whether the uid
+    belongs to somebody who was actually in the class is settled later, when
+    it is resolved against the roster (`_speaker_names`) — a uid nobody
+    recognises simply never becomes a name.
+    """
+    if not isinstance(raw, list):
+        return []
+    cleaned = []
+    for entry in raw[:MAX_SPEAKER_SAMPLES]:
+        if not isinstance(entry, dict):
+            continue
+        try:
+            at = float(entry.get("at"))
+            uid = int(entry.get("uid"))
+        except (TypeError, ValueError):
+            continue
+        if at < 0:
+            continue
+        cleaned.append({"at": round(at, 2), "uid": uid})
+    cleaned.sort(key=lambda item: item["at"])
+    return cleaned
+
+
+def store_notes_audio(
+    *,
+    session,
+    user,
+    upload,
+    client_key="",
+    duration_seconds=None,
+    end=False,
+    speakers=None,
+):
+    """Takes one segment of a class's audio from the browser recording it.
+
+    Everything that could let two recordings of one hour end up in one
+    transcript is closed here rather than trusted to the client. The segment's
+    **index is assigned by this server in arrival order**, never taken from
+    the request: a capturer that crashed and came back would restart its own
+    numbering and silently overwrite the first half of the class. `client_key`
+    makes the upload idempotent, so a segment that timed out on its way up but
+    landed anyway is recognised rather than stored twice. And only the run's
+    nominated capturer is accepted, so a co-instructor's classroom cannot post
+    a second, overlapping copy of the same hour.
+
+    `end` is the browser saying "the class is over" — the classroom closing,
+    the teacher leaving — and is what actually starts the write-up. It is
+    **not** set when the teacher merely presses stop: that is a pause, the
+    class is still going, and the segment being uploaded is simply the last
+    of that stretch. The audio already here waits on the run for the next one.
+    """
+    if not is_local_notes():
+        raise NotesNotConfiguredError(
+            "This server writes classes up from Agora's transcription service, "
+            "not from the classroom's own audio."
+        )
+    if not is_host(user, session):
+        raise SessionAccessDeniedError(
+            "Only this class's teacher can send the audio its notes are written from."
+        )
+
+    notes = active_notes(session)
+    if notes is None or notes.status not in (
+        ClassSessionNotes.NotesStatus.STARTING,
+        ClassSessionNotes.NotesStatus.TRANSCRIBING,
+        # PAUSED and COLLECTING are both accepted because the segment in
+        # flight when the teacher pressed stop — or when the class closed —
+        # is the end of what they were just saying. Refusing it would lose
+        # precisely the minutes nobody wants to lose.
+        ClassSessionNotes.NotesStatus.PAUSED,
+        ClassSessionNotes.NotesStatus.COLLECTING,
+    ):
+        raise NotesUnavailableError("This class isn't taking notes right now.")
+
+    if notes.started_by_id and notes.started_by_id != user.pk:
+        raise NotesUnavailableError(
+            "Another device is already recording this class for its notes."
+        )
+
+    if upload is None:
+        raise NotesUnavailableError("No audio was attached to that upload.")
+
+    # Refused at the door rather than stored and found unreadable when the
+    # class is over and the teacher has gone home.
+    media_type, extension = notes_audio.resolve(
+        getattr(upload, "content_type", "") or ""
+    )
+
+    size = int(getattr(upload, "size", 0) or 0)
+    max_bytes = _local_audio_max_bytes()
+    if size > max_bytes:
+        raise NotesUnavailableError(
+            "That piece of the class is too large to accept "
+            f"({size // (1024 * 1024)} MB; the limit is {max_bytes // (1024 * 1024)} MB)."
+        )
+    if size < notes_audio.MIN_SEGMENT_BYTES:
+        # An empty container and nothing else — a recorder stopped in the same
+        # second it started. Not an error, and not something to keep, but a
+        # closing one still has to end the run.
+        logger.info(
+            "class_sessions: ignoring an empty audio segment for notes run %s", notes.pk
+        )
+        return _finish_local_notes(notes, reason="the classroom closed") if end else notes
+
+    key = (str(client_key).strip() or secrets.token_hex(8))[:64]
+
+    with transaction.atomic():
+        # Locking the run, not the segment table: this is what serialises
+        # index assignment between two uploads arriving together.
+        locked = ClassSessionNotes.objects.select_for_update().filter(pk=notes.pk).first()
+        if locked is None:
+            raise NotesUnavailableError("This class isn't taking notes right now.")
+
+        existing = ClassSessionNotesAudio.objects.filter(
+            notes=locked, client_key=key
+        ).first()
+        if existing is None:
+            highest = ClassSessionNotesAudio.objects.filter(notes=locked).aggregate(
+                top=Max("index")
+            )["top"]
+            segment = ClassSessionNotesAudio(
+                notes=locked,
+                index=0 if highest is None else highest + 1,
+                client_key=key,
+                content_type=notes_audio.base_type(upload.content_type),
+                size_bytes=size,
+                duration_seconds=duration_seconds,
+                speakers=_clean_speaker_timeline(speakers),
+            )
+            filename = (
+                f"class-{session.pk}-notes-{locked.pk}-"
+                f"{segment.index:03d}-{secrets.token_hex(6)}.{extension}"
+            )
+            segment.file.save(filename, upload, save=False)
+            segment.save()
+            logger.info(
+                "class_sessions: notes run %s took segment %s (%s bytes, %s)",
+                locked.pk,
+                segment.index,
+                size,
+                media_type,
+            )
+        else:
+            logger.info(
+                "class_sessions: notes run %s already had segment %s — upload ignored",
+                locked.pk,
+                existing.index,
+            )
+
+    notes.refresh_from_db()
+    if end:
+        return _finish_local_notes(notes, reason="the classroom closed")
+
+    # A heartbeat as well as a save: `_ensure_local_notes_progress` tells a
+    # browser that is still recording from one that stopped answering by how
+    # long it has been since the run last moved.
+    _touch_notes(notes)
+    return notes
+
+
+def _pause_local_notes(notes, *, reason=""):
+    """Parks a run between stretches of one class.
+
+    Nothing is written up and nothing is thrown away: the segments already
+    uploaded stay on the row, the run stays this class's run (PAUSED is in
+    `IN_FLIGHT_STATUSES`, so the constraint still allows only one), and
+    `start_notes` picks it straight back up. `stopped_at` is deliberately
+    left alone — the run has not stopped, and a duration measured from a
+    pause would be wrong for the class that followed it.
+    """
+    ClassSessionNotes.objects.filter(
+        pk=notes.pk, status__in=list(ClassSessionNotes.LISTENING_STATUSES)
+    ).update(
+        status=ClassSessionNotes.NotesStatus.PAUSED, updated_at=timezone.now()
+    )
+    notes.refresh_from_db()
+    logger.info(
+        "class_sessions: notes run %s on class %s paused%s",
+        notes.pk,
+        notes.session_id,
+        f" ({reason})" if reason else "",
+    )
+    return notes
+
+
+def _finish_local_notes(notes, *, reason=""):
+    """Ends a run for good and, if there is anything to read, writes it up.
+
+    Reached from every way a class can be over — the host leaving, the
+    classroom closing itself at the advertised end, the closing upload, and
+    the deadline that catches a laptop that was simply shut — so it has to be
+    safe to call twice and safe to call on a run in any state. A run already
+    past COLLECTING is left to the thread that owns it.
+
+    A run with no audio at all is not failed here: the segment that was in
+    flight when the class closed is still on its way, and
+    `_ensure_local_notes_progress` gives it `LOCAL_NOTES_UPLOAD_GRACE_SECONDS`
+    before deciding it never arrives.
+    """
+    statuses = ClassSessionNotes.NotesStatus
+    if notes.status in (statuses.AVAILABLE, statuses.FAILED, statuses.SUMMARIZING):
+        return notes
+
+    if notes.status != statuses.COLLECTING:
+        ClassSessionNotes.objects.filter(
+            pk=notes.pk,
+            status__in=[*ClassSessionNotes.LISTENING_STATUSES, statuses.PAUSED],
+        ).update(
+            status=statuses.COLLECTING,
+            stopped_at=timezone.now(),
+            updated_at=timezone.now(),
+        )
+        notes.refresh_from_db()
+        logger.info(
+            "class_sessions: notes run %s on class %s is finishing%s",
+            notes.pk,
+            notes.session_id,
+            f" ({reason})" if reason else "",
+        )
+
+    if ClassSessionNotesAudio.objects.filter(notes=notes).exists():
+        return _begin_local_summary(notes)
+    return notes
+
+
+def _begin_local_summary(notes):
+    """Moves a local run on to the write-up and puts a thread behind it.
+
+    Under a lock and spawning at most once, because the things that end a
+    class — the browser's closing segment, the host's leave ping, the
+    classroom closing itself at the advertised end, and the deadline that
+    catches a laptop simply shut — can all arrive within a second of each
+    other, and two threads reading the same audio would bill the model twice
+    for one class. (The teacher's stop button is *not* among them: that is a
+    pause, and `_pause_local_notes` is where it goes.)
+    """
+    statuses = ClassSessionNotes.NotesStatus
+    with transaction.atomic():
+        row = ClassSessionNotes.objects.select_for_update().filter(pk=notes.pk).first()
+        if row is None or row.status in (statuses.AVAILABLE, statuses.FAILED):
+            return row
+        # Whether *this* call is the one that started the write-up. The row,
+        # locked, is the only thing that can answer that across workers — the
+        # in-process `_monitored` set cannot, and two gunicorn workers both
+        # deciding to write a class up would pay the model twice for it. A
+        # row already SUMMARIZING with nothing behind it is a different case
+        # entirely, and is adopted by `_ensure_local_notes_progress`.
+        moved = row.status != statuses.SUMMARIZING
+        if moved:
+            row.status = statuses.SUMMARIZING
+            row.stopped_at = row.stopped_at or timezone.now()
+            row.save(update_fields=["status", "stopped_at", "updated_at"])
+
+    if moved and _mark_notes_monitored(row.pk):
+        logger.info("class_sessions: writing up local notes run %s", row.pk)
+        _spawn(_run_local_notes_safe, row.pk)
+    return row
+
+
+def _ensure_local_notes_progress(notes):
+    """The backstop for a class whose teacher simply closed their laptop.
+
+    A local run has no thread while it is listening — the browser is the only
+    thing doing anything — so this is where a run that will never hear from
+    that browser again is finished off. Reached from the same place an
+    orphaned Agora run is adopted (`_ensure_notes_monitored`), for the same
+    reason: this codebase has no scheduler, so the next request that asks
+    about a class is what moves it along.
+
+    Deliberately unhurried at every step. A listening run is left alone until
+    its class's own end has been and gone; a finished one is given
+    `LOCAL_NOTES_UPLOAD_GRACE_SECONDS` for its last segment to arrive before
+    anybody decides it never will; and a run that was mid-write-up is only
+    adopted once it has been quiet far longer than a model call takes.
+
+    The one place it does not wait is a run the teacher had **paused**. The
+    browser stopped and flushed when they pressed the button, so there is
+    nothing on its way up and the grace would only hold back notes that are
+    already complete.
+    """
+    statuses = ClassSessionNotes.NotesStatus
+    now = timezone.now()
+
+    if notes.status == statuses.SUMMARIZING:
+        if (now - notes.updated_at).total_seconds() < LOCAL_NOTES_ORPHAN_AFTER_SECONDS:
+            return False
+        if not _mark_notes_monitored(notes.pk):
+            return False
+        logger.info("class_sessions: adopting orphaned local notes run %s", notes.pk)
+        _spawn(_run_local_notes_safe, notes.pk)
+        return True
+
+    # Whether anything could still be on its way up. A paused run has no
+    # recorder behind it — the browser stopped and flushed when the teacher
+    # pressed the button — so there is no in-flight segment to wait for, and
+    # the grace below would only delay notes that are already complete.
+    nothing_in_flight = notes.is_paused
+
+    if notes.is_listening or notes.is_paused:
+        # A paused run is finished by the same deadline as a listening one.
+        # The teacher stopped mid-class and then the class ended without
+        # anybody saying so — the twenty minutes already recorded are still a
+        # class, and leaving them parked forever would mean notes that never
+        # arrive and a row nothing can clear.
+        _, _, ends_at = session_window(notes.session)
+        deadline = ends_at + timedelta(
+            minutes=LIVE_GRACE_MINUTES_AFTER + NOTES_STOP_MARGIN_MINUTES
+        )
+        if now < deadline:
+            return False
+        logger.info(
+            "class_sessions: local notes run %s outlived its class — finishing it",
+            notes.pk,
+        )
+        ClassSessionNotes.objects.filter(
+            pk=notes.pk,
+            status__in=[*ClassSessionNotes.LISTENING_STATUSES, statuses.PAUSED],
+        ).update(
+            status=statuses.COLLECTING, stopped_at=now, updated_at=now
+        )
+        notes.refresh_from_db()
+        # Fall through: the grace below starts from this moment, so the last
+        # segment still in flight gets its chance to land.
+
+    if notes.status == statuses.COLLECTING:
+        if (
+            not nothing_in_flight
+            and (now - notes.updated_at).total_seconds() < LOCAL_NOTES_UPLOAD_GRACE_SECONDS
+        ):
+            return False
+        if ClassSessionNotesAudio.objects.filter(notes=notes).exists():
+            logger.info(
+                "class_sessions: local notes run %s stopped waiting for its last "
+                "segment and is writing up what arrived",
+                notes.pk,
+            )
+            _begin_local_summary(notes)
+            return True
+        _fail_notes(
+            notes.pk,
+            "No audio from this class ever reached the server, so there was "
+            "nothing to write up.",
+        )
+        return True
+
+    return False
+
+
+def _run_local_notes_safe(notes_id):
+    """Thread entrypoint for a local write-up: transcribe, summarise, publish.
+
+    Every exit path leaves the row in a state somebody can act on, for the
+    same reason `_run_notes_safe`'s does: a run stuck on SUMMARIZING shows a
+    class a spinner forever.
+    """
+    close_old_connections()
+    try:
+        _write_up_local_notes(notes_id)
+    except Exception as exc:  # noqa: BLE001 - see docstring
+        logger.exception("class_sessions: local notes run %s crashed", notes_id)
+        _fail_notes(notes_id, str(exc))
+    finally:
+        _release_notes_monitored(notes_id)
+        close_old_connections()
+
+
+def _write_up_local_notes(notes_id):
+    """The whole second half of a local run, resumable at every step.
+
+    The transcript is written to the row as soon as it is assembled — exactly
+    as the Agora path does — so a process that dies between transcribing and
+    summarising resumes at the model's second call rather than paying for the
+    first one again.
+    """
+    notes = ClassSessionNotes.objects.select_related("session", "session__course").get(
+        pk=notes_id
+    )
+    if notes.status == _NOTES_AVAILABLE:
+        return notes
+
+    transcript_text = notes.transcript
+    if not transcript_text:
+        transcript_text, problem = _transcribe_local_audio(notes)
+        if not transcript_text:
+            logger.info(
+                "class_sessions: local notes run %s has nothing to write up", notes.pk
+            )
+            _fail_notes(
+                notes_id,
+                problem
+                or "Nothing was transcribed from this class — no one was heard speaking.",
+            )
+            return None
+        ClassSessionNotes.objects.filter(pk=notes_id).exclude(
+            status=_NOTES_AVAILABLE
+        ).update(transcript=transcript_text, updated_at=timezone.now())
+
+    notes.refresh_from_db()
+    payload = _summarize(notes, transcript_text)
+    return _write_notes(notes_id, payload)
+
+
+def _transcribe_local_audio(notes):
+    """Reads every segment of this class, in order, into one transcript.
+
+    Returns `(transcript, problem)`. A segment the model refuses is logged and
+    **skipped rather than fatal**: losing ten minutes out of an hour is worth
+    far more than losing the hour, and the one case where that judgement would
+    mislead — every segment failing — comes back as an empty transcript with
+    the reason attached, so the teacher is told what broke rather than that
+    nobody spoke.
+
+    A segment that produced nothing is still marked read, so a resumed run
+    does not pay to listen to the same silence again. A segment the *provider*
+    refused is deliberately left unmarked: that is the one failure worth
+    another attempt if this run is ever picked up again.
+    """
+    segments = list(notes.audio_segments.all())
+    if not segments:
+        return "", ""
+
+    parts = []
+    problem = ""
+    for position, segment in enumerate(segments):
+        if segment.transcribed_at is not None:
+            if segment.transcript:
+                parts.append(segment.transcript)
+            continue
+
+        tail = parts[-1][-LOCAL_NOTES_TAIL_CHARS:] if parts else ""
+        try:
+            text = _transcribe_segment(
+                notes,
+                segment,
+                position=position,
+                total=len(segments),
+                previous_tail=tail,
+            )
+        except (ProviderError, ProviderTransportError) as exc:
+            # A refusal, a spent quota, or a transport failure that outlived
+            # its retries — the two are separate classes, not one and its
+            # subclass. Logged, remembered and stepped over: see the
+            # docstring.
+            logger.warning(
+                "class_sessions: could not transcribe segment %s of notes run %s: %s",
+                segment.index,
+                notes.pk,
+                exc,
+            )
+            problem = f"Part of this class could not be transcribed: {exc}"
+            continue
+
+        segment.transcript = text
+        segment.transcribed_at = timezone.now()
+        segment.save(update_fields=["transcript", "transcribed_at", "updated_at"])
+        # The run's heartbeat, so a long class is never mistaken for a dead
+        # thread while it is genuinely being read.
+        _touch_notes(notes)
+        if text:
+            parts.append(text)
+
+    transcript_text = "\n".join(part for part in parts if part).strip()
+    logger.info(
+        "class_sessions: local notes run %s read %s segments into %s characters",
+        notes.pk,
+        len(segments),
+        len(transcript_text),
+    )
+    return transcript_text, ("" if transcript_text else problem)
+
+
+def _speaker_names(session, timeline):
+    """The browser's uid timeline, as `[(seconds, name), ...]`.
+
+    The roster is the authority on who those uids are — the same map the
+    video tiles are labelled from — and a uid it does not recognise is
+    dropped rather than turned into a number the model would print as a
+    name. That is the whole safeguard: a name reaches the transcript only if
+    the server can say whose it is.
+    """
+    if not timeline:
+        return []
+    names = _speaker_map(session)
+    resolved = []
+    for entry in timeline:
+        name = names.get(str(entry.get("uid")))
+        if name:
+            resolved.append((entry.get("at", 0), name))
+    return resolved
+
+
+def _transcribe_segment(notes, segment, *, position, total, previous_tail):
+    """One segment of audio → what was said in it.
+
+    The file is sent as an inline part, the same mechanism `brand_validator`
+    uses for a media kit — which is why segments exist at all: a class arrives
+    in pieces small enough to send that way however long it ran.
+
+    Only `ProviderTransportError` is retried, matching `_summarize` and
+    `brand_validator._call_provider`: a request that never got a verdict is
+    free to send again, while a rejected one or a spent quota would bill the
+    same failure twice.
+    """
+    try:
+        with segment.file.open("rb") as handle:
+            data = handle.read()
+    except (FileNotFoundError, OSError, ValueError):
+        # The row says there is audio and the disk disagrees — a restored
+        # database against a fresh media volume, most often. The rest of the
+        # class is still perfectly readable.
+        logger.warning(
+            "class_sessions: audio segment %s of notes run %s is missing from disk",
+            segment.index,
+            notes.pk,
+        )
+        return ""
+
+    if len(data) < notes_audio.MIN_SEGMENT_BYTES:
+        return ""
+
+    media_type, _ = notes_audio.resolve(segment.content_type)
+    prompt = notes_prompt.build_transcript_prompt(
+        session=notes.session,
+        part_index=position,
+        part_count=total,
+        previous_tail=previous_tail,
+        speakers=_speaker_names(notes.session, segment.speakers),
+    )
+
+    provider = get_provider()
+    result = None
+    for attempt in range(NOTES_MAX_TRANSPORT_ATTEMPTS):
+        try:
+            result = provider.generate_course(
+                prompt,
+                notes_prompt.TRANSCRIPT_SCHEMA,
+                LOCAL_NOTES_TRANSCRIBE_TIMEOUT_SECONDS,
+                files=[
+                    {
+                        "mime_type": media_type,
+                        "data_base64": base64.b64encode(data).decode("ascii"),
+                    }
+                ],
+            )
+            break
+        except ProviderTransportError as exc:
+            if attempt + 1 >= NOTES_MAX_TRANSPORT_ATTEMPTS:
+                raise
+            backoff = NOTES_TRANSPORT_BACKOFF_SECONDS[
+                min(attempt, len(NOTES_TRANSPORT_BACKOFF_SECONDS) - 1)
+            ]
+            logger.warning(
+                "class_sessions: segment %s of notes run %s hit a transport error "
+                "(%s) — retrying in %ss",
+                segment.index,
+                notes.pk,
+                exc,
+                backoff,
+            )
+            time.sleep(backoff)
+
+    try:
+        answer = json.loads(result.text)
+    except (TypeError, ValueError):
+        # Not fatal for the class: the model answered with something that is
+        # not the schema it was given, and the next segment may well be fine.
+        logger.warning(
+            "class_sessions: segment %s of notes run %s came back unreadable",
+            segment.index,
+            notes.pk,
+        )
+        return ""
+
+    if not isinstance(answer, dict) or answer.get("has_speech") is False:
+        return ""
+    return str(answer.get("transcript") or "").strip()
 
 
 # ---------------------------------------------------------------------------
@@ -3013,22 +4019,35 @@ def _write_notes(notes_id, payload):
         pk=notes_id
     )
 
+    # Rendered whatever the model made of the class, including "nothing was
+    # taught here". A run that reaches this line *has* notes — it is about to
+    # be published, both portals will offer them, and the card and the reader
+    # both offer them as a document to download. Skipping the render for an
+    # empty class left those buttons promising a file that was deliberately
+    # never made, which is a worse answer than a one-line PDF saying what the
+    # notes say.
+    _render_notes_document(notes)
+
     if not payload["has_content"]:
         logger.info(
             "class_sessions: notes run %s found no lesson in the transcript", notes.pk
         )
         return _publish_notes(notes_id, announce_to_students=False)
 
-    _render_notes_document(notes)
     return _publish_notes(notes_id, announce_to_students=True)
 
 
-def _render_notes_document(notes):
-    """Writes the PDF onto the row, or logs why it could not.
+def render_notes_document(notes, *, with_transcript=False):
+    """The notes as a PDF, in memory, or `None`.
 
-    Never raises: the notes are in the database and on the screen whatever
-    happens here, and failing a class's write-up because a PDF would not
-    render would be throwing away the thing people actually read.
+    `with_transcript` appends the verbatim record of the class under the
+    write-up. It is **off by default and never set by the pipeline**: the
+    stored document is the one emailed to the whole class, and the words of a
+    room that may be full of minors are the course teachers' alone. The only
+    caller that passes it is the download view, which has already asked who
+    is on the other end of the request.
+
+    Never raises: a PDF that will not render costs a download, not a lesson.
     """
     if not notes_document.PDF_AVAILABLE:
         logger.warning(
@@ -3039,7 +4058,37 @@ def _render_notes_document(notes):
 
     try:
         buffer = io.BytesIO()
-        notes_document.build_notes_pdf(notes, session=notes.session, destination=buffer)
+        notes_document.build_notes_pdf(
+            notes,
+            session=notes.session,
+            destination=buffer,
+            transcript=notes.transcript if with_transcript else None,
+        )
+        buffer.seek(0)
+        return buffer
+    except Exception:  # noqa: BLE001 - see docstring
+        logger.exception(
+            "class_sessions: could not render the notes document for run %s", notes.pk
+        )
+        return None
+
+
+def _render_notes_document(notes):
+    """Writes the shareable PDF onto the row, or logs why it could not.
+
+    Shareable means **without the transcript**: this is the file attached to
+    the email every student on the course receives, so it carries the
+    write-up and nothing else.
+
+    Never raises: the notes are in the database and on the screen whatever
+    happens here, and failing a class's write-up because a PDF would not
+    render would be throwing away the thing people actually read.
+    """
+    buffer = render_notes_document(notes)
+    if buffer is None:
+        return None
+
+    try:
         # A random tail rather than a guessable name: the document is served
         # through a view that checks the class's roster, and a MEDIA path that
         # could be guessed would be a second way in that checks nothing.
@@ -3049,7 +4098,7 @@ def _render_notes_document(notes):
         return notes.document
     except Exception:  # noqa: BLE001 - see docstring
         logger.exception(
-            "class_sessions: could not render the notes document for run %s", notes.pk
+            "class_sessions: could not save the notes document for run %s", notes.pk
         )
         return None
 
@@ -3140,7 +4189,7 @@ def _publish_notes(notes_id, *, announce_to_students):
             # rollback here would otherwise have told a class about notes this
             # server then forgot, and an email is the one thing in this
             # function that cannot be taken back.
-            transaction.on_commit(lambda: _email_notes_ready(session))
+            transaction.on_commit(lambda: _email_notes_ready(session, notes))
 
     logger.info(
         "class_sessions: notes run %s of class %s is available",
@@ -3150,19 +4199,54 @@ def _publish_notes(notes_id, *, announce_to_students):
     return notes
 
 
-def _email_notes_ready(session):
-    """Tells the class, by email, that the notes are up.
+def _notes_attachment(notes):
+    """The rendered notes as `(filename, bytes)`, or `None`.
 
-    The link is to the **portal**, never to the document, for the same reason
-    a recording's email links to the portal: the notes are only for people on
-    this course, and an email outlives any check and forwards to anyone — so
-    the mail gets somebody to the screen where their own access is what opens
-    the document.
+    Read once and handed to every message rather than re-opened per
+    recipient: thirty students is thirty copies of the same few kilobytes,
+    and a media volume that has lost the file should cost one log line, not
+    thirty failures.
+    """
+    if notes is None or not notes.document:
+        return None
+    try:
+        with notes.document.open("rb") as handle:
+            content = handle.read()
+    except (FileNotFoundError, OSError, ValueError):
+        # The row says there is a document and the disk disagrees — a restored
+        # database against a fresh media volume, most often. The notes are
+        # still on screen and the email still has somewhere to send people.
+        logger.warning(
+            "class_sessions: notes run %s has no readable document to attach", notes.pk
+        )
+        return None
 
-    Sent with `fail_silently=True` and one message per recipient, matching
-    `_email_recording_ready` and `users.services.send_password_reset_email`: a
-    broken SMTP configuration must not fail notes that are sitting there
-    perfectly fine, and nobody's address belongs in anybody else's To: header.
+    session = notes.session
+    filename = f"{session.course.code}-{session.scheduled_at:%Y-%m-%d}-notes.pdf"
+    return filename, content
+
+
+def _email_notes_ready(session, notes=None):
+    """Tells the class, by email, that the notes are up — **with the PDF**.
+
+    The document is attached rather than linked. It is the one thing a class
+    is given afterwards that is genuinely meant to be kept, read offline and
+    revised from, and a link that only works while somebody is signed into
+    the portal is not that. What makes that safe here is what the notes *are*
+    (`notes_prompt`): the material that was taught, with no student named and
+    nothing in them that was not said out loud to the whole room. The
+    verbatim transcript is a different matter and is never sent — it stays
+    behind `can_manage`, for the teacher alone.
+
+    The portal link stays in the body, because the attachment is a snapshot
+    and the portal is where the class, its recording and any later correction
+    actually live.
+
+    One message per recipient, built and sent individually so a single
+    unreachable address cannot take the rest of the class's email with it,
+    and the whole thing is wrapped: a broken SMTP configuration must not fail
+    notes that are sitting there perfectly fine, and nobody's address belongs
+    in anybody else's To: header.
     """
     if not getattr(settings, "CLASS_NOTES_EMAIL_ENABLED", True):
         return 0
@@ -3175,8 +4259,9 @@ def _email_notes_ready(session):
     student_link = f"{base_url}{getattr(settings, 'CLASS_RECORDING_PORTAL_PATH', '')}"
     teacher_link = f"{base_url}{getattr(settings, 'CLASS_RECORDING_TEACHER_PORTAL_PATH', '')}"
     subject = f"Class notes ready: {session.title}"
+    attachment = _notes_attachment(notes)
 
-    messages = []
+    sent = 0
     for email, name, is_teacher in recipients:
         link = teacher_link if is_teacher else student_link
         where = (
@@ -3184,25 +4269,47 @@ def _email_notes_ready(session):
             if is_teacher
             else "They're under Live Classes → Past Classes in your student portal."
         )
+        attached_line = (
+            "They're attached to this email as a PDF, and they're also in your "
+            "portal:\n"
+            if attachment
+            else "You'll find them in your portal:\n"
+        )
         body = (
             f"Hi {name},\n\n"
             f"The notes from \"{session.title}\" ({session.course.code} — "
             f"{session.course.title}) are ready to read.\n\n"
-            f"{where}\n{link}\n\n"
+            f"{attached_line}{where}\n{link}\n\n"
             "They were written automatically from a transcript of the class and "
             "haven't been checked by your teacher, so treat anything surprising "
             "as something to ask about.\n\n"
             "The Cool Nerds Team"
         )
-        messages.append((subject, body, settings.DEFAULT_FROM_EMAIL, [email]))
 
-    send_mass_mail(tuple(messages), fail_silently=True)
+        try:
+            message = EmailMessage(
+                subject=subject,
+                body=body,
+                from_email=settings.DEFAULT_FROM_EMAIL,
+                to=[email],
+            )
+            if attachment:
+                message.attach(attachment[0], attachment[1], "application/pdf")
+            message.send(fail_silently=True)
+            sent += 1
+        except Exception:  # noqa: BLE001 - one bad address must not stop the class
+            logger.exception(
+                "class_sessions: could not email the notes from class %s to a recipient",
+                session.pk,
+            )
+
     logger.info(
-        "class_sessions: emailed %s people about the notes from class %s",
-        len(messages),
+        "class_sessions: emailed %s people about the notes from class %s (%s)",
+        sent,
         session.pk,
+        "with the PDF attached" if attachment else "no document to attach",
     )
-    return len(messages)
+    return sent
 
 
 # ---------------------------------------------------------------------------
@@ -3257,6 +4364,10 @@ def notes_state(*, session, user, include_notes=True):
         "notes_bot_uid_min": NOTES_BOT_UID_MIN,
         "status": (running or available).status if (running or available) else "NONE",
         "is_transcribing": bool(running and running.is_listening),
+        # Parked mid-class by the teacher. Deliberately neither "taking
+        # notes" nor "writing them up": nothing is happening, the button is
+        # free, and pressing it resumes this run rather than starting another.
+        "is_paused": bool(running and running.is_paused),
         "is_writing": bool(
             running
             and running.status in (statuses.COLLECTING, statuses.SUMMARIZING)
@@ -3264,7 +4375,22 @@ def notes_state(*, session, user, include_notes=True):
         "available": bool(available),
         "notes": None,
         "transcript": None,
+        # Everything the capturing browser needs, including *which* browser
+        # that is. Sent to everyone rather than only to the capturer, because
+        # a client finding its own id in here is how it knows it is the one.
+        "capture": notes_capture_config(session, running),
+        "error": "",
     }
+
+    # Why the last attempt came to nothing — the teacher's alone. It is the
+    # only place a failure is visible at all (a FAILED run is neither running
+    # nor available), and the reason can name a provider, a quota or a file
+    # on disk, none of which is a student's business or any use to them.
+    if running is None and available is None and can_manage(user, session):
+        latest = session.notes_runs.order_by("-created_at").first()
+        if latest is not None and latest.status == statuses.FAILED:
+            state["status"] = statuses.FAILED
+            state["error"] = latest.error_message
 
     if available and include_notes and can_attend(user, session):
         state["notes"] = notes_payload(available)

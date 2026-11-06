@@ -232,13 +232,31 @@ class StartingAndStoppingTests(RecordingViewTestCase):
         self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
         self.assertIn("storage", response.json()["message"].lower())
 
-    def test_a_class_set_not_to_be_recorded_refuses(self):
+    def test_recording_a_class_that_was_scheduled_not_to_be_recorded_works(self):
+        """And remembers it, which is the part that matters.
+
+        `maybe_start_recording` runs inside every host join, and a classroom
+        re-joins on its own whenever Agora renews a token — so a switch left
+        off would make the teacher's own button useless, and a switch left on
+        after they stopped the tape would quietly start a second recording
+        minutes later.
+        """
         self.session.is_recorded = False
         self.session.save(update_fields=["is_recorded"])
         self.client.force_authenticate(user=self.teacher)
 
         response = self.client.post(self.url)
-        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.session.refresh_from_db()
+        self.assertTrue(self.session.is_recorded)
+
+    def test_stopping_the_recording_turns_the_class_switch_off_too(self):
+        self.client.force_authenticate(user=self.teacher)
+        self.client.delete(self.url)
+
+        self.session.refresh_from_db()
+        self.assertFalse(self.session.is_recorded)
 
 
 class SchedulingWithRecordingTests(RecordingViewTestCase):

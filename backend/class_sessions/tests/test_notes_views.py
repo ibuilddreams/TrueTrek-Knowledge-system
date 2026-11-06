@@ -9,6 +9,8 @@ The transcript is the sharper edge of the same question: a student gets the
 write-up, and only a teacher gets the words.
 """
 
+import shutil
+import tempfile
 from unittest import mock
 
 from django.contrib.auth import get_user_model
@@ -28,10 +30,25 @@ UserModel = get_user_model()
 APP_ID = "2f0e20ac920f4bcdb342451a6653358e"
 APP_CERTIFICATE = "9b86a609600d427cbe3cd2f7dd6e4a93"
 
+_MEDIA_ROOT = tempfile.mkdtemp(prefix="class-notes-tests-")
+
+
+def tearDownModule():
+    shutil.rmtree(_MEDIA_ROOT, ignore_errors=True)
+
+
 NOTES_SETTINGS = dict(
+    # Thrown away with the module — see test_notes_services.py.
+    MEDIA_ROOT=_MEDIA_ROOT,
     AGORA_APP_ID=APP_ID,
     AGORA_APP_CERTIFICATE=APP_CERTIFICATE,
     CLASS_NOTES_ENABLED=True,
+    # This module is the *Agora* transcription path throughout: the bot in
+    # the channel, the captions in the bucket, the folder that is listed
+    # until it stops growing. The deployment default is the local source
+    # (the classroom's own audio, no bucket at all) and is covered by
+    # test_local_notes.py — so it is named here rather than relied on.
+    CLASS_NOTES_SOURCE="agora",
     CLASS_NOTES_LANGUAGES="en-US",
     AGORA_CUSTOMER_ID="",
     AGORA_CUSTOMER_SECRET="",
@@ -190,14 +207,32 @@ class StartAndStopTests(NotesViewTestCase):
         response = self.client.post(self.url)
         self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
 
-    def test_a_class_set_not_to_take_notes_refuses_with_a_reason(self):
+    def test_starting_a_class_that_was_scheduled_not_to_take_notes_works(self):
+        """And remembers it, which is the part that matters.
+
+        `maybe_start_notes` runs inside every host join, and a classroom
+        re-joins on its own whenever Agora renews a token — so a switch left
+        off would make the teacher's own button useless, and a switch left on
+        after they stopped the notes would quietly start them again minutes
+        later.
+        """
         self.session.takes_notes = False
         self.session.save(update_fields=["takes_notes"])
         self.client.force_authenticate(self.teacher)
 
-        response = self.client.post(self.url)
-        self.assertEqual(response.status_code, status.HTTP_503_SERVICE_UNAVAILABLE)
-        self.assertIn("not to take notes", response.data["message"])
+        with mock.patch.object(services, "_spawn"):
+            response = self.client.post(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        self.session.refresh_from_db()
+        self.assertTrue(self.session.takes_notes)
+
+    def test_stopping_the_notes_turns_the_class_switch_off_too(self):
+        self.client.force_authenticate(self.teacher)
+        self.client.delete(self.url)
+
+        self.session.refresh_from_db()
+        self.assertFalse(self.session.takes_notes)
 
     def test_stopping_a_class_that_is_not_taking_notes_is_not_an_error(self):
         self.client.force_authenticate(self.teacher)

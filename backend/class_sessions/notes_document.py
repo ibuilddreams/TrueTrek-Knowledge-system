@@ -19,6 +19,7 @@ lesson.
 """
 
 import logging
+import re
 
 logger = logging.getLogger(__name__)
 
@@ -31,6 +32,7 @@ try:
     from reportlab.platypus import (
         ListFlowable,
         ListItem,
+        PageBreak,
         Paragraph,
         SimpleDocTemplate,
         Spacer,
@@ -106,6 +108,20 @@ def _styles():
             textColor=colors.HexColor(MUTED),
             spaceAfter=4,
         ),
+        "speaker": ParagraphStyle(
+            "NotesSpeaker",
+            parent=base["Normal"],
+            fontName="Helvetica",
+            fontSize=9.5,
+            leading=13.5,
+            textColor=colors.HexColor(INK),
+            spaceAfter=5,
+            # The name hangs in the left margin and the words line up under
+            # each other, which is what makes a page of dialogue scannable:
+            # the eye finds who is talking without reading the sentence.
+            leftIndent=58,
+            firstLineIndent=-58,
+        ),
         "footnote": ParagraphStyle(
             "NotesFootnote",
             parent=base["Normal"],
@@ -144,13 +160,51 @@ def _bullets(items, styles):
     )
 
 
-def build_notes_pdf(notes, *, session, destination):
+# How a transcript line arrives from the model: "Name: what they said".
+_SPEAKER_LINE = re.compile(r"^\s*([^:\n]{1,60}?)\s*:\s*(.+)$")
+
+
+def _transcript_flowables(transcript, styles):
+    """The conversation, laid out as one.
+
+    Each line comes from the model as "Name: words", so the name is pulled
+    out and set in bold against a hanging indent — a page of dialogue is read
+    by finding the speakers first and the sentences second. A line that does
+    not have that shape (a stray note, a model that ran the turns together)
+    is printed as it stands rather than forced into a shape it is not.
+    """
+    flowables = []
+    for raw in str(transcript or "").splitlines():
+        line = raw.strip()
+        if not line:
+            continue
+        match = _SPEAKER_LINE.match(line)
+        if match:
+            speaker, words = match.groups()
+            flowables.append(
+                Paragraph(
+                    f"<b>{_escape(speaker)}:</b> {_escape(words)}", styles["speaker"]
+                )
+            )
+        else:
+            flowables.append(Paragraph(_escape(line), styles["speaker"]))
+    return flowables
+
+
+def build_notes_pdf(notes, *, session, destination, transcript=None):
     """Writes the notes to `destination` (a path or a file-like object).
 
     Sections with nothing in them are omitted rather than printed empty: a
     class that set no homework should not hand out a document with an
     "Action items" heading and a blank under it, which reads as something
     having gone missing.
+
+    `transcript` appends the verbatim record of the class under everything
+    else. It is **passed in rather than read off `notes`** so that this
+    function cannot accidentally put it in a document meant for students: the
+    write-up is for the class, the words are for the course's teachers, and
+    only `views.ClassSessionNotesDocumentView` — which has already asked who
+    is downloading — decides which of the two it is rendering.
     """
     if not PDF_AVAILABLE:  # pragma: no cover - guarded by the caller
         raise RuntimeError("reportlab is not installed")
@@ -226,6 +280,19 @@ def build_notes_pdf(notes, *, session, destination):
     if notes.next_class:
         story.append(Paragraph("Next class", styles["heading"]))
         story.append(Paragraph(_escape(notes.next_class), styles["body"]))
+
+    if transcript:
+        story.append(PageBreak())
+        story.append(Paragraph("Transcript", styles["heading"]))
+        story.append(
+            Paragraph(
+                "The full conversation, as it was heard. Only this course's "
+                "teachers receive this page.",
+                styles["detail"],
+            )
+        )
+        story.append(Spacer(1, 4))
+        story.extend(_transcript_flowables(transcript, styles))
 
     story.append(Spacer(1, 6))
     story.append(
