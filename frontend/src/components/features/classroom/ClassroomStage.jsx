@@ -6,7 +6,7 @@ import FullScreenPortal from "@/components/features/portal/lesson-view/FullScree
 import PingDotSpinner from "@/components/ui/PingDotSpinner";
 import { useAgoraCall, CALL_STATUS } from "@/hooks/useAgoraCall";
 import { useClassNotes, useClassNotesControls } from "@/hooks/useClassNotes";
-import { useClassNotesRecorder } from "@/hooks/useClassNotesRecorder";
+import { useRoomAudioRecorder } from "@/hooks/useRoomAudioRecorder";
 import { useClassroomClosing } from "@/hooks/useClassroomClosing";
 import {
   useClassRecording,
@@ -88,7 +88,7 @@ export default function ClassroomStage({ session, onClose }) {
     call.localUid != null &&
     notesCapture.capturer_id === call.localUid;
 
-  const notesRecorder = useClassNotesRecorder({
+  const notesRecorder = useRoomAudioRecorder({
     sessionId: session.id,
     active:
       isNotesCapturer && isTakingNotes && status === CALL_STATUS.CONNECTED,

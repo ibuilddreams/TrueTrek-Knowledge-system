@@ -3,12 +3,18 @@
 import { useEffect, useRef } from "react";
 
 /**
- * Warns the room that a class is nearly over, then closes it on the hour.
+ * Warns a room that it is nearly over, then closes it on the hour.
  *
- * A class booked for an hour is over after an hour: the server shuts its door
- * at `ends_at` (`class_sessions/services.py::LIVE_GRACE_MINUTES_AFTER`, which
- * is zero), so a classroom left open past it is a room nobody can rejoin, a
- * card that says the class has ended, and — for the teacher — a set of notes
+ * Used by both rooms this app runs — a live class and a War Room Live audio
+ * session — and the only thing that differs between them is the moment the
+ * server shuts its door, which is why `endsAt` is passed in rather than
+ * worked out here. A class closes on the stroke of its end
+ * (`class_sessions/services.py::LIVE_GRACE_MINUTES_AFTER`, which is zero);
+ * a War Room Live session runs fifteen minutes over, and the server says so
+ * on the session itself (`room_closes_at`).
+ *
+ * A room left open past that door is a room nobody can rejoin, a card that
+ * says the session has ended, and — for whoever is hosting — a set of notes
  * that never starts being written. This closes it instead.
  *
  * Three things here are deliberate.
@@ -43,13 +49,17 @@ const MAX_TIMER_MS = 2_147_483_000;
 // How long before the end each warning lands, and what it says. Order is
 // descending so the list reads like the clock does.
 export const CLOSING_WARNINGS = [
-  { key: "5m", msBefore: 5 * 60_000, message: "This class ends in 5 minutes." },
-  { key: "1m", msBefore: 60_000, message: "This class ends in 1 minute." },
+  { key: "5m", msBefore: 5 * 60_000, minutes: 5 },
+  { key: "1m", msBefore: 60_000, minutes: 1 },
 ];
 
 export function useClassroomClosing({
   endsAt,
   enabled = true,
+  // What the warnings call the thing that is ending. "This class ends in 5
+  // minutes" is the wrong sentence to put in front of somebody who dropped
+  // into a War Room Live session.
+  subject = "class",
   onWarn,
   onClose,
 } = {}) {
@@ -95,13 +105,14 @@ export function useClassroomClosing({
       );
     };
 
-    CLOSING_WARNINGS.forEach(({ key, msBefore, message }) => {
+    CLOSING_WARNINGS.forEach(({ key, msBefore, minutes }) => {
+      const message = `This ${subject} ends in ${minutes} minute${minutes === 1 ? "" : "s"}.`;
       arm(key, target - msBefore, () => warnRef.current?.(message));
     });
     arm("close", target, () => closeRef.current?.());
 
     return () => timers.forEach(clearTimeout);
-  }, [enabled, endsAt]);
+  }, [enabled, endsAt, subject]);
 }
 
 export default useClassroomClosing;

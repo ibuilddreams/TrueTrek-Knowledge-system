@@ -16,6 +16,7 @@ export default function SessionCard({
   onRsvp,
   onCancelRsvp,
   onJoin,
+  onOpenNotes,
   onOpenDetail,
   isBusy = false,
 }) {
@@ -134,6 +135,7 @@ export default function SessionCard({
           onRsvp={onRsvp}
           onCancelRsvp={onCancelRsvp}
           onJoin={onJoin}
+          onOpenNotes={onOpenNotes}
           isBusy={isBusy}
         />
       </div>

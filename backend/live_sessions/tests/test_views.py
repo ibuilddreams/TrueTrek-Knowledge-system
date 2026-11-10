@@ -33,6 +33,10 @@ class LiveSessionsTestCase(APITestCase):
             title="Building Your Brand in High School",
             scheduled_at=timezone.now() + timedelta(hours=2),
             duration_minutes=60,
+            # Explicitly external: the tests below are about the meeting-link
+            # door. A session scheduled today defaults to AGORA and is opened
+            # with a token instead (see `RoomViewTests`).
+            meeting_method=LiveSession.MeetingMethod.ZOOM,
             meeting_url="https://zoom.us/j/123456",
         )
         self.session.speakers.add(self.speaker)

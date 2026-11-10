@@ -27,6 +27,8 @@ import TabNav from "@/components/ui/TabNav";
 import SessionCalendar from "../live/SessionCalendar";
 import SessionList from "../live/SessionList";
 import SessionDetailModal from "../live/SessionDetailModal";
+import LiveRoomStage from "@/components/features/liveroom/LiveRoomStage";
+import SessionNotesModal from "@/components/features/liveroom/SessionNotesModal";
 
 const SECTIONS = [
   { id: "upcoming", label: "Upcoming Sessions", icon: Radio },
@@ -38,6 +40,10 @@ export default function WarRoomLiveTab() {
   const queryClient = useQueryClient();
   const [activeSection, setActiveSection] = useState("upcoming");
   const [detailSession, setDetailSession] = useState(null);
+  // The session whose room is open. The room itself is a full-screen portal
+  // over the tab (`LiveRoomStage`), so a tab change cannot drop the call.
+  const [roomSession, setRoomSession] = useState(null);
+  const [notesSession, setNotesSession] = useState(null);
 
   const upcoming = useUpcomingSessions();
   // The calendar plots finished sessions beside the scheduled ones, so it
@@ -88,9 +94,17 @@ export default function WarRoomLiveTab() {
     }
   };
 
-  // The meeting link is withheld until the room opens, so it's fetched on
-  // click rather than rendered into the card — see live_sessions/services.py.
+  // Two kinds of session, two ways in. One hosted here opens the room over
+  // this tab; one on somebody else's platform hands out a link, and that link
+  // is withheld until the room opens — so it is fetched on click rather than
+  // rendered into the card (see live_sessions/services.py::get_join_url).
   const handleJoin = async (session) => {
+    if (session.is_hosted_here) {
+      setDetailSession(null);
+      setRoomSession(session);
+      return;
+    }
+
     try {
       const response = await getSessionJoinLink(session.id);
       const url = response?.data?.meeting_url;
@@ -105,12 +119,18 @@ export default function WarRoomLiveTab() {
     }
   };
 
+  const handleOpenNotes = (session) => {
+    setDetailSession(null);
+    setNotesSession(session);
+  };
+
   const isBusy = rsvpMutation.isPending || cancelMutation.isPending;
 
   const sharedHandlers = {
     onRsvp: handleRsvp,
     onCancelRsvp: handleCancelRsvp,
     onJoin: handleJoin,
+    onOpenNotes: handleOpenNotes,
     onOpenDetail: setDetailSession,
     isBusy,
   };
@@ -215,8 +235,29 @@ export default function WarRoomLiveTab() {
         onRsvp={handleRsvp}
         onCancelRsvp={handleCancelRsvp}
         onJoin={handleJoin}
+        onOpenNotes={handleOpenNotes}
         isBusy={isBusy}
       />
+
+      <SessionNotesModal
+        isOpen={Boolean(notesSession)}
+        onClose={() => setNotesSession(null)}
+        session={notesSession}
+      />
+
+      {/* Keyed on the session so switching rooms never hands one call's
+          connection to another. Closing it refreshes the lists, because
+          walking into a room is what marks somebody as having turned up. */}
+      {roomSession && (
+        <LiveRoomStage
+          key={roomSession.id}
+          session={roomSession}
+          onClose={() => {
+            setRoomSession(null);
+            refreshSessions();
+          }}
+        />
+      )}
     </div>
   );
 }

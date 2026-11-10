@@ -9,8 +9,12 @@ import { createSession, getSpeakers, updateSession } from "@/services/liveSessio
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
-// Mirrors live_sessions.models.LiveSession.MeetingMethod.
+// Mirrors live_sessions.models.LiveSession.MeetingMethod. AGORA is first and
+// is the default because the session now runs here, in the portals — the rest
+// are still offered for a guest who insists on their own room, and for the
+// sessions already scheduled on them.
 const MEETING_METHOD_OPTIONS = [
+  { value: "AGORA", label: "Cool Nerds Live Audio (in the portal)" },
   { value: "ZOOM", label: "Zoom" },
   { value: "GOOGLE_MEET", label: "Google Meet" },
   { value: "TEAMS", label: "Microsoft Teams" },
@@ -24,6 +28,15 @@ const STATUS_OPTIONS = [
   { value: "CANCELLED", label: "Cancelled" },
 ];
 
+// Mirrors live_sessions.models.LiveSession.AudienceAccess. It decides the role
+// inside every Agora token the room mints, which is why it is a saved setting
+// rather than something the room decides in the browser — a student who
+// arrives after the floor was opened has to turn up able to speak.
+const AUDIENCE_ACCESS_OPTIONS = [
+  { value: "LISTEN_ONLY", label: "Hosts and guests only" },
+  { value: "EVERYONE", label: "Everyone can unmute" },
+];
+
 const INITIAL_FORM = {
   title: "",
   description: "",
@@ -31,8 +44,10 @@ const INITIAL_FORM = {
   talking_points: "",
   scheduled_at: "",
   duration_minutes: "60",
-  meeting_method: "ZOOM",
+  meeting_method: "AGORA",
   meeting_url: "",
+  audience_access: "LISTEN_ONLY",
+  takes_notes: true,
   capacity: "",
   status: "SCHEDULED",
   recording_url: "",
@@ -116,8 +131,10 @@ export default function LiveSessionFormModal({ isOpen, onClose, onSaved, session
         talking_points: (session.talking_points || []).join("\n"),
         scheduled_at: isoToLocalInput(session.scheduled_at),
         duration_minutes: String(session.duration_minutes ?? "60"),
-        meeting_method: session.meeting_method || "ZOOM",
+        meeting_method: session.meeting_method || "AGORA",
         meeting_url: session.meeting_url || "",
+        audience_access: session.audience_access || "LISTEN_ONLY",
+        takes_notes: session.takes_notes !== false,
         capacity: session.capacity != null ? String(session.capacity) : "",
         status: session.status || "SCHEDULED",
         recording_url: session.recording_url || "",
@@ -145,6 +162,11 @@ export default function LiveSessionFormModal({ isOpen, onClose, onSaved, session
     setForm((prev) => ({ ...prev, [field]: sanitizeIntegerInput(event.target.value) }));
     setFieldErrors((prev) => ({ ...prev, [field]: null }));
   };
+
+  // Whether this session runs in the portals or on somebody else's link. It
+  // is the one choice on this form that changes what the rest of it means:
+  // a hosted session has no join link, and has a room with a floor to open.
+  const isHostedHere = form.meeting_method === "AGORA";
 
   const handleSubmit = async (event) => {
     event.preventDefault();
@@ -176,7 +198,11 @@ export default function LiveSessionFormModal({ isOpen, onClose, onSaved, session
       scheduled_at: scheduledAt,
       duration_minutes: duration,
       meeting_method: form.meeting_method,
-      meeting_url: form.meeting_url.trim() || null,
+      // A session hosted here has no link at all — the server clears it too,
+      // so a stale Zoom URL can never be handed out for a room that moved.
+      meeting_url: isHostedHere ? null : form.meeting_url.trim() || null,
+      audience_access: form.audience_access,
+      takes_notes: Boolean(form.takes_notes),
       speaker_ids: speakerIds,
       capacity: form.capacity ? Number(form.capacity) : null,
       status: form.status,
@@ -342,22 +368,77 @@ export default function LiveSessionFormModal({ isOpen, onClose, onSaved, session
           </div>
         </div>
 
-        <div>
-          <label className={LABEL_CLASS}>Join Link</label>
-          <input
-            type="url"
-            value={form.meeting_url}
-            onChange={updateField("meeting_url")}
-            disabled={isSubmitting}
-            placeholder="https://zoom.us/j/..."
-            className={FIELD_CLASS}
-            autoComplete="off"
-          />
-          <p className="text-[11px] font-light text-muted mt-1.5">
-            Released to students only once the room opens — 15 minutes before the start time.
-          </p>
-          {fieldErrors.meeting_url && <p className={ERROR_CLASS}>{fieldErrors.meeting_url}</p>}
-        </div>
+        {isHostedHere ? (
+          <>
+            <div>
+              <label className={LABEL_CLASS}>Who can speak</label>
+              <select
+                value={form.audience_access}
+                onChange={updateField("audience_access")}
+                disabled={isSubmitting}
+                className={FIELD_CLASS}
+              >
+                {AUDIENCE_ACCESS_OPTIONS.map((option) => (
+                  <option key={option.value} value={option.value}>
+                    {option.label}
+                  </option>
+                ))}
+              </select>
+              <p className="text-[11px] font-light text-muted mt-1.5">
+                You can open and close the floor from inside the room at any
+                point, without editing the session.
+              </p>
+              {fieldErrors.audience_access && (
+                <p className={ERROR_CLASS}>{fieldErrors.audience_access}</p>
+              )}
+            </div>
+
+            <div>
+              <label className="flex items-start gap-3 px-4 py-3 bg-porcelain border border-line rounded-xl cursor-pointer hover:border-pine/40 transition-colors">
+                <input
+                  type="checkbox"
+                  checked={form.takes_notes}
+                  onChange={(event) =>
+                    setForm((prev) => ({ ...prev, takes_notes: event.target.checked }))
+                  }
+                  disabled={isSubmitting}
+                  className="mt-0.5 w-4 h-4 accent-pine cursor-pointer"
+                />
+                <span className="min-w-0">
+                  <span className="block text-sm font-mono text-ink">
+                    Take AI notes on this session
+                  </span>
+                  <span className="block text-[11px] font-light text-muted mt-0.5 leading-relaxed">
+                    The room is recorded while it runs and written up
+                    afterwards — a summary, what was covered, the key points
+                    and anything the guest told people to go and do. Everyone
+                    in the room is shown that it is on, and everybody who was
+                    there is emailed the notes. Leave it unticked and nothing
+                    starts by itself — you can still start and stop the notes
+                    from inside the room.
+                  </span>
+                </span>
+              </label>
+            </div>
+          </>
+        ) : (
+          <div>
+            <label className={LABEL_CLASS}>Join Link</label>
+            <input
+              type="url"
+              value={form.meeting_url}
+              onChange={updateField("meeting_url")}
+              disabled={isSubmitting}
+              placeholder="https://zoom.us/j/..."
+              className={FIELD_CLASS}
+              autoComplete="off"
+            />
+            <p className="text-[11px] font-light text-muted mt-1.5">
+              Released to students only once the room opens — 15 minutes before the start time.
+            </p>
+            {fieldErrors.meeting_url && <p className={ERROR_CLASS}>{fieldErrors.meeting_url}</p>}
+          </div>
+        )}
 
         <MultiSelect
           size="lg"

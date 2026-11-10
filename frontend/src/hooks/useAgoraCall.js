@@ -10,16 +10,30 @@ import { getApiErrorMessage } from "@/lib/apiErrors";
 import { isServiceUid } from "@/components/features/classroom/classSessionUtils";
 
 /**
- * Owns one Agora RTC call for one class session.
+ * Owns one Agora RTC call — a live class, or a War Room Live session.
  *
- * Everything to do with the SDK lives here so the classroom components stay
+ * Everything to do with the SDK lives here so the rooms above it stay
  * ordinary React: they render `remoteUsers` and call the returned actions,
  * and never touch an Agora object directly.
  *
  * The server is the only source of a channel name and a token
- * (`joinClassSession` → class_sessions/services.py::issue_join_credentials),
- * which is also why renewal is just that same call again — there is no
- * separate "refresh token" route to keep in step.
+ * (`issue_join_credentials`, in whichever app owns the room), which is also
+ * why renewal is just that same call again — there is no separate "refresh
+ * token" route to keep in step, and the same call is what picks up a token
+ * with different *speaking rights* after a host opens or closes the floor.
+ *
+ * Two rooms, one hook, and the differences between them are three options
+ * rather than a second copy of this file:
+ *
+ * * **`joinRequest` / `leaveRequest`** — which server owns this room. They
+ *   default to the live classes, which is where this hook started.
+ * * **`withVideo`** — a class is video, a War Room Live session is audio. A
+ *   room with no video never asks for a camera, so a listener is never
+ *   prompted for one and no screen can be shared into it.
+ * * **`startMuted`** — whether somebody arrives already talking. A teacher
+ *   opening their own classroom does; one of thirty people dropping into a
+ *   guest's session does not, and their microphone is not even acquired
+ *   until they ask for it.
  */
 
 export const CALL_STATUS = {
@@ -74,28 +88,49 @@ function isPickerCancelled(error) {
   return error?.code === "PERMISSION_DENIED" || error?.name === "NotAllowedError";
 }
 
-/** Agora reports problems as codes; these are the ones a user can act on. */
-function describeJoinError(error) {
+/**
+ * Agora reports problems as codes; these are the ones a user can act on.
+ *
+ * `withVideo` only changes the words. A War Room Live session never asks for
+ * a camera, so telling somebody their camera was blocked would send them
+ * looking for a permission they were never asked for.
+ */
+function describeJoinError(error, { withVideo = true } = {}) {
+  const devices = withVideo ? "the camera and microphone" : "your microphone";
   const code = error?.code || error?.name;
   if (code === "PERMISSION_DENIED" || code === "NotAllowedError") {
-    return "Your browser blocked access to the camera and microphone. Allow them in the address bar, then try again.";
+    return `Your browser blocked access to ${devices}. Allow ${
+      withVideo ? "them" : "it"
+    } in the address bar, then try again.`;
   }
   if (code === "NotFoundError" || code === "DEVICE_NOT_FOUND") {
-    return "No camera or microphone was found on this device.";
+    return withVideo
+      ? "No camera or microphone was found on this device."
+      : "No microphone was found on this device.";
   }
   if (code === "NotReadableError") {
-    return "Your camera or microphone is being used by another app. Close it and try again.";
+    return withVideo
+      ? "Your camera or microphone is being used by another app. Close it and try again."
+      : "Your microphone is being used by another app. Close it and try again.";
   }
   if (code === "CAN_NOT_GET_GATEWAY_SERVER" || code === "INVALID_PARAMS") {
-    return "The classroom rejected this connection. Ask your teacher to reopen the class.";
+    return "The room rejected this connection. Ask whoever runs it to reopen it.";
   }
   if (code === "WEB_SECURITY_RESTRICT") {
-    return "Live classes need a secure connection (https) or localhost.";
+    return "Live rooms need a secure connection (https) or localhost.";
   }
-  return error?.message || "Could not connect to the classroom.";
+  return error?.message || "Could not connect to the room.";
 }
 
-export function useAgoraCall(sessionId) {
+export function useAgoraCall(
+  sessionId,
+  {
+    joinRequest = joinClassSession,
+    leaveRequest = leaveClassSession,
+    withVideo = true,
+    startMuted = false,
+  } = {},
+) {
   const [status, setStatus] = useState(CALL_STATUS.IDLE);
   const [error, setError] = useState(null);
   const [remoteUsers, setRemoteUsers] = useState([]);
@@ -108,12 +143,19 @@ export function useAgoraCall(sessionId) {
   const [localVideoTrack, setLocalVideoTrack] = useState(null);
   // The microphone, as state rather than only as a ref, because something
   // outside the call needs to read it: the notes recorder taps this track
-  // into its mixer (`useClassNotesRecorder`) and has to be told when it is
+  // into its mixer (`useRoomAudioRecorder`) and has to be told when it is
   // replaced. `setEnabled` releases the device and re-acquires it, so the
   // underlying MediaStreamTrack after an unmute is a different object from
   // the one before the mute — a ref would never say so.
   const [localAudioTrack, setLocalAudioTrack] = useState(null);
   const [activeSpeakerUid, setActiveSpeakerUid] = useState(null);
+  // Whether the token this client holds may publish audio at all. The server
+  // decides it (`can_speak` on the join payload) and Agora enforces it, so
+  // this is only what the controls read to know whether to offer a
+  // microphone button — a page that merely hid the button would be one
+  // console command away from talking over the guest.
+  const [canSpeak, setCanSpeak] = useState(true);
+  const [isHost, setIsHost] = useState(false);
   const [wasRecordingAtJoin, setWasRecordingAtJoin] = useState(false);
   const [wasTakingNotesAtJoin, setWasTakingNotesAtJoin] = useState(false);
   // What the server said, at the moment of joining, about recording this
@@ -137,7 +179,17 @@ export function useAgoraCall(sessionId) {
   // The screen picker is open for as long as the user takes to choose, so a
   // second tap on the button must not start a second share.
   const screenShareBusyRef = useRef(false);
+  // One token refresh in flight at a time — see `refreshCredentials`.
+  const refreshBusyRef = useRef(false);
   const sessionIdRef = useRef(sessionId);
+  // The two requests that own this room, held in refs for the same reason
+  // `sessionId` is: the SDK's own callbacks (a token about to expire, a
+  // browser's "stop sharing" bar) outlive the render that created them, and
+  // a closure over a stale function would ask the wrong server.
+  const joinRequestRef = useRef(joinRequest);
+  const leaveRequestRef = useRef(leaveRequest);
+  const withVideoRef = useRef(withVideo);
+  const startMutedRef = useRef(startMuted);
   // Read by `stopScreenShare`, which is also bound to the browser's own "Stop
   // sharing" bar at the moment sharing starts — a closure would freeze the
   // camera state as it was back then.
@@ -146,6 +198,13 @@ export function useAgoraCall(sessionId) {
   useEffect(() => {
     sessionIdRef.current = sessionId;
   }, [sessionId]);
+
+  useEffect(() => {
+    joinRequestRef.current = joinRequest;
+    leaveRequestRef.current = leaveRequest;
+    withVideoRef.current = withVideo;
+    startMutedRef.current = startMuted;
+  }, [joinRequest, leaveRequest, withVideo, startMuted]);
 
   useEffect(() => {
     isCameraOnRef.current = isCameraOn;
@@ -233,7 +292,7 @@ export function useAgoraCall(sessionId) {
           // that: it also fires on a reload and on React's development
           // double-mount, and treating either as the end of the class ends
           // its notes before anything has been recorded.
-          await leaveClassSession(sessionIdRef.current, { ended });
+          await leaveRequestRef.current(sessionIdRef.current, { ended });
         } catch {
           // Best-effort attendance ping — a failure here must not stop a
           // student from closing the classroom.
@@ -250,6 +309,74 @@ export function useAgoraCall(sessionId) {
    */
   const leave = useCallback((options) => enqueue(() => runLeave(options)), [enqueue, runLeave]);
 
+  /**
+   * Asks the server for a fresh token and brings this client into line with
+   * what it says.
+   *
+   * It is the same call as joining, because the server re-checks everything
+   * on it: the clock, the roster, and — in a room with a floor — whether
+   * this person may speak. So one function serves both of the moments a
+   * token has to be replaced mid-call: Agora warning that the current one is
+   * about to expire, and a host opening or closing the floor.
+   *
+   * Failures are silent on purpose. A renewal that does not land is picked
+   * up by `token-privilege-did-expire` below, and a floor that closed is
+   * enforced by Agora whether or not this client heard about it.
+   *
+   * One at a time. Two things ask for a fresh token — Agora's expiry warning
+   * and the room noticing the floor has moved — and the second is driven by a
+   * poll that keeps firing while the first request is still in flight, so
+   * without this a slow round trip turns into three identical ones.
+   */
+  const refreshCredentials = useCallback(async () => {
+    const client = clientRef.current;
+    if (!client || refreshBusyRef.current) return;
+    refreshBusyRef.current = true;
+
+    try {
+      let credentials;
+      try {
+        const response = await joinRequestRef.current(sessionIdRef.current);
+        credentials = response?.data;
+      } catch {
+        return;
+      }
+      // The call ended, or was replaced, while the request was in flight.
+      if (!credentials?.token || clientRef.current !== client) return;
+
+      try {
+        await client.renewToken(credentials.token);
+      } catch {
+        return;
+      }
+
+      setRoster(credentials.roster || []);
+      const mayPublishAudio = credentials.can_speak !== false;
+      setCanSpeak(mayPublishAudio);
+      setIsHost(Boolean(credentials.is_host));
+
+      // The floor closed under somebody who was speaking. Agora refuses
+      // their audio from this token onwards in any case; taking the
+      // microphone down here is what stops the device light staying on in a
+      // room where they can no longer be heard.
+      const track = micTrackRef.current;
+      if (!mayPublishAudio && track) {
+        micTrackRef.current = null;
+        try {
+          await client.unpublish(track);
+        } catch {
+          // Already unpublished, or the call has ended.
+        }
+        track.stop();
+        track.close();
+        setLocalAudioTrack(null);
+        setIsMicOn(false);
+      }
+    } finally {
+      refreshBusyRef.current = false;
+    }
+  }, []);
+
   const runJoin = useCallback(async () => {
     // Already in the room — a second "Join" (or the remount half of React's
     // double-mount, which queues behind the first) is a no-op.
@@ -259,7 +386,7 @@ export function useAgoraCall(sessionId) {
 
     let credentials;
     try {
-      const response = await joinClassSession(sessionId);
+      const response = await joinRequestRef.current(sessionId);
       credentials = response?.data;
     } catch (joinError) {
       setStatus(CALL_STATUS.ERROR);
@@ -300,15 +427,10 @@ export function useAgoraCall(sessionId) {
       client.on("user-left", syncRemoteUsers);
 
       // Agora warns 30s before a token dies. Asking the server for a fresh
-      // one is the same call as joining, and it re-checks the clock and the
-      // roster — a class that has ended simply isn't renewed.
-      client.on("token-privilege-will-expire", async () => {
-        try {
-          const refreshed = await joinClassSession(sessionIdRef.current);
-          await client.renewToken(refreshed?.data?.token);
-        } catch {
-          // Nothing to do yet; `did-expire` below handles the fallout.
-        }
+      // one re-checks the clock and the roster — a class that has ended
+      // simply isn't renewed.
+      client.on("token-privilege-will-expire", () => {
+        refreshCredentials();
       });
 
       client.on("token-privilege-did-expire", () => {
@@ -334,6 +456,11 @@ export function useAgoraCall(sessionId) {
 
       setLocalUid(credentials.uid);
       setRoster(credentials.roster || []);
+      // Absent means "yes", so a room that never had a floor to open — a
+      // live class — behaves exactly as it always did.
+      const mayPublishAudio = credentials.can_speak !== false;
+      setCanSpeak(mayPublishAudio);
+      setIsHost(Boolean(credentials.is_host));
       // What the server knew at the moment of joining. `useClassRecording`
       // keeps it honest from then on; this is only so the first frame of the
       // classroom already says the class is being recorded, rather than
@@ -344,33 +471,55 @@ export function useAgoraCall(sessionId) {
 
       // Microphone and camera are requested separately so that a student with
       // no webcam — or who denied only the camera — still joins and can talk,
-      // instead of being thrown out of the class entirely.
+      // instead of being thrown out of the room entirely.
+      //
+      // Nothing is acquired that this person is not going to use. Somebody
+      // dropping into a guest's audio session to listen is never prompted
+      // for a microphone, let alone a camera: the browser's permission
+      // dialog is a thing to ask for when it is needed, and a device light
+      // coming on in a room where you are only listening is alarming.
+      const wantsMic = mayPublishAudio && !startMutedRef.current;
+      const wantsCamera = withVideoRef.current;
       let publishable = [];
-      try {
-        micTrackRef.current = await AgoraRTC.createMicrophoneAudioTrack();
-        publishable.push(micTrackRef.current);
-        setLocalAudioTrack(micTrackRef.current);
-        setIsMicOn(true);
-      } catch {
+
+      if (wantsMic) {
+        try {
+          micTrackRef.current = await AgoraRTC.createMicrophoneAudioTrack();
+          publishable.push(micTrackRef.current);
+          setLocalAudioTrack(micTrackRef.current);
+          setIsMicOn(true);
+        } catch {
+          setLocalAudioTrack(null);
+          setIsMicOn(false);
+        }
+      } else {
         setLocalAudioTrack(null);
         setIsMicOn(false);
       }
-      try {
-        cameraTrackRef.current = await AgoraRTC.createCameraVideoTrack();
-        publishable.push(cameraTrackRef.current);
-        setLocalVideoTrack(cameraTrackRef.current);
-        setIsCameraOn(true);
-      } catch {
+
+      if (wantsCamera) {
+        try {
+          cameraTrackRef.current = await AgoraRTC.createCameraVideoTrack();
+          publishable.push(cameraTrackRef.current);
+          setLocalVideoTrack(cameraTrackRef.current);
+          setIsCameraOn(true);
+        } catch {
+          setIsCameraOn(false);
+        }
+      } else {
         setIsCameraOn(false);
       }
 
-      if (!publishable.length) {
+      // Only a failure to get what we actually asked for is a failure. A
+      // listener publishes nothing by design, and throwing here would throw
+      // them out of a room they were perfectly able to hear.
+      if (!publishable.length && (wantsMic || wantsCamera)) {
         throw Object.assign(new Error("No camera or microphone available."), {
           code: "PERMISSION_DENIED",
         });
       }
 
-      await client.publish(publishable);
+      if (publishable.length) await client.publish(publishable);
       syncRemoteUsers();
       setStatus(CALL_STATUS.CONNECTED);
     } catch (callError) {
@@ -382,20 +531,54 @@ export function useAgoraCall(sessionId) {
         await runLeave({ notifyServer: false, nextStatus: CALL_STATUS.IDLE });
         return;
       }
-      setError(describeJoinError(callError));
+      setError(describeJoinError(callError, { withVideo: withVideoRef.current }));
       await runLeave({ notifyServer: false, nextStatus: CALL_STATUS.ERROR });
     }
-  }, [sessionId, runLeave, leave, syncRemoteUsers]);
+  }, [sessionId, runLeave, leave, syncRemoteUsers, refreshCredentials]);
 
   const join = useCallback(() => enqueue(runJoin), [enqueue, runJoin]);
 
   const toggleMic = useCallback(async () => {
+    const client = clientRef.current;
     const track = micTrackRef.current;
-    if (!track) return;
+
+    // Nobody has asked for this device yet — somebody who joined to listen,
+    // or who has just been handed the floor. The browser's permission prompt
+    // belongs to this moment rather than to walking into the room.
+    if (!track) {
+      if (!canSpeak || !canPublish(client)) return;
+      let created = null;
+      try {
+        const AgoraRTC = await loadAgora();
+        created = await AgoraRTC.createMicrophoneAudioTrack();
+        // The call can end while somebody is deciding whether to allow the
+        // microphone; nothing is published onto a client that has moved on.
+        if (clientRef.current !== client || !canPublish(client)) {
+          created.stop();
+          created.close();
+          return;
+        }
+        await client.publish(created);
+        micTrackRef.current = created;
+        setLocalAudioTrack(created);
+        setIsMicOn(true);
+      } catch (micError) {
+        if (created) {
+          created.stop();
+          created.close();
+        }
+        micTrackRef.current = null;
+        setLocalAudioTrack(null);
+        setIsMicOn(false);
+        setError(describeJoinError(micError, { withVideo: withVideoRef.current }));
+      }
+      return;
+    }
+
     const next = !isMicOn;
     await track.setEnabled(next);
     setIsMicOn(next);
-  }, [isMicOn]);
+  }, [canSpeak, isMicOn]);
 
   const toggleCamera = useCallback(async () => {
     const track = cameraTrackRef.current;
@@ -568,6 +751,13 @@ export function useAgoraCall(sessionId) {
     isCameraOn,
     isSharingScreen,
     activeSpeakerUid,
+    canSpeak,
+    isHost,
+    refreshCredentials,
+    // Whether a microphone was actually acquired. A room with a floor asks a
+    // different question — somebody who has not been handed it has no track
+    // yet and should still see a button, disabled — and reads `canSpeak`
+    // instead, so this stays the honest answer the classroom needs.
     hasMic: Boolean(micTrackRef.current),
     hasCamera: Boolean(cameraTrackRef.current),
     toggleMic,

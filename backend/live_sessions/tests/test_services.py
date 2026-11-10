@@ -34,6 +34,12 @@ def make_student(username="session-student"):
 
 def make_session(*, starts_in_minutes=60, duration=60, **kwargs):
     kwargs.setdefault("title", "Building Your Brand in High School")
+    # Explicitly an external session: these tests are about the meeting-link
+    # door, which is now the *other* one. A session scheduled today defaults
+    # to AGORA and is opened with a token rather than a URL
+    # (`services.issue_join_credentials`), so leaving the method implicit
+    # here would quietly test the wrong door.
+    kwargs.setdefault("meeting_method", LiveSession.MeetingMethod.ZOOM)
     kwargs.setdefault("meeting_url", "https://zoom.us/j/123456")
     return LiveSession.objects.create(
         scheduled_at=timezone.now() + timedelta(minutes=starts_in_minutes),

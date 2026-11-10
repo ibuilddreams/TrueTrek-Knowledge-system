@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Edit3, Mic, Trash2, Users } from "lucide-react";
+import { Edit3, Mic, NotebookPen, Radio, Trash2, Users } from "lucide-react";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { deleteSession, getAdminSessions } from "@/services/liveSessionsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
@@ -16,6 +16,8 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import LiveSessionFormModal from "./LiveSessionFormModal";
 import SessionAttendeesModal from "./SessionAttendeesModal";
+import LiveRoomStage from "@/components/features/liveroom/LiveRoomStage";
+import SessionNotesModal from "@/components/features/liveroom/SessionNotesModal";
 
 const PAGE_SIZE = 10;
 
@@ -28,6 +30,10 @@ export default function AdminSessionsSection() {
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingSession, setEditingSession] = useState(null);
   const [attendeesSession, setAttendeesSession] = useState(null);
+  // The session whose room is open. The room itself is a full-screen portal
+  // over the tab (`LiveRoomStage`), so a tab change cannot drop the call.
+  const [roomSession, setRoomSession] = useState(null);
+  const [notesSession, setNotesSession] = useState(null);
   const [removingSession, setRemovingSession] = useState(null);
   const [isRemoving, setIsRemoving] = useState(false);
 
@@ -67,6 +73,13 @@ export default function AdminSessionsSection() {
       setIsRemoving(false);
     }
   };
+
+  // Deliberately the server's word rather than the clock's: the same
+  // `can_join` every student's card reads (live_sessions/services.py), which
+  // already folds in the session's state, its platform and whether this
+  // server can mint a token at all.
+  const canOpenRoom = (session) =>
+    Boolean(session.is_hosted_here && session.can_join);
 
   const columns = [
     {
@@ -119,6 +132,29 @@ export default function AdminSessionsSection() {
       render: (session) => (
         <ActionMenu
           actions={[
+            // Only offered while there is a room to walk into. Opening one
+            // is also what starts the notes, so it is the first thing on the
+            // list for a session that is running right now.
+            ...(canOpenRoom(session)
+              ? [
+                  {
+                    key: "room",
+                    label: "Open Room",
+                    icon: Radio,
+                    onSelect: () => setRoomSession(session),
+                  },
+                ]
+              : []),
+            ...(session.notes_available
+              ? [
+                  {
+                    key: "notes",
+                    label: "Session Notes",
+                    icon: NotebookPen,
+                    onSelect: () => setNotesSession(session),
+                  },
+                ]
+              : []),
             {
               key: "edit",
               label: "Edit Session",
@@ -199,6 +235,27 @@ export default function AdminSessionsSection() {
         session={attendeesSession}
         onClose={() => setAttendeesSession(null)}
       />
+
+      <SessionNotesModal
+        isOpen={Boolean(notesSession)}
+        onClose={() => setNotesSession(null)}
+        session={notesSession}
+      />
+
+      {/* Keyed on the session so switching rooms never hands one call's
+          connection to another. Closing it refreshes the table, because the
+          RSVP count and the notes a session now has both moved while it was
+          open. */}
+      {roomSession && (
+        <LiveRoomStage
+          key={roomSession.id}
+          session={roomSession}
+          onClose={() => {
+            setRoomSession(null);
+            queryClient.invalidateQueries({ queryKey: ["admin-live-sessions"] });
+          }}
+        />
+      )}
 
       <ConfirmDialog
         isOpen={Boolean(removingSession)}

@@ -151,19 +151,31 @@ RESPONSE_SCHEMA = {
 }
 
 
-def build_prompt(*, session, transcript, agenda=None):
-    """The whole instruction, with the class's own context around the words.
+def _agenda_block(agenda):
+    """The planned agenda as bullets, or a plain "(none given)".
 
-    The scheduled title, course and agenda are given as *context*, explicitly
-    labelled as what the class was supposed to be about rather than as source
+    Shared by both prompts below so a session with no agenda reads the same
+    way to the model in either of them.
+    """
+    lines = [str(line).strip() for line in (agenda or []) if str(line).strip()]
+    return "\n".join(f"- {line}" for line in lines) if lines else "(none given)"
+
+
+def build_prompt(*, context, transcript):
+    """The whole instruction, with the session's own context around the words.
+
+    The scheduled title, heading and agenda are given as *context*, explicitly
+    labelled as what the session was supposed to be about rather than as source
     material — a teacher who spent the hour on something else must get notes
     about what they taught, not about what the calendar said.
-    """
-    agenda_lines = [str(line).strip() for line in (agenda or []) if str(line).strip()]
-    agenda_block = (
-        "\n".join(f"- {line}" for line in agenda_lines) if agenda_lines else "(none given)"
-    )
 
+    `context` is a plain mapping, not a model: two different things are
+    written up through this one prompt — a course's live class and a War Room
+    Live audio session — and neither has to pretend to be the other to be
+    summarised. Each supplies its own
+    (`ClassSession.notes_context` / `LiveSession.notes_context`), and the
+    only keys read here are `heading`, `title`, `description` and `agenda`.
+    """
     return (
         f"{SYSTEM_FRAMING}\n\n"
         "---\n"
@@ -171,10 +183,10 @@ def build_prompt(*, session, transcript, agenda=None):
         "transcript better (it tells you which technical terms are likely, and how "
         "the automatic transcription may have misheard them). Do NOT write it up: "
         "if the class covered something else, the notes are about what it covered.\n\n"
-        f"Course: {session.course.code} — {session.course.title}\n"
-        f"Scheduled title: {session.title}\n"
-        f"Description: {session.description or '(none given)'}\n"
-        f"Planned agenda:\n{agenda_block}\n\n"
+        f"{context.get('heading') or ''}\n"
+        f"Scheduled title: {context.get('title') or '(none given)'}\n"
+        f"Description: {context.get('description') or '(none given)'}\n"
+        f"Planned agenda:\n{_agenda_block(context.get('agenda'))}\n\n"
         "---\n"
         "TRANSCRIPT — the automatic transcript of the class. Speaker labels come "
         "from the video call and may be missing or wrong; the words themselves may "
@@ -287,11 +299,14 @@ def _speaker_block(speakers):
 
 
 def build_transcript_prompt(
-    *, session, part_index, part_count, previous_tail="", speakers=None
+    *, context, part_index, part_count, previous_tail="", speakers=None
 ):
-    """The instruction for one segment of a class's audio.
+    """The instruction for one segment of a session's audio.
 
-    The class's own title and agenda are given for the same reason they are
+    `context` is the same mapping `build_prompt` takes, from the same place
+    (`ClassSession.notes_context` / `LiveSession.notes_context`).
+
+    The session's own title and agenda are given for the same reason they are
     given to the notes: they tell the model which technical terms and proper
     nouns are likely in this room, which is most of the difference between
     "first normal form" and "first normal form" misheard. They are context for
@@ -321,10 +336,7 @@ def build_transcript_prompt(
         else ""
     )
 
-    agenda_lines = [str(line).strip() for line in (session.agenda or []) if str(line).strip()]
-    agenda_block = (
-        "\n".join(f"- {line}" for line in agenda_lines) if agenda_lines else "(none given)"
-    )
+    agenda_block = _agenda_block(context.get("agenda"))
 
     timeline = _speaker_block(speakers)
     speaker_section = (
@@ -346,8 +358,8 @@ def build_transcript_prompt(
         "CONTEXT — what this class was scheduled to be. Use it only to hear the "
         "words better: it tells you which subject terms are likely. Do not write "
         "any of it down, and do not assume the class stuck to it.\n\n"
-        f"Course: {session.course.code} — {session.course.title}\n"
-        f"Scheduled title: {session.title}\n"
+        f"{context.get('heading') or ''}\n"
+        f"Scheduled title: {context.get('title') or '(none given)'}\n"
         f"Planned agenda:\n{agenda_block}"
         f"{continuation}"
     )
