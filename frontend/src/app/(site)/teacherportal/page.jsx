@@ -3,6 +3,7 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import TeacherPortal from "@/components/features/teachers/TeacherPortal";
+import TeacherOnboardingGate from "@/components/features/teachers/onboarding/TeacherOnboardingGate";
 import { useAuth } from "@/hooks/useAuth";
 import { AUTH_ROLES } from "@/constants/auth";
 import { ROUTES, getPortalRouteForRole } from "@/constants/routes";
@@ -39,5 +40,13 @@ export default function TeacherPortalPage() {
     return <Loader label="Redirecting..." />;
   }
 
-  return <TeacherPortal />;
+  // A teacher who signed themselves up completes an application here first;
+  // one an admin created falls straight through to the portal. The gate asks
+  // the server which this is rather than guessing — see
+  // components/features/teachers/onboarding/TeacherOnboardingGate.jsx.
+  return (
+    <TeacherOnboardingGate>
+      <TeacherPortal />
+    </TeacherOnboardingGate>
+  );
 }

@@ -49,6 +49,7 @@ urlpatterns = [
     path('api/advisor/', include('advisor.urls')),
     path('api/rewards/', include('rewards.urls')),
     path('api/teacher-requests/', include('teacher_requests.urls')),
+    path('api/teacher-onboarding/', include('teacher_onboarding.urls')),
     path('api/class-feed/', include('class_feed.urls')),
     path('api/warroom/', include('warroom.urls')),
     path('api/notifications/', include('notifications.urls')),

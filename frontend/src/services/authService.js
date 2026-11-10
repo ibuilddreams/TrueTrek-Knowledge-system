@@ -74,7 +74,10 @@ export async function loginWithCredentials({ email, password }) {
   return persistBackendSession(response?.data);
 }
 
-export async function signup({ username, firstName, lastName, email, password, gender }) {
+// `role` is the backend role the visitor picked on the signup form — "STUDENT"
+// or "TEACHER" (users.CustomUser.Roles). The endpoint accepts those two only
+// and defaults to STUDENT when it is omitted, so it stays optional here.
+export async function signup({ username, firstName, lastName, email, password, gender, role }) {
   const response = await backendClient.post("/auth/signup/", {
     username,
     first_name: firstName,
@@ -82,6 +85,7 @@ export async function signup({ username, firstName, lastName, email, password, g
     email,
     password,
     gender,
+    ...(role ? { role } : {}),
   });
   return persistBackendSession(response?.data);
 }

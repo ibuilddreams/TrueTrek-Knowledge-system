@@ -47,6 +47,31 @@ from .services import (
 UserModel = get_user_model()
 
 
+#: The public auth endpoints authenticate nobody — they *issue* credentials.
+#:
+#: Leaving the project's default `SessionAuthentication` on them breaks them
+#: for any browser that also holds a Django `sessionid` cookie — a developer
+#: who has logged into /admin/ is the usual case, and the SPA sends cookies
+#: cross-origin because `apiClient` uses `credentials: "include"`. DRF then
+#: authenticates the signup POST *as that admin* and enforces CSRF on it,
+#: which fails ("Origin checking failed - http://localhost:3000 does not
+#: match any trusted origins"): the SPA is on another origin and sends no
+#: CSRF token, because it authenticates with a Bearer token and has no reason
+#: to hold one.
+#:
+#: There is nothing for CSRF to protect here. These four views are AllowAny,
+#: so a cross-site POST to them achieves exactly what anybody could achieve by
+#: posting to them directly. This is also why login and refresh never had the
+#: bug: SimpleJWT's own `TokenViewBase` already sets `authentication_classes
+#: = ()`, and these are the same kind of endpoint.
+#:
+#: Note this is deliberately *not* a change to the global defaults or to
+#: CSRF_TRUSTED_ORIGINS: every authenticated endpoint still resolves its user
+#: from the Bearer token first, and session-authenticated writes to them stay
+#: CSRF-protected.
+PUBLIC_AUTH_AUTHENTICATION_CLASSES = []
+
+
 class CustomTokenObtainPairView(TokenObtainPairView):
     """Login endpoint: authenticates a user and returns JWT tokens."""
 
@@ -71,11 +96,13 @@ class CustomTokenRefreshView(TokenRefreshView):
 
 
 class SignupView(generics.GenericAPIView):
-    """Self-service signup for the public onboarding flow — always creates a
-    STUDENT account and logs the user in immediately (see SignupSerializer)."""
+    """Self-service signup for the public onboarding flow — creates a STUDENT
+    or TEACHER account (whichever the visitor picked; ADMIN is not an accepted
+    choice) and logs the user in immediately (see SignupSerializer)."""
 
     serializer_class = SignupSerializer
     permission_classes = [AllowAny]
+    authentication_classes = PUBLIC_AUTH_AUTHENTICATION_CLASSES
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -92,6 +119,7 @@ class GoogleAuthView(generics.GenericAPIView):
 
     serializer_class = GoogleAuthSerializer
     permission_classes = [AllowAny]
+    authentication_classes = PUBLIC_AUTH_AUTHENTICATION_CLASSES
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -503,6 +531,7 @@ class ForgotPasswordView(generics.GenericAPIView):
 
     serializer_class = ForgotPasswordSerializer
     permission_classes = [AllowAny]
+    authentication_classes = PUBLIC_AUTH_AUTHENTICATION_CLASSES
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)
@@ -519,6 +548,7 @@ class ResetPasswordView(generics.GenericAPIView):
 
     serializer_class = ResetPasswordSerializer
     permission_classes = [AllowAny]
+    authentication_classes = PUBLIC_AUTH_AUTHENTICATION_CLASSES
 
     def post(self, request, *args, **kwargs):
         serializer = self.get_serializer(data=request.data)

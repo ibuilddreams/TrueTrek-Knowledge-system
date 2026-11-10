@@ -23,6 +23,7 @@ import {
   ShieldAlert,
   Swords,
   Tag,
+  UserCheck,
   Theater,
   UserPlus,
   Users,
@@ -51,6 +52,7 @@ import TiersTab from "@/components/features/admin/tabs/TiersTab";
 import QuestionnaireTab from "@/components/features/admin/tabs/QuestionnaireTab";
 import FutureClientsTab from "@/components/features/admin/tabs/FutureClientsTab";
 import TeacherRequestsTab from "@/components/features/admin/tabs/TeacherRequestsTab";
+import TeacherOnboardingTab from "@/components/features/admin/tabs/TeacherOnboardingTab";
 import StudentConcernsTab from "@/components/features/admin/tabs/StudentConcernsTab";
 import RewardsTab from "@/components/features/admin/tabs/RewardsTab";
 import RedemptionsTab from "@/components/features/admin/tabs/RedemptionsTab";
@@ -70,6 +72,7 @@ const TABS = [
   { id: "future-clients", label: "Future Clients", icon: UserPlus },
   { id: "testimonials", label: "Testimonials", icon: MessageSquareQuote },
   { id: "teachers", label: "Teachers", icon: Users },
+  { id: "teacher-applications", label: "Teacher Applications", icon: UserCheck },
   { id: "invitations", label: "Invitations", icon: UserPlus },
   { id: "teacher-requests", label: "Teacher Requests", icon: FileWarning },
   { id: "student-concerns", label: "Student Concerns", icon: ShieldAlert },
@@ -98,6 +101,7 @@ const TAB_COMPONENTS = {
   "future-clients": FutureClientsTab,
   testimonials: TestimonialsTab,
   teachers: TeachersTab,
+  "teacher-applications": TeacherOnboardingTab,
   "teacher-requests": TeacherRequestsTab,
   "student-concerns": StudentConcernsTab,
   progress: ProgressTab,
@@ -123,7 +127,12 @@ function resolveTab(tabParam) {
   return DEFAULT_TAB;
 }
 
-const DETAIL_PARAMS = ["progressCourseId", "concern"];
+const DETAIL_PARAMS = ["progressCourseId", "concern", "application"];
+
+const NOTIFICATION_DESTINATIONS = {
+  student_concern: { tab: "student-concerns", param: "concern" },
+  teacher_onboarding: { tab: "teacher-applications", param: "application" },
+};
 
 function AdminDashboardContent() {
   const router = useRouter();
@@ -166,12 +175,21 @@ function AdminDashboardContent() {
     [pathname, router, searchParams]
   );
 
+  // Which tab a notification opens, and which query param carries the row it
+  // points at. Keyed on `related_object_type`, which every producer sets (see
+  // notifications/services.py) — before this existed every notification
+  // landed on Student Concerns, which was right only because that was the
+  // only producer.
   const handleSelectNotification = useCallback(
     (notification) => {
+      const destination = NOTIFICATION_DESTINATIONS[notification.related_object_type];
+      if (!destination) return;
+
       const params = new URLSearchParams(searchParams.toString());
-      params.set("tab", "student-concerns");
-      if (notification.related_object_type === "student_concern" && notification.related_object_id) {
-        params.set("concern", String(notification.related_object_id));
+      params.set("tab", destination.tab);
+      DETAIL_PARAMS.forEach((key) => params.delete(key));
+      if (notification.related_object_id) {
+        params.set(destination.param, String(notification.related_object_id));
       }
       router.replace(`${pathname}?${params.toString()}`, { scroll: false });
     },

@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     'live_sessions',
     'wargamer',
     'class_sessions',
+    'teacher_onboarding',
 ]
 
 MIDDLEWARE = [

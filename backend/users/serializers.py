@@ -140,17 +140,33 @@ class CreateStudentSerializer(serializers.ModelSerializer):
 
 
 class SignupSerializer(serializers.ModelSerializer):
-    """Self-service signup — always creates a STUDENT account and, unlike
-    CreateStudentSerializer (admin-only), returns JWT tokens immediately so the
-    onboarding wizard can move straight into the questionnaire without a
-    separate login step."""
+    """Self-service signup — creates a STUDENT or TEACHER account (the visitor
+    picks on the signup form) and, unlike CreateStudentSerializer /
+    CreateTeacherSerializer (both admin-only), returns JWT tokens immediately so
+    a new student can move straight into the onboarding questionnaire and a new
+    teacher straight into their portal, without a separate login step.
+
+    `role` is a ChoiceField restricted to SELF_SIGNUP_ROLES rather than the
+    model's full Roles.choices, so ADMIN is rejected with an ordinary 400 — an
+    admin account is only ever made by another admin or by createsuperuser, and
+    leaving the model choices here would have made it a public request field.
+    It stays optional, defaulting to STUDENT, so callers that predate the role
+    field (and Google sign-in, which has no form) keep working unchanged."""
+
+    #: The roles a visitor may give themselves on the public signup endpoint.
+    SELF_SIGNUP_ROLES = [UserModel.Roles.STUDENT, UserModel.Roles.TEACHER]
 
     password = serializers.CharField(write_only=True, validators=[validate_password])
     gender = serializers.ChoiceField(choices=UserModel.Gender.choices, required=True)
+    role = serializers.ChoiceField(
+        choices=[(role, UserModel.Roles(role).label) for role in SELF_SIGNUP_ROLES],
+        required=False,
+        default=UserModel.Roles.STUDENT,
+    )
 
     class Meta:
         model = UserModel
-        fields = ["id", "username", "first_name", "last_name", "email", "password", "gender"]
+        fields = ["id", "username", "first_name", "last_name", "email", "password", "gender", "role"]
 
     def validate_email(self, value):
         email = UserModel.objects.normalize_email(value)
@@ -164,12 +180,29 @@ class SignupSerializer(serializers.ModelSerializer):
         return value
 
     def create(self, validated_data):
+        # Imported here rather than at module scope: teacher_onboarding reads
+        # the user model, and importing it while `users` is still being
+        # imported is a cycle waiting to happen.
+        from teacher_onboarding.services import start_onboarding_for_signup
+
         password = validated_data.pop("password")
-        return UserModel.objects.create_user(
+        role = validated_data.pop("role", UserModel.Roles.STUDENT)
+        user = UserModel.objects.create_user(
             password=password,
-            role=UserModel.Roles.STUDENT,
+            role=role,
             **validated_data,
         )
+
+        if user.role == UserModel.Roles.TEACHER:
+            # A teacher who signed themselves up is the one kind of teacher
+            # nobody has vouched for, so they get an application to complete
+            # and an admin reviews it. Holding that record is exactly what
+            # `teacher_onboarding.services.can_teach` gates on, which is why
+            # teachers an admin created (who get no record here) keep working
+            # as they always did.
+            start_onboarding_for_signup(user)
+
+        return user
 
     def to_representation(self, instance):
         return _build_token_response(instance)

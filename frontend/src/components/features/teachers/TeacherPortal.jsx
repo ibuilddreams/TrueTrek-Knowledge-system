@@ -27,6 +27,7 @@ import Loader from "@/components/ui/Loader";
 import TabNav from "@/components/ui/TabNav";
 import TabTransition from "@/components/ui/TabTransition";
 import WarRoomScreen from "@/components/features/warroom/WarRoomScreen";
+import TeacherApplicationBanner from "@/components/features/teachers/onboarding/TeacherApplicationBanner";
 import DashboardTab from "./tabs/DashboardTab";
 import MyCoursesTab from "./tabs/MyCoursesTab";
 import EnrollmentScoresTab from "./tabs/EnrollmentScoresTab";
@@ -253,6 +254,12 @@ function TeacherPortalContent() {
           />
         </div>
       </div>
+
+      {/* Renders nothing for an approved teacher, and for every teacher an
+          admin created. A teacher who applied and is waiting gets the portal
+          now rather than a read-only holding page, so this is what says where
+          the review has got to and why course creation is still closed. */}
+      <TeacherApplicationBanner />
 
       <div className="mb-8">
         <TabNav

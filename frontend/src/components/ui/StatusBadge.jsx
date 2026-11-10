@@ -21,6 +21,8 @@ const STATUS_COLORS = {
   PENDING: "bg-gold/12 text-gold border-gold/25",
   APPROVED: "bg-sage/40 text-pine border-pine/20",
   REJECTED: "bg-rose/35 text-clay border-clay/25",
+  UNDER_REVIEW: "bg-sky/60 text-blue border-blue/20",
+  CHANGES_REQUESTED: "bg-gold/12 text-gold border-gold/25",
   HIDDEN: "bg-clay/12 text-clay border-clay/25",
 };
 
