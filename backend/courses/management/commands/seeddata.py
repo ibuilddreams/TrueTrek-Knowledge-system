@@ -4339,7 +4339,11 @@ class Command(BaseCommand):
                     "talking_points": session_def["talking_points"],
                     "scheduled_at": base + timedelta(days=session_def["days_offset"]),
                     "duration_minutes": session_def["duration_minutes"],
-                    "meeting_method": LiveSession.MeetingMethod.ZOOM,
+                    # Hosted here, on this platform's own Agora project, so a
+                    # fresh environment has a War Room Live room somebody can
+                    # actually walk into. The alternative is a card that says
+                    # "Link coming soon" forever, which demonstrates nothing.
+                    "meeting_method": LiveSession.MeetingMethod.AGORA,
                     "recording_url": session_def.get("recording_url"),
                     "recap": session_def.get("recap", ""),
                     "status": LiveSession.SessionStatus.SCHEDULED,
@@ -4349,3 +4353,15 @@ class Command(BaseCommand):
                 session.speakers.set(
                     [speakers_by_name[name] for name in session_def["speakers"]]
                 )
+            elif (
+                session.meeting_method == LiveSession.MeetingMethod.ZOOM
+                and not session.meeting_url
+            ):
+                # Seeded before War Room Live ran on this platform, and never
+                # touched since: a Zoom session with no Zoom link is one
+                # nobody can join and nobody deliberately created. Moved onto
+                # the platform's own room, and *only* in that exact state —
+                # an admin who pasted a real link, or picked another
+                # platform, has made a decision this must not overrule.
+                session.meeting_method = LiveSession.MeetingMethod.AGORA
+                session.save(update_fields=["meeting_method", "updated_at"])

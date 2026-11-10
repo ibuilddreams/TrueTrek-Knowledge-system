@@ -3722,7 +3722,7 @@ def _transcribe_segment(notes, segment, *, position, total, previous_tail):
 
     media_type, _ = notes_audio.resolve(segment.content_type)
     prompt = notes_prompt.build_transcript_prompt(
-        session=notes.session,
+        context=notes.session.notes_context(),
         part_index=position,
         part_count=total,
         previous_tail=previous_tail,
@@ -3949,9 +3949,8 @@ def _summarize(notes, transcript_text):
     """
     session = notes.session
     prompt = notes_prompt.build_prompt(
-        session=session,
+        context=session.notes_context(),
         transcript=_trim_transcript(transcript_text),
-        agenda=session.agenda,
     )
 
     provider = get_provider()
@@ -4060,7 +4059,7 @@ def render_notes_document(notes, *, with_transcript=False):
         buffer = io.BytesIO()
         notes_document.build_notes_pdf(
             notes,
-            session=notes.session,
+            context=notes.session.notes_context(),
             destination=buffer,
             transcript=notes.transcript if with_transcript else None,
         )
@@ -4221,8 +4220,7 @@ def _notes_attachment(notes):
         )
         return None
 
-    session = notes.session
-    filename = f"{session.course.code}-{session.scheduled_at:%Y-%m-%d}-notes.pdf"
+    filename = notes.session.notes_context()["document_name"]
     return filename, content
 
 

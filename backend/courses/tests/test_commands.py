@@ -908,6 +908,54 @@ class SeedDataWarRoomLiveTests(TestCase):
         self.assertEqual(session.scheduled_at, rescheduled_to)
         self.assertEqual(LiveSession.objects.count(), len(seed.LIVE_SESSION_DEFS))
 
+    def test_seeded_sessions_run_on_this_platforms_own_room(self):
+        """A seeded session that nobody can join demonstrates nothing — the
+        card would read "Link coming soon" forever."""
+        seed_offline()
+
+        for session in LiveSession.objects.all():
+            self.assertEqual(
+                session.meeting_method, LiveSession.MeetingMethod.AGORA
+            )
+            self.assertTrue(session.channel_name)
+
+        # Every session gets a channel of its own: an Agora channel is
+        # joinable by anyone holding a token for it, so two sessions sharing
+        # one would be a way into the wrong room.
+        channels = LiveSession.objects.values_list("channel_name", flat=True)
+        self.assertEqual(len(set(channels)), len(channels))
+
+    def test_reseeding_moves_an_unjoinable_seeded_session_onto_our_room(self):
+        """Seeded before War Room Live ran here, and never touched since: a
+        Zoom session with no Zoom link is one nobody can join and nobody
+        deliberately created."""
+        seed_offline()
+        session = LiveSession.objects.get(title="Landing Your First Local Sponsor")
+        LiveSession.objects.filter(pk=session.pk).update(
+            meeting_method=LiveSession.MeetingMethod.ZOOM, meeting_url=None
+        )
+
+        seed_offline()
+
+        session.refresh_from_db()
+        self.assertEqual(session.meeting_method, LiveSession.MeetingMethod.AGORA)
+
+    def test_reseeding_never_overrules_a_real_join_link(self):
+        """An admin who pasted a Zoom link, or picked another platform, has
+        made a decision a reseed must leave alone."""
+        seed_offline()
+        session = LiveSession.objects.get(title="Landing Your First Local Sponsor")
+        LiveSession.objects.filter(pk=session.pk).update(
+            meeting_method=LiveSession.MeetingMethod.ZOOM,
+            meeting_url="https://zoom.us/j/55555",
+        )
+
+        seed_offline()
+
+        session.refresh_from_db()
+        self.assertEqual(session.meeting_method, LiveSession.MeetingMethod.ZOOM)
+        self.assertEqual(session.meeting_url, "https://zoom.us/j/55555")
+
     def test_reseeding_preserves_hand_made_sessions_and_speakers(self):
         seed_offline()
         hand_made = LiveSession.objects.create(

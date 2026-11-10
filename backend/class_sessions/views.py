@@ -704,7 +704,7 @@ class ClassSessionNotesDocumentView(APIView):
                 message="There's no notes document for this class.", status_code=404
             )
 
-        filename = f"{session.course.code}-{session.scheduled_at:%Y-%m-%d}-notes.pdf"
+        filename = session.notes_context()["document_name"]
 
         # The teacher's copy carries the transcript under the notes; the
         # stored one does not, because that is the file emailed to the whole

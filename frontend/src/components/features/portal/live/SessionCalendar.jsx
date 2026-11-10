@@ -34,6 +34,7 @@ export default function SessionCalendar({
   onRsvp,
   onCancelRsvp,
   onJoin,
+  onOpenNotes,
   onOpenDetail,
   isBusy = false,
 }) {
@@ -190,6 +191,7 @@ export default function SessionCalendar({
         onRsvp={onRsvp}
         onCancelRsvp={onCancelRsvp}
         onJoin={onJoin}
+        onOpenNotes={onOpenNotes}
         onOpenDetail={onOpenDetail}
         isBusy={isBusy}
       />

@@ -153,6 +153,52 @@ class ClassSession(BaseModel):
     def __str__(self):
         return f"{self.title} — {self.course.code} ({self.scheduled_at:%Y-%m-%d %H:%M})"
 
+    def notes_context(self):
+        """What this class is, for the two things that write it up.
+
+        `notes_prompt` and `notes_document` are shared with War Room Live
+        (`live_sessions.LiveSession`), which has no course and no teacher —
+        so neither of them reads a field off this model directly. Each kind
+        of session describes itself here instead, which is what lets one
+        prompt and one renderer serve both without either having to pretend
+        to be the other.
+
+        Everything in it is presentation: a heading and an agenda for the
+        model to read the transcript by, the lines printed under the title of
+        the PDF, the two pieces of standing wording on that document, and the
+        name the file is handed out under.
+        """
+        taught_by = ""
+        if self.teacher_id and self.teacher:
+            taught_by = self.teacher.name or self.teacher.username
+
+        return {
+            "heading": f"Course: {self.course.code} — {self.course.title}",
+            "title": self.title,
+            "description": self.description,
+            "agenda": list(self.agenda or []),
+            "meta": [
+                f"{self.course.code} — {self.course.title}",
+                self.scheduled_at.strftime("%d %B %Y, %H:%M UTC"),
+                f"Taught by {taught_by}" if taught_by else "",
+                f"{self.duration_minutes} minutes",
+            ],
+            "transcript_note": (
+                "The full conversation, as it was heard. Only this course's "
+                "teachers receive this page."
+            ),
+            "footnote": (
+                "These notes were written automatically from a transcript of the "
+                "class and have not been checked by your teacher. The transcript "
+                "can mishear names and technical terms, so treat anything "
+                "surprising as a note to ask about rather than as a correction to "
+                "what you were taught."
+            ),
+            "document_name": (
+                f"{self.course.code}-{self.scheduled_at:%Y-%m-%d}-notes.pdf"
+            ),
+        }
+
 
 class ClassSessionAttendance(BaseModel):
     """Evidence that one person opened one class.

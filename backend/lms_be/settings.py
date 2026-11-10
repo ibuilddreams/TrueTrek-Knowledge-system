@@ -75,6 +75,7 @@ INSTALLED_APPS = [
     'live_sessions',
     'wargamer',
     'class_sessions',
+    'teacher_onboarding',
 ]
 
 MIDDLEWARE = [
@@ -587,6 +588,39 @@ CLASS_NOTES_AUDIO_BITRATE = int(os.getenv('CLASS_NOTES_AUDIO_BITRATE', 24000))
 # knob — at the bitrate above a ten-minute segment is about 1.2 MB, so
 # anything near this is a client sending something it should not.
 CLASS_NOTES_AUDIO_MAX_MB = int(os.getenv('CLASS_NOTES_AUDIO_MAX_MB', 40))
+
+# --- War Room Live -------------------------------------------------------
+#
+# The monthly drop-in audio sessions (live_sessions/) run on the SAME Agora
+# project as the live classes — AGORA_APP_ID / AGORA_APP_CERTIFICATE above are
+# the whole of what a room needs, and there is deliberately nothing else to
+# fill in. A session is never filmed and never transcribed by a third party:
+# its notes are written from the room's own audio, recorded by the host's
+# browser and posted to this server, so an AI key is all the write-up needs
+# (live_sessions/notes.py).
+#
+# The recording settings those browsers use are CLASS_NOTES_AUDIO_* above
+# rather than a second set of their own: it is the same recorder posting to
+# the same kind of endpoint, and two numbers that had to stay in step would
+# not.
+LIVE_SESSION_NOTES_ENABLED = os.getenv('LIVE_SESSION_NOTES_ENABLED', 'true').lower() == 'true'
+
+# Whether the finished notes are emailed out with the PDF attached. Turns the
+# email off without touching the in-app notification, exactly as
+# CLASS_NOTES_EMAIL_ENABLED does for a class.
+LIVE_SESSION_NOTES_EMAIL_ENABLED = (
+    os.getenv('LIVE_SESSION_NOTES_EMAIL_ENABLED', 'true').lower() == 'true'
+)
+
+# Where that email sends people. The notes live in the portal, which is where
+# the session, its recording and any later correction are — the attachment is
+# a snapshot, the portal is the record.
+LIVE_SESSION_PORTAL_PATH = os.getenv(
+    'LIVE_SESSION_PORTAL_PATH', '/studentportal?tab=warroom-live'
+)
+LIVE_SESSION_ADMIN_PORTAL_PATH = os.getenv(
+    'LIVE_SESSION_ADMIN_PORTAL_PATH', '/adminportal?tab=live-sessions'
+)
 
 # AI-graded assignment review (assignments/ai_review/) and quiz short-answer
 # grading (quizzes/ai_grading.py) — reuses AI_CHAT_MODEL (the fast path), same

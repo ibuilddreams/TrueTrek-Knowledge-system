@@ -13,6 +13,7 @@ export default function CalendarAgendaPanel({
   onRsvp,
   onCancelRsvp,
   onJoin,
+  onOpenNotes,
   onOpenDetail,
   isBusy = false,
 }) {

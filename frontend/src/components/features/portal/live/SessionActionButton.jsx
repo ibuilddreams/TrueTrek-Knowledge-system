@@ -1,19 +1,21 @@
 "use client";
 
-import { CalendarCheck, PlayCircle, Radio } from "lucide-react";
+import { CalendarCheck, NotebookPen, PlayCircle, Radio } from "lucide-react";
 
 // The one place that decides what a student can do with a session right now.
 // Both the session cards and the calendar's day agenda render it, so the two
 // surfaces can never drift into offering different actions for the same row.
 //
 // `can_join` is the server's word (live_sessions/services.py::can_join) and
-// already folds in "is the room open" and "is there a link at all" — the
+// already folds in "is the room open", "is there a link at all" and — for a
+// session hosted here — whether this server can mint a token for it. The
 // branches below only present it.
 export default function SessionActionButton({
   session,
   onRsvp,
   onCancelRsvp,
   onJoin,
+  onOpenNotes,
   isBusy = false,
   size = "base",
 }) {
@@ -43,6 +45,21 @@ export default function SessionActionButton({
         </a>
       );
     }
+    // Nothing to watch, but the session wrote itself up — which for a
+    // session that was never recorded is the only thing somebody who missed
+    // it can get back.
+    if (session.notes_available) {
+      return (
+        <button
+          type="button"
+          onClick={() => onOpenNotes?.(session)}
+          className={`${base} ${pad} border border-line text-ink hover:bg-porcelain cursor-pointer`}
+        >
+          <NotebookPen className="w-3.5 h-3.5" />
+          Notes
+        </button>
+      );
+    }
     return (
       <span className="text-[11px] font-mono uppercase tracking-wider text-muted">
         {isCancelled ? "Cancelled" : "No recording"}
@@ -50,12 +67,14 @@ export default function SessionActionButton({
     );
   }
 
-  // Live right now, but the admin hasn't published a link yet — offering
-  // "Save my spot" here would be nonsense.
+  // Live right now, but there is nowhere to send anybody: an external
+  // session whose link the admin hasn't published, or — far rarer — a
+  // session hosted here on a server with no Agora keys. Offering "Save my
+  // spot" here would be nonsense.
   if (isLive && !session.can_join) {
     return (
       <span className="text-[11px] font-mono uppercase tracking-wider text-clay">
-        Link coming soon
+        {session.is_hosted_here ? "Room unavailable" : "Link coming soon"}
       </span>
     );
   }
@@ -69,7 +88,7 @@ export default function SessionActionButton({
         className={`${base} ${padWide} bg-clay hover:bg-clay/90 text-paper shadow-sm disabled:opacity-50 cursor-pointer`}
       >
         <Radio className="w-3.5 h-3.5" />
-        Join Live
+        {session.is_hosted_here ? "Join Room" : "Join Live"}
       </button>
     );
   }

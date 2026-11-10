@@ -1,6 +1,15 @@
 "use client";
 
-import { Calendar, CalendarCheck, Clock, Mic, PlayCircle, Radio, Users } from "lucide-react";
+import {
+  Calendar,
+  CalendarCheck,
+  Clock,
+  Mic,
+  NotebookPen,
+  PlayCircle,
+  Radio,
+  Users,
+} from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import SpeakerChip from "./SpeakerChip";
 import {
@@ -18,6 +27,7 @@ export default function SessionDetailModal({
   onRsvp,
   onCancelRsvp,
   onJoin,
+  onOpenNotes,
   isBusy = false,
 }) {
   if (!session) return null;
@@ -156,18 +166,35 @@ export default function SessionDetailModal({
             Close
           </button>
 
+          {/* A finished session can leave two things behind, and they are
+              not alternatives: a recording somebody uploaded, and the notes
+              the room wrote itself. A session that was never recorded still
+              has notes, and they are the only thing somebody who missed it
+              can get back. */}
           {isEnded || isCancelled ? (
-            session.recording_url ? (
-              <a
-                href={session.recording_url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold font-mono uppercase tracking-wider rounded-lg bg-pine hover:bg-moss text-paper shadow-sm transition"
-              >
-                <PlayCircle className="w-3.5 h-3.5" />
-                Play recording
-              </a>
-            ) : null
+            <>
+              {session.notes_available && (
+                <button
+                  type="button"
+                  onClick={() => onOpenNotes?.(session)}
+                  className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold font-mono uppercase tracking-wider rounded-lg border border-line text-ink hover:bg-porcelain transition cursor-pointer"
+                >
+                  <NotebookPen className="w-3.5 h-3.5" />
+                  Session notes
+                </button>
+              )}
+              {session.recording_url && (
+                <a
+                  href={session.recording_url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold font-mono uppercase tracking-wider rounded-lg bg-pine hover:bg-moss text-paper shadow-sm transition"
+                >
+                  <PlayCircle className="w-3.5 h-3.5" />
+                  Play recording
+                </a>
+              )}
+            </>
           ) : session.can_join ? (
             <button
               type="button"
@@ -176,7 +203,7 @@ export default function SessionDetailModal({
               className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold font-mono uppercase tracking-wider rounded-lg bg-clay hover:bg-clay/90 text-paper shadow-sm transition disabled:opacity-50 cursor-pointer"
             >
               <Radio className="w-3.5 h-3.5" />
-              Join live
+              {session.is_hosted_here ? "Join room" : "Join live"}
             </button>
           ) : session.is_rsvped ? (
             <button
@@ -203,7 +230,9 @@ export default function SessionDetailModal({
         {!isEnded && !isCancelled && !session.can_join && (
           <p className="text-[11px] text-muted font-light text-center">
             {isLive
-              ? "This session is live, but a join link hasn't been published yet."
+              ? session.is_hosted_here
+                ? "This session is live, but its room isn't available on this server."
+                : "This session is live, but a join link hasn't been published yet."
               : `The room opens 15 minutes before the session starts${
                   formatCountdown(session.join_opens_at)
                     ? ` — ${formatCountdown(session.join_opens_at)}.`

@@ -1,7 +1,17 @@
+from datetime import timedelta
+
 from rest_framework import serializers
 
+from . import notes as notes_services
 from .models import LiveSession, SessionRSVP, SessionSpeaker
-from .services import can_join, live_state, session_window
+from .services import (
+    LIVE_GRACE_MINUTES_AFTER,
+    audience_can_speak,
+    can_join,
+    is_host,
+    live_state,
+    session_window,
+)
 
 
 class SessionSpeakerSerializer(serializers.ModelSerializer):
@@ -51,6 +61,13 @@ class LiveSessionSerializer(serializers.ModelSerializer):
     `meeting_url` is intentionally absent: the link is only ever released by
     `GET /live-sessions/<id>/join/` once the room is open (see
     services.get_join_url), so it must not leak through a listing.
+
+    **`channel_name` is absent for the same reason, and more strictly.** A
+    session hosted here runs in an Agora channel, which anybody holding a
+    token for it can walk into — so the channel is never in a payload and the
+    only thing that hands one out is `POST /live-sessions/<id>/room/`, which
+    mints a token bound to one person and one channel at the same moment.
+    This is exactly the rule `class_sessions` applies to a class.
     """
 
     speakers = SessionSpeakerSerializer(many=True, read_only=True)
@@ -62,7 +79,16 @@ class LiveSessionSerializer(serializers.ModelSerializer):
     seats_remaining = serializers.SerializerMethodField()
     ends_at = serializers.SerializerMethodField()
     join_opens_at = serializers.SerializerMethodField()
+    room_closes_at = serializers.SerializerMethodField()
     cover_image_url = serializers.SerializerMethodField()
+    # Whether the audio runs here or on somebody else's link — which is the
+    # difference between a button that opens the room and one that opens a
+    # new tab.
+    is_hosted_here = serializers.BooleanField(read_only=True)
+    audience_can_speak = serializers.SerializerMethodField()
+    is_host = serializers.SerializerMethodField()
+    notes_configured = serializers.SerializerMethodField()
+    notes_available = serializers.SerializerMethodField()
 
     class Meta:
         model = LiveSession
@@ -75,9 +101,17 @@ class LiveSessionSerializer(serializers.ModelSerializer):
             "scheduled_at",
             "ends_at",
             "join_opens_at",
+            "room_closes_at",
             "duration_minutes",
             "meeting_method",
             "meeting_method_display",
+            "is_hosted_here",
+            "audience_access",
+            "audience_can_speak",
+            "is_host",
+            "takes_notes",
+            "notes_configured",
+            "notes_available",
             "speakers",
             "capacity",
             "seats_remaining",
@@ -125,6 +159,46 @@ class LiveSessionSerializer(serializers.ModelSerializer):
         opens_at, _, _ = session_window(obj)
         return opens_at
 
+    def get_room_closes_at(self, obj):
+        """When the server stops letting anybody in, which is later than
+        `ends_at` — these sessions run over and the room stays open for it
+        (`services.LIVE_GRACE_MINUTES_AFTER`).
+
+        Sent rather than left for the browser to work out, because a room
+        left open past the moment the server shut it is one nobody can
+        rejoin, and a client re-deriving that grace from a number it does not
+        hold is how the two end up disagreeing."""
+        _, _, ends_at = session_window(obj)
+        return ends_at + timedelta(minutes=LIVE_GRACE_MINUTES_AFTER)
+
+    def get_audience_can_speak(self, obj):
+        return audience_can_speak(obj)
+
+    def get_is_host(self, obj):
+        """Whether the person reading this runs War Room Live.
+
+        Answered per viewer rather than stored, the same way
+        `class_sessions` answers "can I manage this class" — it decides which
+        controls a card offers, and the server is the only thing entitled to
+        say.
+        """
+        request = self.context.get("request")
+        return bool(request and is_host(request.user, obj))
+
+    def get_notes_configured(self, obj):
+        # A pure settings read, so it costs nothing to answer once per row —
+        # and it is what lets the room show the notes button disabled with a
+        # reason rather than offering one that could only fail.
+        return notes_services.is_notes_configured()
+
+    def get_notes_available(self, obj):
+        # Prefetched by the views into `context["sessions_with_notes"]` so a
+        # list of sessions costs one query instead of one per row.
+        with_notes = self.context.get("sessions_with_notes")
+        if with_notes is not None:
+            return obj.pk in with_notes
+        return notes_services.latest_available_notes(obj) is not None
+
     def get_cover_image_url(self, obj):
         if not obj.cover_image:
             return None
@@ -148,6 +222,8 @@ class LiveSessionWriteSerializer(serializers.ModelSerializer):
             "duration_minutes",
             "meeting_method",
             "meeting_url",
+            "audience_access",
+            "takes_notes",
             "speaker_ids",
             "capacity",
             "status",
@@ -161,6 +237,22 @@ class LiveSessionWriteSerializer(serializers.ModelSerializer):
         if value < 5:
             raise serializers.ValidationError("A session must run for at least 5 minutes.")
         return value
+
+    def validate(self, attrs):
+        """A session hosted here has no meeting link, and must not keep one.
+
+        An admin who schedules on Zoom, pastes the link and then switches the
+        session to the platform's own room would otherwise leave a live Zoom
+        URL on a session that no longer uses it — and `get_join_url` would
+        happily hand it out, sending half the room to the wrong place.
+        """
+        method = attrs.get(
+            "meeting_method",
+            getattr(self.instance, "meeting_method", LiveSession.MeetingMethod.AGORA),
+        )
+        if method == LiveSession.MeetingMethod.AGORA:
+            attrs["meeting_url"] = None
+        return attrs
 
     def validate_talking_points(self, value):
         if not isinstance(value, list):
@@ -182,4 +274,13 @@ class SessionRSVPSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = SessionRSVP
-        fields = ["id", "student", "student_name", "student_email", "attended", "joined_at", "created_at"]
+        fields = [
+            "id",
+            "student",
+            "student_name",
+            "student_email",
+            "role",
+            "attended",
+            "joined_at",
+            "created_at",
+        ]

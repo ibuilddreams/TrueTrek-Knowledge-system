@@ -8,7 +8,8 @@ from common.pagination import Pagination
 from common.response import error_response, success_response
 from enrollments.models import Enrollment
 from enrollments.serializers import CourseEnrolledStudentSerializer
-from users.permissions import IsAdmin, IsTeacher
+from teacher_onboarding.permissions import IsApprovedTeacher
+from users.permissions import IsAdmin
 from tiers.models import Tier
 
 from .grades import FILTER_GRADES, MAX_GRADE, MIN_GRADE, grade_name
@@ -407,7 +408,25 @@ class CourseListCreateView(generics.ListCreateAPIView):
 
     def get_permissions(self):
         if self.request.method == "POST":
-            return [(IsAdmin | IsTeacher)()]
+            # IsApprovedTeacher, not IsTeacher: course creation is the single
+            # door through which a teacher becomes an instructor on anything
+            # (every other content write already requires being one), so
+            # gating it here is what keeps an unreviewed self-signup account
+            # from authoring material. Teachers an admin created hold no
+            # application and are unaffected — see teacher_onboarding.services.can_teach.
+            permission = (IsAdmin | IsApprovedTeacher)()
+            # DRF reads `.message` off the composed OR object, never off the
+            # operand that actually failed, so without this a teacher waiting
+            # on their application is told only "You do not have permission to
+            # perform this action" — true, and no use to them. The wording
+            # covers both operands, since a student reaching here must not be
+            # told to wait for a review they never started.
+            permission.message = (
+                "Only admins and approved teachers can create a course. If your teacher "
+                "application is still under review, you'll be able to create courses as "
+                "soon as it has been approved."
+            )
+            return [permission]
         return super().get_permissions()
 
     def get_serializer_class(self):

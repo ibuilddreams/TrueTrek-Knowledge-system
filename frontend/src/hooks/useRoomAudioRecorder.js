@@ -4,22 +4,26 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { uploadClassNotesAudio } from "@/services/classSessionsService";
 
 /**
- * Records a class, in the teacher's own browser, for its AI meeting notes.
+ * Records a room, in its host's own browser, for its AI meeting notes.
  *
- * This is the whole of the "local" notes source on the client side. There is
- * no transcription service and no bucket anywhere in the path: the host's
- * browser mixes everybody who is speaking into one track, records it in
- * segments and posts each one to this project's own server, where the model
- * reads it and writes the class up.
+ * Used by both rooms this app runs — a live class and a War Room Live audio
+ * session — because the recording is identical in each: the only thing that
+ * differs is which server the segments are posted to, which is the
+ * `uploadSegment` option.
+ *
+ * There is no transcription service and no bucket anywhere in the path: the
+ * host's browser mixes everybody who is speaking into one track, records it
+ * in segments and posts each one to this project's own server, where the
+ * model reads it and writes the session up.
  *
  * Five things here are load-bearing.
  *
  * **It mixes rather than records one track.** Agora hands out a separate
  * audio track per person, and a MediaRecorder can only have one — so every
  * track is connected into a single `MediaStreamAudioDestinationNode` and the
- * recorder runs on that. A person who joins or leaves mid-class is connected
- * or dropped as they do, which is why the source list is re-synced on every
- * change to `remoteUsers` rather than built once at the start.
+ * recorder runs on that. A person who joins or leaves mid-session is
+ * connected or dropped as they do, which is why the source list is re-synced
+ * on every change to `remoteUsers` rather than built once at the start.
  *
  * **Muting replaces a track, it does not silence one.** Agora's
  * `setEnabled(false)` releases the microphone, and turning it back on
@@ -27,11 +31,11 @@ import { uploadClassNotesAudio } from "@/services/classSessionsService";
  * underlying track's own id, so an unmute connects the new track instead of
  * leaving a dead node in the mix.
  *
- * **Segments, not one file at the end.** A class is cut into slices on a
+ * **Segments, not one file at the end.** A session is cut into slices on a
  * timer and each is uploaded as it completes. A browser that crashes loses
  * the slice in progress rather than the hour, the final upload is seconds
  * rather than minutes, and the model is handed minutes of audio per call
- * however long the class ran.
+ * however long the session ran.
  *
  * **Uploads are serialised and idempotent.** They go up one at a time, in the
  * order they were recorded, each under a key of its own — so a retry after a
@@ -44,21 +48,21 @@ import { uploadClassNotesAudio } from "@/services/classSessionsService";
  * the only place that knows — it holds every participant's track separately,
  * a moment before they are added together — so it watches each one's level
  * and records the changes as `{at, uid}`. The server resolves those uids
- * against the class roster and hands the model the answer rather than asking
- * it to guess, because a sentence filed under the wrong student's name is
+ * against the room's roster and hands the model the answer rather than asking
+ * it to guess, because a sentence filed under the wrong person's name is
  * worse than one filed under nobody's.
  *
  * **Stopping is awaited, not fired off.** `stopAndFlush` resolves only once
- * the last segment has actually gone up. The classroom awaits it before
- * telling the server the teacher has left — and `stopAndFlush({end: true})`
- * is what tells the server the class is *over*, as opposed to merely paused
- * between two stretches of one class.
+ * the last segment has actually gone up. The room awaits it before telling
+ * the server its host has left — and `stopAndFlush({end: true})` is what
+ * tells the server the session is *over*, as opposed to merely paused
+ * between two stretches of one session.
  */
 
 // Fallbacks for a server that did not say. Kept in step with
-// `class_sessions/services.py::notes_capture_config`, which is where the real
-// values come from — the server has to accept what the browser records, so
-// the numbers belong beside the code that validates them.
+// `notes_capture_config` on whichever server owns the room, which is where
+// the real values come from — the server has to accept what the browser
+// records, so the numbers belong beside the code that validates them.
 const DEFAULT_SEGMENT_SECONDS = 600;
 const DEFAULT_AUDIO_BITRATE = 16000;
 const DEFAULT_MIME_TYPES = [
@@ -70,27 +74,27 @@ const DEFAULT_MIME_TYPES = [
 
 // A blob this small is an empty container header and nothing else — what a
 // recorder stopped in the same second it started produces. Matches
-// `class_sessions/notes_audio.MIN_SEGMENT_BYTES`.
+// `class_sessions/notes_audio.MIN_SEGMENT_BYTES`, which both servers use.
 const MIN_SEGMENT_BYTES = 1024;
 
-// How often each participant's level is sampled, and how loud counts as
-// speaking. Four times a second is finer than anybody changes turn, and the
+// How often each voice's level is sampled, and how loud counts as speaking.
+// Four times a second is finer than anybody changes turn, and the
 // threshold is well above a quiet room but below a soft voice — this decides
 // who gets the line, so a miss costs a name while a false positive costs the
 // wrong one.
 const SPEAKER_SAMPLE_MS = 250;
 const SPEAKER_LEVEL_THRESHOLD = 0.02;
 
-// One retry per segment, after a pause. A classroom uplink drops a request
-// now and then and the segment is still sitting in memory, so trying once
-// more is nearly free; trying forever would queue a class's worth of audio
-// behind one bad minute.
+// One retry per segment, after a pause. A room's uplink drops a request now
+// and then and the segment is still sitting in memory, so trying once more is
+// nearly free; trying forever would queue a session's worth of audio behind
+// one bad minute.
 const UPLOAD_RETRY_DELAY_MS = 4000;
 
-// How many segments in a row have to get nowhere before the teacher is told.
+// How many segments in a row have to get nowhere before the host is told.
 // Two, because the commonest cause is not a blip at all — it is a reverse
 // proxy refusing the body size, which fails every upload identically and
-// otherwise shows up only as a class that mysteriously produced no notes.
+// otherwise shows up only as a session that mysteriously produced no notes.
 const UPLOAD_FAILURES_BEFORE_WARNING = 2;
 
 function pickMimeType(candidates) {
@@ -116,12 +120,17 @@ function randomKey() {
 
 const wait = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
-export function useClassNotesRecorder({
+export function useRoomAudioRecorder({
   sessionId,
   active = false,
-  // A new run means a new class's worth of audio: the recorder is torn down
-  // and rebuilt rather than carried over, so segments can never be filed
-  // against the run before this one.
+  // Where a finished segment goes. Defaults to the live classes, which is
+  // where this hook started; War Room Live passes its own. Everything else
+  // about a recording is the same in both rooms, which is why this is one
+  // argument rather than a second copy of this file.
+  uploadSegment = uploadClassNotesAudio,
+  // A new run means a new session's worth of audio: the recorder is torn
+  // down and rebuilt rather than carried over, so segments can never be
+  // filed against the run before this one.
   runId = null,
   segmentSeconds,
   audioBitrate,
@@ -162,10 +171,18 @@ export function useClassNotesRecorder({
   const speakersRef = useRef([]);
   const speakerTimerRef = useRef(null);
   const segmentStartedAtRef = useRef(0);
+  // Held in a ref for the same reason `sessionId` is: an upload is retried
+  // minutes after the render that queued it, and a closure over a stale
+  // function would post a session's audio to the wrong server.
+  const uploadSegmentRef = useRef(uploadSegment);
 
   useEffect(() => {
     sessionIdRef.current = sessionId;
   }, [sessionId]);
+
+  useEffect(() => {
+    uploadSegmentRef.current = uploadSegment;
+  }, [uploadSegment]);
 
   const upload = useCallback(async (blob, { durationSeconds, end, speakers }) => {
     const clientKey = randomKey();
@@ -174,7 +191,7 @@ export function useClassNotesRecorder({
 
     for (let attempt = 0; attempt < 2; attempt += 1) {
       try {
-        await uploadClassNotesAudio(id, {
+        await uploadSegmentRef.current(id, {
           blob,
           clientKey,
           durationSeconds,
@@ -195,15 +212,15 @@ export function useClassNotesRecorder({
           continue;
         }
 
-        console.warn("Class notes audio upload failed", uploadError);
+        console.warn("Meeting notes audio upload failed", uploadError);
         failedUploadsRef.current += 1;
-        // One lost slice is a blip and the class should not hear about it.
-        // Several in a row is a class that will end with nothing to write up
-        // — a proxy rejecting the body size, most often — and the teacher
-        // needs to know while there is still a lesson left to save.
+        // One lost slice is a blip and nobody should hear about it. Several
+        // in a row is a session that will end with nothing to write up — a
+        // proxy rejecting the body size, most often — and the host needs to
+        // know while there is still something left to save.
         if (failedUploadsRef.current === UPLOAD_FAILURES_BEFORE_WARNING) {
           setError(
-            "The class audio isn't reaching the server, so there may be no notes from this class. Check with whoever runs it.",
+            "The room's audio isn't reaching the server, so there may be no notes from this session. Check with whoever runs it.",
           );
         }
       }
@@ -225,7 +242,7 @@ export function useClassNotesRecorder({
    * Notes down who is speaking, if anybody, and only when that changes.
    *
    * Loudest-above-a-threshold rather than everyone-above-a-threshold: in a
-   * class somebody is always breathing into a microphone, and a turn belongs
+   * full room somebody is always breathing into a microphone, and a turn belongs
    * to the person actually talking. A tie, a silence or a room where two
    * people are over each other leaves a gap, which the model is told to
    * render as "Speaker" rather than filling in.
@@ -289,9 +306,9 @@ export function useClassNotesRecorder({
       runningRef.current = false;
       setIsCapturing(false);
       setError(
-        "This browser can't record the class for its notes. Chrome, Edge, Firefox and Safari can.",
+        "This browser can't record the room for its notes. Chrome, Edge, Firefox and Safari can.",
       );
-      console.warn("Class notes recorder could not start", recorderError);
+      console.warn("Meeting notes recorder could not start", recorderError);
       return;
     }
 
@@ -332,7 +349,7 @@ export function useClassNotesRecorder({
       recorder.__speakers = speakersRef.current;
     } catch (startError) {
       settle();
-      console.warn("Class notes recorder refused to start", startError);
+      console.warn("Meeting notes recorder refused to start", startError);
       return;
     }
 
@@ -375,15 +392,15 @@ export function useClassNotesRecorder({
   /**
    * Ends the recording and waits for the last segment to be on the server.
    *
-   * `end` is the difference between a pause and the end of the class, and it
-   * travels with the closing segment because that upload is what starts the
-   * write-up. The stop button passes nothing (a pause: the audio stays on the
-   * run and the next stretch appends to it); leaving and the classroom
-   * closing itself pass `{end: true}`.
+   * `end` is the difference between a pause and the end of the session, and
+   * it travels with the closing segment because that upload is what starts
+   * the write-up. The stop button passes nothing (a pause: the audio stays on
+   * the run and the next stretch appends to it); leaving and the room closing
+   * itself pass `{end: true}`.
    *
-   * Safe to call when nothing is running, and safe to call twice: the
-   * classroom calls it from the stop button, from leaving, and again when the
-   * server says the run has ended.
+   * Safe to call when nothing is running, and safe to call twice: the room
+   * calls it from the stop button, from leaving, and again when the server
+   * says the run has ended.
    */
   const stopAndFlush = useCallback(async ({ end = false } = {}) => {
     const generation = generationRef.current;
@@ -427,8 +444,8 @@ export function useClassNotesRecorder({
   }, [teardownGraph]);
 
   // Start and stop with the run. Keyed on `runId` as well as `active` so a
-  // class that is stopped and started again records into the new run rather
-  // than carrying the old recorder across.
+  // session that is stopped and started again records into the right run
+  // rather than carrying the old recorder across.
   useEffect(() => {
     if (!active) {
       stopAndFlush();
@@ -440,7 +457,7 @@ export function useClassNotesRecorder({
       (window.AudioContext || window.webkitAudioContext);
     if (!AudioContextClass || typeof MediaRecorder === "undefined") {
       setError(
-        "This browser can't record the class for its notes. Chrome, Edge, Firefox and Safari can.",
+        "This browser can't record the room for its notes. Chrome, Edge, Firefox and Safari can.",
       );
       return undefined;
     }
@@ -511,7 +528,7 @@ export function useClassNotesRecorder({
           buffer: new Uint8Array(analyser.fftSize),
         });
       } catch (mixError) {
-        console.warn("Could not add a voice to the class notes mix", mixError);
+        console.warn("Could not add a voice to the meeting notes mix", mixError);
       }
     });
 

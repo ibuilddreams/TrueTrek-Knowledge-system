@@ -191,7 +191,7 @@ def _transcript_flowables(transcript, styles):
     return flowables
 
 
-def build_notes_pdf(notes, *, session, destination, transcript=None):
+def build_notes_pdf(notes, *, context, destination, transcript=None):
     """Writes the notes to `destination` (a path or a file-like object).
 
     Sections with nothing in them are omitted rather than printed empty: a
@@ -199,15 +199,24 @@ def build_notes_pdf(notes, *, session, destination, transcript=None):
     "Action items" heading and a blank under it, which reads as something
     having gone missing.
 
-    `transcript` appends the verbatim record of the class under everything
+    `context` is `session.notes_context()` — a plain mapping rather than a
+    model, because two different things are written up through this one
+    renderer (a course's live class and a War Room Live audio session) and
+    neither has to pretend to be the other to be printed. Only `title`,
+    `meta` and `footnote` are read here, and each session type supplies its
+    own (`ClassSession.notes_context` / `LiveSession.notes_context`).
+
+    `transcript` appends the verbatim record of the session under everything
     else. It is **passed in rather than read off `notes`** so that this
     function cannot accidentally put it in a document meant for students: the
-    write-up is for the class, the words are for the course's teachers, and
-    only `views.ClassSessionNotesDocumentView` — which has already asked who
-    is downloading — decides which of the two it is rendering.
+    write-up is for the room, the words are for whoever ran it, and only the
+    download view — which has already asked who is downloading — decides
+    which of the two it is rendering.
     """
     if not PDF_AVAILABLE:  # pragma: no cover - guarded by the caller
         raise RuntimeError("reportlab is not installed")
+
+    heading = notes.title or context.get("title") or "Meeting notes"
 
     styles = _styles()
     margin = 0.85 * inch
@@ -218,27 +227,14 @@ def build_notes_pdf(notes, *, session, destination, transcript=None):
         rightMargin=margin,
         topMargin=margin,
         bottomMargin=margin,
-        title=notes.title or session.title,
+        title=heading,
         author="Cool Nerds",
     )
 
-    taught_by = ""
-    if session.teacher_id and session.teacher:
-        taught_by = session.teacher.name or session.teacher.username
-
-    meta = " · ".join(
-        part
-        for part in (
-            f"{session.course.code} — {session.course.title}",
-            session.scheduled_at.strftime("%d %B %Y, %H:%M UTC"),
-            f"Taught by {taught_by}" if taught_by else "",
-            f"{session.duration_minutes} minutes",
-        )
-        if part
-    )
+    meta = " · ".join(str(part) for part in (context.get("meta") or []) if part)
 
     story = [
-        Paragraph(_escape(notes.title or session.title), styles["title"]),
+        Paragraph(_escape(heading), styles["title"]),
         Paragraph(_escape(meta), styles["subtitle"]),
     ]
 
@@ -286,8 +282,11 @@ def build_notes_pdf(notes, *, session, destination, transcript=None):
         story.append(Paragraph("Transcript", styles["heading"]))
         story.append(
             Paragraph(
-                "The full conversation, as it was heard. Only this course's "
-                "teachers receive this page.",
+                _escape(
+                    context.get("transcript_note")
+                    or "The full conversation, as it was heard. Only this course's "
+                    "teachers receive this page."
+                ),
                 styles["detail"],
             )
         )
@@ -297,10 +296,13 @@ def build_notes_pdf(notes, *, session, destination, transcript=None):
     story.append(Spacer(1, 6))
     story.append(
         Paragraph(
-            "These notes were written automatically from a transcript of the class "
-            "and have not been checked by your teacher. The transcript can mishear "
-            "names and technical terms, so treat anything surprising as a note to "
-            "ask about rather than as a correction to what you were taught.",
+            _escape(
+                context.get("footnote")
+                or "These notes were written automatically from a transcript of the "
+                "class and have not been checked by your teacher. The transcript can "
+                "mishear names and technical terms, so treat anything surprising as a "
+                "note to ask about rather than as a correction to what you were taught."
+            ),
             styles["footnote"],
         )
     )

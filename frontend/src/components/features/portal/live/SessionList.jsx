@@ -17,6 +17,7 @@ export default function SessionList({
   onRsvp,
   onCancelRsvp,
   onJoin,
+  onOpenNotes,
   onOpenDetail,
   isBusy,
 }) {
@@ -66,6 +67,7 @@ export default function SessionList({
           onRsvp={onRsvp}
           onCancelRsvp={onCancelRsvp}
           onJoin={onJoin}
+          onOpenNotes={onOpenNotes}
           onOpenDetail={onOpenDetail}
           isBusy={isBusy}
         />

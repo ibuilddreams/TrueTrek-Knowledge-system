@@ -12,8 +12,21 @@ import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 import AuthGateCard from "@/components/ui/AuthGateCard";
 import AuthField from "@/components/ui/AuthField";
+import AuthSelectField from "@/components/ui/AuthSelectField";
 import AuthSubmitButton from "@/components/ui/AuthSubmitButton";
 import Loader from "@/components/ui/Loader";
+
+// Backend roles (users.CustomUser.Roles) — the signup endpoint accepts these
+// two only, so ADMIN is deliberately absent here and rejected server-side too.
+const SIGNUP_ROLES = {
+  STUDENT: "STUDENT",
+  TEACHER: "TEACHER",
+};
+
+const ROLE_OPTIONS = [
+  { value: SIGNUP_ROLES.STUDENT, label: "Student" },
+  { value: SIGNUP_ROLES.TEACHER, label: "Teacher" },
+];
 
 const GENDER_OPTIONS = [
   { value: "MALE", label: "Male" },
@@ -40,6 +53,7 @@ export default function SignupForm() {
   const { shouldBlock, isAuthenticated } = useGuestOnlyRoute();
   const nextPath = useNextPath();
   const [form, setForm] = useState({
+    role: SIGNUP_ROLES.STUDENT,
     firstName: "",
     lastName: "",
     email: "",
@@ -57,6 +71,8 @@ export default function SignupForm() {
     );
   }
 
+  const isTeacherSignup = form.role === SIGNUP_ROLES.TEACHER;
+
   function updateField(field) {
     return (event) => {
       setForm((prev) => ({ ...prev, [field]: event.target.value }));
@@ -64,9 +80,10 @@ export default function SignupForm() {
   }
 
   // Navigation itself is NOT done here — useGuestOnlyRoute (above) reacts to
-  // isAuthenticated flipping true and sends the new student straight into
-  // /onboarding (they land on the Questionnaire step, since signup already
-  // logs them in). Doing it here too would race that check.
+  // isAuthenticated flipping true and routes by role: a new student goes to
+  // /onboarding (landing on the Questionnaire step, since signup already logs
+  // them in) and a new teacher straight to their portal, pathways being a
+  // student-only concept. Doing it here too would race that check.
   async function handleSubmit(event) {
     event.preventDefault();
     setFormError("");
@@ -79,8 +96,13 @@ export default function SignupForm() {
         email: form.email.trim(),
         password: form.password,
         gender: form.gender,
+        role: form.role,
       });
-      toastSuccess(`Welcome, ${user.name || user.email}. Let's find your pathway.`);
+      toastSuccess(
+        isTeacherSignup
+          ? `Welcome, ${user.name || user.email}. Let's get your teaching application started.`
+          : `Welcome, ${user.name || user.email}. Let's find your pathway.`
+      );
     } catch (error) {
       const message = getApiErrorMessage(
         error,
@@ -93,17 +115,32 @@ export default function SignupForm() {
     }
   }
 
-  const selectClassName = `w-full p-3 rounded-xl border text-xs font-sans focus:outline-none transition bg-paper border-line focus:border-pine ${
-    form.gender ? "text-ink" : "text-muted"
-  }`;
-
   return (
     <AuthGateCard
       icon={UserPlus}
       title="Create Your Account"
-      subtitle="Start your Cool Nerdz journey — sign up to get a personalized course pathway."
+      subtitle={
+        isTeacherSignup
+          ? "Apply to teach with Cool Nerdz — sign up, then tell us about your experience."
+          : "Start your Cool Nerdz journey — sign up to get a personalized course pathway."
+      }
     >
       <form onSubmit={handleSubmit} className="space-y-5">
+        <AuthSelectField
+          id="input-signup-role"
+          label="I am a"
+          required
+          value={form.role}
+          onChange={updateField("role")}
+          options={ROLE_OPTIONS}
+          placeholder="Select account type"
+          hint={
+            isTeacherSignup
+              ? "You'll complete a short application after signing up; our team reviews it before your portal opens."
+              : "Student accounts get a personalized pathway through the curriculum."
+          }
+        />
+
         <div className="grid grid-cols-2 gap-3.5">
           <AuthField
             id="input-signup-first-name"
@@ -144,30 +181,15 @@ export default function SignupForm() {
           showPasswordToggle
         />
 
-        <div>
-          <label
-            htmlFor="input-signup-gender"
-            className="text-[10px] font-sans block uppercase tracking-widest font-medium mb-1.5 text-muted"
-          >
-            Gender
-          </label>
-          <select
-            id="input-signup-gender"
-            required
-            value={form.gender}
-            onChange={updateField("gender")}
-            className={selectClassName}
-          >
-            <option value="" disabled>
-              Select gender
-            </option>
-            {GENDER_OPTIONS.map((option) => (
-              <option key={option.value} value={option.value}>
-                {option.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <AuthSelectField
+          id="input-signup-gender"
+          label="Gender"
+          required
+          value={form.gender}
+          onChange={updateField("gender")}
+          options={GENDER_OPTIONS}
+          placeholder="Select gender"
+        />
 
         {formError && (
           <div className="p-3.5 rounded-xl flex items-start gap-2.5 text-xs font-sans uppercase tracking-widest font-medium bg-red-50 border border-red-100 text-red-600">

@@ -17,6 +17,7 @@ export default function CalendarSessionRow({
   onRsvp,
   onCancelRsvp,
   onJoin,
+  onOpenNotes,
   onOpenDetail,
   isBusy = false,
 }) {
@@ -105,6 +106,7 @@ export default function CalendarSessionRow({
             onRsvp={onRsvp}
             onCancelRsvp={onCancelRsvp}
             onJoin={onJoin}
+            onOpenNotes={onOpenNotes}
             isBusy={isBusy}
             size="sm"
           />
