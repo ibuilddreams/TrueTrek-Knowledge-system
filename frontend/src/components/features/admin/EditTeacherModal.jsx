@@ -23,7 +23,6 @@ export default function EditTeacherModal({ isOpen, onClose, teacher, onUpdated }
   const [form, setForm] = useState({
     first_name: "",
     last_name: "",
-    gender: "",
     account_status: "",
     is_advisor: false,
   });
@@ -34,7 +33,6 @@ export default function EditTeacherModal({ isOpen, onClose, teacher, onUpdated }
     setForm({
       first_name: teacher.first_name || "",
       last_name: teacher.last_name || "",
-      gender: teacher.gender || "",
       account_status: teacher.account_status || "ACTIVE",
       is_advisor: Boolean(teacher.is_advisor),
     });
@@ -55,10 +53,9 @@ export default function EditTeacherModal({ isOpen, onClose, teacher, onUpdated }
 
     const firstName = form.first_name.trim();
     const lastName = form.last_name.trim();
-    const gender = form.gender;
     const accountStatus = form.account_status;
 
-    if (!firstName || !lastName || !gender || !accountStatus) {
+    if (!firstName || !lastName || !accountStatus) {
       toastError("Please fill in all required fields.");
       return;
     }
@@ -68,7 +65,6 @@ export default function EditTeacherModal({ isOpen, onClose, teacher, onUpdated }
       const response = await updateTeacher(teacher.id, {
         first_name: firstName,
         last_name: lastName,
-        gender,
         account_status: accountStatus,
         is_advisor: form.is_advisor,
       });
@@ -119,23 +115,6 @@ export default function EditTeacherModal({ isOpen, onClose, teacher, onUpdated }
               autoComplete="off"
             />
           </div>
-        </div>
-
-        <div>
-          <label className={LABEL_CLASS}>Gender</label>
-          <select
-            value={form.gender}
-            onChange={updateField("gender")}
-            disabled={isSubmitting}
-            className={FIELD_CLASS}
-          >
-            <option value="" disabled>
-              Select gender
-            </option>
-            <option value="MALE">Male</option>
-            <option value="FEMALE">Female</option>
-            <option value="OTHER">Other</option>
-          </select>
         </div>
 
         <div>

@@ -88,7 +88,6 @@ class StudentListCreateViewTests(APITestCase):
             "last_name": "New",
             "email": "brandnewstudent@example.com",
             "password": "StrongPass123!",
-            "gender": UserModel.Gender.MALE,
         }
         payload.update(overrides)
         return payload
@@ -168,7 +167,6 @@ class TeacherListCreateViewTests(APITestCase):
             username="adminuser",
             email="adminuser@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
             role=UserModel.Roles.ADMIN,
         )
 
@@ -176,7 +174,6 @@ class TeacherListCreateViewTests(APITestCase):
             username="existingstudent",
             email="existingstudent@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.FEMALE,
             role=UserModel.Roles.STUDENT,
         )
 
@@ -184,7 +181,6 @@ class TeacherListCreateViewTests(APITestCase):
             username="existingteacher",
             email="existingteacher@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
             role=UserModel.Roles.TEACHER,
         )
 
@@ -195,7 +191,6 @@ class TeacherListCreateViewTests(APITestCase):
             "last_name": "New",
             "email": "brandnewteacher@example.com",
             "password": "StrongPass123!",
-            "gender": UserModel.Gender.MALE,
         }
         payload.update(overrides)
         return payload
@@ -273,7 +268,6 @@ class TeacherDetailViewTests(APITestCase):
             username="adminuser",
             email="adminuser@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
             role=UserModel.Roles.ADMIN,
         )
 
@@ -283,7 +277,6 @@ class TeacherDetailViewTests(APITestCase):
             password="StrongPass123!",
             first_name="Detail",
             last_name="Teacher",
-            gender=UserModel.Gender.FEMALE,
             role=UserModel.Roles.TEACHER,
         )
 
@@ -291,7 +284,6 @@ class TeacherDetailViewTests(APITestCase):
             username="detailstudent",
             email="detailstudent@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.OTHER,
             role=UserModel.Roles.STUDENT,
         )
 
@@ -321,7 +313,6 @@ class TeacherDetailViewTests(APITestCase):
             {
                 "first_name": "Updated",
                 "last_name": "Name",
-                "gender": UserModel.Gender.MALE,
                 "account_status": UserModel.AccountStatus.SUSPENDED,
             },
         )
@@ -360,7 +351,6 @@ class TeacherSelfServiceViewsTests(APITestCase):
             username="selfteacher",
             email="selfteacher@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
             role=UserModel.Roles.TEACHER,
         )
 
@@ -368,7 +358,6 @@ class TeacherSelfServiceViewsTests(APITestCase):
             username="otherteacher",
             email="otherteacher@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
             role=UserModel.Roles.TEACHER,
         )
 
@@ -376,7 +365,6 @@ class TeacherSelfServiceViewsTests(APITestCase):
             username="enrolledstudentone",
             email="enrolledstudentone@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.FEMALE,
             role=UserModel.Roles.STUDENT,
         )
 
@@ -384,7 +372,6 @@ class TeacherSelfServiceViewsTests(APITestCase):
             username="enrolledstudenttwo",
             email="enrolledstudenttwo@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.FEMALE,
             role=UserModel.Roles.STUDENT,
         )
 
@@ -392,7 +379,6 @@ class TeacherSelfServiceViewsTests(APITestCase):
             username="unrelatedstudent",
             email="unrelatedstudent@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.OTHER,
             role=UserModel.Roles.STUDENT,
         )
 

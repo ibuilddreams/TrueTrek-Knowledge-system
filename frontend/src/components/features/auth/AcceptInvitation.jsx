@@ -15,7 +15,6 @@ export default function AcceptInvitation() {
   const [credentials, setCredentials] = useState(null);
   const [password, setPassword] = useState("");
   const [confirm, setConfirm] = useState("");
-  const [gender, setGender] = useState("");
   const [busy, setBusy] = useState(false);
   const [feedbackAvailable, setFeedbackAvailable] = useState(false);
   const [done, setDone] = useState(false);
@@ -32,7 +31,7 @@ export default function AcceptInvitation() {
     if (password !== confirm) { setError("Passwords do not match."); return; }
     setBusy(true);
     try {
-      const response = await acceptInvitation({ ...credentials, password, confirm_password: confirm, gender });
+      const response = await acceptInvitation({ ...credentials, password, confirm_password: confirm });
       setFeedbackAvailable(Boolean(response.data?.feedback_available));
       setDone(true);
       setPassword("");
@@ -51,7 +50,6 @@ export default function AcceptInvitation() {
         <AuthField id="invitation-password" label="Password" aria-label="Password" type="password" required minLength={8} maxLength={128} autoComplete="new-password" showPasswordToggle value={password} onChange={(event) => setPassword(event.target.value)} />
         <p className="text-xs text-muted">Use at least 8 characters. Avoid common passwords, all numbers, and personal details.</p>
         <AuthField id="invitation-confirm" label="Confirm password" aria-label="Confirm password" type="password" required maxLength={128} autoComplete="new-password" showPasswordToggle value={confirm} onChange={(event) => setConfirm(event.target.value)} />
-        <label className="block text-sm space-y-2"><span>Gender</span><select required className="w-full rounded-xl border border-line bg-paper p-3" value={gender} onChange={(event) => setGender(event.target.value)}><option value="">Select</option><option value="MALE">Male</option><option value="FEMALE">Female</option><option value="OTHER">Other / prefer not to say</option></select></label>
         {error && <p role="alert" className="text-sm text-rose-700">{error}</p>}
         <AuthSubmitButton isSubmitting={busy} disabled={!credentials || busy} label="Activate account" loadingLabel="Activating…" />
       </form>}

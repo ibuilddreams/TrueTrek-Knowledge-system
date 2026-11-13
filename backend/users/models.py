@@ -12,8 +12,6 @@ class CustomUserManager(BaseUserManager):
     def create_user(self, email, password=None, **extra_fields):
         if not email:
             raise ValueError("The Email field must be set")
-        if not extra_fields.get("gender"):
-            raise ValueError("The Gender field must be set")
         email = self.normalize_email(email)
         user = self.model(email=email, **extra_fields)
         user.set_password(password)
@@ -40,11 +38,6 @@ class CustomUser(AbstractUser):
         TEACHER = "TEACHER", _("Teacher")
         STUDENT = "STUDENT", _("Student")
 
-    class Gender(models.TextChoices):
-        MALE = "MALE", _("Male")
-        FEMALE = "FEMALE", _("Female")
-        OTHER = "OTHER", _("Other")
-
     class AccountStatus(models.TextChoices):
         ACTIVE = "ACTIVE", _("Active")
         SUSPENDED = "SUSPENDED", _("Suspended")
@@ -59,11 +52,6 @@ class CustomUser(AbstractUser):
         default=Roles.STUDENT,
     )
 
-    gender = models.CharField(
-        max_length=10,
-        choices=Gender.choices,
-    )
-
     account_status = models.CharField(
         max_length=20,
         choices=AccountStatus.choices,
@@ -76,7 +64,7 @@ class CustomUser(AbstractUser):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
-    REQUIRED_FIELDS = ["first_name", "last_name", "email", "gender"]
+    REQUIRED_FIELDS = ["first_name", "last_name", "email"]
 
     objects = CustomUserManager()
 

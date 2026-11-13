@@ -23,15 +23,15 @@ class WishlistViewTests(APITestCase):
         )
         self.student = UserModel.objects.create_user(
             username="wishstudent", email="wishstudent@example.com", password="StrongPass123!",
-            role=UserModel.Roles.STUDENT, gender=UserModel.Gender.MALE,
+            role=UserModel.Roles.STUDENT, 
         )
         self.other = UserModel.objects.create_user(
             username="wishother", email="wishother@example.com", password="StrongPass123!",
-            role=UserModel.Roles.STUDENT, gender=UserModel.Gender.MALE,
+            role=UserModel.Roles.STUDENT, 
         )
         self.teacher = UserModel.objects.create_user(
             username="wishteacher", email="wishteacher@example.com", password="StrongPass123!",
-            role=UserModel.Roles.TEACHER, gender=UserModel.Gender.MALE,
+            role=UserModel.Roles.TEACHER, 
         )
 
     def test_requires_authentication(self):

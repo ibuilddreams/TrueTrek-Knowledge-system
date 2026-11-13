@@ -54,7 +54,6 @@ def approve_application(application, admin_user):
             username=_generate_username(application.email),
             first_name=application.first_name,
             last_name=application.last_name,
-            gender=UserModel.Gender.OTHER,
             role=UserModel.Roles.STUDENT,
         )
         student.password = application.password_hash

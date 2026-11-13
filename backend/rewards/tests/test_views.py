@@ -16,28 +16,24 @@ class RewardsTestCase(APITestCase):
             email="rewardstudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         self.other_student = UserModel.objects.create_user(
             username="otherstudent",
             email="otherstudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         self.admin = UserModel.objects.create_user(
             username="rewardsadmin",
             email="rewardsadmin@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.ADMIN,
-            gender=UserModel.Gender.MALE,
         )
         self.teacher = UserModel.objects.create_user(
             username="rewardsteacher",
             email="rewardsteacher@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.TEACHER,
-            gender=UserModel.Gender.MALE,
         )
         self.reward = Reward.objects.create(
             name="Mentor 1-on-1 Session", points_required=500, status="ACTIVE"

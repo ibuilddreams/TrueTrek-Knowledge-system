@@ -29,14 +29,12 @@ class StudentEnrollmentListViewTests(APITestCase):
             email="enrollstudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         self.other_student = UserModel.objects.create_user(
             username="otherenrollstudent",
             email="otherenrollstudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
 
         Enrollment.objects.create(student=self.student, course=self.course)

@@ -18,14 +18,12 @@ class CategoryListCreateViewTests(APITestCase):
             username="categoryuser",
             email="categoryuser@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
         )
         self.admin = UserModel.objects.create_user(
             username="categoryadmin",
             email="categoryadmin@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.ADMIN,
-            gender=UserModel.Gender.MALE,
         )
 
     def test_list_requires_authentication(self):
@@ -67,14 +65,12 @@ class CategoryDetailViewTests(APITestCase):
             username="categorydetailuser",
             email="categorydetailuser@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
         )
         self.admin = UserModel.objects.create_user(
             username="categorydetailadmin",
             email="categorydetailadmin@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.ADMIN,
-            gender=UserModel.Gender.MALE,
         )
 
     def test_retrieve_requires_authentication(self):
@@ -126,14 +122,12 @@ class CourseListCreateViewTests(APITestCase):
             username="courseuser",
             email="courseuser@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
         )
         self.admin = UserModel.objects.create_user(
             username="courseadmin",
             email="courseadmin@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.ADMIN,
-            gender=UserModel.Gender.MALE,
         )
 
     def test_list_requires_authentication(self):
@@ -226,7 +220,6 @@ class PublicCourseListViewTests(APITestCase):
             email="storestudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         enrolled_course = Course.objects.get(title="Published Course")
         Enrollment.objects.create(student=student, course=enrolled_course)
@@ -245,7 +238,6 @@ class PublicCourseListViewTests(APITestCase):
             email="curriculumstudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         enrolled_course = Course.objects.get(title="Published Course")
         Enrollment.objects.create(student=student, course=enrolled_course)
@@ -347,14 +339,12 @@ class CourseDetailViewTests(APITestCase):
             username="coursedetailuser",
             email="coursedetailuser@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
         )
         self.admin = UserModel.objects.create_user(
             username="coursedetailadmin",
             email="coursedetailadmin@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.ADMIN,
-            gender=UserModel.Gender.MALE,
         )
 
     def test_retrieve_requires_authentication(self):
@@ -409,11 +399,9 @@ class PublicCourseRecommendationsViewTests(APITestCase):
         )
         self.student = UserModel.objects.create_user(
             username="buyer", email="buyer@example.com", password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
         )
         other = UserModel.objects.create_user(
             username="other", email="other@example.com", password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
         )
         Enrollment.objects.create(student=other, course=self.popular_course)
 
@@ -474,11 +462,11 @@ class CourseLearningOutcomesTests(APITestCase):
         self.category = Category.objects.create(name="Programming")
         self.admin = UserModel.objects.create_user(
             username="outcomesadmin", email="outcomesadmin@example.com", password="StrongPass123!",
-            role=UserModel.Roles.ADMIN, gender=UserModel.Gender.MALE,
+            role=UserModel.Roles.ADMIN, 
         )
         self.teacher = UserModel.objects.create_user(
             username="outcomesteacher", email="outcomesteacher@example.com", password="StrongPass123!",
-            role=UserModel.Roles.TEACHER, gender=UserModel.Gender.MALE,
+            role=UserModel.Roles.TEACHER, 
         )
 
     def _payload(self, **extra):

@@ -54,7 +54,6 @@ class AdminTestimonialModerationTests(APITestCase):
             username="admin",
             password="pass12345",
             role=UserModel.Roles.ADMIN,
-            gender=UserModel.Gender.OTHER,
         )
         self.testimonial = Testimonial.objects.create(name="Test Person", quote="Nice.", rating=4)
 

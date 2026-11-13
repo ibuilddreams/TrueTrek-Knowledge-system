@@ -18,28 +18,24 @@ class TeacherRequestTests(APITestCase):
             email="reqteacher@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.TEACHER,
-            gender=UserModel.Gender.MALE,
         )
         self.other_teacher = UserModel.objects.create_user(
             username="otherteacher",
             email="otherteacher@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.TEACHER,
-            gender=UserModel.Gender.MALE,
         )
         self.student = UserModel.objects.create_user(
             username="reqstudent",
             email="reqstudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         self.admin = UserModel.objects.create_user(
             username="reqadmin",
             email="reqadmin@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.ADMIN,
-            gender=UserModel.Gender.MALE,
         )
 
         self.valid_payload = {

@@ -21,7 +21,6 @@ def make_student(username="student1"):
         email=f"{username}@example.com",
         password="StrongPass123!",
         role=UserModel.Roles.STUDENT,
-        gender=UserModel.Gender.MALE,
     )
 
 
@@ -31,7 +30,6 @@ def make_admin(username="admin1"):
         email=f"{username}@example.com",
         password="StrongPass123!",
         role=UserModel.Roles.ADMIN,
-        gender=UserModel.Gender.MALE,
     )
 
 

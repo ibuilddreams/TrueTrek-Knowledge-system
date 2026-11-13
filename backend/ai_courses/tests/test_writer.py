@@ -20,7 +20,6 @@ def _teacher(email="teacher@example.com"):
         email=email,
         password="StrongPass123!",
         role=UserModel.Roles.TEACHER,
-        gender=UserModel.Gender.OTHER,
     )
 
 

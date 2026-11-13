@@ -23,7 +23,6 @@ def make_user(username, role=None):
         password="StrongPass123!",
         name=username.title(),
         role=role or UserModel.Roles.STUDENT,
-        gender=UserModel.Gender.MALE,
     )
 
 

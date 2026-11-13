@@ -24,7 +24,7 @@ VALID_DRILL_JSON = json.dumps(
 def make_student(username):
     return UserModel.objects.create_user(
         username=username, email=f"{username}@example.com", password="StrongPass123!",
-        role=UserModel.Roles.STUDENT, gender=UserModel.Gender.MALE,
+        role=UserModel.Roles.STUDENT, 
     )
 
 

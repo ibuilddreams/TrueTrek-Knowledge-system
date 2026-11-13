@@ -13,7 +13,6 @@ const INITIAL_FORM = {
   last_name: "",
   email: "",
   password: "",
-  gender: "",
   is_advisor: false,
 };
 
@@ -54,9 +53,8 @@ export default function CreateTeacherModal({ isOpen, onClose, onCreated }) {
     const lastName = form.last_name.trim();
     const email = form.email.trim();
     const password = form.password;
-    const gender = form.gender;
 
-    if (!username || !firstName || !lastName || !email || !password || !gender) {
+    if (!username || !firstName || !lastName || !email || !password) {
       toastError("Please fill in all required fields.");
       return;
     }
@@ -69,7 +67,6 @@ export default function CreateTeacherModal({ isOpen, onClose, onCreated }) {
         last_name: lastName,
         email,
         password,
-        gender,
         is_advisor: form.is_advisor,
       });
       toastSuccess(response?.message || "Teacher created successfully.");
@@ -172,23 +169,6 @@ export default function CreateTeacherModal({ isOpen, onClose, onCreated }) {
               )}
             </button>
           </div>
-        </div>
-
-        <div>
-          <label className={LABEL_CLASS}>Gender</label>
-          <select
-            value={form.gender}
-            onChange={updateField("gender")}
-            disabled={isSubmitting}
-            className={`${FIELD_CLASS} ${form.gender ? "text-ink" : "text-muted"}`}
-          >
-            <option value="" disabled>
-              Select gender
-            </option>
-            <option value="MALE">Male</option>
-            <option value="FEMALE">Female</option>
-            <option value="OTHER">Other</option>
-          </select>
         </div>
 
         <label className="flex items-center gap-2.5 p-3 rounded-xl border border-line bg-porcelain/60 text-sm font-mono text-ink cursor-pointer">

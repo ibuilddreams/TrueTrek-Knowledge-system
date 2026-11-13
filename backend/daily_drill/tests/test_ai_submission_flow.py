@@ -48,7 +48,7 @@ class AIDrillSubmissionFlowTests(APITestCase):
     def setUp(self):
         self.student = UserModel.objects.create_user(
             username="aiflowstudent", email="aiflowstudent@example.com",
-            password="StrongPass123!", role=UserModel.Roles.STUDENT, gender=UserModel.Gender.MALE,
+            password="StrongPass123!", role=UserModel.Roles.STUDENT, 
         )
         self.today_url = reverse("daily-drill-today")
         self.attempt_url = reverse("daily-drill-attempt")

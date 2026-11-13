@@ -53,14 +53,12 @@ class DailyDrillTestCase(APITestCase):
             email="drillstudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         self.teacher = UserModel.objects.create_user(
             username="drillteacher",
             email="drillteacher@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.TEACHER,
-            gender=UserModel.Gender.MALE,
         )
 
 

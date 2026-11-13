@@ -263,7 +263,7 @@ class InvitationsView(PrivateAPIView):
         try:
             with transaction.atomic():
                 user = CustomUser.objects.create_user(
-                    username=f"invited_{uuid.uuid4().hex}", password=None, gender="OTHER",
+                    username=f"invited_{uuid.uuid4().hex}", password=None,
                     is_active=False, account_status=CustomUser.AccountStatus.DEACTIVATED, **values,
                 )
                 invitation = UserInvitation.objects.create(user=user, invited_by=request.user)
@@ -328,7 +328,6 @@ class InvitationAcceptView(PrivateAPIView):
             token = serializers.CharField(max_length=128)
             password = serializers.CharField(max_length=128, trim_whitespace=False)
             confirm_password = serializers.CharField(max_length=128, trim_whitespace=False)
-            gender = serializers.ChoiceField(choices=CustomUser.Gender.choices)
 
         serializer = SetupInput(data=request.data)
         serializer.is_valid(raise_exception=True)
@@ -351,11 +350,10 @@ class InvitationAcceptView(PrivateAPIView):
             except DjangoValidationError as exc:
                 raise ValidationError({"password": exc.messages})
             user.set_password(values["password"])
-            user.gender = values["gender"]
             user.is_active = True
             user.account_status = CustomUser.AccountStatus.ACTIVE
             user.is_verified = True
-            user.save(update_fields=["password", "gender", "is_active", "account_status", "is_verified"])
+            user.save(update_fields=["password", "is_active", "account_status", "is_verified"])
             invitation.accepted_at = timezone.now()
             invitation.token_hash = ""
             invitation.save(update_fields=["accepted_at", "token_hash"])

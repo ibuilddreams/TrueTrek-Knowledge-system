@@ -28,7 +28,6 @@ def make_user(role, *, email, username=None, **extra):
         password=PASSWORD,
         first_name=extra.pop("first_name", "Test"),
         last_name=extra.pop("last_name", "User"),
-        gender=UserModel.Gender.OTHER,
         role=role,
         **extra,
     )

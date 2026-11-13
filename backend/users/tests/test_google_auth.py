@@ -32,7 +32,6 @@ class GoogleAuthViewTests(APITestCase):
 
         user = UserModel.objects.get(email="newgoogleuser@example.com")
         self.assertEqual(user.role, UserModel.Roles.STUDENT)
-        self.assertEqual(user.gender, UserModel.Gender.OTHER)
         self.assertFalse(user.has_usable_password())
 
     @patch("users.serializers.google_id_token.verify_oauth2_token")
@@ -43,7 +42,6 @@ class GoogleAuthViewTests(APITestCase):
             email="newgoogleuser@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.FEMALE,
         )
 
         response = self.client.post(self.url, {"credential": "fake-token"}, format="json")
@@ -75,7 +73,6 @@ class GoogleAuthViewTests(APITestCase):
             email="newgoogleuser@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.FEMALE,
         )
         existing.is_active = False
         existing.save(update_fields=["is_active"])

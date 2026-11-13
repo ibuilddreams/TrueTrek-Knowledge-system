@@ -13,7 +13,6 @@ const INITIAL_FORM = {
   last_name: "",
   email: "",
   password: "",
-  gender: "",
 };
 
 const FIELD_CLASS =
@@ -53,9 +52,8 @@ export default function CreateStudentModal({ isOpen, onClose, onCreated }) {
     const lastName = form.last_name.trim();
     const email = form.email.trim();
     const password = form.password;
-    const gender = form.gender;
 
-    if (!username || !firstName || !lastName || !email || !password || !gender) {
+    if (!username || !firstName || !lastName || !email || !password) {
       toastError("Please fill in all required fields.");
       return;
     }
@@ -68,7 +66,6 @@ export default function CreateStudentModal({ isOpen, onClose, onCreated }) {
         last_name: lastName,
         email,
         password,
-        gender,
       });
       toastSuccess(response?.message || "Student created successfully.");
       onCreated?.();
@@ -170,23 +167,6 @@ export default function CreateStudentModal({ isOpen, onClose, onCreated }) {
               )}
             </button>
           </div>
-        </div>
-
-        <div>
-          <label className={LABEL_CLASS}>Gender</label>
-          <select
-            value={form.gender}
-            onChange={updateField("gender")}
-            disabled={isSubmitting}
-            className={`${FIELD_CLASS} ${form.gender ? "text-ink" : "text-muted"}`}
-          >
-            <option value="" disabled>
-              Select gender
-            </option>
-            <option value="MALE">Male</option>
-            <option value="FEMALE">Female</option>
-            <option value="OTHER">Other</option>
-          </select>
         </div>
 
         <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-line">

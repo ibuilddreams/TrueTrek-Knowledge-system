@@ -57,10 +57,6 @@ export default function StudentProfileModal({ isOpen, onClose, studentId, enroll
               <p className="text-muted font-semibold">{student.username}</p>
             </div>
             <div>
-              <p className="text-[11px] font-mono uppercase text-muted tracking-wider mb-1">Gender</p>
-              <p className="text-muted font-semibold">{student.gender || "—"}</p>
-            </div>
-            <div>
               <p className="text-[11px] font-mono uppercase text-muted tracking-wider mb-1">Joined Date</p>
               <p className="text-muted font-semibold">{formatDate(student.date_joined)}</p>
             </div>

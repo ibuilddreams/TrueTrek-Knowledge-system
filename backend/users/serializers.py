@@ -100,11 +100,10 @@ class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
 
 class CreateStudentSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
-    gender = serializers.ChoiceField(choices=UserModel.Gender.choices, required=True)
 
     class Meta:
         model = UserModel
-        fields = ["id", "username", "first_name", "last_name", "email", "password", "gender"]
+        fields = ["id", "username", "first_name", "last_name", "email", "password"]
 
     def validate_email(self, value):
         email = UserModel.objects.normalize_email(value)
@@ -134,7 +133,6 @@ class CreateStudentSerializer(serializers.ModelSerializer):
             "last_name": instance.last_name,
             "full_name": instance.name,
             "email": instance.email,
-            "gender": instance.gender,
             "role": instance.role,
         }
 
@@ -157,7 +155,6 @@ class SignupSerializer(serializers.ModelSerializer):
     SELF_SIGNUP_ROLES = [UserModel.Roles.STUDENT, UserModel.Roles.TEACHER]
 
     password = serializers.CharField(write_only=True, validators=[validate_password])
-    gender = serializers.ChoiceField(choices=UserModel.Gender.choices, required=True)
     role = serializers.ChoiceField(
         choices=[(role, UserModel.Roles(role).label) for role in SELF_SIGNUP_ROLES],
         required=False,
@@ -166,7 +163,7 @@ class SignupSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = UserModel
-        fields = ["id", "username", "first_name", "last_name", "email", "password", "gender", "role"]
+        fields = ["id", "username", "first_name", "last_name", "email", "password", "role"]
 
     def validate_email(self, value):
         email = UserModel.objects.normalize_email(value)
@@ -213,8 +210,7 @@ class GoogleAuthSerializer(serializers.Serializer):
     (frontend's GoogleSignInButton), then logs the matching user in or creates
     a new STUDENT account on first sign-in. Google-created accounts get an
     unusable password (Google is the only way in until the user sets one via
-    forgot-password) and `gender` defaults to OTHER since Google's basic scopes
-    don't provide it — the user can update it later from their profile."""
+    forgot-password)."""
 
     credential = serializers.CharField(write_only=True)
 
@@ -261,7 +257,6 @@ class GoogleAuthSerializer(serializers.Serializer):
                 password=None,
                 first_name=payload.get("given_name", ""),
                 last_name=payload.get("family_name", ""),
-                gender=UserModel.Gender.OTHER,
                 role=UserModel.Roles.STUDENT,
                 is_verified=True,
             )
@@ -287,7 +282,6 @@ class StudentSerializer(serializers.ModelSerializer):
             "last_name",
             "full_name",
             "email",
-            "gender",
             "role",
             "account_status",
             "date_joined",
@@ -298,7 +292,7 @@ class StudentSerializer(serializers.ModelSerializer):
 class StudentUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
-        fields = ["first_name", "last_name", "gender", "account_status"]
+        fields = ["first_name", "last_name", "account_status"]
 
     def validate_account_status(self, value):
         from .models import UserInvitation
@@ -324,12 +318,11 @@ class StudentUpdateSerializer(serializers.ModelSerializer):
 
 class CreateTeacherSerializer(serializers.ModelSerializer):
     password = serializers.CharField(write_only=True, validators=[validate_password])
-    gender = serializers.ChoiceField(choices=UserModel.Gender.choices, required=True)
     is_advisor = serializers.BooleanField(required=False, default=False)
 
     class Meta:
         model = UserModel
-        fields = ["id", "username", "first_name", "last_name", "email", "password", "gender", "is_advisor"]
+        fields = ["id", "username", "first_name", "last_name", "email", "password", "is_advisor"]
 
     def validate_email(self, value):
         email = UserModel.objects.normalize_email(value)
@@ -359,7 +352,6 @@ class CreateTeacherSerializer(serializers.ModelSerializer):
             "last_name": instance.last_name,
             "full_name": instance.name,
             "email": instance.email,
-            "gender": instance.gender,
             "role": instance.role,
             "is_advisor": instance.is_advisor,
         }
@@ -377,7 +369,6 @@ class TeacherSerializer(serializers.ModelSerializer):
             "last_name",
             "full_name",
             "email",
-            "gender",
             "role",
             "account_status",
             "is_advisor",
@@ -389,7 +380,7 @@ class TeacherSerializer(serializers.ModelSerializer):
 class TeacherUpdateSerializer(serializers.ModelSerializer):
     class Meta:
         model = UserModel
-        fields = ["first_name", "last_name", "gender", "account_status", "is_advisor"]
+        fields = ["first_name", "last_name", "account_status", "is_advisor"]
 
     def validate_account_status(self, value):
         from .models import UserInvitation
@@ -482,7 +473,6 @@ class ProfileSerializer(serializers.ModelSerializer):
             "last_name",
             "full_name",
             "email",
-            "gender",
             "role",
             "account_status",
             "is_verified",
@@ -506,12 +496,11 @@ class ProfileSerializer(serializers.ModelSerializer):
 
 class ProfileUpdateSerializer(serializers.ModelSerializer):
     full_name = serializers.CharField(source="name", required=False, allow_blank=False)
-    gender = serializers.ChoiceField(choices=UserModel.Gender.choices, required=False, allow_null=True)
     profile = UserProfileWriteSerializer(required=False)
 
     class Meta:
         model = UserModel
-        fields = ["full_name", "email", "gender", "profile"]
+        fields = ["full_name", "email", "profile"]
 
     def to_internal_value(self, data):
         # A multipart request (needed for the avatar file) can't nest fields under

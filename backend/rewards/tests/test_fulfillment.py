@@ -22,21 +22,21 @@ RedemptionStatus = RewardRedemption.RedemptionStatus
 def make_student(username="fulfillstudent"):
     return UserModel.objects.create_user(
         username=username, email=f"{username}@example.com", password="StrongPass123!",
-        role=UserModel.Roles.STUDENT, gender=UserModel.Gender.MALE,
+        role=UserModel.Roles.STUDENT, 
     )
 
 
 def make_admin(username="fulfilladmin"):
     return UserModel.objects.create_user(
         username=username, email=f"{username}@example.com", password="StrongPass123!",
-        role=UserModel.Roles.ADMIN, gender=UserModel.Gender.MALE,
+        role=UserModel.Roles.ADMIN, 
     )
 
 
 def make_mentor(username="fulfillmentor"):
     return UserModel.objects.create_user(
         username=username, email=f"{username}@example.com", password="StrongPass123!",
-        role=UserModel.Roles.TEACHER, gender=UserModel.Gender.MALE,
+        role=UserModel.Roles.TEACHER, 
     )
 
 

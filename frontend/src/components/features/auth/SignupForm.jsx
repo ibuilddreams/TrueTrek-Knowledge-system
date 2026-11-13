@@ -28,19 +28,11 @@ const ROLE_OPTIONS = [
   { value: SIGNUP_ROLES.TEACHER, label: "Teacher" },
 ];
 
-const GENDER_OPTIONS = [
-  { value: "MALE", label: "Male" },
-  { value: "FEMALE", label: "Female" },
-  { value: "OTHER", label: "Other" },
-];
-
-// The backend requires `gender` on CustomUser (no default, enforced in
-// CustomUserManager.create_user) even though this form never shows a
-// username field — the real login is by email, so `username` is only an
-// internal, never-shown identifier. Derive one from the email's local part
-// with a random suffix so a uniqueness collision (backend enforces
-// case-insensitive uniqueness) doesn't surface a confusing "username taken"
-// error to someone who never entered one.
+// This form never shows a username field — the real login is by email, so
+// `username` is only an internal, never-shown identifier. Derive one from the
+// email's local part with a random suffix so a uniqueness collision (backend
+// enforces case-insensitive uniqueness) doesn't surface a confusing "username
+// taken" error to someone who never entered one.
 function generateUsername(email) {
   const base =
     email.split("@")[0]?.toLowerCase().replace(/[^a-z0-9_.-]/g, "") || "user";
@@ -58,7 +50,6 @@ export default function SignupForm() {
     lastName: "",
     email: "",
     password: "",
-    gender: "",
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [formError, setFormError] = useState("");
@@ -95,7 +86,6 @@ export default function SignupForm() {
         lastName: form.lastName.trim(),
         email: form.email.trim(),
         password: form.password,
-        gender: form.gender,
         role: form.role,
       });
       toastSuccess(
@@ -179,16 +169,6 @@ export default function SignupForm() {
           value={form.password}
           onChange={updateField("password")}
           showPasswordToggle
-        />
-
-        <AuthSelectField
-          id="input-signup-gender"
-          label="Gender"
-          required
-          value={form.gender}
-          onChange={updateField("gender")}
-          options={GENDER_OPTIONS}
-          placeholder="Select gender"
         />
 
         {formError && (
