@@ -43,7 +43,6 @@ class FutureClientApplicationTests(APITestCase):
             email="fcteacher@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.TEACHER,
-            gender=UserModel.Gender.MALE,
         )
         CourseInstructor.objects.create(course=self.course, instructor=self.teacher)
 
@@ -52,7 +51,6 @@ class FutureClientApplicationTests(APITestCase):
             email="fcadmin@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.ADMIN,
-            gender=UserModel.Gender.MALE,
         )
 
         self.valid_payload = {
@@ -88,7 +86,6 @@ class FutureClientApplicationTests(APITestCase):
             email="jordan.prospect@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
 
         response = self.client.post(self.apply_url, self.valid_payload)

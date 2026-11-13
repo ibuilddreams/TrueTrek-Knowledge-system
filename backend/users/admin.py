@@ -40,7 +40,7 @@ class CustomUserAdmin(ExportCsvMixin, UserAdmin):
 
     fieldsets = (
         (None, {"fields": ("username", "email", "password")}),
-        ("Personal Info", {"fields": ("first_name", "last_name", "name", "gender")}),
+        ("Personal Info", {"fields": ("first_name", "last_name", "name")}),
         ("Role & Status", {"fields": ("role", "account_status", "is_verified", "last_login_ip")}),
         (
             "Permissions",
@@ -67,7 +67,6 @@ class CustomUserAdmin(ExportCsvMixin, UserAdmin):
                     "email",
                     "first_name",
                     "last_name",
-                    "gender",
                     "role",
                     "password1",
                     "password2",
@@ -90,7 +89,6 @@ class CustomUserAdmin(ExportCsvMixin, UserAdmin):
         ("Last name", "last_name"),
         ("Full name", "name"),
         ("Role", "get_role_display"),
-        ("Gender", "get_gender_display"),
         ("Account status", "get_account_status_display"),
         ("Verified", "is_verified"),
         ("Advisor", "is_advisor"),

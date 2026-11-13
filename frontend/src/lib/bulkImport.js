@@ -4,7 +4,6 @@ const STUDENT_HEADERS = [
   "Email",
   "Username",
   "Password",
-  "Gender",
 ];
 
 const TEACHER_HEADERS = [
@@ -13,7 +12,6 @@ const TEACHER_HEADERS = [
   "Email",
   "Username",
   "Password",
-  "Gender",
 ];
 
 const ENROLLMENT_HEADERS = ["Student Email"];
@@ -29,7 +27,6 @@ const HEADER_ALIASES = {
   password: "Password",
   phone: "Phone",
   phonenumber: "Phone",
-  gender: "Gender",
   studentemail: "Student Email",
   teacheremail: "Teacher Email",
   coursecode: "Course Code",
@@ -269,8 +266,7 @@ export const BULK_IMPORT_CONFIG = {
     requireOneOf: [],
     instructions: [
       "Download the sample template and keep the header row unchanged.",
-      "Required columns: First Name, Last Name, Email, Username, Password, Gender.",
-      "Gender must be Male, Female, or Other.",
+      "Required columns: First Name, Last Name, Email, Username, Password.",
       "One student per row. Enter each student's own Username and Password.",
       "Students that already exist (matching Email or Username) are skipped, not updated or duplicated.",
       "Valid new rows are created even if other rows are skipped or invalid.",
@@ -284,8 +280,7 @@ export const BULK_IMPORT_CONFIG = {
     requireOneOf: [],
     instructions: [
       "Download the sample template and keep the header row unchanged.",
-      "Required columns: First Name, Last Name, Email, Username, Password, Gender.",
-      "Gender must be Male, Female, or Other.",
+      "Required columns: First Name, Last Name, Email, Username, Password.",
       "One teacher per row. Enter each teacher's own Username and Password.",
       "Teachers that already exist (matching Email or Username) are skipped, not updated or duplicated.",
       "Valid new rows are created even if other rows are skipped or invalid.",

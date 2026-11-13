@@ -44,7 +44,6 @@ STUDENT_IMPORT_HEADERS = [
     "Email",
     "Username",
     "Password",
-    "Gender",
 ]
 
 TEACHER_IMPORT_HEADERS = [
@@ -53,7 +52,6 @@ TEACHER_IMPORT_HEADERS = [
     "Email",
     "Username",
     "Password",
-    "Gender",
 ]
 
 STUDENT_SAMPLE_ROWS = [
@@ -63,7 +61,6 @@ STUDENT_SAMPLE_ROWS = [
         "Email": "john@example.com",
         "Username": "john.doe",
         "Password": "Password123",
-        "Gender": "Male",
     },
     {
         "First Name": "Jane",
@@ -71,7 +68,6 @@ STUDENT_SAMPLE_ROWS = [
         "Email": "jane@example.com",
         "Username": "jane.smith",
         "Password": "Password123",
-        "Gender": "Female",
     },
 ]
 
@@ -82,7 +78,6 @@ TEACHER_SAMPLE_ROWS = [
         "Email": "alex.morgan@example.com",
         "Username": "alex.morgan",
         "Password": "Password123",
-        "Gender": "Male",
     },
     {
         "First Name": "Sam",
@@ -90,19 +85,8 @@ TEACHER_SAMPLE_ROWS = [
         "Email": "sam.lee@example.com",
         "Username": "sam.lee",
         "Password": "Password123",
-        "Gender": "Female",
     },
 ]
-
-GENDER_ALIASES = {
-    "male": UserModel.Gender.MALE,
-    "m": UserModel.Gender.MALE,
-    "female": UserModel.Gender.FEMALE,
-    "f": UserModel.Gender.FEMALE,
-    "other": UserModel.Gender.OTHER,
-    "o": UserModel.Gender.OTHER,
-}
-
 
 def send_password_reset_email(email):
     user = UserModel.objects.filter(email__iexact=email).first()
@@ -413,18 +397,12 @@ def hard_delete_teacher(teacher):
     return affected_courses
 
 
-def _normalize_gender(value):
-    key = str(value or "").strip().lower()
-    return GENDER_ALIASES.get(key)
-
-
 def _create_imported_student(row_data, seen_emails, seen_usernames):
     first_name = row_data.get("First Name", "").strip()
     last_name = row_data.get("Last Name", "").strip()
     email = UserModel.objects.normalize_email(row_data.get("Email", "").strip())
     username = row_data.get("Username", "").strip()
     password = row_data.get("Password", "")
-    gender = _normalize_gender(row_data.get("Gender", ""))
 
     if not first_name:
         raise ValueError("First Name is required.")
@@ -436,8 +414,6 @@ def _create_imported_student(row_data, seen_emails, seen_usernames):
         raise ValueError("Username is required.")
     if not password:
         raise ValueError("Password is required.")
-    if gender is None:
-        raise ValueError("Gender must be Male, Female, or Other.")
 
     email_key = email.lower()
     username_key = username.lower()
@@ -458,7 +434,6 @@ def _create_imported_student(row_data, seen_emails, seen_usernames):
             username=username,
             first_name=first_name,
             last_name=last_name,
-            gender=gender,
             role=UserModel.Roles.STUDENT,
         )
 
@@ -472,7 +447,6 @@ def _create_imported_student(row_data, seen_emails, seen_usernames):
         "last_name": user.last_name,
         "full_name": user.name,
         "email": user.email,
-        "gender": user.gender,
         "role": user.role,
     }
 
@@ -483,7 +457,6 @@ def _create_imported_teacher(row_data, seen_emails, seen_usernames):
     email = UserModel.objects.normalize_email(row_data.get("Email", "").strip())
     username = row_data.get("Username", "").strip()
     password = row_data.get("Password", "")
-    gender = _normalize_gender(row_data.get("Gender", ""))
 
     if not first_name:
         raise ValueError("First Name is required.")
@@ -495,8 +468,6 @@ def _create_imported_teacher(row_data, seen_emails, seen_usernames):
         raise ValueError("Username is required.")
     if not password:
         raise ValueError("Password is required.")
-    if gender is None:
-        raise ValueError("Gender must be Male, Female, or Other.")
 
     email_key = email.lower()
     username_key = username.lower()
@@ -517,7 +488,6 @@ def _create_imported_teacher(row_data, seen_emails, seen_usernames):
             username=username,
             first_name=first_name,
             last_name=last_name,
-            gender=gender,
             role=UserModel.Roles.TEACHER,
         )
 
@@ -531,7 +501,6 @@ def _create_imported_teacher(row_data, seen_emails, seen_usernames):
         "last_name": user.last_name,
         "full_name": user.name,
         "email": user.email,
-        "gender": user.gender,
         "role": user.role,
     }
 

@@ -44,7 +44,6 @@ class TeacherJourneyTests(TempMediaMixin, APITestCase):
                 "last_name": "Novak",
                 "email": "riley@example.com",
                 "password": "StrongPass123!",
-                "gender": UserModel.Gender.OTHER,
                 "role": UserModel.Roles.TEACHER,
             },
             format="json",

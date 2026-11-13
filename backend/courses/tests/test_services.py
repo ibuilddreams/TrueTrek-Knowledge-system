@@ -21,7 +21,6 @@ class GetCourseStudentsDetailTests(TestCase):
             email="servicestudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         Enrollment.objects.create(student=self.student, course=self.course)
 

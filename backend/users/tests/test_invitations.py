@@ -22,7 +22,7 @@ class InvitationTests(APITestCase):
         from django.core.cache import cache
         cache.clear()
         self.admin = CustomUser.objects.create_user(
-            username="admin", email="admin@example.com", password="Complex-pass-987", gender="OTHER", role="ADMIN")
+            username="admin", email="admin@example.com", password="Complex-pass-987", role="ADMIN")
         self.client.force_authenticate(self.admin)
 
     def invite(self, approved=False, email="invited@example.com", role="TEACHER"):
@@ -36,7 +36,7 @@ class InvitationTests(APITestCase):
 
     def setup_payload(self, link):
         values = {key: value[0] for key, value in parse_qs(urlsplit(link).fragment).items()}
-        return {**values, "password": "A-unique-new-pass-762!", "confirm_password": "A-unique-new-pass-762!", "gender": "FEMALE"}
+        return {**values, "password": "A-unique-new-pass-762!", "confirm_password": "A-unique-new-pass-762!"}
 
     def accept(self, link):
         self.client.force_authenticate(None)
@@ -49,7 +49,7 @@ class InvitationTests(APITestCase):
         course = Course.objects.create(title=f"Course {code}", code=code, category=category, status=status)
         if teacher:
             instructor = CustomUser.objects.create_user(
-                username=f"t_{code}", email=f"t_{code}@example.com", password="Complex-pass-987", gender="OTHER", role="TEACHER")
+                username=f"t_{code}", email=f"t_{code}@example.com", password="Complex-pass-987", role="TEACHER")
             CourseInstructor.objects.create(course=course, instructor=instructor)
         return course
 
@@ -127,7 +127,6 @@ class InvitationTests(APITestCase):
         self.assertTrue(user.is_active)
         self.assertEqual(user.role, "TEACHER")
         self.assertTrue(user.check_password("A-unique-new-pass-762!"))
-        self.assertEqual(user.gender, "FEMALE")
         self.assertEqual(UserInvitation.objects.get(user=user).token_hash, "")
         repeat = self.client.post("/api/invitations/accept/", self.setup_payload(data["setup_link"]), format="json")
         self.assertEqual(repeat.status_code, 400)
@@ -193,7 +192,7 @@ class InvitationTests(APITestCase):
 
     def test_non_invited_user_cannot_access_feedback_or_admin_operations(self):
         data = self.invite()
-        student = CustomUser.objects.create_user(username="ordinary", email="ordinary@example.com", gender="OTHER", role="STUDENT")
+        student = CustomUser.objects.create_user(username="ordinary", email="ordinary@example.com", role="STUDENT")
         self.client.force_authenticate(student)
         for url in ["/api/feedback/", "/api/invitations/"]:
             self.assertEqual(self.client.get(url).status_code, 403)
@@ -233,7 +232,7 @@ class InvitationTests(APITestCase):
         self.invite()
         self.client.force_authenticate(None)
         response = self.client.post("/api/auth/signup/", {"username": "claim", "email": "invited@example.com",
-            "first_name": "Claim", "last_name": "User", "gender": "OTHER", "password": "Strong-new-pass-546!"})
+            "first_name": "Claim", "last_name": "User", "password": "Strong-new-pass-546!"})
         self.assertEqual(response.status_code, 400)
         from users.serializers import GoogleAuthSerializer
         from rest_framework.exceptions import PermissionDenied
@@ -353,7 +352,7 @@ class InvitationConcurrencyTests(APITransactionTestCase):
         from django.core.cache import cache
         cache.clear()
         self.admin = CustomUser.objects.create_user(
-            username="admin", email="admin@example.com", password=None, gender="OTHER", role="ADMIN")
+            username="admin", email="admin@example.com", password=None, role="ADMIN")
         self.client.force_authenticate(self.admin)
         result = self.client.post("/api/invitations/", {"first_name": "Concurrent", "last_name": "User",
             "email": "concurrent@example.com", "role": "STUDENT"}, format="json")
@@ -389,7 +388,7 @@ class InvitationConcurrencyTests(APITransactionTestCase):
     def test_concurrent_setup_and_feedback_are_consumed_once(self):
         result = self.client.post(f"/api/invitations/{self.invitation_id}/approve/")
         values = {key: value[0] for key, value in parse_qs(urlsplit(result.data["data"]["setup_link"]).fragment).items()}
-        payload = {**values, "password": "Unique-password-849!", "confirm_password": "Unique-password-849!", "gender": "OTHER"}
+        payload = {**values, "password": "Unique-password-849!", "confirm_password": "Unique-password-849!"}
         self.assertEqual(self.parallel_posts("/api/invitations/accept/", payload), [200, 400])
         user = UserInvitation.objects.get(pk=self.invitation_id).user
         self.assertEqual(self.parallel_posts("/api/feedback/", {"rating": 4, "comments": "Works well"}, user), [201, 400])

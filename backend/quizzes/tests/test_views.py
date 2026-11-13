@@ -34,7 +34,6 @@ def _make_user(username, role):
         email=f"{username}@example.com",
         password="StrongPass123!",
         role=role,
-        gender=UserModel.Gender.MALE,
     )
 
 

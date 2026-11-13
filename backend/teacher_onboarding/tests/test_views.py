@@ -49,7 +49,6 @@ class SignupCreatesApplicationTests(TempMediaMixin, APITestCase):
                 "last_name": "Person",
                 "email": email,
                 "password": "StrongPass123!",
-                "gender": UserModel.Gender.OTHER,
                 "role": role,
             },
             format="json",

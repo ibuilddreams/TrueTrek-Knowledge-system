@@ -31,7 +31,6 @@ class DailyDrillPointsIntegrationTests(APITestCase):
             email="integrationstudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
 
     def test_completing_drill_awards_points_exactly_once(self):

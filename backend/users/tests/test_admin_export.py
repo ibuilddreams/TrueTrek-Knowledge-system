@@ -25,7 +25,6 @@ class UserAdminExportTests(TestCase):
             username="exportadmin",
             email="exportadmin@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.OTHER,
             role=UserModel.Roles.ADMIN,
             is_staff=True,
             is_superuser=True,
@@ -36,7 +35,6 @@ class UserAdminExportTests(TestCase):
             username="riley",
             email="riley@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.FEMALE,
             role=UserModel.Roles.STUDENT,
             first_name="Riley",
             last_name="Cruz",
@@ -58,7 +56,6 @@ class UserAdminExportTests(TestCase):
             username="morgan",
             email="morgan@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
             role=UserModel.Roles.TEACHER,
             first_name="Morgan",
             last_name="Hale",
@@ -137,7 +134,6 @@ class UserAdminExportTests(TestCase):
         self.assertEqual(row["Email"], "riley@example.com")
         self.assertEqual(row["Full name"], "Riley Cruz")
         self.assertEqual(row["Role"], "Student")
-        self.assertEqual(row["Gender"], "Female")
         self.assertEqual(row["Account status"], "Active")
         self.assertEqual(row["Verified"], "Yes")
         self.assertEqual(row["Superuser"], "No")
@@ -191,7 +187,6 @@ class UserAdminExportTests(TestCase):
             username="plainstaff",
             email="plainstaff@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
             role=UserModel.Roles.TEACHER,
             is_staff=True,
         )

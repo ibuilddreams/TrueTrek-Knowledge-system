@@ -19,7 +19,7 @@ GenerationStatus = AICourseGeneration.GenerationStatus
 
 def _user(email, role):
     return UserModel.objects.create_user(
-        username=email, email=email, password="StrongPass123!", role=role, gender=UserModel.Gender.OTHER,
+        username=email, email=email, password="StrongPass123!", role=role, 
     )
 
 

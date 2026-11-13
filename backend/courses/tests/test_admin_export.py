@@ -36,7 +36,6 @@ class CourseAdminExportTests(TestCase):
             username="exportadmin",
             email="exportadmin@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.OTHER,
             role=UserModel.Roles.ADMIN,
             is_staff=True,
             is_superuser=True,
@@ -50,7 +49,6 @@ class CourseAdminExportTests(TestCase):
             username="exportteacher",
             email="exportteacher@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.FEMALE,
             role=UserModel.Roles.TEACHER,
             first_name="Dana",
             last_name="Reed",
@@ -144,7 +142,6 @@ class CourseAdminExportTests(TestCase):
             username="rowstaff",
             email="rowstaff@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
             role=UserModel.Roles.TEACHER,
             is_staff=True,
         )
@@ -263,7 +260,6 @@ class CourseAdminExportTests(TestCase):
             username="exportstaff",
             email="exportstaff@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
             role=UserModel.Roles.TEACHER,
             is_staff=True,
         )
@@ -278,7 +274,6 @@ class CourseAdminExportTests(TestCase):
             username="exportstudent",
             email="exportstudent@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
             role=UserModel.Roles.STUDENT,
         )
         self.client.force_login(student)

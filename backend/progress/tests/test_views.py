@@ -24,21 +24,18 @@ class CourseProgressListViewTests(APITestCase):
             email="progressstudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         self.other_student = UserModel.objects.create_user(
             username="otherprogressstudent",
             email="otherprogressstudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         self.teacher = UserModel.objects.create_user(
             username="progressteacher",
             email="progressteacher@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.TEACHER,
-            gender=UserModel.Gender.MALE,
         )
 
         CourseProgress.objects.create(
@@ -82,14 +79,12 @@ class CourseProgressDetailViewTests(APITestCase):
             email="detailstudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         self.teacher = UserModel.objects.create_user(
             username="detailteacher",
             email="detailteacher@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.TEACHER,
-            gender=UserModel.Gender.MALE,
         )
 
     def test_detail_requires_authentication(self):

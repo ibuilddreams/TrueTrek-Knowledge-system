@@ -8,13 +8,11 @@ import {
   BadgeCheck,
   Calendar,
   Camera,
-  ChevronDown,
   Loader2,
   Mail,
   Phone,
   Save,
   User,
-  VenusAndMars,
   X,
 } from "lucide-react";
 import { getProfile, updateProfile } from "@/services/profileService";
@@ -26,17 +24,10 @@ import Loader from "@/components/ui/Loader";
 import AvatarCropModal from "./AvatarCropModal";
 import DiscardChangesDialog from "./DiscardChangesDialog";
 
-const GENDER_OPTIONS = [
-  { value: "MALE", label: "Male" },
-  { value: "FEMALE", label: "Female" },
-  { value: "OTHER", label: "Other" },
-];
-
 const EMPTY_FORM = {
   fullName: "",
   email: "",
   phone: "",
-  gender: "",
   dob: "",
 };
 
@@ -45,7 +36,6 @@ function mapProfileToForm(profile) {
     fullName: profile?.full_name || "",
     email: profile?.email || "",
     phone: profile?.profile?.phone_number || "",
-    gender: profile?.gender || "",
     dob: profile?.profile?.date_of_birth || "",
   };
 }
@@ -181,7 +171,6 @@ export default function ProfileForm() {
       const formData = new FormData();
       formData.append("full_name", form.fullName.trim());
       formData.append("email", form.email.trim());
-      if (form.gender) formData.append("gender", form.gender);
       formData.append("phone_number", form.phone.trim());
       formData.append("date_of_birth", form.dob || "");
       if (avatarFile) formData.append("avatar", avatarFile, "avatar.jpg");
@@ -346,32 +335,6 @@ export default function ProfileForm() {
               value={form.phone}
               onChange={handleFieldChange("phone")}
             />
-
-            <div>
-              <label
-                htmlFor="input-profile-gender"
-                className="text-[10px] font-mono text-stone-400 block uppercase tracking-wider mb-1.5"
-              >
-                Gender
-              </label>
-              <div className="relative">
-                <VenusAndMars className="w-3.5 h-3.5 text-stone-400 absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-                <select
-                  id="input-profile-gender"
-                  value={form.gender}
-                  onChange={handleFieldChange("gender")}
-                  className="w-full p-3 pl-10 pr-9 rounded-lg border border-stone-200 text-xs font-mono bg-stone-50 text-stone-800 focus:outline-none focus:bg-white focus:border-amber-600 transition cursor-pointer appearance-none"
-                >
-                  <option value="">Select Gender</option>
-                  {GENDER_OPTIONS.map((option) => (
-                    <option key={option.value} value={option.value}>
-                      {option.label}
-                    </option>
-                  ))}
-                </select>
-                <ChevronDown className="w-3.5 h-3.5 text-stone-400 absolute right-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
-              </div>
-            </div>
 
             <AuthField
               id="input-profile-dob"

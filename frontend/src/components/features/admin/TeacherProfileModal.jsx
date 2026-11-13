@@ -57,10 +57,6 @@ export default function TeacherProfileModal({ isOpen, onClose, teacherId, course
               <p className="text-muted font-semibold">{teacher.username}</p>
             </div>
             <div>
-              <p className="text-[11px] font-mono uppercase text-muted tracking-wider mb-1">Gender</p>
-              <p className="text-muted font-semibold">{teacher.gender || "—"}</p>
-            </div>
-            <div>
               <p className="text-[11px] font-mono uppercase text-muted tracking-wider mb-1">Joined Date</p>
               <p className="text-muted font-semibold">{formatDate(teacher.date_joined)}</p>
             </div>

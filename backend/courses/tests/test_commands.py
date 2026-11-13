@@ -384,7 +384,6 @@ class SeedDataCommandTests(TestCase):
             email="owner@example.com",
             username="owner@example.com",
             password="x",
-            gender=User.Gender.OTHER,
             role=User.Roles.ADMIN,
         )
         # A superuser whose role was never set to ADMIN still counts as staff to
@@ -394,14 +393,12 @@ class SeedDataCommandTests(TestCase):
             email="root@example.com",
             username="root@example.com",
             password="x",
-            gender=User.Gender.OTHER,
             role=User.Roles.STUDENT,
         )
         student = User.objects.create_user(
             email="old-student@example.com",
             username="old-student@example.com",
             password="x",
-            gender=User.Gender.OTHER,
             role=User.Roles.STUDENT,
         )
 
@@ -538,15 +535,15 @@ class SeedDataCommandTests(TestCase):
         category, _ = Category.objects.get_or_create(name="Academic")
         admin = User.objects.create_user(
             email="owner@example.com", username="owner@example.com", password="x",
-            gender=User.Gender.OTHER, role=User.Roles.ADMIN,
+            role=User.Roles.ADMIN,
         )
         superuser = User.objects.create_superuser(
             email="root@example.com", username="root@example.com", password="x",
-            gender=User.Gender.OTHER, role=User.Roles.STUDENT,
+            role=User.Roles.STUDENT,
         )
         student = User.objects.create_user(
             email="old-student@example.com", username="old-student@example.com", password="x",
-            gender=User.Gender.OTHER, role=User.Roles.STUDENT,
+            role=User.Roles.STUDENT,
         )
         stale_course = Course.objects.create(
             code="ADMIN-MADE-1", title="Added by an administrator",
@@ -1182,7 +1179,6 @@ class SeedDataLiveClassTests(TestCase):
             email="real.student@school.example",
             first_name="Real",
             last_name="Student",
-            gender=User.Gender.OTHER,
             role=User.Roles.STUDENT,
             is_verified=True,
         )

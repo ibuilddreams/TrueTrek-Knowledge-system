@@ -21,7 +21,6 @@ class SignupViewTests(APITestCase):
             "last_name": "Student",
             "email": "newstudent@example.com",
             "password": "StrongPass123!",
-            "gender": UserModel.Gender.MALE,
             "role": UserModel.Roles.STUDENT,
         }
         payload.update(overrides)
@@ -118,7 +117,6 @@ class SignupViewTests(APITestCase):
             email="newstudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         response = self.client.post(self.url, self._payload(), format="json")
         self.assertEqual(response.status_code, status.HTTP_400_BAD_REQUEST)
@@ -143,7 +141,6 @@ class PublicAuthCsrfTests(APITestCase):
             username="siteadmin",
             email="siteadmin@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.OTHER,
             role=UserModel.Roles.ADMIN,
         )
         # Django's own session cookie, as /admin/ would have left it.
@@ -158,7 +155,6 @@ class PublicAuthCsrfTests(APITestCase):
                 "last_name": "Teacher",
                 "email": "newteacher@example.com",
                 "password": "StrongPass123!",
-                "gender": UserModel.Gender.MALE,
                 "role": UserModel.Roles.TEACHER,
             },
             format="json",

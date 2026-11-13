@@ -19,14 +19,12 @@ class AdminDrillScheduleTestCase(APITestCase):
             email="drilladmin@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.ADMIN,
-            gender=UserModel.Gender.MALE,
         )
         self.student = UserModel.objects.create_user(
             username="scheduleviewer",
             email="scheduleviewer@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         self.tomorrow = timezone.localdate() + timedelta(days=1)
         self.yesterday = timezone.localdate() - timedelta(days=1)

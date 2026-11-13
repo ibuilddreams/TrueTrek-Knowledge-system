@@ -51,7 +51,6 @@ HEADER_ALIASES = {
     "password": "Password",
     "phone": "Phone",
     "phonenumber": "Phone",
-    "gender": "Gender",
     "studentemail": "Student Email",
     "coursecode": "Course Code",
     "code": "Course Code",

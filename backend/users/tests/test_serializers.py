@@ -21,7 +21,6 @@ class CreateStudentSerializerTests(TestCase):
             "last_name": "Student",
             "email": "newstudent@example.com",
             "password": "StrongPass123!",
-            "gender": UserModel.Gender.MALE,
         }
         payload.update(overrides)
         return payload
@@ -85,7 +84,7 @@ class CreateStudentSerializerTests(TestCase):
 
         self.assertEqual(
             set(representation.keys()),
-            {"id", "username", "first_name", "last_name", "full_name", "email", "gender", "role"},
+            {"id", "username", "first_name", "last_name", "full_name", "email", "role"},
         )
 
 
@@ -186,7 +185,6 @@ class CreateTeacherSerializerTests(TestCase):
             "last_name": "Teacher",
             "email": "newteacher@example.com",
             "password": "StrongPass123!",
-            "gender": UserModel.Gender.MALE,
         }
         payload.update(overrides)
         return payload
@@ -212,7 +210,6 @@ class CreateTeacherSerializerTests(TestCase):
             username="existing",
             email="dup@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
         )
 
         serializer = CreateTeacherSerializer(
@@ -227,7 +224,6 @@ class CreateTeacherSerializerTests(TestCase):
             username="dupusername",
             email="unique@example.com",
             password="StrongPass123!",
-            gender=UserModel.Gender.MALE,
         )
 
         serializer = CreateTeacherSerializer(
@@ -259,7 +255,6 @@ class CreateTeacherSerializerTests(TestCase):
                 "last_name",
                 "full_name",
                 "email",
-                "gender",
                 "role",
                 "is_advisor",
             },
@@ -274,7 +269,6 @@ class TeacherSerializerTests(TestCase):
             password="StrongPass123!",
             first_name="Read",
             last_name="Only",
-            gender=UserModel.Gender.MALE,
             role=UserModel.Roles.TEACHER,
         )
 

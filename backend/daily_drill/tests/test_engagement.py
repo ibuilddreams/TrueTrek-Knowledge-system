@@ -23,7 +23,6 @@ def _make_student(username):
         email=f"{username}@example.com",
         password="StrongPass123!",
         role=UserModel.Roles.STUDENT,
-        gender=UserModel.Gender.MALE,
     )
 
 
@@ -171,7 +170,6 @@ class StreakCalendarViewTests(APITestCase):
             email="calendarviewteacher@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.TEACHER,
-            gender=UserModel.Gender.MALE,
         )
 
     def test_requires_authentication(self):
@@ -325,7 +323,6 @@ class InactiveStudentsListViewTests(APITestCase):
             email="engagementadmin@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.ADMIN,
-            gender=UserModel.Gender.MALE,
         )
         self.student = _make_student("inactivelisted")
         self.active_student = _make_student("activelisted")

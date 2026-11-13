@@ -2,8 +2,8 @@
 
 /**
  * Select field for the auth screens — the `<select>` sibling of AuthField, so
- * the signup form's two dropdowns (account type and gender) can't drift apart
- * from each other or from the text inputs beside them.
+ * the signup form's account-type dropdown can't drift apart from the text
+ * inputs beside it.
  *
  * The placeholder row is `disabled` rather than selectable, matching the
  * native "required select" pattern: an empty value never passes validation, so

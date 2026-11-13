@@ -20,7 +20,6 @@ class AdminDrillFlowTestCase(APITestCase):
             email="videodrillstudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         self.schedule = AdminDrillSchedule.objects.create(
             title="Handling Feedback",

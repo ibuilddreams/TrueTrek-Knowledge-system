@@ -35,28 +35,24 @@ class CartItemListCreateViewTests(APITestCase):
             email="cartstudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         self.other_student = UserModel.objects.create_user(
             username="othercartstudent",
             email="othercartstudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         self.teacher = UserModel.objects.create_user(
             username="cartteacher",
             email="cartteacher@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.TEACHER,
-            gender=UserModel.Gender.MALE,
         )
         self.admin = UserModel.objects.create_user(
             username="cartadmin",
             email="cartadmin@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.ADMIN,
-            gender=UserModel.Gender.MALE,
         )
 
     def test_list_requires_authentication(self):
@@ -158,21 +154,18 @@ class CartItemDetailViewTests(APITestCase):
             email="removestudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         self.other_student = UserModel.objects.create_user(
             username="otherremovestudent",
             email="otherremovestudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         self.teacher = UserModel.objects.create_user(
             username="removeteacher",
             email="removeteacher@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.TEACHER,
-            gender=UserModel.Gender.MALE,
         )
         self.detail_url = reverse("cart-detail", kwargs={"course_id": self.course.id})
 
@@ -232,21 +225,18 @@ class CartCheckoutViewTests(APITestCase):
             email="checkoutstudent@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.STUDENT,
-            gender=UserModel.Gender.MALE,
         )
         self.teacher_a = UserModel.objects.create_user(
             username="checkoutteachera",
             email="checkoutteachera@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.TEACHER,
-            gender=UserModel.Gender.MALE,
         )
         self.teacher_b = UserModel.objects.create_user(
             username="checkoutteacherb",
             email="checkoutteacherb@example.com",
             password="StrongPass123!",
             role=UserModel.Roles.TEACHER,
-            gender=UserModel.Gender.MALE,
         )
 
     def test_checkout_requires_authentication(self):
@@ -308,11 +298,11 @@ class CartCheckoutViewTests(APITestCase):
         # Pre-load teacher_a with 2 students on this course, teacher_b with 0.
         other_student_1 = UserModel.objects.create_user(
             username="other1", email="other1@example.com", password="StrongPass123!",
-            role=UserModel.Roles.STUDENT, gender=UserModel.Gender.MALE,
+            role=UserModel.Roles.STUDENT, 
         )
         other_student_2 = UserModel.objects.create_user(
             username="other2", email="other2@example.com", password="StrongPass123!",
-            role=UserModel.Roles.STUDENT, gender=UserModel.Gender.MALE,
+            role=UserModel.Roles.STUDENT, 
         )
         Enrollment.objects.create(student=other_student_1, course=course, teacher=self.teacher_a)
         Enrollment.objects.create(student=other_student_2, course=course, teacher=self.teacher_a)
