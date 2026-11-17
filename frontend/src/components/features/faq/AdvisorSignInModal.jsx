@@ -17,7 +17,7 @@ export default function AdvisorSignInModal({ isOpen, onClose }) {
       maxWidth="max-w-md"
     >
       <div className="space-y-5">
-        <p className="text-sm text-muted font-light leading-relaxed">
+        <p className="text-sm text-cn-muted font-light leading-relaxed">
           Sign in to your student account to ask an advisor directly — you&apos;ll find
           &quot;Ask an Advisor&quot; in your Cool Nerdz Portal once you&apos;re signed in.
         </p>
@@ -25,14 +25,14 @@ export default function AdvisorSignInModal({ isOpen, onClose }) {
         <div className="flex flex-col gap-3">
           <Link
             href={buildAuthUrl(ROUTES.LOGIN)}
-            className="w-full flex items-center justify-center gap-2 bg-pine hover:bg-moss text-paper font-sans text-xs font-medium uppercase tracking-widest py-3.5 rounded-full shadow-soft transition"
+            className="w-full flex items-center justify-center gap-2 bg-cn-accent hover:bg-cn-accent-2 text-white text-sm font-semibold h-[50px] rounded-cn-sm transition-colors duration-150"
           >
             <LogIn className="w-4 h-4" />
             Sign In
           </Link>
           <Link
             href={buildAuthUrl(ROUTES.SIGNUP)}
-            className="w-full flex items-center justify-center gap-2 bg-porcelain hover:bg-line/40 border border-line text-ink font-sans text-xs font-medium uppercase tracking-widest py-3.5 rounded-full transition"
+            className="w-full flex items-center justify-center gap-2 bg-white hover:border-cn-ink border border-cn-rule-strong text-cn-ink text-sm font-semibold h-[50px] rounded-cn-sm shadow-cn-1 transition-colors duration-150"
           >
             <UserPlus className="w-4 h-4" />
             Create Student Account
@@ -42,7 +42,7 @@ export default function AdvisorSignInModal({ isOpen, onClose }) {
         <button
           type="button"
           onClick={onClose}
-          className="w-full text-center text-xs font-sans font-medium uppercase tracking-widest text-muted hover:text-ink transition-colors"
+          className="w-full text-center text-xs font-sans font-medium uppercase tracking-widest text-cn-muted hover:text-cn-ink transition-colors"
         >
           Keep Browsing
         </button>

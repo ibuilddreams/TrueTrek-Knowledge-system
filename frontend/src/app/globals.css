@@ -33,6 +33,96 @@
 
   --shadow-elevated: 0 28px 90px rgba(20, 35, 31, 0.16);
   --shadow-soft: 0 12px 36px rgba(20, 35, 31, 0.08);
+
+  /* ======================================================================
+     Cobalt design system (new-design.html) — the white / cobalt / ink
+     language used by the Navbar, the Footer and the Home page.
+
+     Every token is namespaced `cn-*` so the porcelain/moss tokens above
+     keep serving the pages that have not been moved over yet; nothing
+     here changes how an existing utility renders. Values are taken
+     verbatim from new-design.html's `:root`.
+     ====================================================================== */
+
+  /* Surfaces */
+  --color-cn-paper: #ffffff;
+  --color-cn-paper-2: #f5f7fb;
+  --color-cn-paper-3: #eaeffd;
+  --color-cn-paper-4: #dce4fc;
+
+  /* Type */
+  --color-cn-ink: #111827;
+  --color-cn-ink-2: #4b5563;
+  --color-cn-muted: #6b7280;
+
+  /* Rules */
+  --color-cn-rule: #e3e7f0;
+  --color-cn-rule-strong: #c2cad8;
+
+  /* The one cobalt signal */
+  --color-cn-accent: #2450e6;
+  --color-cn-accent-2: #1a3bb8;
+  --color-cn-accent-3: #0f2580;
+  --color-cn-accent-soft: #879ff1;
+
+  /* On the ink band */
+  --color-cn-on-ink: #ffffff;
+  --color-cn-on-ink-2: #c7d0e6;
+  --color-cn-ink-line: #2a3550;
+
+  /* Status */
+  --color-cn-ok: #15803d;
+  --color-cn-ok-bg: #e9f7ef;
+  --color-cn-warn: #b45309;
+  --color-cn-warn-bg: #fdf3e4;
+  --color-cn-live: #e5484d;
+
+  --radius-cn-sm: 12px;
+  --radius-cn: 16px;
+  --radius-cn-lg: 24px;
+  --radius-cn-xl: 32px;
+
+  --shadow-cn-1: 0 1px 2px rgba(17, 24, 39, 0.05);
+  --shadow-cn-2: 0 1px 3px rgba(17, 24, 39, 0.06),
+    0 4px 12px -6px rgba(17, 24, 39, 0.08);
+  --shadow-cn-3: 0 2px 4px rgba(17, 24, 39, 0.05),
+    0 12px 28px -14px rgba(17, 24, 39, 0.14);
+
+  --ease-cn-out: cubic-bezier(0.16, 1, 0.3, 1);
+
+  /* Display scale. Each pair gives Tailwind both the size and the tight
+     display leading, so `text-cn-display` alone reads as the design does. */
+  --text-cn-display: clamp(2.75rem, 4vw + 1rem, 4.5rem);
+  --text-cn-display--line-height: 1.04;
+  --text-cn-display-s: clamp(2.25rem, 3.6vw + 0.5rem, 3.6rem);
+  --text-cn-display-s--line-height: 1.04;
+  --text-cn-section: clamp(2rem, 2.4vw + 1rem, 3.4rem);
+  --text-cn-section--line-height: 1.04;
+  --text-cn-3xl: 2.441rem;
+  --text-cn-3xl--line-height: 1.08;
+  --text-cn-2xl: 1.953rem;
+  --text-cn-2xl--line-height: 1.12;
+  --text-cn-xl: 1.5625rem;
+  --text-cn-xl--line-height: 1.2;
+  --text-cn-lg: 1.25rem;
+  --text-cn-lg--line-height: 1.4;
+
+  /* The design sets one body leading — 1.55 — and lets every size inherit it.
+     Tailwind's own `text-xs`/`text-sm`/`text-base` each ship a *paired*
+     line-height (16px / 20px / 24px), which overrides inheritance and makes
+     cobalt text sit tighter than the design everywhere it is used. These three
+     are the same sizes carrying the design's leading instead, namespaced so
+     Tailwind's defaults — and therefore every page not yet on this design —
+     are left exactly as they were.
+
+     `cn-xs` is 12px: the design declares `--text-xs: 13px` but never uses it,
+     writing its small print as a literal 12px throughout. */
+  --text-cn-xs: 0.75rem;
+  --text-cn-xs--line-height: 1.55;
+  --text-cn-sm: 0.875rem;
+  --text-cn-sm--line-height: 1.55;
+  --text-cn-base: 1rem;
+  --text-cn-base--line-height: 1.55;
 }
 
 /* CoolNerdz page background recipes — applied by SiteShell to the root
@@ -385,4 +475,304 @@ select:disabled {
 @media (prefers-reduced-motion: reduce) {
   .tt-enter, .tt-float, .tt-confirm, .tt-card, .tt-button, .tt-star,
   .tt-interactive button { animation: none !important; transition: none !important; }
+}
+
+/* ==========================================================================
+   Cobalt design system — layout, surface and motion primitives.
+
+   Everything below is scoped to the `cn-` prefix and is only reached by the
+   Navbar, the Footer and the Home page. Measurements come straight from
+   new-design.html: a 1360px measure, a 56/24/16px gutter, a 104px section
+   rhythm, and motion that runs once on entry and stops entirely under
+   `prefers-reduced-motion`.
+   ========================================================================== */
+
+:root {
+  --cn-gutter: 56px;
+  --cn-section: 88px;
+  --cn-nav-h: 76px;
+}
+
+/* The design's base leading, set where the design sets it. Tailwind's
+   preflight puts 1.5 on `html`; the design declares 1.55 on `body` and lets
+   every size inherit it, so text with no explicit size utility — a bare
+   paragraph, a `text-[11px]` arbitrary size — sits a shade looser.
+   Anything carrying a Tailwind `text-*` or `leading-*` class is unaffected,
+   because those set their own line-height. */
+body {
+  line-height: 1.55;
+}
+
+@media (max-width: 60rem) {
+  :root {
+    --cn-gutter: 24px;
+    --cn-section: 72px;
+  }
+}
+
+@media (max-width: 40rem) {
+  :root {
+    --cn-gutter: 16px;
+    --cn-section: 56px;
+  }
+}
+
+/* The one measure every cobalt surface is laid out against. */
+.cn-container {
+  width: 100%;
+  max-width: 1360px;
+  margin-inline: auto;
+  padding-inline: var(--cn-gutter);
+}
+
+/* Section rhythm. `.cn-section + .cn-section` collapses the seam so two
+   plain sections read as one run of content, exactly as the design does —
+   a section that paints its own background (`.cn-band`) keeps its full
+   padding so the band has room to breathe. */
+.cn-section {
+  padding-block: var(--cn-section);
+}
+
+.cn-section + .cn-section {
+  padding-top: 0;
+}
+
+/* A band paints its own background, so it needs the full rhythm on both
+   sides of itself rather than the collapsed seam. Both selectors carry one
+   more class than the rule above, which is what makes them win. */
+.cn-section + .cn-section.cn-band,
+.cn-section.cn-band + .cn-section {
+  padding-top: var(--cn-section);
+}
+
+/* Hero: a dot field over a soft blue bloom, both masked so they fade out
+   before they reach the type. */
+.cn-hero::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -2;
+  background-image: radial-gradient(
+    var(--color-cn-paper-4) 1.2px,
+    transparent 1.2px
+  );
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(
+    ellipse 70% 60% at 50% 32%,
+    #000 30%,
+    transparent 75%
+  );
+  mask-image: radial-gradient(
+    ellipse 70% 60% at 50% 32%,
+    #000 30%,
+    transparent 75%
+  );
+}
+
+.cn-hero::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  background: radial-gradient(
+    ellipse 55% 70% at 50% 38%,
+    var(--color-cn-paper-3),
+    rgba(234, 239, 253, 0) 70%
+  );
+}
+
+/* An inner page's header band: the same dot field as the hero, lit from the
+   top right instead of the centre, so a title sitting left stays on plain
+   paper. Paired with `bg-cn-paper-2` on the band itself. */
+.cn-banner::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background-image: radial-gradient(
+    var(--color-cn-paper-4) 1.2px,
+    transparent 1.2px
+  );
+  background-size: 26px 26px;
+  -webkit-mask-image: radial-gradient(
+    ellipse 60% 80% at 85% 20%,
+    #000,
+    transparent 70%
+  );
+  mask-image: radial-gradient(ellipse 60% 80% at 85% 20%, #000, transparent 70%);
+}
+
+/* The ink band's engraved grid, faded out before the content ends. */
+.cn-dark-grid::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: linear-gradient(
+      var(--color-cn-ink-line) 1px,
+      transparent 1px
+    ),
+    linear-gradient(90deg, var(--color-cn-ink-line) 1px, transparent 1px);
+  background-size: 64px 64px;
+  opacity: 0.35;
+  -webkit-mask-image: linear-gradient(180deg, #000, transparent 70%);
+  mask-image: linear-gradient(180deg, #000, transparent 70%);
+}
+
+/* The cobalt closing panel's dot field, lit from the right. */
+.cn-cta-dots::before {
+  content: "";
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  background-image: radial-gradient(
+    rgba(255, 255, 255, 0.18) 1px,
+    transparent 1px
+  );
+  background-size: 22px 22px;
+  -webkit-mask-image: linear-gradient(90deg, transparent, #000);
+  mask-image: linear-gradient(90deg, transparent, #000);
+}
+
+/* --------------------------------------------------------------------------
+   Scroll motion.
+
+   The hidden state is gated on `[data-cn-js]`, which `useScrollReveal` sets
+   on <html> only once it has an IntersectionObserver and motion is allowed.
+   Without JS, or with reduced motion, nothing is ever hidden — so a reveal
+   can never leave content stranded invisible.
+   -------------------------------------------------------------------------- */
+
+[data-cn-js] .cn-reveal {
+  opacity: 0;
+  transform: translateY(28px);
+  transition:
+    opacity 0.8s var(--ease-cn-out),
+    transform 0.8s var(--ease-cn-out);
+  transition-delay: calc(var(--cn-d, 0) * 90ms);
+}
+
+/* The revealed state is an attribute, not a class — see hooks/useScrollReveal.js
+   for why a class cannot survive React re-rendering the element. */
+[data-cn-js] .cn-reveal[data-cn-in] {
+  opacity: 1;
+  transform: none;
+}
+
+/* A progress bar inside an unrevealed block sits at zero width and grows as
+   the block arrives. Gated on `[data-cn-js]` like every other hidden state,
+   so without JS or with reduced motion the bar is simply drawn at its value. */
+[data-cn-js] .cn-reveal:not([data-cn-in]) .cn-bar-fill {
+  transform: scaleX(0);
+}
+
+.cn-bar-fill {
+  transform-origin: left;
+  transition: transform 1.4s var(--ease-cn-out) 0.2s;
+}
+
+@keyframes cn-rise {
+  from {
+    opacity: 0;
+    transform: translateY(14px);
+  }
+}
+
+@keyframes cn-float {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-10px);
+  }
+}
+
+@keyframes cn-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(229, 72, 77, 0.55);
+  }
+  70% {
+    box-shadow: 0 0 0 10px rgba(229, 72, 77, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(229, 72, 77, 0);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  /* The headline lands a word at a time; `--cn-i` is the word's index. */
+  .cn-word {
+    display: inline-block;
+    animation: cn-rise 0.8s var(--ease-cn-out) both;
+    animation-delay: calc(var(--cn-i, 0) * 90ms + 100ms);
+  }
+
+  /* `--cn-dur` so one class can serve both the hero copy (0.8s, the default)
+     and the slower stage beside it (1.1s), as the design times them. */
+  .cn-enter {
+    animation: cn-rise var(--cn-dur, 0.8s) var(--ease-cn-out) both;
+    animation-delay: var(--cn-delay, 0ms);
+  }
+
+  .cn-float {
+    animation: cn-float 6s ease-in-out infinite;
+  }
+
+  .cn-livedot {
+    animation: cn-pulse 1.8s infinite;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .cn-word,
+  .cn-enter,
+  .cn-float,
+  .cn-livedot {
+    animation: none !important;
+  }
+}
+
+/* --------------------------------------------------------------------------
+   The pathway marquee under the hero.
+
+   The track carries the chip list twice and travels exactly -50%, so the
+   second copy lands where the first started and the loop has no seam. The
+   two belong together: duplicating a third time, or changing this distance,
+   makes the jump visible.
+   -------------------------------------------------------------------------- */
+
+.cn-marquee-mask {
+  -webkit-mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 6%,
+    #000 94%,
+    transparent
+  );
+  mask-image: linear-gradient(
+    90deg,
+    transparent,
+    #000 6%,
+    #000 94%,
+    transparent
+  );
+}
+
+@keyframes cn-marquee {
+  to {
+    transform: translateX(-50%);
+  }
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .cn-marquee-track {
+    animation: cn-marquee 55s linear infinite;
+  }
+
+  /* Hovering or tabbing into the strip stops it, so a chip can be read. */
+  .group:hover .cn-marquee-track,
+  .group:focus-within .cn-marquee-track {
+    animation-play-state: paused;
+  }
 }

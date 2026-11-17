@@ -1,9 +1,10 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { ROUTES } from "@/constants/routes";
+
 import { useState } from "react";
-import { useCart } from "@/hooks/useCart";
-import { useWishlist } from "@/hooks/useWishlist";
-import CartRecommendationCard from "@/components/features/cart/CartRecommendationCard";
+import CourseSuggestionCard from "@/components/ui/CourseSuggestionCard";
 import CourseSectionHeading from "@/components/features/store/detail/CourseSectionHeading";
 
 // "My courses (N)": the instructor's published courses as store cards, with
@@ -12,9 +13,15 @@ import CourseSectionHeading from "@/components/features/store/detail/CourseSecti
 const PAGE_SIZE = 9;
 
 export default function InstructorCourses({ courses }) {
+  const router = useRouter();
+
+  // Enrolling happens in the portal — the same single action the store uses.
+  const handleEnroll = (course) =>
+    router.push(
+      `${ROUTES.STUDENT_PORTAL}?buy=${encodeURIComponent(course.slug)}`,
+    );
+
   const [visibleCount, setVisibleCount] = useState(PAGE_SIZE);
-  const { isInCart, isPending: isCartPending, toggleCourse: toggleCart } = useCart();
-  const wishlist = useWishlist();
 
   if (!courses?.length) return null;
 
@@ -25,16 +32,11 @@ export default function InstructorCourses({ courses }) {
       </CourseSectionHeading>
       <ul className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
         {courses.slice(0, visibleCount).map((course) => (
-          <CartRecommendationCard
+          <CourseSuggestionCard
+            onEnroll={handleEnroll}
             key={course.id}
             course={course}
-            isInCart={isInCart(course.id)}
-            isPending={isCartPending(course.id)}
-            isWishlisted={wishlist.isInWishlist(course.id)}
-            isWishlistPending={wishlist.isPending(course.id)}
             showPopularity
-            onToggleCart={toggleCart}
-            onToggleWishlist={wishlist.toggleCourse}
           />
         ))}
       </ul>

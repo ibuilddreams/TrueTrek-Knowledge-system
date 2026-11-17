@@ -8,19 +8,19 @@ export default function CourseReviewItem({ review, showInstructor = false }) {
   const initial = (review.student_name || "?").trim().charAt(0).toUpperCase();
 
   return (
-    <li className="border-t border-line pt-6 pb-2">
+    <li className="border-t border-cn-rule pt-6 pb-2">
       <div className="flex items-center gap-4">
         <span
           aria-hidden="true"
-          className="w-12 h-12 shrink-0 rounded-full bg-ink text-paper flex items-center justify-center font-serif text-lg"
+          className="w-12 h-12 shrink-0 rounded-full bg-cn-ink text-white flex items-center justify-center font-bold tracking-[-0.015em] text-lg"
         >
           {initial}
         </span>
         <div className="min-w-0">
-          <p className="text-base font-semibold text-ink truncate">{review.student_name}</p>
+          <p className="text-base font-semibold text-cn-ink truncate">{review.student_name}</p>
           <p className="mt-0.5 flex flex-wrap items-center gap-x-2.5 gap-y-1">
             <StarRating value={review.rating} compact />
-            <span className="text-xs font-medium text-muted">{formatRelativeTime(review.created_at)}</span>
+            <span className="text-xs font-medium text-cn-muted">{formatRelativeTime(review.created_at)}</span>
           </p>
         </div>
       </div>
@@ -31,15 +31,15 @@ export default function CourseReviewItem({ review, showInstructor = false }) {
             text={review.comment}
             lines={4}
             threshold={240}
-            className="text-[15px] leading-relaxed text-ink/90"
+            className="text-[15px] leading-relaxed text-cn-ink-2"
           />
         ) : (
-          <p className="text-sm italic text-muted">Left a rating without a comment.</p>
+          <p className="text-sm italic text-cn-muted">Left a rating without a comment.</p>
         )}
       </div>
 
       {showInstructor && review.instructor?.name && (
-        <p className="mt-3 text-xs text-muted">For instructor {review.instructor.name}</p>
+        <p className="mt-3 text-xs text-cn-muted">For instructor {review.instructor.name}</p>
       )}
     </li>
   );

@@ -50,7 +50,6 @@ import CategoriesTab from "@/components/features/admin/tabs/CategoriesTab";
 import PathwaysTab from "@/components/features/admin/tabs/PathwaysTab";
 import TiersTab from "@/components/features/admin/tabs/TiersTab";
 import QuestionnaireTab from "@/components/features/admin/tabs/QuestionnaireTab";
-import FutureClientsTab from "@/components/features/admin/tabs/FutureClientsTab";
 import TeacherRequestsTab from "@/components/features/admin/tabs/TeacherRequestsTab";
 import TeacherOnboardingTab from "@/components/features/admin/tabs/TeacherOnboardingTab";
 import StudentConcernsTab from "@/components/features/admin/tabs/StudentConcernsTab";
@@ -69,7 +68,6 @@ const TABS = [
   { id: "courses", label: "Courses", icon: BookOpen },
   { id: "enrollments", label: "Enrollments", icon: ClipboardList },
   { id: "students", label: "Students", icon: GraduationCap },
-  { id: "future-clients", label: "Future Clients", icon: UserPlus },
   { id: "testimonials", label: "Testimonials", icon: MessageSquareQuote },
   { id: "teachers", label: "Teachers", icon: Users },
   { id: "teacher-applications", label: "Teacher Applications", icon: UserCheck },
@@ -98,7 +96,6 @@ const TAB_COMPONENTS = {
   courses: CoursesTab,
   enrollments: EnrollmentsTab,
   students: StudentsTab,
-  "future-clients": FutureClientsTab,
   testimonials: TestimonialsTab,
   teachers: TeachersTab,
   "teacher-applications": TeacherOnboardingTab,

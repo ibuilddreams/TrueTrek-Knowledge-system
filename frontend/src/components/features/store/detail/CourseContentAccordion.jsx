@@ -24,18 +24,18 @@ const LESSON_META = {
 function ItemRow({ icon: Icon, title, label, meta }) {
   return (
     <li className="flex items-center gap-3 px-5 py-3">
-      <span className="w-8 h-8 shrink-0 rounded-lg bg-porcelain text-pine flex items-center justify-center">
+      <span className="w-8 h-8 shrink-0 rounded-lg bg-cn-paper-2 text-cn-accent flex items-center justify-center">
         <Icon className="w-4 h-4" aria-hidden="true" />
       </span>
       <span className="flex-1 min-w-0">
-        <span className="block text-sm text-ink truncate">{title}</span>
+        <span className="block text-sm text-cn-ink truncate">{title}</span>
         {label && (
-          <span className="block text-[10px] font-sans font-medium uppercase tracking-widest text-muted mt-0.5">
+          <span className="block text-xs font-semibold tracking-widest uppercase text-cn-muted mt-0.5">
             {label}
           </span>
         )}
       </span>
-      {meta && <span className="shrink-0 text-xs text-muted">{meta}</span>}
+      {meta && <span className="shrink-0 text-xs text-cn-muted">{meta}</span>}
     </li>
   );
 }
@@ -49,42 +49,42 @@ function ModuleSection({ module, index, isOpen, onToggle }) {
   const panelId = `module-panel-${module.id}`;
 
   return (
-    <div className="border-b border-line last:border-b-0">
+    <div className="border-b border-cn-rule last:border-b-0">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={isOpen}
         aria-controls={panelId}
-        className="w-full flex items-center gap-4 px-5 py-4 text-left bg-porcelain/50 hover:bg-porcelain transition-colors focus:outline-none focus-visible:bg-porcelain focus-visible:shadow-[inset_0_0_0_2px_rgba(9,45,41,0.35)]"
+        className="w-full flex items-center gap-4 px-5 py-4 text-left bg-cn-paper-2 hover:bg-cn-paper-2 transition-colors focus:outline-none focus-visible:bg-cn-paper-2 focus-visible:shadow-[inset_0_0_0_2px_rgba(9,45,41,0.35)]"
       >
         <span
           aria-hidden="true"
-          className="w-7 h-7 shrink-0 rounded-full bg-pine text-paper text-xs font-sans font-semibold flex items-center justify-center"
+          className="w-7 h-7 shrink-0 rounded-full bg-cn-accent text-white text-xs font-sans font-semibold flex items-center justify-center"
         >
           {index + 1}
         </span>
-        <span className="flex-1 min-w-0 text-sm font-semibold text-ink">{module.title}</span>
-        <span className="hidden sm:block shrink-0 text-xs text-muted">
+        <span className="flex-1 min-w-0 text-sm font-semibold text-cn-ink">{module.title}</span>
+        <span className="hidden sm:block shrink-0 text-xs text-cn-muted">
           {pluralize(itemCount, "item")}
           {minutes ? ` • ${minutes}` : ""}
         </span>
         <ChevronDown
-          className={`w-4 h-4 shrink-0 text-muted transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`w-4 h-4 shrink-0 text-cn-muted transition-transform ${isOpen ? "rotate-180" : ""}`}
           aria-hidden="true"
         />
       </button>
 
       {isOpen && (
-        <div id={panelId} className="bg-paper border-t border-line/70">
+        <div id={panelId} className="bg-white border-t border-cn-rule">
           {module.description && (
-            <p className="px-5 py-4 text-xs leading-relaxed text-muted whitespace-pre-line border-b border-line/60">
+            <p className="px-5 py-4 text-xs leading-relaxed text-cn-muted whitespace-pre-line border-b border-cn-rule">
               {module.description}
             </p>
           )}
           {itemCount === 0 ? (
-            <p className="px-5 py-4 text-xs text-muted">No content has been added to this section yet.</p>
+            <p className="px-5 py-4 text-xs text-cn-muted">No content has been added to this section yet.</p>
           ) : (
-            <ul className="divide-y divide-line/60">
+            <ul className="divide-y divide-cn-rule">
               {lessons.map((lesson) => {
                 const meta = LESSON_META[lesson.content_type];
                 return (
@@ -142,15 +142,15 @@ export default function CourseContentAccordion({ modules, totals }) {
 
   return (
     <section aria-labelledby="course-content-heading">
-      <CourseSectionHeading id="course-content-heading">Course content</CourseSectionHeading>
+      <CourseSectionHeading tone="cobalt" id="course-content-heading">Course content</CourseSectionHeading>
 
       {modules.length === 0 ? (
-        <p className="rounded-card border border-line bg-paper p-6 text-sm text-muted">
+        <p className="rounded-cn border border-cn-rule bg-white p-6 text-sm text-cn-muted">
           Learning materials have not been added to this course yet.
         </p>
       ) : (
         <>
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-muted">
+          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-cn-muted">
             <span>
               {pluralize(modules.length, "section")} • {pluralize(totals.lessons, "lesson")}
               {totals.assignments > 0 ? ` • ${pluralize(totals.assignments, "assignment")}` : ""}
@@ -160,13 +160,13 @@ export default function CourseContentAccordion({ modules, totals }) {
             <button
               type="button"
               onClick={toggleAll}
-              className="font-semibold text-pine hover:text-moss transition"
+              className="font-semibold text-cn-accent hover:text-cn-accent-2 transition"
             >
               {allOpen ? "Collapse all sections" : "Expand all sections"}
             </button>
           </div>
 
-          <div className="rounded-card border border-line overflow-hidden shadow-soft bg-paper">
+          <div className="rounded-cn border border-cn-rule overflow-hidden shadow-cn-1 bg-white">
             {modules.map((module, index) => (
               <ModuleSection
                 key={module.id}

@@ -4,6 +4,7 @@ from .views import (
     AdminCourseEnrollmentListView,
     AdminEnrollmentDetailView,
     AdminEnrollmentListView,
+    CoursePurchaseView,
     EnrollmentBulkImportSampleView,
     EnrollmentBulkImportView,
     EnrollmentListCreateView,
@@ -24,6 +25,7 @@ urlpatterns = [
         name="enrollment-student-course-detail",
     ),
     path("student/", EnrollmentListCreateView.as_view(), name="enrollment-student-list-create"),
+    path("purchase/", CoursePurchaseView.as_view(), name="enrollment-purchase"),
     path("admin/", AdminEnrollmentListView.as_view(), name="enrollment-admin-list"),
     path("admin/bulk-import/", EnrollmentBulkImportView.as_view(), name="enrollment-bulk-import"),
     path(

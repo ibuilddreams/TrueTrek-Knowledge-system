@@ -34,32 +34,30 @@ export default function BuildYourOwnPathwayBanner() {
 
   return (
     <>
+      {/* The page's one cobalt field, as the design uses its closing panel. */}
       <div
         id="build-your-own-pathway-banner"
-        className="relative overflow-hidden rounded-2xl border border-gold/30 bg-pine text-paper p-6 sm:p-7 mb-10"
+        className="cn-cta-dots relative isolate mb-10 overflow-hidden rounded-cn-lg bg-cn-accent p-6 text-white shadow-cn-3 sm:p-8"
       >
-        <div
-          aria-hidden="true"
-          className="absolute -top-20 -right-10 w-72 h-72 rounded-full bg-gold/15 blur-[110px]"
-        />
-
-        <div className="relative z-10 flex flex-col lg:flex-row lg:items-center gap-5 lg:gap-8">
-          <div className="w-11 h-11 rounded-xl bg-gold/20 border border-gold/30 text-gold flex items-center justify-center shrink-0">
+        <div className="relative z-10 flex flex-col gap-5 lg:flex-row lg:items-center lg:gap-8">
+          <div className="grid h-12 w-12 shrink-0 place-items-center rounded-cn bg-white/20 text-white backdrop-blur-[6px]">
             <Wand2 className="w-5 h-5" />
           </div>
 
-          <div className="min-w-0 space-y-1.5">
-            <span className="inline-flex items-center gap-1.5 bg-white/10 border border-white/15 px-3 py-1 rounded-full text-gold font-sans text-[10px] uppercase tracking-widest font-medium">
+          <div className="min-w-0 space-y-2">
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold tracking-widest text-white uppercase backdrop-blur-[6px]">
               <Sparkles className="w-3 h-3" />
               Build Your Own
             </span>
-            <h3 className="text-2xl font-serif font-light leading-tight text-paper">
+            <h3 className="text-cn-xl leading-tight font-bold tracking-[-0.015em] text-white">
               Can&apos;t find the right mix? Create your own pathway.
             </h3>
-            <p className="text-xs font-light leading-relaxed text-paper/70 max-w-xl">
-              Hand-pick {MIN_CUSTOM_PATHWAY_COURSES} or more courses, bundle them
-              into a pathway that&apos;s yours, and buy the whole thing in one go
-              — you&apos;re enrolled in every course inside it straight away.
+            <p className="max-w-[62ch] text-sm leading-relaxed text-cn-on-ink-2">
+              {/* One template literal rather than text around a JSX
+                  expression: the compiler drops the space that follows
+                  `{...}` at a line break, which rendered this as
+                  "Hand-pick 2or more courses". */}
+              {`Hand-pick ${MIN_CUSTOM_PATHWAY_COURSES} or more courses, bundle them into a pathway that's yours, and buy the whole thing in one go — you're enrolled in every course inside it straight away.`}
             </p>
           </div>
 
@@ -67,10 +65,10 @@ export default function BuildYourOwnPathwayBanner() {
             id="build-your-own-pathway-trigger-btn"
             type="button"
             onClick={handleStartBuilding}
-            className="lg:ml-auto shrink-0 inline-flex items-center justify-center gap-2 bg-gold hover:brightness-95 text-ink font-sans text-xs font-semibold uppercase tracking-widest px-6 py-3.5 rounded-full shadow-md transition-all duration-200"
+            className="inline-flex h-[50px] shrink-0 items-center justify-center gap-2 rounded-cn-sm bg-white px-6 text-sm font-semibold text-cn-accent-3 transition-transform duration-150 ease-cn-out hover:-translate-y-px lg:ml-auto"
           >
             Start Building
-            <ArrowRight className="w-3.5 h-3.5" />
+            <ArrowRight className="w-4 h-4" />
           </button>
         </div>
       </div>

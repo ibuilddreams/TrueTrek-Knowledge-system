@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
 import { usePortalSession } from "@/hooks/usePortalSession";
@@ -8,6 +9,10 @@ import { useStudentProfile } from "@/hooks/useStudentProfile";
 import { useNeedsOnboarding } from "@/hooks/useNeedsOnboarding";
 import { useDailyDrillToday } from "@/hooks/student/useDailyDrillToday";
 import { ROUTES } from "@/constants/routes";
+import { getPublicCourseBySlug } from "@/services/coursesService";
+import { purchaseCourses } from "@/services/enrollmentsService";
+import { getApiErrorMessage } from "@/lib/apiErrors";
+import { toastError, toastSuccess } from "@/lib/toast";
 import TabNav from "@/components/ui/TabNav";
 import TabTransition from "@/components/ui/TabTransition";
 import Loader from "@/components/ui/Loader";
@@ -20,6 +25,7 @@ import {
 import PortalHeader from "./PortalHeader";
 import PortalToast from "./PortalToast";
 import DailyDrillReminderModal from "./DailyDrillReminderModal";
+import BuyCourseModal from "./BuyCourseModal";
 import DashboardTab from "./tabs/DashboardTab";
 import CoursesTab from "./tabs/CoursesTab";
 import AssignmentsTab from "./tabs/AssignmentsTab";
@@ -40,7 +46,7 @@ import WarRoomScreen from "@/components/features/warroom/WarRoomScreen";
 // refresh of the Drill tab doesn't re-nag) — see the reminder effect below.
 const DRILL_REMINDER_STORAGE_PREFIX = "ttl:dailyDrillReminderShown:";
 
-const DETAIL_PARAMS = ["assignmentCourse", "quizCourse", "course", "content"];
+const DETAIL_PARAMS = ["assignmentCourse", "quizCourse", "course", "content", "buy"];
 
 function StudentPortalContent() {
   const router = useRouter();
@@ -136,6 +142,53 @@ function StudentPortalContent() {
     const timer = setTimeout(() => setLastNotification(null), 5000);
     return () => clearTimeout(timer);
   }, [lastNotification]);
+
+  // "Buy" on a store card sends a signed-in student here with `?buy=<slug>`,
+  // and the course is fetched by that slug so the modal can name it and
+  // price it. The slug travels rather than an id because it is what the
+  // store's own URLs already use, and it is readable in the address bar.
+  const queryClient = useQueryClient();
+  const buySlug = searchParams.get("buy");
+  const [isBuying, setIsBuying] = useState(false);
+
+  const buyCourseQuery = useQuery({
+    queryKey: ["public-course-detail", buySlug],
+    queryFn: async () => (await getPublicCourseBySlug(buySlug)).data,
+    enabled: Boolean(buySlug),
+  });
+
+  const closeBuyModal = useCallback(() => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("buy");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }, [pathname, router, searchParams]);
+
+  const confirmPurchase = useCallback(
+    async (course) => {
+      setIsBuying(true);
+      try {
+        const response = await purchaseCourses(course.id);
+        const result = response?.data || {};
+        if (result.already_enrolled?.length) {
+          toastSuccess(`You already have ${course.title}. It's in My courses.`);
+        } else {
+          toastSuccess(`${course.title} is yours — it's in My courses.`);
+        }
+        // The purchase changes what the portal shows, so every list that
+        // counts or names enrolled courses has to be re-read.
+        await queryClient.invalidateQueries();
+        closeBuyModal();
+      } catch (error) {
+        toastError(
+          getApiErrorMessage(error, "That purchase could not be completed."),
+        );
+      } finally {
+        setIsBuying(false);
+      }
+    },
+    [closeBuyModal, queryClient],
+  );
 
   const setActiveTab = useCallback(
     (tabId) => {
@@ -271,6 +324,14 @@ function StudentPortalContent() {
           </TabTransition>
         </div>
       </div>
+
+      <BuyCourseModal
+        isOpen={Boolean(buySlug) && Boolean(buyCourseQuery.data)}
+        course={buyCourseQuery.data}
+        isSubmitting={isBuying}
+        onClose={closeBuyModal}
+        onConfirm={confirmPurchase}
+      />
     </div>
   );
 }

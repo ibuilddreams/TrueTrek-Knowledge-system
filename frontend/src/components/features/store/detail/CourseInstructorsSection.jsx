@@ -6,8 +6,8 @@ import CourseSectionHeading from "./CourseSectionHeading";
 
 function StatRow({ icon: Icon, children }) {
   return (
-    <li className="flex items-center gap-3 text-sm text-ink/90">
-      <Icon className="w-4 h-4 shrink-0 text-ink" aria-hidden="true" />
+    <li className="flex items-center gap-3 text-sm text-cn-ink-2">
+      <Icon className="w-4 h-4 shrink-0 text-cn-ink" aria-hidden="true" />
       {children}
     </li>
   );
@@ -19,16 +19,16 @@ function InstructorCard({ instructor }) {
   const initial = (instructor.name || "?").trim().charAt(0).toUpperCase();
 
   return (
-    <article className="rounded-card border border-line bg-paper p-6 md:p-8 shadow-soft">
-      <h3 className="text-xl font-semibold text-ink">
+    <article className="rounded-cn border border-cn-rule bg-white p-6 md:p-8 shadow-cn-1">
+      <h3 className="text-xl font-semibold text-cn-ink">
         <Link
           href={href}
-          className="underline decoration-gold/60 decoration-2 underline-offset-4 hover:text-pine hover:decoration-pine transition-colors"
+          className="underline decoration-gold/60 decoration-2 underline-offset-4 hover:text-cn-accent hover:decoration-pine transition-colors"
         >
           {instructor.name}
         </Link>
       </h3>
-      <p className="mt-1 text-sm text-muted">
+      <p className="mt-1 text-sm text-cn-muted">
         {instructor.headline || (instructor.is_lead ? "Lead instructor" : "Instructor")}
       </p>
 
@@ -38,13 +38,13 @@ function InstructorCard({ instructor }) {
             <img
               src={instructor.avatar}
               alt=""
-              className="w-28 h-28 rounded-full object-cover ring-4 ring-sage/60"
+              className="w-28 h-28 rounded-full object-cover ring-4 ring-cn-paper-4"
               referrerPolicy="no-referrer"
             />
           ) : (
             <span
               aria-hidden="true"
-              className="w-28 h-28 rounded-full bg-gradient-to-br from-pine to-moss text-paper ring-4 ring-sage/60 flex items-center justify-center font-serif text-4xl"
+              className="w-28 h-28 rounded-full bg-gradient-to-br from-cn-accent to-cn-accent-2 text-white ring-4 ring-cn-paper-4 flex items-center justify-center font-bold tracking-[-0.015em] text-4xl"
             >
               {initial}
             </span>
@@ -77,7 +77,7 @@ function InstructorCard({ instructor }) {
             text={instructor.bio}
             lines={4}
             threshold={320}
-            className="text-[15px] leading-relaxed text-ink/90"
+            className="text-[15px] leading-relaxed text-cn-ink-2"
           />
         </div>
       )}
@@ -93,7 +93,7 @@ export default function CourseInstructorsSection({ instructors }) {
 
   return (
     <section aria-labelledby="course-instructors-heading">
-      <CourseSectionHeading id="course-instructors-heading">
+      <CourseSectionHeading tone="cobalt" id="course-instructors-heading">
         {instructors.length === 1 ? "Instructor" : "Instructors"}
       </CourseSectionHeading>
       <div className="space-y-5">

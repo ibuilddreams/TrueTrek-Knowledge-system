@@ -19,14 +19,14 @@ export default function CourseIncludes({ course, totals }) {
 
   return (
     <section aria-labelledby="course-includes-heading">
-      <CourseSectionHeading id="course-includes-heading">This course includes</CourseSectionHeading>
+      <CourseSectionHeading tone="cobalt" id="course-includes-heading">This course includes</CourseSectionHeading>
       <ul className="grid grid-cols-2 sm:grid-cols-3 gap-3">
         {items.map(({ icon: Icon, text }) => (
           <li
             key={text}
-            className="flex items-center gap-3 rounded-xl border border-line bg-paper px-4 py-3 text-sm text-ink shadow-xs"
+            className="flex items-center gap-3 rounded-xl border border-cn-rule bg-white px-4 py-3 text-sm text-cn-ink shadow-xs"
           >
-            <span className="w-8 h-8 shrink-0 rounded-lg bg-porcelain text-pine flex items-center justify-center">
+            <span className="w-8 h-8 shrink-0 rounded-lg bg-cn-paper-2 text-cn-accent flex items-center justify-center">
               <Icon className="w-4 h-4" aria-hidden="true" />
             </span>
             {text}

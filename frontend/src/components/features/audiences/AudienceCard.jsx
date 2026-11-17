@@ -12,11 +12,64 @@ import { ROUTES } from "@/constants/routes";
 // `featured` cards are the full-bleed photographic bookends of the homepage
 // bento grid: the image fills the card and the copy sits bottom-anchored on
 // top of it, so the tall `lg:row-span-2` column never opens a dead gap.
-export default function AudienceCard({ profile, className = "" }) {
+export default function AudienceCard({
+  profile,
+  className = "",
+  variant = "classic",
+}) {
   const Icon = profile.icon;
   const href = `${ROUTES.AUDIENCES}/${profile.slug}`;
   const focusClass =
     "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-pine focus-visible:ring-offset-4";
+
+  // `cobalt` is the Home page's bento treatment from new-design.html: every
+  // card is photographic, the copy is bottom-anchored over a scrim and the
+  // round "go" button rises in on hover. It is a second rendering of the same
+  // profile, not a second component, so the two surfaces can never show a
+  // different set of audiences — and `classic` below is byte-for-byte what
+  // /audiences has always rendered.
+  if (variant === "cobalt") {
+    return (
+      <Link
+        key={profile.id}
+        id={`audience-card-${profile.id}`}
+        href={href}
+        aria-label={`Explore pathways for ${profile.title}`}
+        className={`group relative isolate flex flex-col justify-end overflow-hidden rounded-cn-lg p-6 text-cn-on-ink no-underline shadow-cn-1 transition-[transform,box-shadow] duration-200 ease-cn-out hover:-translate-y-1 hover:shadow-cn-3 focus-visible:outline-[3px] focus-visible:outline-offset-[3px] focus-visible:outline-cn-accent ${className}`}
+      >
+        <img
+          src={profile.image}
+          alt=""
+          loading="lazy"
+          className="absolute inset-0 -z-20 h-full w-full object-cover transition-transform duration-[900ms] ease-cn-out group-hover:scale-[1.06]"
+        />
+        {/* The design's scrim: clear for the top third, then down to 82%
+            ink, which is enough for a tag and a title over a bright
+            photograph. The card carries no description — the audience's own
+            page does — so it does not need a deeper one. */}
+        <div
+          aria-hidden="true"
+          className="absolute inset-0 -z-10 bg-[linear-gradient(180deg,rgba(15,37,128,0)_35%,rgba(10,16,40,0.82))]"
+        ></div>
+
+        <span className="absolute top-4 right-4 grid h-10 w-10 translate-y-1.5 place-items-center rounded-full bg-white text-cn-accent opacity-0 transition-[opacity,transform] duration-200 ease-cn-out group-hover:translate-y-0 group-hover:opacity-100 group-focus-visible:translate-y-0 group-focus-visible:opacity-100">
+          <ArrowRight className="h-4 w-4" />
+        </span>
+
+        {/* In normal flow, not absolutely placed: the grid row it sits in is
+            `minmax(260px, auto)`, so a long description grows the card
+            rather than spilling out from under the scrim. */}
+        <div className="grid gap-1.5">
+          <span className="justify-self-start rounded-full bg-white/20 px-2.5 py-1 text-cn-xs font-semibold backdrop-blur-[6px]">
+            {profile.tag}
+          </span>
+          <h4 className="text-cn-xl font-bold tracking-[-0.015em] text-cn-on-ink">
+            {profile.title}
+          </h4>
+        </div>
+      </Link>
+    );
+  }
 
   if (profile.featured) {
     return (

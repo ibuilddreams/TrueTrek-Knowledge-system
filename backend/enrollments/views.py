@@ -28,6 +28,7 @@ from .services import (
     get_enrollment_import_sample,
     get_student_certificates,
     get_student_enrolled_course_detail,
+    purchase_courses,
     remove_enrollment,
 )
 
@@ -296,3 +297,50 @@ class TeacherEnrollmentListView(generics.ListAPIView):
         serializer = self.get_serializer(page, many=True)
         paginated_data = self.paginator.get_paginated_response(serializer.data).data
         return success_response(paginated_data, message="Enrollments fetched successfully")
+
+
+class CoursePurchaseView(generics.GenericAPIView):
+    """Prototype checkout: no real payment gateway yet — the UI says so
+    plainly, simulates the payment, then calls this to enroll the student.
+
+    Replaces the cart's checkout, which drained a stored basket. A purchase
+    now names the courses outright, so a student can buy one from the portal
+    without anything having to be kept between pages.
+    """
+
+    permission_classes = [IsStudent]
+
+    def post(self, request):
+        course_ids = request.data.get("course_ids")
+
+        # A single id is the common case from the portal's Buy course modal,
+        # but the service handles a batch, so accept either shape.
+        if isinstance(course_ids, int) and not isinstance(course_ids, bool):
+            course_ids = [course_ids]
+
+        if (
+            not isinstance(course_ids, list)
+            or not course_ids
+            or not all(
+                isinstance(course_id, int) and not isinstance(course_id, bool)
+                for course_id in course_ids
+            )
+        ):
+            return error_response(
+                message="course_ids must be a non-empty list of course ids.",
+                status_code=400,
+            )
+
+        result = purchase_courses(request.user, course_ids)
+
+        # Nothing bought and nothing already owned means every id failed —
+        # that is the student's whole request refused, not a partial success.
+        if not result["enrolled"] and not result["already_enrolled"]:
+            return error_response(
+                message=result["failed"][0]["reason"]
+                if result["failed"]
+                else "That purchase could not be completed.",
+                status_code=400,
+            )
+
+        return success_response(result, message="Purchase completed")

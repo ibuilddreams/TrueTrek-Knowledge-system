@@ -1,389 +1,211 @@
 "use client";
 
-import { useState } from "react";
-import styles from "./AudienceDetail.module.css";
+import { useRef, useState } from "react";
 import Link from "next/link";
-import { keepPreviousData, useQuery } from "@tanstack/react-query";
-import {
-  AlertCircle,
-  ArrowLeft,
-  ArrowRight,
-  BookOpen,
-  RefreshCw,
-  Route,
-} from "lucide-react";
-import { motion } from "motion/react";
-import { useAuth } from "@/hooks/useAuth";
-import { useCart } from "@/hooks/useCart";
-import { useWishlist } from "@/hooks/useWishlist";
+import { useQuery } from "@tanstack/react-query";
+import useScrollReveal from "@/hooks/useScrollReveal";
 import { ROUTES } from "@/constants/routes";
-import { getAudienceProfile } from "@/data/audiences";
+import { AUDIENCE_PROFILES, getAudienceProfile } from "@/data/audiences";
+import { getPublicPathways, } from "@/services/pathwaysService";
 import { getPublicCourses } from "@/services/coursesService";
-import { getPublicPathways } from "@/services/pathwaysService";
-import { getApiErrorMessage } from "@/lib/apiErrors";
-import EmptyState from "@/components/ui/EmptyState";
-import Pagination from "@/components/ui/Pagination";
-import StoreCourseCard from "@/components/features/store/StoreCourseCard";
+import CobaltSectionHead from "@/components/features/home/CobaltSectionHead";
+import CobaltPathwayCard from "@/components/features/pathways/CobaltPathwayCard";
 import SignInToSelectModal from "@/components/features/pathways/SignInToSelectModal";
-import AudienceCardGridSkeleton from "./AudienceCardGridSkeleton";
-import AudiencePathwayCard from "./AudiencePathwayCard";
-import AudienceSectionHeader from "./AudienceSectionHeader";
+import AudienceClosingCta from "./AudienceClosingCta";
 
-const PATHWAY_PAGE_SIZE = 6;
-const COURSE_PAGE_SIZE = 6;
+// One audience's page: who it is for, how much there is for them, and the
+// pathways built for them. The chip row moves between audiences in place —
+// the design has no audiences index, so this page is both the destination and
+// the switcher.
+//
+// Both figures in the banner are counted server-side for this audience:
+// pathways by their own audience link, courses by the published pathways that
+// carry them. Only the counts are read from the course query — the catalog
+// itself is the store's job.
+const PATHWAY_PAGE_SIZE = 100;
 
-function scrollToSection(event) {
-  if (event.metaKey || event.ctrlKey || event.shiftKey || event.altKey) return;
-
-  const hash = event.currentTarget.hash;
-  const section = document.getElementById(hash.slice(1));
-  if (!section) return;
-
-  event.preventDefault();
-  if (window.location.hash !== hash) {
-    window.history.pushState(null, "", hash);
-  }
-  section.focus({ preventScroll: true });
-  section.scrollIntoView({
-    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
-      ? "instant"
-      : "smooth",
-    block: "start",
-  });
-}
-
-// Full-width so it lines up with the grid it replaces, rather than sitting as
-// a small island in the middle of an otherwise empty section.
-function SectionError({ title, error, onRetry }) {
+function Stat({ label, value, isReady }) {
   return (
-    <div className="flex flex-col items-start gap-5 rounded-panel border border-clay/25 bg-rose/10 p-8 sm:flex-row sm:items-center">
-      <span className="flex h-12 w-12 shrink-0 items-center justify-center rounded-2xl border border-clay/25 bg-paper text-clay">
-        <AlertCircle className="h-5 w-5" />
-      </span>
-
-      <div className="min-w-0 flex-1">
-        <h3 className="font-serif text-xl font-light text-ink">{title}</h3>
-        <p className="mt-1 text-xs font-light leading-relaxed text-muted">
-          {getApiErrorMessage(error, "Something went wrong. Please try again.")}
-        </p>
-      </div>
-
-      <button
-        type="button"
-        onClick={onRetry}
-        className="inline-flex shrink-0 items-center gap-2 rounded-full border border-line bg-paper px-5 py-2.5 font-sans text-xs font-medium uppercase tracking-widest text-ink transition hover:bg-porcelain"
-      >
-        <RefreshCw className="h-3.5 w-3.5" />
-        Retry
-      </button>
-    </div>
-  );
-}
-
-// Keep unknown counts distinct from zero and preserve dt/dd reading order.
-function HeroStat({ value, label, isReady }) {
-  return (
-    <div className={styles.stat}>
-      <dt className={styles.statLabel}>
-        {label}
-      </dt>
-      <dd className={styles.statValue}>
+    <div className="rounded-cn border border-cn-rule bg-white px-6 py-4 shadow-cn-1">
+      <dt className="text-cn-sm text-cn-muted">{label}</dt>
+      <dd className="m-0 text-cn-3xl leading-[1.55] font-extrabold tracking-[-0.03em] tabular-nums text-cn-ink">
         {isReady ? value : "—"}
       </dd>
     </div>
   );
 }
 
-// Takes a slug rather than the profile object: the route is a Server
-// Component, and a profile carries its `icon` as a React component, which
-// cannot cross the server/client boundary as a prop. The route has already
-// rejected an unknown slug with notFound().
 export default function AudienceDetail({ slug }) {
+  const pageRef = useRef(null);
   const profile = getAudienceProfile(slug);
-  const { isAuthenticated, isStudent } = useAuth();
-
-  // Same gating as the store: guests and students get a cart, teachers and
-  // admins browse without one.
-  const canUseCart = !isAuthenticated || isStudent;
-  const { isInCart, isPending: isCartActionPending, toggleCourse } = useCart();
-  const wishlist = useWishlist();
-
   const audienceSlug = profile?.slug;
-  const Icon = profile?.icon;
 
-  const [pathwayPage, setPathwayPage] = useState(1);
-  const [coursePage, setCoursePage] = useState(1);
-  // The pathway whose withheld bundle price a guest tapped — bundle pricing is
-  // members-only, so the card asks rather than showing a number. The pathway
-  // is kept after closing so its name doesn't vanish mid fade-out.
-  const [pricePromptPathway, setPricePromptPathway] = useState(null);
+  // The pathway whose withheld bundle price a guest tapped. Kept after the
+  // modal closes so its name doesn't vanish mid fade-out.
+  const [pricePrompt, setPricePrompt] = useState(null);
   const [isSignInOpen, setIsSignInOpen] = useState(false);
 
-  // Both lists are scoped server-side to this audience: pathways by their own
-  // audience link, courses by the published pathways that carry them.
   const pathwaysQuery = useQuery({
-    queryKey: ["audience-pathways", audienceSlug, pathwayPage],
+    queryKey: ["audience-pathways", audienceSlug],
     queryFn: async () => {
       const response = await getPublicPathways({
-        page: pathwayPage,
         pageSize: PATHWAY_PAGE_SIZE,
         audience: audienceSlug,
       });
       return response?.data || { results: [], count: 0 };
     },
     enabled: Boolean(audienceSlug),
-    placeholderData: keepPreviousData,
   });
 
+  // Asked for a single row: this is only here for the headline count, so it
+  // never pulls a page of courses it would then throw away.
   const coursesQuery = useQuery({
-    queryKey: ["audience-courses", audienceSlug, coursePage],
+    queryKey: ["audience-course-count", audienceSlug],
     queryFn: async () => {
       const response = await getPublicCourses({
-        page: coursePage,
-        pageSize: COURSE_PAGE_SIZE,
+        page: 1,
+        pageSize: 1,
         audience: audienceSlug,
       });
-      return response?.data || { results: [], count: 0 };
+      return response?.data?.count || 0;
     },
     enabled: Boolean(audienceSlug),
-    placeholderData: keepPreviousData,
   });
 
   const pathways = pathwaysQuery.data?.results || [];
   const totalPathways = pathwaysQuery.data?.count || 0;
-  const totalPathwayPages = Math.max(1, Math.ceil(totalPathways / PATHWAY_PAGE_SIZE));
+  const totalCourses = coursesQuery.data || 0;
 
-  const courses = coursesQuery.data?.results || [];
-  const totalCourses = coursesQuery.data?.count || 0;
-  const totalCoursePages = Math.max(1, Math.ceil(totalCourses / COURSE_PAGE_SIZE));
+  useScrollReveal(pageRef, [pathways.length]);
 
   // Defensive only — the route resolves the slug before rendering this.
   if (!profile) return null;
 
   return (
-    <div id={`audience-page-${profile.slug}`} className="min-h-screen cn-page-bg pb-24 text-ink">
-      <header id="audience-banner-layout" className="mx-auto max-w-6xl px-6 pt-8 sm:pt-10">
-        <Link href={ROUTES.HOME_AUDIENCES} className={styles.backLink}>
-          <ArrowLeft aria-hidden="true" className="h-4 w-4" />
-          All audiences
-        </Link>
+    <div
+      id={`audience-page-${profile.slug}`}
+      ref={pageRef}
+      className="min-h-screen bg-cn-paper text-cn-ink"
+    >
+      <header className="cn-banner relative isolate overflow-hidden bg-cn-paper-2 py-24">
+        <div className="cn-container grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+          <div>
+            <Link
+              href={ROUTES.HOME}
+              className="cn-enter mb-4 inline-flex text-cn-sm font-semibold text-cn-accent no-underline hover:underline"
+            >
+              Who it&apos;s for
+            </Link>
+            <h1 className="cn-enter max-w-[14ch] text-cn-display-s font-extrabold tracking-[-0.035em] text-cn-ink">
+              {profile.title}
+            </h1>
+            <p
+              className="cn-enter mt-6 max-w-[40ch] text-cn-lg leading-[1.5] text-cn-ink-2"
+              style={{ "--cn-delay": "90ms" }}
+            >
+              {profile.description}
+            </p>
 
-        <div className={styles.hero}>
-          <div className={styles.copy}>
-            <div className={styles.eyebrow}>
-              <span className={`${styles.icon} ${profile.iconClassName}`}>
-                <Icon aria-hidden="true" className="h-5 w-5" />
-              </span>
-              <span>{profile.tag}</span>
-            </div>
-            <h1 className={styles.title}>{profile.title}</h1>
-            <p className={styles.description}>{profile.description}</p>
-
-            {profile.chips?.length > 0 && (
-              <div className={styles.chips}>
-                {profile.chips.map((chip) => (
-                  <span key={chip} className={styles.chip}>{chip}</span>
-                ))}
-              </div>
-            )}
-
-            <div className={styles.actions}>
-              <a href="#audience-pathways-section" onClick={scrollToSection} className={styles.primaryAction}>
-                Explore pathways <ArrowRight aria-hidden="true" className="h-4 w-4" />
-              </a>
-              <a href="#audience-courses-section" onClick={scrollToSection} className={styles.secondaryAction}>
-                Browse courses <ArrowRight aria-hidden="true" className="h-4 w-4" />
-              </a>
-            </div>
-
-            <dl className={styles.stats} aria-label="Available learning options">
-              <HeroStat value={totalPathways} label={`Pathway${totalPathways === 1 ? "" : "s"}`} isReady={pathwaysQuery.isSuccess} />
-              <HeroStat value={totalCourses} label={`Course${totalCourses === 1 ? "" : "s"}`} isReady={coursesQuery.isSuccess} />
+            <dl
+              className="cn-enter mt-6 grid grid-cols-2 gap-3"
+              style={{ "--cn-delay": "180ms" }}
+            >
+              <Stat
+                label={`Pathway${totalPathways === 1 ? "" : "s"}`}
+                value={totalPathways}
+                isReady={pathwaysQuery.isSuccess}
+              />
+              <Stat
+                label={`Course${totalCourses === 1 ? "" : "s"}`}
+                value={totalCourses}
+                isReady={coursesQuery.isSuccess}
+              />
             </dl>
+
+            {/* The switcher. `aria-current` rather than `aria-pressed`: these
+                are links to other pages, not toggles on this one. */}
+            <nav
+              aria-label="Audiences"
+              className="cn-enter mt-6 flex flex-wrap gap-2"
+              style={{ "--cn-delay": "270ms" }}
+            >
+              {AUDIENCE_PROFILES.map((item) => {
+                const isCurrent = item.slug === profile.slug;
+                return (
+                  <Link
+                    key={item.id}
+                    href={`${ROUTES.AUDIENCES}/${item.slug}`}
+                    aria-current={isCurrent ? "page" : undefined}
+                    className={`inline-grid h-10 place-items-center rounded-full border px-4 text-cn-sm no-underline transition-colors duration-150 ease-cn-out ${
+                      isCurrent
+                        ? "border-cn-ink bg-cn-ink font-medium text-cn-on-ink"
+                        : "border-cn-rule-strong bg-white font-medium text-cn-ink-2 hover:border-cn-ink hover:text-cn-ink"
+                    }`}
+                  >
+                    {item.title}
+                  </Link>
+                );
+              })}
+            </nav>
           </div>
 
-          <div className={styles.artwork}>
-            <img src={profile.image} alt="" className={styles.image} fetchPriority="high" />
-          </div>
+          <figure
+            className="cn-enter m-0 aspect-4/3 overflow-hidden rounded-cn-lg shadow-cn-3 max-lg:hidden"
+            style={{ "--cn-delay": "180ms" }}
+          >
+            <img
+              src={profile.image}
+              alt={profile.title}
+              width={1200}
+              height={900}
+              fetchPriority="high"
+              className="h-full w-full object-cover"
+            />
+          </figure>
         </div>
       </header>
 
-      {/* Pathways for this audience */}
-      <section id="audience-pathways-section" tabIndex={-1} className="mx-auto max-w-6xl px-6 pt-14 scroll-mt-28">
-        <AudienceSectionHeader
-          eyebrow="Bundled Programs"
-          heading="Find your pathway"
-          description={`Explore course bundles for ${profile.title.toLowerCase()}, with a clear path from learning to putting your skills into practice.`}
-          count={pathwaysQuery.isSuccess ? totalPathways : null}
-          countLabel="pathway"
-          action={
-            <Link
-              href={ROUTES.PATHWAYS}
-              className="inline-flex items-center gap-1.5 font-sans text-[11px] font-semibold uppercase tracking-widest text-moss transition-all hover:gap-2.5 hover:text-pine"
-            >
-              All Pathways
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          }
-        />
-
-        {pathwaysQuery.isLoading && <AudienceCardGridSkeleton count={3} />}
-
-        {pathwaysQuery.isError && (
-          <SectionError
-            title="Failed to Load Pathways"
-            error={pathwaysQuery.error}
-            onRetry={() => pathwaysQuery.refetch()}
+      <section id="audience-pathways-section" className="cn-section">
+        <div className="cn-container">
+          <CobaltSectionHead
+            headingId="audience-pathways-heading"
+            heading={`Pathways for ${profile.headingName}.`}
+            lead="Bundled programs with a clear path from learning to putting it into practice."
           />
-        )}
 
-        {!pathwaysQuery.isLoading && !pathwaysQuery.isError && pathways.length === 0 && (
-          <div className="rounded-panel border border-dashed border-line bg-paper/60 py-4">
-            <EmptyState
-              icon={Route}
-              size="lg"
-              label={`No pathways assigned to ${profile.title} yet`}
-              description="This audience is still being mapped. Browse every published pathway in the meantime."
-              action={
-                <Link
-                  href={ROUTES.PATHWAYS}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-pine px-5 py-2.5 font-sans text-xs font-medium uppercase tracking-widest text-paper transition hover:bg-moss"
-                >
-                  Browse All Pathways
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              }
-            />
-          </div>
-        )}
-
-        {!pathwaysQuery.isLoading && !pathwaysQuery.isError && pathways.length > 0 && (
-          <>
-            <motion.div
-              id="audience-pathways-grid"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className={`grid grid-cols-1 gap-8 transition-opacity duration-200 md:grid-cols-2 lg:grid-cols-3 ${
-                pathwaysQuery.isFetching ? "opacity-60" : "opacity-100"
-              }`}
-            >
+          {pathwaysQuery.isSuccess && pathways.length === 0 ? (
+            <p className="rounded-cn-lg border border-cn-rule bg-white p-10 text-center text-cn-ink-2 shadow-cn-1">
+              No pathways are published for this profile yet.
+            </p>
+          ) : (
+            <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
               {pathways.map((pathway, index) => (
-                <AudiencePathwayCard
+                <CobaltPathwayCard
                   key={pathway.id}
                   pathway={pathway}
-                  accentIndex={index}
+                  revealDelay={index % 3}
                   onRequestSignIn={(selected) => {
-                    setPricePromptPathway(selected);
+                    setPricePrompt(selected);
                     setIsSignInOpen(true);
                   }}
                 />
               ))}
-            </motion.div>
-
-            <Pagination
-              page={pathwayPage}
-              totalPages={totalPathwayPages}
-              onPageChange={setPathwayPage}
-              totalLabel={`${totalPathways} pathway${totalPathways === 1 ? "" : "s"}`}
-            />
-          </>
-        )}
+            </div>
+          )}
+        </div>
       </section>
 
-      {/* Individual courses reachable through those pathways */}
-      <section id="audience-courses-section" tabIndex={-1} className="mx-auto max-w-6xl px-6 pt-16 scroll-mt-28">
-        <AudienceSectionHeader
-          eyebrow="Individual Classes"
-          heading="Build your skills, one course at a time"
-          description="Focus on what matters to you. Explore individual courses from this audience’s pathways."
-          count={coursesQuery.isSuccess ? totalCourses : null}
-          countLabel="course"
-          action={
-            <Link
-              href={ROUTES.STORE}
-              className="inline-flex items-center gap-1.5 font-sans text-[11px] font-semibold uppercase tracking-widest text-moss transition-all hover:gap-2.5 hover:text-pine"
-            >
-              Full Course Store
-              <ArrowRight className="h-3.5 w-3.5" />
-            </Link>
-          }
-        />
-
-        {coursesQuery.isLoading && <AudienceCardGridSkeleton count={3} variant="course" />}
-
-        {coursesQuery.isError && (
-          <SectionError
-            title="Failed to Load Courses"
-            error={coursesQuery.error}
-            onRetry={() => coursesQuery.refetch()}
-          />
-        )}
-
-        {!coursesQuery.isLoading && !coursesQuery.isError && courses.length === 0 && (
-          <div className="rounded-panel border border-dashed border-line bg-paper/60 py-4">
-            <EmptyState
-              icon={BookOpen}
-              size="lg"
-              label="No courses here yet"
-              description="Courses appear once this audience's pathways have published courses in them."
-              action={
-                <Link
-                  href={ROUTES.STORE}
-                  className="inline-flex items-center gap-1.5 rounded-full bg-pine px-5 py-2.5 font-sans text-xs font-medium uppercase tracking-widest text-paper transition hover:bg-moss"
-                >
-                  Browse All Courses
-                  <ArrowRight className="h-3.5 w-3.5" />
-                </Link>
-              }
-            />
-          </div>
-        )}
-
-        {!coursesQuery.isLoading && !coursesQuery.isError && courses.length > 0 && (
-          <>
-            <motion.div
-              id="audience-courses-grid"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className={`grid grid-cols-1 gap-8 transition-opacity duration-200 md:grid-cols-2 lg:grid-cols-3 ${
-                coursesQuery.isFetching ? "opacity-60" : "opacity-100"
-              }`}
-            >
-              {courses.map((course) => (
-                <StoreCourseCard
-                  key={course.id}
-                  course={course}
-                  isInCart={isInCart(course.id)}
-                  isPending={isCartActionPending(course.id)}
-                  canPurchase={canUseCart}
-                  onToggleCart={toggleCourse}
-                  isWishlisted={wishlist.isInWishlist(course.id)}
-                  isWishlistPending={wishlist.isPending(course.id)}
-                  onToggleWishlist={canUseCart ? wishlist.toggleCourse : undefined}
-                />
-              ))}
-            </motion.div>
-
-            <Pagination
-              page={coursePage}
-              totalPages={totalCoursePages}
-              onPageChange={setCoursePage}
-              totalLabel={`${totalCourses} course${totalCourses === 1 ? "" : "s"}`}
-            />
-          </>
-        )}
-      </section>
+      <AudienceClosingCta />
 
       {/* `next` is this audience page, so signing in from here lands the
-          visitor back on the grid they were reading, price in view. */}
+          visitor back where they were. */}
       <SignInToSelectModal
         isOpen={isSignInOpen}
-        pathwayName={pricePromptPathway?.name}
-        intent="price"
-        nextPath={`${ROUTES.AUDIENCES}/${profile.slug}`}
         onClose={() => setIsSignInOpen(false)}
+        pathwayName={pricePrompt?.name}
+        nextPath={`${ROUTES.AUDIENCES}/${profile.slug}`}
+        intent="price"
+        closeLabel="Keep Browsing"
       />
     </div>
   );

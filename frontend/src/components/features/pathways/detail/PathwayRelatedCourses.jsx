@@ -1,12 +1,13 @@
 "use client";
 
+import { useRouter } from "next/navigation";
+import { ROUTES } from "@/constants/routes";
+
 import { useMemo } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { useCart } from "@/hooks/useCart";
-import { useWishlist } from "@/hooks/useWishlist";
 import { getPublicCourseRecommendations } from "@/services/coursesService";
-import CartRecommendationCard from "@/components/features/cart/CartRecommendationCard";
-import CartRecommendationCarousel from "@/components/features/cart/CartRecommendationCarousel";
+import CourseSuggestionCard from "@/components/ui/CourseSuggestionCard";
+import CourseSuggestionCarousel from "@/components/ui/CourseSuggestionCarousel";
 import PathwaySectionHeading from "./PathwaySectionHeading";
 
 const LIMIT = 8;
@@ -24,8 +25,13 @@ const LIMIT = 8;
 // if nothing genuinely relates to this pathway, the section stays hidden
 // rather than padding itself out.
 export default function PathwayRelatedCourses({ pathway }) {
-  const { isInCart, isPending, toggleCourse } = useCart();
-  const wishlist = useWishlist();
+  const router = useRouter();
+
+  // Enrolling happens in the portal — the same single action the store uses.
+  const handleEnroll = (course) =>
+    router.push(
+      `${ROUTES.STUDENT_PORTAL}?buy=${encodeURIComponent(course.slug)}`,
+    );
 
   // Sorted so the query key (and cache) doesn't depend on roadmap order.
   const courseIds = useMemo(
@@ -40,7 +46,10 @@ export default function PathwayRelatedCourses({ pathway }) {
   const { data } = useQuery({
     queryKey: ["pathway-recommendations", courseIds],
     queryFn: async () => {
-      const response = await getPublicCourseRecommendations({ courseIds, limit: LIMIT });
+      const response = await getPublicCourseRecommendations({
+        courseIds,
+        limit: LIMIT,
+      });
       return response?.data || {};
     },
     staleTime: 60 * 1000,
@@ -53,7 +62,10 @@ export default function PathwayRelatedCourses({ pathway }) {
   if (related.length === 0) return null;
 
   return (
-    <section id="pathway-related-courses" aria-labelledby="pathway-related-heading">
+    <section
+      id="pathway-related-courses"
+      aria-labelledby="pathway-related-heading"
+    >
       <PathwaySectionHeading
         id="pathway-related-heading"
         eyebrow="Go Further"
@@ -62,21 +74,16 @@ export default function PathwayRelatedCourses({ pathway }) {
         Keep building beyond this route
       </PathwaySectionHeading>
 
-      <CartRecommendationCarousel ariaLabel="Courses related to this pathway">
+      <CourseSuggestionCarousel ariaLabel="Courses related to this pathway">
         {related.map((course) => (
-          <CartRecommendationCard
+          <CourseSuggestionCard
+            onEnroll={handleEnroll}
             key={course.id}
             course={course}
-            isInCart={isInCart(course.id)}
-            isPending={isPending(course.id)}
-            onToggleCart={toggleCourse}
-            isWishlisted={wishlist.isInWishlist(course.id)}
-            isWishlistPending={wishlist.isPending(course.id)}
-            onToggleWishlist={wishlist.toggleCourse}
             className="shrink-0 snap-start w-[78%] sm:w-[calc(50%-10px)] lg:w-[calc(25%-15px)]"
           />
         ))}
-      </CartRecommendationCarousel>
+      </CourseSuggestionCarousel>
     </section>
   );
 }

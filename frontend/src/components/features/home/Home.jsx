@@ -8,6 +8,7 @@ import {
   ArrowRight,
   Award,
   BookOpen,
+  Check,
   Flame,
   ShieldCheck,
   Zap,
@@ -22,6 +23,7 @@ import {
   // Layers, // Restore with the Learning Pathways Showcase.
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
+import useScrollReveal from "@/hooks/useScrollReveal";
 import IntroVideo from "@/components/features/media/IntroVideo";
 import AudienceCard from "@/components/features/audiences/AudienceCard";
 import MarkdownMiniRenderer from "@/components/ui/MarkdownMiniRenderer";
@@ -39,9 +41,78 @@ import { toPathwayParagraphs } from "@/lib/pathwayDescription";
 import { usePathwayPricing } from "@/hooks/usePathwayPricing";
 import SignInToSelectModal from "@/components/features/pathways/SignInToSelectModal";
 import SectionHeading from "@/components/ui/SectionHeading";
+import PathwayMarquee from "./PathwayMarquee";
+import { shortPathwayName } from "@/data/pathwayImages";
+import CobaltSectionHead from "./CobaltSectionHead";
+import CountUp from "./CountUp";
+import PortalBento from "./PortalBento";
+import { spellNumber } from "@/lib/numberWords";
+import {
+  CATALOG_COURSE_COUNT,
+  CURRICULUM_TIER_COUNT,
+} from "@/lib/catalog";
 import PingDotSpinner from "@/components/ui/PingDotSpinner";
 import PresetPromptPills from "@/components/ui/PresetPromptPills";
 import styles from "./Home.module.css";
+
+
+// The hero's three headline numbers. The course total is the catalog's own
+// (COURSE_DEFS seeds 335) and the audience count is derived from
+// `AUDIENCE_PROFILES` rather than hard-coded, so adding a seventh card moves
+// the number instead of leaving it wrong.
+const HERO_STATS = [
+  {
+    value: String(CURRICULUM_TIER_COUNT),
+    label: "Curriculum tiers",
+    icon: (
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="6" cy="19" r="2" />
+        <circle cx="18" cy="5" r="2" />
+        <path d="M8 19h7a3.5 3.5 0 0 0 0-7H9a3.5 3.5 0 0 1 0-7h7" />
+      </svg>
+    ),
+  },
+  {
+    value: String(CATALOG_COURSE_COUNT),
+    label: "Courses",
+    icon: <BookOpen className="w-[18px] h-[18px]" />,
+  },
+  {
+    value: String(AUDIENCE_PROFILES.length),
+    label: "Audiences",
+    icon: (
+      <svg
+        width="18"
+        height="18"
+        viewBox="0 0 24 24"
+        fill="none"
+        stroke="currentColor"
+        strokeWidth="1.9"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        aria-hidden="true"
+      >
+        <circle cx="12" cy="8" r="4" />
+        <path d="M4 21c1.5-4 4.5-6 8-6s6.5 2 8 6" />
+      </svg>
+    ),
+  },
+];
+
+const HERO_CERTS = ["NCAA bylaws certified", "FERPA and COPPA secure"];
+
+// "One curriculum, six ways in." — one per audience card.
+const SPELLED_WAYS_IN = spellNumber(AUDIENCE_PROFILES.length);
 
 // True once `active` has stayed true for longer than delayMs — used to swap in
 // a "taking longer than usual" message so a slow AI response doesn't look frozen.
@@ -74,21 +145,40 @@ const PATHWAY_PREVIEW_COURSES = 4;
 // One cell of the recommended pathway's at-a-glance strip.
 function PathwayFact({ label, value }) {
   return (
-    <div className="px-3 py-3 text-center">
-      <dt className="font-sans text-[10px] font-semibold uppercase tracking-widest text-muted">
-        {label}
-      </dt>
-      <dd className="mt-1 font-sans text-sm font-semibold text-ink">{value}</dd>
+    <div className="px-3 py-3.5 text-center">
+      <dt className="text-cn-xs text-cn-muted">{label}</dt>
+      <dd className="mt-1 text-cn-sm font-bold text-cn-ink">{value}</dd>
     </div>
   );
 }
 
+// The cobalt design system's section head (new-design.html `.head.center`):
+// an accent eyebrow, a tight 800-weight display line and a 46ch lead. Passed
+// to the shared SectionHeading rather than baked into it, so the pages still
+// on the porcelain system keep that component's own defaults.
+const CN_HEADING = {
+  eyebrowClassName: "text-cn-accent",
+  headingClassName:
+    "mx-auto max-w-[22ch] text-cn-section font-extrabold tracking-[-0.035em] text-balance text-cn-ink",
+  subtitleClassName:
+    "mx-auto max-w-[46ch] text-lg leading-[1.5] text-pretty text-cn-ink-2",
+};
+
+// The same head over the ink band, where the three colours invert.
+const CN_HEADING_DARK = {
+  eyebrowClassName: "text-cn-accent-soft",
+  headingClassName:
+    "mx-auto max-w-[22ch] text-cn-section font-extrabold tracking-[-0.035em] text-balance text-cn-on-ink",
+  subtitleClassName:
+    "mx-auto max-w-[46ch] text-lg leading-[1.5] text-pretty text-cn-on-ink-2",
+};
+
 // Cycled per advisor card index purely for visual variety in the consult board.
 const ADVISOR_TINTS = [
-  "bg-sky/60",
-  "bg-sage/60",
-  "bg-rose/45",
-  "bg-lavender/60",
+  "bg-cn-paper-3",
+  "bg-cn-paper-2",
+  "bg-cn-paper-4",
+  "bg-cn-paper-3",
 ];
 
 /* Preserved for restoring the commented-out Learning Pathways Showcase.
@@ -115,57 +205,36 @@ function getPathwayTierLabel(tiers) {
 
 export default function Home() {
   const homeRef = useRef(null);
+  const heroScreenRef = useRef(null);
 
-  // Reveal each section once, without leaving content hidden if JS is unavailable.
+  // The hero screen's tilt: 1 while the hero is at the top, easing to 0 over
+  // the first 480px of scroll, so the product straightens as it leaves. The
+  // value is written to a CSS variable rather than to `transform` itself,
+  // because the transform is three functions deep and belongs in the
+  // stylesheet; this only supplies the number. Reduced motion opts out
+  // entirely and the element's own `motion-reduce:` class flattens it.
   useEffect(() => {
-    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const animations = new Set();
-    let observer;
-    const setup = () => {
-      observer?.disconnect();
-      animations.forEach((animation) => animation.cancel());
-      animations.clear();
-      if (preference.matches || !window.IntersectionObserver) return;
-      observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting) return;
-            const animation = entry.target.animate(
-              [
-                { opacity: 0, transform: "translateY(24px)" },
-                { opacity: 1, transform: "translateY(0)" },
-              ],
-              {
-                duration: 750,
-                delay: Number(entry.target.dataset.revealDelay || 0),
-                easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-                fill: "backwards",
-              },
-            );
-            animations.add(animation);
-            animation.onfinish = () => animations.delete(animation);
-            observer.unobserve(entry.target);
-          });
-        },
-        { threshold: 0.08 },
-      );
-      homeRef.current
-        ?.querySelectorAll("section > div:not([id]), #stats-dashboard > div")
-        .forEach((element, index) => {
-          element.dataset.revealDelay =
-            element.parentElement.id === "stats-dashboard"
-              ? String((index % 3) * 100)
-              : "0";
-          observer.observe(element);
-        });
+    const screen = heroScreenRef.current;
+    if (!screen) return undefined;
+    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+      return undefined;
+    }
+
+    let queued = false;
+    const apply = () => {
+      queued = false;
+      const tilt = Math.max(0, 1 - window.scrollY / 480);
+      screen.style.setProperty("--tilt", tilt.toFixed(3));
     };
-    setup();
-    preference.addEventListener("change", setup);
-    return () => {
-      observer?.disconnect();
-      animations.forEach((animation) => animation.cancel());
-      preference.removeEventListener("change", setup);
+    const onScroll = () => {
+      if (queued) return;
+      queued = true;
+      requestAnimationFrame(apply);
     };
+
+    apply();
+    window.addEventListener("scroll", onScroll, { passive: true });
+    return () => window.removeEventListener("scroll", onScroll);
   }, []);
 
   const router = useRouter();
@@ -371,7 +440,10 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
   const selectedPathwayRow = pathways.find(
     (pathway) => pathway.id === selectedPathwayId,
   );
-  const recommended = { ...(selectedPathwayRow || {}), ...(selectedPathway || {}) };
+  const recommended = {
+    ...(selectedPathwayRow || {}),
+    ...(selectedPathway || {}),
+  };
 
   const recommendedParagraphs = toPathwayParagraphs(
     recommended.description || recommended.summary,
@@ -379,251 +451,424 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
   const previewCourses = pathwayCourses.slice(0, PATHWAY_PREVIEW_COURSES);
   const remainingCourseCount = pathwayCourses.length - previewCourses.length;
 
+  // Every `data-cn-reveal` element below rises in once as it is scrolled to.
+  // The sweep is re-run when the pathway list arrives, since that section's
+  // cards do not exist on the first pass.
+  useScrollReveal(homeRef, [isPathwaysLoading, pathways.length]);
+
+  // The ledger's four figures. Each note is written from the data rather than
+  // fixed, so "the largest bundle" stays true if a pathway overtakes Coaching.
+  const biggestPathway = pathways.reduce(
+    (best, pathway) =>
+      (pathway.course_count || 0) > (best?.course_count || 0) ? pathway : best,
+    null,
+  );
+  const ledgerFigures = [
+    {
+      label: "Tiers",
+      value: CURRICULUM_TIER_COUNT,
+      note: "From The Blueprint to Critical Thinking, taken in order.",
+    },
+    {
+      label: "Pathways",
+      value: pathways.length,
+      note: biggestPathway
+        ? `${shortPathwayName(biggestPathway.name)} is the largest bundle, at ${biggestPathway.course_count} courses.`
+        : "Each one bundles a run of courses taken together.",
+    },
+    {
+      label: "Courses",
+      value: CATALOG_COURSE_COUNT,
+      note: "Every one sits in a tier and at least one pathway.",
+    },
+    {
+      label: "Audiences",
+      value: AUDIENCE_PROFILES.length,
+      note: "Athletes, scholars, parents, coaches, founders and schools.",
+    },
+  ];
+
+  const easeOut = [0.16, 1, 0.3, 1];
+
   return (
     <div
       id="home-container"
       ref={homeRef}
-      className={`${styles.home} relative overflow-hidden w-full bg-transparent text-ink`}
+      className={`${styles.home} relative w-full overflow-hidden bg-cn-paper text-cn-ink`}
     >
-      {/* Decorative ambient background */}
-      <div
-        id="ambient-sphere-1"
-        className="absolute top-10 left-10 w-96 h-96 rounded-full bg-gold/10 blur-[120px] animate-pulse"
-      ></div>
-      <div
-        id="ambient-sphere-2"
-        className="absolute bottom-10 right-10 w-96 h-96 rounded-full bg-sky/20 blur-[120px] animate-pulse"
-      ></div>
-
-      {/* Hero Header Section */}
-      <div
-        id="hero-header-section"
-        className="max-w-6xl mx-auto px-6 pt-20 pb-14 md:pt-24 md:pb-16 text-center relative z-10 flex flex-col items-center justify-center min-h-[78vh] lg:min-h-0"
-      >
-        <motion.div
-          id="badge-banner"
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.6 }}
-          className="inline-flex items-center gap-2 bg-pine/10 border border-pine/15 px-4 py-2 rounded-full text-pine font-sans uppercase tracking-widest text-xs font-medium mb-8"
-        >
-          <Flame className="w-3.5 h-3.5 text-gold" />
-          Incubator for Elite Pathfinders & Scholars
-        </motion.div>
-
-        <motion.h1
-          id="hero-headline"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.15 }}
-          className="text-5xl md:text-7xl lg:text-8xl font-serif text-ink tracking-tight leading-[0.88] max-w-4xl font-light mb-6"
-        >
-          Build Your{" "}
-          <span className={`italic font-light ${styles.legacyShimmer}`}>
-            Legacy
-          </span>
-          .
-        </motion.h1>
-
-        <motion.p
-          id="hero-subline"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.3 }}
-          className="text-muted text-lg md:text-xl font-sans max-w-2xl font-light mb-10 leading-relaxed"
-        >
-          The premier 9-tier educational roadmap and strategic incubator helping
-          high-potential athletes, world-class scholars, and entrepreneurial
-          pathfinders master real-world capital, law, and legacy.
-        </motion.p>
-
-        <motion.div
-          id="hero-actions"
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.45 }}
-          className="flex flex-col sm:flex-row items-center gap-4 w-full justify-center max-w-md"
-        >
-          <button
-            id="btn-explore-pathways"
-            onClick={onExplorePathways}
-            className="w-full sm:w-auto bg-pine hover:bg-moss text-paper font-semibold px-8 py-3.5 rounded-full flex items-center justify-center gap-2 transition duration-300 shadow-elevated text-sm tracking-wide"
-          >
-            Discover Your 9-Tier Curriculum
-            <ArrowRight className="w-4 h-4" />
-          </button>
-          <button
-            id="btn-portal-access"
-            onClick={onNavigateToPortal}
-            className="w-full sm:w-auto bg-paper hover:bg-porcelain text-ink border border-line px-8 py-3.5 rounded-full text-sm font-semibold transition duration-300 tracking-wide"
-          >
-            Enter Cool Nerdz Portal
-          </button>
-        </motion.div>
-
-        {/* Global Impact Dashboard Section — temporarily hidden at the
-            client's request. Kept here (not deleted) so it can be dropped
-            straight back in; the reveal observer in this file still
-            references #stats-dashboard, which simply matches nothing while
-            this stays commented out. */}
-        {/*
+      {/* Hero. Two columns: the copy, and the "stage" — the portal screenshot
+          tilted in perspective with a photo and three state chips floating
+          over it. The dot field and the blue bloom behind it are painted by
+          `.cn-hero` (app/globals.css) and masked out before they reach the
+          type, which is what keeps the headline on plain paper. */}
+      <section className="cn-hero relative isolate overflow-hidden pt-16 pb-6">
         <div
-          id="stats-dashboard"
-          className="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl mt-14 md:mt-16 border-t border-line pt-10 md:pt-12"
+          id="hero-header-section"
+          className="cn-container relative z-10 grid items-center gap-12 lg:min-h-[calc(100svh-var(--cn-nav-h)-140px)] lg:grid-cols-2 lg:gap-16"
         >
-          <div id="stat-students" className="text-center md:text-left">
-            <p className="text-4xl md:text-5xl font-serif font-light text-pine tracking-tight">
-              12,400+
+          <div className="min-w-0">
+            <Link
+              id="hero-pillnote"
+              href={ROUTES.PARTNERSHIPS}
+              className="cn-enter mb-6 inline-flex h-[34px] items-center gap-2 rounded-full border border-cn-rule bg-white pr-3 pl-1 text-cn-sm font-medium text-cn-ink-2 no-underline shadow-cn-1 transition-colors duration-150 hover:border-cn-accent-soft"
+            >
+              <b className="inline-grid h-[26px] place-items-center rounded-full bg-cn-accent px-2 text-cn-xs font-bold text-white">
+                New
+              </b>
+              School licensing with live cost estimates
+            </Link>
+
+            {/* One span per word, each landing 90ms after the last. */}
+            <h1
+              id="hero-headline"
+              className="max-w-[12ch] text-cn-display font-extrabold tracking-[-0.035em] text-cn-ink"
+            >
+              <span className="cn-word" style={{ "--cn-i": 0 }}>
+                Build
+              </span>{" "}
+              <span className="cn-word" style={{ "--cn-i": 1 }}>
+                Your
+              </span>{" "}
+              <span className="cn-word" style={{ "--cn-i": 2 }}>
+                Legacy.
+              </span>
+            </h1>
+
+            <p
+              id="hero-subline"
+              className="cn-enter mt-6 max-w-[34ch] text-[clamp(1.125rem,0.4vw+1rem,1.375rem)] leading-[1.5] text-cn-ink-2"
+              style={{ "--cn-delay": "450ms" }}
+            >
+              Nine tiers of capital, law and legacy for athletes, scholars and
+              builders.
             </p>
-            <p className="text-muted font-sans uppercase tracking-widest text-xs font-medium mt-2">
-              Active Global Pathfinders
-            </p>
+
+            <div
+              id="hero-actions"
+              className="cn-enter mt-10 flex flex-wrap gap-3"
+              style={{ "--cn-delay": "550ms" }}
+            >
+              <button
+                id="btn-explore-pathways"
+                type="button"
+                onClick={onExplorePathways}
+                className="inline-flex h-[50px] min-w-[200px] flex-1 items-center justify-center gap-2 rounded-cn-sm bg-cn-accent px-6 text-cn-base font-semibold text-white shadow-cn-1 transition-[background-color,transform] duration-150 ease-cn-out hover:-translate-y-px hover:bg-cn-accent-2 sm:flex-none"
+              >
+                Discover the 9 tiers
+                <ArrowRight className="w-[18px] h-[18px]" />
+              </button>
+              <button
+                id="btn-portal-access"
+                type="button"
+                onClick={onNavigateToPortal}
+                className="inline-flex h-[50px] min-w-[200px] flex-1 items-center justify-center rounded-cn-sm border border-cn-rule-strong bg-white px-6 text-cn-base font-semibold text-cn-ink shadow-cn-1 transition-[border-color,transform] duration-150 ease-cn-out hover:-translate-y-px hover:border-cn-ink sm:flex-none"
+              >
+                Enter the portal
+              </button>
+            </div>
+
+            {/* The three headline numbers. `HERO_STATS` reads the real
+                catalog counts rather than repeating the design's mock ones. */}
+            <div
+              id="hero-stats"
+              className="cn-enter mt-10 grid max-w-[540px] grid-cols-1 rounded-cn-lg border border-cn-rule bg-white shadow-cn-1 sm:grid-cols-3"
+              style={{ "--cn-delay": "650ms" }}
+            >
+              {HERO_STATS.map((stat) => (
+                <div
+                  key={stat.label}
+                  className="flex min-w-0 items-center gap-3 border-t border-cn-rule p-4 first:border-t-0 sm:border-t-0 sm:border-l sm:first:border-l-0"
+                >
+                  <span className="grid h-9 w-9 flex-none place-items-center rounded-[10px] bg-cn-paper-3 text-cn-accent">
+                    {stat.icon}
+                  </span>
+                  <span className="min-w-0">
+                    <b className="block text-cn-xl leading-[1.1] font-extrabold tracking-[-0.02em] tabular-nums text-cn-ink">
+                      {stat.value}
+                    </b>
+                    <small className="block text-cn-xs whitespace-nowrap text-cn-muted">
+                      {stat.label}
+                    </small>
+                  </span>
+                </div>
+              ))}
+            </div>
+
+            <ul
+              id="hero-certs"
+              className="cn-enter mt-4 flex list-none flex-wrap gap-2 p-0"
+              style={{ "--cn-delay": "750ms" }}
+            >
+              {HERO_CERTS.map((cert) => (
+                <li
+                  key={cert}
+                  className="inline-flex items-center gap-1.5 rounded-full border border-cn-rule bg-white py-[5px] pr-3 pl-2.5 text-cn-xs font-semibold text-cn-ink-2"
+                >
+                  <ShieldCheck className="w-[15px] h-[15px] text-cn-ok" />
+                  {cert}
+                </li>
+              ))}
+            </ul>
           </div>
+
+          {/* The stage. `--tilt` runs 1 → 0 over the first 480px of scroll
+              (see the effect above), straightening the screen as the hero
+              leaves; the chips float on their own loop regardless. */}
           <div
-            id="stat-admissions"
-            className="text-center md:text-left border-y md:border-y-0 md:border-x border-line py-6 md:py-0 md:px-8"
+            id="hero-stage"
+            className="cn-enter relative pt-6 pb-16 [perspective:1600px] max-lg:hidden"
+            style={{ "--cn-delay": "300ms", "--cn-dur": "1.1s" }}
           >
-            <p className="text-4xl md:text-5xl font-serif font-light text-ink tracking-tight">
-              98.4%
-            </p>
-            <p className="text-muted font-sans uppercase tracking-widest text-xs font-medium mt-2">
-              Collegiate Selection Rate
-            </p>
-          </div>
-          <div id="stat-capital" className="text-center md:text-right">
-            <p className="text-4xl md:text-5xl font-serif font-light text-ink tracking-tight">
-              $145M+
-            </p>
-            <p className="text-muted font-sans uppercase tracking-widest text-xs font-medium mt-2">
-              Aggregate Venture Valuation
-            </p>
+            <div
+              ref={heroScreenRef}
+              id="hero-screen"
+              className="relative rounded-cn-lg border border-cn-rule bg-white p-2.5 shadow-cn-3 [transform-origin:60%_50%] [transform:rotateY(calc(-14deg*var(--tilt,1)))_rotateX(calc(7deg*var(--tilt,1)))_scale(calc(1-0.03*var(--tilt,1)))] [transition:transform_0.1s_linear] will-change-transform motion-reduce:[transform:none]"
+            >
+              <img
+                src="/images/design/portal-dashboard.webp"
+                alt="The Cool Nerdz student dashboard: next lesson, level, assignments and courses in progress"
+                width={1600}
+                height={1000}
+                fetchPriority="high"
+                className="w-full rounded-2xl"
+              />
+            </div>
+
+            <div className="absolute bottom-[2%] left-[-6%] w-[28%] overflow-hidden rounded-cn border-[6px] border-white shadow-cn-3 [rotate:-4deg]">
+              <img
+                src="/images/design/hero-athlete-study.webp"
+                alt="A student athlete studying at a library table"
+                width={640}
+                height={800}
+                className="block aspect-4/5 w-full object-cover"
+              />
+            </div>
+
+            <div className="cn-float absolute top-[2%] right-[-3%] flex items-center gap-3 rounded-cn border border-cn-rule bg-white px-4 py-3 text-cn-sm whitespace-nowrap shadow-cn-2">
+              <span className="grid h-9 w-9 flex-none place-items-center rounded-[10px] bg-cn-ok-bg text-cn-ok">
+                <Check className="w-[18px] h-[18px]" strokeWidth={2.4} />
+              </span>
+              <span>
+                <b className="block text-cn-sm">Assignment graded</b>
+                <span className="text-cn-xs text-cn-muted">
+                  CEO-101 · 132 / 150
+                </span>
+              </span>
+            </div>
+
+            <div
+              className="cn-float absolute top-[46%] right-[-6%] flex items-center gap-3 rounded-cn border border-cn-rule bg-white px-4 py-3 text-cn-sm whitespace-nowrap shadow-cn-2"
+              style={{ animationDelay: "-2s" }}
+            >
+              <span className="grid h-9 w-9 flex-none place-items-center rounded-[10px] bg-cn-paper-3 text-cn-accent">
+                <Zap className="w-[18px] h-[18px]" />
+              </span>
+              <span>
+                <b className="block text-cn-sm">+20 XP</b>
+                <span className="text-cn-xs text-cn-muted">
+                  Daily drill complete
+                </span>
+              </span>
+            </div>
+
+            <div
+              className="cn-float absolute bottom-[8%] left-[30%] flex items-center gap-3 rounded-cn border border-cn-rule bg-white px-4 py-3 text-cn-sm whitespace-nowrap shadow-cn-2"
+              style={{ animationDelay: "-4s" }}
+            >
+              <span className="grid h-9 w-9 flex-none place-items-center rounded-[10px] bg-[#fdecec] text-cn-live">
+                <span className="cn-livedot h-2 w-2 rounded-full bg-cn-live" />
+              </span>
+              <span>
+                <b className="block text-cn-sm">Live now</b>
+                <span className="text-cn-xs text-cn-muted">
+                  Office hours · COH-412
+                </span>
+              </span>
+            </div>
           </div>
         </div>
-        */}
-      </div>
+      </section>
+
+      {/* The pathway strip, directly under the hero as the design places it.
+          Driven by the same `pathways` query the sections below use, so it
+          shows the real catalog rather than a fixed list. */}
+      <PathwayMarquee pathways={pathways} />
 
       {/* Audience Role Map Section. scroll-mt clears the sticky navbar when an
           audience page links back here by anchor (ROUTES.HOME_AUDIENCES). */}
       <section
         id="audience-role-map-section"
-        className="bg-transparent border-t border-line py-14 md:py-16 px-6 relative z-10 scroll-mt-28"
+        className="cn-section relative z-10 scroll-mt-28"
       >
-        <div className="max-w-6xl mx-auto">
-          <SectionHeading
-            className="mb-10"
-            eyebrow="Who We Serve"
-            heading="Built for Every Profile in the Ecosystem"
-            subtitle="Explore learning for student athletes, academically motivated students, parents, and coaches, with practical skills for education, sports, and life beyond school."
+        <div className="cn-container">
+          <CobaltSectionHead
+            headingId="audience-role-map-heading"
+            heading="Built for every profile in the ecosystem."
+            lead={`One curriculum, ${SPELLED_WAYS_IN} ways in. Each profile gets its own pathways.`}
           />
 
+          {/* The design's audience bento: a four-column grid on 260px rows
+              where the two featured profiles hold a 2x2 block each. */}
           <div
             id="audience-cards-grid"
-            className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5"
+            className="grid grid-cols-1 gap-6 sm:auto-rows-[minmax(260px,auto)] sm:grid-cols-2 lg:grid-cols-4"
           >
-            {AUDIENCE_PROFILES.map((profile) => (
-              <AudienceCard
+            {AUDIENCE_PROFILES.map((profile, index) => (
+              <div
                 key={profile.id}
-                profile={profile}
-                className={profile.featured ? "lg:row-span-2 lg:min-h-0" : ""}
-              />
+                data-cn-reveal
+                style={{ "--cn-d": index % 4 }}
+                className={`cn-reveal flex min-h-[260px] ${
+                  profile.featured ? "sm:col-span-2 lg:row-span-2" : ""
+                }`}
+              >
+                <AudienceCard
+                  profile={profile}
+                  variant="cobalt"
+                  className="h-full w-full"
+                />
+              </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* Curated Core Philosophies */}
-      <section
-        id="philosophies-section"
-        className="py-14 md:py-16 px-6 max-w-6xl mx-auto"
-      >
-        <SectionHeading
-          className="mb-10"
-          eyebrow="Our Approach"
-          heading="Principles That Shape Every Tier"
-          subtitle="Three commitments run through the entire 9-tier curriculum, from the first orientation module to the final legacy briefing."
-        />
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          <div className="relative overflow-hidden isolate p-7 border border-line bg-paper rounded-panel text-left">
+      {/* "The curriculum, by the numbers." The design's ledger: a sticky
+          title column beside a two-up grid of figures that count up as they
+          arrive. The numbers are the catalog's real ones. */}
+      <section id="curriculum-numbers-section" className="cn-section relative z-10">
+        <div className="cn-container">
+          <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
             <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -right-10 -bottom-12 w-36 h-36 rounded-full bg-sky/60"
-            ></div>
-            <div className="absolute top-7 right-7 px-3 py-1 rounded-full bg-paper/90 border border-line text-[10px] font-sans uppercase tracking-widest text-muted font-bold">
-              Structured Rigor
+              data-cn-reveal
+              className="cn-reveal grid justify-items-start gap-4 lg:sticky lg:top-[120px]"
+            >
+              <h2 className="max-w-[12ch] text-cn-section font-extrabold tracking-[-0.035em] text-cn-ink">
+                The curriculum, by the numbers.
+              </h2>
+              <p className="max-w-[30ch] text-cn-lg leading-[1.55] text-cn-ink-2">
+                From a first plan to a family office, in one connected portal.
+              </p>
+              <button
+                type="button"
+                onClick={onExploreTiers}
+                className="mt-3 inline-flex h-[50px] items-center justify-center gap-2 rounded-cn-sm border border-cn-rule-strong bg-white px-6 text-cn-base font-semibold text-cn-ink shadow-cn-1 transition-[border-color,transform] duration-150 ease-cn-out hover:-translate-y-px hover:border-cn-ink"
+              >
+                Explore the curriculum
+                <ArrowRight className="w-[18px] h-[18px]" />
+              </button>
             </div>
-            <span className="relative w-11 h-11 rounded-2xl bg-sky text-pine flex items-center justify-center font-serif font-light text-lg mb-5">
-              I
-            </span>
-            <h4 className="relative text-xl font-serif font-light leading-[0.95] tracking-tight text-ink mb-2.5">
-              Architectural Integrity
-            </h4>
-            <p className="relative text-muted text-sm leading-relaxed">
-              We provide real tactical metrics, redline contract examples, and
-              legal codes. No placeholders or shallow advice blocks.
-            </p>
-          </div>
-          <div className="relative overflow-hidden isolate p-7 border border-line bg-paper rounded-panel text-left">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -right-10 -bottom-12 w-36 h-36 rounded-full bg-sage/60"
-            ></div>
-            <div className="absolute top-7 right-7 px-3 py-1 rounded-full bg-paper/90 border border-line text-[10px] font-sans uppercase tracking-widest text-muted font-bold">
-              Human Performance
-            </div>
-            <span className="relative w-11 h-11 rounded-2xl bg-sage text-pine flex items-center justify-center font-serif font-light text-lg mb-5">
-              II
-            </span>
-            <h4 className="relative text-xl font-serif font-light leading-[0.95] tracking-tight text-ink mb-2.5">
-              Cognitive Science First
-            </h4>
-            <p className="relative text-muted text-sm leading-relaxed">
-              Mental capacity, diagnostic evaluation scores, and nervous system
-              recovery habits drive genuine career longevity.
-            </p>
-          </div>
-          <div className="relative overflow-hidden isolate p-7 border border-line bg-paper rounded-panel text-left">
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -right-10 -bottom-12 w-36 h-36 rounded-full bg-gold/20"
-            ></div>
-            <div className="absolute top-7 right-7 px-3 py-1 rounded-full bg-paper/90 border border-line text-[10px] font-sans uppercase tracking-widest text-muted font-bold">
-              Legacy Design
-            </div>
-            <span className="relative w-11 h-11 rounded-2xl bg-gold/10 text-gold flex items-center justify-center font-serif font-light text-lg mb-5">
-              III
-            </span>
-            <h4 className="relative text-xl font-serif font-light leading-[0.95] tracking-tight text-ink mb-2.5">
-              Multi-Generation Focus
-            </h4>
-            <p className="relative text-muted text-sm leading-relaxed">
-              NIL deals and admission spikes are merely entry gates. We prepare
-              you to build robust, generational wealth offices.
-            </p>
+
+            {/* The rule above the first row is ink rather than grey: it is the
+                ledger's top edge, not a divider between two figures. */}
+            <dl className="m-0 grid grid-cols-1 border-t border-cn-ink sm:grid-cols-2">
+              {ledgerFigures.map((figure, index) => (
+                <div
+                  key={figure.label}
+                  data-cn-reveal
+                  style={{ "--cn-d": index }}
+                  className="cn-reveal border-b border-cn-rule py-10 pr-4 sm:pr-10 sm:even:border-l sm:even:border-cn-rule sm:even:pl-10"
+                >
+                  <dt className="text-cn-sm font-semibold text-cn-ink-2">
+                    {figure.label}
+                  </dt>
+                  <dd className="m-0 mt-3 grid gap-3">
+                    <CountUp
+                      value={figure.value}
+                      className="text-[clamp(4rem,6vw+1rem,7.5rem)] leading-[0.9] font-extrabold tracking-[-0.055em] tabular-nums text-cn-ink"
+                    />
+                    <span className="max-w-[30ch] text-cn-ink-2">
+                      {figure.note}
+                    </span>
+                  </dd>
+                </div>
+              ))}
+            </dl>
           </div>
         </div>
       </section>
 
-      {/* Profile Discovery Segment (Bento Panel) */}
+      {/* "Everything happens in the portal." The design's bento of portal
+          features, directly after the ledger. */}
+      <section id="portal-bento-section" className="cn-section relative z-10">
+        <div className="cn-container">
+          <CobaltSectionHead
+            headingId="portal-bento-heading"
+            heading="Everything happens in the portal."
+            lead="Courses, drills, live classes and rewards, in one place for students and their teachers."
+          />
+          <PortalBento />
+        </div>
+      </section>
+
+      {/* Curated Core Philosophies — the design's ink band, the one dark
+          surface on the page, with its engraved grid fading out downwards. */}
       <section
-        id="pathway-audit-section"
-        className="bg-transparent border-t border-line py-14 md:py-16 px-6"
+        id="philosophies-section"
+        className="cn-section cn-band cn-dark-grid relative isolate overflow-hidden bg-cn-ink"
       >
-        <div className="max-w-6xl mx-auto">
-          <SectionHeading
-            className="mb-12"
-            eyebrow="Custom Diagnostics"
-            heading="Determine Your Cool Nerdz Pathway"
-            subtitle="Select your high-potential profile archetype below and see your recommended developmental curriculum, custom metrics, and action blueprint."
+        <div className="cn-container relative">
+          <CobaltSectionHead
+            tone="ink"
+            headingId="philosophies-heading"
+            heading="Three principles shape every tier."
+            lead="The reasons the curriculum is built the way it is."
+          />
+          <div className="grid grid-cols-1 gap-6 md:grid-cols-3">
+            {[
+              {
+                numeral: "I",
+                title: "Architectural integrity",
+                body: "Real tactical metrics, redline contract examples and the legal codes behind them.",
+              },
+              {
+                numeral: "II",
+                title: "Cognitive science first",
+                body: "Mental capacity, diagnostic scores and nervous system recovery come before tactics.",
+              },
+              {
+                numeral: "III",
+                title: "Multi-generation focus",
+                body: "NIL deals and admissions are entry gates. The goal is a generational wealth office.",
+              },
+            ].map((principle, index) => (
+              <article
+                key={principle.numeral}
+                data-cn-reveal
+                style={{ "--cn-d": index }}
+                className="cn-reveal grid content-start gap-4 rounded-cn-lg border border-cn-ink-line bg-white/[0.04] p-10 text-left transition-[background-color,border-color] duration-200 ease-cn-out hover:border-cn-accent-soft hover:bg-white/[0.07]"
+              >
+                <span className="text-cn-3xl font-extrabold tracking-[-0.02em] text-cn-accent-soft">
+                  {principle.numeral}
+                </span>
+                <h4 className="text-cn-xl font-bold tracking-[-0.015em] text-cn-on-ink">
+                  {principle.title}
+                </h4>
+                <p className="text-cn-on-ink-2">{principle.body}</p>
+              </article>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Profile Discovery Segment — the design's explorer: a tab rail of
+          pathways on the left, the chosen one's panel on the right. */}
+      <section id="pathway-audit-section" className="cn-section relative z-10">
+        <div className="cn-container">
+          <CobaltSectionHead
+            headingId="pathway-audit-heading"
+            heading="Choose your pathway."
+            lead="Pick one to see what it covers and how many courses it holds."
           />
 
           {isPathwaysLoading && (
-            <div className="flex items-center justify-center min-h-[200px] text-muted font-sans uppercase tracking-widest text-xs font-medium">
+            <div className="flex min-h-[200px] items-center justify-center text-cn-sm font-medium text-cn-muted">
               Loading pathways...
             </div>
           )}
 
           {!isPathwaysLoading && pathways.length === 0 && (
-            <div className="flex items-center justify-center min-h-[200px] text-muted font-sans uppercase tracking-widest text-xs font-medium">
+            <div className="flex min-h-[200px] items-center justify-center text-cn-sm font-medium text-cn-muted">
               No pathways published yet — check back soon.
             </div>
           )}
@@ -634,11 +879,11 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
             // than stopping short of it. The list is capped at a page of
             // pathways, so it can only ever overrun the panel slightly — and
             // scrolls within its own column if it does.
-            <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
               {/* Left Selection Columns */}
               <div
                 id="audit-selector-group"
-                className="lg:col-span-4 space-y-3 lg:h-full lg:overflow-y-auto pr-1"
+                className="space-y-1 rounded-cn-lg bg-cn-paper-2 p-2 lg:col-span-4 lg:h-full lg:overflow-y-auto"
               >
                 {pathways.map((pathway) => (
                   <button
@@ -647,30 +892,36 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     type="button"
                     onClick={() => setSelectedPathwayId(pathway.id)}
                     aria-pressed={selectedPathwayId === pathway.id}
-                    className={`w-full text-left p-3 rounded-card border transition-all duration-300 flex items-center gap-3 ${
+                    className={`flex w-full items-center gap-3 rounded-cn-sm border p-3 text-left transition-[background-color,border-color,box-shadow] duration-150 ease-cn-out ${
                       selectedPathwayId === pathway.id
-                        ? "bg-pine/10 border-pine/60 text-ink shadow-soft"
-                        : "bg-paper border-line text-muted hover:bg-porcelain hover:border-pine/30"
+                        ? "border-cn-rule bg-white text-cn-ink shadow-cn-1"
+                        : "border-transparent bg-transparent text-cn-ink-2 hover:bg-white/70 hover:text-cn-ink"
                     }`}
                   >
                     <span
-                      className={`w-9 h-9 rounded-xl flex items-center justify-center shrink-0 transition-colors duration-300 ${
+                      className={`grid h-9 w-9 shrink-0 place-items-center rounded-cn-sm transition-colors duration-150 ${
                         selectedPathwayId === pathway.id
-                          ? "bg-pine text-paper"
-                          : "bg-gold/10 text-gold"
+                          ? "bg-cn-accent text-white"
+                          : "bg-cn-paper-3 text-cn-accent"
                       }`}
                     >
                       <BookOpen className="w-4 h-4" />
                     </span>
-                    <span className="flex flex-col gap-1 min-w-0">
-                      <span className="font-medium text-sm text-ink truncate">
+                    <span className="flex min-w-0 flex-col gap-0.5">
+                      <span
+                        className={`truncate text-cn-sm text-cn-ink ${
+                          selectedPathwayId === pathway.id
+                            ? "font-semibold"
+                            : "font-medium"
+                        }`}
+                      >
                         {pathway.name}
                       </span>
                       <span
-                        className={`font-sans uppercase tracking-widest text-xs font-medium ${
+                        className={`text-cn-sm font-medium ${
                           selectedPathwayId === pathway.id
-                            ? "text-pine"
-                            : "text-muted"
+                            ? "text-cn-accent"
+                            : "text-cn-muted"
                         }`}
                       >
                         {pathway.course_count} Course
@@ -684,29 +935,25 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
               {/* Right Audit Recommendation Container */}
               <div
                 id="audit-results-container"
-                className="lg:col-span-8 bg-paper border border-line rounded-panel p-6 md:p-8 relative overflow-hidden isolate min-h-[380px] flex flex-col justify-between"
+                className="relative isolate flex min-h-[380px] flex-col justify-between overflow-hidden rounded-cn-lg border border-cn-rule bg-white p-6 shadow-cn-2 md:p-10 lg:col-span-8"
               >
-                <div
-                  aria-hidden="true"
-                  className="pointer-events-none absolute -right-20 -top-20 w-72 h-72 rounded-full bg-rose/25 blur-2xl"
-                ></div>
                 <div className="relative">
-                  <div className="flex flex-wrap items-start justify-between gap-4 border-b border-line pb-5 mb-6">
+                  <div className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-cn-rule pb-5">
                     <div className="min-w-0">
-                      <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-sky/60 text-pine font-sans uppercase tracking-widest text-[10px] font-bold mb-2.5">
+                      <span className="mb-2.5 inline-flex items-center gap-1.5 rounded-full bg-cn-paper-3 px-3 py-1 text-cn-xs font-semibold text-cn-accent-3">
                         Recommended Pathway
                       </span>
-                      <h3 className="text-xl md:text-2xl font-serif font-light tracking-tight text-ink">
+                      <h3 className="text-cn-xl font-bold tracking-[-0.015em] text-cn-ink">
                         {recommended.name || "..."}
                       </h3>
                     </div>
                     {!isPriceResolved ? (
                       <span
                         aria-hidden="true"
-                        className="h-8 w-28 rounded-lg bg-porcelain"
+                        className="h-8 w-28 rounded-cn-sm bg-cn-paper-2"
                       />
                     ) : canSeePrice ? (
-                      <div className="bg-gold/15 border border-gold/20 px-3 py-1.5 rounded-lg text-gold font-sans text-sm font-semibold">
+                      <div className="rounded-cn-sm bg-cn-paper-3 px-3 py-1.5 text-cn-sm font-bold tracking-[-0.02em] text-cn-accent-3 tabular-nums">
                         {formatCoursePrice(recommended.base_price)} Bundle
                       </div>
                     ) : (
@@ -714,7 +961,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                         id="btn-recommendation-price"
                         type="button"
                         onClick={() => setIsPriceSignInOpen(true)}
-                        className="flex items-center gap-2 rounded-lg border border-dashed border-gold/40 bg-gold/10 px-3 py-1.5 font-sans text-xs font-semibold text-gold transition hover:bg-gold/20"
+                        className="flex items-center gap-2 rounded-cn-sm border border-dashed border-cn-accent-soft bg-cn-paper-3 px-3 py-1.5 text-cn-xs font-semibold text-cn-accent transition-colors duration-150 hover:bg-cn-paper-4"
                       >
                         <Lock aria-hidden="true" className="h-3.5 w-3.5" />
                         Sign in to view price
@@ -724,7 +971,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
 
                   {/* At a glance, in place of the comma-joined dump of every
                       course title this panel used to open with. */}
-                  <dl className="mb-6 grid grid-cols-3 divide-x divide-line rounded-card border border-line bg-porcelain/60">
+                  <dl className="mb-6 grid grid-cols-3 divide-x divide-cn-rule overflow-hidden rounded-cn border border-cn-rule bg-cn-paper-2">
                     <PathwayFact
                       label="Courses"
                       value={recommended.course_count ?? pathwayCourses.length}
@@ -749,7 +996,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                   </dl>
 
                   <div className="mb-7">
-                    <p className="font-sans uppercase text-muted tracking-widest text-xs font-medium mb-3">
+                    <p className="mb-3 text-cn-xs font-semibold tracking-widest text-cn-muted uppercase">
                       What this pathway covers
                     </p>
                     {recommendedParagraphs.length > 0 ? (
@@ -759,8 +1006,8 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                             key={index}
                             className={
                               index === 0
-                                ? "text-[15px] leading-relaxed text-ink/90"
-                                : "text-sm leading-relaxed text-muted"
+                                ? "text-[15px] leading-relaxed text-cn-ink-2"
+                                : "text-cn-sm leading-relaxed text-cn-muted"
                             }
                           >
                             {paragraph}
@@ -768,7 +1015,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                         ))}
                       </div>
                     ) : (
-                      <p className="text-sm text-muted">
+                      <p className="text-cn-sm text-cn-muted">
                         Loading pathway details...
                       </p>
                     )}
@@ -776,12 +1023,13 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
 
                   <div>
                     <div className="mb-3 flex items-baseline justify-between gap-3">
-                      <p className="font-sans uppercase text-muted tracking-widest text-xs font-medium">
+                      <p className="text-cn-xs font-semibold tracking-widest text-cn-muted uppercase">
                         Where you start
                       </p>
                       {previewCourses.length > 0 && (
-                        <span className="font-sans text-[11px] text-muted tabular-nums">
-                          First {previewCourses.length} of {pathwayCourses.length}
+                        <span className="text-cn-xs text-cn-muted tabular-nums">
+                          First {previewCourses.length} of{" "}
+                          {pathwayCourses.length}
                         </span>
                       )}
                     </div>
@@ -791,24 +1039,24 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                         {previewCourses.map(({ course }, index) => (
                           <li
                             key={course.id}
-                            className="flex items-center gap-3 rounded-xl border border-line bg-porcelain/50 px-3.5 py-2.5"
+                            className="flex items-center gap-3 rounded-cn-sm bg-cn-paper-2 px-3.5 py-2.5"
                           >
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-pine/10 font-sans text-[11px] font-bold text-pine tabular-nums">
+                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-cn-paper-3 text-[11px] font-bold text-cn-accent tabular-nums">
                               {String(index + 1).padStart(2, "0")}
                             </span>
                             <span
                               title={course.title}
-                              className="min-w-0 flex-1 truncate text-sm text-ink"
+                              className="min-w-0 flex-1 truncate text-cn-sm text-cn-ink"
                             >
                               {course.title}
                             </span>
-                            <ShieldCheck className="h-4 w-4 shrink-0 text-pine/70" />
+                            <ShieldCheck className="h-4 w-4 shrink-0 text-cn-accent" />
                           </li>
                         ))}
                       </ol>
                     ) : (
-                      <p className="flex items-center gap-2.5 text-sm text-muted">
-                        <BookOpen className="h-4 w-4 shrink-0 text-muted/70" />
+                      <p className="flex items-center gap-2.5 text-cn-sm text-cn-muted">
+                        <BookOpen className="h-4 w-4 shrink-0 text-cn-muted" />
                         No courses attached to this pathway yet.
                       </p>
                     )}
@@ -817,7 +1065,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       <Link
                         id="link-recommendation-full-curriculum"
                         href={`${ROUTES.PATHWAYS}/${recommended.slug}`}
-                        className="mt-3.5 inline-flex items-center gap-1.5 font-sans text-[11px] font-semibold uppercase tracking-widest text-moss transition-all hover:gap-2.5 hover:text-pine"
+                        className="mt-3.5 inline-flex items-center gap-1.5 text-cn-sm font-semibold text-cn-accent transition-all duration-150 hover:gap-2.5 hover:underline"
                       >
                         +{remainingCourseCount} more course
                         {remainingCourseCount === 1 ? "" : "s"} · See the full
@@ -828,8 +1076,8 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                   </div>
                 </div>
 
-                <div className="relative border-t border-line pt-6 mt-8 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                  <span className="text-muted text-sm font-light">
+                <div className="relative mt-8 flex flex-col items-start justify-between gap-4 border-t border-cn-rule pt-6 sm:flex-row sm:items-center">
+                  <span className="text-cn-sm text-cn-muted">
                     Licensed across 40+ educational administrations. Verified
                     athletic and academic compliance.
                   </span>
@@ -837,10 +1085,10 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     id="btn-recommendation-cta"
                     type="button"
                     onClick={onStartOnboarding}
-                    className="bg-pine hover:bg-moss text-paper text-sm font-semibold px-5 py-2.5 rounded-full flex items-center gap-1.5 transition duration-350 shrink-0 shadow-sm"
+                    className="inline-flex h-11 shrink-0 items-center gap-2 rounded-cn-sm bg-cn-accent px-4 text-cn-sm font-semibold text-white transition-[background-color,transform] duration-150 ease-cn-out hover:-translate-y-px hover:bg-cn-accent-2"
                   >
                     Explore {recommended.name || "This Pathway"}
-                    <Zap className="w-3.5 h-3.5 text-gold" />
+                    <Zap className="w-3.5 h-3.5" />
                   </button>
                 </div>
               </div>
@@ -863,13 +1111,13 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           />
 
           {isPathwaysLoading && (
-            <div className="flex items-center justify-center min-h-[200px] text-muted font-sans uppercase tracking-widest text-xs font-medium">
+            <div className="flex items-center justify-center min-h-[200px] text-muted font-sans uppercase tracking-widest text-cn-xs font-medium">
               Loading pathways...
             </div>
           )}
 
           {!isPathwaysLoading && pathways.length === 0 && (
-            <div className="flex items-center justify-center min-h-[200px] text-muted font-sans uppercase tracking-widest text-xs font-medium">
+            <div className="flex items-center justify-center min-h-[200px] text-muted font-sans uppercase tracking-widest text-cn-xs font-medium">
               No pathways published yet — check back soon.
             </div>
           )}
@@ -908,7 +1156,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       <h3 className="relative mt-6 font-serif text-xl font-light leading-[1.15] tracking-tight text-ink line-clamp-2 transition-colors duration-300 group-hover:text-moss">
                         {pathway.name}
                       </h3>
-                      <p className="relative mt-2.5 text-sm font-light leading-relaxed text-muted line-clamp-3">
+                      <p className="relative mt-2.5 text-cn-sm font-light leading-relaxed text-muted line-clamp-3">
                         {pathway.summary ||
                           "A guided sequence of courses drawn from the 9-tier curriculum."}
                       </p>
@@ -919,11 +1167,11 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                             <Layers className="h-3.5 w-3.5" />
                             {courseCount} Course{courseCount === 1 ? "" : "s"}
                           </span>
-                          <span className="ml-auto font-sans text-base font-semibold text-ink">
+                          <span className="ml-auto font-sans text-cn-base font-semibold text-ink">
                             {formatCoursePrice(pathway.base_price)}
                           </span>
                         </div>
-                        <span className="mt-4 flex items-center gap-1.5 text-xs font-sans font-semibold uppercase tracking-widest text-moss">
+                        <span className="mt-4 flex items-center gap-1.5 text-cn-xs font-sans font-semibold uppercase tracking-widest text-moss">
                           Explore Pathway
                           <ArrowRight className="h-3.5 w-3.5 transition-transform duration-300 group-hover:translate-x-1" />
                         </span>
@@ -938,7 +1186,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                   id="btn-view-all-pathways"
                   type="button"
                   onClick={onExplorePathways}
-                  className="inline-flex items-center gap-2 rounded-full border border-line bg-paper px-8 py-3.5 text-sm font-semibold tracking-wide text-ink transition duration-300 hover:bg-porcelain"
+                  className="inline-flex items-center gap-2 rounded-full border border-line bg-paper px-8 py-3.5 text-cn-sm font-semibold tracking-wide text-ink transition duration-300 hover:bg-porcelain"
                 >
                   View All Pathways
                   <ArrowRight className="h-4 w-4" />
@@ -954,44 +1202,45 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       {/* Cinematic Walkthrough Broadcast Section */}
       <section
         id="cinematic-walkthrough-section"
-        className="bg-transparent border-t border-line py-14 md:py-16 px-6 relative z-10"
+        className="cn-section relative z-10"
       >
-        <div className="max-w-6xl mx-auto">
-          <SectionHeading
-            className="mb-10"
-            eyebrow="Multi-Channel Orientation Broadcast"
-            heading="Step Inside the Academy Briefing Room"
-            subtitle="Explore the interactive dashboard, browse core orientation channels, and auto-track high-compliance transcript decoders with Amanda Ross, Esq. and Dr. Simone Chen."
+        <div className="cn-container">
+          <CobaltSectionHead
+            headingId="briefing-room-heading"
+            heading="Step inside the briefing room."
+            lead="Sixteen minutes from the founder on how the academy works."
           />
 
-          <IntroVideo />
+          <div data-cn-reveal className="cn-reveal">
+            <IntroVideo />
+          </div>
         </div>
       </section>
 
       {/* Inline Academy live advisor interactive board */}
       <section
         id="live-advisors-consultation-section"
-        className="bg-transparent border-t border-line py-14 md:py-16 px-6 relative overflow-hidden z-10"
+        className="cn-section relative z-10 overflow-hidden"
       >
         <div
           id="inline-consult-glow"
-          className="absolute -top-12 -left-12 w-80 h-80 rounded-full bg-gold/10 blur-[100px] pointer-events-none"
+          aria-hidden="true"
+          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_38%_52%_at_8%_48%,var(--color-cn-paper-3),transparent_70%)]"
         ></div>
-        <div className="max-w-6xl mx-auto space-y-10 relative z-10">
-          <SectionHeading
-            eyebrow="Live Consulting Board"
-            heading="Connect With the Senior Advisory Council"
-            headingClassName="text-3xl md:text-4xl font-serif font-light leading-[0.92] tracking-tight text-ink"
-            subtitle="Formulate a custom strategic curriculum roadmap in real-time. Describe your targets and get advice back from our leading advisors immediately."
+        <div className="cn-container relative z-10 space-y-12">
+          <CobaltSectionHead
+            headingId="advisory-council-heading"
+            heading="Ask the senior advisory council."
+            lead="Choose what you need help with. The right specialist reads your question and replies to you privately."
           />
 
-          <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
             {/* Advisor Avatars selector */}
-            <div className="lg:col-span-5 space-y-4">
-              <label className="text-xs font-sans uppercase text-muted tracking-widest block text-left font-medium">
+            <div className="space-y-4 lg:col-span-5">
+              <label className="block text-left text-cn-xs font-semibold tracking-widest text-cn-muted uppercase">
                 Choose Direct Session Advisor
               </label>
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                 {ADVISOR_PERSONAS.map((advisor, advisorIdx) => (
                   <button
                     id={`consult-advisor-btn-${advisor.id}`}
@@ -1000,36 +1249,36 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       setSelectedConsultAdvisorId(advisor.id);
                       setConsultAdvice("");
                     }}
-                    className={`relative overflow-hidden isolate p-4 rounded-card text-left border transition-all duration-300 flex flex-col gap-3 cursor-pointer ${
+                    className={`relative isolate flex cursor-pointer flex-col gap-3 overflow-hidden rounded-cn-lg border p-5 text-left transition-[background-color,border-color,box-shadow,transform] duration-200 ease-cn-out ${
                       selectedConsultAdvisorId === advisor.id
-                        ? "bg-pine/10 border-pine text-ink shadow-elevated"
-                        : "bg-paper border-line text-muted hover:bg-porcelain hover:border-pine/30"
+                        ? "border-cn-accent bg-white text-cn-ink shadow-cn-3"
+                        : "border-cn-rule bg-white text-cn-ink-2 shadow-cn-1 hover:-translate-y-1 hover:shadow-cn-2"
                     }`}
                   >
                     <div
                       aria-hidden="true"
-                      className={`pointer-events-none absolute -right-8 -bottom-10 w-28 h-28 rounded-full opacity-70 ${ADVISOR_TINTS[advisorIdx % ADVISOR_TINTS.length]}`}
+                      className={`pointer-events-none absolute -right-10 -bottom-12 h-32 w-32 rounded-full blur-2xl ${ADVISOR_TINTS[advisorIdx % ADVISOR_TINTS.length]}`}
                     ></div>
                     <div className="relative flex items-start gap-3">
                       <img
                         src={advisor.avatar}
                         alt={advisor.name}
-                        className="w-11 h-11 rounded-full border border-line object-cover bg-porcelain shrink-0"
+                        className="h-11 w-11 shrink-0 rounded-full border border-cn-rule bg-cn-paper-2 object-cover"
                         referrerPolicy="no-referrer"
                       />
                       <div className="min-w-0">
-                        <p className="text-base font-black text-ink leading-tight">
+                        <p className="text-cn-base leading-tight font-bold tracking-[-0.015em] text-cn-ink">
                           {advisor.name}
                         </p>
-                        <p className="text-[11px] font-sans uppercase text-muted mt-0.5 tracking-widest leading-snug font-medium">
+                        <p className="mt-0.5 text-cn-xs leading-snug text-cn-muted">
                           {advisor.title.split("&")[0]}
                         </p>
                       </div>
                     </div>
-                    <span className="relative self-start max-w-full truncate px-2.5 py-1 rounded-full bg-paper/85 border border-line text-[9px] font-sans uppercase tracking-widest text-muted font-bold">
+                    <span className="relative max-w-full self-start truncate rounded-full bg-cn-paper-3 px-2.5 py-1 text-cn-xs font-semibold text-cn-accent-3">
                       {advisor.specialty.split(",")[0]}
                     </span>
-                    <p className="relative text-xs text-muted italic leading-relaxed line-clamp-2">
+                    <p className="relative line-clamp-2 text-cn-xs leading-relaxed text-cn-muted italic">
                       &quot;{advisor.quote}&quot;
                     </p>
                   </button>
@@ -1038,13 +1287,13 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
             </div>
 
             {/* Consultation Panel & Feedback Reports */}
-            <div className="lg:col-span-7 bg-ink border border-white/10 rounded-panel p-6 md:p-8 space-y-6">
-              <div className="space-y-2 text-left">
-                <div className="flex justify-between items-center bg-white/5 p-1 rounded-md">
-                  <span className="text-xs font-sans uppercase text-sage/70 tracking-widest block font-bold">
+            <div className="cn-dark-grid relative isolate space-y-6 overflow-hidden rounded-cn-lg bg-cn-ink p-6 shadow-cn-3 md:p-10 lg:col-span-7">
+              <div className="relative space-y-2 text-left">
+                <div className="flex items-center justify-between gap-3 rounded-cn-sm bg-white/5 px-3 py-2">
+                  <span className="block text-cn-xs font-semibold tracking-widest text-cn-on-ink-2 uppercase">
                     Configure Your Custom Scenario
                   </span>
-                  <span className="text-xs font-sans uppercase text-gold font-semibold tracking-widest">
+                  <span className="text-cn-xs font-semibold tracking-widest text-cn-accent-soft uppercase">
                     Active Session
                   </span>
                 </div>
@@ -1056,17 +1305,17 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     value={consultQuery}
                     onChange={(e) => setConsultQuery(e.target.value)}
                     placeholder={`e.g., I am an aspiring independent developer looking to structure simple seed-funding parameters. Which core tiers and steps do I need to prevent venture dilution?`}
-                    className="w-full bg-white/5 border border-white/10 rounded-xl p-4 text-base font-sans text-paper placeholder-sage/40 focus:outline-none focus:border-gold focus:bg-white/10 leading-relaxed resize-none"
+                    className="w-full resize-none rounded-cn border border-cn-ink-line bg-white/5 p-4 text-cn-base leading-relaxed text-white placeholder-white/35 focus:border-cn-accent-soft focus:bg-white/10 focus:outline-none"
                   />
-                  <div className="absolute bottom-3 right-3 text-[11px] font-sans text-sage/50 select-none">
+                  <div className="absolute right-3 bottom-3 text-cn-xs text-white/40 select-none">
                     {consultQuery.length} chars
                   </div>
                 </div>
               </div>
 
               {/* Suggestions pills */}
-              <div className="space-y-2 text-left">
-                <span className="text-[11px] font-sans uppercase text-sage/60 tracking-widest block font-semibold">
+              <div className="relative space-y-2 text-left">
+                <span className="block text-cn-xs font-semibold tracking-widest text-cn-on-ink-2 uppercase">
                   Suggested Inquiries:
                 </span>
                 <div className="flex flex-wrap gap-2">
@@ -1079,7 +1328,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       id={`consult-preset-btn-${pIdx}`}
                       key={pIdx}
                       onClick={() => setConsultQuery(preset)}
-                      className="bg-white/5 hover:bg-white/10 text-sage/70 hover:text-paper border border-white/10 hover:border-white/20 text-xs px-3.5 py-1.5 rounded-lg transition text-left cursor-pointer"
+                      className="cursor-pointer rounded-cn-sm border border-cn-ink-line bg-white/5 px-3.5 py-2 text-left text-cn-xs text-cn-on-ink-2 transition-colors duration-150 hover:border-cn-accent-soft hover:bg-white/10 hover:text-white"
                     >
                       {preset}
                     </button>
@@ -1088,16 +1337,16 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
               </div>
 
               {/* Submit trigger */}
-              <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 pt-2 border-t border-white/10">
-                <div className="flex items-center gap-2 text-left text-sage/60 text-xs">
-                  <Sparkles className="w-4 h-4 text-gold shrink-0 select-none" />
+              <div className="relative flex flex-col items-start justify-between gap-4 border-t border-cn-ink-line pt-4 sm:flex-row sm:items-center">
+                <div className="flex items-center gap-2 text-left text-cn-xs text-cn-on-ink-2">
+                  <Sparkles className="w-4 h-4 text-cn-accent-soft shrink-0 select-none" />
                   <span>Secure satellite routing active</span>
                 </div>
                 <button
                   id="consult-submit-query-btn"
                   onClick={handleSpeakToConsultAdvisor}
                   disabled={isConsulting || !consultQuery.trim()}
-                  className="w-full sm:w-auto bg-gold hover:brightness-95 disabled:opacity-40 text-ink text-base font-sans font-extrabold uppercase tracking-widest py-3 px-6 rounded-xl transition flex items-center justify-center gap-2 cursor-pointer shadow-md"
+                  className="inline-flex h-[50px] w-full cursor-pointer items-center justify-center gap-2 rounded-cn-sm bg-cn-accent px-6 text-cn-base font-semibold text-white transition-[background-color,transform] duration-150 ease-cn-out hover:-translate-y-px hover:bg-cn-accent-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 sm:w-auto"
                 >
                   {isConsulting
                     ? "Analyzing Parameters..."
@@ -1114,13 +1363,13 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 12 }}
                     id="consult-output-result"
-                    className="bg-white/5 border border-white/10 rounded-xl p-5 relative overflow-hidden text-left shadow-inner"
+                    className="relative overflow-hidden rounded-cn border border-cn-ink-line bg-white/5 p-5 text-left"
                   >
-                    <div className="absolute top-0 left-0 w-1 bg-gold h-full"></div>
+                    <div className="absolute top-0 left-0 h-full w-1 bg-cn-accent"></div>
 
-                    <div className="flex justify-between items-center border-b border-white/10 pb-3 mb-4">
-                      <p className="text-xs font-sans uppercase tracking-widest text-sage/60 flex items-center gap-2">
-                        <Award className="w-4 h-4 text-gold" />
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-cn-ink-line pb-3">
+                      <p className="flex items-center gap-2 text-cn-xs tracking-widest text-cn-on-ink-2 uppercase">
+                        <Award className="w-4 h-4 text-cn-accent-soft" />
                         Formal analysis by{" "}
                         {
                           ADVISOR_PERSONAS.find(
@@ -1128,7 +1377,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                           )?.name
                         }
                       </p>
-                      <span className="text-[11px] font-sans uppercase bg-white/10 text-gold border border-gold/20 px-2 py-0.5 rounded tracking-widest">
+                      <span className="rounded-full border border-cn-accent-soft/40 bg-white/10 px-2.5 py-0.5 text-cn-xs font-semibold tracking-widest text-cn-accent-soft uppercase">
                         REPORT ACTIVE
                       </span>
                     </div>
@@ -1136,7 +1385,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     {isConsulting ? (
                       <div className="flex flex-col items-center justify-center py-10 space-y-3">
                         <PingDotSpinner />
-                        <p className="text-base font-sans text-sage/60 animate-pulse tracking-wide">
+                        <p className="animate-pulse text-cn-base tracking-wide text-cn-on-ink-2">
                           {isConsultReplySlow
                             ? "STILL CONNECTING TO THE DESK..."
                             : "SECURE LINK PIPELINE CONFIGURED..."}
@@ -1147,17 +1396,17 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                         <MarkdownMiniRenderer text={consultAdvice} size="lg" />
 
                         {/* Interactive dynamic matching callback anchors inside advisor response */}
-                        <div className="border-t border-white/10 pt-4 mt-3 flex flex-col sm:flex-row items-center justify-between gap-3 text-sage/60 text-sm">
-                          <span className="font-sans text-sage/60">
+                        <div className="mt-3 flex flex-col items-center justify-between gap-3 border-t border-cn-ink-line pt-4 text-cn-sm sm:flex-row">
+                          <span className="text-cn-on-ink-2">
                             Need immediate execution? Visit our syllabus tier
                             files.
                           </span>
                           <button
                             onClick={onExploreTiers}
-                            className="bg-gold text-ink hover:brightness-95 font-sans text-xs uppercase font-bold py-1.5 px-4 rounded-md transition flex items-center gap-1.5 cursor-pointer tracking-widest"
+                            className="inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-cn-sm bg-white px-4 text-cn-xs font-semibold text-cn-accent-3 transition-transform duration-150 ease-cn-out hover:-translate-y-px"
                           >
                             Browse Curriculum File Tiers
-                            <ArrowRight className="w-3 h-3 text-ink" />
+                            <ArrowRight className="w-3 h-3" />
                           </button>
                         </div>
                       </div>
@@ -1171,33 +1420,30 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       </section>
 
       {/* FAQ Section */}
-      <section
-        id="faq-section"
-        className="py-14 md:py-16 px-6 border-t border-line bg-transparent relative z-10"
-      >
-        <div className="max-w-6xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-12 items-start">
+      <section id="faq-section" className="cn-section relative z-10">
+        <div className="cn-container grid grid-cols-1 items-start gap-10 lg:grid-cols-12 lg:gap-6">
           {/* Left Column: Heading and Badge */}
-          <div className="lg:col-span-5 space-y-4 lg:sticky lg:top-24">
-            <span className="text-gold font-sans uppercase tracking-widest text-xs font-medium block">
+          <div className="space-y-4 lg:sticky lg:top-[calc(var(--cn-nav-h)+40px)] lg:col-span-5">
+            <span className="block text-cn-xs font-semibold tracking-widest text-cn-accent uppercase">
               Institutional FAQ
             </span>
-            <h2 className="text-3xl md:text-4xl font-serif font-light leading-[0.92] tracking-tight text-ink mb-2">
+            <h2 className="mb-2 max-w-[18ch] text-cn-2xl font-extrabold tracking-[-0.035em] text-balance text-cn-ink">
               Syllabus & Partnership Intelligence
             </h2>
-            <p className="text-muted text-sm font-light leading-relaxed">
+            <p className="max-w-[44ch] leading-relaxed text-pretty text-cn-ink-2">
               Have specific inquiries regarding Cool Nerdz&apos;s curriculum
               modules, security compliance pathways, and school licensing
               structures? Review our comprehensive advisory dossier.
             </p>
-            <div className="pt-6 border-t border-line flex items-center gap-3">
-              <div className="w-9 h-9 rounded-full bg-gold/10 flex items-center justify-center text-gold shrink-0">
+            <div className="flex items-center gap-3 border-t border-cn-rule pt-6">
+              <div className="grid h-11 w-11 shrink-0 place-items-center rounded-cn-sm bg-cn-paper-3 text-cn-accent">
                 <HelpCircle className="w-5 h-5" />
               </div>
               <div className="text-left">
-                <p className="text-sm font-sans text-ink font-bold uppercase tracking-widest">
+                <p className="text-cn-sm font-bold text-cn-ink">
                   Direct Consultation Portal
                 </p>
-                <p className="text-xs text-muted font-light mt-0.5">
+                <p className="mt-0.5 text-cn-sm text-cn-muted">
                   Need customized criteria evaluations? Utilize our live
                   advisors or our virtual concierge chat desk below.
                 </p>
@@ -1206,25 +1452,33 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           </div>
 
           {/* Right Column: Accordion Questions */}
-          <div className="lg:col-span-7 space-y-4">
+          <div className="space-y-3 lg:col-span-7">
             {INDEX_FAQ_ITEMS.map((item, idx) => {
               const isOpen = activeFaqIndex === idx;
               return (
                 <div
                   key={idx}
                   id={`faq-item-${idx}`}
-                  className="bg-paper border border-line rounded-panel overflow-hidden transition-all duration-300 hover:border-pine/30"
+                  className={`overflow-hidden rounded-cn border bg-white transition-[border-color,box-shadow] duration-200 ease-cn-out ${
+                    isOpen
+                      ? "border-cn-paper-4 shadow-cn-2"
+                      : "border-cn-rule hover:border-cn-rule-strong"
+                  }`}
                 >
                   <button
                     id={`faq-trigger-${idx}`}
                     onClick={() => setActiveFaqIndex(isOpen ? null : idx)}
-                    className="w-full py-5 px-6 flex items-center justify-between text-left gap-4 transition-colors hover:text-pine"
+                    className="flex w-full items-center justify-between gap-6 px-6 py-5 text-left"
                   >
-                    <span className="font-serif text-sm md:text-base font-light tracking-tight text-ink">
+                    <span className="text-cn-base font-semibold tracking-[-0.01em] text-cn-ink">
                       {item.question}
                     </span>
                     <span
-                      className={`w-8 h-8 rounded-full bg-porcelain border border-line flex items-center justify-center shrink-0 text-muted transition-transform duration-300 ${isOpen ? "rotate-180 text-gold border-gold/20 bg-gold/5" : ""}`}
+                      className={`grid h-8 w-8 shrink-0 place-items-center rounded-full transition-transform duration-200 ease-cn-out ${
+                        isOpen
+                          ? "rotate-180 bg-cn-accent text-white"
+                          : "bg-cn-paper-3 text-cn-accent"
+                      }`}
                     >
                       <ChevronDown className="w-4 h-4" />
                     </span>
@@ -1238,7 +1492,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                         exit={{ height: 0, opacity: 0 }}
                         transition={{ duration: 0.25, ease: "easeInOut" }}
                       >
-                        <div className="pb-6 px-6 font-sans text-sm md:text-sm text-muted leading-relaxed border-t border-line pt-4 bg-porcelain/40 select-text">
+                        <div className="max-w-[65ch] px-6 pt-4 pb-6 text-cn-sm leading-relaxed text-cn-ink-2 select-text">
                           {item.answer}
                         </div>
                       </motion.div>
@@ -1252,54 +1506,53 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       </section>
 
       {/* Closing Enrollment CTA */}
-      <section
-        id="enrollment-cta-section"
-        className="py-14 md:py-16 px-6 relative z-10"
-      >
-        <div className="max-w-6xl mx-auto">
+      <section id="enrollment-cta-section" className="cn-section relative z-10">
+        <div className="cn-container">
+          {/* The design's closing panel: the page's one full cobalt field,
+              lit by a dot pattern that fades in from the left. */}
           <div
             id="enrollment-cta-card"
-            className="relative overflow-hidden isolate bg-ink border border-white/10 rounded-panel p-10 md:p-14 shadow-elevated"
+            data-cn-reveal
+            className="cn-reveal cn-cta-dots relative isolate overflow-hidden rounded-cn-xl bg-cn-accent px-6 py-16 shadow-cn-3 md:px-16 md:py-24"
           >
-            <div
+            {/* The design's watermark: the mark bled off the bottom-right
+                corner at low opacity, under the dot field and the copy. */}
+            <img
+              src="/images/design/mark-white.png"
+              alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute -right-24 -top-24 w-96 h-96 rounded-full bg-clay/25 blur-[110px]"
-            ></div>
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -left-16 -bottom-24 w-72 h-72 rounded-full bg-pine/40 blur-[100px]"
-            ></div>
+              width={300}
+              height={367}
+              className="pointer-events-none absolute -right-[30px] -bottom-[60px] w-[300px] opacity-[0.16]"
+            />
 
-            <div className="relative flex flex-col lg:flex-row items-start lg:items-center justify-between gap-10">
-              <div className="max-w-xl text-left">
-                <span className="inline-flex px-3 py-1 rounded-full bg-white/10 border border-white/10 text-gold font-sans uppercase tracking-widest text-[11px] font-bold mb-5">
-                  Early Access Cohort
-                </span>
-                <h2 className="text-3xl md:text-5xl font-serif font-light leading-[0.92] tracking-tight text-paper mb-5">
-                  Begin Your Ascent Through the 9 Tiers.
+            <div className="relative grid items-end gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+              <div>
+                <h2 className="max-w-[14ch] text-cn-section font-extrabold tracking-[-0.035em] text-cn-on-ink">
+                  Begin your ascent through the 9 tiers.
                 </h2>
-                <p className="text-sage/70 text-sm md:text-base leading-relaxed">
-                  Join student-athletes, scholars, and entrepreneurial
-                  pathfinders already building their legacy portfolio, with the
-                  Senior Advisory Council one message away.
+                <p className="mt-4 text-cn-lg leading-[1.55] text-cn-on-ink-2">
+                  Apply once. An advisor places you in the right pathway.
                 </p>
               </div>
 
-              <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full lg:w-auto shrink-0">
+              <div className="flex flex-wrap gap-3 lg:justify-end">
                 <button
                   id="btn-cta-start-onboarding"
+                  type="button"
                   onClick={onStartOnboarding}
-                  className="w-full sm:w-auto bg-gold hover:brightness-95 text-ink font-sans font-extrabold uppercase tracking-widest text-sm px-8 py-4 rounded-full flex items-center justify-center gap-2 transition duration-300 shadow-md"
+                  className="inline-flex h-[50px] items-center justify-center gap-2 rounded-cn-sm bg-white px-6 text-cn-base font-semibold text-cn-accent-3 transition-transform duration-150 ease-cn-out hover:-translate-y-px"
                 >
-                  Start Your Onboarding
-                  <ArrowRight className="w-4 h-4" />
+                  Start your application
+                  <ArrowRight className="w-[18px] h-[18px]" />
                 </button>
                 <button
                   id="btn-cta-explore-curriculum"
+                  type="button"
                   onClick={onExploreTiers}
-                  className="w-full sm:w-auto bg-white/5 hover:bg-white/10 text-paper border border-white/15 font-sans font-semibold uppercase tracking-widest text-sm px-8 py-4 rounded-full transition duration-300"
+                  className="inline-flex h-[50px] items-center justify-center rounded-cn-sm border border-white/30 bg-white/12 px-6 text-cn-base font-semibold text-white transition-colors duration-150 ease-cn-out hover:bg-white/20"
                 >
-                  Browse Curriculum
+                  Browse the curriculum
                 </button>
               </div>
             </div>
@@ -1319,18 +1572,18 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
               animate={{ opacity: 1, scale: 1, y: 0 }}
               exit={{ opacity: 0, scale: 0.9, y: 35 }}
               id="concierge-chat-panel"
-              className="w-[320px] sm:w-[380px] md:w-[410px] h-[520px] bg-ink border border-white/10 shadow-2xl rounded-panel flex flex-col justify-between overflow-hidden relative mb-4"
+              className="relative mb-4 flex h-[520px] w-[320px] flex-col justify-between overflow-hidden rounded-cn-lg bg-cn-ink shadow-cn-3 sm:w-[380px] md:w-[410px]"
             >
               {/* Header block with selected advisor */}
-              <div className="bg-black/20 border-b border-white/10 px-4 py-3 flex items-center justify-between shrink-0">
+              <div className="flex shrink-0 items-center justify-between border-b border-cn-ink-line bg-black/20 px-4 py-3">
                 <div className="flex items-center gap-2.5">
-                  <div className="w-2.5 h-2.5 bg-emerald-500 rounded-full animate-pulse shrink-0"></div>
-                  <div className="text-left min-w-0">
-                    <p className="text-sm font-extrabold text-paper font-serif uppercase tracking-wider flex items-center gap-1.5 truncate">
-                      <Sparkles className="w-3.5 h-3.5 text-gold shrink-0" />
+                  <div className="cn-livedot h-2.5 w-2.5 shrink-0 rounded-full bg-cn-live"></div>
+                  <div className="min-w-0 text-left">
+                    <p className="flex items-center gap-1.5 truncate text-cn-sm font-bold tracking-[-0.01em] text-white">
+                      <Sparkles className="w-3.5 h-3.5 text-cn-accent-soft shrink-0" />
                       Academy AI Desk
                     </p>
-                    <p className="text-[10px] font-sans uppercase text-sage/50 tracking-wide truncate">
+                    <p className="truncate text-cn-xs text-cn-on-ink-2">
                       Live dispatch connection
                     </p>
                   </div>
@@ -1353,14 +1606,14 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       ]);
                     }}
                     title="Reset advisor briefing channel"
-                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-sage/60 hover:text-paper hover:bg-white/10 cursor-pointer transition"
+                    className="grid h-8 w-8 cursor-pointer place-items-center rounded-cn-sm border border-cn-ink-line bg-white/5 text-cn-on-ink-2 transition-colors duration-150 hover:bg-white/10 hover:text-white"
                   >
                     <RefreshCw className="w-3.5 h-3.5" />
                   </button>
                   <button
                     id="close-concierge-chat-btn"
                     onClick={() => setIsChatOpen(false)}
-                    className="w-7 h-7 flex items-center justify-center rounded-lg bg-white/5 border border-white/10 text-sage/60 hover:text-paper hover:bg-white/10 cursor-pointer transition"
+                    className="grid h-8 w-8 cursor-pointer place-items-center rounded-cn-sm border border-cn-ink-line bg-white/5 text-cn-on-ink-2 transition-colors duration-150 hover:bg-white/10 hover:text-white"
                   >
                     <X className="w-3.5 h-3.5" />
                   </button>
@@ -1368,16 +1621,16 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
               </div>
 
               {/* Chat Advisor Tab strip selector */}
-              <div className="bg-white/5 border-b border-white/10 p-2 flex gap-1.5 overflow-x-auto shrink-0 scrollbar-none items-center justify-start">
+              <div className="flex shrink-0 items-center justify-start gap-1.5 overflow-x-auto border-b border-cn-ink-line bg-white/5 p-2 scrollbar-none">
                 {ADVISOR_PERSONAS.map((adv) => (
                   <button
                     id={`chat-strip-btn-${adv.id}`}
                     key={adv.id}
                     onClick={() => setSelectedChatAdvisorId(adv.id)}
-                    className={`px-2 py-1 rounded-lg text-[10px] font-sans uppercase tracking-widest shrink-0 transition flex items-center gap-1 cursor-pointer ${
+                    className={`flex shrink-0 cursor-pointer items-center gap-1.5 rounded-cn-sm border px-2 py-1 text-cn-xs font-semibold transition-colors duration-150 ${
                       selectedChatAdvisorId === adv.id
-                        ? "bg-gold/15 border border-gold/20 text-gold"
-                        : "bg-black/20 border border-white/10 text-sage/60 hover:text-paper"
+                        ? "border-cn-accent-soft/40 bg-cn-accent/25 text-white"
+                        : "border-cn-ink-line bg-black/20 text-cn-on-ink-2 hover:text-white"
                     }`}
                   >
                     <img
@@ -1392,7 +1645,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
               </div>
 
               {/* Message scroll area pane */}
-              <div className="flex-1 overflow-y-auto p-4 space-y-4 bg-black/10 select-text">
+              <div className="flex-1 space-y-4 overflow-y-auto bg-black/10 p-4 select-text">
                 {chatMessages.map((msg) => (
                   <div
                     key={msg.id}
@@ -1406,16 +1659,16 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                           )?.avatar
                         }
                         alt="Advisor"
-                        className="w-7 h-7 rounded-full object-cover shrink-0 border border-white/10 bg-ink mt-1"
+                        className="mt-1 h-7 w-7 shrink-0 rounded-full border border-cn-ink-line bg-cn-ink object-cover"
                         referrerPolicy="no-referrer"
                       />
                     )}
 
                     <div
-                      className={`max-w-[85%] rounded-xl px-3.5 py-2.5 flex flex-col gap-1 shadow-sm text-left ${
+                      className={`flex max-w-[85%] flex-col gap-1 rounded-cn px-3.5 py-2.5 text-left ${
                         msg.sender === "user"
-                          ? "bg-gold text-ink rounded-tr-none text-sm font-sans font-semibold leading-relaxed"
-                          : "bg-white/5 border border-white/10 text-paper rounded-tl-none font-sans text-sm leading-relaxed"
+                          ? "rounded-tr-none bg-cn-accent text-cn-sm leading-relaxed font-medium text-white"
+                          : "rounded-tl-none border border-cn-ink-line bg-white/5 text-cn-sm leading-relaxed text-white"
                       }`}
                     >
                       {msg.sender === "user" ? (
@@ -1438,15 +1691,15 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                         )?.avatar
                       }
                       alt="Advisor"
-                      className="w-7 h-7 rounded-full object-cover shrink-0 border border-white/10 bg-ink animate-pulse"
+                      className="h-7 w-7 shrink-0 animate-pulse rounded-full border border-cn-ink-line bg-cn-ink object-cover"
                       referrerPolicy="no-referrer"
                     />
-                    <div className="bg-white/5 text-sage/70 text-sm py-2 px-3.5 rounded-xl border border-white/10 flex items-center gap-2">
-                      <span className="flex h-1.5 w-1.5 relative">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-1.5 w-1.5 bg-gold"></span>
+                    <div className="flex items-center gap-2 rounded-cn border border-cn-ink-line bg-white/5 px-3.5 py-2 text-cn-sm text-cn-on-ink-2">
+                      <span className="relative flex h-1.5 w-1.5">
+                        <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-cn-accent-soft opacity-75"></span>
+                        <span className="relative inline-flex h-1.5 w-1.5 rounded-full bg-cn-accent-soft"></span>
                       </span>
-                      <p className="font-sans uppercase tracking-widest text-[11px] animate-pulse">
+                      <p className="animate-pulse text-cn-xs tracking-widest uppercase">
                         {isChatReplySlow
                           ? "STILL CONNECTING TO THE DESK..."
                           : "FORMULATING RECOMMENDATIONS..."}
@@ -1458,7 +1711,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
               </div>
 
               {/* Chat footer layout */}
-              <div className="p-3 bg-black/20 border-t border-white/10 shrink-0 space-y-2.5 text-left">
+              <div className="shrink-0 space-y-2.5 border-t border-cn-ink-line bg-black/20 p-3 text-left">
                 {/* suggested pills shortcut */}
                 <div className="flex gap-1.5 overflow-x-auto scrollbar-none py-0.5 items-center justify-start">
                   {selectedChatAdvisorId === "legal" && (
@@ -1523,13 +1776,13 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                       }
                     }}
                     placeholder={`Query ${ADVISOR_PERSONAS.find((a) => a.id === selectedChatAdvisorId)?.name}...`}
-                    className="flex-1 bg-white/5 border border-white/10 rounded-lg py-2 px-3 text-sm font-sans text-paper placeholder-sage/40 focus:outline-none focus:border-gold focus:bg-white/10"
+                    className="flex-1 rounded-cn-sm border border-cn-ink-line bg-white/5 px-3 py-2.5 text-cn-sm text-white placeholder-white/35 focus:border-cn-accent-soft focus:bg-white/10 focus:outline-none"
                   />
                   <button
                     id="floating-chat-send-btn"
                     onClick={() => handleSendChatMessage()}
                     disabled={isChatLoading || !chatInput.trim()}
-                    className="w-9 h-9 bg-gold hover:brightness-95 disabled:opacity-40 text-ink rounded-lg flex items-center justify-center shrink-0 transition cursor-pointer"
+                    className="grid h-10 w-10 shrink-0 cursor-pointer place-items-center rounded-cn-sm bg-cn-accent text-white transition-colors duration-150 hover:bg-cn-accent-2 disabled:cursor-not-allowed disabled:opacity-50"
                   >
                     <Send className="w-4 h-4" />
                   </button>
@@ -1543,29 +1796,29 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
         <button
           id="toggle-concierge-chat-btn"
           onClick={() => setIsChatOpen(!isChatOpen)}
-          className={`w-14 h-14 bg-gradient-to-tr from-pine to-moss text-paper rounded-full flex items-center justify-center cursor-pointer shadow-2xl hover:scale-105 active:scale-95 border-2 border-ink transition-transform duration-200 select-none relative group ${
-            isChatOpen ? "bg-ink from-ink to-ink border-white/10" : ""
+          className={`group relative grid h-14 w-14 cursor-pointer place-items-center rounded-full text-white shadow-cn-3 transition-[transform,background-color] duration-200 ease-cn-out select-none hover:scale-105 active:scale-95 ${
+            isChatOpen ? "bg-cn-ink" : "bg-cn-accent"
           }`}
         >
           {!isChatOpen && (
             <span
               id="concierge-pulse-ring"
-              className="absolute inset-0 rounded-full bg-gold/50 animate-ping -z-10 pointer-events-none"
+              className="pointer-events-none absolute inset-0 -z-10 animate-ping rounded-full bg-cn-accent/50"
             ></span>
           )}
           {isChatOpen ? (
-            <X className="w-6 h-6 text-sage/70" />
+            <X className="w-6 h-6" />
           ) : (
             <>
               <MessageSquare className="w-6 h-6" />
-              <div className="absolute -top-1 -right-1 bg-gold text-ink font-bold text-[9.5px] px-1.5 py-0.5 rounded-full border border-ink uppercase tracking-widest animate-bounce">
+              <div className="absolute -top-1 -right-1 rounded-full border-2 border-white bg-cn-live px-1.5 py-0.5 text-[9.5px] font-bold tracking-widest text-white uppercase">
                 live
               </div>
             </>
           )}
 
           {/* on hover tooltip detail */}
-          <span className="absolute right-16 bg-ink/95 text-sage/70 border border-white/10 px-3.5 py-2 rounded-xl text-[11.5px] uppercase tracking-widest font-sans font-bold shrink-0 opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none shadow-xl select-none">
+          <span className="pointer-events-none absolute right-16 shrink-0 rounded-cn-sm bg-cn-ink px-3.5 py-2 text-cn-xs font-semibold tracking-widest whitespace-nowrap text-white uppercase opacity-0 shadow-cn-3 transition-opacity duration-150 select-none group-hover:opacity-100">
             Live Academy Concierge
           </span>
         </button>

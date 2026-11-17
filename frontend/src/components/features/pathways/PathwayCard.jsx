@@ -32,27 +32,40 @@ export default function PathwayCard({
   accentIndex = 0,
   onToggleSelect,
   onRequestSignIn,
+  // "porcelain" (the default, unchanged) for the audience pages' card,
+  // "cobalt" for the /pathways store. The variant lives entirely in
+  // PathwayCard.module.css — see the `.cobalt` block there.
+  tone = "porcelain",
+  // Cobalt only: this card's place in the scroll-reveal stagger.
+  revealDelay = null,
 }) {
   const courseCount = pathway.course_count ?? 0;
+  const isCobalt = tone === "cobalt";
 
   return (
     <div
       id={`pathway-card-${pathway.id}`}
-      style={pathwayAccentStyle(accentIndex)}
-      className={`${styles.card} ${isOwned ? styles.owned : isSelected ? styles.selected : ""}`}
+      style={{
+        ...pathwayAccentStyle(accentIndex, tone),
+        ...(revealDelay !== null ? { "--cn-d": revealDelay } : {}),
+      }}
+      {...(isCobalt && revealDelay !== null ? { "data-cn-reveal": true } : {})}
+      className={`${styles.card} ${isCobalt ? styles.cobalt : ""} ${
+        isCobalt && revealDelay !== null ? "cn-reveal" : ""
+      } ${isOwned ? styles.owned : isSelected ? styles.selected : ""}`}
     >
       <span aria-hidden="true" className={styles.accent} />
 
       {(isOwned || isSelected) && (
         <div className={styles.badgeSlot}>
           {isOwned ? (
-            <span className="flex items-center gap-1 text-[10px] font-sans font-medium uppercase tracking-widest border px-2.5 py-1 rounded-full shrink-0 bg-sage text-moss border-moss/30">
-              <CheckCircle2 className="w-3 h-3 shrink-0 text-moss" />
+            <span className={`${styles.badge} ${styles.badgeOwned}`}>
+              <CheckCircle2 className="h-3 w-3 shrink-0" />
               OWNED
             </span>
           ) : (
-            <span className="flex items-center gap-1 text-[10px] font-sans font-medium uppercase tracking-widest border px-2.5 py-1 rounded-full shrink-0 bg-gold/15 text-[#8a6f2e] border-gold/30">
-              <CheckCircle2 className="w-3 h-3 shrink-0 text-gold" />
+            <span className={`${styles.badge} ${styles.badgeSelected}`}>
+              <CheckCircle2 className="h-3 w-3 shrink-0" />
               SELECTED
             </span>
           )}

@@ -21,7 +21,10 @@ import CourseRelatedTopics from "./CourseRelatedTopics";
 import CourseReviewsSection from "./CourseReviewsSection";
 
 const BACK_LINK =
-  "inline-flex items-center gap-2 text-xs font-sans font-medium uppercase tracking-widest text-muted hover:text-ink transition-colors";
+  "inline-flex items-center gap-2 text-sm font-semibold text-cn-accent-soft no-underline transition-colors duration-150 hover:underline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cn-accent";
+
+// The same link where it sits on paper rather than on the ink band.
+const BACK_LINK_ON_PAPER = BACK_LINK.replace("text-cn-accent-soft", "text-cn-accent");
 
 // Full course page opened from a store card (/store/<slug>): hero, sticky
 // purchase card, outcomes, outline, description, instructors and suggestions.
@@ -41,17 +44,17 @@ export default function StoreCourseDetailPage({ slug }) {
   if (query.isLoading) {
     body = (
       <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
-        <Loader fullScreen={false} label="Loading course..." />
+        <Loader fullScreen={false} tone="cobalt" label="Loading course..." />
       </div>
     );
   } else if (query.isError) {
     const isNotFound = query.error?.status === 404;
     body = (
-      <div role="alert" className="rounded-card border border-line bg-paper p-8 shadow-soft">
-        <h1 className="text-2xl font-serif">
+      <div role="alert" className="rounded-cn-lg border border-cn-rule bg-white p-10 shadow-cn-1">
+        <h1 className="text-cn-2xl font-extrabold tracking-[-0.035em] text-cn-ink">
           {isNotFound ? "Course not found" : "Unable to load this course"}
         </h1>
-        <p className="mt-3 text-sm text-muted">
+        <p className="mt-3 max-w-[60ch] text-cn-ink-2">
           {isNotFound
             ? "This course may no longer be available. Head back to the store to browse other courses."
             : getApiErrorMessage(query.error, "Please try again.")}
@@ -61,12 +64,12 @@ export default function StoreCourseDetailPage({ slug }) {
             <button
               type="button"
               onClick={() => query.refetch()}
-              className="text-sm font-semibold text-pine underline"
+              className="text-sm font-semibold text-cn-accent underline"
             >
               Retry
             </button>
           )}
-          <Link href={ROUTES.STORE} className={BACK_LINK}>
+          <Link href={ROUTES.STORE} className={BACK_LINK_ON_PAPER}>
             Browse courses
           </Link>
         </div>
@@ -76,14 +79,14 @@ export default function StoreCourseDetailPage({ slug }) {
     body = (
       <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_360px] lg:gap-x-12">
         <div className="lg:col-start-1 lg:row-start-1">
-          <CourseDetailHero course={course} />
+          <CourseDetailHero course={course} moduleCount={modules.length} />
         </div>
 
-        <aside className="relative z-10 mt-8 lg:mt-10 lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:self-start lg:sticky lg:top-24">
+        <aside className="relative z-10 mt-8 lg:sticky lg:top-[calc(var(--cn-nav-h)+24px)] lg:col-start-2 lg:row-start-1 lg:row-span-2 lg:mt-10 lg:self-start">
           <CoursePurchaseCard course={course} />
         </aside>
 
-        <div className="mt-10 space-y-10 min-w-0 lg:col-start-1 lg:row-start-2">
+        <div className="mt-12 min-w-0 space-y-12 lg:col-start-1 lg:row-start-2">
           <CourseLearningOutcomes outcomes={course.learning_outcomes} />
           <CourseRelatedTopics category={course.category} tags={course.tags} />
           <CourseIncludes course={course} totals={totals} />
@@ -100,14 +103,33 @@ export default function StoreCourseDetailPage({ slug }) {
     );
   }
 
+  // The back link rides on the hero's ink band when there is a course to
+  // show, and on plain paper in the loading and error states.
+  const hasHero = Boolean(course) && !query.isLoading && !query.isError;
+
   return (
-    <div id="store-course-detail" className="min-h-screen cn-page-bg text-ink pb-24 overflow-x-clip">
-      <div className="max-w-6xl mx-auto px-6">
-        <div className="pt-8 pb-5">
-          <Link href={ROUTES.STORE} className={BACK_LINK}>
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to store
-          </Link>
+    <div
+      id="store-course-detail"
+      className="min-h-screen overflow-x-clip bg-cn-paper pb-20 text-cn-ink"
+    >
+      <div className="cn-container">
+        <div
+          className={`relative isolate pt-8 pb-5 ${
+            hasHero
+              ? "text-white before:absolute before:inset-y-0 before:-right-[100vw] before:-left-[100vw] before:-z-10 before:bg-cn-ink"
+              : ""
+          }`}
+        >
+          {/* With a course on screen the hero's own breadcrumb is the way
+              back, and the design has no second link above it; this strip
+              then only carries the ink band's top padding. The loading and
+              error screens have no breadcrumb, so there it stands in. */}
+          {!hasHero && (
+            <Link href={ROUTES.STORE} className={BACK_LINK_ON_PAPER}>
+              <ArrowLeft className="w-4 h-4" />
+              Back to store
+            </Link>
+          )}
         </div>
         {body}
       </div>

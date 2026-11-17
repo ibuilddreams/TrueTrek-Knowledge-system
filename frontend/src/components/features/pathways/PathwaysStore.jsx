@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import {
   keepPreviousData,
@@ -23,7 +23,10 @@ import { buildAuthUrl } from "@/lib/authRedirect";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatCoursePrice } from "@/lib/store";
 import { toastError, toastInfo, toastSuccess } from "@/lib/toast";
+import useScrollReveal from "@/hooks/useScrollReveal";
 import EmptyState from "@/components/ui/EmptyState";
+import CobaltPageHeader from "@/components/ui/CobaltPageHeader";
+import { CN_BTN_PRIMARY, CN_BTN_SECONDARY, CN_NOTICE } from "@/components/ui/cobaltStyles";
 import Loader from "@/components/ui/Loader";
 import Pagination from "@/components/ui/Pagination";
 import BuildYourOwnPathwayBanner from "./BuildYourOwnPathwayBanner";
@@ -34,6 +37,7 @@ import PathwayCheckoutModal from "./PathwayCheckoutModal";
 const PAGE_SIZE = 9;
 
 export default function PathwaysStore() {
+  const pageRef = useRef(null);
   const router = useRouter();
   const { isAuthenticated, isStudent, role, user } = useAuth();
 
@@ -184,44 +188,33 @@ export default function PathwaysStore() {
     }
   }, [isLoading, isFetching, pathways.length, page]);
 
+  // The pathway cards reveal a row at a time, re-swept on each new page.
+  useScrollReveal(pageRef, [isLoading, pathways.length, page]);
+
   return (
     <div
       id="pathways-store-container"
-      className="min-h-screen cn-page-bg text-ink pb-32"
+      ref={pageRef}
+      className="min-h-screen bg-cn-paper pb-32 text-cn-ink"
     >
-      {/* Dynamic Header */}
-      <div
+      {/* The design has no pathways page — it shows them as sections on the
+          home and curriculum pages — so this takes the inner-page header the
+          design gives every other page, and its wording. */}
+      <CobaltPageHeader
         id="pathways-banner-layout"
-        className="bg-pine text-paper py-16 px-6 border-b border-white/10 relative overflow-hidden"
-      >
-        <div
-          id="ambient-dot-pathways"
-          className="absolute top-1/2 left-1/4 w-96 h-96 rounded-full bg-gold/12 blur-[130px] -translate-y-1/2"
-        ></div>
-        <div className="max-w-6xl mx-auto relative z-10 text-center sm:text-left flex flex-col sm:flex-row justify-between items-center gap-6">
-          <div className="space-y-3">
-            <span className="inline-flex items-center gap-1.5 bg-white/10 border border-white/15 px-3.5 py-1.5 rounded-full text-gold font-sans text-xs uppercase tracking-widest font-medium">
-              <Route className="w-3.5 h-3.5" />
-              Bundled Learning Pathways
-            </span>
-            <h2 className="text-4xl md:text-5xl font-serif font-light leading-[0.92] tracking-tight text-paper">
-              Explore the Pathways
-            </h2>
-            <p className="text-paper/70 text-xs md:text-sm font-light max-w-xl leading-relaxed">
-              Each pathway bundles several courses into a single purchase and
-              auto-enrolls you in every course it contains.
-            </p>
-          </div>
-        </div>
-      </div>
+        as="h2"
+        layout="split"
+        title="Choose your pathway."
+        lead="Each pathway bundles several courses into a single purchase and auto-enrolls you in every course it contains."
+      />
 
-      <div className="max-w-6xl mx-auto px-6 mt-12">
+      <div className="cn-container pt-12 md:pt-16">
         {/* Role-aware status banner */}
-        <div className="bg-porcelain border border-line rounded-2xl p-4 mb-10 flex flex-col md:flex-row items-center justify-between gap-4">
+        <div className={`${CN_NOTICE} mb-10 flex-col items-start justify-between gap-4 md:flex-row md:items-center`}>
           {isAuthenticated ? (
             <>
-              <p className="text-xs text-ink font-sans leading-relaxed">
-                <span className="font-sans font-medium text-moss uppercase tracking-widest mr-2">
+              <p className="leading-relaxed">
+                <span className="mr-2 text-xs font-semibold tracking-widest text-cn-accent uppercase">
                   [SIGNED IN]
                 </span>
                 Signed in as {user?.name || user?.email}.{" "}
@@ -232,15 +225,15 @@ export default function PathwaysStore() {
               <button
                 type="button"
                 onClick={onNavigateToPortal}
-                className="text-xs font-sans font-medium uppercase tracking-widest bg-pine hover:bg-moss text-paper px-4 py-2 rounded-full transition duration-200 shadow-sm shrink-0"
+                className={`${CN_BTN_PRIMARY} h-11 shrink-0`}
               >
                 Open My Portal →
               </button>
             </>
           ) : (
             <>
-              <p className="text-xs text-ink font-sans leading-relaxed">
-                <span className="font-sans font-medium text-gold uppercase tracking-widest mr-2">
+              <p className="leading-relaxed">
+                <span className="mr-2 text-xs font-semibold tracking-widest text-cn-accent uppercase">
                   [BROWSING AS GUEST]
                 </span>
                 Pathways are visible to everyone. Sign in as a student to
@@ -249,7 +242,7 @@ export default function PathwaysStore() {
               <button
                 type="button"
                 onClick={() => router.push(buildAuthUrl(ROUTES.LOGIN, ROUTES.PATHWAYS))}
-                className="text-xs font-sans font-medium uppercase tracking-widest bg-pine hover:bg-moss text-paper px-4 py-2 rounded-full transition duration-200 shadow-sm shrink-0 flex items-center gap-1.5"
+                className={`${CN_BTN_PRIMARY} h-11 shrink-0`}
               >
                 <LogIn className="w-3 h-3" />
                 Sign In
@@ -265,25 +258,25 @@ export default function PathwaysStore() {
             className="flex min-h-[40vh] items-center justify-center"
             aria-busy="true"
           >
-            <Loader fullScreen={false} label="Loading pathways..." />
+            <Loader fullScreen={false} tone="cobalt" label="Loading pathways..." />
           </div>
         )}
 
         {isError && (
-          <div className="border border-line bg-paper rounded-2xl p-8 text-center max-w-lg mx-auto">
-            <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="mx-auto max-w-lg rounded-cn-lg border border-cn-rule bg-white p-10 text-center shadow-cn-1">
+            <div className="mx-auto mb-5 grid h-12 w-12 place-items-center rounded-cn bg-cn-paper-3 text-cn-live">
               <AlertCircle className="w-6 h-6" />
             </div>
-            <h2 className="text-xl font-serif font-light mb-2 text-ink">
+            <h2 className="mb-2 text-cn-xl font-bold tracking-[-0.015em] text-cn-ink">
               Failed to Load Pathways
             </h2>
-            <p className="text-xs font-light mb-6 text-muted">
+            <p className="mb-6 text-sm leading-relaxed text-cn-ink-2">
               {getApiErrorMessage(error, "Unable to load pathways right now.")}
             </p>
             <button
               type="button"
               onClick={() => refetch()}
-              className="inline-flex items-center gap-2 px-5 py-3 font-sans font-medium text-xs uppercase tracking-widest rounded-full transition border border-line text-ink hover:bg-porcelain"
+              className={CN_BTN_SECONDARY}
             >
               <RefreshCw className="w-4 h-4" />
               Retry
@@ -292,8 +285,9 @@ export default function PathwaysStore() {
         )}
 
         {!isLoading && !isError && pathways.length === 0 && (
-          <div className="rounded-2xl border border-dashed border-line bg-paper/70">
+          <div className="rounded-cn-lg border border-dashed border-cn-rule-strong bg-cn-paper-2">
             <EmptyState
+              tone="cobalt"
               icon={Route}
               label="No pathways published yet"
               description="Check back soon — new pathways are added regularly."
@@ -303,12 +297,9 @@ export default function PathwaysStore() {
 
         {!isLoading && !isError && pathways.length > 0 && (
           <>
-            <motion.div
+            <div
               id="pathways-grid-layout"
-              initial={{ opacity: 0, y: 8 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.25, ease: "easeOut" }}
-              className={`grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 transition-opacity duration-200 ${
+              className={`grid grid-cols-1 gap-6 transition-opacity duration-200 md:grid-cols-2 lg:grid-cols-3 ${
                 isFetching ? "opacity-60" : "opacity-100"
               }`}
             >
@@ -316,6 +307,8 @@ export default function PathwaysStore() {
                 <PathwayCard
                   key={pathway.id}
                   pathway={pathway}
+                  tone="cobalt"
+                  revealDelay={index % 3}
                   accentIndex={index}
                   isSelected={selectedIds.has(pathway.id)}
                   isOwned={ownedPathwayIds.has(pathway.id)}
@@ -324,14 +317,17 @@ export default function PathwaysStore() {
                   onRequestSignIn={(selected) => promptSignIn(selected, "price")}
                 />
               ))}
-            </motion.div>
+            </div>
 
-            <Pagination
-              page={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              totalLabel={`${totalPathways} pathway${totalPathways === 1 ? "" : "s"}`}
-            />
+            <div className="mt-10">
+              <Pagination
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                totalLabel={`${totalPathways} pathway${totalPathways === 1 ? "" : "s"}`}
+                tone="cobalt"
+              />
+            </div>
           </>
         )}
       </div>
@@ -345,13 +341,13 @@ export default function PathwaysStore() {
             transition={{ type: "spring", damping: 26, stiffness: 260 }}
             className="fixed bottom-0 inset-x-0 z-40 flex justify-center px-6 pb-6 pointer-events-none"
           >
-            <div className="pointer-events-auto bg-pine border border-white/10 rounded-2xl shadow-2xl px-5 py-4 flex items-center gap-5 max-w-lg w-full sm:w-auto">
+            <div className="pointer-events-auto flex w-full max-w-lg items-center gap-5 rounded-cn-lg bg-cn-ink px-5 py-4 shadow-cn-3 sm:w-auto">
               <div className="min-w-0">
-                <p className="text-xs font-sans uppercase tracking-widest font-medium text-paper/60">
+                <p className="text-xs font-semibold tracking-widest text-cn-on-ink-2 uppercase">
                   {selectedPathways.length} pathway
                   {selectedPathways.length === 1 ? "" : "s"} selected
                 </p>
-                <p className="text-sm font-sans font-semibold text-paper">
+                <p className="text-sm font-semibold text-white">
                   {formatCoursePrice(selectedTotal)}
                 </p>
               </div>
@@ -359,7 +355,7 @@ export default function PathwaysStore() {
                 id="pathways-checkout-trigger-btn"
                 type="button"
                 onClick={handleOpenCheckout}
-                className="ml-auto shrink-0 bg-gold hover:brightness-95 text-ink font-sans text-xs font-semibold uppercase tracking-widest px-5 py-3 rounded-full shadow-md transition-all duration-200 flex items-center gap-2"
+                className="ml-auto inline-flex h-11 shrink-0 items-center gap-2 rounded-cn-sm bg-white px-5 text-sm font-semibold text-cn-accent-3 transition-transform duration-150 ease-cn-out hover:-translate-y-px"
               >
                 Checkout
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -383,6 +379,7 @@ export default function PathwaysStore() {
         isSubmitting={checkoutMutation.isPending}
         onClose={() => setIsCheckoutOpen(false)}
         onConfirm={handleConfirmPayment}
+        tone="cobalt"
       />
     </div>
   );

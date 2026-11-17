@@ -1,8 +1,11 @@
 import { createSlice } from "@reduxjs/toolkit";
 
 /**
- * Future-clients intake form state kept in Redux (session memory only).
+ * Marketing intake form state kept in Redux (session memory only).
  * Do not persist PII to localStorage — sync to a backend API when available.
+ *
+ * Nothing dispatches or reads this any more: it is registered in the root
+ * reducer and otherwise unused.
  */
 const initialState = {
   isSubmitted: false,

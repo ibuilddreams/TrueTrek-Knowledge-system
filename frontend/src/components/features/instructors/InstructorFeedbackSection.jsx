@@ -4,7 +4,7 @@ import { useInfiniteQuery } from "@tanstack/react-query";
 import { Star } from "lucide-react";
 import { getInstructorFeedback } from "@/services/instructorsService";
 import { pluralize } from "@/lib/courseOutline";
-import CartRecommendationCarousel from "@/components/features/cart/CartRecommendationCarousel";
+import CourseSuggestionCarousel from "@/components/ui/CourseSuggestionCarousel";
 import CourseSectionHeading from "@/components/features/store/detail/CourseSectionHeading";
 import InstructorFeedbackCard from "./InstructorFeedbackCard";
 import InstructorFeedbackForm from "./InstructorFeedbackForm";
@@ -56,7 +56,7 @@ export default function InstructorFeedbackSection({ instructor }) {
         </p>
       ) : (
         <>
-          <CartRecommendationCarousel ariaLabel="Student feedback">
+          <CourseSuggestionCarousel ariaLabel="Student feedback">
             {feedback.map((item) => (
               <InstructorFeedbackCard
                 key={item.id}
@@ -64,7 +64,7 @@ export default function InstructorFeedbackSection({ instructor }) {
                 className="shrink-0 snap-start w-[85%] sm:w-[calc(50%-10px)] lg:w-[calc(33.333%-14px)]"
               />
             ))}
-          </CartRecommendationCarousel>
+          </CourseSuggestionCarousel>
           {query.hasNextPage && (
             <div className="flex justify-center">
               <button

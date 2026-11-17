@@ -85,7 +85,8 @@ def _enroll_user_in_pathway_courses(user, pathway):
 
 
 def checkout_pathways(user, pathway_ids):
-    """Dummy-payment checkout for one or more pathways (mirrors carts.services.checkout_cart).
+    """Dummy-payment checkout for one or more pathways (the bundle counterpart
+    of enrollments.services.purchase_courses).
 
     Each pathway is handled independently — one already-owned or invalid pathway
     doesn't block the rest of the purchase. Bundle discount (by count of *valid*

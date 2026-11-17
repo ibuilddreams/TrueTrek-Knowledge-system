@@ -28,11 +28,11 @@ export default function CourseReviewsSection({ courseSlug, instructorCount }) {
     <section aria-labelledby="course-reviews-heading">
       <h2
         id="course-reviews-heading"
-        className="flex flex-wrap items-center gap-x-3 gap-y-1 text-2xl md:text-3xl font-serif tracking-tight text-ink"
+        className="flex flex-wrap items-center gap-x-3 gap-y-1 text-2xl md:text-3xl font-bold tracking-[-0.015em] tracking-tight text-cn-ink"
       >
-        <Star className="w-7 h-7 fill-gold text-gold" aria-hidden="true" />
+        <Star className="w-7 h-7 fill-cn-accent text-cn-accent" aria-hidden="true" />
         <span>{summary.rating.toFixed(1)} course rating</span>
-        <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-muted/60" />
+        <span aria-hidden="true" className="w-1.5 h-1.5 rounded-full bg-cn-muted" />
         <span>{pluralize(summary.reviews, "rating")}</span>
       </h2>
 
@@ -48,7 +48,7 @@ export default function CourseReviewsSection({ courseSlug, instructorCount }) {
             type="button"
             onClick={() => query.fetchNextPage()}
             disabled={query.isFetchingNextPage}
-            className="rounded-full border border-pine px-6 py-3 text-xs font-sans font-medium uppercase tracking-widest text-pine hover:bg-pine hover:text-paper disabled:opacity-60 transition"
+            className="inline-flex h-11 items-center justify-center rounded-cn-sm border border-cn-rule-strong bg-white px-6 text-sm font-semibold text-cn-ink shadow-cn-1 transition-colors duration-150 enabled:hover:border-cn-ink disabled:cursor-not-allowed disabled:opacity-50"
           >
             {query.isFetchingNextPage ? "Loading..." : "Show more reviews"}
           </button>

@@ -9,10 +9,9 @@ export const ROUTES = {
   PARTNERSHIPS: "/partnerships",
   STORE: "/store",
   INSTRUCTORS: "/instructors",
-  CART: "/cart",
-  WISHLIST: "/wishlist",
   ONBOARDING: "/onboarding",
   PATHWAYS: "/pathways",
+  TIERS: "/tiers",
   // "Build your own pathway" — the student-only builder. A static segment, so
   // it takes precedence over /pathways/[slug] in the App Router.
   PATHWAY_BUILDER: "/pathways/build",
@@ -21,7 +20,7 @@ export const ROUTES = {
   // Audience pages link back here rather than to the /audiences index, since
   // the homepage cards are the entry point people actually arrive through.
   HOME_AUDIENCES: "/#audience-role-map-section",
-  FUTURE_CLIENTS: "/future-clients",
+  HOME_ADVISORS: "/#live-advisors-consultation-section",
   ADMIN_PORTAL: "/adminportal",
   TEACHER_PORTAL: "/teacherportal",
   STUDENT_PORTAL: "/studentportal",
@@ -44,7 +43,6 @@ export const ROUTE_KEYS = {
   STORE: "store",
   ONBOARDING: "onboarding",
   PATHWAYS: "pathways",
-  FUTURE_CLIENTS: "future-clients",
   STUDENT_PORTAL: "studentportal",
   ADMIN_PORTAL: "adminportal",
   TEACHER_PORTAL: "teacherportal",
@@ -54,6 +52,7 @@ export const ROUTE_KEYS = {
   DASHBOARD: "dashboard",
   TEACHERS: "teachers",
   FAQ: "faq",
+  AUDIENCES: "audiences",
 };
 
 export function getPortalRouteForRole(role) {
@@ -71,8 +70,11 @@ export function getSectionFromPathname(pathname) {
   if (pathname.startsWith(ROUTES.STORE)) return ROUTE_KEYS.STORE;
   if (pathname.startsWith(ROUTES.ONBOARDING)) return ROUTE_KEYS.ONBOARDING;
   if (pathname.startsWith(ROUTES.PATHWAYS)) return ROUTE_KEYS.PATHWAYS;
-  if (pathname.startsWith(ROUTES.FUTURE_CLIENTS)) return ROUTE_KEYS.FUTURE_CLIENTS;
   if (pathname.startsWith(ROUTES.FAQ)) return ROUTE_KEYS.FAQ;
+  // Every audience page counts as "Who it's for" in the nav, not just the one
+  // the link points at — the same rule the design applies to its `for-*`
+  // pages, so switching audience with the chips never unlights the nav item.
+  if (pathname.startsWith(ROUTES.AUDIENCES)) return ROUTE_KEYS.AUDIENCES;
   if (
     pathname.startsWith(ROUTES.STUDENT_PORTAL) ||
     pathname.startsWith(ROUTES.PORTAL) ||

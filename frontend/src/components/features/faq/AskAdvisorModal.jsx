@@ -55,17 +55,17 @@ export default function AskAdvisorModal({ isOpen, onClose }) {
           placeholder="What would you like to ask?"
           rows={4}
           autoFocus
-          className="w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60 resize-none"
+          className="w-full px-4 py-3 bg-cn-paper-2 border border-cn-rule focus:border-cn-accent focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-cn-ink placeholder:text-cn-muted transition disabled:opacity-60 resize-none"
         />
 
         <button
           type="submit"
           disabled={!body.trim() || askMutation.isPending}
-          className="w-full flex items-center justify-center gap-2 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper font-sans text-xs font-medium uppercase tracking-widest py-3.5 rounded-full shadow-soft transition"
+          className="w-full flex items-center justify-center gap-2 bg-cn-accent hover:bg-cn-accent-2 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold tracking-widest uppercase py-3.5 rounded-full shadow-cn-1 transition"
         >
           {askMutation.isPending ? (
             <>
-              <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
               Sending...
             </>
           ) : (
