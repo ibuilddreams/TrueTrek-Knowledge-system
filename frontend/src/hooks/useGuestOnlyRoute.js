@@ -25,8 +25,8 @@ export function useGuestOnlyRoute() {
 
   useEffect(() => {
     if (isResolving || !isAuthenticated) return;
-    // Send the user back to where they came from (e.g. the cart after the
-    // "sign in to purchase" prompt). Only validated same-site paths are used.
+    // Send the user back to where they came from (e.g. the course page they
+    // were reading). Only validated same-site paths are used.
     const nextPath = getNextPathFromSearch(window.location.search, role);
     if (nextPath) {
       router.replace(nextPath);

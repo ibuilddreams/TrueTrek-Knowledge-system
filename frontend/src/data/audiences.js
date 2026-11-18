@@ -24,9 +24,11 @@ import {
 //
 // The two `featured` entries are the tall bookend columns of the homepage
 // bento grid; the rest fill the middle columns. Artwork is self-hosted under
-// `public/images/home/` (Unsplash-licensed, free for commercial use, no
-// attribution required) rather than hotlinked, so the cards render identically
-// in production without a third-party dependency.
+// `public/images/design/`, extracted from the design file so the cards show
+// the photographs the design chose for each audience, rather than hotlinked
+// — they render identically in production with no third-party dependency.
+// Entrepreneurs is the one card the design has no artwork for, so it borrows
+// its own pathway's photograph.
 export const AUDIENCE_PROFILES = [
   {
     id: "student-athletes",
@@ -35,12 +37,14 @@ export const AUDIENCE_PROFILES = [
     featured: true,
     tag: "Recruiting & NIL",
     title: "Student Athletes",
+    // How the name reads mid-sentence ("Pathways for student athletes.").
+    headingName: "student athletes",
     description:
       "Build recruiting readiness, understand brand management and NIL marketing, and develop athlete business skills for opportunities in sport and beyond.",
     chips: ["NIL Education"],
     icon: Target,
     iconClassName: "bg-sky text-pine",
-    image: "/images/home/student-athletes.jpg",
+    image: "/images/design/aud-student-athletes.webp",
   },
   {
     id: "scholars-founders",
@@ -48,11 +52,13 @@ export const AUDIENCE_PROFILES = [
     code: "CNS",
     tag: "Academics & Life Skills",
     title: "Cool Nerdz",
+    // How the name reads mid-sentence ("Pathways for Cool Nerdz.").
+    headingName: "Cool Nerdz",
     description:
       "Combine rigorous academics with critical thinking, financial literacy, decision-making, stress management, and practical life skills.",
     icon: GraduationCap,
     iconClassName: "bg-sage text-pine",
-    image: "/images/home/scholars-founders.jpg",
+    image: "/images/design/aud-cool-nerdz.webp",
   },
   {
     id: "parents-families",
@@ -60,11 +66,13 @@ export const AUDIENCE_PROFILES = [
     code: "PAR",
     tag: "Education & Sports",
     title: "Parents",
+    // How the name reads mid-sentence ("Pathways for parents.").
+    headingName: "parents",
     description:
       "Support your student through education and sports, understand their progress, and help them make informed decisions along the way.",
     icon: HeartHandshake,
     iconClassName: "bg-rose/60 text-clay",
-    image: "/images/home/parents-families.jpg",
+    image: "/images/design/aud-parents.webp",
   },
   {
     id: "institutions-academies",
@@ -73,12 +81,14 @@ export const AUDIENCE_PROFILES = [
     featured: true,
     tag: "Support Programs",
     title: "Institutions & Academies",
+    // How the name reads mid-sentence ("Pathways for institutions and academies.").
+    headingName: "institutions and academies",
     description:
       "Curriculum for your cohort, with compliance-grade reporting built in.",
     chips: ["Cohort Licensing", "Compliance Reporting"],
     icon: Building2,
     iconClassName: "bg-lavender text-pine",
-    image: "/images/home/institutions-academies.jpg",
+    image: "/images/design/aud-institutions.webp",
   },
   {
     id: "coaches-mentors",
@@ -86,11 +96,13 @@ export const AUDIENCE_PROFILES = [
     code: "CCH",
     tag: "Talent Management",
     title: "Coaches",
+    // How the name reads mid-sentence ("Pathways for coaches.").
+    headingName: "coaches",
     description:
       "Manage talent and high-profile players, understand NIL, and support athletes through recruiting and brand opportunities.",
     icon: Users,
     iconClassName: "bg-mint text-pine",
-    image: "/images/home/coaches-mentors.jpg",
+    image: "/images/design/aud-coaches.webp",
   },
   {
     id: "entrepreneurs",
@@ -98,11 +110,13 @@ export const AUDIENCE_PROFILES = [
     code: "ENT",
     tag: "Entrepreneurship",
     title: "Entrepreneurs",
+    // How the name reads mid-sentence ("Pathways for entrepreneurs.").
+    headingName: "entrepreneurs",
     description:
       "Build business knowledge, financial literacy, and practical trade and vocational skills for life beyond school and sports.",
     icon: BriefcaseBusiness,
     iconClassName: "bg-gold/15 text-gold",
-    image: "/images/home/legacy-family-offices.jpg",
+    image: "/images/design/path-entrepreneur.webp",
   },
 ];
 
@@ -122,3 +136,9 @@ export function getAudienceLabel(audience) {
     name: profile?.title || audience?.name || "",
   };
 }
+
+// The audience the "Who it's for" nav item opens on. The design has no
+// audiences index — its nav goes straight to the first profile and the chip
+// row on the page moves between them — so this is the first card rather than
+// a separate landing page.
+export const PRIMARY_AUDIENCE_SLUG = AUDIENCE_PROFILES[0].slug;

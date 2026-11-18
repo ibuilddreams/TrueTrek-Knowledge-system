@@ -9,29 +9,29 @@
   flex-direction: column;
   min-width: 0;
   overflow: hidden;
-  border: 1px solid var(--color-line);
-  border-radius: var(--radius-card);
-  background: var(--color-paper);
-  box-shadow: var(--shadow-soft);
+  border: 1px solid var(--pc-rule, var(--color-line));
+  border-radius: var(--pc-radius, var(--radius-card));
+  background: var(--pc-surface, var(--color-paper));
+  box-shadow: var(--pc-shadow, var(--shadow-soft));
   transition: transform 200ms ease, box-shadow 200ms ease, border-color 200ms ease;
 }
 .card:hover {
   transform: translateY(-4px);
   border-color: rgba(9, 45, 41, 0.28);
-  border-color: color-mix(in srgb, var(--pathway-accent, var(--color-pine)) 38%, transparent);
-  box-shadow: var(--shadow-elevated);
+  border-color: color-mix(in srgb, var(--pathway-accent, var(--pc-strong, var(--color-pine))) 38%, transparent);
+  box-shadow: var(--pc-shadow-hover, var(--shadow-elevated));
 }
 
 /* Selection/ownership outrank the hover tint so the state stays visible. */
-.selected, .selected:hover { border-color: var(--color-gold); box-shadow: 0 0 0 2px rgba(199, 168, 91, 0.22); }
-.owned, .owned:hover { border-color: var(--color-moss); }
+.selected, .selected:hover { border-color: var(--pc-selected, var(--color-gold)); box-shadow: 0 0 0 2px rgba(199, 168, 91, 0.22); }
+.owned, .owned:hover { border-color: var(--pc-strong-2, var(--color-moss)); }
 
 /* The coloured rule across the top — what makes a grid read as a choice. */
 .accent {
   height: 4px;
   width: 100%;
   flex-shrink: 0;
-  background: var(--pathway-accent, var(--color-pine));
+  background: var(--pathway-accent, var(--pc-strong, var(--color-pine)));
 }
 
 .badgeSlot { position: absolute; top: 18px; right: 18px; display: flex; gap: 8px; }
@@ -61,26 +61,26 @@
   width: 56px;
   height: 56px;
   border-radius: 999px;
-  background: var(--pathway-accent-icon-bg, var(--color-sage));
-  color: var(--pathway-accent-icon-fg, var(--color-pine));
+  background: var(--pathway-accent-icon-bg, var(--pc-soft, var(--color-sage)));
+  color: var(--pathway-accent-icon-fg, var(--pc-strong, var(--color-pine)));
 }
 
-.eyebrow { color: var(--color-muted); font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; }
+.eyebrow { color: var(--pc-muted, var(--color-muted)); font-size: 9px; font-weight: 600; letter-spacing: 0.16em; text-transform: uppercase; }
 .title {
   margin-top: 10px;
-  font-family: var(--font-serif);
+  font-family: var(--pc-display-font, var(--font-serif));
   font-size: 25px;
   font-weight: 300;
   line-height: 1.2;
   letter-spacing: -0.025em;
-  color: var(--color-pine);
+  color: var(--pc-strong, var(--color-pine));
   text-wrap: pretty;
   overflow-wrap: anywhere;
 }
-.focus { margin-top: 8px; color: var(--pathway-accent-text, var(--color-moss)); font-size: 11px; font-weight: 600; line-height: 1.6; }
+.focus { margin-top: 8px; color: var(--pathway-accent-text, var(--pc-strong-2, var(--color-moss))); font-size: 11px; font-weight: 600; line-height: 1.6; }
 .summary {
   margin-top: 12px;
-  color: var(--color-muted);
+  color: var(--pc-muted, var(--color-muted));
   font-size: 13px;
   line-height: 1.75;
   display: -webkit-box;
@@ -89,12 +89,12 @@
   overflow: hidden;
 }
 
-.footer { margin: 26px 26px 26px; padding-top: 20px; border-top: 1px solid var(--color-line); text-align: center; }
-.priceLabel { display: block; color: var(--color-muted); font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
+.footer { margin: 26px 26px 26px; padding-top: 20px; border-top: 1px solid var(--pc-rule, var(--color-line)); text-align: center; }
+.priceLabel { display: block; color: var(--pc-muted, var(--color-muted)); font-size: 9px; font-weight: 600; letter-spacing: 0.14em; text-transform: uppercase; }
 .price {
   display: block;
   margin-top: 5px;
-  color: var(--color-pine);
+  color: var(--pc-strong, var(--color-pine));
   font-size: 26px;
   font-weight: 600;
   letter-spacing: -0.04em;
@@ -115,17 +115,17 @@
   margin-top: 7px;
   padding: 7px 15px;
   border: 1px dashed rgba(9, 45, 41, 0.3);
-  border-color: color-mix(in srgb, var(--pathway-accent, var(--color-pine)) 42%, transparent);
+  border-color: color-mix(in srgb, var(--pathway-accent, var(--pc-strong, var(--color-pine))) 42%, transparent);
   border-radius: 999px;
-  background: var(--color-porcelain);
-  color: var(--color-pine);
+  background: var(--pc-surface-2, var(--color-porcelain));
+  color: var(--pc-strong, var(--color-pine));
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.04em;
   transition: background 180ms ease;
 }
-.lockedPrice:hover { background: var(--color-sage); }
-.lockedPrice:focus-visible { outline: 2px solid var(--color-pine); outline-offset: 3px; }
+.lockedPrice:hover { background: var(--pc-soft, var(--color-sage)); }
+.lockedPrice:focus-visible { outline: 2px solid var(--pc-strong, var(--color-pine)); outline-offset: 3px; }
 
 /* Holds the price line's height while the session is being restored, so a
    grid of cards doesn't reflow once it resolves. */
@@ -135,7 +135,7 @@
   height: 31px;
   margin: 5px auto 0;
   border-radius: 10px;
-  background: var(--color-porcelain);
+  background: var(--pc-surface-2, var(--color-porcelain));
 }
 
 .action {
@@ -149,18 +149,18 @@
   padding: 12px 16px;
   border: 1px solid transparent;
   border-radius: 999px;
-  color: var(--color-paper);
-  background: var(--color-pine);
+  color: var(--pc-surface, var(--color-paper));
+  background: var(--pc-strong, var(--color-pine));
   font-size: 12px;
   font-weight: 600;
   letter-spacing: 0.03em;
   transition: background 180ms ease;
 }
-.action:hover, .card:hover .browseAction { background: var(--color-moss); }
-.action:focus-visible { outline: 2px solid var(--color-pine); outline-offset: 3px; }
-.actionSelected { background: var(--color-sage); color: var(--color-pine); border-color: rgba(9, 45, 41, 0.2); }
-.actionSelected:hover { background: var(--color-mint); }
-.status { background: var(--color-sage); color: var(--color-moss); }
+.action:hover, .card:hover .browseAction { background: var(--pc-strong-2, var(--color-moss)); }
+.action:focus-visible { outline: 2px solid var(--pc-strong, var(--color-pine)); outline-offset: 3px; }
+.actionSelected { background: var(--pc-soft, var(--color-sage)); color: var(--pc-strong, var(--color-pine)); border-color: rgba(9, 45, 41, 0.2); }
+.actionSelected:hover { background: var(--pc-soft-2, var(--color-mint)); }
+.status { background: var(--pc-soft, var(--color-sage)); color: var(--pc-strong-2, var(--color-moss)); }
 
 /* The accent-coloured "Explore →" line the whole card links through. */
 .detail {
@@ -169,7 +169,7 @@
   justify-content: center;
   gap: 6px;
   margin-top: 16px;
-  color: var(--pathway-accent-text, var(--color-moss));
+  color: var(--pathway-accent-text, var(--pc-strong-2, var(--color-moss)));
   font-size: 10px;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -179,8 +179,8 @@
 .card:hover .detail { gap: 11px; }
 
 /* Stretched link: the whole card opens the pathway page. */
-.link { position: absolute; inset: 0; border-radius: var(--radius-card); }
-.link:focus-visible { outline: 2px solid var(--color-pine); outline-offset: 4px; }
+.link { position: absolute; inset: 0; border-radius: var(--pc-radius, var(--radius-card)); }
+.link:focus-visible { outline: 2px solid var(--pc-strong, var(--color-pine)); outline-offset: 4px; }
 
 @media (max-width: 380px) {
   .body { padding: 30px 20px 0; }
@@ -192,4 +192,93 @@
   .card, .action, .detail, .lockedPrice { transition: none; }
   .card:hover { transform: none; }
   .card:hover .detail { gap: 6px; }
+}
+
+
+/* ------------------------------------------------------------------------
+   Cobalt variant.
+
+   Every colour, radius and shadow above is read through a `--pc-*` alias that
+   falls back to the porcelain token, so re-pointing them here is the whole of
+   the change — the rules themselves are shared with the audience pages' card,
+   which keeps the defaults.
+   ------------------------------------------------------------------------ */
+.cobalt {
+  --pc-rule: var(--color-cn-rule);
+  --pc-surface: #ffffff;
+  --pc-surface-2: var(--color-cn-paper-2);
+  --pc-strong: var(--color-cn-accent);
+  --pc-strong-2: var(--color-cn-accent-2);
+  --pc-muted: var(--color-cn-muted);
+  --pc-soft: var(--color-cn-paper-3);
+  --pc-soft-2: var(--color-cn-paper-4);
+  --pc-selected: var(--color-cn-accent);
+  --pc-shadow: var(--shadow-cn-1);
+  --pc-shadow-hover: var(--shadow-cn-3);
+  --pc-radius: var(--radius-cn-lg);
+  --pc-display-font: var(--font-sans);
+}
+
+/* The cobalt card's title is Inter at 700 rather than the porcelain card's
+   light serif, which is the one thing an alias cannot carry. Title and price
+   are ink here, not the accent: the design keeps its one cobalt signal for
+   the things that act — the rule, the icon, the action and the link. */
+.cobalt .title,
+.cobalt .price {
+  color: var(--color-cn-ink);
+}
+
+.cobalt .title {
+  font-weight: 700;
+  letter-spacing: -0.015em;
+}
+
+.cobalt .action {
+  border-radius: var(--radius-cn-sm);
+  text-transform: none;
+  letter-spacing: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.cobalt .lockedPrice,
+.cobalt .pricePlaceholder {
+  border-radius: var(--radius-cn-sm);
+}
+
+/* The two state badges, so the variant owns them too. */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  flex: none;
+  padding: 4px 10px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.badgeOwned {
+  background: var(--color-sage);
+  color: var(--color-moss);
+  border-color: rgba(33, 72, 63, 0.3);
+}
+
+.badgeSelected {
+  background: rgba(199, 168, 91, 0.15);
+  color: #8a6f2e;
+  border-color: rgba(199, 168, 91, 0.3);
+}
+
+.cobalt .badgeOwned {
+  background: var(--color-cn-ok-bg);
+  color: var(--color-cn-ok);
+  border-color: rgba(21, 128, 61, 0.3);
+}
+
+.cobalt .badgeSelected {
+  background: var(--color-cn-paper-3);
+  color: var(--color-cn-accent-3);
+  border-color: var(--color-cn-accent-soft);
 }

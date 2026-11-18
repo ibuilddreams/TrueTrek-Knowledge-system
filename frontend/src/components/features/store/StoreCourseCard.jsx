@@ -1,123 +1,130 @@
 "use client";
 
 import Link from "next/link";
-import { BookOpen, GraduationCap, Plus, X } from "lucide-react";
+import { BookOpen, GraduationCap, Hash } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { formatCoursePrice } from "@/lib/store";
-import WishlistHeartButton from "@/components/features/wishlist/WishlistHeartButton";
+import { levelLabel, LEVEL_TONES } from "@/lib/courseLevel";
 
 export default function StoreCourseCard({
   course,
-  isInCart,
-  isPending = false,
-  canPurchase = true,
-  onToggleCart,
-  isWishlisted = false,
-  isWishlistPending = false,
-  onToggleWishlist,
+  onRequestEnroll,
+  revealDelay = 0,
 }) {
+  const href = `${ROUTES.STORE}/${course.slug}`;
+  const level = levelLabel(course.difficulty);
+
   return (
-    <div
+    <article
       id={`store-course-card-${course.id}`}
-      className="relative bg-paper border border-line rounded-card overflow-hidden shadow-soft hover:shadow-elevated hover:-translate-y-1 transition-all duration-300 flex flex-col justify-between group"
+      data-cn-reveal
+      style={{ "--cn-d": revealDelay }}
+      className="cn-reveal group grid grid-cols-1 overflow-hidden rounded-cn-lg border border-cn-rule bg-white transition-[transform,box-shadow,border-color] duration-200 ease-cn-out hover:-translate-y-1 hover:border-transparent hover:shadow-cn-3 sm:grid-cols-[minmax(0,5fr)_minmax(0,7fr)]"
     >
-      {/* The wishlist heart sits outside the link (a button can't live inside an anchor) but is positioned over the thumbnail. */}
-      {onToggleWishlist && (
-        <WishlistHeartButton
-          isWishlisted={isWishlisted}
-          isPending={isWishlistPending}
-          onToggle={() => onToggleWishlist(course)}
-          className="absolute top-3.5 right-3.5 z-10"
-        />
-      )}
+      <div className="relative sm:h-full">
+        <Link
+          href={href}
+          aria-label={`View details for ${course.title}`}
+          className="block focus:outline-none focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-cn-accent sm:h-full"
+        >
+          <figure className="m-0 aspect-16/9 overflow-hidden bg-cn-paper-2 sm:aspect-auto sm:h-full">
+            {course.image ? (
+              <img
+                src={course.image}
+                alt={course.title}
+                loading="lazy"
+                className="h-full w-full object-cover transition-transform duration-[900ms] ease-cn-out group-hover:scale-[1.05]"
+                referrerPolicy="no-referrer"
+              />
+            ) : (
+              <div className="flex h-full w-full items-center justify-center bg-linear-135 from-cn-paper-3 via-cn-paper-4 to-cn-accent-soft">
+                <BookOpen
+                  className="h-10 w-10 text-cn-accent"
+                  strokeWidth={1.5}
+                />
+              </div>
+            )}
+          </figure>
+        </Link>
+      </div>
 
-      <Link
-        href={`${ROUTES.STORE}/${course.slug}`}
-        aria-label={`View details for ${course.title}`}
-        className="block focus:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-pine"
-      >
-        <div className="relative h-56 overflow-hidden bg-porcelain">
-          {course.image ? (
-            <img
-              src={course.image}
-              alt={course.title}
-              className="w-full h-full object-cover group-hover:scale-[1.04] transition duration-500"
-              referrerPolicy="no-referrer"
-            />
-          ) : (
-            <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-pine to-ink">
-              <BookOpen className="w-10 h-10 text-gold/70" />
-            </div>
-          )}
-          <div className="absolute inset-0 bg-gradient-to-t from-ink/40 to-transparent"></div>
-
-          <span className="absolute top-4 left-4 text-[10px] font-sans tracking-widest font-medium uppercase bg-ink/80 text-gold border border-ink/60 px-2.5 py-1 rounded-md backdrop-blur-xs">
+      <div className="flex flex-1 flex-col gap-1.5 px-6 py-4">
+        <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+          <span className="text-cn-sm font-semibold whitespace-nowrap text-cn-accent">
             {course.category?.name || "General"}
           </span>
-
-          <span className="absolute bottom-4 right-4 text-[10px] font-sans font-medium bg-paper/90 text-ink px-2.5 py-1 rounded-md shadow-xs capitalize">
-            {(course.difficulty || "beginner").toLowerCase()}
-          </span>
-        </div>
-
-        <div className="p-6 space-y-3">
-          <h3 className="text-base font-serif font-light tracking-tight text-ink group-hover:text-pine transition-colors line-clamp-2">
-            {course.title}
-          </h3>
-          <p className="text-sm text-muted leading-relaxed font-light line-clamp-3">
-            {course.description || "No description has been added for this course yet."}
-          </p>
-        </div>
-      </Link>
-
-      <div className="p-6 pt-0 border-t border-line mt-4 flex items-center justify-between">
-        <div>
-          <span className="text-[10px] font-sans font-medium text-muted block uppercase tracking-widest">
-            Invest Cost
-          </span>
-          <span className="text-xl font-sans font-semibold text-ink">
-            {formatCoursePrice(course.amount)}
-          </span>
-        </div>
-
-        <div className="flex items-center gap-2">
-          {canPurchase ? (
-            <button
-              id={`toggle-cart-${course.id}`}
-              type="button"
-              onClick={() => onToggleCart(course)}
-              disabled={isPending}
-              className={`font-sans text-xs uppercase font-medium px-4 py-2.5 rounded-full tracking-widest transition-all duration-200 flex items-center gap-1.5 disabled:opacity-60 disabled:cursor-not-allowed ${
-                isInCart
-                  ? "bg-sage/60 hover:bg-rose/40 text-moss hover:text-clay"
-                  : "bg-pine hover:bg-moss text-paper"
+          {level && (
+            <span
+              className={`rounded-full px-2.5 py-[3px] text-cn-xs font-semibold whitespace-nowrap ${
+                LEVEL_TONES[course.difficulty] || "bg-cn-paper-2 text-cn-ink-2"
               }`}
             >
-              {isPending ? (
-                "..."
-              ) : isInCart ? (
-                <>
-                  <X className="w-3.5 h-3.5" />
-                  Remove
-                </>
-              ) : (
-                <>
-                  <Plus className="w-3.5 h-3.5" />
-                  Add to cart
-                </>
-              )}
-            </button>
-          ) : (
-            <span
-              className="font-sans text-[11px] uppercase font-medium px-3 py-2.5 rounded-xl tracking-widest flex items-center gap-1.5 bg-porcelain text-muted"
-              title="Only student accounts can add courses to their cart"
-            >
-              <GraduationCap className="w-3.5 h-3.5" />
-              Student Only
+              {level}
             </span>
           )}
         </div>
+
+        <h3 className="text-cn-base leading-[1.3] font-bold tracking-[-0.015em] text-cn-ink">
+          <Link
+            href={href}
+            className="line-clamp-2 no-underline transition-colors duration-150 hover:text-cn-accent"
+          >
+            {course.title}
+          </Link>
+        </h3>
+
+        <p className="line-clamp-2 text-cn-sm leading-[1.55] text-cn-ink-2">
+          {course.description ||
+            "No description has been added for this course yet."}
+        </p>
+
+        <ul className="m-0 mt-2 flex list-none flex-wrap gap-x-4 gap-y-2 p-0 text-[13px] leading-[1.55] text-cn-muted">
+          {course.grade_label && (
+            <li className="flex items-center gap-1.5">
+              <GraduationCap className="h-[15px] w-[15px] flex-none text-cn-accent-2" />
+              {course.grade_label}
+            </li>
+          )}
+          {course.code && (
+            <li className="flex items-center gap-1.5">
+              <Hash className="h-[15px] w-[15px] flex-none text-cn-accent-2" />
+              {course.code}
+            </li>
+          )}
+        </ul>
+
+        {/* `mt-auto` keeps every card's footer on the same baseline however
+            long the title and description above it run. */}
+        <div className="mt-auto grid gap-3 border-t border-cn-rule pt-3">
+          <div className="flex items-baseline gap-1.5">
+            <b className="text-cn-xl leading-[1.55] font-extrabold tracking-[-0.03em] tabular-nums text-cn-ink">
+              {formatCoursePrice(course.amount)}
+            </b>
+            <small className="text-cn-sm text-cn-muted">one-time</small>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2">
+            <Link
+              href={href}
+              className="inline-flex h-11 items-center justify-center rounded-cn-sm border border-cn-rule-strong bg-white px-2.5 text-cn-sm font-semibold whitespace-nowrap text-cn-ink no-underline shadow-cn-1 transition-colors duration-150 ease-cn-out hover:border-cn-ink"
+            >
+              View details
+            </Link>
+
+            {/* One action, as the design has it. A visitor who is not signed
+                in is asked to sign in first; a student goes to the portal,
+                where the purchase actually happens. */}
+            <button
+              id={`enroll-${course.id}`}
+              type="button"
+              onClick={() => onRequestEnroll?.(course)}
+              className="inline-flex h-11 items-center justify-center rounded-cn-sm bg-cn-accent px-2.5 text-cn-sm font-semibold whitespace-nowrap text-white transition-[background-color,transform] duration-150 ease-cn-out hover:-translate-y-px hover:bg-cn-accent-2"
+            >
+              Enroll now
+            </button>
+          </div>
+        </div>
       </div>
-    </div>
+    </article>
   );
 }

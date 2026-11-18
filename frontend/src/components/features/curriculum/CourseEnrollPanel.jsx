@@ -2,23 +2,26 @@
 
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowRight, Check, CheckCircle2, ShoppingCart } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { ArrowRight, Check, CheckCircle2 } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { useCart } from "@/hooks/useCart";
 import { getPortalRouteForRole, ROUTES } from "@/constants/routes";
 import { getStudentEnrolledCourseDetail } from "@/services/studentCoursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatCoursePrice } from "@/lib/store";
 
+// Full-width buttons: this panel is the course page's purchase card, where
+// the design stacks its actions down the card rather than sitting them in a
+// row (new-design.html `.cdcb .btn { width: 100% }`).
 const SECONDARY_BUTTON =
-  "mt-4 inline-flex items-center gap-2 rounded-xl border border-line bg-paper px-5 py-3 text-sm font-medium text-ink transition hover:bg-porcelain disabled:cursor-not-allowed disabled:opacity-70";
+  "inline-flex h-[50px] w-full items-center justify-center gap-2 rounded-cn-sm border border-cn-rule-strong bg-white px-5 text-sm font-semibold text-cn-ink transition-colors duration-150 enabled:hover:border-cn-ink disabled:cursor-not-allowed disabled:opacity-50";
 
 const PRIMARY_BUTTON =
-  "mt-4 inline-flex items-center gap-2 rounded-xl bg-pine px-5 py-3 text-sm font-medium text-paper transition hover:bg-moss disabled:cursor-not-allowed disabled:opacity-70";
+  "inline-flex h-[50px] w-full items-center justify-center gap-2 rounded-cn-sm bg-cn-accent px-5 text-sm font-semibold text-white transition-[background-color,transform] duration-150 ease-cn-out enabled:hover:-translate-y-px enabled:hover:bg-cn-accent-2 disabled:cursor-not-allowed disabled:opacity-50";
 
 export default function CourseEnrollPanel({ course }) {
   const { status, user, isAuthenticated, isStudent, role } = useAuth();
-  const { isInCart, isPending: isCartPending, toggleCourse } = useCart();
+  const router = useRouter();
 
   const isAuthResolved = status !== "idle" && status !== "loading";
   const courseId = course.id;
@@ -36,37 +39,28 @@ export default function CourseEnrollPanel({ course }) {
         throw error;
       }
     },
-    enabled: isAuthResolved && isAuthenticated && isStudent && Boolean(courseId),
+    enabled:
+      isAuthResolved && isAuthenticated && isStudent && Boolean(courseId),
     retry: false,
   });
 
-  const inCart = isInCart(courseId);
-  const cartButton = (
+  // Enrolling happens in the portal, where the purchase is made.
+  const enrollAction = (
     <button
       type="button"
-      onClick={() => toggleCourse(course)}
-      disabled={isCartPending(courseId)}
-      className={inCart ? SECONDARY_BUTTON : PRIMARY_BUTTON}
+      onClick={() =>
+        router.push(
+          `${ROUTES.STUDENT_PORTAL}?buy=${encodeURIComponent(course.slug)}`,
+        )
+      }
+      className={PRIMARY_BUTTON}
     >
-      {inCart ? <Check className="h-4 w-4" /> : <ShoppingCart className="h-4 w-4" />}
-      {inCart ? "In cart · remove" : "Add to cart"}
+      Enroll now
+      <ArrowRight className="h-4 w-4" />
     </button>
   );
 
-  // Purchasing happens from the cart page, never from here.
-  const cartActions = (
-    <div className="flex flex-wrap items-center gap-3">
-      {cartButton}
-      {inCart && (
-        <Link href={ROUTES.CART} className={PRIMARY_BUTTON}>
-          View cart
-          <ArrowRight className="h-4 w-4" />
-        </Link>
-      )}
-    </div>
-  );
-
-  const portalCourseUrl = `${ROUTES.STUDENT_PORTAL}?tab=courses&course=${courseId}`;
+  const portalCourseUrl = `${ROUTES.STUDENT_PORTAL}/courses?course=${courseId}`;
   let heading;
   let body;
   let action;
@@ -82,10 +76,11 @@ export default function CourseEnrollPanel({ course }) {
   } else if (!isAuthenticated) {
     heading = "Enroll in this course";
     body = `Add this course to your cart (${formatCoursePrice(course.amount)}). You'll sign in with your student account when you check out from your cart.`;
-    action = cartActions;
+    action = enrollAction;
   } else if (!isStudent) {
     heading = "Manage this course";
-    body = "Course purchases are available to student accounts. Open your portal to manage courses.";
+    body =
+      "Course purchases are available to student accounts. Open your portal to manage courses.";
     action = (
       <Link href={getPortalRouteForRole(role)} className={PRIMARY_BUTTON}>
         Open your portal
@@ -107,13 +102,18 @@ export default function CourseEnrollPanel({ course }) {
       "We couldn't check your enrollment right now.",
     );
     action = (
-      <button type="button" onClick={() => enrollmentQuery.refetch()} className={PRIMARY_BUTTON}>
+      <button
+        type="button"
+        onClick={() => enrollmentQuery.refetch()}
+        className={PRIMARY_BUTTON}
+      >
         Try again
       </button>
     );
   } else if (enrollmentQuery.data) {
     heading = "You're enrolled";
-    body = "Pick up where you left off — read the lessons, submit assignments, and take quizzes in your learning portal.";
+    body =
+      "Pick up where you left off — read the lessons, submit assignments, and take quizzes in your learning portal.";
     action = (
       <Link href={portalCourseUrl} className={PRIMARY_BUTTON}>
         Start learning
@@ -123,19 +123,21 @@ export default function CourseEnrollPanel({ course }) {
   } else {
     heading = "Enroll in this course";
     body = `Add this course to your cart (${formatCoursePrice(course.amount)}), then purchase it from your cart to unlock its lessons, assignments, and quizzes.`;
-    action = cartActions;
+    action = enrollAction;
   }
 
+  // No border or background of its own: the course page wraps this in the
+  // card that also carries the course image, so this is that card's body.
   return (
-    <div className="mt-6 rounded-2xl border border-line bg-sage/50 p-6">
-      <h3 className="flex items-center gap-2 font-semibold">
+    <div className="grid gap-3 p-6">
+      <h3 className="flex items-center gap-2 text-cn-lg font-bold tracking-[-0.015em] text-cn-ink">
         {enrollmentQuery.data && isStudent && (
-          <CheckCircle2 className="h-4 w-4 text-emerald-600" />
+          <CheckCircle2 className="h-5 w-5 shrink-0 text-cn-ok" />
         )}
         {heading}
       </h3>
-      <p className="mt-2 text-sm text-muted">{body}</p>
-      {action}
+      <p className="text-sm leading-relaxed text-cn-ink-2">{body}</p>
+      <div className="mt-1">{action}</div>
     </div>
   );
 }

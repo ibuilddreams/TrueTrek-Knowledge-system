@@ -835,7 +835,20 @@ class SeedDataAssetTests(TestCase):
             call_command("seeddata", noinput=True)
 
         self.assertEqual(Course.objects.count(), len(seed.COURSE_DEFS))
-        self.assertFalse(Course.objects.exclude(thumbnail="").exists())
+        # The two shared lesson files are fetched over the network, so no
+        # lesson carries one. (Handouts are *rendered* locally rather than
+        # downloaded, so authored courses still have their files — which is
+        # why this asserts on the downloaded pair rather than on `file`.)
+        for path in seed.LESSON_ASSET_PATHS.values():
+            self.assertFalse(Lesson.objects.filter(file=path).exists())
+        # The course photographs are the exception, and the reason they ship in
+        # the repository rather than being downloaded: a seed run on a server
+        # with no outbound network still ends with a catalog that has pictures.
+        # This used to assert the opposite, back when a thumbnail could only
+        # come from a download.
+        self.assertEqual(
+            Course.objects.exclude(thumbnail="").count(), len(seed.COURSE_DEFS)
+        )
 
 
 class SeedDataQuestTests(TestCase):

@@ -66,7 +66,7 @@ export default function RoomThread({ room, onBack }) {
         {isFaculty && (
           <button
             type="button"
-            onClick={() => router.push(`${ROUTES.TEACHER_PORTAL}?tab=students`)}
+            onClick={() => router.push(`${ROUTES.TEACHER_PORTAL}/students`)}
             title="View course roster"
             className="hidden sm:inline-flex items-center gap-1.5 px-3 py-1.5 border border-stone-200 hover:bg-stone-50 text-stone-600 text-[11px] font-mono uppercase tracking-wider rounded-lg transition shrink-0"
           >

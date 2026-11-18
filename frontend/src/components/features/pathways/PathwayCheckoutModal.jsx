@@ -5,6 +5,7 @@ import { CreditCard, Lock, ShieldCheck } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
 import { formatCoursePrice } from "@/lib/store";
 import CloseButton from "@/components/ui/CloseButton";
+import { CN_BTN_PRIMARY } from "@/components/ui/cobaltStyles";
 
 function formatCardNumber(value) {
   const digits = value.replace(/\D/g, "").slice(0, 19);
@@ -17,16 +18,63 @@ function formatExpiry(value) {
   return `${digits.slice(0, 2)}/${digits.slice(2)}`;
 }
 
-const FIELD_CLASS =
-  "w-full px-3.5 py-2.5 bg-porcelain border border-line focus:border-moss rounded-xl text-xs font-sans text-ink placeholder:text-muted focus:outline-none focus:bg-paper transition";
+// This modal opens over four different screens, and they are not all on the
+// same design: `/pathways` is cobalt while the pathway detail page, the custom
+// builder and the student portal's picker are still porcelain. So the look is
+// a prop with the old values as its default, rather than a rewrite — the same
+// `tone` convention the other shared components here use. `porcelain` must keep
+// emitting exactly the classes it emitted before this prop existed.
+const TONES = {
+  porcelain: {
+    overlay: "bg-ink/60",
+    panel: "bg-paper rounded-panel border-line shadow-2xl",
+    close:
+      "absolute top-4 right-4 text-muted hover:text-ink bg-paper/90 p-2 rounded-full shadow-md z-10 border border-line transition",
+    badge: "rounded-xl bg-pine text-paper",
+    title: "font-serif font-light text-ink",
+    eyebrow: "text-[10px] font-sans uppercase tracking-widest font-medium text-muted",
+    summary: "rounded-xl border border-line bg-porcelain/80",
+    lineLabel: "text-muted truncate",
+    linePrice: "font-sans text-ink shrink-0",
+    totalRule: "border-line",
+    totalLabel: "text-ink",
+    totalPrice: "font-sans font-semibold text-moss",
+    fieldLabel:
+      "text-[9px] font-sans font-medium uppercase tracking-widest text-muted block mb-1.5",
+    field:
+      "w-full px-3.5 py-2.5 bg-porcelain border border-line focus:border-moss rounded-xl text-xs font-sans text-ink placeholder:text-muted focus:outline-none focus:bg-paper transition",
+    note: "text-muted",
+    submit:
+      "w-full flex items-center justify-center gap-2 bg-gold hover:brightness-95 text-ink font-sans text-xs font-semibold uppercase tracking-widest py-3.5 rounded-full shadow-md transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed",
+  },
+  cobalt: {
+    overlay: "bg-cn-ink/60",
+    panel: "bg-white rounded-cn-lg border-cn-rule shadow-cn-3",
+    close:
+      "absolute top-4 right-4 z-10 rounded-full border border-cn-rule bg-white/90 p-2 text-cn-muted shadow-cn-1 transition-colors duration-150 hover:text-cn-ink",
+    badge: "rounded-cn bg-cn-accent text-white",
+    title: "text-cn-lg font-bold tracking-[-0.015em] text-cn-ink",
+    eyebrow: "text-[10px] uppercase tracking-widest font-semibold text-cn-muted",
+    summary: "rounded-cn border border-cn-rule bg-cn-paper-2",
+    lineLabel: "text-cn-muted truncate",
+    linePrice: "font-semibold text-cn-ink shrink-0",
+    totalRule: "border-cn-rule",
+    totalLabel: "text-cn-ink",
+    totalPrice: "font-semibold text-cn-accent",
+    fieldLabel:
+      "text-[9px] font-semibold uppercase tracking-widest text-cn-muted block mb-1.5",
+    field:
+      "w-full px-3.5 py-2.5 bg-cn-paper-2 border border-cn-rule focus:border-cn-accent rounded-cn-sm text-xs text-cn-ink placeholder:text-cn-muted focus:outline-none focus:bg-white transition-colors duration-150",
+    note: "text-cn-muted",
+    submit: `${CN_BTN_PRIMARY} w-full`,
+  },
+};
 
-function Field({ label, ...inputProps }) {
+function Field({ label, styles, ...inputProps }) {
   return (
     <div>
-      <label className="text-[9px] font-sans font-medium uppercase tracking-widest text-muted block mb-1.5">
-        {label}
-      </label>
-      <input {...inputProps} className={FIELD_CLASS} />
+      <label className={styles.fieldLabel}>{label}</label>
+      <input {...inputProps} className={styles.field} />
     </div>
   );
 }
@@ -37,7 +85,9 @@ export default function PathwayCheckoutModal({
   isSubmitting = false,
   onClose,
   onConfirm,
+  tone = "porcelain",
 }) {
+  const styles = TONES[tone] ?? TONES.porcelain;
   const [form, setForm] = useState({ cardholderName: "", cardNumber: "", expiry: "", cvv: "" });
 
   const subtotal = pathways.reduce((sum, pathway) => sum + (Number(pathway.base_price) || 0), 0);
@@ -66,46 +116,48 @@ export default function PathwayCheckoutModal({
     <AnimatePresence>
       {isOpen && (
         <div
-          className="fixed inset-0 z-[110] overflow-y-auto flex items-center justify-center p-6 bg-ink/60 backdrop-blur-xs"
+          className={`fixed inset-0 z-[110] overflow-y-auto flex items-center justify-center p-6 backdrop-blur-xs ${styles.overlay}`}
           id="pathway-checkout-modal-layout"
         >
           <motion.div
             initial={{ scale: 0.95, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
             exit={{ scale: 0.95, opacity: 0 }}
-            className="relative bg-paper rounded-panel overflow-hidden max-w-md w-full border border-line shadow-2xl"
+            className={`relative overflow-hidden max-w-md w-full border ${styles.panel}`}
           >
             <CloseButton
               onClick={handleClose}
-              className="absolute top-4 right-4 text-muted hover:text-ink bg-paper/90 p-2 rounded-full shadow-md z-10 border border-line transition"
+              className={styles.close}
               iconClassName="w-4 h-4"
             />
 
             <div className="p-6 space-y-5">
               <div className="flex items-center gap-2.5">
-                <div className="w-9 h-9 rounded-xl bg-pine text-paper flex items-center justify-center shrink-0">
+                <div
+                  className={`w-9 h-9 flex items-center justify-center shrink-0 ${styles.badge}`}
+                >
                   <CreditCard className="w-4 h-4" />
                 </div>
                 <div>
-                  <h3 className="font-serif font-light text-ink">Pathway Checkout</h3>
-                  <p className="text-[10px] font-sans uppercase tracking-widest font-medium text-muted">
-                    Simulated payment — no real charge
-                  </p>
+                  <h3 className={styles.title}>Pathway Checkout</h3>
+                  <p className={styles.eyebrow}>Simulated payment — no real charge</p>
                 </div>
               </div>
 
-              <div className="rounded-xl border border-line bg-porcelain/80 p-3.5 space-y-2">
+              <div className={`p-3.5 space-y-2 ${styles.summary}`}>
                 {pathways.map((pathway) => (
                   <div key={pathway.id} className="flex items-center justify-between gap-3 text-xs">
-                    <span className="text-muted truncate">{pathway.name}</span>
-                    <span className="font-sans text-ink shrink-0">
+                    <span className={styles.lineLabel}>{pathway.name}</span>
+                    <span className={styles.linePrice}>
                       {formatCoursePrice(pathway.base_price)}
                     </span>
                   </div>
                 ))}
-                <div className="flex items-center justify-between pt-2 border-t border-line text-xs font-bold">
-                  <span className="text-ink">Total</span>
-                  <span className="font-sans font-semibold text-moss">{formatCoursePrice(subtotal)}</span>
+                <div
+                  className={`flex items-center justify-between pt-2 border-t text-xs font-bold ${styles.totalRule}`}
+                >
+                  <span className={styles.totalLabel}>Total</span>
+                  <span className={styles.totalPrice}>{formatCoursePrice(subtotal)}</span>
                 </div>
               </div>
 
@@ -116,6 +168,7 @@ export default function PathwayCheckoutModal({
                   value={form.cardholderName}
                   onChange={updateField("cardholderName")}
                   autoComplete="off"
+                  styles={styles}
                 />
                 <Field
                   label="Card Number"
@@ -124,6 +177,7 @@ export default function PathwayCheckoutModal({
                   value={form.cardNumber}
                   onChange={updateField("cardNumber", formatCardNumber)}
                   autoComplete="off"
+                  styles={styles}
                 />
                 <div className="grid grid-cols-2 gap-3.5">
                   <Field
@@ -133,6 +187,7 @@ export default function PathwayCheckoutModal({
                     value={form.expiry}
                     onChange={updateField("expiry", formatExpiry)}
                     autoComplete="off"
+                    styles={styles}
                   />
                   <Field
                     label="CVV"
@@ -142,10 +197,11 @@ export default function PathwayCheckoutModal({
                     value={form.cvv}
                     onChange={updateField("cvv", (v) => v.replace(/\D/g, "").slice(0, 4))}
                     autoComplete="off"
+                    styles={styles}
                   />
                 </div>
 
-                <p className="flex items-center gap-1.5 text-[10px] text-muted">
+                <p className={`flex items-center gap-1.5 text-[10px] ${styles.note}`}>
                   <Lock className="w-3 h-3 shrink-0" />
                   This is a demo checkout. Card details are never sent or stored.
                 </p>
@@ -153,7 +209,7 @@ export default function PathwayCheckoutModal({
                 <button
                   type="submit"
                   disabled={isSubmitting || pathways.length === 0}
-                  className="w-full flex items-center justify-center gap-2 bg-gold hover:brightness-95 text-ink font-sans text-xs font-semibold uppercase tracking-widest py-3.5 rounded-full shadow-md transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+                  className={styles.submit}
                 >
                   <ShieldCheck className="w-4 h-4" />
                   {isSubmitting ? "Processing..." : "Confirm Payment"}

@@ -15,7 +15,6 @@ from django.utils import timezone
 from django.utils.text import slugify
 
 from assignments.models import Assignment
-from carts.models import CartItem
 from class_sessions.models import ClassSession, ClassSessionAttendance
 from common.models import Status
 from common.ordering import get_next_order
@@ -23,7 +22,6 @@ from courses.grades import STAGE_AUDIENCES, STAGE_NAMES
 from courses.models import Category, Course, CourseInstructor, Tag
 from daily_drill.models import DrillOption, DrillQuestion
 from enrollments.models import Enrollment, EnrollmentHistory
-from future_clients.models import FutureClientApplication
 from instructors.models import InstructorFeedback, InstructorProfile
 from lessons.models import Lesson
 from modules.models import Module
@@ -53,6 +51,13 @@ from wargamer.models import RolePlayScenario, RolePlaySession, RolePlayTurn
 
 from ._course_content import COURSE_CONTENT
 from ._handouts import PDF_AVAILABLE, build_handout_docx, build_handout_pdf
+from ._course_images import (
+    image_file_names,
+    image_for,
+    is_seeded_thumbnail,
+    media_path as course_image_media_path,
+    source_path as course_image_source_path,
+)
 from ._retired_courses import RETIRED_COURSE_CODES
 
 User = get_user_model()
@@ -2929,6 +2934,7 @@ class Command(BaseCommand):
         without a file."""
         assets = {
             "provider_thumbnails": {},
+            "course_images": {},
             "lessons": {},
             "instructor_avatars": [],
             "handouts": {},
@@ -2941,6 +2947,7 @@ class Command(BaseCommand):
             return assets
 
         assets["handouts"] = self._build_handouts()
+        assets["course_images"] = self._store_course_images()
 
         for name, url in LESSON_ASSET_URLS.items():
             path = self._store_asset(LESSON_ASSET_PATHS[name], url)
@@ -2969,10 +2976,52 @@ class Command(BaseCommand):
                 f"Prepared {len(assets['instructor_avatars'])} instructor photo(s), "
                 f"{len(assets['lessons'])} shared lesson file(s), "
                 f"{len(assets['handouts'])} course handout(s) and "
-                f"{len(assets['provider_thumbnails'])} provider thumbnail(s) in media storage"
+                f"{len(assets['provider_thumbnails'])} provider thumbnail(s) and "
+                f"{len(assets['course_images'])} course photograph(s) in media storage"
             )
         )
         return assets
+
+    def _store_course_images(self):
+        """Copies the shipped course photographs into MEDIA_ROOT.
+
+        These are the one seed asset that is **not** downloaded: they live in
+        the repository (`_assets/course_images/`), so a server with no outbound
+        network still ends up with a catalog that has pictures. Already-stored
+        files are left alone, which is what makes a reseed cheap and keeps the
+        stored name stable for `_assign_course_thumbnail`.
+
+        Returns {file name: stored media name}. A file missing from the working
+        tree is reported and skipped rather than raising: a catalog card without
+        a photograph is a blemish, not a reason to abort a seed that is also
+        writing courses, enrolments and progress.
+        """
+        stored = {}
+        missing = []
+
+        for file_name in image_file_names():
+            target = course_image_media_path(file_name)
+            if default_storage.exists(target):
+                stored[file_name] = target
+                continue
+
+            source = course_image_source_path(file_name)
+            if not source.exists():
+                missing.append(file_name)
+                continue
+
+            with source.open("rb") as handle:
+                stored[file_name] = default_storage.save(target, ContentFile(handle.read()))
+
+        if missing:
+            self.stdout.write(
+                self.style.WARNING(
+                    f"{len(missing)} course photograph(s) missing from the repository "
+                    f"({', '.join(missing[:3])}{'...' if len(missing) > 3 else ''}) — "
+                    "those courses seed without one."
+                )
+            )
+        return stored
 
     def _build_handouts(self):
         """Renders the handouts authored modules carry, into media storage.
@@ -3059,6 +3108,40 @@ class Command(BaseCommand):
             return None
 
         return default_storage.save(path, ContentFile(response.content))
+
+    def _course_thumbnail_for(self, course_def, position, assets):
+        """The stored media name for one course's card photograph, or "".
+
+        The shipped per-category photographs come first; the provider logo
+        (`PROVIDER_THUMBNAILS`) remains the fallback for a catalog that ever
+        carries third-party courses again, and "" means this course seeds
+        without a picture.
+        """
+        file_name = image_for(course_def["category"], position)
+        stored = assets["course_images"].get(file_name) if file_name else None
+        if stored:
+            return stored
+        return assets["provider_thumbnails"].get(course_def["provider"]) or ""
+
+    def _assign_course_thumbnail(self, course, thumbnail):
+        """Fills in an existing course's card photograph on a reseed.
+
+        Only when the course has no thumbnail, or when the one it has is one of
+        ours: a thumbnail uploaded through the admin portal is stored outside
+        the seeded folder (`is_seeded_thumbnail`) and is left exactly as it is,
+        the same rule that protects every other admin edit this command
+        preserves. A course already carrying the right file is not written at
+        all, which keeps a repeat run a no-op.
+        """
+        if not thumbnail:
+            return
+        current = course.thumbnail.name if course.thumbnail else ""
+        if current and not is_seeded_thumbnail(current):
+            return
+        if current == thumbnail:
+            return
+        course.thumbnail = thumbnail
+        course.save(update_fields=["thumbnail", "updated_at"])
 
     def _validate_course_defs(self):
         """Fails fast on the two ways the merged catalog could corrupt itself.
@@ -3239,14 +3322,10 @@ class Command(BaseCommand):
         ModuleProgress.objects.all().delete()
         CourseProgress.objects.all().delete()
         LearningActivity.objects.all().delete()
-        CartItem.objects.all().delete()
         OnboardingProgress.objects.all().delete()
         PathwayEnrollment.objects.all().delete()
         TierProgress.objects.all().delete()
 
-        # Applications carry their own applicant details rather than an FK to a
-        # seeded user, so deleting users doesn't cascade them.
-        FutureClientApplication.objects.all().delete()
         DrillQuestion.objects.all().delete()
 
         Course.objects.all().delete()
@@ -3388,8 +3467,31 @@ class Command(BaseCommand):
                 tag_cache[name] = Tag.objects.get_or_create(name=name)[0]
             return tag_cache[name]
 
+        # Which photograph a course gets is its rank **in title order within
+        # its own category** — not its position in COURSE_DEFS. Every catalog
+        # surface lists courses by title (`courses/views.py` defaults to
+        # `order_by("title", "id")`), so ranking any other way hands the pool
+        # out in an order unrelated to the one people read, and the same
+        # picture lands twice in a single row. Ranked this way the four-image
+        # pool cycles 1,2,3,4 straight down a three-column grid, which puts the
+        # repeats on a diagonal where no two of them touch.
+        image_positions = {}
+        for category in {cd["category"] for cd in COURSE_DEFS}:
+            ranked = sorted(
+                (cd for cd in COURSE_DEFS if cd["category"] == category),
+                # Case-folded, because the database collation that actually
+                # orders the catalog is case-insensitive: a plain ASCII sort
+                # puts "AI for Creativity" before "Acing the First Job
+                # Interview" and Postgres does the opposite, which is enough
+                # to slip two cards of the same picture next to each other.
+                key=lambda cd: cd["title"].casefold(),
+            )
+            for rank, ranked_def in enumerate(ranked):
+                image_positions[ranked_def["code"]] = rank
+
         for course_def in COURSE_DEFS:
-            thumbnail = assets["provider_thumbnails"].get(course_def["provider"]) or ""
+            position = image_positions[course_def["code"]]
+            thumbnail = self._course_thumbnail_for(course_def, position, assets)
             course, created = Course.objects.get_or_create(
                 code=course_def["code"],
                 defaults={
@@ -3405,6 +3507,14 @@ class Command(BaseCommand):
                 },
             )
             courses_by_code[course_def["code"]] = course
+
+            # A course that already exists gets its photograph here rather than
+            # through `defaults` above: every environment seeded before these
+            # images shipped holds courses with a blank thumbnail, and
+            # `get_or_create` would leave the whole catalog looking the way it
+            # does today. An admin's own upload is never replaced.
+            if not created:
+                self._assign_course_thumbnail(course, thumbnail)
 
             authored = COURSE_CONTENT.get(course_def["code"])
             # Existing catalog content may have been edited or purchased. Only

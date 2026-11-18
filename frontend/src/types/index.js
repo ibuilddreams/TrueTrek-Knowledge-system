@@ -4,7 +4,7 @@
  */
 
 /**
- * @typedef {'home'|'curriculum'|'partnerships'|'store'|'future-clients'|'portal'|'login'|'dashboard'|'teachers'} RouteKey
+ * @typedef {'home'|'curriculum'|'partnerships'|'store'|'portal'|'login'|'dashboard'|'teachers'} RouteKey
  */
 
 /**

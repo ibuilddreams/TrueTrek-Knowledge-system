@@ -98,7 +98,7 @@ export default function SavedCustomPathwayCard({
       <div className="mt-auto pt-1 flex flex-wrap items-center gap-2">
         {isPurchased ? (
           <Link
-            href={`${ROUTES.STUDENT_PORTAL}?tab=courses`}
+            href={`${ROUTES.STUDENT_PORTAL}/courses`}
             className="inline-flex items-center justify-center gap-2 bg-pine hover:bg-moss text-paper font-sans text-[11px] font-medium uppercase tracking-widest px-5 py-2.5 rounded-full shadow-soft transition"
           >
             Go To My Courses

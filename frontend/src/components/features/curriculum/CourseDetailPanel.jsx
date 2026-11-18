@@ -197,7 +197,7 @@ export default function CourseDetailPanel({ course: cardCourse, onClose }) {
                   <button
                     id="curriculum-continue-learning-btn"
                     onClick={() =>
-                      router.push(`${ROUTES.STUDENT_PORTAL}?tab=courses&course=${courseId}`)
+                      router.push(`${ROUTES.STUDENT_PORTAL}/courses?course=${courseId}`)
                     }
                     className="font-semibold text-xs px-5 py-2.5 rounded-lg tracking-wide transition bg-stone-900 hover:bg-stone-800 text-white"
                   >

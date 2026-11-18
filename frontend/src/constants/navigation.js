@@ -1,14 +1,10 @@
 import { ROUTES, ROUTE_KEYS } from "./routes";
+import { PRIMARY_AUDIENCE_SLUG } from "@/data/audiences";
 
+// No "Home" entry: the design makes the wordmark the way home, so a separate
+// link would be a second control for the same destination. The logo in
+// `Navbar` carries that job (and its own title/aria label).
 export const NAV_LINKS = [
-  {
-    id: "nav-link-home",
-    key: ROUTE_KEYS.HOME,
-    href: ROUTES.HOME,
-    label: "Home",
-    mobileLabel: "Home Orientation",
-    title: "View the Cool Nerdz program orientation and overview",
-  },
   {
     id: "nav-link-curriculum",
     key: ROUTE_KEYS.CURRICULUM,
@@ -17,14 +13,14 @@ export const NAV_LINKS = [
     mobileLabel: "Curriculum Core",
     title: "Explore the 14-Tier Incubator Life Curriculum",
   },
-  // {
-  //   id: "nav-link-partnerships",
-  //   key: ROUTE_KEYS.PARTNERSHIPS,
-  //   href: ROUTES.PARTNERSHIPS,
-  //   label: "For Schools",
-  //   mobileLabel: "For Schools (Licenses)",
-  //   title: "Review academic institutional licenses and partnerships",
-  // },
+  {
+    id: "nav-link-audiences",
+    key: ROUTE_KEYS.AUDIENCES,
+    href: `${ROUTES.AUDIENCES}/${PRIMARY_AUDIENCE_SLUG}`,
+    label: "Who it's for",
+    mobileLabel: "Who It's For",
+    title: "See the pathways built for each kind of learner",
+  },
   {
     id: "nav-link-store",
     key: ROUTE_KEYS.STORE,
@@ -34,12 +30,12 @@ export const NAV_LINKS = [
     title: "Purchase strategic merchandise and program materials",
   },
   {
-    id: "nav-link-future-clients",
-    key: ROUTE_KEYS.FUTURE_CLIENTS,
-    href: ROUTES.FUTURE_CLIENTS,
-    label: "Future Clients",
-    mobileLabel: "Future Clients",
-    title: "Calculate program metrics and configure parent/guardian custom plans",
+    id: "nav-link-partnerships",
+    key: ROUTE_KEYS.PARTNERSHIPS,
+    href: ROUTES.PARTNERSHIPS,
+    label: "For schools",
+    mobileLabel: "For Schools",
+    title: "License the curriculum and portal for your whole school",
   },
   {
     id: "nav-link-faq",

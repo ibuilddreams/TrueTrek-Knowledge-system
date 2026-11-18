@@ -1,6 +1,14 @@
 import { backendClient } from "./apiClient";
 import { downloadBlob } from "@/lib/bulkImport";
 
+// Prototype checkout: the modal simulates the payment, then this enrolls the
+// student. Replaces the cart's checkout — a purchase now names its courses
+// instead of draining a stored basket.
+export async function purchaseCourses(courseIds) {
+  const ids = Array.isArray(courseIds) ? courseIds : [courseIds];
+  return backendClient.post("/enrollments/purchase/", { course_ids: ids });
+}
+
 export async function getEnrollments({ pageSize = 100 } = {}) {
   return backendClient.get(`/enrollments/admin/?page_size=${pageSize}`);
 }

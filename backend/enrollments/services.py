@@ -1,5 +1,5 @@
 from django.contrib.auth import get_user_model
-from django.db import transaction
+from django.db import IntegrityError, transaction
 from django.db.models import Count
 
 from assignments.models import AssignmentSubmission
@@ -408,3 +408,92 @@ def get_student_certificates(student):
         }
         for progress in completed
     ]
+
+
+def purchase_courses(student, course_ids):
+    """Buys one or more courses outright and enrolls the student in each.
+
+    This is the whole purchase path. It replaces the cart's checkout, which
+    enrolled a student by draining their cart; courses are now bought one at a
+    time from the portal, so the courses to buy are named directly instead of
+    being read from a stored basket.
+
+    Each course is handled independently and atomically — a course is either
+    fully enrolled or left untouched, never a partial state — so one course
+    failing (unpublished, no instructor yet) doesn't block the others. The
+    three-way result mirrors the old checkout's, because the frontend tells
+    the student a different thing about each outcome.
+
+    There is no payment integration: the UI is explicit that this is a
+    prototype checkout, and the only thing that happens here is the enrolment.
+    """
+    courses = list(Course.objects.filter(id__in=course_ids))
+    found_ids = {course.id for course in courses}
+
+    enrolled = []
+    already_enrolled = []
+    failed = [
+        {
+            "course_id": course_id,
+            "course_title": "",
+            "reason": "This course could not be found.",
+        }
+        for course_id in course_ids
+        if course_id not in found_ids
+    ]
+
+    for course in courses:
+        if course.status != Status.PUBLISHED:
+            failed.append(
+                {
+                    "course_id": course.id,
+                    "course_title": course.title,
+                    "reason": "This course is no longer available for purchase.",
+                }
+            )
+            continue
+
+        if Enrollment.objects.filter(student=student, course=course).exists():
+            already_enrolled.append(
+                {"course_id": course.id, "course_title": course.title}
+            )
+            continue
+
+        teacher = assign_teacher_for_course(course)
+        if teacher is None:
+            failed.append(
+                {
+                    "course_id": course.id,
+                    "course_title": course.title,
+                    "reason": "This course doesn't have an instructor assigned yet.",
+                }
+            )
+            continue
+
+        try:
+            with transaction.atomic():
+                enrollment = Enrollment.objects.create(
+                    student=student, course=course, teacher=teacher
+                )
+        except IntegrityError:
+            # Lost a race with a second purchase of the same course in the
+            # same instant. The desired end state (enrolled) already holds.
+            already_enrolled.append(
+                {"course_id": course.id, "course_title": course.title}
+            )
+            continue
+
+        enrolled.append(
+            {
+                "course_id": course.id,
+                "course_title": course.title,
+                "enrollment_id": enrollment.id,
+                "teacher": {"id": teacher.id, "name": teacher.name},
+            }
+        )
+
+    return {
+        "enrolled": enrolled,
+        "already_enrolled": already_enrolled,
+        "failed": failed,
+    }

@@ -10,11 +10,10 @@ class TestimonialStatus(models.TextChoices):
 
 
 class Testimonial(BaseModel):
-    """A public testimonial submitted from the Future Clients page.
+    """A public testimonial submitted by a visitor.
 
     Submissions start PENDING and only appear on the public page once an
-    admin publishes them, mirroring the moderation pattern used by
-    future_clients.FutureClientApplication.
+    admin publishes them.
     """
 
     name = models.CharField(max_length=150)

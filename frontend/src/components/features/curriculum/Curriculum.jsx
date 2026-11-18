@@ -1,103 +1,89 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
-import CurriculumFilters from "./CurriculumFilters";
-import CurriculumCourseCard from "./CurriculumCourseCard";
-import { getPublicCourses, getPublicCourseFilters } from "@/services/coursesService";
-import { useDebouncedValue } from "@/hooks/useDebouncedValue";
-import { usePaginationAnchor } from "@/hooks/usePaginationAnchor";
-import { getApiErrorMessage } from "@/lib/apiErrors";
-import { useCart } from "@/hooks/useCart";
-import { useAuth } from "@/hooks/useAuth";
-import Loader from "@/components/ui/Loader";
+import useScrollReveal from "@/hooks/useScrollReveal";
+import { getPublicCourseFilters } from "@/services/coursesService";
+import { getPublicPathways } from "@/services/pathwaysService";
+import CurriculumTierLadder from "./CurriculumTierLadder";
+import CurriculumPathwayCards from "./CurriculumPathwayCards";
+import CurriculumClosingCta from "./CurriculumClosingCta";
 
-const SAVED_KEY = "truetrek-saved-curriculum";
-const PAGE_SIZE = 24;
-const DEFAULT_FILTERS = { grade: "", tier: "", difficulty: "", sort: "title" };
-
+// `/curriculum` is the overview of how the catalog is organised: the nine
+// tiers in order, then the pathways that cut across them. It deliberately
+// holds no course list — browsing and buying individual courses is the store's
+// job, and the design keeps the two apart so this page can answer "how is this
+// structured?" without also being a search results screen.
 export default function Curriculum() {
-  const [search, setSearch] = useState("");
-  const query = useDebouncedValue(search);
-  const [filters, setFilters] = useState(DEFAULT_FILTERS);
-  const [page, setPage] = useState(1);
-  const [resultsRef, changePage] = usePaginationAnchor(setPage);
-  const [saved, setSaved] = useState([]);
-  const [savedOnly, setSavedOnly] = useState(false);
-  const { isAuthenticated, isStudent } = useAuth();
-  const { isInCart, isPending, toggleCourse } = useCart();
-  const canUseCart = !isAuthenticated || isStudent;
-  useEffect(() => {
-    try {
-      const stored = JSON.parse(localStorage.getItem(SAVED_KEY) || "[]");
-      if (Array.isArray(stored)) setSaved(stored.filter((id) => typeof id === "string"));
-    } catch { /* A blocked or unavailable browser store does not prevent browsing. */ }
-  }, []);
+  const pageRef = useRef(null);
 
-  const facets = useQuery({ queryKey: ["curriculum-filters"], queryFn: async () => (await getPublicCourseFilters()).data });
-  const coursesQuery = useQuery({
-    queryKey: ["curriculum-courses", query, filters, page],
-    queryFn: async () => (await getPublicCourses({ ...filters, search: query, page, pageSize: PAGE_SIZE })).data,
+  // The tiers come from the public course filters, which is where the catalog
+  // already publishes them with their level, name and focus.
+  const facets = useQuery({
+    queryKey: ["curriculum-filters"],
+    queryFn: async () => (await getPublicCourseFilters()).data,
   });
-  const allCourses = coursesQuery.data?.results || [];
-  const courses = savedOnly ? allCourses.filter((course) => saved.includes(String(course.id))) : allCourses;
-  const count = coursesQuery.data?.count || 0;
-  const totalPages = Math.max(1, Math.ceil(count / PAGE_SIZE));
-  function updateFilter(key, value) { setFilters((current) => ({ ...current, [key]: value })); setPage(1); }
-  function toggleSaved(course) {
-    const id = String(course.id);
-    const next = saved.includes(id) ? saved.filter((item) => item !== id) : [...saved, id];
-    setSaved(next);
-    try { localStorage.setItem(SAVED_KEY, JSON.stringify(next)); } catch { /* Keep this session's selection. */ }
-  }
-  function clearFilters() { setFilters((current) => ({ ...DEFAULT_FILTERS, sort: current.sort })); setPage(1); }
+
+  // `/pathways/public/` is paginated, so the array is under `data.results` —
+  // the envelope itself is not iterable. Its own cache key rather than the
+  // homepage's: two queries sharing a key must agree on the shape they return,
+  // and an invariant like that rots the first time one of them is edited.
+  const pathwaysQuery = useQuery({
+    queryKey: ["curriculum-pathways"],
+    queryFn: async () => {
+      const response = await getPublicPathways({ pageSize: 100 });
+      return response?.data?.results || [];
+    },
+  });
+
   const tiers = facets.data?.tiers || [];
-  const grades = facets.data?.grades || [];
-  const difficulties = facets.data?.difficulties || [];
+  const pathways = pathwaysQuery.data || [];
+
+  // Re-run the reveal sweep as each list arrives, so cards that render after
+  // the first pass reveal exactly as the first set did.
+  useScrollReveal(pageRef, [tiers.length, pathways.length]);
+
   return (
-    <div className="min-h-screen bg-[#fafafa] px-5 py-10 font-sans text-zinc-900 md:px-8 md:py-12" id="curriculum-container">
-      <div className="mx-auto max-w-7xl">
-        <header className="mx-auto mb-7 max-w-3xl text-center md:mb-8">
-          <h1 className="text-4xl font-bold tracking-tight sm:text-5xl md:text-[56px] md:leading-[1.15]">The 9-Tier Curriculum</h1>
-          <p className="mx-auto mt-3 max-w-2xl text-base leading-7 text-zinc-500">Explore courses built around your next chapter. Filter by tier, grade level, or difficulty to find your next course and discover what you’ll learn.</p>
-        </header>
-        <CurriculumFilters
-          filters={filters}
-          search={search}
-          onSearchChange={(value) => { setSearch(value); setPage(1); }}
-          onFilterChange={updateFilter}
-          onClear={clearFilters}
-          grades={grades}
-          tiers={tiers}
-          difficulties={difficulties}
-          savedCount={saved.length}
-          savedOnly={savedOnly}
-          onToggleSaved={() => setSavedOnly(!savedOnly)}
-        />
-        {facets.isError && <p role="alert" className="mt-3 text-sm text-red-700">Filters could not load. <button type="button" className="underline" onClick={() => facets.refetch()}>Retry filters</button></p>}
-        <p ref={resultsRef} className="my-3 scroll-mt-28 text-xs text-zinc-500" aria-live="polite">{coursesQuery.isLoading ? "Loading courses…" : `${count} course${count === 1 ? "" : "s"}`}{savedOnly ? " · Showing saved courses on this page" : ""}</p>
-        {coursesQuery.isLoading ? <Loader fullScreen={false} label="Loading curriculum..." /> : coursesQuery.isError ? (
-          <div role="alert" className="rounded-2xl border border-line bg-paper p-8 text-center"><p>{getApiErrorMessage(coursesQuery.error, "Unable to load curriculum.")}</p><button type="button" onClick={() => coursesQuery.refetch()} className="mt-4 text-pine underline">Try again</button></div>
-        ) : courses.length === 0 ? (
-          <div className="rounded-2xl border border-line bg-paper p-12 text-center"><h2 className="text-xl">No courses found</h2><p className="mt-2 text-muted">Try adjusting your search or filters.</p></div>
-        ) : (
-          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
-            {courses.map((course) => (
-              <CurriculumCourseCard
-                key={course.id}
-                course={course}
-                isSaved={saved.includes(String(course.id))}
-                onToggleSaved={() => toggleSaved(course)}
-                canUseCart={canUseCart}
-                inCart={isInCart(course.id)}
-                cartPending={isPending(course.id)}
-                onToggleCart={() => toggleCourse(course)}
-              />
-            ))}
+    <div
+      className="min-h-screen bg-cn-paper text-cn-ink"
+      id="curriculum-container"
+      ref={pageRef}
+    >
+      {/* The design's inner-page banner: a paper-2 band carrying a masked dot
+          field lit from the top right, with the title and lead on the left and
+          a photograph on the right. */}
+      <header className="cn-banner relative isolate overflow-hidden bg-cn-paper-2 py-24">
+        <div className="cn-container grid items-center gap-10 lg:grid-cols-2 lg:gap-16">
+          <div>
+            <h1 className="cn-enter max-w-[14ch] text-cn-display-s font-extrabold tracking-[-0.035em] text-cn-ink">
+              The 9-tier curriculum.
+            </h1>
+            <p
+              className="cn-enter mt-6 max-w-[40ch] text-cn-lg leading-[1.5] text-cn-ink-2"
+              style={{ "--cn-delay": "90ms" }}
+            >
+              Nine tiers, from the first plan to a lasting legacy. Every course
+              sits in a tier and belongs to one or more pathways.
+            </p>
           </div>
-        )}
-        {!coursesQuery.isError && !savedOnly && count > PAGE_SIZE && <nav aria-label="Course pages" className="mt-8 flex items-center justify-center gap-5"><button type="button" disabled={page <= 1 || coursesQuery.isFetching} onClick={() => changePage(page - 1)} className="rounded-xl border border-line bg-paper px-4 py-2 disabled:opacity-40">Previous</button><span className="text-sm">Page {page} of {totalPages}</span><button type="button" disabled={page >= totalPages || coursesQuery.isFetching} onClick={() => changePage(page + 1)} className="rounded-xl border border-line bg-paper px-4 py-2 disabled:opacity-40">Next</button></nav>}
-      </div>
+          <figure
+            className="cn-enter m-0 aspect-4/3 overflow-hidden rounded-cn-lg shadow-cn-3 max-lg:hidden"
+            style={{ "--cn-delay": "180ms" }}
+          >
+            <img
+              src="/images/design/path-coolnerds.webp"
+              alt="A student studying in a library"
+              width={1200}
+              height={900}
+              className="h-full w-full object-cover"
+            />
+          </figure>
+        </div>
+      </header>
+
+      <CurriculumTierLadder tiers={tiers} />
+      <CurriculumPathwayCards pathways={pathways} />
+      <CurriculumClosingCta />
     </div>
   );
 }

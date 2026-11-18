@@ -1,149 +1,128 @@
 "use client";
 
 import Link from "next/link";
-import { useRouter } from "next/navigation";
-import { useQueryClient } from "@tanstack/react-query";
-import { ArrowRight, BookOpen, CheckCircle2, Heart, ShoppingCart, X } from "lucide-react";
+import { ArrowRight, BookOpen, Check, CheckCircle2, Play, Zap } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
-import { CART_QUERY_KEY, useCart } from "@/hooks/useCart";
 import { useCourseEnrollment } from "@/hooks/useCourseEnrollment";
-import { useWishlist } from "@/hooks/useWishlist";
+import { useEnrollAction } from "@/hooks/useEnrollAction";
 import { getPortalRouteForRole, ROUTES } from "@/constants/routes";
-import { addToCart } from "@/services/cartService";
-import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatCoursePrice } from "@/lib/store";
-import { toastError } from "@/lib/toast";
 
-const PRIMARY_BUTTON =
-  "w-full inline-flex items-center justify-center gap-2 bg-pine hover:bg-moss text-paper text-xs font-sans font-medium uppercase tracking-widest px-5 py-3.5 rounded-full shadow-soft transition disabled:opacity-60 disabled:cursor-not-allowed";
+// The design's `.cdcard`/`.cdcb`, measured against it: a 50px full-width
+// control at 16px/600, not the 14px the shared cobalt button uses.
+const ACTION =
+  "inline-flex h-[50px] w-full items-center justify-center gap-2 rounded-cn-sm border border-transparent px-6 py-px text-cn-base font-semibold no-underline transition-[background-color,border-color,transform] duration-150 ease-cn-out focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cn-accent";
+const ACTION_PRIMARY = `${ACTION} bg-cn-accent text-white enabled:hover:-translate-y-px enabled:hover:bg-cn-accent-2 disabled:cursor-not-allowed disabled:opacity-50`;
 
-const SECONDARY_BUTTON =
-  "w-full inline-flex items-center justify-center gap-2 border border-pine text-pine hover:bg-pine hover:text-paper text-xs font-sans font-medium uppercase tracking-widest px-5 py-3.5 rounded-full transition disabled:opacity-60 disabled:cursor-not-allowed";
+// What a course includes, as the design lists it. The two content lines are
+// dropped for a course that has no modules yet (the catalog carries a handful
+// that are a page and a price while their curriculum is written), because the
+// card must not promise lessons that are not there.
+const INCLUDES = [
+  { key: "lessons", icon: Play, text: "Video lessons in every module", needsContent: true },
+  { key: "practice", icon: Zap, text: "Practice drills and quizzes", needsContent: true },
+  { key: "progress", icon: Check, text: "Progress tracking in your dashboard", needsContent: false },
+];
 
-// Sticky purchase card: thumbnail, price, add to cart / wishlist / buy now,
-// plus what's included. Students who already own the course get a "Start
-// learning" link instead; teachers and admins get a link to their portal.
-export default function CoursePurchaseCard({ course }) {
-  const router = useRouter();
-  const queryClient = useQueryClient();
+export default function CoursePurchaseCard({ course, hasContent = true }) {
   const { status, isAuthenticated, isStudent, role } = useAuth();
-  const { isGuest, isInCart, isPending: isCartPending, addCourse, toggleCourse } = useCart();
-  const wishlist = useWishlist();
   const enrollmentQuery = useCourseEnrollment(course.id);
+  const { enroll, enrollModal } = useEnrollAction();
 
   const isAuthResolved = status !== "idle" && status !== "loading";
-  const inCart = isInCart(course.id);
-  const isWishlisted = wishlist.isInWishlist(course.id);
+  const isOwned = Boolean(enrollmentQuery.data);
 
-  // Adds the course (if needed) and goes straight to the cart. Students' carts
-  // live on the server, so wait for the add to land before navigating.
-  async function handleBuyNow() {
-    if (inCart) {
-      router.push(ROUTES.CART);
-      return;
-    }
-    if (isGuest) {
-      addCourse(course);
-      router.push(ROUTES.CART);
-      return;
-    }
-    try {
-      await addToCart(course.id);
-      await queryClient.invalidateQueries({ queryKey: CART_QUERY_KEY });
-      router.push(ROUTES.CART);
-    } catch (error) {
-      toastError(getApiErrorMessage(error, "Unable to add this course to your cart."));
-    }
-  }
-
-  let actions;
+  let action;
   if (!isAuthResolved || (isAuthenticated && isStudent && enrollmentQuery.isLoading)) {
-    actions = (
-      <button type="button" disabled className={PRIMARY_BUTTON}>
+    action = (
+      <button type="button" disabled className={ACTION_PRIMARY}>
         Loading…
       </button>
     );
   } else if (isAuthenticated && !isStudent) {
-    actions = (
-      <Link href={getPortalRouteForRole(role)} className={PRIMARY_BUTTON}>
+    action = (
+      <Link href={getPortalRouteForRole(role)} className={ACTION_PRIMARY}>
         Open your portal
-        <ArrowRight className="w-4 h-4" />
+        <ArrowRight className="h-[18px] w-[18px]" strokeWidth={1.9} />
       </Link>
     );
-  } else if (enrollmentQuery.data) {
-    actions = (
-      <>
-        <p className="flex items-center gap-2 text-sm font-semibold text-ink">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
-          You're enrolled in this course
-        </p>
-        <Link href={`${ROUTES.STUDENT_PORTAL}?tab=courses&course=${course.id}`} className={PRIMARY_BUTTON}>
-          Start learning
-          <ArrowRight className="w-4 h-4" />
-        </Link>
-      </>
+  } else if (isOwned) {
+    action = (
+      <Link
+        href={`${ROUTES.STUDENT_PORTAL}/courses?course=${course.id}`}
+        className={ACTION_PRIMARY}
+      >
+        Start learning
+        <ArrowRight className="h-[18px] w-[18px]" strokeWidth={1.9} />
+      </Link>
     );
   } else {
-    actions = (
-      <>
-        <div className="flex items-stretch gap-2">
-          <button
-            type="button"
-            onClick={() => toggleCourse(course)}
-            disabled={isCartPending(course.id)}
-            className={`${inCart ? SECONDARY_BUTTON : PRIMARY_BUTTON} flex-1`}
-          >
-            {inCart ? <X className="w-4 h-4" /> : <ShoppingCart className="w-4 h-4" />}
-            {inCart ? "Remove from cart" : "Add to cart"}
-          </button>
-          <button
-            type="button"
-            onClick={() => wishlist.toggleCourse(course)}
-            disabled={wishlist.isPending(course.id)}
-            title={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-            aria-label={isWishlisted ? "Remove from wishlist" : "Add to wishlist"}
-            aria-pressed={isWishlisted}
-            className="shrink-0 w-12 rounded-full border border-pine text-pine hover:bg-porcelain flex items-center justify-center transition disabled:opacity-60 disabled:cursor-not-allowed"
-          >
-            <Heart className={`w-5 h-5 ${isWishlisted ? "fill-clay text-clay" : ""}`} />
-          </button>
-        </div>
-        <button type="button" onClick={handleBuyNow} className={SECONDARY_BUTTON}>
-          Buy now
-        </button>
-        {inCart && (
-          <Link
-            href={ROUTES.CART}
-            className="block text-center text-xs font-sans font-medium text-pine hover:underline"
-          >
-            View cart
-          </Link>
-        )}
-      </>
+    action = (
+      <button type="button" onClick={() => enroll(course)} className={ACTION_PRIMARY}>
+        Enroll now
+        <ArrowRight className="h-[18px] w-[18px]" strokeWidth={1.9} />
+      </button>
     );
   }
 
+  const includes = INCLUDES.filter((item) => hasContent || !item.needsContent);
+
   return (
-    <div className="rounded-card border border-line bg-paper shadow-elevated overflow-hidden">
-      <div className="aspect-video bg-porcelain">
+    <div className="overflow-hidden rounded-cn-lg border border-cn-rule bg-cn-paper shadow-cn-3">
+      <figure className="m-0 aspect-16/9 bg-cn-paper-2">
         {course.image ? (
           <img
             src={course.image}
             alt={course.title}
-            className="w-full h-full object-cover"
+            className="h-full w-full object-cover"
             referrerPolicy="no-referrer"
           />
         ) : (
-          <div className="w-full h-full flex items-center justify-center bg-gradient-to-br from-pine to-ink">
-            <BookOpen className="w-10 h-10 text-gold/70" />
+          <div className="flex h-full w-full items-center justify-center bg-linear-135 from-cn-paper-3 via-cn-paper-4 to-cn-accent-soft">
+            <BookOpen className="h-10 w-10 text-cn-accent" strokeWidth={1.5} />
           </div>
         )}
+      </figure>
+
+      <div className="grid gap-3 p-6">
+        <div className="flex items-baseline gap-1.5">
+          <b className="text-cn-3xl leading-[1.55] font-extrabold tracking-[-0.03em] tabular-nums text-cn-ink">
+            {formatCoursePrice(course.amount)}
+          </b>
+          <small className="text-cn-sm text-cn-muted">one-time</small>
+        </div>
+
+        {isOwned && (
+          <p className="flex items-center gap-2 text-cn-sm font-semibold text-cn-ink">
+            <CheckCircle2 className="h-5 w-5 shrink-0 text-cn-ok" />
+            You&apos;re enrolled in this course
+          </p>
+        )}
+
+        {action}
+
+        <p className="m-0 text-center text-cn-xs text-cn-muted">
+          Enrollment and payment happen in your dashboard.
+        </p>
+
+        <div className="mt-2 grid gap-3 border-t border-cn-rule pt-4 text-cn-sm">
+          <b>This course includes</b>
+          <ul className="m-0 grid list-none gap-2 p-0 text-cn-ink-2">
+            {includes.map(({ key, icon: Icon, text }) => (
+              <li key={key} className="flex items-center gap-3">
+                <Icon
+                  aria-hidden="true"
+                  className="h-4 w-4 flex-none text-cn-accent"
+                  strokeWidth={key === "progress" ? 2.4 : 2.2}
+                />
+                {text}
+              </li>
+            ))}
+          </ul>
+        </div>
       </div>
 
-      <div className="p-6 space-y-4">
-        <p className="text-3xl font-sans font-semibold text-ink">{formatCoursePrice(course.amount)}</p>
-        <div className="space-y-3">{actions}</div>
-      </div>
+      {enrollModal}
     </div>
   );
 }

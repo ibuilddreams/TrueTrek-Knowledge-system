@@ -55,8 +55,38 @@ export function getPathwayAccent(index = 0) {
 /**
  * The inline `style` object a pathway card spreads onto its root element.
  */
-export function pathwayAccentStyle(index) {
-  const accent = getPathwayAccent(index);
+// The cobalt system's own rotation. It carries one hue, so the cards are told
+// apart by weight rather than by colour — a grid of pathways still reads as a
+// set of distinct paths without five competing accents on white paper.
+export const PATHWAY_ACCENTS_COBALT = [
+  {
+    line: "var(--color-cn-accent)",
+    halo: "rgba(36, 80, 230, 0.16)",
+    iconBg: "var(--color-cn-paper-3)",
+    iconFg: "var(--color-cn-accent)",
+    text: "var(--color-cn-accent)",
+  },
+  {
+    line: "var(--color-cn-accent-3)",
+    halo: "rgba(15, 37, 128, 0.14)",
+    iconBg: "var(--color-cn-paper-4)",
+    iconFg: "var(--color-cn-accent-3)",
+    text: "var(--color-cn-accent-3)",
+  },
+  {
+    line: "var(--color-cn-accent-soft)",
+    halo: "rgba(135, 159, 241, 0.22)",
+    iconBg: "var(--color-cn-paper-2)",
+    iconFg: "var(--color-cn-accent-2)",
+    text: "var(--color-cn-accent-2)",
+  },
+];
+
+export function pathwayAccentStyle(index, tone = "porcelain") {
+  const accent =
+    tone === "cobalt"
+      ? PATHWAY_ACCENTS_COBALT[index % PATHWAY_ACCENTS_COBALT.length]
+      : getPathwayAccent(index);
 
   return {
     "--pathway-accent": accent.line,

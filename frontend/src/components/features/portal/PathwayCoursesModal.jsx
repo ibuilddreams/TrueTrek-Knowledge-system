@@ -88,7 +88,7 @@ export default function PathwayCoursesModal({ pathway, isOpen, onClose }) {
                 return (
                   <li key={entry.id}>
                     <Link
-                      href={`${ROUTES.STUDENT_PORTAL}?tab=courses&course=${course.id}`}
+                      href={`${ROUTES.STUDENT_PORTAL}/courses?course=${course.id}`}
                       className="group flex items-center gap-3.5 p-3 rounded-xl border border-line bg-porcelain transition hover:border-gold/50 hover:bg-paper hover:shadow-[0_10px_28px_-22px_rgba(28,25,23,0.35)] focus:outline-none focus-visible:ring-2 focus-visible:ring-pine"
                     >
                       <span className="w-6 text-center text-[11px] font-mono text-muted shrink-0">

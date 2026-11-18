@@ -1,13 +1,19 @@
 /**
- * Step-by-step "how do I actually use this" guides for the two portals,
- * rendered by the User Guides section on the /faq page.
+ * Step-by-step "how do I actually use this" guides for the two portals.
+ *
+ * The /faq page no longer renders the walkthroughs in place — it shows a card
+ * per guide and sends people to the portal, as the design does — so what is
+ * read from here now is each guide's label, audience and the size of it
+ * (`chapters.length` and the number of steps across them). The step content
+ * is kept because it is the written material, not scaffolding: it is what any
+ * future guide screen would render.
  *
  * Deliberately non-technical: every step is written for someone who has never
  * seen the product, names the screen they are looking at (`where`) rather than
  * an endpoint, and never mentions a component, API or setting.
  *
- * Icon keys are resolved in `components/features/faq/guides/guideIcons.js`,
- * keeping this file framework-agnostic — same convention as `constants/faq.js`.
+ * `icon` keys are plain strings so this file stays framework-agnostic — the
+ * same convention as `constants/faq.js`. Nothing resolves them at the moment.
  */
 
 const STUDENT_GUIDE = {

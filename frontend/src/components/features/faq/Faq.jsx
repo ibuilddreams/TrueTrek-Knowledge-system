@@ -1,547 +1,195 @@
 "use client";
 
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useRef } from "react";
 import Link from "next/link";
-import {
-  ChevronDown,
-  HelpCircle,
-  GraduationCap,
-  ClipboardCheck,
-  Landmark,
-  LayoutDashboard,
-  LifeBuoy,
-  ArrowRight,
-  ArrowUpRight,
-  BookOpenCheck,
-  MessageCircleQuestion,
-  Sparkles,
-  ShieldCheck,
-  Clock,
-  Users,
-  LayoutGrid,
-} from "lucide-react";
-import { motion, AnimatePresence } from "motion/react";
+import { ArrowRight, Plus } from "lucide-react";
 import { FAQ_CATEGORIES } from "@/constants/faq";
+import { USER_GUIDES } from "@/constants/userGuides";
 import { ROUTES } from "@/constants/routes";
+import useScrollReveal from "@/hooks/useScrollReveal";
+import CobaltSectionHead from "@/components/features/home/CobaltSectionHead";
 import ContactAdvisorEntry from "./ContactAdvisorEntry";
-import UserGuides from "./guides/UserGuides";
 
-const CATEGORY_ICONS = {
-  GraduationCap,
-  ClipboardCheck,
-  Landmark,
-  LayoutDashboard,
-  LifeBuoy,
-};
-
-const TOTAL_QUESTIONS = FAQ_CATEGORIES.reduce(
-  (sum, category) => sum + category.items.length,
-  0
-);
-
-const POPULAR_FAQS = FAQ_CATEGORIES.map((category) => ({
-  category,
-  item: category.items[0],
-})).slice(0, 3);
-
-function CategoryIcon({ name, className }) {
-  const Icon = CATEGORY_ICONS[name] ?? HelpCircle;
-  return <Icon className={className} />;
-}
-
+// The FAQ: every question on the page at once, grouped under its category,
+// with each category heading held beside its own questions.
+//
+// There is deliberately no search box or filter rail. Everything is on the
+// page, so the browser's own in-page find covers it — which is what people
+// reach for anyway — and native <details> means a question opens without
+// JavaScript and is findable by that search even while closed.
 export default function Faq() {
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [openKey, setOpenKey] = useState(null);
   const pageRef = useRef(null);
-
-  const visibleCategories = useMemo(() => {
-    if (activeCategory === "all") return FAQ_CATEGORIES;
-    return FAQ_CATEGORIES.filter((category) => category.id === activeCategory);
-  }, [activeCategory]);
-
-  // Reveal cards/sections as they scroll into view, without hiding content if JS is unavailable.
-  useEffect(() => {
-    const preference = window.matchMedia("(prefers-reduced-motion: reduce)");
-    const animations = new Set();
-    let observer;
-    const setup = () => {
-      observer?.disconnect();
-      animations.forEach((animation) => animation.cancel());
-      animations.clear();
-      if (preference.matches || !window.IntersectionObserver) return;
-      observer = new IntersectionObserver(
-        (entries) => {
-          entries.forEach((entry) => {
-            if (!entry.isIntersecting) return;
-            const animation = entry.target.animate(
-              [
-                { opacity: 0, transform: "translateY(18px)" },
-                { opacity: 1, transform: "translateY(0)" },
-              ],
-              {
-                duration: 600,
-                delay: Number(entry.target.dataset.revealDelay || 0),
-                easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-                fill: "backwards",
-              }
-            );
-            animations.add(animation);
-            animation.onfinish = () => animations.delete(animation);
-            observer.unobserve(entry.target);
-          });
-        },
-        { threshold: 0.08 }
-      );
-      pageRef.current
-        ?.querySelectorAll("[data-reveal]")
-        .forEach((element) => observer.observe(element));
-    };
-    setup();
-    preference.addEventListener("change", setup);
-    return () => {
-      observer?.disconnect();
-      animations.forEach((animation) => animation.cancel());
-      preference.removeEventListener("change", setup);
-    };
-  }, [visibleCategories]);
-
-  const jumpToItem = (categoryId, itemKey) => {
-    setActiveCategory("all");
-    setOpenKey(itemKey);
-    requestAnimationFrame(() => {
-      setTimeout(() => {
-        document
-          .getElementById(`faq-item-${itemKey}`)
-          ?.scrollIntoView({ behavior: "smooth", block: "center" });
-      }, 60);
-    });
-  };
+  useScrollReveal(pageRef, []);
 
   return (
     <div
       id="faq-page-container"
       ref={pageRef}
-      className="cn-page-bg min-h-screen"
+      className="min-h-screen bg-cn-paper text-cn-ink"
     >
-      {/* Hero */}
-      <section className="relative overflow-hidden isolate border-b border-line">
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -top-32 right-[-10%] w-lg h-128 rounded-full bg-pine/10 blur-[120px] animate-pulse"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute -bottom-40 left-[-10%] w-md h-112 rounded-full bg-gold/10 blur-[110px] animate-pulse"
-        />
-        <div
-          aria-hidden="true"
-          className="pointer-events-none absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-160 h-160 rounded-full bg-sky/10 blur-[140px] animate-pulse"
-        />
+      {/* The design's `.banner.solo`: the title on the left over seven
+          columns, the lead on the right over five, baselines aligned. */}
+      <header className="cn-banner relative isolate overflow-hidden bg-cn-paper-2 py-24">
+        <div className="cn-container grid gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)] lg:items-end">
+          <h1 className="cn-enter text-cn-display-s font-extrabold tracking-[-0.035em] text-cn-ink">
+            Questions, answered.
+          </h1>
+          <p
+            className="cn-enter max-w-[40ch] text-cn-lg leading-[1.5] text-cn-ink-2"
+            style={{ "--cn-delay": "90ms" }}
+          >
+            Curriculum, admissions, school licensing, the portal and billing.
+            The questions families and schools ask most.
+          </p>
+        </div>
+      </header>
 
-        <div className="relative max-w-5xl mx-auto px-6 pt-12 pb-10 md:pt-16 md:pb-12 flex flex-col items-center text-center">
-          <motion.span
-            initial={{ opacity: 0, y: 15 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="inline-flex items-center gap-2 bg-pine/10 border border-pine/15 px-4 py-2 rounded-full text-pine font-sans uppercase tracking-widest text-xs font-medium mb-5"
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            Knowledge Base &amp; Support
-          </motion.span>
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.15 }}
-            className="text-4xl md:text-6xl font-serif text-ink tracking-tight leading-[0.95] font-light max-w-3xl"
-          >
-            Answers for Every Step of the Incubator
-          </motion.h1>
-          <motion.p
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.3 }}
-            className="text-muted text-sm md:text-lg font-sans font-light leading-relaxed max-w-2xl mt-4"
-          >
-            Curriculum structure, admissions, school licensing, the Student
-            Portal, and billing — everything prospective scholars, parents,
-            and partner institutions ask us most, plus complete step-by-step
-            guides for students and teachers.
-          </motion.p>
+      <section id="faq-categories" className="cn-section">
+        <div className="cn-container">
+          {FAQ_CATEGORIES.map((category) => (
+            <div
+              key={category.id}
+              id={`faq-category-${category.id}`}
+              data-cn-reveal
+              className="cn-reveal grid gap-6 border-t border-cn-rule py-16 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]"
+            >
+              <h2 className="max-w-[14ch] text-cn-2xl leading-[1.04] font-extrabold tracking-[-0.035em] text-cn-ink">
+                {category.label}
+              </h2>
 
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.8, delay: 0.45 }}
-            className="flex flex-col sm:flex-row items-center gap-3 mt-7"
-          >
-            <a
-              id="btn-faq-hero-guides"
-              href="#user-guides"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-pine hover:bg-moss text-paper font-sans font-semibold uppercase tracking-widest text-xs px-7 py-3.5 rounded-full transition-colors duration-300 shadow-soft"
-            >
-              <BookOpenCheck className="w-4 h-4" />
-              Read the User Guides
-            </a>
-            <a
-              id="btn-faq-hero-questions"
-              href="#faq-topics"
-              className="w-full sm:w-auto inline-flex items-center justify-center gap-2 bg-paper hover:border-pine/30 text-ink border border-line font-sans font-semibold uppercase tracking-widest text-xs px-7 py-3.5 rounded-full transition-colors duration-300"
-            >
-              Browse {TOTAL_QUESTIONS} Questions
-            </a>
-          </motion.div>
+              <div>
+                {category.items.map((item) => (
+                  <details
+                    key={item.question}
+                    className="group mb-3 rounded-cn border border-cn-rule bg-white transition-shadow duration-200 ease-cn-out open:border-cn-paper-4 open:shadow-cn-2"
+                  >
+                    <summary className="flex cursor-pointer list-none items-center justify-between gap-6 p-6 text-cn-lg leading-[1.55] font-semibold [&::-webkit-details-marker]:hidden">
+                      {item.question}
+                      <span className="grid h-8 w-8 flex-none place-items-center rounded-full bg-cn-paper-3 text-cn-accent transition-transform duration-200 ease-cn-out group-open:rotate-45">
+                        <Plus aria-hidden="true" className="h-4 w-4" />
+                      </span>
+                    </summary>
+                    <p className="max-w-[65ch] px-6 pb-6 text-cn-ink-2">
+                      {item.answer}
+                    </p>
+                  </details>
+                ))}
+              </div>
+            </div>
+          ))}
         </div>
       </section>
 
-      <div className="max-w-6xl mx-auto px-6 py-10 md:py-14">
-        {/* Popular questions */}
-        {activeCategory === "all" && (
-          <div className="mb-12">
-            <div className="flex items-center gap-2 mb-5">
-              <span className="text-gold font-sans uppercase tracking-widest text-xs font-medium">
-                Most Referenced
-              </span>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-              {POPULAR_FAQS.map(({ category, item }, idx) => (
-                <motion.button
-                  key={category.id}
-                  id={`faq-popular-${category.id}`}
-                  data-reveal
-                  data-reveal-delay={idx * 90}
-                  whileTap={{ scale: 0.97 }}
-                  onClick={() => jumpToItem(category.id, `${category.id}-0`)}
-                  className="group text-left bg-paper border border-line p-5 rounded-card shadow-soft hover:shadow-elevated hover:-translate-y-1 transition-all duration-300"
+      <section id="faq-guides" className="cn-section">
+        <div className="cn-container">
+          <CobaltSectionHead
+            headingId="faq-guides-heading"
+            heading="Step-by-step guides."
+            lead="Two walkthroughs in plain language. Keep the portal open beside them."
+          />
+
+          <div className="grid gap-6 sm:grid-cols-2">
+            {USER_GUIDES.map((guide, index) => {
+              const steps = guide.chapters.reduce(
+                (total, chapter) => total + (chapter.steps?.length || 0),
+                0,
+              );
+              return (
+                <article
+                  key={guide.id}
+                  data-cn-reveal
+                  style={{ "--cn-d": index }}
+                  className="cn-reveal flex flex-col overflow-hidden rounded-cn-lg border border-cn-rule bg-white shadow-cn-1 transition-[transform,box-shadow] duration-200 ease-cn-out hover:-translate-y-1 hover:shadow-cn-3"
                 >
-                  <div className="flex items-start justify-between mb-4">
-                    <div
-                      className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${category.tint}`}
-                    >
-                      <CategoryIcon name={category.icon} className="w-5 h-5" />
-                    </div>
-                    <ArrowUpRight className="w-4 h-4 text-muted group-hover:text-pine group-hover:translate-x-0.5 group-hover:-translate-y-0.5 transition-all duration-300" />
-                  </div>
-                  <p className="text-gold font-sans uppercase tracking-widest text-[10px] font-semibold mb-2">
-                    0{idx + 1} &middot; {category.label}
-                  </p>
-                  <h3 className="font-serif text-base font-light tracking-tight text-ink leading-snug">
-                    {item.question}
-                  </h3>
-                </motion.button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {/* Step-by-step portal walkthroughs for students and teachers */}
-        <UserGuides />
-
-        {/* Section header for the Q&A below, so it reads as its own half of
-            the page now that the guides sit above it. */}
-        <div id="faq-topics" data-reveal className="scroll-mt-24 max-w-2xl mb-8">
-          <span className="inline-flex items-center gap-2 text-gold font-sans uppercase tracking-widest text-xs font-medium mb-3">
-            <MessageCircleQuestion className="w-3.5 h-3.5" />
-            Frequently Asked Questions
-          </span>
-          <h2 className="text-2xl md:text-4xl font-serif font-light tracking-tight text-ink leading-[1.05]">
-            Still have a question? Start here.
-          </h2>
-          <p className="mt-3 font-sans text-sm md:text-base text-muted leading-relaxed">
-            {TOTAL_QUESTIONS} answers across {FAQ_CATEGORIES.length} topics,
-            covering the program, enrollment, licensing, the portal and billing.
-          </p>
-        </div>
-
-        {/* Content: sticky category rail + accordions */}
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 lg:gap-10 items-start">
-          {/* Mobile category scroller */}
-          <div className="lg:hidden -mx-6 px-6 flex gap-2 overflow-x-auto pb-1">
-            <motion.button
-              whileTap={{ scale: 0.94 }}
-              onClick={() => setActiveCategory("all")}
-              className={`relative shrink-0 px-4 py-2 rounded-full text-xs font-sans font-semibold uppercase tracking-widest transition-colors duration-200 ${
-                activeCategory === "all"
-                  ? "text-paper"
-                  : "bg-paper text-muted border border-line"
-              }`}
-            >
-              {activeCategory === "all" && (
-                <motion.span
-                  layoutId="faq-mobile-pill"
-                  transition={{ type: "spring", stiffness: 500, damping: 32 }}
-                  className="absolute inset-0 bg-pine rounded-full shadow-soft"
-                />
-              )}
-              <span className="relative z-10">All Topics</span>
-            </motion.button>
-            {FAQ_CATEGORIES.map((category) => (
-              <motion.button
-                key={category.id}
-                whileTap={{ scale: 0.94 }}
-                onClick={() => setActiveCategory(category.id)}
-                className={`relative shrink-0 px-4 py-2 rounded-full text-xs font-sans font-semibold uppercase tracking-widest transition-colors duration-200 ${
-                  activeCategory === category.id
-                    ? "text-paper"
-                    : "bg-paper text-muted border border-line"
-                }`}
-              >
-                {activeCategory === category.id && (
-                  <motion.span
-                    layoutId="faq-mobile-pill"
-                    transition={{ type: "spring", stiffness: 500, damping: 32 }}
-                    className="absolute inset-0 bg-pine rounded-full shadow-soft"
-                  />
-                )}
-                <span className="relative z-10">{category.label}</span>
-              </motion.button>
-            ))}
-          </div>
-
-          {/* Desktop sticky sidebar */}
-          <aside className="hidden lg:block lg:col-span-3">
-            <div className="lg:sticky lg:top-28 space-y-6">
-              <p className="text-ink font-sans uppercase tracking-widest text-xs font-semibold flex items-center gap-2">
-                <LayoutGrid className="w-3.5 h-3.5 text-gold" />
-                Browse by Topic
-              </p>
-              <nav className="space-y-1">
-                <button
-                  id="faq-filter-all"
-                  onClick={() => setActiveCategory("all")}
-                  className={`relative w-full flex items-center justify-between gap-3 pl-4 pr-3 py-2.5 rounded-xl text-sm font-sans transition-colors duration-200 ${
-                    activeCategory === "all"
-                      ? "text-ink font-semibold"
-                      : "text-muted hover:text-ink hover:bg-paper/60"
-                  }`}
-                >
-                  {activeCategory === "all" && (
-                    <motion.span
-                      layoutId="faq-sidebar-pill"
-                      transition={{ type: "spring", stiffness: 500, damping: 36 }}
-                      className="absolute inset-0 bg-paper border-l-2 border-pine rounded-xl shadow-soft"
+                  {/* The design's `.ctop`: a tinted band carrying the audience
+                      and the size of the guide, with one large ring bled off
+                      the top-right corner. The counts are read from
+                      `USER_GUIDES` rather than written here, so they stay true
+                      as chapters are added. */}
+                  <div className="relative flex h-[120px] items-end justify-between overflow-hidden bg-cn-paper-3 p-6">
+                    <span
+                      aria-hidden="true"
+                      className="absolute -top-[30px] -right-[30px] h-[140px] w-[140px] rounded-full border-[24px] border-white/35"
                     />
-                  )}
-                  <span className="relative z-10">All Topics</span>
-                  <span className="relative z-10 text-[11px] text-muted">
-                    {TOTAL_QUESTIONS}
-                  </span>
-                </button>
-                {FAQ_CATEGORIES.map((category) => (
-                  <button
-                    key={category.id}
-                    id={`faq-filter-${category.id}`}
-                    onClick={() => setActiveCategory(category.id)}
-                    className={`relative w-full flex items-center justify-between gap-3 pl-4 pr-3 py-2.5 rounded-xl text-sm font-sans transition-colors duration-200 ${
-                      activeCategory === category.id
-                        ? "text-ink font-semibold"
-                        : "text-muted hover:text-ink hover:bg-paper/60"
-                    }`}
-                  >
-                    {activeCategory === category.id && (
-                      <motion.span
-                        layoutId="faq-sidebar-pill"
-                        transition={{ type: "spring", stiffness: 500, damping: 36 }}
-                        className="absolute inset-0 bg-paper border-l-2 border-pine rounded-xl shadow-soft"
-                      />
-                    )}
-                    <span className="relative z-10 text-left leading-snug">
-                      {category.label}
+                    <b className="relative text-cn-2xl leading-[1.55] font-extrabold tracking-[-0.03em] text-cn-accent-3">
+                      {guide.shortLabel}
+                    </b>
+                    <span className="relative rounded-full bg-white/80 px-2.5 py-1 text-cn-xs font-semibold text-cn-accent-3">
+                      {guide.chapters.length} chapters, {steps} steps
                     </span>
-                    <span className="relative z-10 text-[11px] text-muted shrink-0">
-                      {category.items.length}
-                    </span>
-                  </button>
-                ))}
-              </nav>
-
-              <div className="pt-6 border-t border-line">
-                <div
-                  data-reveal
-                  className="bg-pine/5 border border-pine/15 rounded-card p-5"
-                >
-                  <div className="w-9 h-9 rounded-full bg-pine/10 flex items-center justify-center text-pine mb-4">
-                    <MessageCircleQuestion className="w-4.5 h-4.5" />
                   </div>
-                  <p className="text-sm font-serif font-light text-ink mb-1.5">
-                    Can&apos;t find it here?
-                  </p>
-                  <p className="text-xs text-muted leading-relaxed mb-4">
-                    Our advisory team replies to every intake within one
-                    business day.
-                  </p>
-                  <Link
-                    href={ROUTES.FUTURE_CLIENTS}
-                    className="inline-flex items-center gap-1.5 text-xs font-sans font-semibold text-pine hover:text-moss transition"
-                  >
-                    Talk to an advisor
-                    <ArrowRight className="w-3.5 h-3.5" />
-                  </Link>
-                </div>
-              </div>
-            </div>
-          </aside>
 
-          {/* Results */}
-          <div className="lg:col-span-9">
-            <div className="space-y-10">
-              {visibleCategories.map((category, catIdx) => {
-                  const fullCategory = FAQ_CATEGORIES.find(
-                    (entry) => entry.id === category.id
-                  );
-                  const categoryIndex = FAQ_CATEGORIES.indexOf(fullCategory);
-                  return (
-                    <div key={category.id} id={`faq-category-${category.id}`}>
-                      <div
-                        data-reveal
-                        data-reveal-delay={catIdx * 70}
-                        className="flex items-start gap-4 mb-4"
+                  <div className="flex flex-1 flex-col gap-3 p-6">
+                    <h3 className="text-cn-lg leading-[1.2] font-bold tracking-[-0.015em] text-cn-ink">
+                      {guide.label}
+                    </h3>
+                    <p className="text-cn-sm text-cn-ink-2">{guide.audience}</p>
+                    <div className="mt-auto flex gap-2 pt-2">
+                      <Link
+                        href={
+                          guide.id === "teacher"
+                            ? ROUTES.TEACHER_PORTAL
+                            : ROUTES.STUDENT_PORTAL
+                        }
+                        className="inline-flex h-[50px] flex-1 items-center justify-center gap-2 rounded-cn-sm border border-cn-rule-strong bg-white px-6 text-cn-base font-semibold text-cn-ink no-underline shadow-cn-1 transition-[border-color,transform] duration-150 ease-cn-out hover:-translate-y-px hover:border-cn-ink"
                       >
-                        <span className="font-serif text-3xl md:text-4xl font-light text-gold/50 leading-none mt-0.5">
-                          {String(categoryIndex + 1).padStart(2, "0")}
-                        </span>
-                        <div
-                          className={`w-11 h-11 rounded-xl flex items-center justify-center shrink-0 ${category.tint}`}
-                        >
-                          <CategoryIcon name={category.icon} className="w-5 h-5" />
-                        </div>
-                        <div>
-                          <h2 className="text-xl md:text-2xl font-serif font-light text-ink tracking-tight">
-                            {category.label}
-                          </h2>
-                          <p className="text-muted text-xs font-sans uppercase tracking-widest mt-0.5">
-                            {category.items.length}{" "}
-                            {category.items.length === 1 ? "question" : "questions"}
-                          </p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-3">
-                        {category.items.map((item, idx) => {
-                          const itemKey = `${category.id}-${idx}`;
-                          const isOpen = openKey === itemKey;
-                          return (
-                            <div
-                              key={itemKey}
-                              id={`faq-item-${itemKey}`}
-                              data-reveal
-                              data-reveal-delay={idx * 50}
-                              className={`bg-paper border rounded-panel overflow-hidden transition-all duration-300 ${
-                                isOpen
-                                  ? "border-gold/30 shadow-elevated"
-                                  : "border-line shadow-soft hover:border-pine/30 hover:shadow-elevated"
-                              }`}
-                            >
-                              <motion.button
-                                id={`faq-trigger-${itemKey}`}
-                                whileTap={{ scale: 0.99 }}
-                                onClick={() => setOpenKey(isOpen ? null : itemKey)}
-                                className="w-full py-4 px-5 flex items-center justify-between text-left gap-4 transition-colors hover:text-pine"
-                              >
-                                <span className="font-serif text-sm md:text-base font-light tracking-tight text-ink">
-                                  {item.question}
-                                </span>
-                                <motion.span
-                                  animate={{ rotate: isOpen ? 180 : 0 }}
-                                  transition={{ type: "spring", stiffness: 300, damping: 22 }}
-                                  className={`w-8 h-8 rounded-full bg-porcelain border border-line flex items-center justify-center shrink-0 text-muted transition-colors duration-300 ${
-                                    isOpen ? "text-gold border-gold/20 bg-gold/5" : ""
-                                  }`}
-                                >
-                                  <ChevronDown className="w-4 h-4" />
-                                </motion.span>
-                              </motion.button>
-
-                              <AnimatePresence initial={false}>
-                                {isOpen && (
-                                  <motion.div
-                                    initial={{ height: 0, opacity: 0 }}
-                                    animate={{ height: "auto", opacity: 1 }}
-                                    exit={{ height: 0, opacity: 0 }}
-                                    transition={{ duration: 0.25, ease: "easeInOut" }}
-                                  >
-                                    <div className="pb-5 px-5 font-sans text-sm text-muted leading-relaxed border-t border-line pt-3.5 bg-porcelain/40 select-text">
-                                      {item.answer}
-                                    </div>
-                                  </motion.div>
-                                )}
-                              </AnimatePresence>
-                            </div>
-                          );
-                        })}
-                      </div>
+                        Open the portal
+                        <ArrowRight className="h-4 w-4" />
+                      </Link>
                     </div>
-                  );
-                })}
-              </div>
-            </div>
+                  </div>
+                </article>
+              );
+            })}
           </div>
-        {/* Still have questions CTA */}
-        <section id="faq-cta-section" className="mt-16">
+        </div>
+      </section>
+
+      <section id="faq-cta-section" className="cn-section">
+        <div className="cn-container">
           <div
             id="faq-cta-card"
-            data-reveal
-            className="relative overflow-hidden isolate bg-ink border border-white/10 rounded-panel p-8 md:p-11 shadow-elevated"
+            data-cn-reveal
+            className="cn-reveal cn-cta-dots relative isolate overflow-hidden rounded-cn-xl bg-cn-accent px-6 py-16 shadow-cn-3 md:px-16 md:py-24"
           >
-            <div
+            <img
+              src="/images/design/mark-white.png"
+              alt=""
               aria-hidden="true"
-              className="pointer-events-none absolute -right-24 -top-24 w-96 h-96 rounded-full bg-gold/15 blur-[110px]"
-            />
-            <div
-              aria-hidden="true"
-              className="pointer-events-none absolute -left-16 -bottom-24 w-72 h-72 rounded-full bg-pine/40 blur-[100px]"
+              width={300}
+              height={367}
+              className="pointer-events-none absolute -right-[30px] -bottom-[60px] w-[300px] opacity-[0.16]"
             />
 
-            <div className="relative">
-              <div className="flex flex-col lg:flex-row items-start lg:items-center justify-between gap-8">
-                <div className="max-w-xl text-left">
-                  <span className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-white/10 border border-white/10 text-gold font-sans uppercase tracking-widest text-[11px] font-bold mb-4">
-                    <MessageCircleQuestion className="w-3.5 h-3.5" />
-                    Still Have Questions?
-                  </span>
-                  <h2 className="text-2xl md:text-4xl font-serif font-light leading-[0.95] tracking-tight text-paper mb-4">
-                    Talk to the Senior Advisory Council.
-                  </h2>
-                  <p className="text-sage/70 text-sm md:text-base leading-relaxed">
-                    Send your question directly to an advisor and get a reply
-                    in your Cool Nerdz Portal — no forms, no waiting on an intake
-                    review.
-                  </p>
-                </div>
-
-                <div className="flex flex-col sm:flex-row lg:flex-col gap-3 w-full lg:w-auto shrink-0">
-                  <ContactAdvisorEntry
-                    id="btn-faq-cta-ask-advisor"
-                    icon={ArrowRight}
-                    className="w-full sm:w-auto bg-gold hover:brightness-95 text-ink font-sans font-extrabold uppercase tracking-widest text-sm px-8 py-3.5 rounded-full flex items-center justify-center gap-2 transition duration-300 shadow-md"
-                  />
-                  <Link
-                    id="btn-faq-cta-curriculum"
-                    href={ROUTES.CURRICULUM}
-                    className="w-full sm:w-auto bg-white/5 hover:bg-white/10 text-paper border border-white/15 font-sans font-semibold uppercase tracking-widest text-sm px-8 py-3.5 rounded-full flex items-center justify-center transition duration-300"
-                  >
-                    Browse Curriculum
-                  </Link>
-                </div>
+            <div className="relative grid items-end gap-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,5fr)]">
+              <div>
+                <h2 className="max-w-[14ch] text-cn-section font-extrabold tracking-[-0.035em] text-cn-on-ink">
+                  Still have a question?
+                </h2>
+                <p className="mt-4 text-cn-lg leading-[1.55] text-cn-on-ink-2">
+                  Ask an advisor and get a reply in your Cool Nerdz Portal
+                  within one business day.
+                </p>
               </div>
 
-              <div className="relative flex flex-wrap items-center gap-x-8 gap-y-3 mt-7 pt-6 border-t border-white/10">
-                <div className="flex items-center gap-2 text-paper/70 text-xs font-sans">
-                  <ShieldCheck className="w-4 h-4 text-gold" />
-                  FERPA &amp; COPPA Secure
-                </div>
-                <div className="flex items-center gap-2 text-paper/70 text-xs font-sans">
-                  <Clock className="w-4 h-4 text-gold" />
-                  Advisor replies within 24 hours
-                </div>
-                <div className="flex items-center gap-2 text-paper/70 text-xs font-sans">
-                  <Users className="w-4 h-4 text-gold" />
-                  1:1 matched to a senior advisor
-                </div>
+              <div className="flex flex-wrap gap-3 lg:justify-end">
+                <ContactAdvisorEntry
+                  id="btn-faq-cta-ask-advisor"
+                  icon={ArrowRight}
+                  className="inline-flex h-[50px] items-center justify-center gap-2 rounded-cn-sm bg-white px-6 text-cn-base font-semibold text-cn-accent-3 transition-transform duration-150 ease-cn-out hover:-translate-y-px"
+                />
+                <Link
+                  id="btn-faq-cta-curriculum"
+                  href={ROUTES.CURRICULUM}
+                  className="inline-flex h-[50px] items-center justify-center rounded-cn-sm border border-white/30 bg-white/12 px-6 text-cn-base font-semibold text-white no-underline transition-colors duration-150 ease-cn-out hover:bg-white/20"
+                >
+                  Browse the curriculum
+                </Link>
               </div>
             </div>
           </div>
-        </section>
-      </div>
+        </div>
+      </section>
     </div>
   );
 }

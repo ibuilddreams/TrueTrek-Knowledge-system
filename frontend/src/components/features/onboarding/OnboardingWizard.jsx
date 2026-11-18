@@ -39,7 +39,7 @@ const PROGRESS_QUERY_KEY = ["onboarding-progress"];
  * IS mirrored to the backend (OnboardingProgress, see onboardingService.js)
  * on every step transition so a refresh, closed browser, or logging in again
  * resumes at the same step instead of restarting. Do not reuse
- * store/slices/intake/intakeSlice.js, which is unrelated (future-clients
+ * store/slices/intake/intakeSlice.js, which is unrelated (a leftover
  * marketing lead-capture form) and was never meant to survive a reload.
  */
 export default function OnboardingWizard() {

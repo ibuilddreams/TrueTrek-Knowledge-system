@@ -48,8 +48,8 @@ def award_points(*, student, amount, transaction_type, reason="", drill_attempt=
     InsufficientPointsError instead of writing anything.
 
     Locks the student's StudentPointsAccount row for the duration of the
-    transaction (same select_for_update-then-recheck shape as
-    future_clients.services.approve_application) so two concurrent awards/
+    transaction (select_for_update, then re-read inside the lock) so two
+    concurrent awards/
     spends for the same student can't race past each other and both read a
     stale balance.
     """
