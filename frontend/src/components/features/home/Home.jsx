@@ -24,7 +24,6 @@ import {
 } from "lucide-react";
 import { motion, AnimatePresence } from "motion/react";
 import useScrollReveal from "@/hooks/useScrollReveal";
-import IntroVideo from "@/components/features/media/IntroVideo";
 import AudienceCard from "@/components/features/audiences/AudienceCard";
 import MarkdownMiniRenderer from "@/components/ui/MarkdownMiniRenderer";
 import { ADVISOR_PERSONAS } from "@/data/curriculum";
@@ -42,8 +41,9 @@ import { usePathwayPricing } from "@/hooks/usePathwayPricing";
 import SignInToSelectModal from "@/components/features/pathways/SignInToSelectModal";
 import SectionHeading from "@/components/ui/SectionHeading";
 import PathwayMarquee from "./PathwayMarquee";
-import { shortPathwayName } from "@/data/pathwayImages";
+import { pathwayImage, shortPathwayName } from "@/data/pathwayImages";
 import CobaltSectionHead from "./CobaltSectionHead";
+import BriefingRoom from "./BriefingRoom";
 import CountUp from "./CountUp";
 import PortalBento from "./PortalBento";
 import { spellNumber } from "@/lib/numberWords";
@@ -133,20 +133,82 @@ const PATHWAY_DIFFICULTY_LABELS = {
   ADVANCED: "Advanced",
 };
 
-// How much of a pathway the recommendation panel previews. A pathway can hold
-// fifty courses; listing them all buried the panel's own CTA under a wall of
-// titles, so it shows the opening run and links out for the rest.
-const PATHWAY_PREVIEW_COURSES = 4;
-
-// One cell of the recommended pathway's at-a-glance strip.
-function PathwayFact({ label, value }) {
+// One cell of the chosen pathway's at-a-glance strip — the design's
+// `.facts div`: a soft tile carrying a small grey label over a bold value.
+function PathwayFact({ label, children }) {
   return (
-    <div className="px-3 py-3.5 text-center">
+    <div className="rounded-cn-sm bg-cn-paper-2 px-4 py-3">
       <dt className="text-cn-xs text-cn-muted">{label}</dt>
-      <dd className="mt-1 text-cn-sm font-bold text-cn-ink">{value}</dd>
+      <dd className="m-0 font-bold text-cn-ink">{children}</dd>
     </div>
   );
 }
+
+// The advisory council's four topics, in the design's order. `id` is the
+// `ADVISOR_PERSONAS` id, so choosing a topic chooses the persona the AI call
+// already ran against — the topic rail is a second way into the same
+// selection, not a second list of advisors. The portraits are the design's
+// own, and `firstName` is what the submit button says ("Send to Richard"),
+// derived exactly as the design derives it: drop the honorific, take the
+// first word of the name before any comma.
+const ADVISORY_TOPICS = [
+  {
+    id: "recruiter",
+    topic: "Recruiting",
+    name: "Coach Vance Miller",
+    firstName: "Vance",
+    role: "Executive of recruiting",
+    focus: "Collegiate recruitment",
+    photo: "/images/design/adv-miller.webp",
+    prompts: [
+      "When should my son start contacting college coaches?",
+      "How do I make a highlight reel coaches will watch?",
+      "Is a D2 scholarship better than a D1 walk-on spot?",
+    ],
+  },
+  {
+    id: "legal",
+    topic: "NIL and contracts",
+    name: "Amanda Ross, Esq.",
+    firstName: "Amanda",
+    role: "Lead NIL specialist",
+    focus: "Trademark governance",
+    photo: "/images/design/adv-ross.webp",
+    prompts: [
+      "My son has an NIL offer from a local dealership. What should we check before signing?",
+      "Can my daughter trademark her nickname?",
+      "Can NIL income affect eligibility?",
+    ],
+  },
+  {
+    id: "psychology",
+    topic: "Wellbeing",
+    name: "Dr. Simone Chen",
+    firstName: "Simone",
+    role: "Head of high-performance neurobiology",
+    focus: "Circadian stabilization",
+    photo: "/images/design/adv-chen.webp",
+    prompts: [
+      "How do I sleep well around early-morning practices?",
+      "How can I tell burnout from a normal slump?",
+      "What should a calm game-day routine look like?",
+    ],
+  },
+  {
+    id: "legacy",
+    topic: "Money",
+    name: "Richard Sterling",
+    firstName: "Richard",
+    role: "Steward of multi-family offices",
+    focus: "Generational philanthropy",
+    photo: "/images/design/adv-sterling.webp",
+    prompts: [
+      "What should a teenager do with a first NIL payment?",
+      "How does a family start giving in a structured way?",
+      "When does it make sense to set up a trust?",
+    ],
+  },
+];
 
 // The cobalt design system's section head (new-design.html `.head.center`):
 // an accent eyebrow, a tight 800-weight display line and a 46ch lead. Passed
@@ -252,8 +314,9 @@ export default function Home() {
 
   // Inline Interactive Consultation Board states
   const [selectedConsultAdvisorId, setSelectedConsultAdvisorId] =
-    useState("legal");
+    useState(ADVISORY_TOPICS[0].id);
   const [consultQuery, setConsultQuery] = useState("");
+  const [consultEmail, setConsultEmail] = useState("");
   const [consultAdvice, setConsultAdvice] = useState("");
   const [isConsulting, setIsConsulting] = useState(false);
   const isConsultReplySlow = useDelayedFlag(isConsulting, 6000);
@@ -444,8 +507,9 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
   const recommendedParagraphs = toPathwayParagraphs(
     recommended.description || recommended.summary,
   );
-  const previewCourses = pathwayCourses.slice(0, PATHWAY_PREVIEW_COURSES);
-  const remainingCourseCount = pathwayCourses.length - previewCourses.length;
+  const activeAdvisoryTopic =
+    ADVISORY_TOPICS.find((topic) => topic.id === selectedConsultAdvisorId) ||
+    ADVISORY_TOPICS[0];
 
   // Every `data-cn-reveal` element below rises in once as it is scrolled to.
   // The sweep is re-run when the pathway list arrives, since that section's
@@ -850,8 +914,9 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
         </div>
       </section>
 
-      {/* Profile Discovery Segment — the design's explorer: a tab rail of
-          pathways on the left, the chosen one's panel on the right. */}
+      {/* "Choose your pathway." — the design's explorer (`.explorer` in
+          new-design.html): a rail of the published pathways on the left over
+          four columns, the chosen one's panel on the right over eight. */}
       <section id="pathway-audit-section" className="cn-section relative z-10">
         <div className="cn-container">
           <CobaltSectionHead
@@ -873,221 +938,148 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
           )}
 
           {!isPathwaysLoading && pathways.length > 0 && (
-            // Both columns share the row's height (no items-start), so the
-            // profile list runs the full depth of the panel beside it rather
-            // than stopping short of it. The list is capped at a page of
-            // pathways, so it can only ever overrun the panel slightly — and
-            // scrolls within its own column if it does.
-            <div className="grid grid-cols-1 gap-6 lg:grid-cols-12">
-              {/* Left Selection Columns */}
+            // Both columns share the row's height (`items-stretch`), so the
+            // rail runs the full depth of the panel beside it rather than
+            // stopping short of it — the design's `grid-auto-rows: 1fr`.
+            <div
+              data-cn-reveal
+              className="cn-reveal grid grid-cols-1 items-stretch gap-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)]"
+            >
+              {/* The pathway rail. */}
               <div
                 id="audit-selector-group"
-                className="space-y-1 rounded-cn-lg bg-cn-paper-2 p-2 lg:col-span-4 lg:h-full lg:overflow-y-auto"
+                role="tablist"
+                aria-label="Pathways"
+                aria-orientation="vertical"
+                className="grid h-full auto-rows-fr gap-1"
               >
-                {pathways.map((pathway) => (
-                  <button
-                    id={`audit-profile-btn-${pathway.id}`}
-                    key={pathway.id}
-                    type="button"
-                    onClick={() => setSelectedPathwayId(pathway.id)}
-                    aria-pressed={selectedPathwayId === pathway.id}
-                    className={`flex w-full items-center gap-3 rounded-cn-sm border p-3 text-left transition-[background-color,border-color,box-shadow] duration-150 ease-cn-out ${
-                      selectedPathwayId === pathway.id
-                        ? "border-cn-rule bg-white text-cn-ink shadow-cn-1"
-                        : "border-transparent bg-transparent text-cn-ink-2 hover:bg-white/70 hover:text-cn-ink"
-                    }`}
-                  >
-                    <span
-                      className={`grid h-9 w-9 shrink-0 place-items-center rounded-cn-sm transition-colors duration-150 ${
-                        selectedPathwayId === pathway.id
-                          ? "bg-cn-accent text-white"
-                          : "bg-cn-paper-3 text-cn-accent"
+                {pathways.map((pathway) => {
+                  const isActive = selectedPathwayId === pathway.id;
+                  return (
+                    <button
+                      id={`audit-profile-btn-${pathway.id}`}
+                      key={pathway.id}
+                      type="button"
+                      role="tab"
+                      aria-selected={isActive}
+                      tabIndex={isActive ? 0 : -1}
+                      onClick={() => setSelectedPathwayId(pathway.id)}
+                      className={`flex h-full min-h-[52px] items-center justify-between gap-4 rounded-cn-sm border px-4 py-3 text-left transition-[background-color,color] duration-150 ease-cn-out ${
+                        isActive
+                          ? "border-cn-rule bg-white font-semibold text-cn-ink shadow-cn-1"
+                          : "border-transparent bg-transparent font-medium text-cn-ink-2 hover:bg-white hover:text-cn-ink"
                       }`}
                     >
-                      <BookOpen className="w-4 h-4" />
-                    </span>
-                    <span className="flex min-w-0 flex-col gap-0.5">
-                      <span
-                        className={`truncate text-cn-sm text-cn-ink ${
-                          selectedPathwayId === pathway.id
-                            ? "font-semibold"
-                            : "font-medium"
+                      <span className="min-w-0 truncate">
+                        {shortPathwayName(pathway.name)}
+                      </span>
+                      <small
+                        className={`shrink-0 text-cn-sm font-medium whitespace-nowrap ${
+                          isActive ? "text-cn-accent" : "text-cn-muted"
                         }`}
                       >
-                        {pathway.name}
-                      </span>
-                      <span
-                        className={`text-cn-sm font-medium ${
-                          selectedPathwayId === pathway.id
-                            ? "text-cn-accent"
-                            : "text-cn-muted"
-                        }`}
-                      >
-                        {pathway.course_count} Course
-                        {pathway.course_count === 1 ? "" : "s"} Bundle
-                      </span>
-                    </span>
-                  </button>
-                ))}
+                        {pathway.course_count} course
+                        {pathway.course_count === 1 ? "" : "s"}
+                      </small>
+                    </button>
+                  );
+                })}
               </div>
 
-              {/* Right Audit Recommendation Container */}
+              {/* The chosen pathway's panel: its photograph on the left, what
+                  it covers on the right. */}
               <div
                 id="audit-results-container"
-                className="relative isolate flex min-h-[380px] flex-col justify-between overflow-hidden rounded-cn-lg border border-cn-rule bg-white p-6 shadow-cn-2 md:p-10 lg:col-span-8"
+                role="tabpanel"
+                aria-labelledby={
+                  selectedPathwayId
+                    ? `audit-profile-btn-${selectedPathwayId}`
+                    : undefined
+                }
+                className="grid h-full grid-cols-1 overflow-hidden rounded-cn-lg border border-cn-rule bg-white shadow-cn-2 md:grid-cols-2"
               >
-                <div className="relative">
-                  <div className="mb-6 flex flex-wrap items-start justify-between gap-4 border-b border-cn-rule pb-5">
-                    <div className="min-w-0">
-                      <span className="mb-2.5 inline-flex items-center gap-1.5 rounded-full bg-cn-paper-3 px-3 py-1 text-cn-xs font-semibold text-cn-accent-3">
-                        Recommended Pathway
-                      </span>
-                      <h3 className="text-cn-xl font-bold tracking-[-0.015em] text-cn-ink">
-                        {recommended.name || "..."}
-                      </h3>
-                    </div>
-                    {!isPriceResolved ? (
-                      <span
-                        aria-hidden="true"
-                        className="h-8 w-28 rounded-cn-sm bg-cn-paper-2"
-                      />
-                    ) : canSeePrice ? (
-                      <div className="rounded-cn-sm bg-cn-paper-3 px-3 py-1.5 text-cn-sm font-bold tracking-[-0.02em] text-cn-accent-3 tabular-nums">
-                        {formatCoursePrice(recommended.base_price)} Bundle
-                      </div>
-                    ) : (
-                      <button
-                        id="btn-recommendation-price"
-                        type="button"
-                        onClick={() => setIsPriceSignInOpen(true)}
-                        className="flex items-center gap-2 rounded-cn-sm border border-dashed border-cn-accent-soft bg-cn-paper-3 px-3 py-1.5 text-cn-xs font-semibold text-cn-accent transition-colors duration-150 hover:bg-cn-paper-4"
-                      >
-                        <Lock aria-hidden="true" className="h-3.5 w-3.5" />
-                        Sign in to view price
-                      </button>
-                    )}
+                <figure className="relative m-0 grid h-full min-h-[240px] place-items-center overflow-hidden bg-[linear-gradient(135deg,var(--color-cn-paper-3),var(--color-cn-paper-4)_60%,var(--color-cn-accent-soft))] md:min-h-[440px]">
+                  {pathwayImage(recommended.slug) && (
+                    <img
+                      src={pathwayImage(recommended.slug)}
+                      alt={recommended.name || ""}
+                      className="h-full w-full object-cover"
+                    />
+                  )}
+                </figure>
+
+                <div className="flex flex-col gap-6 p-6 md:p-10">
+                  <div className="text-[clamp(4rem,5vw+1rem,6rem)] leading-[0.9] font-extrabold tracking-[-0.05em] text-cn-ink tabular-nums">
+                    {recommended.course_count ?? pathwayCourses.length}
+                    <small className="mt-2 block text-cn-base font-semibold tracking-normal text-cn-ink-2">
+                      courses in this pathway
+                    </small>
                   </div>
 
-                  {/* At a glance, in place of the comma-joined dump of every
-                      course title this panel used to open with. */}
-                  <dl className="mb-6 grid grid-cols-3 divide-x divide-cn-rule overflow-hidden rounded-cn border border-cn-rule bg-cn-paper-2">
-                    <PathwayFact
-                      label="Courses"
-                      value={recommended.course_count ?? pathwayCourses.length}
-                    />
-                    <PathwayFact
-                      label="Level"
-                      value={
-                        PATHWAY_DIFFICULTY_LABELS[recommended.difficulty] ||
-                        "All levels"
-                      }
-                    />
-                    {recommended.duration_weeks > 0 ? (
-                      <PathwayFact
-                        label="Duration"
-                        value={`${recommended.duration_weeks} week${
-                          recommended.duration_weeks === 1 ? "" : "s"
-                        }`}
-                      />
-                    ) : (
-                      <PathwayFact label="Access" value="Lifetime" />
-                    )}
+                  <h3 className="text-cn-xl font-bold tracking-[-0.015em] text-cn-ink">
+                    {recommended.name || "..."}
+                  </h3>
+
+                  {recommendedParagraphs.length > 0 ? (
+                    <div className="space-y-3">
+                      {recommendedParagraphs.map((paragraph, index) => (
+                        <p key={index} className="text-cn-ink-2">
+                          {paragraph}
+                        </p>
+                      ))}
+                    </div>
+                  ) : (
+                    <p className="text-cn-ink-2">Loading pathway details...</p>
+                  )}
+
+                  {/* At a glance. The bundle price is members-only here as
+                      everywhere else, so that one cell offers the sign-in
+                      instead of the number. */}
+                  <dl className="m-0 grid grid-cols-2 gap-3">
+                    <PathwayFact label="Bundle">
+                      {!isPriceResolved ? (
+                        <span
+                          aria-hidden="true"
+                          className="block h-5 w-16 rounded bg-cn-paper-3"
+                        />
+                      ) : canSeePrice ? (
+                        formatCoursePrice(recommended.base_price)
+                      ) : (
+                        <button
+                          id="btn-recommendation-price"
+                          type="button"
+                          onClick={() => setIsPriceSignInOpen(true)}
+                          className="inline-flex items-center gap-1.5 text-cn-sm font-semibold text-cn-accent transition-colors duration-150 hover:text-cn-accent-3"
+                        >
+                          <Lock aria-hidden="true" className="h-3.5 w-3.5" />
+                          Sign in to view
+                        </button>
+                      )}
+                    </PathwayFact>
+                    <PathwayFact label="Level">
+                      {PATHWAY_DIFFICULTY_LABELS[recommended.difficulty] ||
+                        "All levels"}
+                    </PathwayFact>
+                    <PathwayFact label="Access">
+                      {recommended.duration_weeks > 0
+                        ? `${recommended.duration_weeks} week${
+                            recommended.duration_weeks === 1 ? "" : "s"
+                          }`
+                        : "Lifetime"}
+                    </PathwayFact>
+                    <PathwayFact label="Courses">
+                      {recommended.course_count ?? pathwayCourses.length}
+                    </PathwayFact>
                   </dl>
 
-                  <div className="mb-7">
-                    <p className="mb-3 text-cn-xs font-semibold tracking-widest text-cn-muted uppercase">
-                      What this pathway covers
-                    </p>
-                    {recommendedParagraphs.length > 0 ? (
-                      <div className="space-y-3">
-                        {recommendedParagraphs.map((paragraph, index) => (
-                          <p
-                            key={index}
-                            className={
-                              index === 0
-                                ? "text-[15px] leading-relaxed text-cn-ink-2"
-                                : "text-cn-sm leading-relaxed text-cn-muted"
-                            }
-                          >
-                            {paragraph}
-                          </p>
-                        ))}
-                      </div>
-                    ) : (
-                      <p className="text-cn-sm text-cn-muted">
-                        Loading pathway details...
-                      </p>
-                    )}
-                  </div>
-
-                  <div>
-                    <div className="mb-3 flex items-baseline justify-between gap-3">
-                      <p className="text-cn-xs font-semibold tracking-widest text-cn-muted uppercase">
-                        Where you start
-                      </p>
-                      {previewCourses.length > 0 && (
-                        <span className="text-cn-xs text-cn-muted tabular-nums">
-                          First {previewCourses.length} of{" "}
-                          {pathwayCourses.length}
-                        </span>
-                      )}
-                    </div>
-
-                    {previewCourses.length > 0 ? (
-                      <ol className="space-y-2">
-                        {previewCourses.map(({ course }, index) => (
-                          <li
-                            key={course.id}
-                            className="flex items-center gap-3 rounded-cn-sm bg-cn-paper-2 px-3.5 py-2.5"
-                          >
-                            <span className="flex h-7 w-7 shrink-0 items-center justify-center rounded-lg bg-cn-paper-3 text-[11px] font-bold text-cn-accent tabular-nums">
-                              {String(index + 1).padStart(2, "0")}
-                            </span>
-                            <span
-                              title={course.title}
-                              className="min-w-0 flex-1 truncate text-cn-sm text-cn-ink"
-                            >
-                              {course.title}
-                            </span>
-                            <ShieldCheck className="h-4 w-4 shrink-0 text-cn-accent" />
-                          </li>
-                        ))}
-                      </ol>
-                    ) : (
-                      <p className="flex items-center gap-2.5 text-cn-sm text-cn-muted">
-                        <BookOpen className="h-4 w-4 shrink-0 text-cn-muted" />
-                        No courses attached to this pathway yet.
-                      </p>
-                    )}
-
-                    {remainingCourseCount > 0 && recommended.slug && (
-                      <Link
-                        id="link-recommendation-full-curriculum"
-                        href={`${ROUTES.PATHWAYS}/${recommended.slug}`}
-                        className="mt-3.5 inline-flex items-center gap-1.5 text-cn-sm font-semibold text-cn-accent transition-all duration-150 hover:gap-2.5 hover:underline"
-                      >
-                        +{remainingCourseCount} more course
-                        {remainingCourseCount === 1 ? "" : "s"} · See the full
-                        curriculum
-                        <ArrowRight className="h-3.5 w-3.5" />
-                      </Link>
-                    )}
-                  </div>
-                </div>
-
-                <div className="relative mt-8 flex flex-col items-start justify-between gap-4 border-t border-cn-rule pt-6 sm:flex-row sm:items-center">
-                  <span className="text-cn-sm text-cn-muted">
-                    Licensed across 40+ educational administrations. Verified
-                    athletic and academic compliance.
-                  </span>
                   <button
                     id="btn-recommendation-cta"
                     type="button"
                     onClick={onStartOnboarding}
-                    className="inline-flex h-11 shrink-0 items-center gap-2 rounded-cn-sm bg-cn-accent px-4 text-cn-sm font-semibold text-white transition-[background-color,transform] duration-150 ease-cn-out hover:-translate-y-px hover:bg-cn-accent-2"
+                    className="mt-auto inline-flex h-[50px] items-center justify-center gap-2 self-start rounded-cn-sm bg-cn-accent px-6 text-cn-base font-semibold text-white shadow-cn-1 transition-[background-color,transform] duration-150 ease-cn-out hover:-translate-y-px hover:bg-cn-accent-2"
                   >
-                    Explore {recommended.name || "This Pathway"}
-                    <Zap className="w-3.5 h-3.5" />
+                    Explore the pathway
+                    <ArrowRight className="w-[18px] h-[18px]" />
                   </button>
                 </div>
               </div>
@@ -1198,7 +1190,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
 
       */}
 
-      {/* Cinematic Walkthrough Broadcast Section */}
+      {/* "Step inside the briefing room." — the design's `.brief`. */}
       <section
         id="cinematic-walkthrough-section"
         className="cn-section relative z-10"
@@ -1210,151 +1202,174 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
             lead="Sixteen minutes from the founder on how the academy works."
           />
 
-          <div data-cn-reveal className="cn-reveal">
-            <IntroVideo />
-          </div>
+          <BriefingRoom />
         </div>
       </section>
 
-      {/* Inline Academy live advisor interactive board */}
-      <section
-        id="live-advisors-consultation-section"
-        className="cn-section relative z-10 overflow-hidden"
-      >
-        <div
-          id="inline-consult-glow"
-          aria-hidden="true"
-          className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_38%_52%_at_8%_48%,var(--color-cn-paper-3),transparent_70%)]"
-        ></div>
-        <div className="cn-container relative z-10 space-y-12">
+      {/* "Ask the senior advisory council." — the design's `.adv4`: the topic
+          pills across the top, the chosen specialist's portrait on the left
+          over four columns, the question card on the right over seven. */}
+      <section id="live-advisors-consultation-section" className="cn-section relative z-10">
+        <div className="cn-container">
           <CobaltSectionHead
             headingId="advisory-council-heading"
             heading="Ask the senior advisory council."
             lead="Choose what you need help with. The right specialist reads your question and replies to you privately."
           />
 
-          <div className="grid grid-cols-1 items-start gap-6 lg:grid-cols-12">
-            {/* Advisor Avatars selector */}
-            <div className="space-y-4 lg:col-span-5">
-              <label className="block text-left text-cn-xs font-semibold tracking-widest text-cn-muted uppercase">
-                Choose Direct Session Advisor
-              </label>
-              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                {ADVISOR_PERSONAS.map((advisor, advisorIdx) => (
-                  <button
-                    id={`consult-advisor-btn-${advisor.id}`}
-                    key={advisor.id}
-                    onClick={() => {
-                      setSelectedConsultAdvisorId(advisor.id);
-                      setConsultAdvice("");
-                    }}
-                    className={`relative isolate flex cursor-pointer flex-col gap-3 overflow-hidden rounded-cn-lg border p-5 text-left transition-[background-color,border-color,box-shadow,transform] duration-200 ease-cn-out ${
-                      selectedConsultAdvisorId === advisor.id
-                        ? "border-cn-accent bg-white text-cn-ink shadow-cn-3"
-                        : "border-cn-rule bg-white text-cn-ink-2 shadow-cn-1 hover:-translate-y-1 hover:shadow-cn-2"
-                    }`}
-                  >
-                    <div
-                      aria-hidden="true"
-                      className={`pointer-events-none absolute -right-10 -bottom-12 h-32 w-32 rounded-full blur-2xl ${ADVISOR_TINTS[advisorIdx % ADVISOR_TINTS.length]}`}
-                    ></div>
-                    <div className="relative flex items-start gap-3">
-                      <img
-                        src={advisor.avatar}
-                        alt={advisor.name}
-                        className="h-11 w-11 shrink-0 rounded-full border border-cn-rule bg-cn-paper-2 object-cover"
-                        referrerPolicy="no-referrer"
+          <form
+            data-cn-reveal
+            className="cn-reveal grid grid-cols-1 items-stretch gap-x-6 gap-y-6 lg:grid-cols-[minmax(0,4fr)_minmax(0,7fr)]"
+            noValidate
+            onSubmit={(event) => {
+              event.preventDefault();
+              handleSpeakToConsultAdvisor();
+            }}
+          >
+            {/* The topic rail. Picking a topic picks the specialist, which is
+                the same selection the card and the portrait both read. */}
+            <fieldset className="m-0 border-0 p-0 lg:col-span-2">
+              <legend className="mb-3 p-0 text-cn-sm text-cn-muted">
+                Choose a topic
+              </legend>
+              <div className="flex flex-wrap gap-2">
+                {ADVISORY_TOPICS.map((option) => {
+                  const isActive = selectedConsultAdvisorId === option.id;
+                  return (
+                    <label
+                      key={option.id}
+                      className={`relative flex items-center gap-3 rounded-full border py-1.5 pr-3.5 pl-1.5 text-cn-sm font-semibold transition-[background-color,border-color,color] duration-200 ease-cn-out ${
+                        isActive
+                          ? "border-cn-ink bg-cn-ink text-white"
+                          : "border-cn-rule bg-white text-cn-ink hover:border-cn-rule-strong"
+                      }`}
+                    >
+                      <input
+                        type="radio"
+                        name="ask-topic"
+                        value={option.topic}
+                        checked={isActive}
+                        onChange={() => {
+                          setSelectedConsultAdvisorId(option.id);
+                          setConsultAdvice("");
+                        }}
+                        className="pointer-events-none absolute opacity-0"
                       />
-                      <div className="min-w-0">
-                        <p className="text-cn-base leading-tight font-bold tracking-[-0.015em] text-cn-ink">
-                          {advisor.name}
-                        </p>
-                        <p className="mt-0.5 text-cn-xs leading-snug text-cn-muted">
-                          {advisor.title.split("&")[0]}
-                        </p>
-                      </div>
-                    </div>
-                    <span className="relative max-w-full self-start truncate rounded-full bg-cn-paper-3 px-2.5 py-1 text-cn-xs font-semibold text-cn-accent-3">
-                      {advisor.specialty.split(",")[0]}
-                    </span>
-                    <p className="relative line-clamp-2 text-cn-xs leading-relaxed text-cn-muted italic">
-                      &quot;{advisor.quote}&quot;
-                    </p>
-                  </button>
-                ))}
+                      <span className="shrink-0">
+                        <img
+                          src={option.photo}
+                          alt=""
+                          className="h-8 w-8 rounded-full object-cover"
+                        />
+                      </span>
+                      <span className="whitespace-nowrap">{option.topic}</span>
+                    </label>
+                  );
+                })}
               </div>
+            </fieldset>
+
+            {/* The specialist's portrait. */}
+            <div className="flex min-h-full">
+              <figure className="relative m-0 flex-1 overflow-hidden rounded-cn-lg">
+                <img
+                  src={activeAdvisoryTopic.photo}
+                  alt={activeAdvisoryTopic.name}
+                  className="h-full min-h-[420px] w-full object-cover object-[50%_22%]"
+                />
+                <figcaption className="absolute inset-x-0 bottom-0 grid gap-0.5 bg-[rgba(10,16,40,0.62)] px-6 pt-10 pb-6 text-white [mask-image:linear-gradient(180deg,transparent,#000_40%)] [-webkit-mask-image:linear-gradient(180deg,transparent,#000_40%)]">
+                  <b className="text-cn-2xl leading-[1.1] tracking-[-0.03em]">
+                    {activeAdvisoryTopic.name}
+                  </b>
+                  <span className="text-cn-on-ink-2">
+                    {activeAdvisoryTopic.role}
+                  </span>
+                  <em className="mt-2 text-cn-sm not-italic text-white">
+                    Focus: {activeAdvisoryTopic.focus}
+                  </em>
+                </figcaption>
+              </figure>
             </div>
 
-            {/* Consultation Panel & Feedback Reports */}
-            <div className="cn-dark-grid relative isolate space-y-6 overflow-hidden rounded-cn-lg bg-cn-ink p-6 shadow-cn-3 md:p-10 lg:col-span-7">
-              <div className="relative space-y-2 text-left">
-                <div className="flex items-center justify-between gap-3 rounded-cn-sm bg-white/5 px-3 py-2">
-                  <span className="block text-cn-xs font-semibold tracking-widest text-cn-on-ink-2 uppercase">
-                    Configure Your Custom Scenario
-                  </span>
-                  <span className="text-cn-xs font-semibold tracking-widest text-cn-accent-soft uppercase">
-                    Active Session
-                  </span>
-                </div>
-
-                <div className="relative">
-                  <textarea
-                    id="consult-query-input-box"
-                    rows={4}
-                    value={consultQuery}
-                    onChange={(e) => setConsultQuery(e.target.value)}
-                    placeholder={`e.g., I am an aspiring independent developer looking to structure simple seed-funding parameters. Which core tiers and steps do I need to prevent venture dilution?`}
-                    className="w-full resize-none rounded-cn border border-cn-ink-line bg-white/5 p-4 text-cn-base leading-relaxed text-white placeholder-white/35 focus:border-cn-accent-soft focus:bg-white/10 focus:outline-none"
-                  />
-                  <div className="absolute right-3 bottom-3 text-cn-xs text-white/40 select-none">
-                    {consultQuery.length} chars
-                  </div>
-                </div>
+            {/* The question card. */}
+            <div className="grid content-start rounded-cn-lg border border-cn-rule bg-white shadow-cn-1">
+              <div className="flex items-center gap-3 border-b border-cn-rule px-4 py-4 text-cn-sm md:px-10">
+                <span className="text-cn-sm text-cn-muted">To</span>
+                <b className="font-semibold">{activeAdvisoryTopic.name}</b>
+                <span className="ml-auto rounded-full bg-cn-paper-3 px-2.5 py-[3px] text-cn-xs font-semibold text-cn-accent-3">
+                  {activeAdvisoryTopic.topic}
+                </span>
               </div>
 
-              {/* Suggestions pills */}
-              <div className="relative space-y-2 text-left">
-                <span className="block text-cn-xs font-semibold tracking-widest text-cn-on-ink-2 uppercase">
-                  Suggested Inquiries:
+              <label className="sr-only" htmlFor="consult-query-input-box">
+                Your question
+              </label>
+              <textarea
+                id="consult-query-input-box"
+                rows={6}
+                required
+                value={consultQuery}
+                onChange={(event) => setConsultQuery(event.target.value)}
+                placeholder="Describe your situation the way you’d explain it to a friend."
+                className="min-h-[180px] resize-y border-0 bg-transparent p-4 text-cn-lg leading-[1.5] text-cn-ink placeholder:text-cn-muted focus:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--color-cn-accent)] md:px-10 md:py-6"
+              />
+
+              <div className="grid gap-3 px-4 pb-6 md:px-10">
+                <span className="text-cn-sm text-cn-muted">
+                  Not sure how to start? Try one of these
                 </span>
                 <div className="flex flex-wrap gap-2">
-                  {[
-                    "How can high school athletes protect their brand trademark assets early?",
-                    "What stress regulation protocols maximize focus score during college exam weeks?",
-                    "What multi-generational trusts prevent estate erosion across generations?",
-                  ].map((preset, pIdx) => (
+                  {activeAdvisoryTopic.prompts.map((prompt, index) => (
                     <button
-                      id={`consult-preset-btn-${pIdx}`}
-                      key={pIdx}
-                      onClick={() => setConsultQuery(preset)}
-                      className="cursor-pointer rounded-cn-sm border border-cn-ink-line bg-white/5 px-3.5 py-2 text-left text-cn-xs text-cn-on-ink-2 transition-colors duration-150 hover:border-cn-accent-soft hover:bg-white/10 hover:text-white"
+                      id={`consult-preset-btn-${index}`}
+                      key={prompt}
+                      type="button"
+                      onClick={() => setConsultQuery(prompt)}
+                      className="rounded-full border border-cn-rule bg-cn-paper-2 px-3.5 py-[7px] text-left text-cn-sm text-cn-ink-2 transition-[background-color,border-color,color] duration-200 ease-cn-out hover:border-cn-accent hover:bg-white hover:text-cn-accent-3"
                     >
-                      {preset}
+                      {prompt}
                     </button>
                   ))}
                 </div>
               </div>
 
-              {/* Submit trigger */}
-              <div className="relative flex flex-col items-start justify-between gap-4 border-t border-cn-ink-line pt-4 sm:flex-row sm:items-center">
-                <div className="flex items-center gap-2 text-left text-cn-xs text-cn-on-ink-2">
-                  <Sparkles className="w-4 h-4 text-cn-accent-soft shrink-0 select-none" />
-                  <span>Secure satellite routing active</span>
+              <div className="flex flex-col items-stretch gap-3 border-t border-cn-rule bg-white px-4 pt-6 pb-3 sm:flex-row sm:items-center md:px-10">
+                <div className="min-w-0 flex-1">
+                  <label className="sr-only" htmlFor="consult-email-input">
+                    Email for the reply
+                  </label>
+                  <input
+                    id="consult-email-input"
+                    type="email"
+                    autoComplete="email"
+                    value={consultEmail}
+                    onChange={(event) => setConsultEmail(event.target.value)}
+                    placeholder="Your email for the reply"
+                    className="h-[52px] w-full rounded-cn border border-cn-rule bg-white px-4 text-cn-ink placeholder:text-cn-muted focus:outline-none focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cn-accent"
+                  />
                 </div>
                 <button
                   id="consult-submit-query-btn"
-                  onClick={handleSpeakToConsultAdvisor}
-                  disabled={isConsulting || !consultQuery.trim()}
-                  className="inline-flex h-[50px] w-full cursor-pointer items-center justify-center gap-2 rounded-cn-sm bg-cn-accent px-6 text-cn-base font-semibold text-white transition-[background-color,transform] duration-150 ease-cn-out hover:-translate-y-px hover:bg-cn-accent-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0 sm:w-auto"
+                  type="submit"
+                  disabled={isConsulting}
+                  className="inline-flex h-[50px] shrink-0 items-center justify-center gap-2 rounded-cn-sm bg-cn-accent px-6 text-cn-base font-semibold text-white shadow-cn-1 transition-[background-color,transform] duration-150 ease-cn-out hover:-translate-y-px hover:bg-cn-accent-2 disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:translate-y-0"
                 >
                   {isConsulting
-                    ? "Analyzing Parameters..."
-                    : "Ask Live Advisor"}
-                  <Send className="w-3.5 h-3.5" />
+                    ? "Sending..."
+                    : `Send to ${activeAdvisoryTopic.firstName}`}
+                  <ArrowRight className="w-[18px] h-[18px]" />
                 </button>
               </div>
 
-              {/* Advice consultation output panel */}
+              <p className="flex items-center gap-1.5 px-4 pb-6 text-cn-xs text-cn-muted md:px-10">
+                <ShieldCheck
+                  aria-hidden="true"
+                  className="h-[15px] w-[15px] shrink-0 text-cn-accent"
+                />
+                Private reply, usually within two working days.
+              </p>
+
+              {/* The specialist's answer, in the card it was asked from. */}
               <AnimatePresence>
                 {(isConsulting || consultAdvice) && (
                   <motion.div
@@ -1362,50 +1377,45 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 12 }}
                     id="consult-output-result"
-                    className="relative overflow-hidden rounded-cn border border-cn-ink-line bg-white/5 p-5 text-left"
+                    className="mx-4 mb-6 overflow-hidden rounded-cn border border-cn-rule bg-cn-paper-2 p-5 text-left md:mx-10"
                   >
-                    <div className="absolute top-0 left-0 h-full w-1 bg-cn-accent"></div>
-
-                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-cn-ink-line pb-3">
-                      <p className="flex items-center gap-2 text-cn-xs tracking-widest text-cn-on-ink-2 uppercase">
-                        <Award className="w-4 h-4 text-cn-accent-soft" />
-                        Formal analysis by{" "}
-                        {
-                          ADVISOR_PERSONAS.find(
-                            (a) => a.id === selectedConsultAdvisorId,
-                          )?.name
-                        }
+                    <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-cn-rule pb-3">
+                      <p className="flex items-center gap-2 text-cn-xs font-semibold text-cn-muted">
+                        <Award
+                          aria-hidden="true"
+                          className="h-4 w-4 text-cn-accent"
+                        />
+                        Reply from {activeAdvisoryTopic.name}
                       </p>
-                      <span className="rounded-full border border-cn-accent-soft/40 bg-white/10 px-2.5 py-0.5 text-cn-xs font-semibold tracking-widest text-cn-accent-soft uppercase">
-                        REPORT ACTIVE
+                      <span className="rounded-full bg-cn-paper-3 px-2.5 py-[3px] text-cn-xs font-semibold text-cn-accent-3">
+                        {activeAdvisoryTopic.topic}
                       </span>
                     </div>
 
                     {isConsulting ? (
-                      <div className="flex flex-col items-center justify-center py-10 space-y-3">
+                      <div className="flex flex-col items-center justify-center gap-3 py-10">
                         <PingDotSpinner />
-                        <p className="animate-pulse text-cn-base tracking-wide text-cn-on-ink-2">
+                        <p className="animate-pulse text-cn-sm text-cn-ink-2">
                           {isConsultReplySlow
-                            ? "STILL CONNECTING TO THE DESK..."
-                            : "SECURE LINK PIPELINE CONFIGURED..."}
+                            ? "Still reaching the desk..."
+                            : "Reading your question..."}
                         </p>
                       </div>
                     ) : (
                       <div className="space-y-4">
                         <MarkdownMiniRenderer text={consultAdvice} size="lg" />
 
-                        {/* Interactive dynamic matching callback anchors inside advisor response */}
-                        <div className="mt-3 flex flex-col items-center justify-between gap-3 border-t border-cn-ink-line pt-4 text-cn-sm sm:flex-row">
-                          <span className="text-cn-on-ink-2">
-                            Need immediate execution? Visit our syllabus tier
-                            files.
+                        <div className="mt-3 flex flex-col items-center justify-between gap-3 border-t border-cn-rule pt-4 text-cn-sm sm:flex-row">
+                          <span className="text-cn-ink-2">
+                            Need the curriculum behind this answer?
                           </span>
                           <button
+                            type="button"
                             onClick={onExploreTiers}
-                            className="inline-flex h-10 shrink-0 cursor-pointer items-center gap-2 rounded-cn-sm bg-white px-4 text-cn-xs font-semibold text-cn-accent-3 transition-transform duration-150 ease-cn-out hover:-translate-y-px"
+                            className="inline-flex h-10 shrink-0 items-center gap-2 rounded-cn-sm bg-cn-accent px-4 text-cn-sm font-semibold text-white transition-[background-color,transform] duration-150 ease-cn-out hover:-translate-y-px hover:bg-cn-accent-2"
                           >
-                            Browse Curriculum File Tiers
-                            <ArrowRight className="w-3 h-3" />
+                            Browse the tiers
+                            <ArrowRight className="w-3.5 h-3.5" />
                           </button>
                         </div>
                       </div>
@@ -1414,7 +1424,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                 )}
               </AnimatePresence>
             </div>
-          </div>
+          </form>
         </div>
       </section>
 
