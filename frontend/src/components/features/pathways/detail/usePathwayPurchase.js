@@ -81,7 +81,7 @@ export function usePathwayPurchase(pathway) {
     mode === "staff"
       ? getPortalRouteForRole(role)
       : mode === "owned"
-        ? `${ROUTES.STUDENT_PORTAL}?tab=courses`
+        ? `${ROUTES.STUDENT_PORTAL}/courses`
         : null;
 
   function act() {

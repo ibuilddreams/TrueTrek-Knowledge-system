@@ -67,12 +67,12 @@ export default function LoginForm() {
 
   return (
     <section className="pt-6">
-      <div className="cn-container grid min-h-[calc(100svh-var(--cn-nav-h)-48px)] gap-10 lg:grid-cols-2">
+      <div className="cn-container grid min-h-[calc(100svh-var(--cn-nav-h)-48px)] gap-10 grid-cols-[minmax(0,1fr)_minmax(0,1fr)] max-[60rem]:grid-cols-[minmax(0,1fr)]">
         {/* The art panel. Below `lg` it becomes a short banner above the
             form and drops its bullet list, as the design does — the
             photograph is atmosphere, and a phone should reach the fields
             without scrolling past a full-height image. */}
-        <AuthArtPanel className="min-h-[280px] rounded-cn-lg lg:min-h-[560px]" />
+        <AuthArtPanel className="min-h-[560px] rounded-cn-lg max-[60rem]:min-h-[280px]" />
 
         <div className="grid place-items-center py-10">
           <div className="grid w-[min(440px,100%)] gap-6">
@@ -162,9 +162,9 @@ export default function LoginForm() {
               />
             </form>
 
-            {/* The design's rule-with-a-label: the text sits left and one line
-                runs out from it to the edge. */}
-            <div className="flex items-center gap-3 text-cn-sm text-cn-muted after:h-px after:flex-1 after:bg-cn-rule after:content-['']">
+            {/* `.lgdiv` — the label sits in the middle with a rule running
+                out to each side. */}
+            <div className="flex items-center gap-3 text-cn-sm text-cn-muted before:h-px before:flex-1 before:bg-cn-rule before:content-[''] after:h-px after:flex-1 after:bg-cn-rule after:content-['']">
               <span>New to Cool Nerdz?</span>
             </div>
 

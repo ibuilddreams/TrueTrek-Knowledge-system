@@ -112,7 +112,8 @@ export function useAuth() {
   );
 
   const login = useCallback(
-    ({ email, password }) => runAuthRequest(() => loginWithCredentials({ email, password })),
+    ({ email, password, remember }) =>
+      runAuthRequest(() => loginWithCredentials({ email, password, remember })),
     [runAuthRequest]
   );
 

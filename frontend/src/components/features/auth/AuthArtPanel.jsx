@@ -2,21 +2,27 @@
 
 import { Check } from "lucide-react";
 
-// The photographic panel beside a sign-in form: the design uses the same one
-// on the login page and in the enrol modal, so it lives here rather than
-// being written twice and drifting.
+// The design's `.lgart`: the photographic panel beside a sign-in form. It is
+// used in two places that style it differently, which is what `variant` picks:
 //
-// The panel itself is placed by the caller (`className`), which is what
-// decides where it is hidden. The bullet list drops below `lg` on its own:
-// where the panel survives as a short banner it has no room for three lines
-// under the quote.
+//   "page"  — the login page's `.lgwrap .lgart`. The quote drops from
+//             `--text-2xl` to `--text-xl` and the bullets disappear below
+//             60rem, where the panel becomes a 280px banner above the form.
+//   "modal" — the enrol dialog's `.lgm .lgart`. The quote is always
+//             `--text-xl` and the whole panel is hidden below 48rem, so its
+//             bullets never need to hide on their own.
+//
+// Both breakpoints are the design's own, not Tailwind's `lg` — they differ by
+// 64px and 256px respectively, which is a visible layout change on a laptop.
 const POINTS = [
   "Courses, drills and live classes",
-  "Favourites and purchases in one place",
+  "Your courses and purchases in one place",
   "Grades and feedback from your teachers",
 ];
 
-export default function AuthArtPanel({ className = "" }) {
+export default function AuthArtPanel({ className = "", variant = "page" }) {
+  const isModal = variant === "modal";
+
   return (
     <div className={`relative overflow-hidden ${className}`}>
       <img
@@ -37,11 +43,19 @@ export default function AuthArtPanel({ className = "" }) {
           height={54}
           className="w-11 opacity-90"
         />
-        <p className="max-w-[22ch] text-cn-xl leading-[1.2] font-bold tracking-[-0.025em] lg:text-cn-2xl">
+        <p
+          className={`max-w-[22ch] leading-[1.2] font-bold tracking-[-0.025em] ${
+            isModal ? "text-cn-xl" : "text-cn-2xl max-[60rem]:text-cn-xl"
+          }`}
+        >
           Nine tiers of capital, law and legacy, and one dashboard to work
           through them.
         </p>
-        <ul className="m-0 grid list-none gap-2 p-0 text-cn-sm text-cn-on-ink-2 max-lg:hidden">
+        <ul
+          className={`m-0 grid list-none gap-2 p-0 text-cn-sm text-cn-on-ink-2 ${
+            isModal ? "" : "max-[60rem]:hidden"
+          }`}
+        >
           {POINTS.map((point) => (
             <li key={point} className="flex items-center gap-2">
               <Check

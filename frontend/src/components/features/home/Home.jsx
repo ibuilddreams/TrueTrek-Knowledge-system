@@ -47,14 +47,10 @@ import CobaltSectionHead from "./CobaltSectionHead";
 import CountUp from "./CountUp";
 import PortalBento from "./PortalBento";
 import { spellNumber } from "@/lib/numberWords";
-import {
-  CATALOG_COURSE_COUNT,
-  CURRICULUM_TIER_COUNT,
-} from "@/lib/catalog";
+import { CATALOG_COURSE_COUNT, CURRICULUM_TIER_COUNT } from "@/lib/catalog";
 import PingDotSpinner from "@/components/ui/PingDotSpinner";
 import PresetPromptPills from "@/components/ui/PresetPromptPills";
 import styles from "./Home.module.css";
-
 
 // The hero's three headline numbers. The course total is the catalog's own
 // (COURSE_DEFS seeds 335) and the audience count is derived from
@@ -736,7 +732,10 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       {/* "The curriculum, by the numbers." The design's ledger: a sticky
           title column beside a two-up grid of figures that count up as they
           arrive. The numbers are the catalog's real ones. */}
-      <section id="curriculum-numbers-section" className="cn-section relative z-10">
+      <section
+        id="curriculum-numbers-section"
+        className="cn-section relative z-10"
+      >
         <div className="cn-container">
           <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,4fr)_minmax(0,8fr)] lg:gap-16">
             <div

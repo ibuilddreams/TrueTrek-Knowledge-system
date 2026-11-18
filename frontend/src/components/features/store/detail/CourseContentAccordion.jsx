@@ -1,184 +1,113 @@
-"use client";
+import { Check, Play, Plus, Zap } from "lucide-react";
+import { pluralize } from "@/lib/courseOutline";
 
-import { useState } from "react";
-import {
-  ChevronDown,
-  ClipboardList,
-  FileQuestion,
-  FileText,
-  Image as ImageIcon,
-  ListChecks,
-  Video,
-} from "lucide-react";
-import { formatMinutesCompact, pluralize, summarizeOutline } from "@/lib/courseOutline";
-import CourseSectionHeading from "./CourseSectionHeading";
+// The design's `.cdmods`. Native `<details>`, exactly as the design has it:
+// the first module open, the rest shut, and the plus turning into a cross on
+// open. Nothing here needs React state, so this stays a server component and
+// the disclosure keeps working with JavaScript still loading.
+const ROW_ICON = { lesson: Play, assignment: Zap, quiz: Check };
 
-const LESSON_META = {
-  VIDEO: { icon: Video, label: "Video" },
-  PDF: { icon: FileText, label: "PDF" },
-  DOCUMENT: { icon: FileText, label: "Document" },
-  IMAGE: { icon: ImageIcon, label: "Image" },
-  TEXT: { icon: FileText, label: "Reading" },
-};
-
-function ItemRow({ icon: Icon, title, label, meta }) {
-  return (
-    <li className="flex items-center gap-3 px-5 py-3">
-      <span className="w-8 h-8 shrink-0 rounded-lg bg-cn-paper-2 text-cn-accent flex items-center justify-center">
-        <Icon className="w-4 h-4" aria-hidden="true" />
-      </span>
-      <span className="flex-1 min-w-0">
-        <span className="block text-sm text-cn-ink truncate">{title}</span>
-        {label && (
-          <span className="block text-xs font-semibold tracking-widest uppercase text-cn-muted mt-0.5">
-            {label}
-          </span>
-        )}
-      </span>
-      {meta && <span className="shrink-0 text-xs text-cn-muted">{meta}</span>}
-    </li>
-  );
+function itemsFor(module) {
+  // The design lists what a module holds, in the order it shows them: the
+  // lessons, then the practice, then the quiz. Real titles go in the design's
+  // slots — the mock's generic "Video lessons" line is a placeholder standing
+  // in for content it has no backend to read.
+  return [
+    ...(module.lessons || []).map((lesson) => ({
+      key: `lesson-${lesson.id}`,
+      kind: "lesson",
+      title: lesson.title,
+    })),
+    ...(module.assignments || []).map((assignment) => ({
+      key: `assignment-${assignment.id}`,
+      kind: "assignment",
+      title: assignment.title,
+    })),
+    ...(module.quizzes || []).map((quiz) => ({
+      key: `quiz-${quiz.id}`,
+      kind: "quiz",
+      title: quiz.title,
+    })),
+  ];
 }
 
-function ModuleSection({ module, index, isOpen, onToggle }) {
-  const lessons = module.lessons || [];
-  const assignments = module.assignments || [];
-  const quizzes = module.quizzes || [];
-  const itemCount = lessons.length + assignments.length + quizzes.length;
-  const minutes = formatMinutesCompact(summarizeOutline([module]).minutes);
-  const panelId = `module-panel-${module.id}`;
-
-  return (
-    <div className="border-b border-cn-rule last:border-b-0">
-      <button
-        type="button"
-        onClick={onToggle}
-        aria-expanded={isOpen}
-        aria-controls={panelId}
-        className="w-full flex items-center gap-4 px-5 py-4 text-left bg-cn-paper-2 hover:bg-cn-paper-2 transition-colors focus:outline-none focus-visible:bg-cn-paper-2 focus-visible:shadow-[inset_0_0_0_2px_rgba(9,45,41,0.35)]"
-      >
-        <span
-          aria-hidden="true"
-          className="w-7 h-7 shrink-0 rounded-full bg-cn-accent text-white text-xs font-sans font-semibold flex items-center justify-center"
+export default function CourseContentAccordion({ modules = [] }) {
+  if (modules.length === 0) {
+    return (
+      <section aria-labelledby="course-content-heading" className="grid gap-4">
+        <h2
+          id="course-content-heading"
+          className="max-w-[20ch] text-cn-2xl leading-[1.04] font-extrabold tracking-[-0.02em] text-balance text-cn-ink"
         >
-          {index + 1}
-        </span>
-        <span className="flex-1 min-w-0 text-sm font-semibold text-cn-ink">{module.title}</span>
-        <span className="hidden sm:block shrink-0 text-xs text-cn-muted">
-          {pluralize(itemCount, "item")}
-          {minutes ? ` • ${minutes}` : ""}
-        </span>
-        <ChevronDown
-          className={`w-4 h-4 shrink-0 text-cn-muted transition-transform ${isOpen ? "rotate-180" : ""}`}
-          aria-hidden="true"
-        />
-      </button>
-
-      {isOpen && (
-        <div id={panelId} className="bg-white border-t border-cn-rule">
-          {module.description && (
-            <p className="px-5 py-4 text-xs leading-relaxed text-cn-muted whitespace-pre-line border-b border-cn-rule">
-              {module.description}
-            </p>
-          )}
-          {itemCount === 0 ? (
-            <p className="px-5 py-4 text-xs text-cn-muted">No content has been added to this section yet.</p>
-          ) : (
-            <ul className="divide-y divide-cn-rule">
-              {lessons.map((lesson) => {
-                const meta = LESSON_META[lesson.content_type];
-                return (
-                  <ItemRow
-                    key={`lesson-${lesson.id}`}
-                    icon={meta?.icon || FileQuestion}
-                    title={lesson.title}
-                    label={meta?.label || "Lesson"}
-                    meta={formatMinutesCompact(lesson.duration_minutes)}
-                  />
-                );
-              })}
-              {assignments.map((assignment) => (
-                <ItemRow
-                  key={`assignment-${assignment.id}`}
-                  icon={ClipboardList}
-                  title={assignment.title}
-                  label="Assignment"
-                  meta={assignment.total_marks != null ? `${assignment.total_marks} marks` : null}
-                />
-              ))}
-              {quizzes.map((quiz) => (
-                <ItemRow
-                  key={`quiz-${quiz.id}`}
-                  icon={ListChecks}
-                  title={quiz.title}
-                  label="Quiz"
-                  meta={quiz.time_limit_minutes > 0 ? `${quiz.time_limit_minutes} min` : null}
-                />
-              ))}
-            </ul>
-          )}
-        </div>
-      )}
-    </div>
-  );
-}
-
-// "Course content": collapsible sections with a lecture/duration summary and
-// an expand-all toggle, like the lesson outline on Udemy.
-export default function CourseContentAccordion({ modules, totals }) {
-  const [openIds, setOpenIds] = useState(() => new Set(modules[0] ? [modules[0].id] : []));
-  const allOpen = modules.length > 0 && openIds.size === modules.length;
-  const totalTime = formatMinutesCompact(totals.minutes);
-
-  const toggle = (moduleId) =>
-    setOpenIds((previous) => {
-      const next = new Set(previous);
-      if (next.has(moduleId)) next.delete(moduleId);
-      else next.add(moduleId);
-      return next;
-    });
-
-  const toggleAll = () => setOpenIds(allOpen ? new Set() : new Set(modules.map((module) => module.id)));
-
-  return (
-    <section aria-labelledby="course-content-heading">
-      <CourseSectionHeading tone="cobalt" id="course-content-heading">Course content</CourseSectionHeading>
-
-      {modules.length === 0 ? (
-        <p className="rounded-cn border border-cn-rule bg-white p-6 text-sm text-cn-muted">
+          Course content
+        </h2>
+        <p className="rounded-cn-lg border border-cn-rule p-6 text-cn-sm text-cn-muted">
           Learning materials have not been added to this course yet.
         </p>
-      ) : (
-        <>
-          <div className="mb-3 flex flex-wrap items-center justify-between gap-2 text-xs text-cn-muted">
-            <span>
-              {pluralize(modules.length, "section")} • {pluralize(totals.lessons, "lesson")}
-              {totals.assignments > 0 ? ` • ${pluralize(totals.assignments, "assignment")}` : ""}
-              {totals.quizzes > 0 ? ` • ${pluralize(totals.quizzes, "quiz", "quizzes")}` : ""}
-              {totalTime ? ` • ${totalTime} total length` : ""}
-            </span>
-            <button
-              type="button"
-              onClick={toggleAll}
-              className="font-semibold text-cn-accent hover:text-cn-accent-2 transition"
-            >
-              {allOpen ? "Collapse all sections" : "Expand all sections"}
-            </button>
-          </div>
+      </section>
+    );
+  }
 
-          <div className="rounded-cn border border-cn-rule overflow-hidden shadow-cn-1 bg-white">
-            {modules.map((module, index) => (
-              <ModuleSection
-                key={module.id}
-                module={module}
-                index={index}
-                isOpen={openIds.has(module.id)}
-                onToggle={() => toggle(module.id)}
-              />
-            ))}
-          </div>
-        </>
-      )}
+  return (
+    <section aria-labelledby="course-content-heading" className="grid gap-4">
+      <h2
+        id="course-content-heading"
+        className="max-w-[20ch] text-cn-2xl leading-[1.04] font-extrabold tracking-[-0.02em] text-balance text-cn-ink"
+      >
+        Course content
+      </h2>
+      <p className="text-cn-ink-2">
+        {pluralize(modules.length, "module")}. Each one has video lessons, a
+        practice drill and a short quiz in the portal.
+      </p>
+
+      <div className="overflow-hidden rounded-cn-lg border border-cn-rule">
+        {modules.map((module, index) => {
+          const items = itemsFor(module);
+          return (
+            <details
+              key={module.id}
+              open={index === 0}
+              className="mb-3 rounded-cn border border-cn-rule bg-white transition-shadow duration-[240ms] ease-cn-out open:border-cn-paper-4 open:shadow-cn-2"
+            >
+              <summary className="grid cursor-pointer list-none grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-4 bg-cn-paper-2 px-6 py-4 text-cn-lg leading-[1.55] font-semibold focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-cn-accent [&::-webkit-details-marker]:hidden">
+                <span className="text-cn-xs font-semibold text-cn-muted">
+                  Module {index + 1}
+                </span>
+                <b className="min-w-0 font-black">{module.title}</b>
+                <span
+                  aria-hidden="true"
+                  className="cn-accordion-plus grid h-8 w-8 flex-none place-items-center rounded-full bg-cn-paper-3 text-cn-accent"
+                >
+                  <Plus className="h-4 w-4" strokeWidth={2} />
+                </span>
+              </summary>
+
+              {items.length === 0 ? (
+                <p className="py-3 pr-6 pb-4 pl-24 text-cn-sm text-cn-muted max-[60rem]:pl-6">
+                  No content has been added to this module yet.
+                </p>
+              ) : (
+                <ul className="m-0 grid list-none gap-3 py-3 pr-6 pb-4 pl-24 text-cn-sm text-cn-ink-2 max-[60rem]:pl-6">
+                  {items.map((item) => {
+                    const Icon = ROW_ICON[item.kind];
+                    return (
+                      <li key={item.key} className="flex items-center gap-3">
+                        <Icon
+                          aria-hidden="true"
+                          className="h-3.5 w-3.5 flex-none text-cn-accent"
+                          strokeWidth={item.kind === "quiz" ? 2.4 : 2.2}
+                        />
+                        <span className="min-w-0">{item.title}</span>
+                      </li>
+                    );
+                  })}
+                </ul>
+              )}
+            </details>
+          );
+        })}
+      </div>
     </section>
   );
 }

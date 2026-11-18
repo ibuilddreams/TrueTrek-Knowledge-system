@@ -4,20 +4,7 @@ import Link from "next/link";
 import { BookOpen, GraduationCap, Hash } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { formatCoursePrice } from "@/lib/store";
-
-// The design's level pill. Three fixed colours, keyed off the API's own
-// uppercase difficulty values; anything unrecognised falls back to the neutral
-// paper chip rather than rendering an unstyled badge.
-const LEVEL_TONES = {
-  BEGINNER: "bg-cn-ok-bg text-cn-ok",
-  INTERMEDIATE: "bg-cn-paper-3 text-cn-accent-3",
-  ADVANCED: "bg-cn-warn-bg text-cn-warn",
-};
-
-function levelLabel(difficulty) {
-  if (!difficulty) return null;
-  return difficulty.charAt(0) + difficulty.slice(1).toLowerCase();
-}
+import { levelLabel, LEVEL_TONES } from "@/lib/courseLevel";
 
 export default function StoreCourseCard({
   course,

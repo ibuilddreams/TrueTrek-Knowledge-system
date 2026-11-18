@@ -1,22 +1,30 @@
 import { Check } from "lucide-react";
-import CourseSectionHeading from "./CourseSectionHeading";
 
-// "What you'll learn" — hidden entirely when the course has no points yet.
+// The design's `.cdlearn`: a bordered box of what the course teaches, two
+// columns on desktop and one below 60rem. Hidden entirely when the course has
+// no points yet, rather than drawing an empty frame.
 export default function CourseLearningOutcomes({ outcomes }) {
   if (!outcomes?.length) return null;
 
   return (
-    <section aria-labelledby="course-outcomes-heading">
-      <CourseSectionHeading tone="cobalt" id="course-outcomes-heading">What you'll learn</CourseSectionHeading>
-      <ul className="grid grid-cols-1 sm:grid-cols-2 gap-3 rounded-cn border border-cn-rule bg-white p-6 shadow-cn-1">
+    <section
+      aria-labelledby="course-outcomes-heading"
+      className="grid gap-4 rounded-cn-lg border border-cn-rule p-10"
+    >
+      <h2
+        id="course-outcomes-heading"
+        className="max-w-[20ch] text-cn-2xl leading-[1.04] font-extrabold tracking-[-0.02em] text-balance text-cn-ink"
+      >
+        What you&apos;ll learn
+      </h2>
+      <ul className="m-0 grid list-none grid-cols-2 gap-x-6 gap-y-3 p-0 max-[60rem]:grid-cols-1">
         {outcomes.map((outcome, index) => (
-          <li key={index} className="flex items-start gap-3 text-cn-base leading-[1.55] text-cn-ink-2">
-            <span
+          <li key={index} className="flex items-start gap-3">
+            <Check
               aria-hidden="true"
-              className="mt-0.5 w-5 h-5 shrink-0 rounded-full bg-cn-paper-3 text-cn-accent-2 flex items-center justify-center"
-            >
-              <Check className="w-3 h-3" strokeWidth={3} />
-            </span>
+              className="mt-[3px] h-[18px] w-[18px] flex-none text-cn-accent"
+              strokeWidth={2.4}
+            />
             <span>{outcome}</span>
           </li>
         ))}

@@ -34,8 +34,14 @@ import { ROUTES } from "@/constants/routes";
 import AuthGateCard from "@/components/ui/AuthGateCard";
 import AccountMenu from "@/components/ui/AccountMenu";
 import NotificationBell from "@/components/ui/NotificationBell";
-import TabNav from "@/components/ui/TabNav";
 import TabTransition from "@/components/ui/TabTransition";
+import { AUTH_ROLES } from "@/constants/auth";
+import PortalShell from "@/components/features/portal/shell/PortalShell";
+import {
+  DEFAULT_PORTAL_SLUG,
+  isValidPortalSlug,
+  portalHref,
+} from "@/components/features/portal/shell/portalNav";
 import Loader from "@/components/ui/Loader";
 import EnrollStudentModal from "@/components/features/admin/EnrollStudentModal";
 import DashboardTab from "@/components/features/admin/tabs/DashboardTab";
@@ -131,7 +137,7 @@ const NOTIFICATION_DESTINATIONS = {
   teacher_onboarding: { tab: "teacher-applications", param: "application" },
 };
 
-function AdminDashboardContent() {
+function AdminDashboardContent({ slug = DEFAULT_PORTAL_SLUG }) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -139,38 +145,24 @@ function AdminDashboardContent() {
   const { loadEnrollments } = useAdminEnrollments();
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
 
-  const activeTab = useMemo(
-    () => resolveTab(searchParams.get("tab")),
-    [searchParams]
-  );
+  const activeTab = isValidPortalSlug(AUTH_ROLES.ADMIN, slug)
+    ? slug
+    : DEFAULT_PORTAL_SLUG;
 
+  // Back-compatibility with the portal's previous `?tab=` URLs — a bookmark
+  // or an old link lands on the matching route rather than the dashboard.
   useEffect(() => {
-    const rawTab = searchParams.get("tab");
-    if (rawTab && !VALID_TABS.has(rawTab)) {
-      router.replace(pathname, { scroll: false });
-    }
-  }, [pathname, router, searchParams]);
-
-  const setActiveTab = useCallback(
-    (tabId) => {
-      const nextTab = resolveTab(tabId);
-      const params = new URLSearchParams(searchParams.toString());
-
-      if (nextTab === DEFAULT_TAB) {
-        params.delete("tab");
-      } else {
-        params.set("tab", nextTab);
-      }
-
-      window.scrollTo({ top: 0, left: 0, behavior: "instant" });
-      // Opened detail views (course/assignment/quiz/etc.) live in the URL, so drop
-      // them on a tab switch — returning to a tab should start at its list.
-      DETAIL_PARAMS.forEach((key) => params.delete(key));
-      const query = params.toString();
-      router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
-    },
-    [pathname, router, searchParams]
-  );
+    const legacyTab = searchParams.get("tab");
+    if (!legacyTab) return;
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("tab");
+    const target = isValidPortalSlug(AUTH_ROLES.ADMIN, legacyTab)
+      ? legacyTab
+      : DEFAULT_PORTAL_SLUG;
+    const query = params.toString();
+    const href = portalHref(AUTH_ROLES.ADMIN, target);
+    router.replace(query ? `${href}?${query}` : href, { scroll: false });
+  }, [router, searchParams]);
 
   // Which tab a notification opens, and which query param carries the row it
   // points at. Keyed on `related_object_type`, which every producer sets (see
@@ -182,15 +174,15 @@ function AdminDashboardContent() {
       const destination = NOTIFICATION_DESTINATIONS[notification.related_object_type];
       if (!destination) return;
 
-      const params = new URLSearchParams(searchParams.toString());
-      params.set("tab", destination.tab);
-      DETAIL_PARAMS.forEach((key) => params.delete(key));
+      const params = new URLSearchParams();
       if (notification.related_object_id) {
         params.set(destination.param, String(notification.related_object_id));
       }
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      const href = portalHref(AUTH_ROLES.ADMIN, destination.tab);
+      const query = params.toString();
+      router.push(query ? `${href}?${query}` : href);
     },
-    [pathname, router, searchParams]
+    [router]
   );
 
   if (!isAuthenticated || !isAdmin) {
@@ -216,53 +208,13 @@ function AdminDashboardContent() {
   const ActiveTabComponent = TAB_COMPONENTS[activeTab] || DashboardTab;
 
   return (
-    <div
-      id="admin-dashboard-container"
-      className="max-w-7xl mx-auto px-4 sm:px-6 py-8 sm:py-10 font-sans"
+    <PortalShell
+      role={AUTH_ROLES.ADMIN}
+      activeSlug={activeTab}
+      user={{ name: user?.name }}
+      today={new Date()}
+      onOpenNotifications={undefined}
     >
-      <div className="relative z-30 flex flex-col lg:flex-row lg:items-center justify-between gap-6 pb-8 mb-8 border-b border-line">
-        <div className="flex items-center gap-4 sm:gap-5 min-w-0">
-          <div className="relative shrink-0">
-            <div className="absolute inset-0 rounded-[1.15rem] bg-gold/25 blur-md scale-110" />
-            <div className="relative w-14 h-14 sm:w-16 sm:h-16 rounded-[1.15rem] bg-gradient-to-br from-pine via-moss to-gold text-paper flex items-center justify-center shadow-[0_10px_24px_-12px_rgba(9,45,41,0.7)] ring-2 ring-paper">
-              <Shield className="w-7 h-7" />
-            </div>
-            <div className="absolute -bottom-1 -right-1 w-6 h-6 rounded-lg bg-ink border-2 border-paper text-gold flex items-center justify-center shadow-sm">
-              <Lock className="w-3 h-3" />
-            </div>
-          </div>
-
-          <div className="min-w-0 pt-0.5">
-            <div className="inline-flex items-center gap-2 mb-1.5">
-              <span className="h-px w-4 bg-gold/70" />
-              <span className="text-xs font-sans font-medium uppercase tracking-widest text-gold">
-                Admin Portal
-              </span>
-            </div>
-            <h1 className="text-2xl sm:text-[2rem] font-serif font-light tracking-tight text-ink leading-[0.92]">
-              Control Center
-            </h1>
-            <p className="text-sm text-muted font-light mt-2 leading-snug max-w-md">
-              Courses, enrollments, users, and platform health — in one place
-              {user?.name ? ` · ${user.name}` : ""}.
-            </p>
-          </div>
-        </div>
-
-        <div className="relative z-40 flex items-center gap-3">
-          <NotificationBell onSelectNotification={handleSelectNotification} />
-          <AccountMenu
-            onProfile={() => router.push(ROUTES.PROFILE)}
-            onMessages={() => router.push(ROUTES.MESSAGES)}
-            size="lg"
-          />
-        </div>
-      </div>
-
-      <div className="mb-8">
-        <TabNav tabs={TABS} activeTab={activeTab} onChange={setActiveTab} ariaLabel="Admin sections" size="lg" />
-      </div>
-
       <TabTransition activeKey={activeTab}>
         <ActiveTabComponent />
       </TabTransition>
@@ -272,14 +224,14 @@ function AdminDashboardContent() {
         onClose={() => setIsEnrollModalOpen(false)}
         onEnrolled={() => loadEnrollments({ force: true })}
       />
-    </div>
+    </PortalShell>
   );
 }
 
-export default function AdminDashboard() {
+export default function AdminDashboard({ slug }) {
   return (
     <Suspense fallback={<Loader label="Loading Dashboard..." />}>
-      <AdminDashboardContent />
+      <AdminDashboardContent slug={slug} />
     </Suspense>
   );
 }

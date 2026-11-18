@@ -7,12 +7,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { AUTH_ROLES } from "@/constants/auth";
 import { ROUTES, getPortalRouteForRole } from "@/constants/routes";
 import Loader from "@/components/ui/Loader";
+import {
+  DEFAULT_PORTAL_SLUG,
+  isValidPortalSlug,
+} from "@/components/features/portal/shell/portalNav";
 
-export default function AdminPortalPage() {
+export default function AdminPortalRoute({ slug }) {
   const router = useRouter();
   const { role, status, isAuthenticated } = useAuth();
 
   const isResolving = status === "idle" || status === "loading";
+  const resolvedSlug = slug ?? DEFAULT_PORTAL_SLUG;
+  const isUnknownSlug = !isValidPortalSlug(AUTH_ROLES.ADMIN, resolvedSlug);
 
   useEffect(() => {
     if (isResolving) return;
@@ -27,6 +33,12 @@ export default function AdminPortalPage() {
     }
   }, [isResolving, isAuthenticated, role, router]);
 
+  // A slug nobody serves goes to the portal's front page rather than
+  // rendering an empty frame.
+  useEffect(() => {
+    if (isUnknownSlug) router.replace(ROUTES.ADMIN_PORTAL);
+  }, [isUnknownSlug, router]);
+
   if (isResolving) {
     return <Loader label="Loading Admin Portal..." />;
   }
@@ -39,5 +51,5 @@ export default function AdminPortalPage() {
     return <Loader label="Redirecting..." />;
   }
 
-  return <AdminDashboard />;
+  return <AdminDashboard slug={isUnknownSlug ? DEFAULT_PORTAL_SLUG : resolvedSlug} />;
 }

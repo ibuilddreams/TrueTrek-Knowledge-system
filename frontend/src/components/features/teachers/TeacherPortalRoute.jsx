@@ -8,12 +8,18 @@ import { useAuth } from "@/hooks/useAuth";
 import { AUTH_ROLES } from "@/constants/auth";
 import { ROUTES, getPortalRouteForRole } from "@/constants/routes";
 import Loader from "@/components/ui/Loader";
+import {
+  DEFAULT_PORTAL_SLUG,
+  isValidPortalSlug,
+} from "@/components/features/portal/shell/portalNav";
 
-export default function TeacherPortalPage() {
+export default function TeacherPortalRoute({ slug }) {
   const router = useRouter();
   const { role, status, isAuthenticated } = useAuth();
 
   const isResolving = status === "idle" || status === "loading";
+  const resolvedSlug = slug ?? DEFAULT_PORTAL_SLUG;
+  const isUnknownSlug = !isValidPortalSlug(AUTH_ROLES.FACULTY, resolvedSlug);
 
   useEffect(() => {
     if (isResolving) return;
@@ -27,6 +33,12 @@ export default function TeacherPortalPage() {
       router.replace(getPortalRouteForRole(role));
     }
   }, [isResolving, isAuthenticated, role, router]);
+
+  // A slug nobody serves goes to the portal's front page rather than
+  // rendering an empty frame.
+  useEffect(() => {
+    if (isUnknownSlug) router.replace(ROUTES.TEACHER_PORTAL);
+  }, [isUnknownSlug, router]);
 
   if (isResolving) {
     return <Loader label="Loading Teacher Portal..." />;
@@ -46,7 +58,7 @@ export default function TeacherPortalPage() {
   // components/features/teachers/onboarding/TeacherOnboardingGate.jsx.
   return (
     <TeacherOnboardingGate>
-      <TeacherPortal />
+      <TeacherPortal slug={isUnknownSlug ? DEFAULT_PORTAL_SLUG : resolvedSlug} />
     </TeacherOnboardingGate>
   );
 }

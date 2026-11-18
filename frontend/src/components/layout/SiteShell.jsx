@@ -28,6 +28,19 @@ export default function SiteShell({ children }) {
 
   const hideFooter = pathname?.startsWith(ROUTES.MESSAGES);
 
+  // The signed-in portals bring their own frame — a sidebar and a sticky top
+  // bar (`features/portal/shell/PortalShell`). They are rendered bare, with
+  // no site navbar, mobile menu or footer over them, or the window would
+  // carry two headers and the sidebar would start below the wrong one.
+  const PORTAL_ROUTES = [
+    ROUTES.STUDENT_PORTAL,
+    ROUTES.TEACHER_PORTAL,
+    ROUTES.ADMIN_PORTAL,
+  ];
+  const isPortalRoute = PORTAL_ROUTES.some(
+    (route) => pathname === route || pathname?.startsWith(`${route}/`),
+  );
+
   // These pages are on the cobalt design system (white paper, one cobalt
   // signal); every other public page still runs the porcelain recipe. The
   // shell owns the choice because the sticky, translucent navbar sits over
@@ -61,13 +74,13 @@ export default function SiteShell({ children }) {
           : "cn-page-bg text-ink selection:bg-gold/25 selection:text-pine"
       }`}
     >
-      <Navbar />
-      <MobileMenu />
+      {!isPortalRoute && <Navbar />}
+      {!isPortalRoute && <MobileMenu />}
       <main id="primary-view-wrapper" className="flex-grow">
-        <FeedbackBanner />
+        {!isPortalRoute && <FeedbackBanner />}
         {children}
       </main>
-      {!hideFooter && <Footer />}
+      {!hideFooter && !isPortalRoute && <Footer />}
     </div>
   );
 }

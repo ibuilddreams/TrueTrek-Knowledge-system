@@ -100,7 +100,8 @@ async function refreshAccessToken() {
         throw new Error(data?.message || "Session expired");
       }
 
-      setClientCookie(AUTH_COOKIE.ACCESS_TOKEN, accessToken);
+      const persist = getClientCookie(AUTH_COOKIE.PERSIST) !== "0";
+      setClientCookie(AUTH_COOKIE.ACCESS_TOKEN, accessToken, persist ? 365 : null);
       return accessToken;
     })();
   }
@@ -116,6 +117,7 @@ function clearAuthCookies() {
   removeClientCookie(AUTH_COOKIE.ACCESS_TOKEN);
   removeClientCookie(AUTH_COOKIE.REFRESH_TOKEN);
   removeClientCookie(AUTH_COOKIE.USER);
+  removeClientCookie(AUTH_COOKIE.PERSIST);
 }
 
 /**

@@ -77,6 +77,46 @@
   --color-cn-warn-bg: #fdf3e4;
   --color-cn-live: #e5484d;
 
+  /* ---------------------------------------------------------------------
+     Portal palette (`cn-p-*`).
+
+     The design ships the signed-in portal as its own stylesheet with its own
+     token set, and it is NOT the marketing site's: it runs on a 14px base
+     rather than 16px, its paper is grey rather than white, and five of its
+     colours differ from the cobalt ones by a few points (accent hover
+     #1c40c0 vs #1a3bb8, rule-strong #c9d0dd vs #c2cad8, soft-ink #1c40c0 vs
+     #0f2580, ok-bg #eef8f2 vs #e9f7ef, small radius 10px vs 12px).
+
+     Those are small enough to be tempting to collapse into the cobalt tokens
+     and large enough to be visible side by side, so the portal gets its own
+     namespace instead. Nothing on the public site reads these, and nothing
+     here changes a single existing `cn-*` value.
+     --------------------------------------------------------------------- */
+  --color-cn-p-accent: #2450e6;
+  --color-cn-p-accent-hover: #1c40c0;
+  --color-cn-p-accent-soft: #879ff1;
+  --color-cn-p-ink: #111827;
+  --color-cn-p-ink-2: #4b5563;
+  --color-cn-p-muted: #6b7280;
+  --color-cn-p-page: #f5f7fb;
+  --color-cn-p-card: #ffffff;
+  --color-cn-p-line: #e3e7f0;
+  --color-cn-p-line-2: #c9d0dd;
+  --color-cn-p-soft: #eaeffd;
+  --color-cn-p-soft-ink: #1c40c0;
+  --color-cn-p-track: #e6ebf7;
+  --color-cn-p-warn: #b45309;
+  --color-cn-p-warn-bg: #fdf3e4;
+  --color-cn-p-ok: #15803d;
+  --color-cn-p-ok-bg: #eef8f2;
+  --color-cn-p-bad: #b91c1c;
+  --color-cn-p-bad-bg: #fdecec;
+  --color-cn-p-neutral-bg: #f1f3f7;
+
+  --radius-cn-p-sm: 10px;
+  --radius-cn-p: 16px;
+  --shadow-cn-p: 0 12px 32px -16px rgba(17, 24, 39, 0.25);
+
   --radius-cn-sm: 12px;
   --radius-cn: 16px;
   --radius-cn-lg: 24px;
@@ -775,4 +815,17 @@ body {
   .group:focus-within .cn-marquee-track {
     animation-play-state: paused;
   }
+}
+
+/* The course page's module accordion. The design turns the plus in a module's
+   summary into a cross while that module is open — written here, with the
+   design's own selector, because Tailwind's `group-open:` variant emits no
+   rule in this build (plain `open:` does, which is why the border and shadow
+   on the module itself stay in the markup). */
+.cn-accordion-plus {
+  transition: transform 240ms var(--ease-cn-out);
+}
+
+details[open] > summary .cn-accordion-plus {
+  transform: rotate(45deg);
 }

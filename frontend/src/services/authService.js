@@ -55,23 +55,29 @@ function toPublicBackendUser(rawUser) {
   };
 }
 
-function persistBackendSession(responseData) {
+// `remember` is the sign-in dialog's "Keep me signed in on this device".
+// Ticked (the default, and what every other entry point passes) the session
+// cookies carry the usual year; unticked they become session cookies and the
+// browser drops them when it closes.
+function persistBackendSession(responseData, { remember = true } = {}) {
   const { access_token, refresh_token, user } = responseData || {};
   const publicUser = toPublicBackendUser(user);
+  const days = remember ? 365 : null;
 
-  setClientCookie(AUTH_COOKIE.ACCESS_TOKEN, access_token);
-  setClientCookie(AUTH_COOKIE.REFRESH_TOKEN, refresh_token);
-  setClientCookie(AUTH_COOKIE.USER, JSON.stringify(publicUser));
+  setClientCookie(AUTH_COOKIE.ACCESS_TOKEN, access_token, days);
+  setClientCookie(AUTH_COOKIE.REFRESH_TOKEN, refresh_token, days);
+  setClientCookie(AUTH_COOKIE.USER, JSON.stringify(publicUser), days);
+  setClientCookie(AUTH_COOKIE.PERSIST, remember ? "1" : "0", days);
 
   return { user: publicUser };
 }
 
-export async function loginWithCredentials({ email, password }) {
+export async function loginWithCredentials({ email, password, remember = true }) {
   const response = await backendClient.post("/auth/login/", {
     email,
     password,
   });
-  return persistBackendSession(response?.data);
+  return persistBackendSession(response?.data, { remember });
 }
 
 // `role` is the backend role the visitor picked on the signup form — "STUDENT"
@@ -130,4 +136,8 @@ export function clearBackendSession() {
   removeClientCookie(AUTH_COOKIE.ACCESS_TOKEN);
   removeClientCookie(AUTH_COOKIE.REFRESH_TOKEN);
   removeClientCookie(AUTH_COOKIE.USER);
+  // The "keep me signed in" choice belongs to the session that set it, so it
+  // goes out with the rest of them rather than being inherited by whoever
+  // signs in next on this browser.
+  removeClientCookie(AUTH_COOKIE.PERSIST);
 }

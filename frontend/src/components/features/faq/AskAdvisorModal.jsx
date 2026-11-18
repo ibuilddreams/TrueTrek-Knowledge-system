@@ -19,7 +19,7 @@ export default function AskAdvisorModal({ isOpen, onClose }) {
     onSuccess: () => {
       setBody("");
       onClose();
-      router.push(`${ROUTES.STUDENT_PORTAL}?tab=advisor`);
+      router.push(`${ROUTES.STUDENT_PORTAL}/advisor`);
     },
     onError: (error) => {
       toastError(getApiErrorMessage(error, "Unable to send your question. Please try again."));

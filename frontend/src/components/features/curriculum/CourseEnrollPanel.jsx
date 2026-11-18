@@ -60,7 +60,7 @@ export default function CourseEnrollPanel({ course }) {
     </button>
   );
 
-  const portalCourseUrl = `${ROUTES.STUDENT_PORTAL}?tab=courses&course=${courseId}`;
+  const portalCourseUrl = `${ROUTES.STUDENT_PORTAL}/courses?course=${courseId}`;
   let heading;
   let body;
   let action;
