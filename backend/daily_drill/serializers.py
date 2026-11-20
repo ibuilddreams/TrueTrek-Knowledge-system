@@ -53,6 +53,14 @@ class DrillQuestionSerializer(serializers.ModelSerializer):
         return options
 
 
+class PublicDrillAnswerSerializer(serializers.Serializer):
+    """Body for the signed-out taster. Only a key: the question is whichever
+    one `get_public_drill_question` is serving, never one the caller names,
+    so the endpoint can't be walked through the bank to collect answers."""
+
+    answer_key = serializers.CharField(max_length=1)
+
+
 class DrillAnswerSubmitSerializer(serializers.Serializer):
     """Body for `POST /daily-drill/attempt/` — the unified single-question
     submit endpoint shared by the AI_QUESTION and LEGACY_QUESTION sources.

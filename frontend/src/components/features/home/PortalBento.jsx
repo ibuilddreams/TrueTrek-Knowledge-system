@@ -2,6 +2,7 @@
 
 import { Check, Play } from "lucide-react";
 import CountUp from "./CountUp";
+import DailyDrillTile from "./DailyDrillTile";
 
 // The design's portal bento: one wide tile showing progress tracking, then
 // four narrow ones for grading, the daily drill, live classes and rewards.
@@ -11,6 +12,10 @@ import CountUp from "./CountUp";
 // the section's job is to show what the portal looks like. The sample rows
 // are therefore fixed, and deliberately use the same course codes and
 // pathway photographs the real catalog uses so the picture is honest.
+//
+// The daily drill is the one exception: it is the only thing here a visitor
+// can do without an account, so it plays a real published drill rather than
+// miming one. See `DailyDrillTile`.
 const LESSON_ROWS = [
   {
     title: "The Athlete CEO Mindset",
@@ -36,12 +41,6 @@ const LESSON_ROWS = [
     next: "The core model",
     image: "/images/design/path-recruiting.webp",
   },
-];
-
-const DRILL_OPTIONS = [
-  { key: "A", label: "Sign immediately" },
-  { key: "B", label: "Reject outright" },
-  { key: "C", label: "Send a redlined counter", correct: true },
 ];
 
 // Built per tile rather than written once and overridden, because two
@@ -183,30 +182,8 @@ export default function PortalBento() {
         </div>
       </article>
 
-      {/* The daily drill. */}
-      <article data-cn-reveal className={`cn-reveal ${tileClass()} lg:col-span-2`}>
-        <h3 className={TILE_H3}>A drill every morning</h3>
-        <p className={TILE_P}>
-          One real dilemma a day, with the best move explained.
-        </p>
-        <div className={MINI}>
-          {DRILL_OPTIONS.map((option) => (
-            <div
-              key={option.key}
-              className={`flex items-center gap-3 rounded-cn-sm border-[1.5px] bg-white p-3 text-cn-sm transition-[border-color,background-color] duration-[400ms] ${
-                option.correct
-                  ? "border-cn-ok bg-cn-ok-bg"
-                  : "border-cn-rule"
-              }`}
-            >
-              <span className="grid h-[26px] w-[26px] flex-none place-items-center rounded-lg bg-cn-paper-2 text-cn-xs font-bold">
-                {option.key}
-              </span>
-              {option.label}
-            </div>
-          ))}
-        </div>
-      </article>
+      {/* The daily drill — the one tile that is not an illustration. */}
+      <DailyDrillTile className={`${tileClass()} lg:col-span-2`} />
 
       {/* Live classes. */}
       <article

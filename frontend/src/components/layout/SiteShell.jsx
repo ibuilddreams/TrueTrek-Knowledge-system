@@ -60,10 +60,22 @@ export default function SiteShell({ children }) {
     ROUTES.LOGIN,
     ROUTES.SIGNUP,
   ];
-  const COBALT_TREES = [ROUTES.CURRICULUM, ROUTES.STORE, ROUTES.AUDIENCES];
+  const COBALT_TREES = [
+    ROUTES.CURRICULUM,
+    ROUTES.STORE,
+    ROUTES.AUDIENCES,
+    // Covers /pathways and every pathway's own page.
+    ROUTES.PATHWAYS,
+  ];
+  // The custom-bundle builder sits under /pathways but has not been moved
+  // across yet, so it keeps the porcelain background its components expect.
+  const COBALT_EXCEPTIONS = [ROUTES.PATHWAY_BUILDER];
   const isCobaltPage =
-    COBALT_PAGES.includes(pathname) ||
-    COBALT_TREES.some((route) => pathname?.startsWith(route));
+    !COBALT_EXCEPTIONS.some(
+      (route) => pathname === route || pathname?.startsWith(`${route}/`),
+    ) &&
+    (COBALT_PAGES.includes(pathname) ||
+      COBALT_TREES.some((route) => pathname?.startsWith(route)));
 
   return (
     <div

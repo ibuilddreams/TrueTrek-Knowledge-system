@@ -1,5 +1,9 @@
 import { ROUTES, ROUTE_KEYS } from "./routes";
 import { PRIMARY_AUDIENCE_SLUG } from "@/data/audiences";
+// Read rather than retyped: both labels below had drifted to numbers the rest
+// of the site stopped using (11 in the footer, 14 in the nav's tooltip) while
+// every other surface said nine.
+import { CURRICULUM_TIER_COUNT } from "@/lib/catalog";
 
 // No "Home" entry: the design makes the wordmark the way home, so a separate
 // link would be a second control for the same destination. The logo in
@@ -11,7 +15,7 @@ export const NAV_LINKS = [
     href: ROUTES.CURRICULUM,
     label: "Curriculum",
     mobileLabel: "Curriculum Core",
-    title: "Explore the 14-Tier Incubator Life Curriculum",
+    title: `Explore the ${CURRICULUM_TIER_COUNT}-Tier Incubator Life Curriculum`,
   },
   {
     id: "nav-link-audiences",
@@ -48,7 +52,7 @@ export const NAV_LINKS = [
 ];
 
 export const FOOTER_LINKS = [
-  { href: ROUTES.CURRICULUM, label: "The 11 Tiers Portfolio" },
+  { href: ROUTES.CURRICULUM, label: `The ${CURRICULUM_TIER_COUNT} Tiers Portfolio` },
   { href: ROUTES.PARTNERSHIPS, label: "School Licensing cost" },
   { href: ROUTES.STUDENT_PORTAL, label: "Daily Drill Sandbox" },
   { href: ROUTES.STORE, label: "Strategic Merchant Store" },

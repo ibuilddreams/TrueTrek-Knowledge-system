@@ -3,6 +3,9 @@
 import { useEffect, useRef, useState } from "react";
 import { Loader2, Timer } from "lucide-react";
 import { useAutosaveQuizAttempt } from "@/hooks/student/useQuizAttempt";
+import { PortalButton, PortalPill } from "../shell/PortalUI";
+
+const CHOICE_KEYS = "ABCDEFGH";
 
 const AUTOSAVE_DEBOUNCE_MS = 2000;
 
@@ -119,130 +122,120 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
   }
 
   if (!currentQuestion) {
-    return <p className="text-sm text-muted">This quiz has no questions yet.</p>;
+    return <p className="text-sm text-cn-p-ink-2">This quiz has no questions yet.</p>;
   }
 
   return (
-    <div className="space-y-5">
+    <div className="flex flex-col gap-5">
       {attempt.resumed ? (
-        <div
-          className="rounded-xl border px-3.5 py-2.5 text-sm bg-gold/12 text-gold border-gold/25"
-        >
+        <p className="rounded-xl bg-cn-p-warn-bg px-3.5 py-2.5 text-[13px] text-cn-p-warn">
           Resumed from your last session — answers you&apos;d already saved are pre-filled.
-        </div>
-      ) : null}
-      <div className="flex items-center justify-between gap-3">
-        <p className="text-xs font-mono uppercase tracking-wider text-muted">
-          Question {currentIndex + 1} of {questions.length} · {answeredCount} answered
         </p>
+      ) : null}
+
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[13px] text-cn-p-ink-2">
+          Question {currentIndex + 1} of {questions.length} · {answeredCount} answered
+        </span>
         {secondsLeft !== null ? (
-          <span
-            className={`inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg border text-xs font-mono font-bold ${
-              secondsLeft <= 30
-                ? "bg-rose-50 text-rose-600 border-rose-100"
-                : "bg-porcelain text-muted border-line"
-            }`}
-          >
-            <Timer className="w-3.5 h-3.5" />
+          <PortalPill tone={secondsLeft <= 30 ? "bad" : "warn"}>
+            <Timer aria-hidden="true" className="h-3.5 w-3.5" />
             {formatSeconds(secondsLeft)}
-          </span>
+            {timeLimitMinutes ? " left" : ""}
+          </PortalPill>
         ) : null}
       </div>
 
-      <div className="flex flex-wrap gap-1.5">
+      {/* The design's `.steps` rail: one segment per question, lit up to the
+          one being answered. */}
+      <div className="flex items-center gap-2">
         {questions.map((question, index) => (
           <button
             key={question.id}
             type="button"
+            aria-label={`Go to question ${index + 1}`}
             onClick={() => setCurrentIndex(index)}
-            className={`w-7 h-7 rounded-lg text-xs font-mono font-bold border transition ${
-              index === currentIndex
-                ? "bg-pine text-paper border-pine"
+            className={`h-1 flex-1 rounded-[9px] ${
+              index <= currentIndex
+                ? "bg-cn-p-accent"
                 : answers[question.id] !== undefined
-                  ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                  : "bg-paper text-muted border-line"
+                  ? "bg-cn-p-accent-soft"
+                  : "bg-cn-p-line"
             }`}
-          >
-            {index + 1}
-          </button>
+          />
         ))}
       </div>
 
-      <div
-        className="rounded-2xl border p-4 space-y-3 border-line bg-paper"
-      >
-        <p className="text-sm font-medium text-ink">
-          {currentQuestion.text}
-        </p>
+      <h3 className="text-[22px] leading-[1.35] font-bold text-cn-p-ink">
+        {currentQuestion.text}
+      </h3>
 
-        {currentQuestion.question_type === "SHORT_ANSWER" ? (
-          <textarea
-            value={answers[currentQuestion.id]?.textAnswer || ""}
-            onChange={(event) => setAnswer(currentQuestion.id, { textAnswer: event.target.value })}
-            rows={4}
-            placeholder="Type your answer..."
-            className="w-full px-3.5 py-3 border focus:ring-4 focus:outline-none rounded-xl text-sm transition bg-porcelain/90 border-line focus:border-pine focus:ring-pine/10 text-ink placeholder:text-muted"
-          />
-        ) : (
-          <div className="space-y-2">
-            {(currentQuestion.choices || []).map((choice) => (
-              <label
+      {currentQuestion.question_type === "SHORT_ANSWER" ? (
+        <textarea
+          value={answers[currentQuestion.id]?.textAnswer || ""}
+          onChange={(event) => setAnswer(currentQuestion.id, { textAnswer: event.target.value })}
+          rows={5}
+          placeholder="Type your answer..."
+          className="min-h-[110px] w-full resize-y rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card px-3 py-2.5 text-sm leading-[1.5] text-cn-p-ink outline-none placeholder:text-cn-p-muted focus:border-cn-p-accent focus:outline-2 focus:outline-cn-p-accent"
+        />
+      ) : (
+        <div className="flex flex-col gap-2.5">
+          {(currentQuestion.choices || []).map((choice, index) => {
+            const isPicked = answers[currentQuestion.id]?.selectedChoice === choice.id;
+            return (
+              <button
                 key={choice.id}
-                className={`flex items-center gap-2.5 px-3.5 py-2.5 rounded-xl border text-sm cursor-pointer transition ${
-                  answers[currentQuestion.id]?.selectedChoice === choice.id
-                    ? "border-pine/25 bg-pine/10 text-pine"
-                    : "border-line hover:border-pine text-muted"
+                type="button"
+                aria-pressed={isPicked}
+                onClick={() => setAnswer(currentQuestion.id, { selectedChoice: choice.id })}
+                className={`flex w-full items-start gap-3.5 rounded-xl border-[1.5px] p-4 text-left transition-[border-color,background-color] duration-150 ${
+                  isPicked
+                    ? "border-cn-p-accent bg-cn-p-soft"
+                    : "border-cn-p-line bg-cn-p-card hover:border-cn-p-accent-soft"
                 }`}
               >
-                <input
-                  type="radio"
-                  name={`question-${currentQuestion.id}`}
-                  checked={answers[currentQuestion.id]?.selectedChoice === choice.id}
-                  onChange={() => setAnswer(currentQuestion.id, { selectedChoice: choice.id })}
-                  className="accent-pine"
-                />
-                {choice.text}
-              </label>
-            ))}
-          </div>
-        )}
-      </div>
+                <span
+                  className={`grid h-[30px] w-[30px] flex-none place-items-center rounded-lg font-bold ${
+                    isPicked ? "bg-cn-p-accent text-white" : "bg-cn-p-neutral-bg text-cn-p-ink"
+                  }`}
+                >
+                  {CHOICE_KEYS[index] || index + 1}
+                </span>
+                <span className="flex-1 pt-1 text-cn-p-ink">{choice.text}</span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       <div className="flex items-center justify-between gap-3">
-        <button
-          type="button"
-          onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))}
-          disabled={currentIndex === 0}
-          className="px-4 py-2 border disabled:opacity-40 text-xs font-mono uppercase tracking-wider rounded-xl transition border-line text-muted"
-        >
-          Previous
-        </button>
+        {currentIndex > 0 ? (
+          <PortalButton
+            variant="sec"
+            onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))}
+          >
+            Previous
+          </PortalButton>
+        ) : (
+          <span />
+        )}
 
         {currentIndex < questions.length - 1 ? (
-          <button
-            type="button"
+          <PortalButton
             onClick={() => setCurrentIndex((index) => Math.min(questions.length - 1, index + 1))}
-            className="px-4 py-2 text-xs font-mono uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
           >
-            Next
-          </button>
+            Next question
+          </PortalButton>
         ) : (
-          <button
-            type="button"
-            onClick={() => onSubmit(buildPayload())}
-            disabled={isSubmitting}
-            className="inline-flex items-center gap-2 px-4 py-2 disabled:opacity-50 text-xs font-mono uppercase tracking-wider rounded-xl transition bg-emerald-700 hover:bg-emerald-800 text-paper"
-          >
-            {isSubmitting && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+          <PortalButton onClick={() => onSubmit(buildPayload())} disabled={isSubmitting}>
+            {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {isSubmitting && isAiGradedShortAnswer ? "Evaluating your answer…" : "Submit quiz"}
-          </button>
+          </PortalButton>
         )}
       </div>
 
       {isSubmitting && isAiGradedShortAnswer ? (
-        <p
-          className="text-xs text-center text-muted"
-        >
+        <p className="text-center text-xs text-cn-p-ink-2">
           The Elite Coach is reviewing your short-answer response — this can take up to a
           minute. Please don&apos;t close this window.
         </p>

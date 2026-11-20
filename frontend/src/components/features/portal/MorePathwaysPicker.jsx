@@ -11,6 +11,7 @@ import { useAuth } from "@/hooks/useAuth";
 import PathwayCheckoutModal from "@/components/features/pathways/PathwayCheckoutModal";
 import PathwayCoursesModal from "./PathwayCoursesModal";
 import PathwayPreviewModal from "./PathwayPreviewModal";
+import { PortalIcon, PortalKicker } from "./shell/PortalUI";
 
 // Lets a student pick another pathway from a dropdown, pay for it, and go
 // straight to its (now enrolled) courses.
@@ -133,46 +134,40 @@ export default function MorePathwaysPicker() {
     <>
       <div
         ref={containerRef}
-        className="relative rounded-2xl border border-line/80 bg-paper/90 p-4 sm:p-5 shadow-[0_8px_30px_-24px_rgba(28,25,23,0.35)]"
+        className="relative rounded-cn-p border border-cn-p-line bg-cn-p-card p-5"
       >
-        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-10 h-10 rounded-xl border shrink-0 flex items-center justify-center bg-pine/10 border-pine/20 text-pine">
-              <Route className="w-5 h-5" />
-            </div>
+        <div className="flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
+          <div className="flex min-w-0 items-center gap-3">
+            <PortalIcon icon={Route} size="lg" />
             <div className="min-w-0">
-              <p className="text-[11px] font-mono uppercase tracking-[0.16em] text-pine/80">
-                Grow your library
-              </p>
-              <h3 className="text-base font-serif font-bold text-ink">
-                Explore more pathways
-              </h3>
-              <p className="text-xs font-light text-muted">
+              <PortalKicker>Grow your library</PortalKicker>
+              <h3 className="text-base font-bold text-cn-p-ink">Explore more pathways</h3>
+              <p className="text-[13px] text-cn-p-ink-2">
                 Pick another pathway to unlock all of its courses and keep learning.
               </p>
             </div>
           </div>
 
-          <div className="relative w-full sm:w-72 shrink-0">
+          <div className="relative w-full shrink-0 sm:w-72">
             <button
               type="button"
               onClick={() => setIsMenuOpen((open) => !open)}
               disabled={isLoading}
               aria-haspopup="listbox"
               aria-expanded={isMenuOpen}
-              className="w-full flex items-center justify-between gap-3 px-4 py-3 rounded-xl border border-line bg-porcelain text-sm text-ink transition hover:border-pine/50 focus:outline-none focus-visible:ring-2 focus-visible:ring-pine disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex h-11 w-full items-center justify-between gap-3 rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card px-4 text-sm text-cn-p-ink transition-colors duration-150 hover:border-cn-p-ink disabled:cursor-not-allowed disabled:opacity-60"
             >
               <span className="truncate">
                 {isLoading ? "Loading pathways..." : "Choose a pathway"}
               </span>
-              <span className="flex items-center gap-2 shrink-0">
+              <span className="flex shrink-0 items-center gap-2">
                 {!isLoading && (
-                  <span className="text-[11px] font-mono text-muted">
+                  <span className="text-xs text-cn-p-muted tabular-nums">
                     {availablePathways.length}
                   </span>
                 )}
                 <ChevronDown
-                  className={`w-4 h-4 text-muted transition-transform ${isMenuOpen ? "rotate-180" : ""}`}
+                  className={`h-4 w-4 text-cn-p-ink-2 transition-transform ${isMenuOpen ? "rotate-180" : ""}`}
                 />
               </span>
             </button>
@@ -181,26 +176,26 @@ export default function MorePathwaysPicker() {
               <ul
                 role="listbox"
                 aria-label="Available pathways"
-                className="absolute right-0 left-0 sm:left-auto sm:w-96 top-full mt-2 z-30 max-h-80 overflow-y-auto rounded-xl border border-line bg-paper p-1.5 shadow-elevated"
+                className="absolute top-full right-0 left-0 z-30 mt-2 max-h-80 overflow-y-auto rounded-cn-p border border-cn-p-line bg-cn-p-card p-1.5 shadow-cn-p sm:left-auto sm:w-96"
               >
                 {availablePathways.map((pathway) => (
                   <li key={pathway.id} role="option" aria-selected={false}>
                     <button
                       type="button"
                       onClick={() => handleSelect(pathway)}
-                      className="w-full flex items-start justify-between gap-3 p-3 rounded-lg text-left transition hover:bg-porcelain focus:outline-none focus-visible:bg-porcelain"
+                      className="flex w-full items-start justify-between gap-3 rounded-cn-p-sm p-3 text-left transition-colors duration-150 hover:bg-cn-p-page"
                     >
                       <span className="min-w-0">
-                        <span className="block text-sm font-semibold text-ink leading-snug">
+                        <span className="block text-sm leading-snug font-semibold text-cn-p-ink">
                           {pathway.name}
                         </span>
-                        <span className="mt-1 flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wide text-muted">
-                          <Layers className="w-3 h-3" />
+                        <span className="mt-1 flex items-center gap-1.5 text-xs text-cn-p-ink-2">
+                          <Layers className="h-3 w-3" />
                           {pathway.course_count ?? 0} course
                           {pathway.course_count === 1 ? "" : "s"}
                         </span>
                       </span>
-                      <span className="shrink-0 text-sm font-semibold text-pine">
+                      <span className="shrink-0 text-sm font-semibold text-cn-p-accent">
                         {formatCoursePrice(pathway.base_price)}
                       </span>
                     </button>

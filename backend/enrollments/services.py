@@ -13,6 +13,7 @@ from common.models import Status
 from courses.models import Course, CourseInstructor
 from courses.serializers import CourseDetailSerializer
 from lessons.models import Lesson
+from modules.models import Module
 from progress.models import CourseProgress, LearningActivity, LessonProgress, ModuleProgress
 from progress.services import get_module_lock_map
 from quizzes.models import Quiz, QuizAttempt
@@ -214,6 +215,68 @@ def get_enrollment_import_sample(file_format):
             "text/csv",
         )
     raise ImportFileError("Sample format must be csv or xlsx.")
+
+
+def get_enrollment_card_data(student, course_ids):
+    """Per-course facts the student's course library card shows.
+
+    The library lists every enrolment at once, so each of these is one query
+    across the whole set rather than one per course: the module and lesson
+    counts under a card's title, and the lesson the student would open next —
+    the first one, in module then lesson order, they have not completed.
+
+    Counts are taken the same way :func:`get_student_enrolled_course_detail`
+    takes them (every module and lesson of the course, not only published
+    ones), so a card and the course screen behind it can never disagree.
+    """
+    course_ids = list(course_ids)
+    if not course_ids:
+        return {}
+
+    lesson_rows = list(
+        Lesson.objects.filter(module__course_id__in=course_ids)
+        .values("id", "title", "module__course_id")
+        .order_by("module__course_id", "module__order", "order", "id")
+    )
+    completed_lesson_ids = set(
+        LessonProgress.objects.filter(
+            student=student,
+            lesson_id__in=[row["id"] for row in lesson_rows],
+            is_completed=True,
+        ).values_list("lesson_id", flat=True)
+    )
+    module_counts = {
+        row["course_id"]: row["total"]
+        for row in Module.objects.filter(course_id__in=course_ids)
+        .values("course_id")
+        .annotate(total=Count("id"))
+    }
+
+    by_course = {}
+    for row in lesson_rows:
+        entry = by_course.setdefault(
+            row["module__course_id"],
+            {"total_lessons": 0, "completed_lessons": 0, "next_lesson": None},
+        )
+        entry["total_lessons"] += 1
+        if row["id"] in completed_lesson_ids:
+            entry["completed_lessons"] += 1
+        elif entry["next_lesson"] is None:
+            entry["next_lesson"] = {"id": row["id"], "title": row["title"]}
+
+    return {
+        course_id: {
+            "stats": {
+                "total_modules": module_counts.get(course_id, 0),
+                "total_lessons": by_course.get(course_id, {}).get("total_lessons", 0),
+                "completed_lessons": by_course.get(course_id, {}).get(
+                    "completed_lessons", 0
+                ),
+            },
+            "next_lesson": by_course.get(course_id, {}).get("next_lesson"),
+        }
+        for course_id in course_ids
+    }
 
 
 def get_student_enrolled_course_detail(student, course_id, request=None):

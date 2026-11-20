@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useMemo, useRef } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
@@ -26,6 +26,7 @@ import { motion, AnimatePresence } from "motion/react";
 import useScrollReveal from "@/hooks/useScrollReveal";
 import AudienceCard from "@/components/features/audiences/AudienceCard";
 import MarkdownMiniRenderer from "@/components/ui/MarkdownMiniRenderer";
+import AdvisorAvatar, { advisorInitial } from "@/components/ui/AdvisorAvatar";
 import { ADVISOR_PERSONAS } from "@/data/curriculum";
 import { AUDIENCE_PROFILES } from "@/data/audiences";
 import { INDEX_FAQ_ITEMS } from "@/constants/faq";
@@ -127,6 +128,11 @@ function useDelayedFlag(active, delayMs) {
   return isSlow;
 }
 
+// How many pathways the explorer's rail offers. The catalog publishes nine
+// today, so this only bites once a tenth and an eleventh are added — the rail
+// is a column beside one panel, not a directory.
+const HOME_PATHWAY_LIMIT = 10;
+
 const PATHWAY_DIFFICULTY_LABELS = {
   BEGINNER: "Beginner",
   INTERMEDIATE: "Intermediate",
@@ -197,15 +203,31 @@ const ADVISORY_TOPICS = [
   {
     id: "legacy",
     topic: "Money",
-    name: "Richard Sterling",
-    firstName: "Richard",
-    role: "Steward of multi-family offices",
+    name: "Oumar Hill",
+    firstName: "Oumar",
+    role: "Co-founder",
     focus: "Generational philanthropy",
-    photo: "/images/design/adv-sterling.webp",
+    photo: "/images/design/adv-oumar.webp",
     prompts: [
       "What should a teenager do with a first NIL payment?",
       "How does a family start giving in a structured way?",
       "When does it make sense to set up a trust?",
+    ],
+  },
+  {
+    id: "tech",
+    topic: "Tech",
+    name: "Waqar",
+    firstName: "Waqar",
+    role: "Technology advisor",
+    focus: "Software and product",
+    // No portrait yet — `AdvisorAvatar` draws the initial in the same box, so
+    // the pill and the stage keep their shape until a photograph arrives.
+    photo: null,
+    prompts: [
+      "How do I start learning to code with no background?",
+      "What should a student build to show employers?",
+      "Is a computer science degree still worth it?",
     ],
   },
 ];
@@ -467,17 +489,40 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
   const { data: pathwaysData, isLoading: isPathwaysLoading } = useQuery({
     queryKey: ["home-pathways"],
     queryFn: async () => {
-      const response = await getPublicPathways({ pageSize: 12 });
+      // The whole published catalog, because the explorer below ranks it
+      // before it takes the top ten — a page of twelve would rank twelve
+      // arbitrary rows rather than the catalog's biggest bundles.
+      const response = await getPublicPathways({ pageSize: 100 });
       return response?.data?.results || [];
     },
   });
-  const pathways = pathwaysData || [];
+  const pathways = useMemo(() => pathwaysData || [], [pathwaysData]);
+
+  // The explorer's rail: the catalog's ten biggest bundles, largest first.
+  // Pathways holding the same number of courses keep the catalog's own order
+  // (the sort carries an index tiebreak rather than relying on the engine's
+  // stability), so the four ten-course pathways never shuffle between
+  // renders. The ledger above still counts `pathways`, not this — it states
+  // how many pathways the catalog has, which is not the same question.
+  const topPathways = useMemo(
+    () =>
+      pathways
+        .map((pathway, index) => ({ pathway, index }))
+        .sort(
+          (a, b) =>
+            (b.pathway.course_count || 0) - (a.pathway.course_count || 0) ||
+            a.index - b.index,
+        )
+        .slice(0, HOME_PATHWAY_LIMIT)
+        .map((row) => row.pathway),
+    [pathways],
+  );
 
   useEffect(() => {
-    if (!selectedPathwayId && pathways.length > 0) {
-      setSelectedPathwayId(pathways[0].id);
+    if (!selectedPathwayId && topPathways.length > 0) {
+      setSelectedPathwayId(topPathways[0].id);
     }
-  }, [pathways, selectedPathwayId]);
+  }, [topPathways, selectedPathwayId]);
 
   const { data: selectedPathway } = useQuery({
     queryKey: ["home-pathway-detail", selectedPathwayId],
@@ -496,7 +541,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
   // panel can render them the moment a pathway is picked instead of blanking
   // out while its detail request is in flight. Detail fields win where both
   // have one.
-  const selectedPathwayRow = pathways.find(
+  const selectedPathwayRow = topPathways.find(
     (pathway) => pathway.id === selectedPathwayId,
   );
   const recommended = {
@@ -510,6 +555,9 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
   const activeAdvisoryTopic =
     ADVISORY_TOPICS.find((topic) => topic.id === selectedConsultAdvisorId) ||
     ADVISORY_TOPICS[0];
+  const activeChatAdvisor =
+    ADVISOR_PERSONAS.find((advisor) => advisor.id === selectedChatAdvisorId) ||
+    ADVISOR_PERSONAS[0];
 
   // Every `data-cn-reveal` element below rises in once as it is scrolled to.
   // The sweep is re-run when the pathway list arrives, since that section's
@@ -931,13 +979,13 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
             </div>
           )}
 
-          {!isPathwaysLoading && pathways.length === 0 && (
+          {!isPathwaysLoading && topPathways.length === 0 && (
             <div className="flex min-h-[200px] items-center justify-center text-cn-sm font-medium text-cn-muted">
               No pathways published yet — check back soon.
             </div>
           )}
 
-          {!isPathwaysLoading && pathways.length > 0 && (
+          {!isPathwaysLoading && topPathways.length > 0 && (
             // Both columns share the row's height (`items-stretch`), so the
             // rail runs the full depth of the panel beside it rather than
             // stopping short of it — the design's `grid-auto-rows: 1fr`.
@@ -953,7 +1001,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                 aria-orientation="vertical"
                 className="grid h-full auto-rows-fr gap-1"
               >
-                {pathways.map((pathway) => {
+                {topPathways.map((pathway) => {
                   const isActive = selectedPathwayId === pathway.id;
                   return (
                     <button
@@ -1256,10 +1304,10 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                         className="pointer-events-none absolute opacity-0"
                       />
                       <span className="shrink-0">
-                        <img
+                        <AdvisorAvatar
+                          name={option.name}
                           src={option.photo}
-                          alt=""
-                          className="h-8 w-8 rounded-full object-cover"
+                          className="h-8 w-8 rounded-full object-cover text-cn-xs"
                         />
                       </span>
                       <span className="whitespace-nowrap">{option.topic}</span>
@@ -1271,12 +1319,27 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
 
             {/* The specialist's portrait. */}
             <div className="flex min-h-full">
-              <figure className="relative m-0 flex-1 overflow-hidden rounded-cn-lg">
-                <img
-                  src={activeAdvisoryTopic.photo}
-                  alt={activeAdvisoryTopic.name}
-                  className="h-full min-h-[420px] w-full object-cover object-[50%_22%]"
-                />
+              {/* The column stretches to the card beside it, but the portrait
+                  stops at a height its 4:5 source can still fill honestly —
+                  past that, `object-cover` just magnifies the face. */}
+              <figure className="relative m-0 max-h-[680px] flex-1 overflow-hidden rounded-cn-lg">
+                {activeAdvisoryTopic.photo ? (
+                  <img
+                    src={activeAdvisoryTopic.photo}
+                    alt={activeAdvisoryTopic.name}
+                    className="h-full min-h-[420px] w-full object-cover object-[50%_22%]"
+                  />
+                ) : (
+                  /* The design's own empty-media treatment (`.ph` with no
+                     `.has`): the cobalt wash, with the advisor's initial where
+                     the face would be. */
+                  <span
+                    aria-hidden="true"
+                    className="grid h-full min-h-[420px] w-full place-items-center bg-[linear-gradient(135deg,var(--color-cn-paper-3),var(--color-cn-paper-4)_60%,var(--color-cn-accent-soft))] text-[clamp(5rem,12vw,9rem)] leading-none font-extrabold tracking-[-0.04em] text-white select-none"
+                  >
+                    {advisorInitial(activeAdvisoryTopic.name)}
+                  </span>
+                )}
                 <figcaption className="absolute inset-x-0 bottom-0 grid gap-0.5 bg-[rgba(10,16,40,0.62)] px-6 pt-10 pb-6 text-white [mask-image:linear-gradient(180deg,transparent,#000_40%)] [-webkit-mask-image:linear-gradient(180deg,transparent,#000_40%)]">
                   <b className="text-cn-2xl leading-[1.1] tracking-[-0.03em]">
                     {activeAdvisoryTopic.name}
@@ -1377,7 +1440,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     animate={{ opacity: 1, y: 0 }}
                     exit={{ opacity: 0, y: 12 }}
                     id="consult-output-result"
-                    className="mx-4 mb-6 overflow-hidden rounded-cn border border-cn-rule bg-cn-paper-2 p-5 text-left md:mx-10"
+                    className="mx-4 mb-6 flex flex-col overflow-hidden rounded-cn border border-cn-rule bg-cn-paper-2 p-5 text-left md:mx-10"
                   >
                     <div className="mb-4 flex flex-wrap items-center justify-between gap-3 border-b border-cn-rule pb-3">
                       <p className="flex items-center gap-2 text-cn-xs font-semibold text-cn-muted">
@@ -1402,10 +1465,23 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                         </p>
                       </div>
                     ) : (
-                      <div className="space-y-4">
-                        <MarkdownMiniRenderer text={consultAdvice} size="lg" />
+                      <>
+                        {/* The answer scrolls inside the card rather than
+                            growing it. A long reply otherwise pushed the card
+                            past a thousand pixels, and the portrait beside it
+                            — which stretches to match — became a face blown up
+                            two and a half times. `overscroll-contain` keeps a
+                            flick inside the panel from scrolling the page on
+                            once it reaches the end. */}
+                        <div className="max-h-[min(55vh,420px)] overflow-y-auto overscroll-contain pr-1">
+                          <MarkdownMiniRenderer
+                            text={consultAdvice}
+                            size="lg"
+                            tone="light"
+                          />
+                        </div>
 
-                        <div className="mt-3 flex flex-col items-center justify-between gap-3 border-t border-cn-rule pt-4 text-cn-sm sm:flex-row">
+                        <div className="mt-4 flex flex-col items-center justify-between gap-3 border-t border-cn-rule pt-4 text-cn-sm sm:flex-row">
                           <span className="text-cn-ink-2">
                             Need the curriculum behind this answer?
                           </span>
@@ -1418,7 +1494,7 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                             <ArrowRight className="w-3.5 h-3.5" />
                           </button>
                         </div>
-                      </div>
+                      </>
                     )}
                   </motion.div>
                 )}
@@ -1642,11 +1718,11 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                         : "border-cn-ink-line bg-black/20 text-cn-on-ink-2 hover:text-white"
                     }`}
                   >
-                    <img
+                    <AdvisorAvatar
+                      name={adv.name}
                       src={adv.avatar}
-                      alt={adv.name}
-                      className="w-5 h-5 rounded-full object-cover shrink-0"
-                      referrerPolicy="no-referrer"
+                      className="h-5 w-5 shrink-0 rounded-full object-cover text-[9px]"
+                      fallbackClassName="bg-cn-accent/30 text-white"
                     />
                     <span>{adv.name.split(" ")[1] || adv.name}</span>
                   </button>
@@ -1661,15 +1737,11 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
                     className={`flex gap-2.5 ${msg.sender === "user" ? "justify-end" : "justify-start"}`}
                   >
                     {msg.sender === "advisor" && (
-                      <img
-                        src={
-                          ADVISOR_PERSONAS.find(
-                            (a) => a.id === selectedChatAdvisorId,
-                          )?.avatar
-                        }
-                        alt="Advisor"
-                        className="mt-1 h-7 w-7 shrink-0 rounded-full border border-cn-ink-line bg-cn-ink object-cover"
-                        referrerPolicy="no-referrer"
+                      <AdvisorAvatar
+                        name={activeChatAdvisor?.name}
+                        src={activeChatAdvisor?.avatar}
+                        className="mt-1 h-7 w-7 shrink-0 rounded-full border border-cn-ink-line object-cover text-[10px]"
+                        fallbackClassName="bg-cn-ink text-white"
                       />
                     )}
 
@@ -1693,15 +1765,11 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
 
                 {isChatLoading && (
                   <div className="flex gap-2.5 justify-start">
-                    <img
-                      src={
-                        ADVISOR_PERSONAS.find(
-                          (a) => a.id === selectedChatAdvisorId,
-                        )?.avatar
-                      }
-                      alt="Advisor"
-                      className="h-7 w-7 shrink-0 animate-pulse rounded-full border border-cn-ink-line bg-cn-ink object-cover"
-                      referrerPolicy="no-referrer"
+                    <AdvisorAvatar
+                      name={activeChatAdvisor?.name}
+                      src={activeChatAdvisor?.avatar}
+                      className="h-7 w-7 shrink-0 animate-pulse rounded-full border border-cn-ink-line object-cover text-[10px]"
+                      fallbackClassName="bg-cn-ink text-white"
                     />
                     <div className="flex items-center gap-2 rounded-cn border border-cn-ink-line bg-white/5 px-3.5 py-2 text-cn-sm text-cn-on-ink-2">
                       <span className="relative flex h-1.5 w-1.5">

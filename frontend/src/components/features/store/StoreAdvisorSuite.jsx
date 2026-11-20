@@ -7,6 +7,7 @@ import { ADVISOR_PERSONAS } from "@/data/curriculum";
 import { requestAdvisorAdvice } from "@/services/advisorService";
 import MarkdownMiniRenderer from "@/components/ui/MarkdownMiniRenderer";
 import PingDotSpinner from "@/components/ui/PingDotSpinner";
+import AdvisorAvatar from "@/components/ui/AdvisorAvatar";
 
 // Demo catalog used only to ground the advisor's recommendations — this
 // suite is currently disabled (not rendered by MerchantStore) since the
@@ -226,11 +227,11 @@ Instructions:
                 }`}
               >
                 <div className="flex items-center gap-3 mb-2.5">
-                  <img
+                  <AdvisorAvatar
+                    name={advisor.name}
                     src={advisor.avatar}
-                    alt={advisor.name}
-                    className="w-10 h-10 rounded-full border object-cover border-stone-700 bg-stone-900 shrink-0"
-                    referrerPolicy="no-referrer"
+                    className="w-10 h-10 rounded-full border object-cover border-stone-700 shrink-0 text-xs"
+                    fallbackClassName="bg-stone-900 text-stone-300"
                   />
                   <div className="min-w-0">
                     <p className="text-sm font-bold text-stone-100 truncate">

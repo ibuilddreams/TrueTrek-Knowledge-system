@@ -5,101 +5,66 @@ import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
 import {
   AlertCircle,
-  ArrowLeft,
-  BookOpen,
-  Calendar,
-  CalendarClock,
-  CheckCircle2,
-  ChevronDown,
-  ChevronUp,
-  Circle,
+  ChevronRight,
   CircleHelp,
   ClipboardList,
-  FileQuestion,
-  FileText,
-  HelpCircle,
-  Image as ImageIcon,
   Layers,
   Lock,
+  Mail,
+  MessageSquare,
+  Play,
   RefreshCw,
-  Repeat,
-  UserRound,
-  Video,
 } from "lucide-react";
 import { AnimatePresence, motion } from "motion/react";
+import { AUTH_ROLES } from "@/constants/auth";
 import { getStudentEnrolledCourseDetail } from "@/services/studentCoursesService";
 import CourseFeedSection from "@/components/features/portal/course-detail/CourseFeedSection";
-import CourseOverview from "@/components/features/portal/course-detail/CourseOverview";
 import { getApiErrorMessage } from "@/lib/apiErrors";
-import { formatDate, formatDateTime } from "@/lib/adminFormatters";
-import { useModuleLessons } from "@/hooks/student/useModuleLessons";
+import { parseCourseDescription } from "@/lib/courseDescription";
+import { getPortalAssignmentStatus, getPortalQuizStatus } from "@/lib/curriculumMeta";
 import { useStudentAssignments } from "@/hooks/student/useStudentAssignments";
 import { useStudentQuizzes } from "@/hooks/student/useStudentQuizzes";
 import Loader from "@/components/ui/Loader";
-import StatusBadge from "@/components/ui/StatusBadge";
+import PortalCard from "../shell/PortalCard";
+import {
+  PortalButton,
+  PortalCrumbs,
+  PortalEmpty,
+  PortalIcon,
+  PortalKicker,
+  PortalKv,
+  PortalKvItem,
+  PortalPill,
+  PortalRing,
+  PortalSectionLabel,
+  PortalTick,
+} from "../shell/PortalUI";
+import { portalHref } from "../shell/portalNav";
 import LessonViewScreen from "../lesson-view/LessonViewScreen";
 import LessonViewPending from "../lesson-view/LessonViewPending";
 
-const ASSIGNMENT_STATUS_STYLES = {
-  SUBMITTED: "bg-gold/12 text-gold border-gold/25",
-  LATE: "bg-rose-50 text-rose-600 border-rose-100",
-  GRADED: "bg-emerald-50 text-emerald-700 border-emerald-100",
-  RETURNED: "bg-sky-50 text-sky-700 border-sky-100",
-  RESUBMITTED: "bg-gold/12 text-gold border-gold/25",
-};
-
-const LESSON_TYPE_META = {
-  VIDEO: { icon: Video, label: "Video", badge: "bg-sky-50 text-sky-600 border-sky-100" },
-  PDF: { icon: FileText, label: "PDF", badge: "bg-rose-50 text-rose-600 border-rose-100" },
-  DOCUMENT: { icon: FileText, label: "Document", badge: "bg-blue-50 text-blue-600 border-blue-100" },
-  IMAGE: { icon: ImageIcon, label: "Image", badge: "bg-violet-50 text-violet-600 border-violet-100" },
-  DEFAULT: { icon: FileQuestion, label: "Lesson", badge: "bg-porcelain text-muted border-line" },
-};
-
-function RowIcon({ icon: Icon, className }) {
-  return (
-    <span
-      className={`flex items-center justify-center w-8 h-8 rounded-lg border shrink-0 ${className}`}
-    >
-      <Icon className="w-4 h-4" />
-    </span>
-  );
+// "Nov 24, 2026" — how the design writes a due date in a module row.
+function formatDueDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
-function ProgressBar({ value }) {
-  const progress = Math.round(value || 0);
-  return (
-    <div className="space-y-1.5">
-      <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-muted">
-        <span>Overall progress</span>
-        <span className="text-pine font-bold">{progress}%</span>
-      </div>
-      <div className="w-full bg-porcelain h-2 rounded-full overflow-hidden">
-        <motion.div
-          className={`h-full rounded-full ${
-            progress >= 80 ? "bg-emerald-500" : "bg-pine"
-          }`}
-          initial={{ width: 0 }}
-          animate={{ width: `${progress}%` }}
-          transition={{ duration: 0.6, ease: "easeOut" }}
-        />
-      </div>
-    </div>
-  );
+// "Nov 04" — the design's own short enrolment date, which sits in a 2x4 tile
+// grid where a full date would wrap.
+function formatEnrolledDate(value) {
+  if (!value) return null;
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return null;
+  return date.toLocaleDateString("en-US", { month: "short", day: "2-digit" });
 }
 
-function StatChip({ label, value }) {
-  return (
-    <div className="rounded-xl border border-line bg-porcelain/80 px-3 py-2.5">
-      <p className="text-[10px] font-mono uppercase tracking-wider text-muted">
-        {label}
-      </p>
-      <p className="text-base font-serif font-bold text-ink mt-0.5">{value}</p>
-    </div>
-  );
-}
-
-function instructorInitials(name) {
+function initials(name) {
   if (!name) return "?";
   return name
     .split(" ")
@@ -110,158 +75,24 @@ function instructorInitials(name) {
     .toUpperCase();
 }
 
-function InstructorAvatar({ name, avatar }) {
-  const [imageFailed, setImageFailed] = useState(false);
-  const hasAvatar = Boolean(avatar) && !imageFailed;
-  if (hasAvatar) {
-    return (
-      <img
-        src={avatar}
-        alt={name || "Instructor avatar"}
-        onError={() => setImageFailed(true)}
-        className="w-8 h-8 rounded-full object-cover shrink-0"
-      />
-    );
-  }
-  return (
-    <span className="flex items-center justify-center w-8 h-8 rounded-full bg-pine text-paper font-bold text-[11px] shrink-0">
-      {instructorInitials(name)}
-    </span>
-  );
-}
-
-function CourseThumbnail({ image, title }) {
-  const [imageFailed, setImageFailed] = useState(false);
-  const hasImage = Boolean(image) && !imageFailed;
-  return (
-    <div className="relative w-full h-44 sm:h-56 rounded-2xl border border-line overflow-hidden shrink-0">
-      <img
-        src={hasImage ? image : "/images/course-placeholder.svg"}
-        alt={title ? `${title} thumbnail` : "Course thumbnail"}
-        onError={() => setImageFailed(true)}
-        className="absolute inset-0 w-full h-full object-cover"
-      />
-    </div>
-  );
-}
-
-function assignmentStatusLabel(submission) {
-  if (!submission) {
-    return { label: "Not submitted", className: "bg-porcelain text-muted border-line" };
-  }
-  const className =
-    ASSIGNMENT_STATUS_STYLES[submission.status] || "bg-porcelain text-muted border-line";
-  return { label: submission.status, className };
-}
-
-function quizStatusLabel(quiz) {
-  const attempt = quiz.latest_attempt;
-  if (!attempt) return { label: "Not attempted", className: "bg-porcelain text-muted border-line" };
-  if (attempt.status === "IN_PROGRESS") {
-    return { label: "In progress", className: "bg-gold/12 text-gold border-gold/25" };
-  }
-  if (attempt.is_passed === true) {
-    return { label: "Passed", className: "bg-emerald-50 text-emerald-700 border-emerald-100" };
-  }
-  if (attempt.is_passed === false) {
-    return { label: "Failed", className: "bg-rose-50 text-rose-600 border-rose-100" };
-  }
-  return { label: "Submitted", className: "bg-porcelain text-muted border-line" };
-}
-
-function LessonRow({ lesson, onOpen, disabled }) {
-  const meta = LESSON_TYPE_META[lesson.content_type] || LESSON_TYPE_META.DEFAULT;
+/** `.accrow` — one clickable line inside an open module. */
+function AccordionRow({ onClick, disabled, children }) {
   return (
     <button
       type="button"
-      onClick={() => onOpen(lesson)}
+      onClick={disabled ? undefined : onClick}
       disabled={disabled}
-      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-porcelain disabled:hover:bg-transparent disabled:cursor-default transition-colors group"
+      className="flex w-full items-center gap-3 rounded-cn-p-sm border-0 bg-transparent px-2 py-3 text-left transition-colors duration-150 hover:bg-cn-p-page disabled:cursor-not-allowed disabled:opacity-50 disabled:hover:bg-transparent"
     >
-      <RowIcon icon={meta.icon} className={meta.badge} />
-      <span className="min-w-0 flex-1">
-        <span className="block text-[12.5px] font-medium text-muted group-hover:text-pine truncate transition-colors">
-          {lesson.title}
-        </span>
-        <span className="flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-muted mt-0.5">
-          <span>{meta.label}</span>
-          {lesson.duration_minutes ? (
-            <>
-              <span className="w-0.5 h-0.5 rounded-full bg-muted/40 shrink-0" />
-              <span>{lesson.duration_minutes}m</span>
-            </>
-          ) : null}
-        </span>
-      </span>
-      {lesson.is_completed ? (
-        <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
-      ) : (
-        <Circle className="w-4 h-4 text-muted shrink-0" />
-      )}
+      {children}
     </button>
   );
 }
 
-function AssignmentRow({ assignment, onOpen, disabled }) {
-  const { label, className } = assignmentStatusLabel(assignment.submission);
-  return (
-    <button
-      type="button"
-      onClick={() => onOpen(assignment)}
-      disabled={disabled}
-      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-porcelain disabled:hover:bg-transparent disabled:cursor-default disabled:opacity-50 transition-colors group"
-    >
-      <RowIcon icon={ClipboardList} className="bg-gold/12 text-gold border-gold/25" />
-      <span className="min-w-0 flex-1">
-        <span className="block text-[12.5px] font-medium text-muted group-hover:text-pine truncate transition-colors">
-          {assignment.title}
-        </span>
-        {assignment.due_date ? (
-          <span className="flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-muted mt-0.5">
-            <CalendarClock className="w-3 h-3 shrink-0" />
-            Due {formatDateTime(assignment.due_date)}
-          </span>
-        ) : null}
-      </span>
-      <span
-        className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border shrink-0 ${className}`}
-      >
-        {label}
-      </span>
-    </button>
-  );
-}
-
-function QuizRow({ quiz, onOpen, disabled }) {
-  const { label, className } = quizStatusLabel(quiz);
-  return (
-    <button
-      type="button"
-      onClick={() => onOpen(quiz)}
-      disabled={disabled}
-      className="w-full flex items-center gap-3 rounded-xl px-2 py-2 text-left hover:bg-porcelain disabled:hover:bg-transparent disabled:cursor-default disabled:opacity-50 transition-colors group"
-    >
-      <RowIcon icon={CircleHelp} className="bg-violet-50 text-violet-600 border-violet-100" />
-      <span className="min-w-0 flex-1">
-        <span className="block text-[12.5px] font-medium text-muted group-hover:text-pine truncate transition-colors">
-          {quiz.title}
-        </span>
-        <span className="flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-muted mt-0.5">
-          <Repeat className="w-3 h-3 shrink-0" />
-          {quiz.number_of_questions} question{quiz.number_of_questions === 1 ? "" : "s"}
-        </span>
-      </span>
-      <span
-        className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border shrink-0 ${className}`}
-      >
-        {label}
-      </span>
-    </button>
-  );
-}
-
+/** `.acc` — one module, closed to a header and opened to its contents. */
 function ModuleAccordionItem({
   module,
+  index,
   isExpanded,
   onToggle,
   moduleAssignments,
@@ -271,101 +102,44 @@ function ModuleAccordionItem({
   onOpenAssignment,
   onOpenQuiz,
 }) {
-  const { data: fullLessons } = useModuleLessons(module.id, isExpanded);
-
-  const lessonCompletionById = useMemo(() => {
-    const map = new Map();
-    (module.lessons || []).forEach((lesson) => map.set(lesson.id, lesson.is_completed));
-    return map;
-  }, [module.lessons]);
-
-  const displayLessons = useMemo(() => {
-    if (fullLessons && fullLessons.length) {
-      return fullLessons.map((lesson) => ({
-        ...lesson,
-        is_completed: lessonCompletionById.get(lesson.id) ?? false,
-      }));
-    }
-    return null;
-  }, [fullLessons, lessonCompletionById]);
-
-  const hasDetails =
-    (module.lessons || []).length > 0 ||
-    moduleAssignments.length > 0 ||
-    moduleQuizzes.length > 0;
-
-  // Task 18 (Phase 5) — computed server-side (progress.services.get_module_lock_map)
-  // from real quiz-failure history; never guessed client-side. Kept separate
-  // from the pre-existing `canInteract` gate (enrollment-active check) so
-  // this addition doesn't change that unrelated behavior.
+  const lessons = module.lessons || [];
+  const completedLessons = lessons.filter((lesson) => lesson.is_completed).length;
   const isLocked = Boolean(module.is_locked);
-  const rowsDisabled = isLocked;
+  const rowsDisabled = isLocked || !canInteract;
+  const hasDetails =
+    lessons.length > 0 || moduleAssignments.length > 0 || moduleQuizzes.length > 0;
 
   return (
-    <div className="rounded-2xl border border-line bg-paper overflow-hidden">
+    <div className="overflow-hidden rounded-[14px] border border-cn-p-line bg-cn-p-card">
       <button
         type="button"
         onClick={onToggle}
         aria-expanded={isExpanded}
-        className="w-full text-left p-4 sm:p-5 space-y-3 hover:bg-porcelain/70 transition-colors"
+        className="flex w-full items-center gap-3.5 border-0 bg-transparent px-5 py-[18px] text-left"
       >
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <p className="text-[11px] font-mono uppercase tracking-wider text-muted">
-              Module {module.order}
-            </p>
-            <h5 className="font-serif font-bold text-ink mt-0.5 truncate">
-              {module.title}
-            </h5>
-          </div>
-          <div className="flex items-center gap-2 shrink-0">
-            {isLocked ? (
-              <span className="inline-flex items-center gap-1 text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border bg-porcelain text-muted border-line">
-                <Lock className="w-3 h-3" />
-                Locked
-              </span>
-            ) : (
-              <span
-                className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${
-                  module.is_completed
-                    ? "bg-emerald-50 text-emerald-700 border-emerald-100"
-                    : "bg-porcelain text-muted border-line"
-                }`}
-              >
-                {Math.round(module.completion_percentage || 0)}%
-              </span>
-            )}
-            {hasDetails ? (
-              isExpanded ? (
-                <ChevronUp className="w-4 h-4 text-muted" />
-              ) : (
-                <ChevronDown className="w-4 h-4 text-muted" />
-              )
-            ) : null}
-          </div>
-        </div>
-
-        {module.description ? (
-          <p className="text-xs text-muted font-light leading-relaxed line-clamp-2">
-            {module.description}
-          </p>
-        ) : null}
-
-        <div className="flex flex-wrap gap-2 text-[11px] font-mono uppercase tracking-wider text-muted">
-          <span className="inline-flex items-center gap-1">
-            <BookOpen className="w-3 h-3" />
-            {module.stats?.completed_lessons || 0}/
-            {module.stats?.total_lessons || 0} lessons
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <HelpCircle className="w-3 h-3" />
-            {moduleQuizzes.length || module.stats?.total_quizzes || 0} quizzes
-          </span>
-          <span className="inline-flex items-center gap-1">
-            <ClipboardList className="w-3 h-3" />
-            {moduleAssignments.length || module.stats?.total_assignments || 0} assigns
-          </span>
-        </div>
+        <PortalIcon size="lg">
+          <span className="text-sm font-bold">{index + 1}</span>
+        </PortalIcon>
+        <span className="flex min-w-0 flex-1 flex-col gap-0.5">
+          <b className="flex items-center gap-1.5 text-base font-bold text-cn-p-ink">
+            <span className="truncate">{module.title}</span>
+            {isLocked && <Lock aria-hidden="true" className="h-3.5 w-3.5 flex-none" />}
+          </b>
+          {module.description && (
+            <span className="truncate text-[13px] text-cn-p-ink-2">
+              {module.description}
+            </span>
+          )}
+        </span>
+        <span className="flex-none text-[13px] text-cn-p-ink-2">
+          {completedLessons}/{lessons.length} lessons
+        </span>
+        <ChevronRight
+          aria-hidden="true"
+          className={`h-[18px] w-[18px] flex-none text-cn-p-ink-2 transition-transform duration-150 ${
+            isExpanded ? "rotate-90" : ""
+          }`}
+        />
       </button>
 
       <AnimatePresence initial={false}>
@@ -377,72 +151,110 @@ function ModuleAccordionItem({
             transition={{ duration: 0.22, ease: "easeOut" }}
             className="overflow-hidden"
           >
-            <div className="px-4 sm:px-5 pb-4 sm:pb-5 space-y-4">
-              {(module.lessons || []).length > 0 && (
-                <div className="space-y-0.5 pt-2 border-t border-line">
-                  <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-muted px-2 pb-1">
-                    <BookOpen className="w-3 h-3" />
-                    Lessons
-                  </p>
-                  {displayLessons === null ? (
-                    <div className="py-2">
-                      <Loader fullScreen={false} label="Loading lessons..." />
-                    </div>
-                  ) : (
-                    displayLessons.map((lesson) => (
-                      <LessonRow
-                        key={lesson.id}
-                        lesson={lesson}
-                        onOpen={onOpenLesson}
-                        disabled={rowsDisabled}
-                      />
-                    ))
-                  )}
-                </div>
+            <div className="border-t border-cn-p-line px-5 pt-1.5 pb-3.5">
+              {lessons.length > 0 && (
+                <>
+                  <PortalSectionLabel>Lessons</PortalSectionLabel>
+                  {lessons.map((lesson) => (
+                    <AccordionRow
+                      key={lesson.id}
+                      disabled={rowsDisabled}
+                      onClick={() => onOpenLesson(lesson)}
+                    >
+                      <PortalTick isOn={lesson.is_completed} />
+                      <span className="min-w-0 flex-1 truncate text-cn-p-ink">
+                        {lesson.title}
+                      </span>
+                      {lesson.duration_minutes ? (
+                        <span className="flex-none text-xs text-cn-p-ink-2">
+                          {lesson.duration_minutes} min
+                        </span>
+                      ) : null}
+                    </AccordionRow>
+                  ))}
+                </>
               )}
 
               {moduleAssignments.length > 0 && (
-                <div className="space-y-0.5 pt-2 border-t border-line">
-                  <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-muted px-2 pb-1">
-                    <ClipboardList className="w-3 h-3" />
-                    Assignments
-                  </p>
-                  {moduleAssignments.map((assignment) => (
-                    <AssignmentRow
-                      key={assignment.id}
-                      assignment={assignment}
-                      onOpen={onOpenAssignment}
-                      disabled={rowsDisabled}
-                    />
-                  ))}
-                </div>
+                <>
+                  <PortalSectionLabel>Assignment</PortalSectionLabel>
+                  {moduleAssignments.map((assignment) => {
+                    const status = getPortalAssignmentStatus({
+                      ...assignment,
+                      is_locked: assignment.is_locked || isLocked,
+                    });
+                    return (
+                      <AccordionRow
+                        key={assignment.id}
+                        disabled={rowsDisabled}
+                        onClick={() => onOpenAssignment(assignment)}
+                      >
+                        <PortalIcon icon={ClipboardList} />
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate text-cn-p-ink">{assignment.title}</span>
+                          <span className="truncate text-xs text-cn-p-ink-2">
+                            {assignment.due_date
+                              ? `Due ${formatDueDate(assignment.due_date)}`
+                              : "No due date"}
+                            {assignment.total_marks ? ` · ${assignment.total_marks} marks` : ""}
+                          </span>
+                        </span>
+                        <PortalPill tone={status.tone}>{status.label}</PortalPill>
+                      </AccordionRow>
+                    );
+                  })}
+                </>
               )}
 
               {moduleQuizzes.length > 0 && (
-                <div className="space-y-0.5 pt-2 border-t border-line">
-                  <p className="flex items-center gap-1.5 text-[10px] font-mono font-bold uppercase tracking-wider text-muted px-2 pb-1">
-                    <HelpCircle className="w-3 h-3" />
-                    Quizzes
-                  </p>
-                  {moduleQuizzes.map((quiz) => (
-                    <QuizRow key={quiz.id} quiz={quiz} onOpen={onOpenQuiz} disabled={rowsDisabled} />
-                  ))}
-                </div>
+                <>
+                  <PortalSectionLabel>Quiz</PortalSectionLabel>
+                  {moduleQuizzes.map((quiz) => {
+                    const status = getPortalQuizStatus({
+                      ...quiz,
+                      is_locked: quiz.is_locked || isLocked,
+                    });
+                    return (
+                      <AccordionRow
+                        key={quiz.id}
+                        disabled={rowsDisabled}
+                        onClick={() => onOpenQuiz(quiz)}
+                      >
+                        <PortalIcon icon={CircleHelp} />
+                        <span className="flex min-w-0 flex-1 flex-col">
+                          <span className="truncate text-cn-p-ink">{quiz.title}</span>
+                          <span className="truncate text-xs text-cn-p-ink-2">
+                            {[
+                              `${quiz.number_of_questions} question${
+                                quiz.number_of_questions === 1 ? "" : "s"
+                              }`,
+                              quiz.time_limit_minutes ? `${quiz.time_limit_minutes} min` : null,
+                              quiz.passing_score ? `pass ${quiz.passing_score}%` : null,
+                            ]
+                              .filter(Boolean)
+                              .join(" · ")}
+                          </span>
+                        </span>
+                        <PortalPill tone={status.tone}>{status.label}</PortalPill>
+                      </AccordionRow>
+                    );
+                  })}
+                </>
               )}
 
-              {isLocked ? (
-                <p className="flex items-start gap-1.5 text-[11px] text-rose-600 bg-rose-50 border border-rose-100 rounded-lg px-2.5 py-2 pt-1">
-                  <Lock className="w-3 h-3 mt-0.5 shrink-0" />
+              {isLocked && (
+                <p className="mt-2 flex items-start gap-1.5 rounded-cn-p-sm bg-cn-p-bad-bg px-3 py-2 text-xs text-cn-p-bad">
+                  <Lock aria-hidden="true" className="mt-0.5 h-3 w-3 flex-none" />
                   <span>{module.lock_info?.reason || "This module is locked."}</span>
                 </p>
-              ) : null}
+              )}
 
-              {!canInteract ? (
-                <p className="flex items-center gap-1.5 text-[11px] text-muted pt-1">
-                  <Lock className="w-3 h-3" />
+              {!canInteract && (
+                <p className="mt-2 flex items-center gap-1.5 px-2 text-xs text-cn-p-ink-2">
+                  <Lock aria-hidden="true" className="h-3 w-3 flex-none" />
                   Actions are disabled while this enrollment isn&apos;t active.
                 </p>
-              ) : null}
+              )}
             </div>
           </motion.div>
         )}
@@ -473,6 +285,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("content", `${type.toLowerCase()}-${id}`);
     router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    if (typeof window !== "undefined") window.scrollTo(0, 0);
   }
 
   function closeContent() {
@@ -480,6 +293,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
     params.delete("content");
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+    if (typeof window !== "undefined") window.scrollTo(0, 0);
   }
 
   // Tracks the last courseId this effect actually reacted to — compared by value rather
@@ -490,14 +304,10 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
   const lastReactedCourseIdRef = useRef(courseId);
 
   useEffect(() => {
-    if (lastReactedCourseIdRef.current === courseId) {
-      return;
-    }
+    if (lastReactedCourseIdRef.current === courseId) return;
     lastReactedCourseIdRef.current = courseId;
     setExpandedModuleIds(new Set());
-    if (typeof window !== "undefined") {
-      window.scrollTo(0, 0);
-    }
+    if (typeof window !== "undefined") window.scrollTo(0, 0);
     const params = new URLSearchParams(searchParams.toString());
     if (params.has("content")) {
       params.delete("content");
@@ -507,13 +317,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [courseId]);
 
-  const {
-    data,
-    isLoading,
-    isError,
-    error,
-    refetch,
-  } = useQuery({
+  const { data, isLoading, isError, error, refetch } = useQuery({
     queryKey: ["studentEnrolledCourseDetail", courseId],
     queryFn: async () => {
       const response = await getStudentEnrolledCourseDetail(courseId);
@@ -528,23 +332,16 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
   const course = data?.course || enrollment?.course || {};
   const detailEnrollment = data?.enrollment || enrollment || {};
   const stats = data?.stats || {};
-  const modules = data?.modules || [];
-  const courseInstructors = course.instructors || [];
-  const fallbackInstructorName =
-    courseInstructors.find((item) => item.is_lead)?.name ||
-    courseInstructors[0]?.name ||
-    "Instructor TBD";
-  const assignedInstructor = detailEnrollment.teacher || null;
-
+  const modules = useMemo(() => data?.modules || [], [data]);
   const canInteract = detailEnrollment.status === "ACTIVE";
 
   const courseAssignments = useMemo(
     () => allAssignments.filter((assignment) => assignment.course?.id === courseId),
-    [allAssignments, courseId]
+    [allAssignments, courseId],
   );
   const courseQuizzes = useMemo(
     () => allQuizzes.filter((quiz) => quiz.course?.id === courseId),
-    [allQuizzes, courseId]
+    [allQuizzes, courseId],
   );
 
   const assignmentsByModule = useMemo(() => {
@@ -571,261 +368,323 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
 
   const courseLevelAssignments = useMemo(
     () => courseAssignments.filter((assignment) => !assignment.module),
-    [courseAssignments]
+    [courseAssignments],
   );
   const courseLevelQuizzes = useMemo(
     () => courseQuizzes.filter((quiz) => !quiz.module),
-    [courseQuizzes]
+    [courseQuizzes],
   );
 
-  return (
-    <div className="space-y-6">
-      {!activeItem && (
-        <button
-          type="button"
-          onClick={onBack}
-          className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-line hover:border-pine hover:text-pine text-muted text-xs font-mono uppercase tracking-wider rounded-xl transition"
-        >
-          <ArrowLeft className="w-3.5 h-3.5" />
-          Back to My Courses
-        </button>
-      )}
+  // The first lesson, in module then lesson order, the student has not
+  // finished — what "Continue" opens, and what tells Start from Continue.
+  const { nextLesson, completedLessons, totalLessons } = useMemo(() => {
+    let next = null;
+    let done = 0;
+    let total = 0;
+    modules.forEach((module) => {
+      (module.lessons || []).forEach((lesson) => {
+        total += 1;
+        if (lesson.is_completed) done += 1;
+        else if (!next && !module.is_locked) next = lesson;
+      });
+    });
+    return { nextLesson: next, completedLessons: done, totalLessons: total };
+  }, [modules]);
 
-      {(isLoading || (!data && !isError)) &&
-        (activeItem ? (
-          <LessonViewPending />
-        ) : (
-          <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
-            <Loader fullScreen={false} label="Loading course details..." />
-          </div>
-        ))}
+  const descriptionParagraphs = useMemo(
+    () => parseCourseDescription(course.description).paragraphs,
+    [course.description],
+  );
 
-      {isError &&
-        (activeItem ? (
-          <LessonViewPending
-            isError
-            errorMessage={getApiErrorMessage(error, "Unable to load course details.")}
-            onRetry={() => refetch()}
-          />
-        ) : (
-          <div className="text-center py-12">
-            <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-              <AlertCircle className="w-6 h-6" />
-            </div>
-            <p className="text-sm text-rose-600 mb-4">
-              {getApiErrorMessage(error, "Unable to load course details.")}
-            </p>
-            <button
-              type="button"
-              onClick={() => refetch()}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-pine text-paper text-sm font-mono uppercase rounded-lg"
-            >
-              <RefreshCw className="w-3.5 h-3.5" />
+  const instructor =
+    detailEnrollment.teacher ||
+    course.instructors?.find((item) => item.is_lead) ||
+    course.instructors?.[0] ||
+    null;
+
+  const crumbs = (
+    <PortalCrumbs
+      items={[
+        { label: "My courses", onClick: onBack },
+        { label: course.code || course.title || "Course" },
+      ]}
+    />
+  );
+
+  if (isLoading || (!data && !isError)) {
+    return activeItem ? (
+      <LessonViewPending />
+    ) : (
+      <>
+        {crumbs}
+        <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
+          <Loader fullScreen={false} label="Loading course details..." />
+        </div>
+      </>
+    );
+  }
+
+  if (isError) {
+    return activeItem ? (
+      <LessonViewPending
+        isError
+        errorMessage={getApiErrorMessage(error, "Unable to load course details.")}
+        onRetry={() => refetch()}
+      />
+    ) : (
+      <>
+        {crumbs}
+        <PortalCard>
+          <PortalEmpty
+            icon={AlertCircle}
+            title="Couldn't load this course"
+            text={getApiErrorMessage(error, "Unable to load course details.")}
+          >
+            <PortalButton onClick={() => refetch()}>
+              <RefreshCw className="h-[18px] w-[18px]" />
               Retry
-            </button>
-          </div>
-        ))}
+            </PortalButton>
+          </PortalEmpty>
+        </PortalCard>
+      </>
+    );
+  }
 
-      {data && activeItem && (
-        <LessonViewScreen
-          course={course}
-          courseId={courseId}
-          modules={modules}
-          courseAssignments={courseAssignments}
-          courseQuizzes={courseQuizzes}
-          assignmentsByModule={assignmentsByModule}
-          quizzesByModule={quizzesByModule}
-          courseLevelAssignments={courseLevelAssignments}
-          courseLevelQuizzes={courseLevelQuizzes}
-          canInteract={canInteract}
-          activeItem={activeItem}
-          onSelectItem={openContent}
-          onExit={closeContent}
-        />
-      )}
+  if (activeItem) {
+    return (
+      <LessonViewScreen
+        course={course}
+        courseId={courseId}
+        modules={modules}
+        courseAssignments={courseAssignments}
+        courseQuizzes={courseQuizzes}
+        assignmentsByModule={assignmentsByModule}
+        quizzesByModule={quizzesByModule}
+        courseLevelAssignments={courseLevelAssignments}
+        courseLevelQuizzes={courseLevelQuizzes}
+        canInteract={canInteract}
+        activeItem={activeItem}
+        onSelectItem={openContent}
+        onExit={closeContent}
+        onBackToCourses={onBack}
+      />
+    );
+  }
 
-      {data && !activeItem && (
-        <motion.div
-          initial={{ opacity: 0, y: 12 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.35, ease: "easeOut" }}
-          className="space-y-6"
-        >
-          <div className="flex flex-wrap items-start justify-between gap-3">
-            <div className="min-w-0">
-              <p className="text-[11px] font-mono uppercase tracking-[0.16em] text-pine/80 mb-1">
-                Course dossier
-              </p>
-              <h2 className="font-serif font-bold text-2xl sm:text-3xl text-ink leading-tight">
-                {course.title || "Course details"}
-              </h2>
-              <p className="text-sm text-muted font-light mt-1.5">
-                {course.category?.name || "General"}
-                {course.code ? ` · ${course.code}` : ""}
-              </p>
-            </div>
-            <StatusBadge status={detailEnrollment.status} size="lg" />
-          </div>
+  const isComplete = detailEnrollment.is_completed || stats.completion_percentage === 100;
 
-          <CourseThumbnail image={course.image} title={course.title} />
+  return (
+    <>
+      {crumbs}
 
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 items-start">
-            <div className="lg:col-span-2 space-y-6 min-w-0">
-              <div className="rounded-card border border-line bg-paper shadow-soft p-5 sm:p-6 space-y-4">
-                <CourseOverview description={course.description} />
-
-                {!canInteract ? (
-                  <div className="flex items-start gap-2 rounded-xl border border-line bg-porcelain px-3.5 py-3 text-sm text-muted">
-                    <Lock className="w-4 h-4 shrink-0 mt-0.5" />
-                    <span>
-                      This enrollment is {detailEnrollment.status?.toLowerCase()} — lessons,
-                      assignments, and quizzes can&apos;t be interacted with until it&apos;s
-                      active again.
-                    </span>
-                  </div>
-                ) : null}
-              </div>
-
-              {(courseLevelAssignments.length > 0 || courseLevelQuizzes.length > 0) && (
-                <div className="rounded-card border border-line bg-paper shadow-soft p-5 space-y-3">
-                  <h4 className="font-serif font-bold text-ink text-sm">
-                    Course-wide assignments & quizzes
-                  </h4>
-                  {courseLevelAssignments.map((assignment) => (
-                    <AssignmentRow
-                      key={assignment.id}
-                      assignment={assignment}
-                      onOpen={(item) => openContent("assignment", item.id)}
-                    />
-                  ))}
-                  {courseLevelQuizzes.map((quiz) => (
-                    <QuizRow
-                      key={quiz.id}
-                      quiz={quiz}
-                      onOpen={(item) => openContent("quiz", item.id)}
-                    />
-                  ))}
-                </div>
-              )}
-
-              <CourseFeedSection courseId={courseId} />
-
-              <div className="space-y-3">
-                <div>
-                  <h4 className="font-serif font-bold text-ink">Modules & lessons</h4>
-                  <p className="text-sm text-muted font-light mt-0.5">
-                    Your learning path inside this enrolled course.
-                  </p>
-                </div>
-
-                {modules.length === 0 ? (
-                  <div className="rounded-2xl border border-dashed border-line bg-paper px-4 py-8 text-center">
-                    <Layers className="w-5 h-5 text-muted mx-auto mb-2" />
-                    <p className="text-sm text-muted">
-                      No modules have been published for this course yet.
-                    </p>
-                  </div>
-                ) : (
-                  <div className="space-y-3">
-                    {modules.map((module) => (
-                      <ModuleAccordionItem
-                        key={module.id}
-                        module={module}
-                        isExpanded={expandedModuleIds.has(module.id)}
-                        onToggle={() => {
-                          setExpandedModuleIds((prev) => {
-                            const next = new Set(prev);
-                            if (next.has(module.id)) {
-                              next.delete(module.id);
-                            } else {
-                              next.add(module.id);
-                            }
-                            return next;
-                          });
-                        }}
-                        moduleAssignments={assignmentsByModule.get(module.id) || []}
-                        moduleQuizzes={quizzesByModule.get(module.id) || []}
-                        canInteract={canInteract}
-                        onOpenLesson={(lesson) => openContent("lesson", lesson.id)}
-                        onOpenAssignment={(assignment) => openContent("assignment", assignment.id)}
-                        onOpenQuiz={(quiz) => openContent("quiz", quiz.id)}
-                      />
-                    ))}
-                  </div>
-                )}
-              </div>
+      <div className="grid grid-cols-[minmax(0,2fr)_minmax(0,1fr)] items-start gap-5 max-[72rem]:grid-cols-1">
+        <div className="flex min-w-0 flex-col gap-5">
+          {/* The course itself, and the one button that resumes it. */}
+          <PortalCard className="flex flex-col gap-3.5 p-6">
+            <div className="flex flex-wrap items-center gap-2">
+              {course.code && <PortalPill tone="blue">{course.code}</PortalPill>}
+              {course.category?.name && <PortalPill>{course.category.name}</PortalPill>}
+              <PortalPill tone={canInteract || isComplete ? "ok" : "bad"}>
+                {isComplete ? "Completed" : canInteract ? "Active" : detailEnrollment.status}
+              </PortalPill>
             </div>
 
-            <div className="space-y-4 lg:sticky lg:top-24">
-              <div className="rounded-card border border-line bg-paper shadow-soft p-5 space-y-4">
-                <ProgressBar value={stats.completion_percentage} />
+            <h2 className="text-[28px] leading-[1.2] font-bold tracking-[-0.015em] text-cn-p-ink">
+              {course.title || "Course details"}
+            </h2>
 
-                <div className="grid grid-cols-2 gap-2.5">
-                  <StatChip
-                    label="Modules"
-                    value={`${stats.completed_modules || 0}/${stats.total_modules || 0}`}
-                  />
-                  <StatChip
-                    label="Lessons"
-                    value={`${stats.completed_lessons || 0}/${stats.total_lessons || 0}`}
-                  />
-                  <StatChip
-                    label="Assignments"
-                    value={`${
-                      courseAssignments.filter((assignment) => assignment.submission).length
-                    }/${courseAssignments.length}`}
-                  />
-                  <StatChip label="Quizzes" value={stats.total_quizzes || 0} />
-                </div>
-
-                <div className="pt-3 border-t border-line space-y-3">
-                  <div className="space-y-2">
-                    <p className="text-[10px] font-mono uppercase tracking-wider text-muted">
-                      Instructor
-                    </p>
-                    {assignedInstructor ? (
-                      <div className="flex items-center gap-2.5">
-                        <InstructorAvatar
-                          name={assignedInstructor.name}
-                          avatar={assignedInstructor.avatar}
-                        />
-                        <div className="min-w-0 flex-1">
-                          <p className="text-[12px] font-medium text-ink truncate">
-                            {assignedInstructor.name}
-                          </p>
-                          {assignedInstructor.email ? (
-                            <p className="text-[11px] text-muted font-mono truncate">
-                              {assignedInstructor.email}
-                            </p>
-                          ) : null}
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="flex items-center gap-2 text-[12px] text-muted">
-                        <UserRound className="w-3.5 h-3.5 text-muted shrink-0" />
-                        <span>{fallbackInstructorName}</span>
-                      </div>
+            {descriptionParagraphs.length > 0 ? (
+              <div className="flex flex-col gap-2">
+                {descriptionParagraphs.map((paragraph, index) => (
+                  <p key={index} className="text-base text-cn-p-ink-2">
+                    {paragraph.label && (
+                      <span className="font-semibold text-cn-p-ink">{paragraph.label}: </span>
                     )}
-                  </div>
-                </div>
+                    {paragraph.text}
+                  </p>
+                ))}
+              </div>
+            ) : (
+              <p className="text-base text-cn-p-ink-2">
+                No course description has been added yet.
+              </p>
+            )}
 
-                <div className="space-y-2.5 text-[12px] text-muted">
-                  <div className="flex items-center gap-2">
-                    <Calendar className="w-3.5 h-3.5 text-muted shrink-0" />
-                    <span>Enrolled {formatDate(detailEnrollment.enrolled_at)}</span>
-                  </div>
-                  {course.duration_minutes ? (
-                    <div className="flex items-center gap-2">
-                      <BookOpen className="w-3.5 h-3.5 text-muted shrink-0" />
-                      <span>{course.duration_minutes} minutes total</span>
-                    </div>
-                  ) : null}
+            <div className="flex flex-wrap items-center gap-3">
+              {nextLesson && (
+                <PortalButton
+                  onClick={() => openContent("lesson", nextLesson.id)}
+                  disabled={!canInteract}
+                >
+                  <Play className="h-4 w-4" />
+                  {completedLessons ? "Continue" : "Start"}: {nextLesson.title}
+                </PortalButton>
+              )}
+              <PortalButton
+                variant="sec"
+                onClick={() => router.push(portalHref(AUTH_ROLES.STUDENT, "warroom"))}
+              >
+                <MessageSquare className="h-[18px] w-[18px]" />
+                Course chat
+              </PortalButton>
+            </div>
+          </PortalCard>
+
+          <div>
+            <div className="mb-3 flex items-center justify-between gap-3">
+              <h2 className="text-xl font-bold tracking-[-0.01em] text-cn-p-ink">
+                Modules &amp; lessons
+              </h2>
+              <span className="text-[13px] text-cn-p-ink-2">
+                {modules.length} module{modules.length === 1 ? "" : "s"} · {totalLessons} lesson
+                {totalLessons === 1 ? "" : "s"}
+              </span>
+            </div>
+
+            {modules.length === 0 ? (
+              <PortalCard>
+                <PortalEmpty
+                  icon={Layers}
+                  title="Nothing published yet"
+                  text="No modules have been published for this course yet."
+                />
+              </PortalCard>
+            ) : (
+              <div className="flex flex-col gap-3">
+                {modules.map((module, index) => (
+                  <ModuleAccordionItem
+                    key={module.id}
+                    module={module}
+                    index={index}
+                    isExpanded={expandedModuleIds.has(module.id)}
+                    onToggle={() =>
+                      setExpandedModuleIds((prev) => {
+                        const next = new Set(prev);
+                        if (next.has(module.id)) next.delete(module.id);
+                        else next.add(module.id);
+                        return next;
+                      })
+                    }
+                    moduleAssignments={assignmentsByModule.get(module.id) || []}
+                    moduleQuizzes={quizzesByModule.get(module.id) || []}
+                    canInteract={canInteract}
+                    onOpenLesson={(lesson) => openContent("lesson", lesson.id)}
+                    onOpenAssignment={(assignment) => openContent("assignment", assignment.id)}
+                    onOpenQuiz={(quiz) => openContent("quiz", quiz.id)}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+
+          {(courseLevelAssignments.length > 0 || courseLevelQuizzes.length > 0) && (
+            <PortalCard className="p-5">
+              <PortalKicker>Course-wide</PortalKicker>
+              <div className="mt-2">
+                {courseLevelAssignments.map((assignment) => {
+                  const status = getPortalAssignmentStatus(assignment);
+                  return (
+                    <AccordionRow
+                      key={assignment.id}
+                      disabled={!canInteract}
+                      onClick={() => openContent("assignment", assignment.id)}
+                    >
+                      <PortalIcon icon={ClipboardList} />
+                      <span className="min-w-0 flex-1 truncate text-cn-p-ink">
+                        {assignment.title}
+                      </span>
+                      <PortalPill tone={status.tone}>{status.label}</PortalPill>
+                    </AccordionRow>
+                  );
+                })}
+                {courseLevelQuizzes.map((quiz) => {
+                  const status = getPortalQuizStatus(quiz);
+                  return (
+                    <AccordionRow
+                      key={quiz.id}
+                      disabled={!canInteract}
+                      onClick={() => openContent("quiz", quiz.id)}
+                    >
+                      <PortalIcon icon={CircleHelp} />
+                      <span className="min-w-0 flex-1 truncate text-cn-p-ink">{quiz.title}</span>
+                      <PortalPill tone={status.tone}>{status.label}</PortalPill>
+                    </AccordionRow>
+                  );
+                })}
+              </div>
+            </PortalCard>
+          )}
+        </div>
+
+        <div className="flex flex-col gap-5">
+          <PortalCard className="flex flex-col items-center gap-3.5 p-6 text-center">
+            <PortalKicker>Overall progress</PortalKicker>
+            <PortalRing
+              value={stats.completion_percentage}
+              size={128}
+              label={`${Math.round(stats.completion_percentage || 0)}%`}
+            />
+            <PortalKv columns={2} className="w-full text-left">
+              <PortalKvItem
+                label="Lessons"
+                value={`${stats.completed_lessons ?? completedLessons}/${
+                  stats.total_lessons ?? totalLessons
+                }`}
+              />
+              <PortalKvItem
+                label="Assignments"
+                value={`${
+                  courseAssignments.filter((assignment) => assignment.submission).length
+                }/${courseAssignments.length}`}
+              />
+              <PortalKvItem
+                label="Quizzes passed"
+                value={`${
+                  courseQuizzes.filter((quiz) => quiz.latest_attempt?.is_passed).length
+                }/${courseQuizzes.length}`}
+              />
+              <PortalKvItem
+                label="Enrolled"
+                value={formatEnrolledDate(detailEnrollment.enrolled_at) || "—"}
+              />
+            </PortalKv>
+          </PortalCard>
+
+          {instructor && (
+            <PortalCard className="flex flex-col gap-3 p-6">
+              <PortalKicker>Instructor</PortalKicker>
+              <div className="flex items-center gap-3">
+                {instructor.avatar ? (
+                  <img
+                    src={instructor.avatar}
+                    alt=""
+                    className="h-10 w-10 flex-none rounded-full object-cover"
+                  />
+                ) : (
+                  <span className="grid h-10 w-10 flex-none place-items-center rounded-full bg-cn-p-soft text-[13px] font-bold text-cn-p-soft-ink">
+                    {initials(instructor.name)}
+                  </span>
+                )}
+                <div className="flex min-w-0 flex-col">
+                  <b className="truncate font-bold text-cn-p-ink">{instructor.name}</b>
+                  {instructor.email && (
+                    <span className="truncate text-xs text-cn-p-ink-2">{instructor.email}</span>
+                  )}
                 </div>
               </div>
-            </div>
-          </div>
-        </motion.div>
-      )}
-    </div>
+              <PortalButton
+                variant="sec"
+                onClick={() => router.push(portalHref(AUTH_ROLES.STUDENT, "messages"))}
+              >
+                <Mail className="h-[18px] w-[18px]" />
+                Message instructor
+              </PortalButton>
+            </PortalCard>
+          )}
+
+          <CourseFeedSection courseId={courseId} />
+        </div>
+      </div>
+    </>
   );
 }

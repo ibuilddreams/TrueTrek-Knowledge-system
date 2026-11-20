@@ -1,50 +1,124 @@
 "use client";
 
-import { useRef } from "react";
 import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft } from "lucide-react";
+import { Check } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { getPublicPathwayBySlug } from "@/services/pathwaysService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
+import { toPathwayParagraphs } from "@/lib/pathwayDescription";
 import Loader from "@/components/ui/Loader";
 import PathwayCheckoutModal from "../PathwayCheckoutModal";
 import SignInToSelectModal from "../SignInToSelectModal";
-import PathwayAudiencePanel from "./PathwayAudiencePanel";
-import PathwayJourneyHero from "./PathwayJourneyHero";
-import PathwayOutcomesPanel from "./PathwayOutcomesPanel";
-import PathwayPurposeSection from "./PathwayPurposeSection";
+import PathwayBuyCard from "./PathwayBuyCard";
+import PathwayCourseList from "./PathwayCourseList";
+import PathwayDetailHeader from "./PathwayDetailHeader";
 import PathwayRelatedCourses from "./PathwayRelatedCourses";
-import PathwayRoadmap from "./PathwayRoadmap";
-import PathwayStickyBuyBar from "./PathwayStickyBuyBar";
 import { usePathwayPurchase } from "./usePathwayPurchase";
 
-const BACK_LINK =
-  "inline-flex items-center gap-2 text-xs font-sans font-medium uppercase tracking-widest text-muted hover:text-ink transition-colors";
+// The public pathway page (/pathways/<slug>), built in the design's own
+// detail-page language — the ink header band, an 8/4 body, and a sticky buy
+// card pulled up into the band. The design file has no pathway page of its
+// own; its one detail page is a course, and this is that layout carrying a
+// bundle instead.
+const H2 = "text-cn-2xl font-extrabold tracking-[-0.02em] text-cn-ink";
 
-// Public pathway page (/pathways/<slug>). Structured as a route the reader
-// travels — hero, outcomes, brief, then the course-by-course roadmap — rather
-// than the course page's hero + sticky-rail + stacked-sections layout.
+/** The design's `.cdlearn`: a bordered panel holding a two-column checklist. */
+function ChecklistPanel({ id, title, items }) {
+  if (!items?.length) return null;
+  return (
+    <section aria-labelledby={id} className="grid gap-4">
+      <h2 id={id} className={H2}>
+        {title}
+      </h2>
+      <div className="rounded-cn-lg border border-cn-rule p-10 max-[40rem]:p-6">
+        <ul className="m-0 grid list-none gap-x-6 gap-y-3 p-0 sm:grid-cols-2">
+          {items.map((item) => (
+            <li key={item} className="flex items-start gap-3 text-cn-ink-2">
+              <Check
+                aria-hidden="true"
+                className="mt-[3px] h-[18px] w-[18px] flex-none text-cn-accent"
+                strokeWidth={2.4}
+              />
+              {item}
+            </li>
+          ))}
+        </ul>
+      </div>
+    </section>
+  );
+}
+
 function PathwayDetailBody({ pathway }) {
-  const heroCtaRef = useRef(null);
   const purchase = usePathwayPurchase(pathway);
+  const paragraphs = toPathwayParagraphs(pathway.description || pathway.summary);
+  // The audiences this bundle is reachable through are real catalog data;
+  // `who_is_for` is the admin's own prose, shown when they have written it.
+  const audienceItems = [
+    ...(pathway.who_is_for || []),
+    ...(pathway.audiences || []).map((audience) => audience.name),
+  ];
 
   return (
     <>
-      <PathwayJourneyHero pathway={pathway} purchase={purchase} ctaRef={heroCtaRef} />
+      <PathwayDetailHeader pathway={pathway} />
 
-      <div className="mt-14 space-y-14 pb-10">
-        <PathwayOutcomesPanel outcomes={pathway.learning_outcomes} />
-        <PathwayPurposeSection purpose={pathway.purpose} description={pathway.description} />
-        <PathwayRoadmap courses={pathway.courses} />
-        <PathwayAudiencePanel
-          whoIsFor={pathway.who_is_for}
-          prerequisites={pathway.prerequisites}
-        />
+      <section className="pb-24">
+        <div className="cn-container grid items-start gap-6 lg:grid-cols-[minmax(0,8fr)_minmax(0,4fr)]">
+          <div className="grid gap-16 pt-16">
+            <ChecklistPanel
+              id="pathway-outcomes-heading"
+              title="What you'll learn"
+              items={pathway.learning_outcomes}
+            />
+
+            {(paragraphs.length > 0 || pathway.purpose) && (
+              <section aria-labelledby="pathway-purpose-heading" className="grid gap-4">
+                <h2 id="pathway-purpose-heading" className={H2}>
+                  Why this pathway exists
+                </h2>
+                <div className="grid gap-3">
+                  {pathway.purpose && (
+                    <p className="text-cn-lg text-cn-ink-2">{pathway.purpose}</p>
+                  )}
+                  {paragraphs.map((paragraph, index) => (
+                    <p key={index} className="text-cn-ink-2">
+                      {paragraph}
+                    </p>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <PathwayCourseList courses={pathway.courses} />
+
+            <ChecklistPanel
+              id="pathway-audience-heading"
+              title="Who it's for"
+              items={audienceItems}
+            />
+
+            <ChecklistPanel
+              id="pathway-prerequisites-heading"
+              title="Before you start"
+              items={pathway.prerequisites}
+            />
+          </div>
+
+          {/* The design pulls this card up into the ink band above it, which
+              is why the header's own right-hand column is left empty. In one
+              column there is no band to sit in and no rail to stick to, so it
+              comes first instead — a price and an enrol button belong above
+              fifty-five courses, not under them. */}
+          <aside className="max-lg:order-first max-lg:pt-10 lg:sticky lg:top-[100px] lg:-mt-[250px]">
+            <PathwayBuyCard pathway={pathway} purchase={purchase} />
+          </aside>
+        </div>
+      </section>
+
+      <div className="cn-container pb-24">
         <PathwayRelatedCourses pathway={pathway} />
       </div>
-
-      <PathwayStickyBuyBar pathway={pathway} purchase={purchase} watchRef={heroCtaRef} />
 
       <SignInToSelectModal
         isOpen={purchase.isSignInOpen}
@@ -72,57 +146,58 @@ export default function PathwayDetailPage({ slug }) {
     retry: (count, error) => error?.status !== 404 && count < 2,
   });
 
-  let body;
-
   if (query.isLoading) {
-    body = (
-      <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
+    return (
+      <div
+        className="flex min-h-[60vh] items-center justify-center"
+        aria-busy="true"
+      >
         <Loader fullScreen={false} label="Loading pathway..." />
       </div>
     );
-  } else if (query.isError) {
+  }
+
+  if (query.isError) {
     const isNotFound = query.error?.status === 404;
-    body = (
-      <div role="alert" className="rounded-card border border-line bg-paper p-8 shadow-soft">
-        <h1 className="font-serif text-2xl">
-          {isNotFound ? "Pathway not found" : "Unable to load this pathway"}
-        </h1>
-        <p className="mt-3 text-sm text-muted">
-          {isNotFound
-            ? "This pathway may no longer be available. Head back to browse the other pathways."
-            : getApiErrorMessage(query.error, "Please try again.")}
-        </p>
-        <div className="mt-5 flex items-center gap-4">
-          {!isNotFound && (
-            <button
-              type="button"
-              onClick={() => query.refetch()}
-              className="text-sm font-semibold text-pine underline"
+    return (
+      <div className="cn-container py-24">
+        <div
+          role="alert"
+          className="mx-auto max-w-xl rounded-cn-lg border border-cn-rule bg-white p-10 text-center shadow-cn-1"
+        >
+          <h1 className="text-cn-2xl font-extrabold tracking-[-0.03em] text-cn-ink">
+            {isNotFound ? "Pathway not found" : "Unable to load this pathway"}
+          </h1>
+          <p className="mt-3 text-cn-ink-2">
+            {isNotFound
+              ? "This pathway may no longer be available. Head back to browse the others."
+              : getApiErrorMessage(query.error, "Please try again.")}
+          </p>
+          <div className="mt-6 flex flex-wrap items-center justify-center gap-3">
+            {!isNotFound && (
+              <button
+                type="button"
+                onClick={() => query.refetch()}
+                className="inline-flex h-[50px] items-center justify-center rounded-cn-sm bg-cn-accent px-6 text-cn-base font-semibold text-white transition-[background-color,transform] duration-150 ease-cn-out hover:-translate-y-px hover:bg-cn-accent-2"
+              >
+                Retry
+              </button>
+            )}
+            <Link
+              href={ROUTES.PATHWAYS}
+              className="inline-flex h-[50px] items-center justify-center rounded-cn-sm border border-cn-rule-strong bg-white px-6 text-cn-base font-semibold text-cn-ink transition-[border-color,transform] duration-150 ease-cn-out hover:-translate-y-px hover:border-cn-ink"
             >
-              Retry
-            </button>
-          )}
-          <Link href={ROUTES.PATHWAYS} className={BACK_LINK}>
-            Browse pathways
-          </Link>
+              Browse pathways
+            </Link>
+          </div>
         </div>
       </div>
     );
-  } else if (query.data) {
-    body = <PathwayDetailBody pathway={query.data} />;
   }
 
   return (
-    <div id="pathway-detail" className="min-h-screen cn-page-bg pb-28 text-ink overflow-x-clip">
-      <div className="mx-auto max-w-6xl px-6">
-        <div className="pb-5 pt-8">
-          <Link href={ROUTES.PATHWAYS} className={BACK_LINK}>
-            <ArrowLeft className="h-3.5 w-3.5" />
-            Back to pathways
-          </Link>
-        </div>
-        {body}
-      </div>
+    <div id="pathway-detail" className="overflow-x-clip">
+      {query.data && <PathwayDetailBody pathway={query.data} />}
     </div>
   );
 }

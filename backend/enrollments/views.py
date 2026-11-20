@@ -25,6 +25,7 @@ from .serializers import (
 )
 from .services import (
     bulk_import_enrollments,
+    get_enrollment_card_data,
     get_enrollment_import_sample,
     get_student_certificates,
     get_student_enrolled_course_detail,
@@ -93,6 +94,7 @@ class EnrollmentListCreateView(generics.ListCreateAPIView):
             )
         }
         context["progress_map"] = progress_map
+        context["card_map"] = get_enrollment_card_data(self.request.user, course_ids)
         return context
 
     def list(self, request, *args, **kwargs):

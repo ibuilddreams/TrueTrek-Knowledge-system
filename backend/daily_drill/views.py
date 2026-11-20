@@ -1,11 +1,15 @@
 from django.conf import settings
 from django.db.models import Count, Q, Sum
+from django.utils import timezone
 from rest_framework import generics
 from rest_framework.parsers import FormParser, JSONParser, MultiPartParser
+from rest_framework.permissions import AllowAny
+from rest_framework.throttling import ScopedRateThrottle
 
 from common.pagination import Pagination
 from common.response import error_response, success_response
 from users.permissions import IsAdmin, IsStudent
+from users.views import PUBLIC_AUTH_AUTHENTICATION_CLASSES
 
 from .admin_drill_services import record_video_progress, submit_admin_drill_quiz
 from .exceptions import (
@@ -22,10 +26,19 @@ from .serializers import (
     AdminDrillScheduleSerializer,
     AdminDrillScheduleWriteSerializer,
     DrillAnswerSubmitSerializer,
+    DrillOptionResultSerializer,
+    DrillQuestionSerializer,
     InactiveStudentSerializer,
+    PublicDrillAnswerSerializer,
     VideoProgressSerializer,
 )
-from .services import build_todays_drill_payload, get_streak_calendar, submit_single_question_answer
+from .services import (
+    build_todays_drill_payload,
+    get_public_drill_question,
+    get_streak_calendar,
+    grade_public_drill_answer,
+    submit_single_question_answer,
+)
 
 # ---------------------------------------------------------------------------
 # Student — today's Daily Drill (whichever source resolves)
@@ -40,6 +53,74 @@ class DailyDrillTodayView(generics.GenericAPIView):
         if data["type"] == "UNAVAILABLE":
             return success_response(data, message="No Daily Drill is available right now.")
         return success_response(data, message="Today's Daily Drill retrieved successfully.")
+
+
+# ---------------------------------------------------------------------------
+# Public — the home page's taster drill (no account)
+#
+# Both clear `authentication_classes`. The SPA sends cookies cross-origin, so
+# an AllowAny endpoint left on the project's default SessionAuthentication
+# authenticates a developer who happens to hold a Django /admin/ session and
+# then rejects the request on CSRF — the same trap `users.SignupView` and the
+# rest of the public auth endpoints already sidestep.
+# ---------------------------------------------------------------------------
+
+
+class PublicDailyDrillView(generics.GenericAPIView):
+    permission_classes = [AllowAny]
+    authentication_classes = PUBLIC_AUTH_AUTHENTICATION_CLASSES
+
+    def get(self, request):
+        question = get_public_drill_question()
+        if question is None:
+            return success_response(
+                {"available": False},
+                message="No drill is available right now.",
+            )
+        return success_response(
+            {
+                "available": True,
+                "drill_date": timezone.localdate().isoformat(),
+                **DrillQuestionSerializer(question).data,
+            },
+            message="Public drill retrieved successfully.",
+        )
+
+
+class PublicDrillAttemptView(generics.GenericAPIView):
+    """Grades one guest answer and explains it. Writes nothing — no attempt
+    row, no points, no streak."""
+
+    permission_classes = [AllowAny]
+    authentication_classes = PUBLIC_AUTH_AUTHENTICATION_CLASSES
+    throttle_classes = [ScopedRateThrottle]
+    throttle_scope = "public-drill"
+    serializer_class = PublicDrillAnswerSerializer
+
+    def post(self, request):
+        serializer = self.get_serializer(data=request.data)
+        serializer.is_valid(raise_exception=True)
+
+        question = get_public_drill_question()
+        if question is None:
+            return error_response(message="No drill is available right now.", status_code=404)
+
+        try:
+            selected, best = grade_public_drill_answer(
+                question, serializer.validated_data["answer_key"].upper()
+            )
+        except InvalidDrillOptionError as exc:
+            return error_response(message=str(exc), status_code=400)
+
+        return success_response(
+            {
+                "question_id": question.id,
+                "selected": DrillOptionResultSerializer(selected).data,
+                "best": DrillOptionResultSerializer(best).data,
+                "is_best": selected.id == best.id,
+            },
+            message="Drill answer graded successfully.",
+        )
 
 
 class StreakCalendarView(generics.GenericAPIView):

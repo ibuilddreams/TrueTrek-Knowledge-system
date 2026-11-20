@@ -31,6 +31,11 @@ class EnrollmentListSerializer(serializers.ModelSerializer):
     teacher = EnrollmentTeacherSerializer(read_only=True)
     completion_percentage = serializers.SerializerMethodField()
     is_completed = serializers.SerializerMethodField()
+    # Both come from `card_map`, built once for the whole page by the view
+    # (enrollments.services.get_enrollment_card_data) rather than per row, so
+    # a library of thirty courses still costs three queries instead of ninety.
+    stats = serializers.SerializerMethodField()
+    next_lesson = serializers.SerializerMethodField()
 
     class Meta:
         model = Enrollment
@@ -42,8 +47,20 @@ class EnrollmentListSerializer(serializers.ModelSerializer):
             "enrolled_at",
             "completion_percentage",
             "is_completed",
+            "stats",
+            "next_lesson",
         ]
         read_only_fields = fields
+
+    def get_stats(self, obj):
+        card = (self.context.get("card_map") or {}).get(obj.course_id)
+        if card is None:
+            return {"total_modules": 0, "total_lessons": 0, "completed_lessons": 0}
+        return card["stats"]
+
+    def get_next_lesson(self, obj):
+        card = (self.context.get("card_map") or {}).get(obj.course_id)
+        return card["next_lesson"] if card else None
 
     def get_completion_percentage(self, obj):
         progress_map = self.context.get("progress_map") or {}

@@ -188,6 +188,10 @@ REST_FRAMEWORK = {
         # retry path (a failed scoring call) should not be the thing that
         # locks a student out of their own report card.
         'roleplay-evaluation': '40/hour',
+        # The home page's signed-out taster drill. Generous, because it is
+        # anonymous and therefore throttled per IP — a school or office behind
+        # one address must not lock each other out of a marketing page.
+        'public-drill': '30/minute',
     },
 }
 
