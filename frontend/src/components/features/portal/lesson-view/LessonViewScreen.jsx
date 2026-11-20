@@ -1,14 +1,15 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft } from "lucide-react";
 import { useCourseLessons } from "@/hooks/student/useCourseLessons";
-import FullScreenPortal from "./FullScreenPortal";
+import { PortalCrumbs } from "../shell/PortalUI";
 import ContentPlayerPanel from "./ContentPlayerPanel";
 import CurriculumPanel from "./CurriculumPanel";
 
 function findModuleIdForLesson(modules, lessonId) {
-  const module = modules.find((item) => (item.lessons || []).some((lesson) => lesson.id === lessonId));
+  const module = modules.find((item) =>
+    (item.lessons || []).some((lesson) => lesson.id === lessonId),
+  );
   return module?.id ?? null;
 }
 
@@ -26,6 +27,7 @@ export default function LessonViewScreen({
   activeItem,
   onSelectItem,
   onExit,
+  onBackToCourses,
 }) {
   const lessonCompletionById = useMemo(() => {
     const map = new Map();
@@ -33,6 +35,18 @@ export default function LessonViewScreen({
       (module.lessons || []).forEach((lesson) => map.set(lesson.id, lesson.is_completed));
     });
     return map;
+  }, [modules]);
+
+  // Every lesson of the course in reading order — what Previous and Next
+  // step through, and which module heading the reader prints.
+  const orderedLessons = useMemo(() => {
+    const rows = [];
+    modules.forEach((module, moduleIndex) => {
+      (module.lessons || []).forEach((lesson) => {
+        rows.push({ lesson, module, moduleIndex });
+      });
+    });
+    return rows;
   }, [modules]);
 
   const activeAssignment = useMemo(() => {
@@ -56,17 +70,15 @@ export default function LessonViewScreen({
     return null;
   }, [activeItem, modules, activeAssignment, activeQuiz]);
 
-  // Only the active item's module needs to fetch its full lesson content up front —
-  // everything else loads lazily as the student expands it in the curriculum panel,
-  // same as the course overview's accordion. Fetching every module immediately would
-  // fire one request per module for no benefit on courses with many modules.
-  const [expandedModuleIds, setExpandedModuleIds] = useState(
-    () => new Set(activeModuleId ? [activeModuleId] : [])
+  // Only the open lesson's module fetches its full content. The rail is drawn
+  // from the course payload, so nothing else needs loading.
+  const [fetchedModuleIds, setFetchedModuleIds] = useState(
+    () => new Set(activeModuleId ? [activeModuleId] : []),
   );
 
   useEffect(() => {
     if (!activeModuleId) return;
-    setExpandedModuleIds((prev) => {
+    setFetchedModuleIds((prev) => {
       if (prev.has(activeModuleId)) return prev;
       const next = new Set(prev);
       next.add(activeModuleId);
@@ -74,21 +86,20 @@ export default function LessonViewScreen({
     });
   }, [activeModuleId]);
 
-  function toggleModule(moduleId) {
-    setExpandedModuleIds((prev) => {
-      const next = new Set(prev);
-      if (next.has(moduleId)) next.delete(moduleId);
-      else next.add(moduleId);
-      return next;
-    });
-  }
+  const { lessonsByModuleId, loadingModuleIds } = useCourseLessons(modules, fetchedModuleIds);
 
-  const { lessonsByModuleId, loadingModuleIds } = useCourseLessons(modules, expandedModuleIds);
+  const activeIndex = useMemo(
+    () =>
+      activeItem?.type === "LESSON"
+        ? orderedLessons.findIndex((row) => row.lesson.id === activeItem.id)
+        : -1,
+    [activeItem, orderedLessons],
+  );
 
   const activeLesson = useMemo(() => {
     if (activeItem?.type !== "LESSON" || !activeModuleId) return null;
     const found = (lessonsByModuleId.get(activeModuleId) || []).find(
-      (lesson) => lesson.id === activeItem.id
+      (lesson) => lesson.id === activeItem.id,
     );
     if (!found) return null;
     return { ...found, is_completed: lessonCompletionById.get(found.id) ?? found.is_completed };
@@ -97,54 +108,66 @@ export default function LessonViewScreen({
   const isResolving =
     activeItem?.type === "LESSON" && !activeLesson && loadingModuleIds.has(activeModuleId);
 
+  const activeRow = activeIndex >= 0 ? orderedLessons[activeIndex] : null;
+  // Where the open item's module sits in the course — what the assignment
+  // and quiz screens print as "Module 2 of 3".
+  const activeModulePosition = modules.findIndex((module) => module.id === activeModuleId);
+  const previousLesson = activeIndex > 0 ? orderedLessons[activeIndex - 1].lesson : null;
+  const nextLesson =
+    activeIndex >= 0 && activeIndex < orderedLessons.length - 1
+      ? orderedLessons[activeIndex + 1].lesson
+      : null;
+
+  const activeTitle =
+    activeItem?.type === "LESSON"
+      ? activeRow?.lesson?.title
+      : activeItem?.type === "ASSIGNMENT"
+        ? activeAssignment?.title
+        : activeQuiz?.title;
+
   return (
-    <FullScreenPortal>
-      <div className="w-full px-4 sm:px-6 lg:px-8 py-5 space-y-5">
-        <div className="flex flex-wrap items-center justify-between gap-3">
-          <button
-            type="button"
-            onClick={onExit}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 border text-xs font-mono uppercase tracking-wider rounded-xl transition border-line hover:border-pine hover:text-pine text-muted"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to course
-          </button>
-          <p className="text-sm font-mono uppercase tracking-wider truncate max-w-[60%] text-right text-muted">
-            {course?.title}
-          </p>
+    <>
+      <PortalCrumbs
+        items={[
+          { label: "My courses", onClick: onBackToCourses },
+          { label: course?.code || course?.title || "Course", onClick: onExit },
+          { label: activeTitle || "Lesson" },
+        ]}
+      />
+
+      <div className="grid grid-cols-[minmax(0,2.4fr)_minmax(280px,1fr)] items-start gap-5 max-[72rem]:grid-cols-1">
+        <div className="min-w-0">
+          <ContentPlayerPanel
+            activeItem={activeItem}
+            lesson={activeLesson}
+            moduleIndex={
+              activeItem?.type === "LESSON" ? activeRow?.moduleIndex : activeModulePosition
+            }
+            moduleTitle={activeRow?.module?.title}
+            moduleCount={modules.length}
+            assignment={activeAssignment}
+            quiz={activeQuiz}
+            isResolving={isResolving}
+            courseId={courseId}
+            canInteract={canInteract}
+            previousLesson={previousLesson}
+            nextLesson={nextLesson}
+            onSelectItem={onSelectItem}
+          />
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-[minmax(0,1fr)_400px] gap-6 items-start">
-          <div className="min-w-0">
-            <ContentPlayerPanel
-              activeItem={activeItem}
-              lesson={activeLesson}
-              assignment={activeAssignment}
-              quiz={activeQuiz}
-              isResolving={isResolving}
-              courseId={courseId}
-              canInteract={canInteract}
-            />
-          </div>
-
-          <div className="lg:sticky lg:top-6">
-            <CurriculumPanel
-              modules={modules}
-              lessonsByModuleId={lessonsByModuleId}
-              loadingModuleIds={loadingModuleIds}
-              lessonCompletionById={lessonCompletionById}
-              assignmentsByModule={assignmentsByModule}
-              quizzesByModule={quizzesByModule}
-              courseLevelAssignments={courseLevelAssignments}
-              courseLevelQuizzes={courseLevelQuizzes}
-              activeItem={activeItem}
-              onSelectItem={onSelectItem}
-              expandedModuleIds={expandedModuleIds}
-              onToggleModule={toggleModule}
-            />
-          </div>
+        <div className="min-[72.0625rem]:sticky min-[72.0625rem]:top-[96px]">
+          <CurriculumPanel
+            modules={modules}
+            assignmentsByModule={assignmentsByModule}
+            quizzesByModule={quizzesByModule}
+            courseLevelAssignments={courseLevelAssignments}
+            courseLevelQuizzes={courseLevelQuizzes}
+            activeItem={activeItem}
+            onSelectItem={onSelectItem}
+          />
         </div>
       </div>
-    </FullScreenPortal>
+    </>
   );
 }

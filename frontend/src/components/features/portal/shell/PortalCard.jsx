@@ -78,12 +78,22 @@ export function PortalStat({ label, value, hint, icon: Icon, tone = "accent" }) 
   );
 }
 
-/** The thin progress rail the design uses beside a percentage. */
-export function PortalBar({ value = 0, className = "" }) {
+/**
+ * The thin progress rail the design uses beside a percentage.
+ *
+ * `size="lg"` is the design's own `.bar.lg` (8px rather than 6px), used where
+ * the rail is the card's closing statement rather than a detail in a row. The
+ * height is a prop rather than something a caller appends through `className`,
+ * because Tailwind resolves two conflicting `h-*` utilities by the order they
+ * are emitted in the stylesheet, not by their order in the class string.
+ */
+const BAR_HEIGHTS = { sm: "h-1.5", lg: "h-2" };
+
+export function PortalBar({ value = 0, size = "sm", className = "" }) {
   const pct = Math.max(0, Math.min(100, Number(value) || 0));
   return (
     <span
-      className={`block h-1.5 w-full overflow-hidden rounded-full bg-cn-p-track ${className}`}
+      className={`block w-full overflow-hidden rounded-full bg-cn-p-track ${BAR_HEIGHTS[size] ?? BAR_HEIGHTS.sm} ${className}`}
     >
       <span
         className="block h-full rounded-full bg-cn-p-accent transition-[width] duration-500 ease-cn-out"

@@ -3,23 +3,22 @@
 import { CheckCircle2, Clock, Loader2, Paperclip, RefreshCw, Sparkles } from "lucide-react";
 import { formatDateTime } from "@/lib/adminFormatters";
 import { useRetryAiReview } from "@/hooks/student/useAssignmentSubmission";
+import { PortalButton, PortalPill, PortalSectionLabel } from "../shell/PortalUI";
 
-const STATUS_STYLES = {
-  DRAFT: "bg-porcelain text-muted border-line",
-  SUBMITTED: "bg-gold/12 text-gold border-gold/25",
-  LATE: "bg-rose-50 text-rose-600 border-rose-100",
-  GRADED: "bg-emerald-50 text-emerald-700 border-emerald-100",
-  RETURNED: "bg-sky-50 text-sky-700 border-sky-100",
-  RESUBMITTED: "bg-gold/12 text-gold border-gold/25",
+// Each submission state as one of the design's own pill tones.
+const STATUS_TONES = {
+  DRAFT: "neutral",
+  SUBMITTED: "blue",
+  LATE: "bad",
+  GRADED: "ok",
+  RETURNED: "blue",
+  RESUBMITTED: "blue",
 };
 
-// AI grading status pill is intentionally hand-rolled to match this file's
-// existing STATUS_STYLES convention rather than the shared StatusBadge
-// component — see PROJECT.md's frontend notes on this inconsistency.
-const AI_REVIEW_STYLES = {
-  COMPLETED: "bg-emerald-50 text-emerald-700 border-emerald-100",
-  FAILED: "bg-rose-50 text-rose-600 border-rose-100",
-  PROCESSING: "bg-sky-50 text-sky-700 border-sky-100",
+const AI_REVIEW_TONES = {
+  COMPLETED: "ok",
+  FAILED: "bad",
+  PROCESSING: "blue",
 };
 
 function AiReviewPanel({ assignmentId, aiReview, totalMarks }) {
@@ -32,7 +31,7 @@ function AiReviewPanel({ assignmentId, aiReview, totalMarks }) {
   const isCompleted = aiReview.status === "COMPLETED";
 
   const badgeKey = isProcessing ? "PROCESSING" : isFailed ? "FAILED" : "COMPLETED";
-  const badgeClass = AI_REVIEW_STYLES[badgeKey] || AI_REVIEW_STYLES.PROCESSING;
+  const badgeTone = AI_REVIEW_TONES[badgeKey] || "blue";
   const badgeLabel = isProcessing
     ? "Grading in Progress"
     : isFailed
@@ -40,70 +39,61 @@ function AiReviewPanel({ assignmentId, aiReview, totalMarks }) {
       : "Graded by Elite Coach";
 
   return (
-    <div
-      className="pt-3 border-t space-y-2.5 border-line"
-    >
+    <div className="flex flex-col gap-2.5 border-t border-cn-p-line pt-3">
       <div className="flex items-center justify-between gap-3">
-        <h6
-          className="inline-flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-muted"
-        >
-          <Sparkles className="w-3.5 h-3.5" />
-          Elite Coach Grading
-        </h6>
-        <span
-          className={`inline-flex items-center gap-1 text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${badgeClass}`}
-        >
-          {isProcessing && <Loader2 className="w-3 h-3 animate-spin" />}
+        <PortalSectionLabel className="inline-flex items-center gap-1.5 px-0 pt-0">
+          <Sparkles className="h-3.5 w-3.5" />
+          Elite Coach grading
+        </PortalSectionLabel>
+        <PortalPill tone={badgeTone}>
+          {isProcessing && <Loader2 className="h-3 w-3 animate-spin" />}
           {badgeLabel}
-        </span>
+        </PortalPill>
       </div>
 
       {isFailed && (
         <div className="space-y-2">
-          <p className="text-sm font-light text-muted">
-            Submission Saved — grading is taking longer than expected or is temporarily
+          <p className="text-sm text-cn-p-ink-2">
+            Submission saved — grading is taking longer than expected or is temporarily
             unavailable. Please try again shortly.
           </p>
-          <button
-            type="button"
+          <PortalButton
+            variant="sec"
+            size="sm"
             onClick={() => retryMutation.mutate()}
             disabled={retryMutation.isPending}
-            className="inline-flex items-center gap-1.5 px-3 py-1.5 disabled:opacity-50 text-[11px] font-mono uppercase tracking-wider rounded-lg border transition border-line hover:border-pine text-muted hover:text-pine"
+            className="self-start"
           >
             {retryMutation.isPending ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
             ) : (
-              <RefreshCw className="w-3.5 h-3.5" />
+              <RefreshCw className="h-3.5 w-3.5" />
             )}
-            Retry Grading
-          </button>
+            Retry grading
+          </PortalButton>
         </div>
       )}
 
       {isCompleted && (
         <div className="space-y-2">
           {aiReview.score !== null && aiReview.score !== undefined ? (
-            <div
-              className="flex items-center gap-1.5 text-sm font-serif font-bold text-emerald-700"
-            >
-              <CheckCircle2 className="w-4 h-4" />
+            <div className="flex items-center gap-1.5 font-bold text-cn-p-ok">
+              <CheckCircle2 className="h-4 w-4" />
               {totalMarks
                 ? `${Math.round((Number(aiReview.score) / 100) * totalMarks)} / ${totalMarks} marks`
                 : "Score"}
-              <span
-                className="font-mono text-sm font-normal text-emerald-600/80"
-              >
+              <span className="text-sm font-normal tabular-nums text-cn-p-ok">
                 ({Math.round(Number(aiReview.score))}%)
               </span>
             </div>
           ) : null}
 
           {Array.isArray(aiReview.criteria_results) && aiReview.criteria_results.length > 0 ? (
-            <ul className="text-sm font-light space-y-0.5 text-muted">
+            <ul className="flex flex-col gap-0.5 text-sm text-cn-p-ink-2">
               {aiReview.criteria_results.map((item, index) => (
                 <li key={index} className="flex items-baseline justify-between gap-2">
                   <span className="min-w-0 truncate">{item.name}</span>
-                  <span className="font-mono text-xs shrink-0">
+                  <span className="shrink-0 text-xs tabular-nums">
                     {item.awarded_marks} / {item.max_marks}
                   </span>
                 </li>
@@ -112,19 +102,13 @@ function AiReviewPanel({ assignmentId, aiReview, totalMarks }) {
           ) : null}
 
           {aiReview.feedback ? (
-            <p className="text-sm font-light text-muted">
-              {aiReview.feedback}
-            </p>
+            <p className="text-sm text-cn-p-ink-2">{aiReview.feedback}</p>
           ) : null}
 
           {Array.isArray(aiReview.strengths) && aiReview.strengths.length > 0 ? (
             <div>
-              <p
-                className="text-[11px] font-mono uppercase tracking-wider mb-1 text-muted"
-              >
-                Strengths
-              </p>
-              <ul className="text-sm font-light space-y-0.5 text-muted">
+              <PortalSectionLabel className="px-0 pt-0">Strengths</PortalSectionLabel>
+              <ul className="flex flex-col gap-0.5 text-sm text-cn-p-ink-2">
                 {aiReview.strengths.map((item, index) => (
                   <li key={index}>• {item}</li>
                 ))}
@@ -134,12 +118,8 @@ function AiReviewPanel({ assignmentId, aiReview, totalMarks }) {
 
           {Array.isArray(aiReview.improvements) && aiReview.improvements.length > 0 ? (
             <div>
-              <p
-                className="text-[11px] font-mono uppercase tracking-wider mb-1 text-muted"
-              >
-                Areas to improve
-              </p>
-              <ul className="text-sm font-light space-y-0.5 text-muted">
+              <PortalSectionLabel className="px-0 pt-0">Areas to improve</PortalSectionLabel>
+              <ul className="flex flex-col gap-0.5 text-sm text-cn-p-ink-2">
                 {aiReview.improvements.map((item, index) => (
                   <li key={index}>• {item}</li>
                 ))}
@@ -153,7 +133,7 @@ function AiReviewPanel({ assignmentId, aiReview, totalMarks }) {
 }
 
 export default function AssignmentSubmissionStatus({ submission }) {
-  const statusClass = STATUS_STYLES[submission.status] || STATUS_STYLES.DRAFT;
+  const statusTone = STATUS_TONES[submission.status] || "neutral";
   const isAiGraded = submission.assignment?.grading_mode === "AI";
   // A teacher/admin can manually override an AI-graded submission's marks
   // (GradeSubmissionModal) without creating a new AI review row, so the
@@ -163,20 +143,10 @@ export default function AssignmentSubmissionStatus({ submission }) {
   const isManuallyGraded = Boolean(submission.graded_by);
 
   return (
-    <div
-      className="rounded-xl border p-4 space-y-3 border-line bg-porcelain/70"
-    >
+    <div className="flex flex-col gap-3 rounded-xl border border-cn-p-line bg-cn-p-page p-4">
       <div className="flex items-center justify-between gap-3">
-        <h5
-          className="text-sm font-mono uppercase tracking-wider text-muted"
-        >
-          Your submission
-        </h5>
-        <span
-          className={`text-[11px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${statusClass}`}
-        >
-          {submission.status}
-        </span>
+        <PortalSectionLabel className="px-0 pt-0">Your submission</PortalSectionLabel>
+        <PortalPill tone={statusTone}>{submission.status}</PortalPill>
       </div>
 
       {(submission.files || []).length > 0 && (
@@ -187,11 +157,9 @@ export default function AssignmentSubmissionStatus({ submission }) {
               href={file.file}
               target="_blank"
               rel="noopener noreferrer"
-              className="flex items-center gap-2 text-[12px] transition text-muted hover:text-pine"
+              className="flex items-center gap-2 text-[13px] text-cn-p-ink-2 transition-colors duration-150 hover:text-cn-p-accent"
             >
-              <Paperclip
-                className="w-3.5 h-3.5 shrink-0 text-muted"
-              />
+              <Paperclip className="h-3.5 w-3.5 shrink-0" />
               <span className="truncate">{file.original_name || file.file}</span>
             </a>
           ))}
@@ -199,35 +167,25 @@ export default function AssignmentSubmissionStatus({ submission }) {
       )}
 
       {submission.submitted_at ? (
-        <div
-          className="flex items-center gap-1.5 text-xs text-muted"
-        >
-          <Clock className="w-3.5 h-3.5" />
+        <div className="flex items-center gap-1.5 text-xs text-cn-p-ink-2">
+          <Clock className="h-3.5 w-3.5" />
           Submitted {formatDateTime(submission.submitted_at)}
         </div>
       ) : null}
 
       {(!isAiGraded || isManuallyGraded) && submission.status === "GRADED" && (
-        <div
-          className="pt-2 border-t space-y-1.5 border-line"
-        >
-          <div
-            className="flex items-center gap-1.5 text-sm font-serif font-bold text-emerald-700"
-          >
-            <CheckCircle2 className="w-4 h-4" />
+        <div className="flex flex-col gap-1.5 border-t border-cn-p-line pt-2">
+          <div className="flex items-center gap-1.5 font-bold text-cn-p-ok">
+            <CheckCircle2 className="h-4 w-4" />
             {submission.marks} / {submission.assignment?.total_marks ?? "—"} marks
             {submission.percentage !== null && submission.percentage !== undefined ? (
-              <span
-                className="font-mono text-sm font-normal text-emerald-600/80"
-              >
+              <span className="text-sm font-normal tabular-nums text-cn-p-ok">
                 ({submission.percentage}%)
               </span>
             ) : null}
           </div>
           {submission.feedback ? (
-            <p className="text-sm font-light text-muted">
-              {submission.feedback}
-            </p>
+            <p className="text-sm text-cn-p-ink-2">{submission.feedback}</p>
           ) : null}
         </div>
       )}

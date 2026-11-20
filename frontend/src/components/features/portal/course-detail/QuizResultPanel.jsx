@@ -1,8 +1,9 @@
 "use client";
 
-import { AlertCircle, CheckCircle2, XCircle } from "lucide-react";
+import { AlertCircle } from "lucide-react";
 import Loader from "@/components/ui/Loader";
 import { useQuizAttemptResult } from "@/hooks/student/useQuizAttempt";
+import { PortalButton, PortalRing } from "../shell/PortalUI";
 
 export default function QuizResultPanel({ attemptId, onClose }) {
   const { data: result, isLoading, isError } = useQuizAttemptResult(attemptId);
@@ -23,57 +24,43 @@ export default function QuizResultPanel({ attemptId, onClose }) {
 
   if (isError || !result) {
     return (
-      <div className="text-center py-8 space-y-4">
-        <AlertCircle className="w-6 h-6 mx-auto text-rose-500" />
-        <p className="text-sm text-muted">
+      <div className="flex flex-col items-center gap-4 py-8 text-center">
+        <AlertCircle aria-hidden="true" className="h-6 w-6 text-cn-p-bad" />
+        <p className="text-sm text-cn-p-ink-2">
           Your attempt was submitted, but the result isn&apos;t ready yet — check back shortly.
         </p>
-        <button
-          type="button"
-          onClick={onClose}
-          className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-mono uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
-        >
+        <PortalButton variant="sec" onClick={onClose}>
           Close
-        </button>
+        </PortalButton>
       </div>
     );
   }
 
+  const percentage = Math.round(Number(result.percentage));
+
   return (
-    <div className="space-y-5 text-center py-4">
-      <div
-        className={`w-16 h-16 mx-auto rounded-2xl flex items-center justify-center border ${
-          result.is_passed
-            ? "bg-emerald-50 border-emerald-100 text-emerald-600"
-            : "bg-rose-50 border-rose-100 text-rose-600"
-        }`}
-      >
-        {result.is_passed ? <CheckCircle2 className="w-8 h-8" /> : <XCircle className="w-8 h-8" />}
-      </div>
-      <div>
-        <p className="text-3xl font-serif font-bold text-ink">
-          {Math.round(Number(result.percentage))}%
-        </p>
-        <p className="text-sm mt-1 text-muted">
-          Score: {result.score} · Attempt {result.attempt_number} ·{" "}
-          {result.is_passed ? "Passed" : "Not passed"}
-        </p>
-      </div>
-      {hasPendingGrading ? (
-        <p
-          className="text-sm rounded-xl px-3.5 py-2.5 border bg-gold/12 text-gold border-gold/25"
-        >
+    <div className="flex flex-col items-center gap-5 text-center">
+      <PortalRing value={percentage} size={140} label={`${percentage}%`} />
+
+      <h3 className="text-2xl font-bold tracking-[-0.015em] text-cn-p-ink">
+        {result.is_passed ? "You passed" : "Not passed this time"}
+      </h3>
+
+      <p className="text-cn-p-ink-2">
+        Score: {result.score} · Attempt {result.attempt_number} ·{" "}
+        {result.is_passed ? "Passed" : "Not passed"}
+      </p>
+
+      {hasPendingGrading && (
+        <p className="rounded-xl bg-cn-p-warn-bg px-3.5 py-2.5 text-[13px] text-cn-p-warn">
           Some short-answer responses are pending manual grading — your score may change once
           they&apos;re reviewed.
         </p>
-      ) : null}
-      <button
-        type="button"
-        onClick={onClose}
-        className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-mono uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
-      >
+      )}
+
+      <PortalButton variant="sec" onClick={onClose}>
         Close
-      </button>
+      </PortalButton>
     </div>
   );
 }

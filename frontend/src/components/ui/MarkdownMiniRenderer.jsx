@@ -2,7 +2,33 @@
 
 import { ShieldCheck } from "lucide-react";
 
-function parseInline(text) {
+/**
+ * Two palettes, because this renderer draws an advisor's answer on two very
+ * different surfaces: the floating concierge and the store suite sit on the
+ * ink panel, while the home page's advisory council sits on paper. `dark` is
+ * the original and stays the default, so nothing that already used this
+ * component changes.
+ */
+const TONES = {
+  dark: {
+    body: "text-paper/75",
+    heading: "text-gold font-serif",
+    strong: "text-paper",
+    em: "text-gold",
+    marker: "bg-gold/10 border-gold/30 text-gold",
+    bullet: "text-gold",
+  },
+  light: {
+    body: "text-cn-ink-2",
+    heading: "text-cn-ink",
+    strong: "text-cn-ink",
+    em: "text-cn-accent-3",
+    marker: "bg-cn-paper-3 border-cn-accent-soft/50 text-cn-accent-3",
+    bullet: "text-cn-accent",
+  },
+};
+
+function parseInline(text, tone) {
   const regex = /\*\*([^*]+)\*\*|\*([^*]+)\*/g;
   const nodes = [];
   let lastIndex = 0;
@@ -15,13 +41,13 @@ function parseInline(text) {
     }
     if (match[1] !== undefined) {
       nodes.push(
-        <strong key={key++} className="text-paper font-bold">
+        <strong key={key++} className={`font-bold ${tone.strong}`}>
           {match[1]}
         </strong>
       );
     } else {
       nodes.push(
-        <em key={key++} className="text-gold not-italic font-medium">
+        <em key={key++} className={`font-medium not-italic ${tone.em}`}>
           {match[2]}
         </em>
       );
@@ -36,14 +62,20 @@ function parseInline(text) {
   return nodes;
 }
 
-export default function MarkdownMiniRenderer({ text, className = "", size = "base" }) {
+export default function MarkdownMiniRenderer({
+  text,
+  className = "",
+  size = "base",
+  tone = "dark",
+}) {
   if (!text) return null;
   const lines = text.split("\n");
   const isLg = size === "lg";
+  const palette = TONES[tone] ?? TONES.dark;
 
   return (
     <div
-      className={`space-y-2.5 font-sans ${isLg ? "text-sm" : "text-xs"} text-paper/75 leading-relaxed text-left ${className}`}
+      className={`space-y-2.5 font-sans ${isLg ? "text-sm" : "text-xs"} ${palette.body} leading-relaxed text-left ${className}`}
     >
       {lines.map((line, idx) => {
         const trimmed = line.trim();
@@ -58,9 +90,9 @@ export default function MarkdownMiniRenderer({ text, className = "", size = "bas
           return (
             <h4
               key={idx}
-              className={`${isLg ? "text-sm md:text-base" : "text-xs md:text-sm"} font-bold text-gold font-serif mt-3 mb-1.5 tracking-wide uppercase`}
+              className={`${isLg ? "text-sm md:text-base" : "text-xs md:text-sm"} font-bold ${palette.heading} mt-3 mb-1.5 tracking-wide uppercase`}
             >
-              {parseInline(headerText)}
+              {parseInline(headerText, palette)}
             </h4>
           );
         }
@@ -70,11 +102,11 @@ export default function MarkdownMiniRenderer({ text, className = "", size = "bas
           return (
             <div key={idx} className="flex items-start gap-2.5 pl-1 select-text">
               <span
-                className={`w-4.5 h-4.5 shrink-0 rounded-full bg-gold/10 border border-gold/30 text-gold ${isLg ? "text-[10px]" : "text-[9px]"} font-mono font-bold flex items-center justify-center mt-0.5`}
+                className={`w-4.5 h-4.5 shrink-0 rounded-full border ${palette.marker} ${isLg ? "text-[10px]" : "text-[9px]"} font-mono font-bold flex items-center justify-center mt-0.5`}
               >
                 {numberedMatch[1]}
               </span>
-              <span className="flex-1">{parseInline(numberedMatch[2])}</span>
+              <span className="flex-1">{parseInline(numberedMatch[2], palette)}</span>
             </div>
           );
         }
@@ -83,15 +115,15 @@ export default function MarkdownMiniRenderer({ text, className = "", size = "bas
           const bulletText = trimmed.substring(2);
           return (
             <div key={idx} className="flex items-start gap-2 pl-1 select-text">
-              <ShieldCheck className="w-4 h-4 text-gold shrink-0 mt-0.5" />
-              <span className="flex-1">{parseInline(bulletText)}</span>
+              <ShieldCheck className={`w-4 h-4 shrink-0 mt-0.5 ${palette.bullet}`} />
+              <span className="flex-1">{parseInline(bulletText, palette)}</span>
             </div>
           );
         }
 
         return (
           <p key={idx} className="leading-relaxed select-text">
-            {parseInline(trimmed)}
+            {parseInline(trimmed, palette)}
           </p>
         );
       })}

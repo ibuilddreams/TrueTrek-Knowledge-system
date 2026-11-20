@@ -2,84 +2,100 @@
 
 import { AlertCircle } from "lucide-react";
 import Loader from "@/components/ui/Loader";
+import PortalCard from "../shell/PortalCard";
+import { PortalEmpty } from "../shell/PortalUI";
 import LessonPlayerPanel from "./LessonPlayerPanel";
 import AssignmentPlayerPanel from "./AssignmentPlayerPanel";
 import QuizPlayerPanel from "./QuizPlayerPanel";
 
-function PanelShell({ children }) {
-  return (
-    <div className="rounded-2xl border p-5 sm:p-6 border-line bg-paper">
-      {children}
-    </div>
-  );
+/** The design's `.card.reader` — the page the student actually reads. */
+function Reader({ children, className = "" }) {
+  return <PortalCard className={`p-9 max-[40rem]:p-5 ${className}`}>{children}</PortalCard>;
 }
 
 export default function ContentPlayerPanel({
   activeItem,
   lesson,
+  moduleIndex,
+  moduleTitle,
+  moduleCount,
   assignment,
   quiz,
   isResolving,
   courseId,
   canInteract,
+  previousLesson,
+  nextLesson,
+  onSelectItem,
 }) {
   if (!activeItem) {
     return (
-      <PanelShell>
-        <div className="flex min-h-[40vh] items-center justify-center text-center px-4">
-          <p className="text-sm text-muted">
-            Select a lesson, quiz, or assignment from the curriculum to begin.
-          </p>
-        </div>
-      </PanelShell>
+      <Reader>
+        <PortalEmpty
+          title="Nothing open"
+          text="Select a lesson, quiz, or assignment from the curriculum to begin."
+        />
+      </Reader>
     );
   }
 
   if (isResolving) {
     return (
-      <PanelShell>
+      <Reader>
         <div className="flex min-h-[40vh] items-center justify-center" aria-busy="true">
           <Loader fullScreen={false} label="Loading content..." />
         </div>
-      </PanelShell>
+      </Reader>
     );
   }
 
   if (activeItem.type === "LESSON" && lesson) {
     return (
-      <PanelShell>
-        <LessonPlayerPanel key={lesson.id} lesson={lesson} courseId={courseId} canInteract={canInteract} />
-      </PanelShell>
+      <Reader>
+        <LessonPlayerPanel
+          key={lesson.id}
+          lesson={lesson}
+          moduleIndex={moduleIndex}
+          moduleTitle={moduleTitle}
+          courseId={courseId}
+          canInteract={canInteract}
+          previousLesson={previousLesson}
+          nextLesson={nextLesson}
+          onSelectItem={onSelectItem}
+        />
+      </Reader>
     );
   }
 
   if (activeItem.type === "ASSIGNMENT" && assignment) {
     return (
-      <PanelShell>
-        <AssignmentPlayerPanel key={assignment.id} assignment={assignment} canInteract={canInteract} />
-      </PanelShell>
+      <Reader>
+        <AssignmentPlayerPanel
+          key={assignment.id}
+          assignment={assignment}
+          moduleIndex={moduleIndex}
+          moduleCount={moduleCount}
+          canInteract={canInteract}
+        />
+      </Reader>
     );
   }
 
   if (activeItem.type === "QUIZ" && quiz) {
     return (
-      <PanelShell>
+      <Reader>
         <QuizPlayerPanel key={quiz.id} quiz={quiz} canInteract={canInteract} />
-      </PanelShell>
+      </Reader>
     );
   }
 
   return (
-    <PanelShell>
-      <div className="flex flex-col items-center justify-center text-center gap-3 min-h-[40vh] px-4">
-        <div className="w-12 h-12 rounded-2xl flex items-center justify-center border bg-rose-50 border-rose-100 text-rose-600">
-          <AlertCircle className="w-6 h-6" />
-        </div>
-        <p className="text-sm text-muted">
-          We couldn&apos;t find that item — it may have been removed. Pick something else from
-          the curriculum.
-        </p>
-      </div>
-    </PanelShell>
+    <Reader>
+      <PortalEmpty
+        icon={AlertCircle}
+        title="Not found"
+        text="We couldn't find that item — it may have been removed. Pick something else from the curriculum."
+      />
+    </Reader>
   );
 }

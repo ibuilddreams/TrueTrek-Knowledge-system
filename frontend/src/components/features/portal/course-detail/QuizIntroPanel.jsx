@@ -1,26 +1,29 @@
 "use client";
 
-import { Loader2, PlayCircle, ShieldAlert } from "lucide-react";
-import { formatDateTime } from "@/lib/adminFormatters";
+import { Loader2, Play, ShieldAlert } from "lucide-react";
+import { getPortalQuizStatus } from "@/lib/curriculumMeta";
+import {
+  PortalButton,
+  PortalKv,
+  PortalKvItem,
+  PortalPill,
+} from "../shell/PortalUI";
 
-function InfoChip({ label, value }) {
-  return (
-    <div
-      className="rounded-xl border px-3 py-2.5 border-line bg-porcelain/80"
-    >
-      <p className="text-[10px] font-mono uppercase tracking-wider text-muted">
-        {label}
-      </p>
-      <p className="text-sm font-serif font-bold mt-0.5 text-ink">
-        {value}
-      </p>
-    </div>
-  );
+function formatDeadline(value) {
+  if (!value) return "No deadline";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "No deadline";
+  return date.toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
 }
 
 export default function QuizIntroPanel({ quiz, canInteract, isStarting, onStart }) {
   const isUnavailable = !quiz.is_available;
   const hasInProgress = quiz.latest_attempt?.status === "IN_PROGRESS";
+  const status = getPortalQuizStatus(quiz);
   // Attempts are unlimited — every attempt after the first regenerates a
   // fresh AI question set (quizzes/ai_generation.py), so there's nothing to
   // exhaust here. Only enrollment/availability can block starting.
@@ -29,57 +32,73 @@ export default function QuizIntroPanel({ quiz, canInteract, isStarting, onStart 
   if (!canInteract) disabledReason = "Your enrollment for this course isn't active.";
   else if (isUnavailable) disabledReason = "This quiz isn't currently available.";
 
-  return (
-    <div className="space-y-5">
-      {quiz.description ? (
-        <p className="text-sm font-light leading-relaxed text-muted">
-          {quiz.description}
-        </p>
-      ) : null}
+  const best = quiz.latest_attempt?.percentage;
 
-      <div className="grid grid-cols-2 gap-2.5">
-        <InfoChip label="Passing score" value={`${quiz.passing_score}%`} />
-        <InfoChip
+  return (
+    <div className="flex flex-col gap-5">
+      <div className="flex flex-wrap items-center gap-2">
+        <PortalPill tone="blue">Quiz</PortalPill>
+        <PortalPill tone={status.tone}>{status.label}</PortalPill>
+      </div>
+
+      <h2 className="text-[28px] leading-[1.2] font-bold tracking-[-0.015em] text-cn-p-ink">
+        {quiz.title}
+      </h2>
+
+      <p className="text-base text-cn-p-ink-2">
+        {quiz.description ||
+          `${quiz.number_of_questions} question${
+            quiz.number_of_questions === 1 ? "" : "s"
+          } on this module's lessons. Answer them all, then submit for an instant score.`}
+      </p>
+
+      <PortalKv>
+        <PortalKvItem label="Passing score" value={`${quiz.passing_score}%`} />
+        <PortalKvItem
           label="Time limit"
           value={quiz.time_limit_minutes ? `${quiz.time_limit_minutes} min` : "No limit"}
         />
-        <InfoChip label="Attempts" value={`${quiz.attempts_used || 0}`} />
-        <InfoChip
-          label="Available until"
-          value={quiz.available_until ? formatDateTime(quiz.available_until) : "No deadline"}
+        <PortalKvItem label="Attempts" value={quiz.attempts_used || 0} />
+        <PortalKvItem
+          label="Best score"
+          value={best != null ? `${Math.round(Number(best))}%` : "—"}
         />
-      </div>
+      </PortalKv>
 
-      {hasInProgress ? (
-        <div
-          className="flex items-start gap-2 rounded-xl border px-3.5 py-3 text-sm bg-gold/12 text-gold border-gold/25"
-        >
-          <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+      {quiz.available_until && (
+        <p className="text-[13px] text-cn-p-ink-2">
+          Available until {formatDeadline(quiz.available_until)}.
+        </p>
+      )}
+
+      {hasInProgress && (
+        <p className="flex items-start gap-2 rounded-xl bg-cn-p-warn-bg px-3.5 py-3 text-[13px] text-cn-p-warn">
+          <ShieldAlert aria-hidden="true" className="mt-0.5 h-4 w-4 flex-none" />
           <span>
             You have an attempt in progress. Continuing will resume it exactly where you left
             off — it won&apos;t count as a new attempt.
           </span>
-        </div>
-      ) : null}
+        </p>
+      )}
 
-      {disabledReason ? (
-        <p className="text-sm text-rose-600">{disabledReason}</p>
-      ) : null}
+      {disabledReason && <p className="text-[13px] text-cn-p-bad">{disabledReason}</p>}
 
-      <div className="flex flex-wrap items-center gap-2.5">
-        <button
-          type="button"
+      <div>
+        <PortalButton
           onClick={onStart}
           disabled={Boolean(disabledReason) || isStarting}
-          className="inline-flex items-center gap-2 px-4 py-2.5 disabled:opacity-40 disabled:cursor-not-allowed text-xs font-mono uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
         >
           {isStarting ? (
-            <Loader2 className="w-3.5 h-3.5 animate-spin" />
+            <Loader2 className="h-4 w-4 animate-spin" />
           ) : (
-            <PlayCircle className="w-3.5 h-3.5" />
+            <Play className="h-4 w-4" />
           )}
-          {hasInProgress ? "Resume attempt" : "Start attempt"}
-        </button>
+          {hasInProgress
+            ? "Resume attempt"
+            : quiz.attempts_used
+              ? "Start new attempt"
+              : "Start attempt"}
+        </PortalButton>
       </div>
     </div>
   );

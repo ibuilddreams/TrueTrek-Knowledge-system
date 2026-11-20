@@ -10,6 +10,7 @@ import {
   isAllowedAssignmentFile,
 } from "@/lib/assignmentFileTypes";
 import { toastError } from "@/lib/toast";
+import { PortalButton, PortalSectionLabel } from "../shell/PortalUI";
 
 export default function AssignmentSubmissionForm({
   assignment,
@@ -23,9 +24,7 @@ export default function AssignmentSubmissionForm({
 
   if (!canSubmit) {
     return (
-      <div
-        className="rounded-xl border border-dashed px-4 py-4 text-sm border-line bg-porcelain text-muted"
-      >
+      <div className="rounded-xl border border-dashed border-cn-p-line-2 bg-cn-p-page px-4 py-4 text-sm text-cn-p-ink-2">
         {isPastDue
           ? "The due date has passed and resubmission isn't allowed for this assignment."
           : "Submissions are disabled — your enrollment for this course isn't active."}
@@ -69,18 +68,16 @@ export default function AssignmentSubmissionForm({
   }
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-3">
-      <h5
-        className="text-sm font-mono uppercase tracking-wider text-muted"
-      >
+    <form onSubmit={handleSubmit} className="flex flex-col gap-3">
+      <PortalSectionLabel className="px-0 pt-0">
         {hasSubmission ? "Resubmit your work" : "Submit your work"}
-      </h5>
+      </PortalSectionLabel>
 
       <div className="space-y-2">
         <label
-          className="inline-flex items-center gap-2 px-3.5 py-2 border border-dashed rounded-xl text-xs font-mono uppercase tracking-wider cursor-pointer transition border-line hover:border-pine text-muted hover:text-pine"
+          className="inline-flex cursor-pointer items-center gap-2 rounded-cn-p-sm border border-dashed border-cn-p-line-2 px-3.5 py-2.5 text-sm font-semibold text-cn-p-ink-2 transition-colors duration-150 hover:border-cn-p-accent hover:bg-cn-p-soft hover:text-cn-p-soft-ink"
         >
-          <UploadCloud className="w-3.5 h-3.5" />
+          <UploadCloud className="h-4 w-4" />
           Attach files
           <input
             type="file"
@@ -91,7 +88,7 @@ export default function AssignmentSubmissionForm({
             className="hidden"
           />
         </label>
-        <p className="text-[11px] text-muted">
+        <p className="text-xs text-cn-p-muted">
           Allowed: {ALL_ALLOWED_ASSIGNMENT_EXTENSIONS.join(", ")} · up to {MAX_ASSIGNMENT_FILE_SIZE_MB}
           MB each
         </p>
@@ -101,19 +98,17 @@ export default function AssignmentSubmissionForm({
             {files.map((file, index) => (
               <li
                 key={`${file.name}-${index}`}
-                className="flex items-center justify-between gap-2 text-[12px] border rounded-lg px-3 py-1.5 text-muted bg-porcelain border-line"
+                className="flex items-center justify-between gap-2 rounded-cn-p-sm border border-cn-p-line bg-cn-p-page px-3 py-1.5 text-[13px] text-cn-p-ink-2"
               >
                 <span className="inline-flex items-center gap-1.5 min-w-0 truncate">
-                  <Paperclip
-                    className="w-3.5 h-3.5 shrink-0 text-muted"
-                  />
+                  <Paperclip className="h-3.5 w-3.5 shrink-0" />
                   <span className="truncate">{file.name}</span>
                 </span>
                 <button
                   type="button"
                   onClick={() => removeFile(index)}
                   disabled={submitMutation.isPending}
-                  className="transition text-muted hover:text-rose-600"
+                  className="text-cn-p-ink-2 transition-colors duration-150 hover:text-cn-p-bad"
                   aria-label={`Remove ${file.name}`}
                 >
                   <X className="w-3.5 h-3.5" />
@@ -124,20 +119,21 @@ export default function AssignmentSubmissionForm({
         )}
       </div>
 
-      <button
+      <PortalButton
+        as="button"
         type="submit"
         disabled={submitMutation.isPending || files.length === 0}
-        className="inline-flex items-center gap-2 px-4 py-2.5 disabled:opacity-50 text-xs font-mono uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
+        className="self-start"
       >
-        {submitMutation.isPending && <Loader2 className="w-3.5 h-3.5 animate-spin" />}
+        {submitMutation.isPending && <Loader2 className="h-4 w-4 animate-spin" />}
         {submitMutation.isPending && isAiGraded
           ? "Elite Coach is reviewing your submission…"
           : hasSubmission
             ? "Resubmit assignment"
             : "Submit assignment"}
-      </button>
+      </PortalButton>
       {submitMutation.isPending && isAiGraded ? (
-        <p className="text-[11px] text-muted">
+        <p className="text-xs text-cn-p-muted">
           Your work has been saved. This can take up to a minute — please don&apos;t close this window.
         </p>
       ) : null}

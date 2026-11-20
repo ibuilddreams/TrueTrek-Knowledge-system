@@ -56,3 +56,33 @@ export function getQuizStatusMeta(quiz) {
   }
   return { label: "Submitted", className: fallback };
 }
+
+/**
+ * The signed-in design's own status vocabulary and pill tones (its `TONE`
+ * map): an assignment reads Locked / Graded / Returned / Submitted / Overdue
+ * / To do, and a quiz Locked / Passed / Not passed / In progress / Not
+ * attempted. Separate from the two helpers above, which still serve the
+ * screens on the older palette.
+ */
+export function getPortalAssignmentStatus(assignment) {
+  if (assignment?.is_locked) return { label: "Locked", tone: "neutral" };
+  const submission = assignment?.submission;
+  if (submission) {
+    if (submission.status === "GRADED") return { label: "Graded", tone: "ok" };
+    if (submission.status === "RETURNED") return { label: "Returned", tone: "blue" };
+    if (submission.status === "LATE") return { label: "Late", tone: "bad" };
+    return { label: "Submitted", tone: "blue" };
+  }
+  if (assignment?.is_overdue) return { label: "Overdue", tone: "bad" };
+  return { label: "To do", tone: "neutral" };
+}
+
+export function getPortalQuizStatus(quiz) {
+  if (quiz?.is_locked) return { label: "Locked", tone: "neutral" };
+  const attempt = quiz?.latest_attempt;
+  if (!attempt) return { label: "Not attempted", tone: "neutral" };
+  if (attempt.status === "IN_PROGRESS") return { label: "In progress", tone: "warn" };
+  if (attempt.is_passed === true) return { label: "Passed", tone: "ok" };
+  if (attempt.is_passed === false) return { label: "Not passed", tone: "bad" };
+  return { label: "Submitted", tone: "blue" };
+}

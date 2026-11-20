@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { CircleHelp } from "lucide-react";
 import { useStartQuizAttempt, useSubmitQuizAttempt } from "@/hooks/student/useQuizAttempt";
 import { toastInfo } from "@/lib/toast";
 import QuizIntroPanel from "../course-detail/QuizIntroPanel";
@@ -31,7 +30,7 @@ export default function QuizPlayerPanel({ quiz, canInteract }) {
     if (!attempt) return;
     submitAttemptMutation.mutate(
       { attemptId: attempt.attempt_id, payload },
-      { onSuccess: () => setPhase("result") }
+      { onSuccess: () => setPhase("result") },
     );
   }
 
@@ -40,45 +39,26 @@ export default function QuizPlayerPanel({ quiz, canInteract }) {
     setAttempt(null);
   }
 
-  return (
-    <div className="space-y-6">
-      <div className="flex items-start gap-3">
-        <span className="flex items-center justify-center w-10 h-10 rounded-xl border shrink-0 bg-violet-50 text-violet-600 border-violet-100">
-          <CircleHelp className="w-5 h-5" />
-        </span>
-        <div className="min-w-0">
-          <p className="text-[11px] font-mono uppercase tracking-[0.16em] mb-1 text-gold/80">
-            Quiz
-          </p>
-          <h2 className="font-serif font-bold text-xl sm:text-2xl leading-tight text-ink">
-            {quiz.title}
-          </h2>
-          {phase === "in_progress" ? (
-            <p className="text-sm mt-1 text-gold">
-              Attempt in progress
-            </p>
-          ) : null}
-        </div>
-      </div>
+  if (phase === "in_progress" && attempt) {
+    return (
+      <QuizAttemptRunner
+        attempt={attempt}
+        isSubmitting={submitAttemptMutation.isPending}
+        onSubmit={handleSubmit}
+      />
+    );
+  }
 
-      {phase === "intro" && (
-        <QuizIntroPanel
-          quiz={quiz}
-          canInteract={canInteract}
-          isStarting={startAttemptMutation.isPending}
-          onStart={handleStart}
-        />
-      )}
-      {phase === "in_progress" && attempt && (
-        <QuizAttemptRunner
-          attempt={attempt}
-          isSubmitting={submitAttemptMutation.isPending}
-          onSubmit={handleSubmit}
-        />
-      )}
-      {phase === "result" && attempt && (
-        <QuizResultPanel attemptId={attempt.attempt_id} onClose={handleResultClose} />
-      )}
-    </div>
+  if (phase === "result" && attempt) {
+    return <QuizResultPanel attemptId={attempt.attempt_id} onClose={handleResultClose} />;
+  }
+
+  return (
+    <QuizIntroPanel
+      quiz={quiz}
+      canInteract={canInteract}
+      isStarting={startAttemptMutation.isPending}
+      onStart={handleStart}
+    />
   );
 }

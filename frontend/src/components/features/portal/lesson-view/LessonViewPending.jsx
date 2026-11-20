@@ -2,35 +2,39 @@
 
 import { AlertCircle, RefreshCw } from "lucide-react";
 import Loader from "@/components/ui/Loader";
-import FullScreenPortal from "./FullScreenPortal";
+import PortalCard from "../shell/PortalCard";
+import { PortalButton, PortalEmpty } from "../shell/PortalUI";
 
+/**
+ * The lesson screen before its course has loaded — shown on a refresh that
+ * lands straight on a lesson URL, so the student sees the reader's own card
+ * settling rather than the course library flashing past first.
+ */
 export default function LessonViewPending({ isError, errorMessage, onRetry }) {
+  if (isError) {
+    return (
+      <PortalCard>
+        <PortalEmpty
+          icon={AlertCircle}
+          title="Couldn't open this lesson"
+          text={errorMessage || "Unable to load this course right now."}
+        >
+          {onRetry && (
+            <PortalButton onClick={onRetry}>
+              <RefreshCw className="h-[18px] w-[18px]" />
+              Retry
+            </PortalButton>
+          )}
+        </PortalEmpty>
+      </PortalCard>
+    );
+  }
+
   return (
-    <FullScreenPortal>
-      <div className="min-h-screen w-full flex items-center justify-center px-4">
-        {isError ? (
-          <div className="text-center space-y-4 max-w-sm">
-            <div className="w-12 h-12 mx-auto rounded-2xl border flex items-center justify-center bg-rose-50 border-rose-100 text-rose-600">
-              <AlertCircle className="w-6 h-6" />
-            </div>
-            <p className="text-sm text-muted">
-              {errorMessage}
-            </p>
-            {onRetry ? (
-              <button
-                type="button"
-                onClick={onRetry}
-                className="inline-flex items-center gap-2 px-4 py-2.5 text-xs font-mono uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
-              >
-                <RefreshCw className="w-3.5 h-3.5" />
-                Retry
-              </button>
-            ) : null}
-          </div>
-        ) : (
-          <Loader fullScreen={false} label="Loading your lesson..." />
-        )}
+    <PortalCard>
+      <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
+        <Loader fullScreen={false} label="Loading lesson..." />
       </div>
-    </FullScreenPortal>
+    </PortalCard>
   );
 }
