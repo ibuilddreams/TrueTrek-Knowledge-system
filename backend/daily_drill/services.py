@@ -48,6 +48,54 @@ def get_todays_question():
     return questions[index]
 
 
+# ---------------------------------------------------------------------------
+# The public taster drill (home page, signed out)
+#
+# The marketing site shows one real drill so a visitor can try the thing
+# before making an account. Two rules make that safe to serve to anybody:
+#
+#   1. It is never the question the portal itself might be serving today.
+#      `get_todays_question` picks the bank by ordinal; this picks the next
+#      one along, so a signed-in student cannot read their own drill's answer
+#      from an unauthenticated URL. (With a one-question bank there is
+#      nothing else to offer, and that bank is itself only the last-resort
+#      fallback — see `resolve_todays_drill`.)
+#   2. Scores, impacts and rationales never travel with the question. They
+#      are returned only by `grade_public_drill_answer`, for the one option
+#      the visitor actually picked, which is the same rule
+#      `DrillQuestionSerializer` already follows for students.
+#
+# Nothing here writes: a guest has no account, earns no points and breaks no
+# streak, so there is no attempt row and no daily limit to enforce server
+# side. The "one free drill" the home page offers is a courtesy, enforced in
+# the browser, not an entitlement worth defending here.
+# ---------------------------------------------------------------------------
+
+
+def get_public_drill_question(drill_date=None):
+    """The published bank question offered to signed-out visitors today."""
+    questions = DrillQuestion.objects.filter(status=Status.PUBLISHED).order_by("id")
+    total = questions.count()
+    if not total:
+        return None
+    drill_date = drill_date or timezone.localdate()
+    return questions[(drill_date.toordinal() + 1) % total]
+
+
+def grade_public_drill_answer(question, answer_key):
+    """Grade one guest answer. Returns (selected_option, best_option).
+
+    Raises InvalidDrillOptionError if the key is not one of this question's
+    options. Writes nothing.
+    """
+    options = list(question.options.order_by("key"))
+    selected = next((option for option in options if option.key == answer_key), None)
+    if selected is None:
+        raise InvalidDrillOptionError("Selected option does not belong to this drill.")
+    best = max(options, key=lambda option: option.score)
+    return selected, best
+
+
 def _get_all_activity_dates(student):
     """Every calendar date a student completed a Daily Drill, unioned across
     all three sources (only one is ever active per day, but a student's

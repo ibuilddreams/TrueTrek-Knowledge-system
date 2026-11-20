@@ -1,5 +1,15 @@
 import { backendClient } from "./apiClient";
 
+// Public — the home page's taster drill. No account, and the backend writes
+// nothing: the answer is graded and explained, not recorded.
+export async function getPublicDailyDrill() {
+  return backendClient.get("/daily-drill/public/today/");
+}
+
+export async function submitPublicDrillAnswer(answerKey) {
+  return backendClient.post("/daily-drill/public/attempt/", { answer_key: answerKey });
+}
+
 // Student — today's Daily Drill (backend resolves admin-scheduled / AI / legacy)
 export async function getTodaysDrill() {
   return backendClient.get("/daily-drill/today/");

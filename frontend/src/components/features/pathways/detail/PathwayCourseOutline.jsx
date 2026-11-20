@@ -20,7 +20,7 @@ export default function PathwayCourseOutline({ slug, isOpen }) {
 
   if (!slug) {
     return (
-      <p className="px-5 pb-5 text-xs text-muted">
+      <p className="px-6 pb-5 text-cn-sm text-cn-muted">
         This course has no public outline yet.
       </p>
     );
@@ -28,9 +28,9 @@ export default function PathwayCourseOutline({ slug, isOpen }) {
 
   if (query.isLoading) {
     return (
-      <div className="space-y-2 px-5 pb-5" aria-busy="true">
+      <div className="grid gap-2 px-6 py-5" aria-busy="true">
         {[0, 1, 2].map((row) => (
-          <div key={row} className="h-9 animate-pulse rounded-lg bg-porcelain" />
+          <div key={row} className="h-9 animate-pulse rounded-cn-sm bg-cn-paper-2" />
         ))}
       </div>
     );
@@ -38,7 +38,7 @@ export default function PathwayCourseOutline({ slug, isOpen }) {
 
   if (query.isError) {
     return (
-      <p role="alert" className="px-5 pb-5 text-xs text-clay">
+      <p role="alert" className="px-6 pb-5 text-cn-sm text-cn-live">
         {getApiErrorMessage(query.error, "Unable to load this course outline.")}
       </p>
     );
@@ -49,35 +49,35 @@ export default function PathwayCourseOutline({ slug, isOpen }) {
 
   if (modules.length === 0) {
     return (
-      <p className="px-5 pb-5 text-xs text-muted">
+      <p className="px-6 pb-5 text-cn-sm text-cn-muted">
         The syllabus for this course is still being published.
       </p>
     );
   }
 
   return (
-    <div className="px-5 pb-5">
-      <p className="mb-3 text-[11px] font-sans uppercase tracking-widest text-muted">
+    <div className="px-6 pt-4 pb-5">
+      <p className="mb-3 text-cn-xs text-cn-muted">
         {pluralize(modules.length, "module")} · {pluralize(totals.lessons, "lesson")}
         {totals.quizzes > 0 && ` · ${pluralize(totals.quizzes, "quiz", "quizzes")}`}
         {totals.assignments > 0 && ` · ${pluralize(totals.assignments, "assignment")}`}
         {formatMinutesCompact(totals.minutes) && ` · ${formatMinutesCompact(totals.minutes)}`}
       </p>
 
-      <ol className="space-y-2.5">
+      <ol className="grid gap-2.5">
         {modules.map((module, moduleIdx) => {
           const lessons = [...(module.lessons || [])].sort((a, b) => a.order - b.order);
           return (
             <li
               key={module.id}
-              className="overflow-hidden rounded-xl border border-line bg-porcelain/60"
+              className="overflow-hidden rounded-cn border border-cn-rule bg-cn-paper-2"
             >
               <div className="flex items-baseline gap-2.5 px-4 py-3">
-                <span className="font-sans text-[10px] font-bold uppercase tracking-widest text-muted tabular-nums">
+                <span className="text-cn-xs font-bold text-cn-muted tabular-nums">
                   M{String(moduleIdx + 1).padStart(2, "0")}
                 </span>
-                <h5 className="min-w-0 flex-1 text-sm font-medium text-ink">{module.title}</h5>
-                <span className="shrink-0 text-[11px] font-sans text-muted">
+                <h5 className="min-w-0 flex-1 text-cn-sm font-semibold text-cn-ink">{module.title}</h5>
+                <span className="shrink-0 text-cn-xs text-cn-muted">
                   {lessons.length} lesson{lessons.length === 1 ? "" : "s"}
                 </span>
               </div>
@@ -85,16 +85,16 @@ export default function PathwayCourseOutline({ slug, isOpen }) {
               {(lessons.length > 0 ||
                 module.quizzes?.length > 0 ||
                 module.assignments?.length > 0) && (
-                <ul className="divide-y divide-line border-t border-line bg-paper">
+                <ul className="m-0 list-none divide-y divide-cn-rule border-t border-cn-rule bg-white p-0">
                   {lessons.map((lesson) => (
                     <li
                       key={`lesson-${lesson.id}`}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-ink/85"
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-cn-sm text-cn-ink-2"
                     >
-                      <PlayCircle className="h-3.5 w-3.5 shrink-0 text-moss" />
+                      <PlayCircle className="h-3.5 w-3.5 shrink-0 text-cn-accent" />
                       <span className="min-w-0 flex-1 truncate">{lesson.title}</span>
                       {formatMinutesCompact(lesson.duration_minutes) && (
-                        <span className="shrink-0 font-sans text-[11px] text-muted">
+                        <span className="shrink-0 text-cn-xs text-cn-muted">
                           {formatMinutesCompact(lesson.duration_minutes)}
                         </span>
                       )}
@@ -103,21 +103,21 @@ export default function PathwayCourseOutline({ slug, isOpen }) {
                   {(module.quizzes || []).map((quiz) => (
                     <li
                       key={`quiz-${quiz.id}`}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-ink/85"
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-cn-sm text-cn-ink-2"
                     >
-                      <FileQuestion className="h-3.5 w-3.5 shrink-0 text-gold" />
+                      <FileQuestion className="h-3.5 w-3.5 shrink-0 text-cn-accent" />
                       <span className="min-w-0 flex-1 truncate">{quiz.title}</span>
-                      <span className="shrink-0 font-sans text-[11px] text-muted">Quiz</span>
+                      <span className="shrink-0 text-cn-xs text-cn-muted">Quiz</span>
                     </li>
                   ))}
                   {(module.assignments || []).map((assignment) => (
                     <li
                       key={`assignment-${assignment.id}`}
-                      className="flex items-center gap-2.5 px-4 py-2.5 text-xs text-ink/85"
+                      className="flex items-center gap-2.5 px-4 py-2.5 text-cn-sm text-cn-ink-2"
                     >
-                      <ClipboardList className="h-3.5 w-3.5 shrink-0 text-clay" />
+                      <ClipboardList className="h-3.5 w-3.5 shrink-0 text-cn-accent" />
                       <span className="min-w-0 flex-1 truncate">{assignment.title}</span>
-                      <span className="shrink-0 font-sans text-[11px] text-muted">Assignment</span>
+                      <span className="shrink-0 text-cn-xs text-cn-muted">Assignment</span>
                     </li>
                   ))}
                 </ul>

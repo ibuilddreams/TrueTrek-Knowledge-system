@@ -1,38 +1,23 @@
 "use client";
 
-import { useRouter } from "next/navigation";
-import { ROUTES } from "@/constants/routes";
-
 import { useMemo } from "react";
+import Link from "next/link";
 import { useQuery } from "@tanstack/react-query";
+import { ArrowRight } from "lucide-react";
+import { ROUTES } from "@/constants/routes";
 import { getPublicCourseRecommendations } from "@/services/coursesService";
-import CourseSuggestionCard from "@/components/ui/CourseSuggestionCard";
-import CourseSuggestionCarousel from "@/components/ui/CourseSuggestionCarousel";
-import PathwaySectionHeading from "./PathwaySectionHeading";
 
-const LIMIT = 8;
+const LIMIT = 6;
 
-// Upsell shelf under the pathway roadmap, built on the same recommendations
-// endpoint and cards as the cart's "You might also like". Seeding it with the
-// pathway's own course ids means the API treats them like a cart: it returns
-// courses sharing their category/tags (best tag overlap first) and excludes
-// the pathway's own courses — and any the viewer is already enrolled in — so
-// nothing already covered by this bundle is suggested back.
+// The design's "More like this" shelf, carrying the same recommendations the
+// cart's "You might also like" uses: seeded with this pathway's own course
+// ids, so the API returns courses sharing their category and tags and
+// excludes the ones this bundle already holds.
 //
-// Only the `related` half of the response is used here. The endpoint also
-// returns a `popular` ("most purchased") list, which the cart shows as a
-// second tab, but on a pathway page a generic best-seller shelf is off-topic:
-// if nothing genuinely relates to this pathway, the section stays hidden
-// rather than padding itself out.
+// The cards are written here rather than reusing `CourseSuggestionCard`,
+// which is shared with the instructor page and still on the older palette —
+// borrowing it would put porcelain cards inside a cobalt page.
 export default function PathwayRelatedCourses({ pathway }) {
-  const router = useRouter();
-
-  // Enrolling happens in the portal — the same single action the store uses.
-  const handleEnroll = (course) =>
-    router.push(
-      `${ROUTES.STUDENT_PORTAL}?buy=${encodeURIComponent(course.slug)}`,
-    );
-
   // Sorted so the query key (and cache) doesn't depend on roadmap order.
   const courseIds = useMemo(
     () =>
@@ -53,37 +38,74 @@ export default function PathwayRelatedCourses({ pathway }) {
       return response?.data || {};
     },
     staleTime: 60 * 1000,
-    // Keep the current shelf on screen while a cart change refetches, so the
-    // cards don't flash away when someone adds one.
     placeholderData: (previous) => previous,
   });
 
   const related = data?.related || [];
+  // Only the `related` half is used. The endpoint also returns `popular`,
+  // which on a pathway page is an off-topic best-seller shelf: if nothing
+  // genuinely relates, the section stays hidden rather than padding itself.
   if (related.length === 0) return null;
 
   return (
     <section
       id="pathway-related-courses"
       aria-labelledby="pathway-related-heading"
+      className="grid gap-4"
     >
-      <PathwaySectionHeading
+      <h2
         id="pathway-related-heading"
-        eyebrow="Go Further"
-        subtitle="Courses that pair well with this pathway, drawn from the same subjects and tags."
+        className="text-cn-2xl font-extrabold tracking-[-0.02em] text-cn-ink"
       >
-        Keep building beyond this route
-      </PathwaySectionHeading>
+        More like this
+      </h2>
+      <p className="max-w-[60ch] text-cn-ink-2">
+        Courses that pair well with this pathway, drawn from the same subjects
+        and tags.
+      </p>
 
-      <CourseSuggestionCarousel ariaLabel="Courses related to this pathway">
+      <div className="mt-2 grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {related.map((course) => (
-          <CourseSuggestionCard
-            onEnroll={handleEnroll}
+          <Link
             key={course.id}
-            course={course}
-            className="shrink-0 snap-start w-[78%] sm:w-[calc(50%-10px)] lg:w-[calc(25%-15px)]"
-          />
+            href={`${ROUTES.STORE}/${course.slug}`}
+            className="group flex flex-col overflow-hidden rounded-cn-lg border border-cn-rule bg-white no-underline shadow-cn-1 transition-[border-color,box-shadow,transform] duration-200 ease-cn-out hover:-translate-y-1 hover:border-cn-accent-soft hover:shadow-cn-2"
+          >
+            <figure className="relative m-0 grid aspect-[4/3] place-items-center overflow-hidden bg-[linear-gradient(135deg,var(--color-cn-paper-3),var(--color-cn-paper-4)_60%,var(--color-cn-accent-soft))]">
+              {course.image && (
+                <img
+                  src={course.image}
+                  alt=""
+                  loading="lazy"
+                  className="h-full w-full object-cover transition-transform duration-[900ms] ease-cn-out group-hover:scale-[1.04]"
+                />
+              )}
+            </figure>
+            <div className="flex flex-1 flex-col gap-2 p-6">
+              {course.code && (
+                <span className="w-fit rounded-full bg-cn-paper-3 px-2.5 py-1 text-cn-xs font-semibold text-cn-accent-3">
+                  {course.code}
+                </span>
+              )}
+              <h3 className="text-cn-lg leading-[1.3] font-bold tracking-[-0.015em] text-cn-ink">
+                {course.title}
+              </h3>
+              {course.category?.name && (
+                <span className="text-cn-sm text-cn-ink-2">
+                  {course.category.name}
+                </span>
+              )}
+              <span className="mt-auto inline-flex items-center gap-1.5 pt-2 text-cn-sm font-semibold text-cn-accent">
+                View the course
+                <ArrowRight
+                  aria-hidden="true"
+                  className="h-4 w-4 transition-transform duration-150 group-hover:translate-x-0.5"
+                />
+              </span>
+            </div>
+          </Link>
         ))}
-      </CourseSuggestionCarousel>
+      </div>
     </section>
   );
 }

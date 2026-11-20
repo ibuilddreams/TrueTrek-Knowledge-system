@@ -12,10 +12,16 @@ from .views import (
     DailyDrillTodayView,
     DailyDrillVideoProgressView,
     InactiveStudentsListView,
+    PublicDailyDrillView,
+    PublicDrillAttemptView,
     StreakCalendarView,
 )
 
 urlpatterns = [
+    # Public — the home page's taster drill, no account needed
+    path("public/today/", PublicDailyDrillView.as_view(), name="daily-drill-public-today"),
+    path("public/attempt/", PublicDrillAttemptView.as_view(), name="daily-drill-public-attempt"),
+
     # Student — today's Daily Drill (backend resolves the source)
     path("today/", DailyDrillTodayView.as_view(), name="daily-drill-today"),
     path("streak/calendar/", StreakCalendarView.as_view(), name="daily-drill-streak-calendar"),
