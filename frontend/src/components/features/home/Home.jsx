@@ -161,8 +161,8 @@ const ADVISORY_TOPICS = [
   {
     id: "recruiter",
     topic: "Recruiting",
-    name: "Coach Vance Miller",
-    firstName: "Vance",
+    name: "Tahir Awan",
+    firstName: "Tahir",
     role: "Executive of recruiting",
     focus: "Collegiate recruitment",
     photo: "/images/design/adv-miller.webp",
@@ -217,13 +217,14 @@ const ADVISORY_TOPICS = [
   {
     id: "tech",
     topic: "Tech",
-    name: "Waqar",
+    name: "Muhammad Waqar",
+    // The one name the "first word" rule above doesn't fit: "Muhammad" is the
+    // customary prefix rather than the name he goes by, so the submit button
+    // reads "Send to Waqar".
     firstName: "Waqar",
     role: "Technology advisor",
     focus: "Software and product",
-    // No portrait yet — `AdvisorAvatar` draws the initial in the same box, so
-    // the pill and the stage keep their shape until a photograph arrives.
-    photo: null,
+    photo: "/images/design/adv-sterling.webp",
     prompts: [
       "How do I start learning to code with no background?",
       "What should a student build to show employers?",
