@@ -353,3 +353,124 @@ export function PortalIcon({ icon: Icon, tone = "accent", size = "md", children 
     </span>
   );
 }
+
+/**
+ * `.tabs` / `.tab` — the underlined filter strip the design puts inside a
+ * `.card.p0`, above a table. Distinct from `PortalSegmented` (`.seg`), which is
+ * the pill-shaped control used *beside* a heading: this one is a row of tabs
+ * that owns the top edge of the card it sits in, and each carries a count.
+ *
+ * The count is shown when it is a number, zero included — a tab reading "0"
+ * tells the reader the filter is empty before they click it, which is the
+ * whole point of putting counts here.
+ */
+export function PortalTabs({ options, value, onChange, ariaLabel }) {
+  return (
+    <div
+      role="tablist"
+      aria-label={ariaLabel}
+      className="flex gap-1 overflow-x-auto border-b border-cn-p-line"
+    >
+      {options.map((option) => {
+        const isActive = option.value === value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="tab"
+            aria-selected={isActive}
+            onClick={() => onChange(option.value)}
+            className={`-mb-px inline-flex h-11 flex-none items-center gap-2 border-0 border-b-2 bg-transparent px-3.5 text-sm font-semibold whitespace-nowrap transition-colors duration-150 ${
+              isActive
+                ? "border-cn-p-accent text-cn-p-accent"
+                : "border-transparent text-cn-p-ink-2 hover:text-cn-p-ink"
+            }`}
+          >
+            {option.label}
+            {typeof option.count === "number" && (
+              <span className="rounded-full bg-cn-p-neutral-bg px-[7px] py-px text-[11px] font-semibold text-cn-p-ink-2">
+                {option.count}
+              </span>
+            )}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/**
+ * `.tblwrap` + `.tbl` — the design's data table. The wrapper scrolls
+ * horizontally rather than letting the table squeeze its columns, which is why
+ * it exists at all: these tables carry five or six columns and a phone cannot
+ * show them any other way without making every cell unreadable.
+ *
+ * Callers write their own `<thead>`/`<tbody>`; `PortalTh`, `PortalTd` and
+ * `PortalTr` carry the design's cell rules so a column cannot drift.
+ */
+export function PortalTable({ children, className = "" }) {
+  return (
+    <div className={`overflow-x-auto ${className}`}>
+      <table className="w-full border-collapse">{children}</table>
+    </div>
+  );
+}
+
+export function PortalTh({ align = "left", className = "", children }) {
+  return (
+    <th
+      scope="col"
+      className={`border-b border-cn-p-line bg-cn-p-page px-4 py-3 text-xs font-semibold whitespace-nowrap text-cn-p-ink-2 ${
+        align === "right" ? "text-right" : "text-left"
+      } ${className}`}
+    >
+      {children}
+    </th>
+  );
+}
+
+export function PortalTd({ align = "left", numeric = false, className = "", children }) {
+  return (
+    <td
+      className={`border-b border-cn-p-line px-4 py-3.5 align-middle group-last/row:border-b-0 ${
+        align === "right" ? "text-right" : "text-left"
+      } ${numeric ? "tabular-nums" : ""} ${className}`}
+    >
+      {children}
+    </td>
+  );
+}
+
+/**
+ * A table row. `onOpen` makes the whole row activate — the design marks these
+ * `.click` — and when it does the row is given the keyboard affordances a
+ * `<tr>` has none of on its own, so the screen is usable without a mouse.
+ */
+export function PortalTr({ onOpen, disabled = false, title, className = "", children }) {
+  const isClickable = Boolean(onOpen) && !disabled;
+  return (
+    <tr
+      {...(isClickable
+        ? {
+            role: "button",
+            tabIndex: 0,
+            onClick: onOpen,
+            onKeyDown: (event) => {
+              if (event.key === "Enter" || event.key === " ") {
+                event.preventDefault();
+                onOpen();
+              }
+            },
+          }
+        : {})}
+      title={title}
+      className={`group/row ${
+        isClickable
+          ? "cursor-pointer transition-colors duration-150 hover:bg-cn-p-page focus-visible:bg-cn-p-page focus-visible:outline-2 focus-visible:-outline-offset-2 focus-visible:outline-cn-p-accent"
+          : ""
+      } ${disabled ? "opacity-70" : ""} ${className}`}
+    >
+      {children}
+    </tr>
+  );
+}

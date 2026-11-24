@@ -410,7 +410,7 @@ export default function StudentDashboard({ onNavigate }) {
           <PortalCardHead
             title="Today's activity"
             action={`${questsDone} of ${quests.length} done`}
-            href={href("quests")}
+            href={`${href("daily")}/quests`}
           />
           {quests.length === 0 ? (
             <p className="px-5 py-8 text-center text-sm text-cn-p-muted">

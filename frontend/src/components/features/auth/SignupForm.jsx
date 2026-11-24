@@ -76,6 +76,10 @@ export default function SignupForm() {
   if (shouldBlock && !isSubmitting) {
     return (
       <Loader
+        // This page is on the cobalt system, and so is the screen a signed-in
+        // visitor is on their way to — without the tone the hand-off flashes a
+        // cream page and a pine spinner under a cobalt navbar.
+        tone="cobalt"
         label={isAuthenticated ? "Redirecting..." : "Checking Session..."}
       />
     );

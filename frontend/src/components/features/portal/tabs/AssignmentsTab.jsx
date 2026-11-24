@@ -3,258 +3,97 @@
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowLeft,
-  CalendarClock,
-  CheckCircle2,
-  ChevronRight,
-  Clock,
-  ClipboardList,
-  Lock,
-  RefreshCw,
-  RotateCcw,
-} from "lucide-react";
-import { motion } from "motion/react";
+import { AlertCircle, ClipboardList, RefreshCw } from "lucide-react";
 import { useStudentAssignments } from "@/hooks/student/useStudentAssignments";
 import { getStudentEnrollments } from "@/services/studentCoursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
-import { formatDateTime } from "@/lib/adminFormatters";
-import EmptyState from "@/components/ui/EmptyState";
+import { formatDate } from "@/lib/adminFormatters";
 import Loader from "@/components/ui/Loader";
+import Pagination from "@/components/ui/Pagination";
+import { usePaginationAnchor } from "@/hooks/usePaginationAnchor";
+import PortalCard from "../shell/PortalCard";
+import {
+  PortalButton,
+  PortalEmpty,
+  PortalPageHead,
+  PortalPill,
+  PortalTable,
+  PortalTabs,
+  PortalTd,
+  PortalTh,
+  PortalTr,
+} from "../shell/PortalUI";
 import AssignmentDetailModal from "../course-detail/AssignmentDetailModal";
-import CourseworkSummaryCard from "../CourseworkSummaryCard";
 
-const STATUS_STYLES = {
-  DRAFT: "bg-porcelain text-muted border-line",
-  SUBMITTED: "bg-gold/12 text-gold border-gold/25",
-  LATE: "bg-rose-50 text-rose-600 border-rose-100",
-  GRADED: "bg-emerald-50 text-emerald-700 border-emerald-100",
-  RETURNED: "bg-sky/60 text-blue border-blue/20",
-  RESUBMITTED: "bg-gold/12 text-gold border-gold/25",
-};
+// The design's `SP.assignments`: one table of everything across every course,
+// filtered by a strip of status tabs, rather than a grid of course cards to
+// drill into. The Course column is what the old grouping was really for, and a
+// row carries it, so nothing is lost by flattening — while "what do I owe
+// right now" stops being a question you have to open four cards to answer.
+//
+// `?assignmentCourse=<id>` is kept and now means *filter to this course*
+// instead of *open this course's screen*. Nothing in the app links with it
+// (the dashboard links to the bare tab), but it survives a bookmark, and the
+// course filter writes it so the view stays shareable.
 
-const STATUS_ICON = {
-  DRAFT: Clock,
-  SUBMITTED: Clock,
-  LATE: AlertTriangle,
-  GRADED: CheckCircle2,
-  RETURNED: RotateCcw,
-  RESUBMITTED: RefreshCw,
-};
-
-const NOT_SUBMITTED_STYLE = "bg-porcelain text-muted border-line";
-const OVERDUE_STYLE = "bg-rose-50 text-rose-600 border-rose-100";
-const LOCKED_STYLE = "bg-porcelain text-muted border-line";
-
-const SCORE_TONES = {
-  high: { bar: "bg-emerald-500", text: "text-emerald-700" },
-  mid: { bar: "bg-gold", text: "text-gold" },
-  low: { bar: "bg-rose-500", text: "text-rose-600" },
-};
-
-function scoreTone(percentage) {
-  if (percentage >= 70) return SCORE_TONES.high;
-  if (percentage >= 50) return SCORE_TONES.mid;
-  return SCORE_TONES.low;
-}
-
-const STATUS_FILTERS = [
-  { id: "ALL", label: "All" },
-  { id: "PENDING", label: "To Do" },
-  { id: "SUBMITTED", label: "Awaiting Grading" },
-  { id: "GRADED", label: "Graded" },
-];
-
-function sortAssignments(list) {
-  const pending = list.filter((assignment) => !assignment.submission);
-  const submitted = list.filter((assignment) => assignment.submission);
-
-  pending.sort((a, b) => {
-    // Locked-and-unsubmitted assignments aren't actionable yet, so they sort
-    // after every unlocked pending one regardless of due date.
-    if (Boolean(a.is_locked) !== Boolean(b.is_locked)) return a.is_locked ? 1 : -1;
-    return new Date(a.due_date).getTime() - new Date(b.due_date).getTime();
-  });
-  submitted.sort((a, b) => {
-    const at = a.submission.submitted_at
-      ? new Date(a.submission.submitted_at).getTime()
-      : 0;
-    const bt = b.submission.submitted_at
-      ? new Date(b.submission.submitted_at).getTime()
-      : 0;
-    return bt - at;
-  });
-
-  return [...pending, ...submitted];
-}
-
-function StatChip({ label, value, tone = "stone" }) {
-  const toneClasses = {
-    stone: "bg-porcelain border-line text-muted",
-    amber: "bg-gold/12 border-gold/25 text-gold",
-    emerald: "bg-emerald-50 border-emerald-100 text-emerald-700",
-  };
-  return (
-    <div
-      className={`flex flex-col items-center rounded-xl border px-4 py-2.5 min-w-21 ${toneClasses[tone]}`}
-    >
-      <span className="text-base font-serif font-bold">{value}</span>
-      <span className="text-[10px] font-mono uppercase tracking-wider mt-0.5 opacity-80">
-        {label}
-      </span>
-    </div>
-  );
-}
-
-function FilterButton({ active, onClick, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase tracking-wider border transition ${
-        active
-          ? "bg-pine border-pine text-paper"
-          : "bg-paper border-line text-muted hover:border-pine/40 hover:text-pine"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function AssignmentRow({ assignment, onOpen }) {
+// Which tab an assignment belongs in. Deliberately one function: the tab
+// counts, the filtering and the row's own status label must agree, and three
+// copies of these rules is how they stop agreeing.
+//
+// `is_locked` only hides work that has not been handed in — the backend blocks
+// a *new* submission on a locked module (assignments.views.AssignmentSubmitView)
+// and says nothing about one already submitted, so an assignment submitted
+// before its module locked keeps its real status rather than reading "Locked".
+function bucketOf(assignment) {
   const submission = assignment.submission;
-  const hasSubmission = Boolean(submission);
-  const isGraded = hasSubmission && submission.marks !== null;
-  const isOverdue = !hasSubmission && assignment.is_overdue;
-  // Task 18 — the backend only blocks a *new* submission on a locked module
-  // (see assignments.views.AssignmentSubmitView); an assignment already
-  // submitted before the module locked keeps showing its real status rather
-  // than being masked as "locked".
-  const isLocked = Boolean(assignment.is_locked) && !hasSubmission;
-
-  const statusClass = isLocked
-    ? LOCKED_STYLE
-    : hasSubmission
-      ? STATUS_STYLES[submission.status] || STATUS_STYLES.DRAFT
-      : isOverdue
-        ? OVERDUE_STYLE
-        : NOT_SUBMITTED_STYLE;
-  const StatusIcon = isLocked
-    ? Lock
-    : hasSubmission
-      ? STATUS_ICON[submission.status] || ClipboardList
-      : isOverdue
-        ? AlertTriangle
-        : Clock;
-  const statusLabel = isLocked
-    ? "LOCKED"
-    : hasSubmission
-      ? submission.status
-      : isOverdue
-        ? "OVERDUE"
-        : "NOT SUBMITTED";
-  const gradingLabel = isLocked
-    ? assignment.lock_info?.blocking_quiz_title
-      ? `Pass "${assignment.lock_info.blocking_quiz_title}" first`
-      : "Locked — an earlier module isn't complete"
-    : hasSubmission
-      ? isGraded
-        ? "Graded"
-        : "Pending review"
-      : isOverdue
-        ? "Past due"
-        : "Awaiting submission";
-  const tone = isGraded ? scoreTone(submission.percentage) : null;
-
-  return (
-    <button
-      type="button"
-      onClick={isLocked ? undefined : onOpen}
-      disabled={isLocked}
-      title={isLocked ? assignment.lock_info?.reason : undefined}
-      className="group w-full flex items-center gap-3 rounded-xl border transition p-3.5 text-left disabled:cursor-default disabled:opacity-70 border-line bg-paper enabled:hover:border-pine enabled:hover:shadow-[0_8px_24px_-18px_rgba(28,25,23,0.35)]"
-    >
-      <span
-        className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 border ${statusClass}`}
-      >
-        <StatusIcon className="w-4 h-4" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[13px] font-medium truncate text-ink">
-          {assignment.title}
-        </span>
-        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-mono uppercase tracking-wider mt-1 text-muted">
-          {assignment.module ? <span>{assignment.module.title}</span> : null}
-          {hasSubmission && submission.submitted_at ? (
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" />{" "}
-              {formatDateTime(submission.submitted_at)}
-            </span>
-          ) : !hasSubmission ? (
-            <span className="flex items-center gap-1">
-              <CalendarClock className="w-3 h-3" />
-              Due {formatDateTime(assignment.due_date)}
-            </span>
-          ) : null}
-          <span>{gradingLabel}</span>
-        </span>
-      </span>
-      <span className="hidden sm:flex flex-col items-end gap-1.5 shrink-0 w-28">
-        <span
-          className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${statusClass}`}
-        >
-          {statusLabel}
-        </span>
-        {isGraded ? (
-          <span className="flex items-center gap-1.5 w-full">
-            <span className="flex-1 h-1.5 rounded-full overflow-hidden bg-porcelain">
-              <span
-                className={`block h-full rounded-full ${tone.bar}`}
-                style={{
-                  width: `${Math.min(100, Math.max(0, submission.percentage ?? 0))}%`,
-                }}
-              />
-            </span>
-            <span className={`text-xs font-mono font-bold ${tone.text}`}>
-              {submission.marks}/{assignment.total_marks}
-            </span>
-          </span>
-        ) : null}
-      </span>
-      <span className="sm:hidden flex flex-col items-end gap-1 shrink-0">
-        <span
-          className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${statusClass}`}
-        >
-          {statusLabel}
-        </span>
-        {isGraded ? (
-          <span className="text-xs font-mono text-muted">
-            {submission.marks}/{assignment.total_marks}
-            {submission.percentage !== null
-              ? ` · ${submission.percentage}%`
-              : ""}
-          </span>
-        ) : null}
-      </span>
-      {isLocked ? (
-        <span className="w-4 h-4 shrink-0" />
-      ) : (
-        <ChevronRight className="w-4 h-4 transition shrink-0 text-muted group-hover:text-pine" />
-      )}
-    </button>
-  );
+  if (!submission) return assignment.is_locked ? "locked" : "todo";
+  return submission.marks !== null ? "graded" : "submitted";
 }
+
+const STATUS_TONES = {
+  DRAFT: "neutral",
+  SUBMITTED: "blue",
+  LATE: "bad",
+  GRADED: "ok",
+  RETURNED: "blue",
+  RESUBMITTED: "blue",
+};
+
+function statusOf(assignment) {
+  const submission = assignment.submission;
+  if (!submission) {
+    if (assignment.is_locked) return { label: "Locked", tone: "neutral" };
+    return assignment.is_overdue
+      ? { label: "Overdue", tone: "bad" }
+      : { label: "To do", tone: "warn" };
+  }
+  const raw = submission.status || "SUBMITTED";
+  const label = raw.charAt(0) + raw.slice(1).toLowerCase();
+  return { label, tone: STATUS_TONES[raw] ?? "blue" };
+}
+
+// Ten a page, the size every other paginated table in the portal uses. The
+// design's mock shows no pager because its seed data is a handful of rows; a
+// real roster is hundreds, and a tab that renders all of them is a scroll
+// nobody reaches the end of.
+const PAGE_SIZE = 10;
+
+const TABS = [
+  { value: "todo", label: "To do" },
+  { value: "submitted", label: "Submitted" },
+  { value: "graded", label: "Graded" },
+  { value: "locked", label: "Locked" },
+];
 
 export default function AssignmentsTab() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const selectedCourseId = searchParams.get("assignmentCourse");
+  const courseFilter = searchParams.get("assignmentCourse") || "";
+  const [tab, setTab] = useState("todo");
+  const [page, setPage] = useState(1);
+  const [resultsRef, changePage] = usePaginationAnchor(setPage);
   const [detailAssignment, setDetailAssignment] = useState(null);
-  const [statusFilter, setStatusFilter] = useState("ALL");
 
   const {
     data: assignments = [],
@@ -272,309 +111,276 @@ export default function AssignmentsTab() {
     },
   });
 
-  const enrollmentStatusByCourseId = useMemo(() => {
-    const map = new Map();
+  // Submitting is refused for a course whose enrolment is not ACTIVE, which is
+  // the modal's business — but the answer is per course, so it is resolved here
+  // where every row is, and handed down for the row the reader opened.
+  const activeCourseIds = useMemo(() => {
+    const ids = new Set();
     enrollments.forEach((enrollment) => {
-      if (enrollment.course?.id) {
-        map.set(enrollment.course.id, enrollment.status);
+      if (enrollment.course?.id && enrollment.status === "ACTIVE") {
+        ids.add(enrollment.course.id);
       }
     });
-    return map;
+    return ids;
   }, [enrollments]);
 
-  const groupsByCourse = useMemo(() => {
+  // Every course that has assignments, for the filter. Built from the
+  // assignments themselves rather than from enrolments, so a course cannot
+  // appear in the filter and then show an empty table.
+  const courses = useMemo(() => {
     const map = new Map();
     assignments.forEach((assignment) => {
-      const courseId = assignment.course?.id;
-      if (!courseId) return;
-      const group = map.get(courseId) || {
-        course: assignment.course,
-        assignments: [],
-      };
-      group.assignments.push(assignment);
-      map.set(courseId, group);
+      if (assignment.course?.id && !map.has(assignment.course.id)) {
+        map.set(assignment.course.id, assignment.course);
+      }
     });
-    return Array.from(map.values()).map((group) => {
-      const assignmentsSorted = sortAssignments(group.assignments);
-      // Locked-and-unsubmitted assignments stay visible in the list (badged
-      // and disabled — see AssignmentRow) but aren't actually actionable
-      // right now, so they're excluded from the "To Do" count.
-      const pendingCount = assignmentsSorted.filter(
-        (assignment) => !assignment.submission && !assignment.is_locked,
-      ).length;
-      const awaitingCount = assignmentsSorted.filter(
-        (assignment) =>
-          assignment.submission && assignment.submission.marks === null,
-      ).length;
-      const gradedCount = assignmentsSorted.filter(
-        (assignment) =>
-          assignment.submission && assignment.submission.marks !== null,
-      ).length;
-      const percentages = assignmentsSorted
-        .map((assignment) => assignment.submission?.percentage)
-        .filter((value) => value !== null && value !== undefined);
-      const averagePercentage = percentages.length
-        ? Math.round(
-            percentages.reduce((sum, value) => sum + value, 0) /
-              percentages.length,
-          )
-        : null;
-      return {
-        ...group,
-        assignments: assignmentsSorted,
-        pendingCount,
-        awaitingCount,
-        gradedCount,
-        averagePercentage,
-      };
-    });
+    return Array.from(map.values()).sort((a, b) =>
+      (a.title || "").localeCompare(b.title || ""),
+    );
   }, [assignments]);
 
-  const selectedGroup = useMemo(
+  const scoped = useMemo(
     () =>
-      selectedCourseId
-        ? groupsByCourse.find(
-            (item) => String(item.course.id) === String(selectedCourseId),
+      courseFilter
+        ? assignments.filter(
+            (assignment) => String(assignment.course?.id) === courseFilter,
           )
-        : null,
-    [groupsByCourse, selectedCourseId],
+        : assignments,
+    [assignments, courseFilter],
   );
 
-  const canInteractWithSelectedCourse =
-    selectedGroup &&
-    enrollmentStatusByCourseId.get(selectedGroup.course.id) === "ACTIVE";
-
-  const filteredAssignments = useMemo(() => {
-    if (!selectedGroup) return [];
-    if (statusFilter === "PENDING") {
-      return selectedGroup.assignments.filter((a) => !a.submission);
-    }
-    if (statusFilter === "SUBMITTED") {
-      return selectedGroup.assignments.filter(
-        (a) => a.submission && a.submission.marks === null,
-      );
-    }
-    if (statusFilter === "GRADED") {
-      return selectedGroup.assignments.filter(
-        (a) => a.submission && a.submission.marks !== null,
-      );
-    }
-    return selectedGroup.assignments;
-  }, [selectedGroup, statusFilter]);
-
-  function openCourse(courseId) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("assignmentCourse", String(courseId));
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    setStatusFilter("ALL");
-  }
-
-  function closeCourse() {
-    const params = new URLSearchParams(searchParams.toString());
-    params.delete("assignmentCourse");
-    const query = params.toString();
-    router.replace(query ? `${pathname}?${query}` : pathname, {
-      scroll: false,
+  const counts = useMemo(() => {
+    const tally = { todo: 0, submitted: 0, graded: 0, locked: 0 };
+    scoped.forEach((assignment) => {
+      tally[bucketOf(assignment)] += 1;
     });
+    return tally;
+  }, [scoped]);
+
+  // Soonest first, which is the order the question "what is due?" is asked in.
+  // A missing due date sorts last rather than to 1970.
+  const rows = useMemo(
+    () =>
+      scoped
+        .filter((assignment) => bucketOf(assignment) === tab)
+        .sort((a, b) => {
+          const at = a.due_date ? new Date(a.due_date).getTime() : Infinity;
+          const bt = b.due_date ? new Date(b.due_date).getTime() : Infinity;
+          return at - bt;
+        }),
+    [scoped, tab],
+  );
+
+  const totalPages = Math.max(1, Math.ceil(rows.length / PAGE_SIZE));
+  // Derived, never stored: a filter can shrink the list under the reader, and
+  // clamping here means the table is always right on the first render rather
+  // than showing an empty page and then correcting itself.
+  const safePage = Math.min(page, totalPages);
+  const pageRows = rows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  function changeTab(value) {
+    setTab(value);
+    setPage(1);
   }
 
-  let content;
+  function setCourseFilter(value) {
+    setPage(1);
+    const params = new URLSearchParams(searchParams.toString());
+    if (value) params.set("assignmentCourse", value);
+    else params.delete("assignmentCourse");
+    const query = params.toString();
+    router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  }
 
   if (isLoading) {
-    content = (
-      <div
-        className="flex min-h-[50vh] items-center justify-center"
-        aria-busy="true"
-      >
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
         <Loader fullScreen={false} label="Loading your assignments..." />
       </div>
     );
-  } else if (isError) {
-    content = (
-      <div className="border rounded-2xl p-8 text-center max-w-lg mx-auto border-line bg-paper">
-        <div className="w-12 h-12 border rounded-2xl flex items-center justify-center mx-auto mb-4 bg-rose-50 border-rose-100 text-rose-600">
-          <AlertCircle className="w-6 h-6" />
-        </div>
-        <h2 className="text-xl font-serif font-bold mb-2 text-ink">
-          Failed to Load Assignments
+  }
+
+  if (isError) {
+    return (
+      <PortalCard className="mx-auto max-w-lg p-10 text-center">
+        <span className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-cn-p-sm bg-cn-p-bad-bg text-cn-p-bad">
+          <AlertCircle className="h-6 w-6" />
+        </span>
+        <h2 className="mb-2 text-xl font-bold tracking-[-0.015em] text-cn-p-ink">
+          Failed to load assignments
         </h2>
-        <p className="text-sm font-light mb-6 text-muted">
+        <p className="mb-6 text-sm text-cn-p-ink-2">
           {getApiErrorMessage(error, "Unable to load your assignments.")}
         </p>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
-        >
-          <RefreshCw className="w-4 h-4" />
+        <PortalButton onClick={() => refetch()}>
+          <RefreshCw className="h-4 w-4" />
           Retry
-        </button>
-      </div>
-    );
-  } else if (assignments.length === 0) {
-    content = (
-      <div className="rounded-2xl border border-dashed border-line bg-paper/70">
-        <EmptyState
-          icon={ClipboardList}
-          label="No assignments yet"
-          description="Once your instructors publish assignments in your enrolled courses, they will appear here."
-          size="lg"
-        />
-      </div>
-    );
-  } else if (selectedCourseId) {
-    if (!selectedGroup) {
-      content = (
-        <div className="rounded-2xl border border-dashed p-10 text-center space-y-4 border-line bg-paper/70">
-          <p className="text-sm text-muted">
-            We couldn&apos;t find assignments for that course.
-          </p>
-          <button
-            type="button"
-            onClick={closeCourse}
-            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-mono uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
-          >
-            Back to Assignments
-          </button>
-        </div>
-      );
-    } else {
-      const { pendingCount, awaitingCount, gradedCount } = selectedGroup;
-
-      content = (
-        <div className="space-y-5">
-          <button
-            type="button"
-            onClick={closeCourse}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 border text-xs font-mono uppercase tracking-wider rounded-xl transition border-line hover:border-pine hover:text-pine text-muted"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to Assignments
-          </button>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h2 className="font-serif font-bold text-2xl text-ink">
-                {selectedGroup.course.title}
-              </h2>
-              <p className="text-sm font-light mt-1 text-muted">
-                {selectedGroup.assignments.length} assignment
-                {selectedGroup.assignments.length === 1 ? "" : "s"} total
-                {!canInteractWithSelectedCourse
-                  ? " · enrollment isn't active, submissions are disabled"
-                  : ""}
-              </p>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <StatChip
-                label="To do"
-                value={pendingCount}
-                tone={pendingCount > 0 ? "amber" : "stone"}
-              />
-              <StatChip label="Graded" value={gradedCount} tone="emerald" />
-              <StatChip
-                label="Avg score"
-                value={
-                  selectedGroup.averagePercentage === null
-                    ? "—"
-                    : `${selectedGroup.averagePercentage}%`
-                }
-                tone="amber"
-              />
-            </div>
-          </div>
-          <div className="flex items-center gap-2 flex-wrap">
-            {STATUS_FILTERS.map((filter) => {
-              const count =
-                filter.id === "ALL"
-                  ? selectedGroup.assignments.length
-                  : filter.id === "PENDING"
-                    ? pendingCount
-                    : filter.id === "SUBMITTED"
-                      ? awaitingCount
-                      : gradedCount;
-              return (
-                <FilterButton
-                  key={filter.id}
-                  active={statusFilter === filter.id}
-                  onClick={() => setStatusFilter(filter.id)}
-                >
-                  {filter.label} ({count})
-                </FilterButton>
-              );
-            })}
-          </div>
-          {filteredAssignments.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-line bg-paper/70">
-              <EmptyState
-                icon={ClipboardList}
-                label="Nothing here"
-                description="No assignments match this filter."
-                compact
-                size="lg"
-              />
-            </div>
-          ) : (
-            <div className="space-y-2.5">
-              {filteredAssignments.map((assignment) => (
-                <AssignmentRow
-                  key={assignment.id}
-                  assignment={assignment}
-                  onOpen={() => setDetailAssignment(assignment)}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      );
-    }
-  } else {
-    content = (
-      <div className="space-y-6">
-        <div>
-          <p className="text-[11px] font-mono uppercase tracking-[0.2em] mb-2 text-pine/80">
-            Coursework
-          </p>
-          <h2 className="font-serif font-bold text-2xl sm:text-3xl text-ink">
-            Your assignments
-          </h2>
-          <p className="text-sm font-light mt-2 text-muted">
-            Grouped by course — open a course to submit pending work or review
-            past submissions, marks, and feedback.
-          </p>
-        </div>
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
-        >
-          {groupsByCourse.map((group) => (
-            <CourseworkSummaryCard
-              key={group.course.id}
-              courseTitle={group.course.title}
-              accent="amber"
-              itemLabel="assignment"
-              totalCount={group.assignments.length}
-              pendingCount={group.pendingCount}
-              completedCount={group.gradedCount}
-              completedLabel="Graded"
-              averagePercentage={group.averagePercentage}
-              onOpen={() => openCourse(group.course.id)}
-            />
-          ))}
-        </motion.div>
-      </div>
+        </PortalButton>
+      </PortalCard>
     );
   }
 
   return (
-    <>
-      {content}
+    // `grid-cols-[minmax(0,1fr)]`, not a bare `grid`: a grid item defaults to
+    // `min-width:auto` and so refuses to shrink below its content, and the
+    // table below is wider than a phone. Left alone the column grew to the
+    // table's intrinsic width and took the whole page with it — the heading
+    // ran off the right edge and the screen scrolled sideways instead of the
+    // table scrolling inside its own wrapper.
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Assignments"
+        subtitle="Everything you need to hand in, and everything you already have."
+      >
+        {courses.length > 1 && (
+          <label className="flex items-center gap-2 text-sm text-cn-p-ink-2">
+            <span className="sr-only">Filter by course</span>
+            <select
+              value={courseFilter}
+              onChange={(event) => setCourseFilter(event.target.value)}
+              // A <select> sizes itself to its widest option, and course
+              // titles here run to sixty characters — left alone it stretched
+              // past half the page and shoved itself onto a line of its own.
+              // The open list still shows every title in full.
+              className="h-11 max-w-[240px] truncate rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card px-3 text-sm font-semibold text-cn-p-ink transition-[border-color] duration-150 hover:border-cn-p-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cn-p-accent"
+            >
+              <option value="">All courses</option>
+              {courses.map((course) => (
+                <option key={course.id} value={String(course.id)}>
+                  {course.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </PortalPageHead>
+
+      {assignments.length === 0 ? (
+        <PortalCard>
+          <PortalEmpty
+            icon={ClipboardList}
+            title="No assignments yet"
+            text="Once your instructors publish assignments in your enrolled courses, they will appear here."
+          />
+        </PortalCard>
+      ) : (
+        <PortalCard>
+          <div ref={resultsRef} className="scroll-mt-24 px-4">
+            <PortalTabs
+              ariaLabel="Filter assignments by status"
+              options={TABS.map((item) => ({ ...item, count: counts[item.value] }))}
+              value={tab}
+              onChange={changeTab}
+            />
+          </div>
+
+          {rows.length === 0 ? (
+            <PortalEmpty
+              icon={ClipboardList}
+              title="Nothing here"
+              text="Assignments move between these tabs as you submit them and they get graded."
+            />
+          ) : (
+            <PortalTable>
+              <thead>
+                <tr>
+                  <PortalTh>Assignment</PortalTh>
+                  <PortalTh>Course</PortalTh>
+                  <PortalTh>Due</PortalTh>
+                  <PortalTh>Status</PortalTh>
+                  <PortalTh align="right">
+                    {tab === "graded" ? "Grade" : "Marks"}
+                  </PortalTh>
+                </tr>
+              </thead>
+              <tbody>
+                {pageRows.map((assignment) => {
+                  const status = statusOf(assignment);
+                  const submission = assignment.submission;
+                  const isGraded = Boolean(submission) && submission.marks !== null;
+                  // A locked assignment has nothing to open: the modal's only
+                  // actions are submitting and reading a grade, and it has
+                  // neither. The row says why instead.
+                  const isLocked = Boolean(assignment.is_locked) && !submission;
+                  return (
+                    <PortalTr
+                      key={assignment.id}
+                      disabled={isLocked}
+                      title={isLocked ? assignment.lock_info?.reason : undefined}
+                      onOpen={
+                        isLocked ? undefined : () => setDetailAssignment(assignment)
+                      }
+                    >
+                      <PortalTd>
+                        <b className="font-semibold text-cn-p-ink">
+                          {assignment.title}
+                        </b>
+                        {assignment.module?.title && (
+                          <span className="mt-0.5 block text-[13px] text-cn-p-muted">
+                            {assignment.module.title}
+                          </span>
+                        )}
+                      </PortalTd>
+                      <PortalTd className="text-sm text-cn-p-ink-2">
+                        {assignment.course?.title || "—"}
+                      </PortalTd>
+                      <PortalTd className="text-sm text-cn-p-ink-2">
+                        {/* A date, not a timestamp: the design prints "Nov 12"
+                            here, and a column of "10/28/2026, 5:13 PM" is
+                            unreadable at a glance. The modal keeps the time,
+                            which is where it actually matters. */}
+                        {formatDate(assignment.due_date)}
+                      </PortalTd>
+                      <PortalTd>
+                        <PortalPill tone={status.tone}>{status.label}</PortalPill>
+                      </PortalTd>
+                      <PortalTd align="right" numeric className="text-sm">
+                        {isGraded ? (
+                          <>
+                            <b className="font-bold text-cn-p-ink">
+                              {submission.marks}
+                            </b>
+                            <span className="text-cn-p-ink-2">
+                              {" "}
+                              / {assignment.total_marks}
+                            </span>
+                          </>
+                        ) : (
+                          <span className="text-cn-p-ink-2">
+                            {assignment.total_marks}
+                          </span>
+                        )}
+                      </PortalTd>
+                    </PortalTr>
+                  );
+                })}
+              </tbody>
+            </PortalTable>
+          )}
+
+          {rows.length > 0 && (
+            <div className="px-5 pb-4">
+              <Pagination
+                size="lg"
+                tone="cobalt"
+                page={safePage}
+                totalPages={totalPages}
+                onPageChange={changePage}
+                totalLabel={`${rows.length} assignment${rows.length === 1 ? "" : "s"}`}
+              />
+            </div>
+          )}
+        </PortalCard>
+      )}
+
       <AssignmentDetailModal
         assignment={detailAssignment}
-        canInteract={Boolean(canInteractWithSelectedCourse)}
+        canInteract={
+          Boolean(detailAssignment) &&
+          activeCourseIds.has(detailAssignment.course?.id)
+        }
         onClose={() => setDetailAssignment(null)}
       />
-    </>
+    </div>
   );
 }

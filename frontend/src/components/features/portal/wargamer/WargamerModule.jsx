@@ -23,6 +23,7 @@ import Loader from "@/components/ui/Loader";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import ModuleIntroPanel from "./ModuleIntroPanel";
 import AbpMethodPanel from "./AbpMethodPanel";
+import PortalCard from "../shell/PortalCard";
 import ScenarioPicker from "./ScenarioPicker";
 import RolePlayStage from "./RolePlayStage";
 import EvaluationReport from "./EvaluationReport";
@@ -30,7 +31,6 @@ import EvaluationReport from "./EvaluationReport";
 // Once a student has been through the briefing and the method, dropping them
 // back on the intro screen every visit is friction, not teaching — so that is
 // remembered per browser, the same way the Daily Drill reminder is.
-const INTRO_SEEN_STORAGE_KEY = "ttl:wargamerIntroSeen";
 
 const STEPS = { INTRO: "intro", METHOD: "method", SCENARIOS: "scenarios", SESSION: "session" };
 
@@ -43,10 +43,14 @@ const STEPS = { INTRO: "intro", METHOD: "method", SCENARIOS: "scenarios", SESSIO
  * rather than stored alongside it — a scored session can only ever render as
  * a report card, so the two can't disagree.
  */
-export default function WargamerModule({ initialSessionId = null, onSessionOpened }) {
+export default function WargamerModule({
+  initialSessionId = null,
+  onSessionOpened,
+  onImmersiveChange,
+}) {
   const queryClient = useQueryClient();
 
-  const [step, setStep] = useState(STEPS.INTRO);
+  const [step, setStep] = useState(STEPS.SCENARIOS);
   const [activeSessionId, setActiveSessionId] = useState(null);
   const [startingScenarioId, setStartingScenarioId] = useState(null);
   // A failed reply, handed back to the composer. The token is what makes a
@@ -55,16 +59,16 @@ export default function WargamerModule({ initialSessionId = null, onSessionOpene
   const [isQuitOpen, setIsQuitOpen] = useState(false);
 
   const { data: catalog, isLoading: isLoadingCatalog } = useRolePlayScenarios();
-  const { data: session, isLoading: isLoadingSession } = useRolePlaySession(activeSessionId);
 
+  // A live conversation, the method primer and the report card each own the
+  // whole page — "Past runs" beside a role-play in progress is a distraction
+  // from the one thing the student is meant to be doing. The browse state is
+  // the only one that shares the page, so the parent is told which it is.
+  const isImmersive = step !== STEPS.SCENARIOS;
   useEffect(() => {
-    try {
-      if (window.localStorage.getItem(INTRO_SEEN_STORAGE_KEY)) setStep(STEPS.SCENARIOS);
-    } catch {
-      // localStorage unavailable (private browsing, etc.) — fall through and
-      // show the intro, which is the safe default rather than a failure.
-    }
-  }, []);
+    onImmersiveChange?.(isImmersive);
+  }, [isImmersive, onImmersiveChange]);
+  const { data: session, isLoading: isLoadingSession } = useRolePlaySession(activeSessionId);
 
   // Opening a run from the history table (a sibling section of this tab)
   // hands the id down here rather than duplicating the session view there.
@@ -74,14 +78,6 @@ export default function WargamerModule({ initialSessionId = null, onSessionOpene
     setStep(STEPS.SESSION);
     onSessionOpened?.();
   }, [initialSessionId, onSessionOpened]);
-
-  const markIntroSeen = useCallback(() => {
-    try {
-      window.localStorage.setItem(INTRO_SEEN_STORAGE_KEY, "1");
-    } catch {
-      // Nothing to do — the student just sees the intro again next visit.
-    }
-  }, []);
 
   const cacheSession = useCallback(
     (updated) => {
@@ -195,34 +191,34 @@ export default function WargamerModule({ initialSessionId = null, onSessionOpene
 
   if (isLoadingCatalog) {
     return (
-      <div className="bg-paper border border-line rounded-2xl p-10">
-        <Loader fullScreen={false} label="Loading your training module..." />
-      </div>
+      <PortalCard className="p-10">
+        <Loader fullScreen={false} tone="cobalt" label="Loading your training module..." />
+      </PortalCard>
     );
   }
 
   if (step === STEPS.SESSION) {
     if (isLoadingSession && !session) {
       return (
-        <div className="bg-paper border border-line rounded-2xl p-10">
-          <Loader fullScreen={false} label="Opening the conversation..." />
-        </div>
+        <PortalCard className="p-10">
+          <Loader fullScreen={false} tone="cobalt" label="Opening the conversation..." />
+        </PortalCard>
       );
     }
 
     if (!session) {
       return (
-        <div className="bg-paper border border-line rounded-2xl p-10 flex flex-col items-center gap-3 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-rose/35 border border-clay/25 text-clay flex items-center justify-center">
+        <div className="bg-cn-p-card border border-cn-p-line rounded-2xl p-10 flex flex-col items-center gap-3 text-center">
+          <div className="w-12 h-12 rounded-2xl bg-cn-p-bad-bg border border-cn-p-bad-bg text-cn-p-bad flex items-center justify-center">
             <AlertCircle className="w-5 h-5" />
           </div>
-          <h3 className="text-lg font-serif font-light text-ink">
+          <h3 className="text-lg font-light text-cn-p-ink">
             We couldn&apos;t open that conversation
           </h3>
           <button
             type="button"
             onClick={backToScenarios}
-            className="mt-1 inline-flex items-center gap-2 px-4 py-2 bg-pine hover:bg-moss text-paper font-bold font-mono text-xs uppercase tracking-wider rounded-lg transition cursor-pointer"
+            className="mt-1 inline-flex items-center gap-2 px-4 py-2 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white font-bold tabular-nums text-xs  rounded-lg transition cursor-pointer"
           >
             <RotateCcw className="w-3.5 h-3.5" />
             Back to the situations
@@ -275,7 +271,6 @@ export default function WargamerModule({ initialSessionId = null, onSessionOpene
       <AbpMethodPanel
         onBack={() => setStep(STEPS.INTRO)}
         onContinue={() => {
-          markIntroSeen();
           setStep(STEPS.SCENARIOS);
         }}
       />
@@ -286,10 +281,9 @@ export default function WargamerModule({ initialSessionId = null, onSessionOpene
     return (
       <ScenarioPicker
         scenarios={catalog?.scenarios || []}
-        stats={catalog?.stats}
-        onBack={() => setStep(STEPS.METHOD)}
         onStart={handleStart}
         startingScenarioId={startingScenarioId}
+        onShowBriefing={() => setStep(STEPS.INTRO)}
       />
     );
   }

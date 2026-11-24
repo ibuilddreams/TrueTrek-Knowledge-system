@@ -12,12 +12,12 @@ export default function MessageReactions({ reactions, onToggle, isMine }) {
           onClick={() => onToggle(reaction.emoji)}
           className={`inline-flex items-center gap-1 px-1.5 py-0.5 rounded-full text-[11px] border transition cursor-pointer ${
             reaction.reacted_by_me
-              ? "bg-amber-50 border-amber-300 text-amber-800"
-              : "bg-stone-50 border-stone-200 text-stone-600 hover:bg-stone-100"
+              ? "bg-cn-p-soft border-cn-p-accent-soft text-cn-p-soft-ink"
+              : "bg-cn-p-page border-cn-p-line-2 text-cn-p-ink-2 hover:bg-cn-p-page"
           }`}
         >
           <span>{reaction.emoji}</span>
-          <span className="font-mono">{reaction.count}</span>
+          <span className="tabular-nums">{reaction.count}</span>
         </button>
       ))}
     </div>

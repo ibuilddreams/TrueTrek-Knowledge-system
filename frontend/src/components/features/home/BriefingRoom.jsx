@@ -83,7 +83,9 @@ export default function BriefingRoom() {
           onPlay={() => setIsPlaying(true)}
           onPause={() => setIsPlaying(false)}
           onEnded={() => setIsPlaying(false)}
-          onTimeUpdate={(event) => setCurrentTime(event.currentTarget.currentTime)}
+          onTimeUpdate={(event) =>
+            setCurrentTime(event.currentTarget.currentTime)
+          }
           onClick={() => {
             const video = videoRef.current;
             if (!video) return;
@@ -190,7 +192,9 @@ export default function BriefingRoom() {
                         : "border-cn-rule-strong bg-white text-cn-ink-2"
                     }`}
                   >
-                    <span className={isCurrent ? "hidden" : "group-hover:hidden"}>
+                    <span
+                      className={isCurrent ? "hidden" : "group-hover:hidden"}
+                    >
                       {index + 1}
                     </span>
                     <svg
@@ -203,7 +207,9 @@ export default function BriefingRoom() {
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       aria-hidden="true"
-                      className={isCurrent ? "block" : "hidden group-hover:block"}
+                      className={
+                        isCurrent ? "block" : "hidden group-hover:block"
+                      }
                     >
                       <path d="M7 4l13 8-13 8z" />
                     </svg>
@@ -236,7 +242,9 @@ export default function BriefingRoom() {
             className="h-10 w-10 shrink-0 rounded-full object-cover shadow-[0_0_0_2px_var(--color-cn-paper),0_0_0_3px_var(--color-cn-rule)]"
           />
           <span>
-            <small className="block text-cn-xs text-cn-muted">Narrated by</small>
+            <small className="block text-cn-xs text-cn-muted">
+              Narrated by
+            </small>
             <b className="text-cn-ink">Marcus Vance Sr.</b>, founder
           </span>
         </div>

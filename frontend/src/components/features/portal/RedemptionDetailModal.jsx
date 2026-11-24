@@ -9,8 +9,8 @@ function InfoRow({ label, value }) {
   if (!value) return null;
   return (
     <div className="flex items-center justify-between text-sm py-1.5">
-      <span className="text-muted font-light">{label}</span>
-      <span className="text-ink font-medium text-right">{value}</span>
+      <span className="text-cn-p-ink-2 font-light">{label}</span>
+      <span className="text-cn-p-ink font-medium text-right">{value}</span>
     </div>
   );
 }
@@ -22,47 +22,47 @@ export default function RedemptionDetailModal({ isOpen, onClose, redemption }) {
   const status = redemption.status;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} icon={Gift} title={redemption.reward?.name} maxWidth="max-w-md">
+    <Modal isOpen={isOpen} onClose={onClose} variant="cobalt" icon={Gift} title={redemption.reward?.name} maxWidth="max-w-md">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <span className="font-mono font-bold text-ink">{redemption.points_cost?.toLocaleString()} pts</span>
+          <span className="font-bold text-cn-p-ink">{redemption.points_cost?.toLocaleString()} pts</span>
           <StatusBadge size="lg" status={status} />
         </div>
 
         {redemption.student_note && (
-          <div className="bg-porcelain border border-line rounded-xl p-3">
-            <p className="text-[11px] font-mono uppercase tracking-wider text-muted font-semibold mb-1">
+          <div className="bg-cn-p-page border border-cn-p-line rounded-cn-p-sm p-3">
+            <p className="text-[11px]  text-cn-p-ink-2 font-semibold mb-1">
               Your note
             </p>
-            <p className="text-sm text-muted">{redemption.student_note}</p>
+            <p className="text-sm text-cn-p-ink-2">{redemption.student_note}</p>
           </div>
         )}
 
         {status === "PENDING" && (
-          <p className="text-sm text-muted font-light">Your redemption is waiting for admin approval.</p>
+          <p className="text-sm text-cn-p-ink-2 font-light">Your redemption is waiting for admin approval.</p>
         )}
 
         {status === "APPROVED" && (
-          <p className="text-sm text-muted font-light">
+          <p className="text-sm text-cn-p-ink-2 font-light">
             Your reward has been approved and is awaiting fulfillment.
           </p>
         )}
 
         {status === "SCHEDULED" && fulfillment && (
-          <div className="bg-gold/12 border border-gold/25 rounded-xl p-4 space-y-1">
-            <div className="flex items-center gap-2 text-sm font-semibold text-ink">
+          <div className="rounded-cn-p-sm bg-cn-p-warn-bg p-4 space-y-1">
+            <div className="flex items-center gap-2 text-sm font-semibold text-cn-p-ink">
               <Calendar className="w-4 h-4" />
               {formatPlainDate(fulfillment.scheduled_date)}
             </div>
             {fulfillment.start_time && (
-              <div className="flex items-center gap-2 text-sm text-muted">
+              <div className="flex items-center gap-2 text-sm text-cn-p-ink-2">
                 <Clock className="w-4 h-4" />
                 {formatPlainTime(fulfillment.start_time)}
                 {fulfillment.end_time ? ` – ${formatPlainTime(fulfillment.end_time)}` : ""}
               </div>
             )}
             {fulfillment.mentor && (
-              <div className="flex items-center gap-2 text-sm text-muted">
+              <div className="flex items-center gap-2 text-sm text-cn-p-ink-2">
                 <User className="w-4 h-4" />
                 {fulfillment.mentor.name}
               </div>
@@ -72,7 +72,7 @@ export default function RedemptionDetailModal({ isOpen, onClose, redemption }) {
                 href={fulfillment.meeting_url}
                 target="_blank"
                 rel="noreferrer"
-                className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-pine hover:bg-moss text-paper text-xs font-semibold font-mono uppercase tracking-wider rounded-lg transition"
+                className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-xs font-semibold  rounded-lg transition"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 Join Session
@@ -82,30 +82,30 @@ export default function RedemptionDetailModal({ isOpen, onClose, redemption }) {
         )}
 
         {status === "READY" && (
-          <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 space-y-2">
+          <div className="bg-emerald-50 border border-emerald-100 rounded-cn-p-sm p-4 space-y-2">
             <p className="text-sm font-semibold text-emerald-800">Your reward is ready to use.</p>
-            {fulfillment?.notes && <p className="text-sm text-emerald-700 font-mono">{fulfillment.notes}</p>}
+            {fulfillment?.notes && <p className="text-sm text-cn-p-ok">{fulfillment.notes}</p>}
           </div>
         )}
 
         {status === "COMPLETED" && (
-          <div className="flex items-center gap-2 text-sm text-emerald-700 bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-sm text-cn-p-ok bg-emerald-50 border border-emerald-100 rounded-cn-p-sm p-4">
             <CheckCircle2 className="w-4 h-4 shrink-0" />
             Reward successfully fulfilled.
           </div>
         )}
 
         {status === "CANCELLED" && (
-          <div className="flex items-start gap-2 text-sm text-muted bg-porcelain border border-line rounded-xl p-4">
+          <div className="flex items-start gap-2 text-sm text-cn-p-ink-2 bg-cn-p-page border border-cn-p-line rounded-cn-p-sm p-4">
             <XCircle className="w-4 h-4 shrink-0 mt-0.5 text-rose-500" />
             <div>
               {redemption.cancellation_reason && <p className="mb-1">Reason: {redemption.cancellation_reason}</p>}
-              <p className="font-semibold text-emerald-700">{redemption.points_cost?.toLocaleString()} points refunded.</p>
+              <p className="font-semibold text-cn-p-ok">{redemption.points_cost?.toLocaleString()} points refunded.</p>
             </div>
           </div>
         )}
 
-        <div className="border-t border-line pt-3">
+        <div className="border-t border-cn-p-line pt-3">
           <InfoRow label="Redeemed" value={formatDateTime(redemption.created_at)} />
         </div>
       </div>

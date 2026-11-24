@@ -1,9 +1,9 @@
 "use client";
 
 const SEVERITY_TONE = {
-  HIGH: "bg-rose/35 text-clay border-clay/25",
-  MEDIUM: "bg-gold/12 text-gold border-gold/25",
-  LOW: "bg-porcelain text-muted border-line",
+  HIGH: "bg-cn-p-bad-bg text-cn-p-bad border-transparent",
+  MEDIUM: "bg-cn-p-warn-bg text-cn-p-warn border-transparent",
+  LOW: "bg-cn-p-page text-cn-p-ink-2 border-cn-p-line",
 };
 
 export default function ReviewFindingList({
@@ -15,13 +15,13 @@ export default function ReviewFindingList({
   numbered = false,
 }) {
   const accent = {
-    positive: "bg-sage/40 text-pine border-pine/20",
-    negative: "bg-rose/35 text-clay border-clay/20",
-    neutral: "bg-gold/12 text-gold border-gold/25",
+    positive: "bg-cn-p-soft text-cn-p-accent border-cn-p-accent-soft",
+    negative: "bg-cn-p-bad-bg text-cn-p-bad border-transparent",
+    neutral: "bg-cn-p-warn-bg text-cn-p-warn border-transparent",
   }[tone];
 
   return (
-    <div className="bg-paper border border-line rounded-2xl shadow-sm p-5">
+    <div className="bg-cn-p-card border border-cn-p-line rounded-2xl shadow-sm p-5">
       <div className="flex items-center gap-3 mb-4">
         {Icon && (
           <div
@@ -30,30 +30,30 @@ export default function ReviewFindingList({
             <Icon className="w-4 h-4" />
           </div>
         )}
-        <h3 className="text-sm font-serif font-bold text-ink">{title}</h3>
-        <span className="ml-auto text-[11px] font-mono text-muted">{findings.length}</span>
+        <h3 className="text-sm font-bold text-cn-p-ink">{title}</h3>
+        <span className="ml-auto text-[11px] tabular-nums text-cn-p-ink-2">{findings.length}</span>
       </div>
 
       {findings.length === 0 ? (
-        <p className="text-xs text-muted font-light">{emptyLabel}</p>
+        <p className="text-xs text-cn-p-ink-2 font-light">{emptyLabel}</p>
       ) : (
         <ul className="space-y-3.5">
           {findings.map((finding, index) => (
             <li
               key={`${finding.title}-${index}`}
-              className="flex gap-3 pb-3.5 last:pb-0 border-b last:border-b-0 border-line"
+              className="flex gap-3 pb-3.5 last:pb-0 border-b last:border-b-0 border-cn-p-line"
             >
               {numbered && (
-                <span className="w-6 h-6 shrink-0 rounded-lg bg-pine text-paper text-[11px] font-mono font-bold flex items-center justify-center">
+                <span className="w-6 h-6 shrink-0 rounded-lg bg-cn-p-accent text-white text-[11px] tabular-nums font-bold flex items-center justify-center">
                   {index + 1}
                 </span>
               )}
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-sm font-semibold text-ink leading-snug">{finding.title}</p>
+                  <p className="text-sm font-semibold text-cn-p-ink leading-snug">{finding.title}</p>
                   {finding.severity && (
                     <span
-                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest border shrink-0 ${
+                      className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border shrink-0 ${
                         SEVERITY_TONE[finding.severity] || SEVERITY_TONE.MEDIUM
                       }`}
                     >
@@ -62,7 +62,7 @@ export default function ReviewFindingList({
                   )}
                 </div>
                 {finding.detail && finding.detail !== finding.title && (
-                  <p className="text-xs text-muted font-light mt-1 leading-relaxed">
+                  <p className="text-xs text-cn-p-ink-2 font-light mt-1 leading-relaxed">
                     {finding.detail}
                   </p>
                 )}

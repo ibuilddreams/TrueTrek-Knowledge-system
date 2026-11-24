@@ -29,7 +29,7 @@ export default function SessionActionButton({
   const padWide = size === "sm" ? "px-3.5 py-1.5" : "px-5 py-2";
   const base = `inline-flex items-center gap-1.5 ${
     size === "sm" ? "text-[11px]" : "text-xs"
-  } font-semibold font-mono uppercase tracking-wider rounded-lg transition`;
+  } font-semibold font-semibold rounded-lg transition`;
 
   if (isEnded || isCancelled) {
     if (session.recording_url) {
@@ -38,7 +38,7 @@ export default function SessionActionButton({
           href={session.recording_url}
           target="_blank"
           rel="noopener noreferrer"
-          className={`${base} ${pad} border border-line text-ink hover:bg-porcelain`}
+          className={`${base} ${pad} border border-cn-p-line text-cn-p-ink hover:bg-cn-p-page`}
         >
           <PlayCircle className="w-3.5 h-3.5" />
           Recording
@@ -53,7 +53,7 @@ export default function SessionActionButton({
         <button
           type="button"
           onClick={() => onOpenNotes?.(session)}
-          className={`${base} ${pad} border border-line text-ink hover:bg-porcelain cursor-pointer`}
+          className={`${base} ${pad} border border-cn-p-line text-cn-p-ink hover:bg-cn-p-page cursor-pointer`}
         >
           <NotebookPen className="w-3.5 h-3.5" />
           Notes
@@ -61,7 +61,7 @@ export default function SessionActionButton({
       );
     }
     return (
-      <span className="text-[11px] font-mono uppercase tracking-wider text-muted">
+      <span className="text-[11px] font-semibold text-cn-p-ink-2">
         {isCancelled ? "Cancelled" : "No recording"}
       </span>
     );
@@ -73,7 +73,7 @@ export default function SessionActionButton({
   // spot" here would be nonsense.
   if (isLive && !session.can_join) {
     return (
-      <span className="text-[11px] font-mono uppercase tracking-wider text-clay">
+      <span className="text-[11px] font-semibold text-cn-p-bad">
         {session.is_hosted_here ? "Room unavailable" : "Link coming soon"}
       </span>
     );
@@ -85,7 +85,7 @@ export default function SessionActionButton({
         type="button"
         onClick={() => onJoin?.(session)}
         disabled={isBusy}
-        className={`${base} ${padWide} bg-clay hover:bg-clay/90 text-paper shadow-sm disabled:opacity-50 cursor-pointer`}
+        className={`${base} ${padWide} bg-cn-p-bad hover:bg-cn-p-bad text-white shadow-sm disabled:opacity-50 cursor-pointer`}
       >
         <Radio className="w-3.5 h-3.5" />
         {session.is_hosted_here ? "Join Room" : "Join Live"}
@@ -99,7 +99,7 @@ export default function SessionActionButton({
         type="button"
         onClick={() => onCancelRsvp?.(session)}
         disabled={isBusy}
-        className={`${base} ${pad} border border-line text-muted hover:text-ink hover:bg-porcelain disabled:opacity-50 cursor-pointer`}
+        className={`${base} ${pad} border border-cn-p-line text-cn-p-ink-2 hover:text-cn-p-ink hover:bg-cn-p-page disabled:opacity-50 cursor-pointer`}
       >
         Cancel RSVP
       </button>
@@ -113,8 +113,8 @@ export default function SessionActionButton({
       disabled={isBusy || isFull}
       className={`${base} ${padWide} shadow-sm ${
         isFull
-          ? "bg-porcelain text-muted cursor-not-allowed"
-          : "bg-pine hover:bg-moss text-paper cursor-pointer disabled:opacity-50"
+          ? "bg-cn-p-page text-cn-p-ink-2 cursor-not-allowed"
+          : "bg-cn-p-accent hover:bg-cn-p-accent-hover text-white cursor-pointer disabled:opacity-50"
       }`}
     >
       <CalendarCheck className="w-3.5 h-3.5" />

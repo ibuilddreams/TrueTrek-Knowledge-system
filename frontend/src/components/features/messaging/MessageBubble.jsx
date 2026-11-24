@@ -67,7 +67,7 @@ export default function MessageBubble({ conversationId, message, isBeingEdited, 
   if (message.is_deleted) {
     return (
       <div data-message-id={message.id} className={`flex ${isMine ? "justify-end" : "justify-start"}`}>
-        <div className="max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm italic text-stone-400 bg-stone-50 border border-stone-100">
+        <div className="max-w-[75%] rounded-2xl px-3.5 py-2.5 text-sm italic text-cn-p-muted bg-cn-p-page border border-cn-p-line">
           This message was deleted
         </div>
       </div>
@@ -87,7 +87,7 @@ export default function MessageBubble({ conversationId, message, isBeingEdited, 
             onClick={() => setIsReactionPickerOpen((prev) => !prev)}
             title="React"
             aria-label="React to message"
-            className="w-6 h-6 flex items-center justify-center rounded-full text-stone-400 hover:text-amber-600 hover:bg-stone-100 transition cursor-pointer"
+            className="w-6 h-6 flex items-center justify-center rounded-full text-cn-p-muted hover:text-cn-p-warn hover:bg-cn-p-page transition cursor-pointer"
           >
             <Smile className="w-3.5 h-3.5" />
           </button>
@@ -97,7 +97,7 @@ export default function MessageBubble({ conversationId, message, isBeingEdited, 
             onClick={() => setIsActionsMenuOpen((prev) => !prev)}
             title="More options"
             aria-label="More message options"
-            className="w-6 h-6 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition cursor-pointer"
+            className="w-6 h-6 flex items-center justify-center rounded-full text-cn-p-muted hover:text-cn-p-ink hover:bg-cn-p-page transition cursor-pointer"
           >
             <MoreHorizontal className="w-3.5 h-3.5" />
           </button>
@@ -107,14 +107,14 @@ export default function MessageBubble({ conversationId, message, isBeingEdited, 
           <div
             className={`rounded-2xl px-3.5 py-2.5 text-sm leading-relaxed space-y-1.5 transition-shadow ${
               isMine
-                ? "bg-stone-900 text-stone-100 rounded-br-sm"
-                : "bg-stone-100 text-stone-800 rounded-bl-sm"
-            } ${isBeingEdited ? "ring-2 ring-amber-500 ring-offset-2 ring-offset-white" : ""}`}
+                ? "bg-cn-p-accent text-white rounded-br-sm"
+                : "bg-cn-p-neutral-bg text-cn-p-ink rounded-bl-sm"
+            } ${isBeingEdited ? "ring-2 ring-cn-p-accent ring-offset-2 ring-offset-white" : ""}`}
           >
             <MessageAttachment message={message} />
             <MessageCourseCard course={message.course} />
             {message.body && <p className="whitespace-pre-wrap wrap-break-word">{message.body}</p>}
-            <p className="text-[10px] font-mono text-stone-400 flex items-center gap-1">
+            <p className="text-[10px] text-cn-p-muted flex items-center gap-1">
               {message.is_edited && <span>edited ·</span>}
               {formatTime(message.created_at)}
             </p>

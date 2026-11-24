@@ -4,7 +4,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowLeft, MessageCircle } from "lucide-react";
 import Loader from "@/components/ui/Loader";
-import EmptyState from "@/components/ui/EmptyState";
+import { PortalEmpty } from "@/components/features/portal/shell/PortalUI";
 import { getInitials } from "@/lib/initials";
 import { getConversationMessages, markConversationRead } from "@/services/messagingService";
 import MessageBubble from "./MessageBubble";
@@ -69,18 +69,18 @@ export default function MessageThread({ conversation, onBack }) {
 
   return (
     <div className="flex-1 flex flex-col min-h-0">
-      <div className="px-4 py-3 border-b border-stone-100 flex items-center gap-3 shrink-0">
+      <div className="px-4 py-3 border-b border-cn-p-line flex items-center gap-3 shrink-0">
         {onBack && (
           <button
             type="button"
             onClick={onBack}
             aria-label="Back to conversations"
-            className="sm:hidden w-8 h-8 -ml-1 shrink-0 flex items-center justify-center rounded-full text-stone-500 hover:bg-stone-100 transition cursor-pointer"
+            className="sm:hidden w-8 h-8 -ml-1 shrink-0 flex items-center justify-center rounded-full text-cn-p-ink-2 hover:bg-cn-p-page transition cursor-pointer"
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
         )}
-        <span className="w-9 h-9 rounded-full bg-stone-100 border border-stone-200 text-stone-600 flex items-center justify-center shrink-0 text-xs font-bold font-mono overflow-hidden">
+        <span className="w-9 h-9 rounded-full bg-cn-p-neutral-bg border border-cn-p-line-2 text-cn-p-ink-2 flex items-center justify-center shrink-0 text-xs font-bold overflow-hidden">
           {other?.avatar ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={other.avatar} alt="" className="w-full h-full object-cover" />
@@ -89,8 +89,8 @@ export default function MessageThread({ conversation, onBack }) {
           )}
         </span>
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-stone-800 truncate">{other?.name || "Unknown"}</p>
-          <p className="text-[11px] font-mono uppercase tracking-wider text-stone-400">{other?.role}</p>
+          <p className="text-sm font-semibold text-cn-p-ink truncate">{other?.name || "Unknown"}</p>
+          <p className="text-[11px] uppercase tracking-wider text-cn-p-muted">{other?.role}</p>
         </div>
       </div>
 
@@ -98,12 +98,10 @@ export default function MessageThread({ conversation, onBack }) {
         {messagesQuery.isLoading ? (
           <Loader fullScreen={false} label="Loading messages..." />
         ) : messages.length === 0 ? (
-          <EmptyState
+          <PortalEmpty
             icon={MessageCircle}
-            label="No messages yet."
-            description="Send the first message below."
-            compact
-            size="lg"
+            title="No messages yet"
+            text="Send the first message below."
           />
         ) : (
           <>

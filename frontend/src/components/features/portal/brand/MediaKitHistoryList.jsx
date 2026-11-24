@@ -5,9 +5,19 @@ import { useQuery } from "@tanstack/react-query";
 import { getMediaKitReviews } from "@/services/brandValidatorService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatDateTime } from "@/lib/adminFormatters";
-import DataTable from "@/components/ui/DataTable";
 import Pagination from "@/components/ui/Pagination";
-import StatusBadge from "@/components/ui/StatusBadge";
+import Loader from "@/components/ui/Loader";
+import { AlertCircle, FileText } from "lucide-react";
+import PortalCard from "../shell/PortalCard";
+import {
+  PortalButton,
+  PortalEmpty,
+  PortalPill,
+  PortalTable,
+  PortalTd,
+  PortalTh,
+  PortalTr,
+} from "../shell/PortalUI";
 
 const PAGE_SIZE = 10;
 
@@ -25,67 +35,107 @@ export default function MediaKitHistoryList({ onOpenReview }) {
   const rows = data?.results || [];
   const totalPages = Math.max(1, Math.ceil((data?.count || 0) / PAGE_SIZE));
 
-  const columns = [
-    {
-      key: "created_at",
-      header: "Uploaded",
-      render: (row) => (
-        <span className="text-muted whitespace-nowrap">{formatDateTime(row.created_at)}</span>
-      ),
-    },
-    {
-      key: "original_name",
-      header: "File",
-      render: (row) => <span className="text-ink truncate">{row.original_name || "Media kit"}</span>,
-    },
-    {
-      key: "status",
-      header: "Status",
-      render: (row) => <StatusBadge status={row.status} size="lg" />,
-    },
-    {
-      key: "overall_score",
-      header: "Score",
-      render: (row) => (
-        <span className="font-mono font-bold text-ink">
-          {row.status === "COMPLETED" ? `${row.overall_score}/100` : "—"}
+  const count = data?.count || 0;
+  const STATUS_TONES = { COMPLETED: "ok", PROCESSING: "warn", PENDING: "warn", FAILED: "bad" };
+
+  if (isLoading) {
+    return (
+      <PortalCard className="p-10">
+        <Loader fullScreen={false} tone="cobalt" label="Loading your review history..." />
+      </PortalCard>
+    );
+  }
+
+  if (isError) {
+    return (
+      <PortalCard className="flex flex-col items-center gap-3 p-10 text-center">
+        <span className="grid h-10 w-10 place-items-center rounded-cn-p-sm bg-cn-p-bad-bg text-cn-p-bad">
+          <AlertCircle className="h-5 w-5" />
         </span>
-      ),
-    },
-    {
-      key: "actions",
-      header: "",
-      render: (row) =>
-        row.status === "COMPLETED" ? (
-          <button
-            type="button"
-            onClick={() => onOpenReview?.(row.id)}
-            className="text-[11px] font-mono uppercase tracking-wider text-pine hover:text-moss transition cursor-pointer"
-          >
-            View
-          </button>
-        ) : null,
-    },
-  ];
+        <p className="text-sm text-cn-p-ink-2">
+          {getApiErrorMessage(error, "Unable to load your review history.")}
+        </p>
+        <PortalButton size="sm" onClick={() => refetch()}>
+          Retry
+        </PortalButton>
+      </PortalCard>
+    );
+  }
+
+  if (rows.length === 0) {
+    return (
+      <PortalCard>
+        <PortalEmpty
+          icon={FileText}
+          title="No reviews yet"
+          text="Your first review shows up here."
+        />
+      </PortalCard>
+    );
+  }
 
   return (
-    <div className="bg-paper border border-line rounded-2xl shadow-sm p-6">
-      <DataTable
-        size="lg"
-        columns={columns}
-        rows={rows}
-        isLoading={isLoading}
-        error={isError ? getApiErrorMessage(error, "Unable to load your review history.") : null}
-        onRetry={refetch}
-        emptyLabel="No media kits reviewed yet."
-      />
-      <Pagination
-        size="lg"
-        page={page}
-        totalPages={totalPages}
-        onPageChange={setPage}
-        totalLabel={`${data?.count || 0} review${(data?.count || 0) === 1 ? "" : "s"}`}
-      />
-    </div>
+    <PortalCard>
+      <PortalTable>
+        <thead>
+          <tr>
+            <PortalTh>File</PortalTh>
+            <PortalTh>Uploaded</PortalTh>
+            <PortalTh align="right">Score</PortalTh>
+            <PortalTh>Status</PortalTh>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => {
+            const isDone = row.status === "COMPLETED";
+            return (
+              <PortalTr
+                key={row.id}
+                onOpen={isDone ? () => onOpenReview?.(row.id) : undefined}
+              >
+                <PortalTd>
+                  <span className="flex items-center gap-3">
+                    <span className="grid h-9 w-9 flex-none place-items-center rounded-cn-p-sm bg-cn-p-soft text-cn-p-soft-ink">
+                      <FileText className="h-4 w-4" />
+                    </span>
+                    <b className="min-w-0 truncate font-semibold text-cn-p-ink">
+                      {row.original_name || "Media kit"}
+                    </b>
+                  </span>
+                </PortalTd>
+                <PortalTd className="text-sm whitespace-nowrap text-cn-p-ink-2">
+                  {formatDateTime(row.created_at)}
+                </PortalTd>
+                <PortalTd align="right" numeric>
+                  {isDone ? (
+                    <b className="font-bold text-cn-p-ink">{row.overall_score}/100</b>
+                  ) : (
+                    <span className="text-cn-p-ink-2">&mdash;</span>
+                  )}
+                </PortalTd>
+                <PortalTd>
+                  <PortalPill tone={STATUS_TONES[row.status] || "neutral"}>
+                    {row.status
+                      ? row.status.charAt(0) + row.status.slice(1).toLowerCase()
+                      : "—"}
+                  </PortalPill>
+                </PortalTd>
+              </PortalTr>
+            );
+          })}
+        </tbody>
+      </PortalTable>
+
+      <div className="px-5 pb-4">
+        <Pagination
+          size="lg"
+          tone="cobalt"
+          page={page}
+          totalPages={totalPages}
+          onPageChange={setPage}
+          totalLabel={`${count} review${count === 1 ? "" : "s"}`}
+        />
+      </div>
+    </PortalCard>
   );
 }

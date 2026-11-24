@@ -2,7 +2,6 @@
 
 import { useState } from "react";
 import Link from "next/link";
-import confetti from "canvas-confetti";
 import { AlertCircle, ArrowRight } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useGuestOnlyRoute } from "@/hooks/useGuestOnlyRoute";
@@ -10,6 +9,7 @@ import { useNextPath } from "@/hooks/useNextPath";
 import { buildAuthUrl } from "@/lib/authRedirect";
 import { ROUTES } from "@/constants/routes";
 import { toastError } from "@/lib/toast";
+import { markSignInCelebration } from "@/lib/signInCelebration";
 import Loader from "@/components/ui/Loader";
 import GoogleSignInButton from "@/components/features/auth/GoogleSignInButton";
 import AuthArtPanel from "@/components/features/auth/AuthArtPanel";
@@ -32,6 +32,10 @@ export default function LoginForm() {
   if (shouldBlock && !isSubmitting) {
     return (
       <Loader
+        // This page is on the cobalt system, and so is the screen a signed-in
+        // visitor is on their way to — without the tone the hand-off flashes a
+        // cream page and a pine spinner under a cobalt navbar.
+        tone="cobalt"
         label={isAuthenticated ? "Redirecting..." : "Checking Session..."}
       />
     );
@@ -40,14 +44,11 @@ export default function LoginForm() {
   // Navigation itself is NOT done here — useGuestOnlyRoute (above) reacts to
   // isAuthenticated flipping true and sends the user to /onboarding or their
   // portal, whichever is correct. Doing it here too would race that check.
-  function celebrateSignIn() {
-    confetti({
-      particleCount: 80,
-      spread: 60,
-      origin: { y: 0.8 },
-      colors: ["#2450e6", "#879ff1", "#0f2580"],
-    });
-  }
+  //
+  // Which is also why the welcome confetti is not thrown here: this page is
+  // about to be replaced, so the burst would be torn down mid-flight on a
+  // "Redirecting..." screen. `markSignInCelebration` leaves a note for the
+  // portal to throw it on arrival instead.
 
   async function handleSubmit(event) {
     event.preventDefault();
@@ -55,7 +56,7 @@ export default function LoginForm() {
     setIsSubmitting(true);
     try {
       await login({ email, password });
-      celebrateSignIn();
+      markSignInCelebration();
     } catch (error) {
       const message = error?.message || "Unable to sign in. Please try again.";
       setFormError(message);
@@ -157,7 +158,7 @@ export default function LoginForm() {
               </button>
 
               <GoogleSignInButton
-                onSuccess={celebrateSignIn}
+                onSuccess={markSignInCelebration}
                 disabled={isSubmitting}
               />
             </form>

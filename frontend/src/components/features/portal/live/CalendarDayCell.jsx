@@ -35,22 +35,22 @@ export default function CalendarDayCell({
         month: "long",
         day: "numeric",
       })} — ${summary}`}
-      className={`relative flex flex-col items-stretch gap-1 min-h-[62px] md:min-h-[92px] p-1.5 md:p-2 rounded-xl border text-left transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-pine focus-visible:ring-offset-1 ${
+      className={`relative flex flex-col items-stretch gap-1 min-h-[62px] md:min-h-[92px] p-1.5 md:p-2 rounded-xl border text-left transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-cn-p-accent focus-visible:ring-offset-1 ${
         isSelected
-          ? "border-pine/40 bg-pine/[0.07] ring-1 ring-pine/25"
+          ? "border-cn-p-accent-soft bg-cn-p-accent/[0.07] ring-1 ring-cn-p-accent/25"
           : isCurrentMonth
-            ? "border-line bg-paper hover:bg-porcelain"
-            : "border-transparent bg-porcelain/40 hover:bg-porcelain"
+            ? "border-cn-p-line bg-cn-p-card hover:bg-cn-p-page"
+            : "border-transparent bg-cn-p-page/40 hover:bg-cn-p-page"
       }`}
     >
       <span className="flex items-center justify-between gap-1">
         <span
-          className={`flex items-center justify-center w-6 h-6 rounded-full text-xs font-mono font-semibold shrink-0 ${
+          className={`flex items-center justify-center w-6 h-6 rounded-full text-xs tabular-nums font-semibold shrink-0 ${
             isToday
-              ? "bg-pine text-paper"
+              ? "bg-cn-p-accent text-white"
               : isCurrentMonth
-                ? "text-ink"
-                : "text-muted/45"
+                ? "text-cn-p-ink"
+                : "text-cn-p-ink-2/45"
           }`}
         >
           {date.getDate()}
@@ -80,8 +80,8 @@ export default function CalendarDayCell({
               title={`${formatSessionTime(session.scheduled_at)} · ${session.title}`}
               className={`flex items-stretch gap-1.5 pl-1 pr-1.5 py-1 rounded-md border min-w-0 ${
                 session.is_rsvped && session.live_state !== "ENDED"
-                  ? "bg-sage/40 border-pine/15"
-                  : "bg-porcelain border-line"
+                  ? "bg-cn-p-soft border-cn-p-accent-soft"
+                  : "bg-cn-p-page border-cn-p-line"
               }`}
             >
               <span
@@ -90,10 +90,10 @@ export default function CalendarDayCell({
                 }`}
               />
               <span className="flex flex-col min-w-0 leading-tight">
-                <span className="text-[9px] font-mono uppercase tracking-wide text-muted">
+                <span className="text-[9px] tabular-nums uppercase tracking-wide text-cn-p-ink-2">
                   {formatSessionTime(session.scheduled_at)}
                 </span>
-                <span className="text-[11px] text-ink font-light line-clamp-2">
+                <span className="text-[11px] text-cn-p-ink font-light line-clamp-2">
                   {session.title}
                 </span>
               </span>
@@ -101,7 +101,7 @@ export default function CalendarDayCell({
           ))}
 
           {overflow > 0 && (
-            <span className="text-[10px] font-mono text-muted pl-1.5">+{overflow} more</span>
+            <span className="text-[10px] tabular-nums text-cn-p-ink-2 pl-1.5">+{overflow} more</span>
           )}
         </span>
       )}

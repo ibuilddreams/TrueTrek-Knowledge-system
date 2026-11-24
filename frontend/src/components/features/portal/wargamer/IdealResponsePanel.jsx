@@ -21,11 +21,11 @@ export default function IdealResponsePanel({ idealResponse }) {
   if (rows.length === 0) return null;
 
   return (
-    <div className="bg-paper border border-line rounded-2xl shadow-sm p-5">
-      <h3 className="text-sm font-serif font-bold text-ink mb-1">
+    <div className="bg-cn-p-card border border-cn-p-line rounded-2xl shadow-sm p-5">
+      <h3 className="text-sm font-bold text-cn-p-ink mb-1">
         How the method handles this one
       </h3>
-      <p className="text-xs text-muted font-light mb-4 leading-relaxed">
+      <p className="text-xs text-cn-p-ink-2 font-light mb-4 leading-relaxed">
         Not a script to memorise &mdash; a reference for what each move sounds like in this
         situation.
       </p>
@@ -33,14 +33,14 @@ export default function IdealResponsePanel({ idealResponse }) {
       <ul className="space-y-3">
         {rows.map((row) => (
           <li key={row.key} className="flex gap-3">
-            <span className="w-7 h-7 shrink-0 rounded-lg bg-pine text-paper font-serif font-bold text-sm flex items-center justify-center">
+            <span className="w-7 h-7 shrink-0 rounded-lg bg-cn-p-accent text-white font-bold text-sm flex items-center justify-center">
               {row.letter}
             </span>
             <div className="min-w-0">
-              <p className="text-[10px] font-mono uppercase tracking-widest text-muted">
+              <p className="text-[10px] font-semibold text-cn-p-ink-2">
                 {row.label}
               </p>
-              <p className="text-sm text-ink font-light italic leading-relaxed mt-0.5">
+              <p className="text-sm text-cn-p-ink font-light italic leading-relaxed mt-0.5">
                 &ldquo;{row.text}&rdquo;
               </p>
             </div>

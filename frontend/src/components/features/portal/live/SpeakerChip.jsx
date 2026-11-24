@@ -22,22 +22,22 @@ export default function SpeakerChip({ speaker, size = "base" }) {
         <img
           src={speaker.avatar_url}
           alt={speaker.name}
-          className={`${isLarge ? "w-10 h-10" : "w-8 h-8"} rounded-full object-cover border border-line shrink-0`}
+          className={`${isLarge ? "w-10 h-10" : "w-8 h-8"} rounded-full object-cover border border-cn-p-line shrink-0`}
         />
       ) : (
         <div
-          className={`${isLarge ? "w-10 h-10 text-xs" : "w-8 h-8 text-[10px]"} rounded-full bg-pine/10 border border-pine/20 text-pine font-mono font-bold flex items-center justify-center shrink-0`}
+          className={`${isLarge ? "w-10 h-10 text-xs" : "w-8 h-8 text-[10px]"} rounded-full bg-cn-p-accent/10 border border-cn-p-accent-soft text-cn-p-accent tabular-nums font-bold flex items-center justify-center shrink-0`}
         >
           {initials || <UserRound className="w-3.5 h-3.5" />}
         </div>
       )}
 
       <div className="min-w-0">
-        <p className={`${isLarge ? "text-sm" : "text-xs"} font-semibold text-ink truncate`}>
+        <p className={`${isLarge ? "text-sm" : "text-xs"} font-semibold text-cn-p-ink truncate`}>
           {speaker.name}
         </p>
         {speaker.headline && (
-          <p className="text-[11px] text-muted font-light truncate">{speaker.headline}</p>
+          <p className="text-[11px] text-cn-p-ink-2 font-light truncate">{speaker.headline}</p>
         )}
       </div>
     </div>

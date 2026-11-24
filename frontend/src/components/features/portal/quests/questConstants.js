@@ -11,18 +11,18 @@ import {
 // and its display label, so this map only supplies the icon/tone the label
 // can't carry.
 export const QUEST_CATEGORY_META = {
-  AUDIT: { icon: Search, tone: "bg-gold/12 text-gold border-gold/25" },
-  CONTENT: { icon: Camera, tone: "bg-sage/40 text-pine border-pine/20" },
-  ENGAGEMENT: { icon: Heart, tone: "bg-rose/35 text-clay border-clay/20" },
-  PROFILE: { icon: UserRound, tone: "bg-porcelain text-ink border-line" },
-  OUTREACH: { icon: MessageSquare, tone: "bg-gold/12 text-gold border-gold/25" },
-  REFLECTION: { icon: PenLine, tone: "bg-sage/40 text-pine border-pine/20" },
+  AUDIT: { icon: Search, tone: "bg-cn-p-warn-bg text-cn-p-warn border-transparent" },
+  CONTENT: { icon: Camera, tone: "bg-cn-p-soft text-cn-p-soft-ink border-transparent" },
+  ENGAGEMENT: { icon: Heart, tone: "bg-cn-p-bad-bg text-cn-p-bad border-transparent" },
+  PROFILE: { icon: UserRound, tone: "bg-cn-p-neutral-bg text-cn-p-ink border-transparent" },
+  OUTREACH: { icon: MessageSquare, tone: "bg-cn-p-warn-bg text-cn-p-warn border-transparent" },
+  REFLECTION: { icon: PenLine, tone: "bg-cn-p-soft text-cn-p-soft-ink border-transparent" },
 };
 
 export const QUEST_DIFFICULTY_TONE = {
-  EASY: "bg-sage/40 text-pine border-pine/20",
-  MEDIUM: "bg-gold/12 text-gold border-gold/25",
-  HARD: "bg-rose/35 text-clay border-clay/25",
+  EASY: "bg-cn-p-soft text-cn-p-soft-ink border-transparent",
+  MEDIUM: "bg-cn-p-warn-bg text-cn-p-warn border-transparent",
+  HARD: "bg-cn-p-bad-bg text-cn-p-bad border-transparent",
 };
 
 export function getQuestCategoryMeta(category) {

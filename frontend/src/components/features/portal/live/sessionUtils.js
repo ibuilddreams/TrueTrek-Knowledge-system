@@ -4,19 +4,19 @@
 // server is authoritative on.
 
 export const LIVE_STATE_TONE = {
-  LIVE: "bg-rose/35 text-clay border-clay/25",
-  UPCOMING: "bg-gold/12 text-gold border-gold/25",
-  ENDED: "bg-porcelain text-muted border-line",
-  CANCELLED: "bg-porcelain text-muted border-line",
+  LIVE: "bg-cn-p-bad-bg text-cn-p-bad border-transparent",
+  UPCOMING: "bg-cn-p-warn-bg text-cn-p-warn border-transparent",
+  ENDED: "bg-cn-p-neutral-bg text-cn-p-ink-2 border-transparent",
+  CANCELLED: "bg-cn-p-neutral-bg text-cn-p-ink-2 border-transparent",
 };
 
 // Solid fill for the small square/dot that marks a session on the calendar
 // grid, where a tinted badge would be too faint to read at 6px.
 export const LIVE_STATE_DOT = {
-  LIVE: "bg-clay",
-  UPCOMING: "bg-gold",
-  ENDED: "bg-muted/70",
-  CANCELLED: "bg-muted/50",
+  LIVE: "bg-cn-p-bad",
+  UPCOMING: "bg-cn-p-warn",
+  ENDED: "bg-cn-p-muted/70",
+  CANCELLED: "bg-cn-p-muted/50",
 };
 
 export const LIVE_STATE_LABEL = {

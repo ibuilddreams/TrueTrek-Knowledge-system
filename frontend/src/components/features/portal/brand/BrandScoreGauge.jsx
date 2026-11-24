@@ -3,9 +3,9 @@
 // Tailwind can't generate a class from a runtime value, so the stroke colour
 // is resolved to a literal here rather than interpolated into a class name.
 const BANDS = [
-  { min: 75, stroke: "#4F6F52", label: "text-pine" },
-  { min: 50, stroke: "#C7A85B", label: "text-gold" },
-  { min: 0, stroke: "#D96F5F", label: "text-clay" },
+  { min: 75, stroke: "#4F6F52", label: "text-cn-p-accent" },
+  { min: 50, stroke: "#C7A85B", label: "text-cn-p-warn" },
+  { min: 0, stroke: "#D96F5F", label: "text-cn-p-bad" },
 ];
 
 const RADIUS = 52;
@@ -51,19 +51,19 @@ export default function BrandScoreGauge({ score = 0, verdict, caption = "Sponsor
         </svg>
 
         <div className="absolute inset-0 flex flex-col items-center justify-center">
-          <span className={`text-4xl font-serif font-light tracking-tight ${band.label}`}>
+          <span className={`text-4xl font-light tracking-tight ${band.label}`}>
             {safeScore}
           </span>
-          <span className="text-[10px] font-mono uppercase tracking-widest text-muted">
+          <span className="text-[10px] font-semibold text-cn-p-ink-2">
             / 100
           </span>
         </div>
       </div>
 
       {verdict && (
-        <p className="text-sm font-serif font-bold text-ink leading-snug max-w-[220px]">{verdict}</p>
+        <p className="text-sm font-bold text-cn-p-ink leading-snug max-w-[220px]">{verdict}</p>
       )}
-      <p className="text-[10px] font-mono uppercase tracking-widest text-muted">{caption}</p>
+      <p className="text-[10px] font-semibold text-cn-p-ink-2">{caption}</p>
     </div>
   );
 }

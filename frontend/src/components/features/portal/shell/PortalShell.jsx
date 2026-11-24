@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import PortalSidebar from "./PortalSidebar";
 import PortalTopbar from "./PortalTopbar";
 import { portalTitle } from "./portalNav";
+import { useSignInCelebration } from "@/hooks/useSignInCelebration";
 
 /**
  * The frame every signed-in screen sits in: the design's `.app` grid — a
@@ -32,6 +33,11 @@ export default function PortalShell({
   children,
 }) {
   const [isNavOpen, setIsNavOpen] = useState(false);
+
+  // The welcome burst for somebody who has just signed in. It lives here
+  // rather than in one dashboard because all three roles share this frame, and
+  // it is a no-op for every other way of arriving at a portal screen.
+  useSignInCelebration();
 
   // A drawer left open while the viewport grows would sit over the content
   // with no way back, since the button that closes it is hidden above 60rem.

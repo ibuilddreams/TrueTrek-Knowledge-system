@@ -67,7 +67,11 @@ export default function DrillSignupModal({ isOpen, onClose, result }) {
             aria-labelledby="drill-signup-title"
             initial={reducedMotion ? false : { opacity: 0, y: 12, scale: 0.98 }}
             animate={{ opacity: 1, y: 0, scale: 1 }}
-            exit={{ opacity: 0, y: reducedMotion ? 0 : 8, scale: reducedMotion ? 1 : 0.98 }}
+            exit={{
+              opacity: 0,
+              y: reducedMotion ? 0 : 8,
+              scale: reducedMotion ? 1 : 0.98,
+            }}
             transition={{ duration: reducedMotion ? 0 : 0.18, ease: "easeOut" }}
             onClick={(event) => event.stopPropagation()}
             className="relative my-auto max-h-[90vh] w-full max-w-lg overflow-y-auto rounded-cn-lg border border-cn-rule bg-white shadow-cn-3"
@@ -131,8 +135,12 @@ export default function DrillSignupModal({ isOpen, onClose, result }) {
                       <Icon className="h-[18px] w-[18px]" strokeWidth={1.9} />
                     </span>
                     <span className="min-w-0">
-                      <b className="block text-cn-sm font-bold text-cn-ink">{title}</b>
-                      <span className="block text-cn-sm text-cn-ink-2">{text}</span>
+                      <b className="block text-cn-sm font-bold text-cn-ink">
+                        {title}
+                      </b>
+                      <span className="block text-cn-sm text-cn-ink-2">
+                        {text}
+                      </span>
                     </span>
                   </li>
                 ))}

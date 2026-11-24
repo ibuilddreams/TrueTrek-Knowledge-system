@@ -134,7 +134,9 @@ export default function PortalBento() {
                 </span>
                 <span className="grid min-w-0 gap-1.5">
                   <span className="flex items-baseline justify-between gap-3">
-                    <b className="truncate text-cn-sm text-cn-ink">{row.title}</b>
+                    <b className="truncate text-cn-sm text-cn-ink">
+                      {row.title}
+                    </b>
                     <span className="text-cn-sm font-bold tabular-nums text-cn-accent">
                       {row.percent}%
                     </span>

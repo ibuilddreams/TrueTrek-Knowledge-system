@@ -2,117 +2,134 @@
 
 import { useState } from "react";
 import { useQueryClient } from "@tanstack/react-query";
-import { CalendarCheck, History, Radio, Video } from "lucide-react";
-import {
-  useMyPastClasses,
-  useMyUpcomingClasses,
-} from "@/hooks/student/useStudentClassSessions";
-import EmptyState from "@/components/ui/EmptyState";
+import { Radio, Video } from "lucide-react";
+import { useMyPastClasses, useMyUpcomingClasses } from "@/hooks/student/useStudentClassSessions";
 import Loader from "@/components/ui/Loader";
-import StatCard from "@/components/ui/StatCard";
-import TabNav from "@/components/ui/TabNav";
+import PortalCard from "../shell/PortalCard";
+import { PortalEmpty, PortalPageHead, PortalTabs } from "../shell/PortalUI";
 import ClassSessionCard from "@/components/features/classroom/ClassSessionCard";
 import ClassroomStage from "@/components/features/classroom/ClassroomStage";
 
-const SECTIONS = [
-  { id: "upcoming", label: "Upcoming Classes", icon: Radio },
-  { id: "past", label: "Past Classes", icon: History },
-];
-
-/**
- * Live classes for the courses this student is enrolled in.
- *
- * The list refreshes on a timer (see useStudentClassSessions) because
- * whether a class can be joined is a server-side judgement about the clock —
- * a tab left open would otherwise never notice the room opening.
- */
+// The design's `SP.live`: a band across the top for anything running right
+// now, then a card of Upcoming / Past behind tabs.
+//
+// The band is the whole point of the screen — a class that is live is the one
+// thing a student needs to act on immediately, and it should not be something
+// they have to find in a list. It is the design's `.hero` in a row layout: the
+// page's one cobalt field.
+//
+// The list refreshes on a timer (see useClassSessions) because whether a class
+// can be joined is a server-side judgement about the clock — a tab left open
+// would otherwise never notice the room opening.
 export default function LiveClassesTab() {
   const queryClient = useQueryClient();
-  const [activeSection, setActiveSection] = useState("upcoming");
+  const [tab, setTab] = useState("upcoming");
   const [activeClass, setActiveClass] = useState(null);
 
   const upcoming = useMyUpcomingClasses();
-  const past = useMyPastClasses({ enabled: activeSection === "past" });
-
-  const sessions = (activeSection === "upcoming" ? upcoming.data : past.data) || [];
-  const isLoading = activeSection === "upcoming" ? upcoming.isLoading : past.isLoading;
+  const past = useMyPastClasses({ enabled: tab === "past" });
 
   const upcomingList = upcoming.data || [];
-  const liveNow = upcomingList.filter((session) => session.live_state === "LIVE").length;
+  const pastList = past.data || [];
+  const isLoading = tab === "upcoming" ? upcoming.isLoading : past.isLoading;
+
+  // A live class is still an "upcoming" row as far as the server is concerned,
+  // so it appears in the band *and* in the list below. That repetition is
+  // deliberate: the band is the call to action, the list is the schedule.
+  const liveNow = upcomingList.filter((session) => session.live_state === "LIVE");
+  const sessions = tab === "upcoming" ? upcomingList : pastList;
 
   return (
-    <div className="space-y-6">
-      <div className="relative bg-paper border border-line rounded-2xl shadow-sm p-6 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pine via-moss to-gold" />
-        <div className="flex items-start gap-4">
-          <span className="w-12 h-12 rounded-2xl bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
-            <Video className="w-6 h-6" />
-          </span>
-          <div className="min-w-0">
-            <h2 className="text-xl font-serif font-bold text-ink leading-tight">
-              Live Classes
-            </h2>
-            <p className="text-sm text-muted font-light mt-1 leading-relaxed">
-              Video classes your instructors run for the courses you&apos;re enrolled
-              in. The room opens at the scheduled start time — you&apos;ll need
-              to allow your camera and microphone.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <StatCard
-          label="Live right now"
-          value={liveNow}
-          icon={Radio}
-          accent={liveNow > 0 ? "rose" : "stone"}
-          footer={liveNow > 0 ? "Jump in below" : "Nothing running yet"}
-        />
-        <StatCard
-          label="Coming up"
-          value={upcomingList.length}
-          icon={CalendarCheck}
-          accent="amber"
-          footer="Across all your courses"
-        />
-      </div>
-
-      <TabNav
-        tabs={SECTIONS}
-        activeTab={activeSection}
-        onChange={setActiveSection}
-        ariaLabel="Live class sections"
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Live classes"
+        subtitle="Video classes your instructors run for your courses. The room opens at the scheduled start time, and you'll be asked for your camera and microphone."
       />
 
-      {isLoading ? (
-        <Loader label="Loading your classes..." />
-      ) : sessions.length === 0 ? (
-        <EmptyState
-          icon={Video}
-          size="lg"
-          label={
-            activeSection === "upcoming"
-              ? "No classes scheduled yet."
-              : "You haven't been to a class yet."
-          }
-          description={
-            activeSection === "upcoming"
-              ? "When an instructor schedules one for a course you're enrolled in, it appears here."
-              : "Classes you've attended will be listed here once they finish."
-          }
-        />
-      ) : (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {sessions.map((session) => (
-            <ClassSessionCard
-              key={session.id}
-              session={session}
-              onJoin={setActiveClass}
-            />
+      {liveNow.length > 0 ? (
+        <div className="grid gap-4">
+          {liveNow.map((session) => (
+            <div
+              key={`live-${session.id}`}
+              className="flex flex-wrap items-center gap-5 rounded-[20px] bg-cn-p-accent p-6 text-white"
+            >
+              <span className="inline-flex h-6 flex-none items-center gap-1.5 rounded-full bg-white px-2.5 text-xs font-semibold text-cn-p-bad">
+                <Radio className="h-3 w-3 animate-pulse" />
+                Live now
+              </span>
+              <div className="min-w-0 flex-1">
+                <b className="block truncate text-xl font-bold">{session.title}</b>
+                <span className="block truncate text-sm text-[#d7dffc]">
+                  {session.course_code} · {session.teacher_name}
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={() => setActiveClass(session)}
+                className="inline-flex h-11 flex-none items-center justify-center gap-2 rounded-cn-p-sm bg-white px-[18px] text-sm font-semibold text-cn-p-accent transition-transform duration-150 hover:-translate-y-px"
+              >
+                <Video className="h-[18px] w-[18px]" />
+                Join class
+              </button>
+            </div>
           ))}
         </div>
+      ) : (
+        <PortalCard>
+          <PortalEmpty
+            icon={Video}
+            title="Nothing live right now"
+            text="Classes appear here the moment your instructor starts them."
+          />
+        </PortalCard>
       )}
+
+      <PortalCard>
+        <div className="px-4">
+          <PortalTabs
+            ariaLabel="Filter classes"
+            options={[
+              { value: "upcoming", label: "Upcoming", count: upcomingList.length },
+              // Counted only once the Past query has run — it is lazy, and a
+              // "0" standing in for "not asked yet" would be a lie.
+              { value: "past", label: "Past", count: past.data ? pastList.length : undefined },
+            ]}
+            value={tab}
+            onChange={setTab}
+          />
+        </div>
+
+        {isLoading ? (
+          <div className="flex min-h-[30vh] items-center justify-center" aria-busy="true">
+            <Loader fullScreen={false} label="Loading your classes..." />
+          </div>
+        ) : sessions.length === 0 ? (
+          <PortalEmpty
+            icon={Video}
+            title={
+              tab === "upcoming"
+                ? "No classes scheduled yet"
+                : "You haven't been to a class yet"
+            }
+            text={
+              tab === "upcoming"
+                ? "When an instructor schedules one for a course you're enrolled in, it appears here."
+                : "Classes you've attended are listed here once they finish."
+            }
+          />
+        ) : (
+          <div className="grid gap-5 p-5 lg:grid-cols-2">
+            {sessions.map((session) => (
+              <ClassSessionCard
+                key={session.id}
+                session={session}
+                variant="cobalt"
+                onJoin={setActiveClass}
+              />
+            ))}
+          </div>
+        )}
+      </PortalCard>
 
       {activeClass && (
         <ClassroomStage

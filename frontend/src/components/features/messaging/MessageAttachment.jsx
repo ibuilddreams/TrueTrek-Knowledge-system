@@ -44,12 +44,12 @@ export default function MessageAttachment({ message }) {
       rel="noopener noreferrer"
       className="flex items-center gap-2.5 px-3 py-2.5 rounded-lg bg-white/60 border border-black/10 hover:bg-white transition"
     >
-      <FileText className="w-6 h-6 shrink-0 text-stone-500" />
+      <FileText className="w-6 h-6 shrink-0 text-cn-p-ink-2" />
       <span className="min-w-0">
         <span className="block text-xs font-semibold truncate max-w-40">
           {message.attachment_original_name || "Attachment"}
         </span>
-        <span className="block text-[10px] font-mono text-stone-400">
+        <span className="block text-[10px] text-cn-p-muted">
           {formatFileSize(message.attachment_size)}
         </span>
       </span>

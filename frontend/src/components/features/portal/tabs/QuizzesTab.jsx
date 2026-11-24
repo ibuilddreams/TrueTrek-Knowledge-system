@@ -3,397 +3,99 @@
 import { useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import {
-  AlertCircle,
-  AlertTriangle,
-  ArrowLeft,
-  CalendarClock,
-  CheckCircle2,
-  ChevronRight,
-  CircleHelp,
-  Clock,
-  Lock,
-  RefreshCw,
-  Repeat,
-  Trophy,
-  XCircle,
-} from "lucide-react";
-import { motion } from "motion/react";
+import { AlertCircle, CircleHelp, RefreshCw } from "lucide-react";
 import { useStudentQuizAttempts } from "@/hooks/student/useStudentQuizAttempts";
 import { useStudentQuizzes } from "@/hooks/student/useStudentQuizzes";
 import { getStudentEnrollments } from "@/services/studentCoursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
-import { formatDateTime } from "@/lib/adminFormatters";
-import EmptyState from "@/components/ui/EmptyState";
+import { formatDate } from "@/lib/adminFormatters";
 import Loader from "@/components/ui/Loader";
+import Pagination from "@/components/ui/Pagination";
+import { usePaginationAnchor } from "@/hooks/usePaginationAnchor";
+import PortalCard from "../shell/PortalCard";
+import {
+  PortalButton,
+  PortalEmpty,
+  PortalPageHead,
+  PortalPill,
+  PortalTable,
+  PortalTabs,
+  PortalTd,
+  PortalTh,
+  PortalTr,
+} from "../shell/PortalUI";
 import QuizAttemptHistoryModal from "../history/QuizAttemptHistoryModal";
 import QuizAttemptModal from "../course-detail/QuizAttemptModal";
-import CourseworkSummaryCard from "../CourseworkSummaryCard";
 
-const SCORE_TONES = {
-  high: { bar: "bg-emerald-500", text: "text-emerald-700" },
-  mid: { bar: "bg-gold", text: "text-gold" },
-  low: { bar: "bg-rose-500", text: "text-rose-600" },
-};
+// The design's `SP.quizzes`: one table of every quiz across every course,
+// filtered by a strip of status tabs, with the Course column doing the work the
+// old course-card drill-down did.
+//
+// Three of the tabs are the design's own (Open / Passed / Locked). The fourth,
+// Attempts, is not in the design and is kept because this app has something the
+// design's mock does not: a full attempt history, every try with its score and
+// outcome. Dropping it to match a mock would have deleted a real feature, so it
+// lives as a fourth tab over the same table rather than a second screen.
+//
+// The design's subtitle says "Pass mark is 70%, with three attempts each". Both
+// halves are false here — the pass mark is per quiz (`passing_score`) and
+// attempts are unlimited (see the retake rule below) — so the wording is this
+// app's rather than the mock's. A screen that states a rule students are graded
+// against has to state the real one.
 
-function scoreTone(percentage) {
-  if (percentage >= 70) return SCORE_TONES.high;
-  if (percentage >= 50) return SCORE_TONES.mid;
-  return SCORE_TONES.low;
-}
+// Ten a page, matching every other paginated table in the portal. The design's
+// mock shows no pager because its seed data is a handful of rows; a real roster
+// is hundreds, and a tab that renders all of them is a scroll nobody finishes.
+const PAGE_SIZE = 10;
 
-const TONE_STYLES = {
-  stone: {
-    light: "bg-porcelain text-muted border-line",
-  },
-  amber: {
-    light: "bg-gold/12 text-gold border-gold/25",
-  },
-  rose: {
-    light: "bg-rose-50 text-rose-600 border-rose-100",
-  },
-  emerald: {
-    light: "bg-emerald-50 text-emerald-700 border-emerald-100",
-  },
-  sky: {
-    light: "bg-sky/60 text-blue border-blue/20",
-  },
-  orange: {
-    light: "bg-clay/12 text-clay border-clay/25",
-  },
-  abandoned: {
-    light: "bg-porcelain text-muted border-line",
-  },
-};
-
-function toneClass(tone) {
-  const entry = TONE_STYLES[tone] || TONE_STYLES.stone;
-  return entry.light;
-}
-
-const STATUS_FILTERS = [
-  { id: "ALL", label: "All" },
-  { id: "PASSED", label: "Passed" },
-  { id: "FAILED", label: "Failed" },
-  { id: "IN_PROGRESS", label: "In progress" },
-  { id: "ABANDONED", label: "Expired/Abandoned" },
-];
-
-function isAbandonedStatus(attempt) {
+function isAbandoned(attempt) {
   return attempt.status === "EXPIRED" || attempt.status === "ABANDONED";
 }
 
-function attemptStatusMeta(attempt) {
-  if (attempt.status === "IN_PROGRESS") {
-    return { label: "In progress", tone: "amber", icon: Clock };
+// Attempts are unlimited: a quiz is open again as soon as there is no
+// in-progress attempt sitting on it to resume instead.
+function bucketOf(quiz, passedQuizIds) {
+  if (quiz.is_locked) return "locked";
+  if (passedQuizIds.has(quiz.id)) return "passed";
+  return "open";
+}
+
+function quizStatus(quiz, passedQuizIds) {
+  if (quiz.is_locked) return { label: "Locked", tone: "neutral" };
+  if (quiz.latest_attempt?.status === "IN_PROGRESS") {
+    return { label: "In progress", tone: "warn" };
   }
-  if (attempt.status === "EXPIRED") {
-    return { label: "Expired", tone: "orange", icon: AlertTriangle };
+  if (passedQuizIds.has(quiz.id)) return { label: "Passed", tone: "ok" };
+  if (quiz.latest_attempt?.is_passed === false) {
+    return { label: "Not passed", tone: "bad" };
   }
-  if (attempt.status === "ABANDONED") {
-    return { label: "Abandoned", tone: "abandoned", icon: AlertTriangle };
+  if (!quiz.is_available) {
+    return quiz.available_from
+      ? { label: `Opens ${formatDate(quiz.available_from)}`, tone: "neutral" }
+      : { label: "Unavailable", tone: "neutral" };
   }
-  if (attempt.is_passed === true) {
-    return { label: "Passed", tone: "emerald", icon: CheckCircle2 };
-  }
-  if (attempt.is_passed === false) {
-    return { label: "Failed", tone: "rose", icon: XCircle };
-  }
-  return { label: attempt.status, tone: "stone", icon: CircleHelp };
+  return { label: "To do", tone: "blue" };
 }
 
-function sortAttempts(list) {
-  return [...list].sort((a, b) => {
-    const aDone = Boolean(a.ended_at);
-    const bDone = Boolean(b.ended_at);
-    if (aDone !== bDone) return aDone ? -1 : 1;
-    if (aDone && bDone) return new Date(b.ended_at).getTime() - new Date(a.ended_at).getTime();
-    return 0;
-  });
-}
-
-function computeBestAttemptIds(attempts) {
-  const byQuiz = new Map();
-  const countByQuiz = new Map();
-  attempts.forEach((attempt) => {
-    const quizId = attempt.quiz?.id ?? attempt.quiz?.title;
-    countByQuiz.set(quizId, (countByQuiz.get(quizId) || 0) + 1);
-    if (attempt.percentage === null || attempt.percentage === undefined) return;
-    const current = byQuiz.get(quizId);
-    if (!current || attempt.percentage > current.percentage) {
-      byQuiz.set(quizId, attempt);
-    }
-  });
-  return new Set(
-    Array.from(byQuiz.entries())
-      .filter(([quizId]) => (countByQuiz.get(quizId) || 0) > 1)
-      .map(([, attempt]) => attempt.attempt_id)
-  );
-}
-
-function isPendingQuiz(quiz) {
-  return !quiz.latest_attempt || quiz.latest_attempt.status === "IN_PROGRESS";
-}
-
-function canRetakeQuiz(quiz) {
-  // Attempts are unlimited — retaking is always possible once there's no
-  // in-progress attempt to resume instead.
-  return Boolean(quiz.latest_attempt) && quiz.latest_attempt.status !== "IN_PROGRESS";
-}
-
-function isToDoQuiz(quiz) {
-  return isPendingQuiz(quiz) || canRetakeQuiz(quiz);
-}
-
-function toDoPriority(quiz) {
-  // Task 18 — a locked quiz (progress.services.get_module_lock_map) is never
-  // actionable right now, regardless of its own attempt/availability state,
-  // so it always sorts to the bottom of "To do" rather than competing with
-  // quizzes the student can actually take.
-  if (quiz.is_locked) return 5;
-  if (quiz.latest_attempt?.status === "IN_PROGRESS") return 0;
-  if (!quiz.latest_attempt) {
-    if (quiz.is_available) return 1;
-    if (quiz.available_from && new Date() < new Date(quiz.available_from)) return 2;
-    return 4;
-  }
-  return 3;
-}
-
-function sortToDoQuizzes(list) {
-  return [...list].sort((a, b) => toDoPriority(a) - toDoPriority(b));
-}
-
-function quizToDoMeta(quiz) {
-  const attempt = quiz.latest_attempt;
-
-  if (quiz.is_locked) {
-    const blockingTitle = quiz.lock_info?.blocking_quiz_title;
-    return {
-      label: "LOCKED",
-      tone: "stone",
-      icon: Lock,
-      note: blockingTitle ? `Pass "${blockingTitle}" first` : "Locked — an earlier module isn't complete",
-    };
-  }
-
-  if (attempt?.status === "IN_PROGRESS") {
-    return { label: "IN PROGRESS", tone: "amber", icon: Clock, note: "Continue where you left off" };
-  }
-
-  if (!attempt) {
-    if (quiz.is_available) {
-      return { label: "NOT ATTEMPTED", tone: "stone", icon: CircleHelp, note: "Not started yet" };
-    }
-    if (quiz.available_from && new Date() < new Date(quiz.available_from)) {
-      return {
-        label: "NOT YET OPEN",
-        tone: "sky",
-        icon: CalendarClock,
-        note: `Opens ${formatDateTime(quiz.available_from)}`,
-      };
-    }
-    return { label: "MISSED", tone: "rose", icon: AlertTriangle, note: "Availability window closed" };
-  }
-
-  const note = "Retry anytime — new questions each time";
-  if (attempt.is_passed === true) {
-    return { label: "PASSED", tone: "emerald", icon: CheckCircle2, note };
-  }
-  if (attempt.is_passed === false) {
-    return { label: "FAILED", tone: "rose", icon: XCircle, note };
-  }
-  return { label: attempt.status, tone: "stone", icon: CircleHelp, note };
-}
-
-function StatChip({ label, value, tone = "stone" }) {
-  const toneClasses = {
-    stone: "bg-porcelain border-line text-muted",
-    amber: "bg-gold/12 border-gold/25 text-gold",
-    emerald: "bg-emerald-50 border-emerald-100 text-emerald-700",
-  };
-  return (
-    <div
-      className={`flex flex-col items-center rounded-xl border px-4 py-2.5 min-w-21 ${toneClasses[tone]}`}
-    >
-      <span className="text-base font-serif font-bold">{value}</span>
-      <span className="text-[10px] font-mono uppercase tracking-wider mt-0.5 opacity-80">
-        {label}
-      </span>
-    </div>
-  );
-}
-
-function FilterButton({ active, onClick, children }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className={`px-3 py-1.5 rounded-lg text-[11px] font-mono font-bold uppercase tracking-wider border transition ${
-        active
-          ? "bg-pine border-pine text-paper"
-          : "bg-paper border-line text-muted hover:border-pine/40 hover:text-pine"
-      }`}
-    >
-      {children}
-    </button>
-  );
-}
-
-function QuizToDoRow({ quiz, onOpen }) {
-  const meta = quizToDoMeta(quiz);
-  const StatusIcon = meta.icon;
-  const badgeClass = toneClass(meta.tone);
-  const attempt = quiz.latest_attempt;
-  const hasScore = attempt && attempt.percentage !== null && attempt.percentage !== undefined;
-  const tone = hasScore ? scoreTone(attempt.percentage) : null;
-  const isLocked = Boolean(quiz.is_locked);
-
-  return (
-    <button
-      type="button"
-      onClick={isLocked ? undefined : onOpen}
-      disabled={isLocked}
-      title={isLocked ? quiz.lock_info?.reason : undefined}
-      className="group w-full flex items-center gap-3 rounded-xl border transition p-3.5 text-left disabled:cursor-default disabled:opacity-70 border-line bg-paper enabled:hover:border-pine enabled:hover:shadow-[0_8px_24px_-18px_rgba(28,25,23,0.35)]"
-    >
-      <span className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 border ${badgeClass}`}>
-        <StatusIcon className="w-4 h-4" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="block text-[13px] font-medium truncate text-ink">
-          {quiz.title}
-        </span>
-        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-mono uppercase tracking-wider mt-1 text-muted">
-          {quiz.module ? <span>{quiz.module.title}</span> : null}
-          <span className="flex items-center gap-1">
-            <Repeat className="w-3 h-3" />
-            {quiz.attempts_used || 0} attempt{quiz.attempts_used === 1 ? "" : "s"}
-          </span>
-          <span>{meta.note}</span>
-        </span>
-      </span>
-      <span className="hidden sm:flex flex-col items-end gap-1.5 shrink-0 w-32">
-        <span
-          className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${badgeClass}`}
-        >
-          {meta.label}
-        </span>
-        {hasScore ? (
-          <span className={`text-xs font-mono font-bold ${tone.text}`}>
-            {attempt.percentage}%
-          </span>
-        ) : null}
-      </span>
-      <span className="sm:hidden flex flex-col items-end gap-1 shrink-0">
-        <span
-          className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${badgeClass}`}
-        >
-          {meta.label}
-        </span>
-      </span>
-      {isLocked ? (
-        <span className="w-4 h-4 shrink-0" />
-      ) : (
-        <ChevronRight className="w-4 h-4 transition shrink-0 text-muted group-hover:text-pine" />
-      )}
-    </button>
-  );
-}
-
-function QuizAttemptRow({ attempt, onOpen, isBest }) {
-  const { label, tone, icon: StatusIcon } = attemptStatusMeta(attempt);
-  const badgeClass = toneClass(tone);
-  const canOpenDetail = Boolean(attempt.ended_at);
-  const hasScore = attempt.percentage !== null && attempt.percentage !== undefined;
-  const scoreToneValue = hasScore ? scoreTone(attempt.percentage) : null;
-
-  return (
-    <button
-      type="button"
-      onClick={canOpenDetail ? onOpen : undefined}
-      disabled={!canOpenDetail}
-      className="group w-full flex items-center gap-3 rounded-xl border transition p-3.5 text-left disabled:opacity-70 disabled:cursor-default border-line bg-paper enabled:hover:border-pine enabled:hover:shadow-[0_8px_24px_-18px_rgba(28,25,23,0.35)]"
-    >
-      <span className={`flex items-center justify-center w-9 h-9 rounded-lg shrink-0 border ${badgeClass}`}>
-        <StatusIcon className="w-4 h-4" />
-      </span>
-      <span className="min-w-0 flex-1">
-        <span className="flex items-center gap-1.5">
-          <span className="block text-[13px] font-medium truncate text-ink">
-            {attempt.quiz.title}
-          </span>
-          {isBest ? (
-            <span className="flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-wider px-1.5 py-0.5 rounded-md border shrink-0 text-gold bg-gold/12 border-gold/25">
-              <Trophy className="w-3 h-3" /> Best
-            </span>
-          ) : null}
-        </span>
-        <span className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[11px] font-mono uppercase tracking-wider mt-1 text-muted">
-          {attempt.module ? <span>{attempt.module.title}</span> : null}
-          <span className="flex items-center gap-1">
-            <Repeat className="w-3 h-3" />
-            Attempt {attempt.attempt_number}
-          </span>
-          {attempt.ended_at ? (
-            <span className="flex items-center gap-1">
-              <Clock className="w-3 h-3" /> {formatDateTime(attempt.ended_at)}
-            </span>
-          ) : null}
-        </span>
-      </span>
-      <span className="hidden sm:flex flex-col items-end gap-1.5 shrink-0 w-28">
-        <span
-          className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${badgeClass}`}
-        >
-          {label}
-        </span>
-        {hasScore ? (
-          <span className="flex items-center gap-1.5 w-full">
-            <span className="flex-1 h-1.5 rounded-full overflow-hidden bg-porcelain">
-              <span
-                className={`block h-full rounded-full ${scoreToneValue.bar}`}
-                style={{ width: `${Math.min(100, Math.max(0, attempt.percentage))}%` }}
-              />
-            </span>
-            <span className={`text-xs font-mono font-bold ${scoreToneValue.text}`}>
-              {attempt.percentage}%
-            </span>
-          </span>
-        ) : null}
-      </span>
-      <span className="sm:hidden flex flex-col items-end gap-1 shrink-0">
-        <span
-          className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-1 rounded-lg border ${badgeClass}`}
-        >
-          {label}
-        </span>
-        {hasScore ? (
-          <span className="text-xs font-mono text-muted">
-            {attempt.score}/{attempt.total_marks} · {attempt.percentage}%
-          </span>
-        ) : null}
-      </span>
-      {canOpenDetail ? (
-        <ChevronRight className="w-4 h-4 transition shrink-0 text-muted group-hover:text-pine" />
-      ) : (
-        <span className="w-4 h-4 shrink-0" />
-      )}
-    </button>
-  );
+function attemptStatus(attempt) {
+  if (attempt.status === "IN_PROGRESS") return { label: "In progress", tone: "warn" };
+  if (attempt.status === "EXPIRED") return { label: "Expired", tone: "neutral" };
+  if (attempt.status === "ABANDONED") return { label: "Abandoned", tone: "neutral" };
+  if (attempt.is_passed === true) return { label: "Passed", tone: "ok" };
+  if (attempt.is_passed === false) return { label: "Failed", tone: "bad" };
+  return { label: attempt.status, tone: "neutral" };
 }
 
 export default function QuizzesTab() {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const selectedCourseId = searchParams.get("quizCourse");
-  const [detailAttemptId, setDetailAttemptId] = useState(null);
-  // Tracked by id, not the quiz object itself, so the open modal always
-  // reflects the live `quizzes` query instead of showing a stale snapshot
-  // from when it was opened.
+  const courseFilter = searchParams.get("quizCourse") || "";
+  const [tab, setTab] = useState("open");
+  const [page, setPage] = useState(1);
+  const [resultsRef, changePage] = usePaginationAnchor(setPage);
   const [selectedQuizId, setSelectedQuizId] = useState(null);
-  const [statusFilter, setStatusFilter] = useState("ALL");
+  const [detailAttemptId, setDetailAttemptId] = useState(null);
 
   const {
     data: quizzes = [],
@@ -402,11 +104,6 @@ export default function QuizzesTab() {
     error: quizzesError,
     refetch: refetchQuizzes,
   } = useStudentQuizzes();
-
-  const selectedQuiz = useMemo(
-    () => (selectedQuizId ? quizzes.find((quiz) => quiz.id === selectedQuizId) || null : null),
-    [quizzes, selectedQuizId]
-  );
 
   const {
     data: attempts = [],
@@ -424,16 +121,6 @@ export default function QuizzesTab() {
     },
   });
 
-  const enrollmentStatusByCourseId = useMemo(() => {
-    const map = new Map();
-    enrollments.forEach((enrollment) => {
-      if (enrollment.course?.id) {
-        map.set(enrollment.course.id, enrollment.status);
-      }
-    });
-    return map;
-  }, [enrollments]);
-
   const isLoading = isQuizzesLoading || isAttemptsLoading;
   const isError = isQuizzesError || isAttemptsError;
   const error = quizzesError || attemptsError;
@@ -443,347 +130,373 @@ export default function QuizzesTab() {
     refetchAttempts();
   }
 
-  const quizGroupsByCourse = useMemo(() => {
-    const map = new Map();
-    quizzes.forEach((quiz) => {
-      const courseId = quiz.course?.id;
-      if (!courseId) return;
-      const group = map.get(courseId) || { course: quiz.course, quizzes: [] };
-      group.quizzes.push(quiz);
-      map.set(courseId, group);
+  const activeCourseIds = useMemo(() => {
+    const ids = new Set();
+    enrollments.forEach((enrollment) => {
+      if (enrollment.course?.id && enrollment.status === "ACTIVE") {
+        ids.add(enrollment.course.id);
+      }
     });
-    return Array.from(map.values()).map((group) => {
-      const toDoQuizzes = sortToDoQuizzes(group.quizzes.filter(isToDoQuiz));
-      // Locked quizzes stay visible in the "To do" list above (so nothing
-      // looks like it vanished) but aren't actually actionable right now,
-      // so they're excluded from this count — matches the "To do" chip's
-      // "quizzes you can take right now" framing.
-      const pendingCount = group.quizzes.filter((quiz) => isPendingQuiz(quiz) && !quiz.is_locked).length;
-      const passedCount = group.quizzes.filter((quiz) => quiz.latest_attempt?.is_passed === true).length;
-      const percentages = group.quizzes
-        .map((quiz) => quiz.latest_attempt?.percentage)
-        .filter((value) => value !== null && value !== undefined);
-      const averagePercentage = percentages.length
-        ? Math.round(percentages.reduce((sum, value) => sum + value, 0) / percentages.length)
-        : null;
-      return { ...group, toDoQuizzes, pendingCount, passedCount, averagePercentage };
-    });
-  }, [quizzes]);
+    return ids;
+  }, [enrollments]);
 
-  const attemptGroupsByCourse = useMemo(() => {
-    const map = new Map();
+  // Best score and "has ever passed", per quiz, read from the attempt history
+  // rather than from `latest_attempt`: a student who passes and then retakes
+  // for a better mark has a latest attempt that may be worse, and neither the
+  // Passed tab nor the Best column should forget the pass.
+  const { bestByQuiz, passedQuizIds } = useMemo(() => {
+    const best = new Map();
+    const passed = new Set();
     attempts.forEach((attempt) => {
-      const courseId = attempt.course?.id;
-      if (!courseId) return;
-      const group = map.get(courseId) || { course: attempt.course, attempts: [] };
-      group.attempts.push(attempt);
-      map.set(courseId, group);
+      const quizId = attempt.quiz?.id;
+      if (!quizId) return;
+      if (attempt.is_passed === true) passed.add(quizId);
+      const pct = attempt.percentage;
+      if (pct === null || pct === undefined) return;
+      if (!best.has(quizId) || pct > best.get(quizId)) best.set(quizId, pct);
     });
-    return Array.from(map.values()).map((group) => {
-      const attemptsSorted = sortAttempts(group.attempts);
-      const passedCount = attemptsSorted.filter((attempt) => attempt.is_passed === true).length;
-      const percentages = attemptsSorted
-        .map((attempt) => attempt.percentage)
-        .filter((value) => value !== null && value !== undefined);
-      const averagePercentage = percentages.length
-        ? Math.round(percentages.reduce((sum, value) => sum + value, 0) / percentages.length)
-        : null;
-      return {
-        ...group,
-        attempts: attemptsSorted,
-        passedCount,
-        averagePercentage,
-        bestAttemptIds: computeBestAttemptIds(attemptsSorted),
-      };
-    });
+    return { bestByQuiz: best, passedQuizIds: passed };
   }, [attempts]);
 
-  const selectedGroup = useMemo(
+  const courses = useMemo(() => {
+    const map = new Map();
+    quizzes.forEach((quiz) => {
+      if (quiz.course?.id && !map.has(quiz.course.id)) {
+        map.set(quiz.course.id, quiz.course);
+      }
+    });
+    return Array.from(map.values()).sort((a, b) =>
+      (a.title || "").localeCompare(b.title || ""),
+    );
+  }, [quizzes]);
+
+  const scopedQuizzes = useMemo(
     () =>
-      selectedCourseId
-        ? quizGroupsByCourse.find((item) => String(item.course.id) === String(selectedCourseId))
-        : null,
-    [quizGroupsByCourse, selectedCourseId]
+      courseFilter
+        ? quizzes.filter((quiz) => String(quiz.course?.id) === courseFilter)
+        : quizzes,
+    [quizzes, courseFilter],
   );
 
-  const selectedAttemptGroup = useMemo(
+  const scopedAttempts = useMemo(
     () =>
-      (selectedCourseId &&
-        attemptGroupsByCourse.find((item) => String(item.course.id) === String(selectedCourseId))) || {
-        attempts: [],
-        passedCount: 0,
-        averagePercentage: null,
-        bestAttemptIds: new Set(),
-      },
-    [attemptGroupsByCourse, selectedCourseId]
+      courseFilter
+        ? attempts.filter((attempt) => String(attempt.course?.id) === courseFilter)
+        : attempts,
+    [attempts, courseFilter],
   );
 
-  const canInteractWithSelectedCourse =
-    selectedGroup && enrollmentStatusByCourseId.get(selectedGroup.course.id) === "ACTIVE";
+  const counts = useMemo(() => {
+    const tally = { open: 0, passed: 0, locked: 0 };
+    scopedQuizzes.forEach((quiz) => {
+      tally[bucketOf(quiz, passedQuizIds)] += 1;
+    });
+    return { ...tally, attempts: scopedAttempts.length };
+  }, [scopedQuizzes, scopedAttempts, passedQuizIds]);
 
-  const filteredAttempts = useMemo(() => {
-    const list = selectedAttemptGroup.attempts;
-    if (statusFilter === "ALL") return list;
-    if (statusFilter === "IN_PROGRESS") {
-      return list.filter((attempt) => attempt.status === "IN_PROGRESS");
-    }
-    if (statusFilter === "ABANDONED") {
-      return list.filter(isAbandonedStatus);
-    }
-    if (statusFilter === "PASSED") {
-      return list.filter((attempt) => attempt.is_passed === true);
-    }
-    return list.filter((attempt) => attempt.is_passed === false && !isAbandonedStatus(attempt));
-  }, [selectedAttemptGroup, statusFilter]);
+  const quizRows = useMemo(
+    () => scopedQuizzes.filter((quiz) => bucketOf(quiz, passedQuizIds) === tab),
+    [scopedQuizzes, tab, passedQuizIds],
+  );
 
-  function openCourse(courseId) {
-    const params = new URLSearchParams(searchParams.toString());
-    params.set("quizCourse", String(courseId));
-    router.replace(`${pathname}?${params.toString()}`, { scroll: false });
-    setStatusFilter("ALL");
+  // Finished attempts first, newest first; an in-progress one has no end date
+  // and sorts after them rather than to the top on a missing value.
+  const attemptRows = useMemo(
+    () =>
+      [...scopedAttempts].sort((a, b) => {
+        const aDone = Boolean(a.ended_at);
+        const bDone = Boolean(b.ended_at);
+        if (aDone !== bDone) return aDone ? -1 : 1;
+        if (aDone && bDone) {
+          return new Date(b.ended_at).getTime() - new Date(a.ended_at).getTime();
+        }
+        return 0;
+      }),
+    [scopedAttempts],
+  );
+
+  const selectedQuiz = useMemo(
+    () => (selectedQuizId ? quizzes.find((quiz) => quiz.id === selectedQuizId) || null : null),
+    [quizzes, selectedQuizId],
+  );
+
+  // One pager serves both tables — the Attempts tab shows a different list, so
+  // the active one decides what is being paged.
+  const activeRows = tab === "attempts" ? attemptRows : quizRows;
+  const totalPages = Math.max(1, Math.ceil(activeRows.length / PAGE_SIZE));
+  // Derived, never stored: a filter can shrink the list under the reader, and
+  // clamping here means the table is right on the first render rather than
+  // showing an empty page and then correcting itself.
+  const safePage = Math.min(page, totalPages);
+  const pageRows = activeRows.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+
+  function changeTab(value) {
+    setTab(value);
+    setPage(1);
   }
 
-  function closeCourse() {
+  function setCourseFilter(value) {
+    setPage(1);
     const params = new URLSearchParams(searchParams.toString());
-    params.delete("quizCourse");
+    if (value) params.set("quizCourse", value);
+    else params.delete("quizCourse");
     const query = params.toString();
     router.replace(query ? `${pathname}?${query}` : pathname, { scroll: false });
   }
 
-  let content;
-
   if (isLoading) {
-    content = (
+    return (
       <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
         <Loader fullScreen={false} label="Loading your quizzes..." />
       </div>
     );
-  } else if (isError) {
-    content = (
-      <div className="border rounded-2xl p-8 text-center max-w-lg mx-auto border-line bg-paper">
-        <div className="w-12 h-12 border rounded-2xl flex items-center justify-center mx-auto mb-4 bg-rose-50 border-rose-100 text-rose-600">
-          <AlertCircle className="w-6 h-6" />
-        </div>
-        <h2 className="text-xl font-serif font-bold mb-2 text-ink">
-          Failed to Load Quizzes
+  }
+
+  if (isError) {
+    return (
+      <PortalCard className="mx-auto max-w-lg p-10 text-center">
+        <span className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-cn-p-sm bg-cn-p-bad-bg text-cn-p-bad">
+          <AlertCircle className="h-6 w-6" />
+        </span>
+        <h2 className="mb-2 text-xl font-bold tracking-[-0.015em] text-cn-p-ink">
+          Failed to load quizzes
         </h2>
-        <p className="text-sm font-light mb-6 text-muted">
+        <p className="mb-6 text-sm text-cn-p-ink-2">
           {getApiErrorMessage(error, "Unable to load your quizzes.")}
         </p>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
-        >
-          <RefreshCw className="w-4 h-4" />
+        <PortalButton onClick={() => refetch()}>
+          <RefreshCw className="h-4 w-4" />
           Retry
-        </button>
-      </div>
-    );
-  } else if (quizzes.length === 0) {
-    content = (
-      <div className="rounded-2xl border border-dashed border-line bg-paper/70">
-        <EmptyState
-          icon={CircleHelp}
-          label="No quizzes yet"
-          description="Once your instructors publish quizzes in your enrolled courses, they will appear here."
-          size="lg"
-        />
-      </div>
-    );
-  } else if (selectedCourseId) {
-    if (!selectedGroup) {
-      content = (
-        <div className="rounded-2xl border border-dashed p-10 text-center space-y-4 border-line bg-paper/70">
-          <p className="text-sm text-muted">
-            We couldn&apos;t find quizzes for that course.
-          </p>
-          <button
-            type="button"
-            onClick={closeCourse}
-            className="inline-flex items-center gap-2 px-4 py-2.5 text-sm font-mono uppercase tracking-wider rounded-xl transition bg-pine hover:bg-moss text-paper"
-          >
-            Back to Quizzes
-          </button>
-        </div>
-      );
-    } else {
-      const inProgressCount = selectedAttemptGroup.attempts.filter(
-        (attempt) => attempt.status === "IN_PROGRESS"
-      ).length;
-      const abandonedCount = selectedAttemptGroup.attempts.filter(isAbandonedStatus).length;
-      const failedCount = selectedAttemptGroup.attempts.filter(
-        (attempt) => attempt.is_passed === false && !isAbandonedStatus(attempt)
-      ).length;
-
-      content = (
-        <div className="space-y-6">
-          <button
-            type="button"
-            onClick={closeCourse}
-            className="inline-flex items-center gap-1.5 px-3.5 py-2 border text-xs font-mono uppercase tracking-wider rounded-xl transition border-line hover:border-pine hover:text-pine text-muted"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to Quizzes
-          </button>
-          <div className="flex flex-wrap items-start justify-between gap-4">
-            <div>
-              <h2 className="font-serif font-bold text-2xl text-ink">
-                {selectedGroup.course.title}
-              </h2>
-              <p className="text-sm font-light mt-1 text-muted">
-                {selectedGroup.quizzes.length} quiz{selectedGroup.quizzes.length === 1 ? "" : "zes"} total
-                {!canInteractWithSelectedCourse
-                  ? " · enrollment isn't active, attempts are disabled"
-                  : ""}
-              </p>
-            </div>
-            <div className="flex items-center gap-2.5">
-              <StatChip
-                label="To do"
-                value={selectedGroup.pendingCount}
-                tone={selectedGroup.pendingCount > 0 ? "amber" : "stone"}
-              />
-              <StatChip label="Passed" value={selectedGroup.passedCount} tone="emerald" />
-              <StatChip
-                label="Avg score"
-                value={
-                  selectedGroup.averagePercentage === null ? "—" : `${selectedGroup.averagePercentage}%`
-                }
-                tone="amber"
-              />
-            </div>
-          </div>
-
-          {selectedGroup.toDoQuizzes.length > 0 ? (
-            <div className="space-y-2.5">
-              <div className="flex items-baseline gap-2">
-                <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-muted">
-                  To do
-                </h3>
-                <span className="text-[11px] font-mono text-muted">
-                  Quizzes you can take right now
-                </span>
-              </div>
-              <div className="space-y-2.5">
-                {selectedGroup.toDoQuizzes.map((quiz) => (
-                  <QuizToDoRow
-                    key={quiz.id}
-                    quiz={quiz}
-                    onOpen={() => setSelectedQuizId(quiz.id)}
-                  />
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          <div className="space-y-2.5">
-            <div className="flex items-baseline gap-2">
-              <h3 className="text-sm font-mono font-bold uppercase tracking-wider text-muted">
-                Attempt history
-              </h3>
-              <span className="text-[11px] font-mono text-muted">
-                Every attempt you&apos;ve made in this course
-              </span>
-            </div>
-            <div className="flex flex-wrap items-center gap-2">
-              {STATUS_FILTERS.map((filter) => {
-                const count =
-                  filter.id === "ALL"
-                    ? selectedAttemptGroup.attempts.length
-                    : filter.id === "PASSED"
-                      ? selectedAttemptGroup.passedCount
-                      : filter.id === "FAILED"
-                        ? failedCount
-                        : filter.id === "ABANDONED"
-                          ? abandonedCount
-                          : inProgressCount;
-                return (
-                  <FilterButton
-                    key={filter.id}
-                    active={statusFilter === filter.id}
-                    onClick={() => setStatusFilter(filter.id)}
-                  >
-                    {filter.label} ({count})
-                  </FilterButton>
-                );
-              })}
-            </div>
-            {filteredAttempts.length === 0 ? (
-              <div className="rounded-2xl border border-dashed border-line bg-paper/70">
-                <EmptyState
-                  icon={CircleHelp}
-                  label="Nothing here"
-                  description="No attempts match this filter."
-                  compact
-                  size="lg"
-                />
-              </div>
-            ) : (
-              <div className="space-y-2.5">
-                {filteredAttempts.map((attempt) => (
-                  <QuizAttemptRow
-                    key={attempt.attempt_id}
-                    attempt={attempt}
-                    isBest={selectedAttemptGroup.bestAttemptIds.has(attempt.attempt_id)}
-                    onOpen={() => setDetailAttemptId(attempt.attempt_id)}
-                  />
-                ))}
-              </div>
-            )}
-          </div>
-        </div>
-      );
-    }
-  } else {
-    content = (
-      <div className="space-y-6">
-        <div>
-          <p className="text-[11px] font-mono uppercase tracking-[0.2em] mb-2 text-pine/80">
-            Assessments
-          </p>
-          <h2 className="font-serif font-bold text-2xl sm:text-3xl text-ink">
-            Your quizzes
-          </h2>
-          <p className="text-sm font-light mt-2 text-muted">
-            Grouped by course — open a course to take a pending quiz or review every attempt and
-            score.
-          </p>
-        </div>
-        <motion.div
-          initial={{ opacity: 0, y: 8 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.25, ease: "easeOut" }}
-          className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
-        >
-          {quizGroupsByCourse.map((group) => (
-            <CourseworkSummaryCard
-              key={group.course.id}
-              courseTitle={group.course.title}
-              accent="violet"
-              itemLabel="quiz"
-              totalCount={group.quizzes.length}
-              pendingCount={group.pendingCount}
-              completedCount={group.passedCount}
-              completedLabel="Passed"
-              averagePercentage={group.averagePercentage}
-              onOpen={() => openCourse(group.course.id)}
-            />
-          ))}
-        </motion.div>
-      </div>
+        </PortalButton>
+      </PortalCard>
     );
   }
 
+  const isAttemptsTab = tab === "attempts";
+
   return (
-    <>
-      {content}
+    // `grid-cols-[minmax(0,1fr)]`, not a bare `grid`: a grid item defaults to
+    // `min-width:auto` and so refuses to shrink below its content, and the
+    // table below is wider than a phone. Left alone the column grew to the
+    // table's intrinsic width and took the whole page with it — the heading
+    // ran off the right edge and the screen scrolled sideways instead of the
+    // table scrolling inside its own wrapper.
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Quizzes"
+        subtitle="Module knowledge checks. Each quiz carries its own pass mark, and you can retake one as many times as you need."
+      >
+        {courses.length > 1 && (
+          <label className="flex items-center gap-2 text-sm text-cn-p-ink-2">
+            <span className="sr-only">Filter by course</span>
+            <select
+              value={courseFilter}
+              onChange={(event) => setCourseFilter(event.target.value)}
+              // A <select> sizes itself to its widest option, and course
+              // titles here run to sixty characters — left alone it stretched
+              // past half the page and shoved itself onto a line of its own.
+              // The open list still shows every title in full.
+              className="h-11 max-w-[240px] truncate rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card px-3 text-sm font-semibold text-cn-p-ink transition-[border-color] duration-150 hover:border-cn-p-ink focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-cn-p-accent"
+            >
+              <option value="">All courses</option>
+              {courses.map((course) => (
+                <option key={course.id} value={String(course.id)}>
+                  {course.title}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </PortalPageHead>
+
+      {quizzes.length === 0 ? (
+        <PortalCard>
+          <PortalEmpty
+            icon={CircleHelp}
+            title="No quizzes yet"
+            text="Once your instructors publish quizzes in your enrolled courses, they will appear here."
+          />
+        </PortalCard>
+      ) : (
+        <PortalCard>
+          <div ref={resultsRef} className="scroll-mt-24 px-4">
+            <PortalTabs
+              ariaLabel="Filter quizzes by status"
+              options={[
+                { value: "open", label: "Open", count: counts.open },
+                { value: "passed", label: "Passed", count: counts.passed },
+                { value: "locked", label: "Locked", count: counts.locked },
+                { value: "attempts", label: "Attempts", count: counts.attempts },
+              ]}
+              value={tab}
+              onChange={changeTab}
+            />
+          </div>
+
+          {isAttemptsTab ? (
+            attemptRows.length === 0 ? (
+              <PortalEmpty
+                icon={CircleHelp}
+                title="No attempts yet"
+                text="Every quiz you start shows up here with its score and outcome."
+              />
+            ) : (
+              <PortalTable>
+                <thead>
+                  <tr>
+                    <PortalTh>Quiz</PortalTh>
+                    <PortalTh>Course</PortalTh>
+                    <PortalTh align="right">Attempt</PortalTh>
+                    <PortalTh align="right">Score</PortalTh>
+                    <PortalTh>Finished</PortalTh>
+                    <PortalTh>Status</PortalTh>
+                  </tr>
+                </thead>
+                <tbody>
+                  {pageRows.map((attempt) => {
+                    const status = attemptStatus(attempt);
+                    return (
+                      <PortalTr
+                        key={attempt.attempt_id}
+                        onOpen={() => setDetailAttemptId(attempt.attempt_id)}
+                      >
+                        <PortalTd>
+                          <b className="font-semibold text-cn-p-ink">
+                            {attempt.quiz?.title || "Quiz"}
+                          </b>
+                          {attempt.module?.title && (
+                            <span className="mt-0.5 block text-[13px] text-cn-p-muted">
+                              {attempt.module.title}
+                            </span>
+                          )}
+                        </PortalTd>
+                        <PortalTd className="text-sm text-cn-p-ink-2">
+                          {attempt.course?.title || "—"}
+                        </PortalTd>
+                        <PortalTd align="right" numeric className="text-sm text-cn-p-ink-2">
+                          #{attempt.attempt_number}
+                        </PortalTd>
+                        <PortalTd align="right" numeric className="text-sm">
+                          {attempt.percentage === null || attempt.percentage === undefined ? (
+                            <span className="text-cn-p-ink-2">—</span>
+                          ) : (
+                            <>
+                              <b className="font-bold text-cn-p-ink">{attempt.percentage}%</b>
+                              {attempt.score !== null && attempt.total_marks ? (
+                                <span className="text-cn-p-ink-2">
+                                  {" "}
+                                  ({attempt.score}/{attempt.total_marks})
+                                </span>
+                              ) : null}
+                            </>
+                          )}
+                        </PortalTd>
+                        <PortalTd className="text-sm text-cn-p-ink-2">
+                          {attempt.ended_at ? formatDate(attempt.ended_at) : "—"}
+                        </PortalTd>
+                        <PortalTd>
+                          <PortalPill tone={status.tone}>{status.label}</PortalPill>
+                        </PortalTd>
+                      </PortalTr>
+                    );
+                  })}
+                </tbody>
+              </PortalTable>
+            )
+          ) : quizRows.length === 0 ? (
+            <PortalEmpty
+              icon={CircleHelp}
+              title="Nothing here"
+              text="Quizzes move between these tabs as you take them and pass them."
+            />
+          ) : (
+            <PortalTable>
+              <thead>
+                <tr>
+                  <PortalTh>Quiz</PortalTh>
+                  <PortalTh>Course</PortalTh>
+                  <PortalTh align="right">Questions</PortalTh>
+                  <PortalTh align="right">Attempts</PortalTh>
+                  <PortalTh align="right">Best</PortalTh>
+                  <PortalTh>Status</PortalTh>
+                </tr>
+              </thead>
+              <tbody>
+                {pageRows.map((quiz) => {
+                  const status = quizStatus(quiz, passedQuizIds);
+                  const best = bestByQuiz.get(quiz.id);
+                  const isLocked = Boolean(quiz.is_locked);
+                  return (
+                    <PortalTr
+                      key={quiz.id}
+                      disabled={isLocked}
+                      title={isLocked ? quiz.lock_info?.reason : undefined}
+                      onOpen={isLocked ? undefined : () => setSelectedQuizId(quiz.id)}
+                    >
+                      <PortalTd>
+                        <b className="font-semibold text-cn-p-ink">{quiz.title}</b>
+                        {quiz.module?.title && (
+                          <span className="mt-0.5 block text-[13px] text-cn-p-muted">
+                            {quiz.module.title}
+                          </span>
+                        )}
+                      </PortalTd>
+                      <PortalTd className="text-sm text-cn-p-ink-2">
+                        {quiz.course?.title || "—"}
+                      </PortalTd>
+                      <PortalTd align="right" numeric className="text-sm text-cn-p-ink-2">
+                        {quiz.number_of_questions ?? "—"}
+                      </PortalTd>
+                      <PortalTd align="right" numeric className="text-sm text-cn-p-ink-2">
+                        {quiz.attempts_used ?? 0}
+                      </PortalTd>
+                      <PortalTd align="right" numeric className="text-sm">
+                        {best === undefined ? (
+                          <span className="text-cn-p-ink-2">—</span>
+                        ) : (
+                          <b className="font-bold text-cn-p-ink">{best}%</b>
+                        )}
+                      </PortalTd>
+                      <PortalTd>
+                        <PortalPill tone={status.tone}>{status.label}</PortalPill>
+                      </PortalTd>
+                    </PortalTr>
+                  );
+                })}
+              </tbody>
+            </PortalTable>
+          )}
+
+          {activeRows.length > 0 && (
+            <div className="px-5 pb-4">
+              <Pagination
+                size="lg"
+                tone="cobalt"
+                page={safePage}
+                totalPages={totalPages}
+                onPageChange={changePage}
+                totalLabel={
+                  tab === "attempts"
+                    ? `${activeRows.length} attempt${activeRows.length === 1 ? "" : "s"}`
+                    : `${activeRows.length} quiz${activeRows.length === 1 ? "" : "zes"}`
+                }
+              />
+            </div>
+          )}
+        </PortalCard>
+      )}
+
       <QuizAttemptModal
         quiz={selectedQuiz}
-        canInteract={Boolean(canInteractWithSelectedCourse)}
+        canInteract={
+          Boolean(selectedQuiz) && activeCourseIds.has(selectedQuiz.course?.id)
+        }
         onClose={() => setSelectedQuizId(null)}
       />
-      <QuizAttemptHistoryModal attemptId={detailAttemptId} onClose={() => setDetailAttemptId(null)} />
-    </>
+      <QuizAttemptHistoryModal
+        attemptId={detailAttemptId}
+        onClose={() => setDetailAttemptId(null)}
+      />
+    </div>
   );
 }

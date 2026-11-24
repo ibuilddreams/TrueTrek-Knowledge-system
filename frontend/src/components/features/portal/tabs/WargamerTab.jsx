@@ -1,15 +1,11 @@
 "use client";
 
-import { useState } from "react";
-import { History, Swords } from "lucide-react";
-import TabNav from "@/components/ui/TabNav";
+import { useCallback, useState } from "react";
+import { useRolePlayScenarios } from "@/hooks/student/useRolePlayScenarios";
+import { PortalPageHead } from "../shell/PortalUI";
 import WargamerModule from "../wargamer/WargamerModule";
+import WargamerStatStrip from "../wargamer/WargamerStatStrip";
 import SessionHistoryList from "../wargamer/SessionHistoryList";
-
-const SECTIONS = [
-  { id: "module", label: "Tactical Wargamer", icon: Swords },
-  { id: "history", label: "Past Runs", icon: History },
-];
 
 /**
  * The student's entry point to LS-302 — the AI role-play boundary simulator.
@@ -19,51 +15,60 @@ const SECTIONS = [
  * (a situational-judgement MCQ). This one is a conversation the student has
  * to hold their own in, and it is the only portal surface that scores how
  * they said something rather than what they picked.
+ *
+ * The design lays this out as the three score tiles over two columns —
+ * Situations beside Past runs — with no tabs: a student picking what to
+ * practise next wants their last results in the same glance. A live
+ * conversation, the method primer and the report card each take the whole
+ * page instead, which is what `isImmersive` switches.
  */
 export default function WargamerTab() {
-  const [activeSection, setActiveSection] = useState("module");
   const [openingSessionId, setOpeningSessionId] = useState(null);
+  const [isImmersive, setIsImmersive] = useState(false);
 
-  const handleOpenSession = (sessionId) => {
-    setOpeningSessionId(sessionId);
-    setActiveSection("module");
-  };
+  // The catalog is already cached by the module below, so reading it here for
+  // the tiles costs no extra request.
+  const { data: catalog } = useRolePlayScenarios();
+
+  const handleOpenSession = (sessionId) => setOpeningSessionId(sessionId);
+
+  // Stable, or `WargamerModule`'s effect would re-fire on every render.
+  const handleImmersiveChange = useCallback((next) => setIsImmersive(next), []);
+
+  const module = (
+    <WargamerModule
+      initialSessionId={openingSessionId}
+      onSessionOpened={() => setOpeningSessionId(null)}
+      onImmersiveChange={handleImmersiveChange}
+    />
+  );
 
   return (
-    <div className="space-y-6">
-      <div className="relative bg-paper border border-line rounded-2xl shadow-sm p-6 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pine via-moss to-gold opacity-80" />
-        <div className="flex items-start gap-4">
-          <div className="w-11 h-11 rounded-2xl bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
-            <Swords className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-lg font-serif font-light text-ink">
-              The &ldquo;No&rdquo; Muscle
-            </h2>
-            <p className="text-xs text-muted font-light mt-1 leading-relaxed">
-              Practise turning down family, friends and your community &mdash; against someone
-              who pushes back &mdash; before it happens for real.
-            </p>
-          </div>
-        </div>
-      </div>
-
-      <TabNav
-        tabs={SECTIONS}
-        activeTab={activeSection}
-        onChange={setActiveSection}
-        ariaLabel="Tactical Wargamer sections"
-        size="lg"
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Tactical wargamer"
+        subtitle={'LS-302 · The "No" Muscle. Practise turning down family, friends and your community without burning bridges.'}
       />
 
-      {activeSection === "module" && (
-        <WargamerModule
-          initialSessionId={openingSessionId}
-          onSessionOpened={() => setOpeningSessionId(null)}
-        />
-      )}
-      {activeSection === "history" && <SessionHistoryList onOpenSession={handleOpenSession} />}
+      {!isImmersive && <WargamerStatStrip stats={catalog?.stats} />}
+
+      {/* The module stays in the same position in the tree in both states —
+          first child of this grid — and only the wrapper's columns and the
+          sibling beside it change. Rendering it at two *different* positions
+          (`isImmersive ? module : <div>{module}</div>`) made React unmount and
+          remount it every time the flag flipped, which reset its step back to
+          the situations list the instant a conversation opened, so starting a
+          run did nothing at all. */}
+      <div
+        className={
+          isImmersive
+            ? "grid grid-cols-[minmax(0,1fr)] gap-6"
+            : "grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"
+        }
+      >
+        <div className="min-w-0">{module}</div>
+        {!isImmersive && <SessionHistoryList onOpenSession={handleOpenSession} />}
+      </div>
     </div>
   );
 }

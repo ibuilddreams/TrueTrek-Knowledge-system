@@ -61,6 +61,7 @@ export default function QuizAttemptModal({ quiz, canInteract, onClose }) {
       icon={CircleHelp}
       title={quiz?.title}
       subtitle={phase === "in_progress" ? "Attempt in progress" : undefined}
+      variant="cobalt"
       maxWidth="max-w-2xl"
     >
       {quiz && phase === "intro" && (

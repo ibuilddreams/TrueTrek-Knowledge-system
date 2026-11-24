@@ -28,16 +28,15 @@ export default function ReviewProgressPanel({ fileName }) {
   }, []);
 
   return (
-    <div className="relative bg-paper border border-line rounded-2xl shadow-sm p-8 overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pine via-moss to-gold opacity-80" />
+    <div className="relative bg-cn-p-card border border-cn-p-line rounded-2xl shadow-sm p-8 overflow-hidden">
 
       <div className="flex flex-col items-center text-center gap-3 mb-7">
-        <div className="w-12 h-12 rounded-2xl bg-gold/12 border border-gold/25 text-gold flex items-center justify-center">
+        <div className="w-12 h-12 rounded-2xl bg-cn-p-warn-bg border border-cn-p-warn-bg text-cn-p-warn flex items-center justify-center">
           <Loader2 className="w-5 h-5 animate-spin" />
         </div>
-        <h3 className="text-lg font-serif font-light text-ink">Reviewing your media kit</h3>
-        {fileName && <p className="text-xs text-muted font-light">{fileName}</p>}
-        <p className="text-xs text-muted font-light max-w-sm leading-relaxed">
+        <h3 className="text-lg font-light text-cn-p-ink">Reviewing your media kit</h3>
+        {fileName && <p className="text-xs text-cn-p-ink-2 font-light">{fileName}</p>}
+        <p className="text-xs text-cn-p-ink-2 font-light max-w-sm leading-relaxed">
           This usually takes under a minute. You can leave this tab — your review keeps running
           and will be here when you come back.
         </p>
@@ -54,19 +53,19 @@ export default function ReviewProgressPanel({ fileName }) {
               key={stage.label}
               className={`flex items-center gap-3 px-4 py-3 rounded-xl border transition-colors ${
                 isActive
-                  ? "border-pine/30 bg-sage/20"
+                  ? "border-cn-p-accent-soft bg-cn-p-soft"
                   : isDone
-                    ? "border-line bg-porcelain"
-                    : "border-line bg-paper opacity-50"
+                    ? "border-cn-p-line bg-cn-p-page"
+                    : "border-cn-p-line bg-cn-p-card opacity-50"
               }`}
             >
               <StageIcon
-                className={`w-4 h-4 shrink-0 ${isActive ? "text-pine" : "text-muted"}`}
+                className={`w-4 h-4 shrink-0 ${isActive ? "text-cn-p-accent" : "text-cn-p-ink-2"}`}
               />
-              <span className={`text-xs font-light ${isActive ? "text-ink" : "text-muted"}`}>
+              <span className={`text-xs font-light ${isActive ? "text-cn-p-ink" : "text-cn-p-ink-2"}`}>
                 {stage.label}
               </span>
-              {isActive && <Loader2 className="w-3.5 h-3.5 ml-auto animate-spin text-pine" />}
+              {isActive && <Loader2 className="w-3.5 h-3.5 ml-auto animate-spin text-cn-p-accent" />}
             </li>
           );
         })}

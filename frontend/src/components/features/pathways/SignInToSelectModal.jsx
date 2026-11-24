@@ -1,86 +1,49 @@
 "use client";
 
-import Link from "next/link";
-import { LogIn, ShieldCheck, Tag, UserPlus } from "lucide-react";
-import Modal from "@/components/ui/Modal";
+import { ShieldCheck, Tag } from "lucide-react";
+import SignInModal from "@/components/features/auth/SignInModal";
 import { ROUTES } from "@/constants/routes";
-import { buildAuthUrl } from "@/lib/authRedirect";
 
 // Shown when a guest tries to select or enroll in a pathway, or taps a bundle
-// price that is only shown to signed-in accounts, instead of bouncing them
-// straight to /login. Mirrors the cart's SignInToPurchaseModal; `nextPath` is
-// carried as `?next=` so useGuestOnlyRoute returns them to this exact page
-// once they've signed in.
+// price that is only shown to signed-in accounts.
 //
-// `intent` only changes the wording — both routes end in the same account, so
-// a guest who clicked a withheld price isn't told they tried to buy something.
+// It is the design's sign-in dialog (`features/auth/SignInModal`), the same one
+// the store's "Enroll now" opens, so a visitor signs in on the spot instead of
+// being sent to /login and losing the pathway they were reading about. The
+// price they tapped is simply there when the dialog closes — `usePathwayPricing`
+// reads the session — which is why signing in here needs no follow-up action.
+//
+// `nextPath` is carried as `?next=` on the "Start your application" route only:
+// signing in happens in place, so only the sign-*up* detour has to find its way
+// back. `intent` changes the chip and nothing else — both routes end in the
+// same account, so a guest who clicked a withheld price isn't told they tried
+// to buy something.
 export default function SignInToSelectModal({
   isOpen,
   onClose,
   pathwayName,
   nextPath = ROUTES.PATHWAYS,
   intent = "select",
-  closeLabel = "Keep Browsing Pathways",
 }) {
   const isPriceIntent = intent === "price";
 
   return (
-    <Modal
+    <SignInModal
       isOpen={isOpen}
       onClose={onClose}
-      icon={isPriceIntent ? Tag : ShieldCheck}
-      title={isPriceIntent ? "Sign in to view pricing" : "Sign in to select this pathway"}
-      subtitle={
-        isPriceIntent
-          ? "Bundle pricing is shown to members"
-          : "A student account is needed to enroll"
+      nextPath={nextPath}
+      context={
+        pathwayName && {
+          icon: isPriceIntent ? Tag : ShieldCheck,
+          eyebrow: isPriceIntent
+            ? "Sign in to view pricing"
+            : "Sign in to enroll",
+          title: pathwayName,
+          // No trailing value: the bundle price is exactly what is being
+          // withheld, so there is nothing to show beside the name.
+        }
       }
-      maxWidth="max-w-md"
-    >
-      <div className="space-y-5">
-        <p className="text-sm font-light leading-relaxed text-muted">
-          {pathwayName ? (
-            <>
-              <span className="font-medium text-ink">{pathwayName}</span>
-              {isPriceIntent
-                ? " is priced for signed-in accounts."
-                : " is purchased with a student account."}
-            </>
-          ) : isPriceIntent ? (
-            "Pathway pricing is shown to signed-in accounts."
-          ) : (
-            "Pathways are purchased with a student account."
-          )}{" "}
-          {isPriceIntent
-            ? "Sign in or create an account and we'll bring you straight back here with the price in view."
-            : "Sign in and we'll bring you straight back here to finish."}
-        </p>
-
-        <div className="flex flex-col gap-3">
-          <Link
-            href={buildAuthUrl(ROUTES.LOGIN, nextPath)}
-            className="w-full flex items-center justify-center gap-2 bg-pine hover:bg-moss text-paper font-sans text-xs font-medium uppercase tracking-widest py-3.5 rounded-full shadow-soft transition"
-          >
-            <LogIn className="w-4 h-4" />
-            Sign In
-          </Link>
-          <Link
-            href={buildAuthUrl(ROUTES.SIGNUP, nextPath)}
-            className="w-full flex items-center justify-center gap-2 bg-porcelain hover:bg-line/40 border border-line text-ink font-sans text-xs font-medium uppercase tracking-widest py-3.5 rounded-full transition"
-          >
-            <UserPlus className="w-4 h-4" />
-            Create Student Account
-          </Link>
-        </div>
-
-        <button
-          type="button"
-          onClick={onClose}
-          className="w-full text-center text-xs font-sans font-medium uppercase tracking-widest text-muted hover:text-ink transition-colors"
-        >
-          {closeLabel}
-        </button>
-      </div>
-    </Modal>
+      onSignedIn={onClose}
+    />
   );
 }

@@ -4,7 +4,9 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/constants/routes";
-import EnrollSignInModal from "@/components/features/store/EnrollSignInModal";
+import { BookOpen } from "lucide-react";
+import { formatCoursePrice } from "@/lib/store";
+import SignInModal from "@/components/features/auth/SignInModal";
 
 // "Enroll now", wherever it is offered: the store grid, the course page's
 // purchase card and the suggestions beside it.
@@ -48,13 +50,23 @@ export function useEnrollAction() {
   // Rendered by the caller, so the modal sits inside whatever already owns the
   // page's stacking context.
   const enrollModal = (
-    <EnrollSignInModal
+    <SignInModal
       isOpen={isOpen}
-      course={course}
       onClose={() => setIsOpen(false)}
-      onSignedIn={(selected) => {
+      // The course page is where they came from, so that is where signing up
+      // should return them.
+      nextPath={course?.slug ? `${ROUTES.STORE}/${course.slug}` : ROUTES.STORE}
+      context={
+        course && {
+          icon: BookOpen,
+          eyebrow: "Sign in to enroll",
+          title: course.title,
+          trailing: formatCoursePrice(course.amount),
+        }
+      }
+      onSignedIn={() => {
         setIsOpen(false);
-        if (selected) openPortalCheckout(selected);
+        if (course) openPortalCheckout(course);
       }}
     />
   );

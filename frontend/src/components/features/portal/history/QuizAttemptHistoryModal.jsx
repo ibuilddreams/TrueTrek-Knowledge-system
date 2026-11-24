@@ -13,19 +13,18 @@ function formatDuration(seconds) {
   return minutes === 0 ? `${remaining}s` : `${minutes}m ${remaining}s`;
 }
 
+// The design's `.kv` cell: a quiet label over the figure it names.
 function SummaryTile({ label, value, tone = "neutral" }) {
   const toneClass =
     tone === "emerald"
-      ? "text-emerald-700"
+      ? "text-cn-p-ok"
       : tone === "rose"
-        ? "text-rose-600"
-        : "text-ink";
+        ? "text-cn-p-bad"
+        : "text-cn-p-ink";
   return (
-    <div className="rounded-xl border px-3 py-2.5 border-line bg-porcelain/80">
-      <p className="text-[10px] font-mono uppercase tracking-wider text-muted">
-        {label}
-      </p>
-      <p className={`text-base font-serif font-bold mt-0.5 ${toneClass}`}>{value}</p>
+    <div className="rounded-cn-p-sm bg-cn-p-page px-3.5 py-3">
+      <p className="text-xs text-cn-p-ink-2">{label}</p>
+      <p className={`mt-0.5 text-base font-bold tabular-nums ${toneClass}`}>{value}</p>
     </div>
   );
 }
@@ -41,6 +40,7 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
       icon={ListChecks}
       title={data ? data.quiz.title : "Attempt detail"}
       subtitle={data ? `Attempt ${data.attempt_number} · ${data.status}` : ""}
+      variant="cobalt"
       maxWidth="max-w-2xl"
     >
       {isLoading && <Loader fullScreen={false} label="Loading attempt..." />}
@@ -68,7 +68,7 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
             />
           </div>
 
-          <p className="text-xs font-mono uppercase tracking-wider text-muted">
+          <p className="text-sm text-cn-p-ink-2">
             Submitted {formatDateTime(data.ended_at)}
           </p>
 
@@ -76,13 +76,13 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
             {data.questions.map((question, index) => (
               <li
                 key={question.id}
-                className="rounded-xl border p-4 border-line"
+                className="rounded-cn-p-sm border border-cn-p-line p-4"
               >
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <p className="text-sm font-semibold text-ink">
+                  <p className="text-sm font-semibold text-cn-p-ink">
                     {index + 1}. {question.text}
                   </p>
-                  <span className="text-[11px] font-mono uppercase shrink-0 text-muted">
+                  <span className="shrink-0 text-xs tabular-nums text-cn-p-ink-2">
                     {question.marks_awarded !== null
                       ? `${question.marks_awarded}/${question.marks} marks`
                       : `${question.marks} marks`}
@@ -91,14 +91,14 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
 
                 {question.question_type === "SHORT_ANSWER" ? (
                   <div className="space-y-2">
-                    <p className="text-sm border rounded-lg p-3 whitespace-pre-wrap text-muted bg-porcelain border-line">
+                    <p className="rounded-cn-p-sm border border-cn-p-line bg-cn-p-page p-3 text-sm whitespace-pre-wrap text-cn-p-ink-2">
                       {question.text_answer || "No answer provided."}
                     </p>
                     <span
-                      className={`inline-block text-[11px] font-mono uppercase tracking-wider ${
+                      className={`inline-flex h-6 items-center rounded-full px-2.5 text-xs font-semibold ${
                         question.grading_status === "PENDING_GRADING"
-                          ? "text-gold"
-                          : "text-emerald-700"
+                          ? "bg-cn-p-warn-bg text-cn-p-warn"
+                          : "bg-cn-p-ok-bg text-cn-p-ok"
                       }`}
                     >
                       {question.grading_status === "PENDING_GRADING"
@@ -106,7 +106,7 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
                         : "Graded"}
                     </span>
                     {question.feedback ? (
-                      <p className="text-xs font-light text-muted">
+                      <p className="text-sm text-cn-p-ink-2">
                         {question.feedback}
                       </p>
                     ) : null}
@@ -116,12 +116,12 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
                     {question.choices.map((choice) => (
                       <li
                         key={choice.id}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border ${
+                        className={`flex items-center gap-2 rounded-cn-p-sm border px-3 py-2 text-sm ${
                           choice.is_correct
-                            ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+                            ? "border-transparent bg-cn-p-ok-bg text-cn-p-ok"
                             : choice.is_selected
-                              ? "border-rose-200 bg-rose-50 text-rose-700"
-                              : "border-line bg-porcelain/60 text-muted"
+                              ? "border-transparent bg-cn-p-bad-bg text-cn-p-bad"
+                              : "border-cn-p-line bg-cn-p-page text-cn-p-ink-2"
                         }`}
                       >
                         {choice.is_correct && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
@@ -130,7 +130,7 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
                         )}
                         <span className="flex-1">{choice.text}</span>
                         {choice.is_selected && (
-                          <span className="text-[10px] font-mono uppercase tracking-wider shrink-0">
+                          <span className="shrink-0 text-xs font-semibold">
                             Selected
                           </span>
                         )}

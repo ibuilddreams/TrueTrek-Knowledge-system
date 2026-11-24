@@ -522,7 +522,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
               )}
               <PortalButton
                 variant="sec"
-                onClick={() => router.push(portalHref(AUTH_ROLES.STUDENT, "warroom"))}
+                onClick={() => router.push(`${portalHref(AUTH_ROLES.STUDENT, "daily")}/warroom`)}
               >
                 <MessageSquare className="h-[18px] w-[18px]" />
                 Course chat

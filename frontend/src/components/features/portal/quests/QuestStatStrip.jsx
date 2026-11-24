@@ -23,13 +23,13 @@ export default function QuestStatStrip({ stats }) {
   ];
 
   return (
-    <div className="grid grid-cols-2 sm:grid-cols-4 rounded-xl border border-line bg-porcelain/60 divide-y divide-x divide-line sm:divide-y-0">
+    <div className="grid grid-cols-2 sm:grid-cols-4 rounded-xl border border-cn-p-line bg-cn-p-page/60 divide-y divide-x divide-line sm:divide-y-0">
       {items.map((item) => (
         <div key={item.label} className="px-4 py-3.5 text-center first:border-l-0">
-          <p className="text-2xl sm:text-3xl font-mono font-bold text-pine tracking-tight tabular-nums">
+          <p className="text-2xl sm:text-3xl font-bold text-cn-p-accent tracking-tight tabular-nums">
             {item.value}
           </p>
-          <p className="text-[10px] font-mono uppercase tracking-widest text-muted mt-1">
+          <p className="text-[10px] font-semibold text-cn-p-ink-2 mt-1">
             {item.label}
           </p>
         </div>

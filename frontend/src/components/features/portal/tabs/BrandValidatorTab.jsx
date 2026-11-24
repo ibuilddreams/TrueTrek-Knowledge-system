@@ -11,21 +11,16 @@ import { isReviewRunning, useMediaKitReview } from "@/hooks/student/useMediaKitR
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 import Loader from "@/components/ui/Loader";
-import TabNav from "@/components/ui/TabNav";
+import PortalCard from "../shell/PortalCard";
+import { PortalButton, PortalPageHead } from "../shell/PortalUI";
 import MediaKitUploader from "../brand/MediaKitUploader";
 import ReviewProgressPanel from "../brand/ReviewProgressPanel";
 import MediaKitReviewResult from "../brand/MediaKitReviewResult";
 import NotAMediaKitPanel from "../brand/NotAMediaKitPanel";
 import MediaKitHistoryList from "../brand/MediaKitHistoryList";
 
-const SECTIONS = [
-  { id: "validator", label: "Brand Validator", icon: ShieldCheck },
-  { id: "history", label: "Past Reviews", icon: History },
-];
-
 export default function BrandValidatorTab() {
   const queryClient = useQueryClient();
-  const [activeSection, setActiveSection] = useState("validator");
   // `null` means "show the uploader"; an id means "show that review". Kept
   // separate from the latest-review query so "Review a new version" can
   // return to the uploader without discarding the completed review.
@@ -82,9 +77,9 @@ export default function BrandValidatorTab() {
   const renderValidator = () => {
     if (isLoadingLatest && !hasRestored) {
       return (
-        <div className="bg-paper border border-line rounded-2xl p-10">
-          <Loader fullScreen={false} label="Loading your brand review..." />
-        </div>
+        <PortalCard className="p-10">
+          <Loader fullScreen={false} tone="cobalt" label="Loading your brand review..." />
+        </PortalCard>
       );
     }
 
@@ -99,7 +94,7 @@ export default function BrandValidatorTab() {
 
     if (isLoadingReview && !review) {
       return (
-        <div className="bg-paper border border-line rounded-2xl p-10">
+        <div className="bg-cn-p-card border border-cn-p-line rounded-2xl p-10">
           <Loader fullScreen={false} label="Loading your brand review..." />
         </div>
       );
@@ -111,25 +106,21 @@ export default function BrandValidatorTab() {
 
     if (review?.status === "FAILED") {
       return (
-        <div className="bg-paper border border-line rounded-2xl p-10 flex flex-col items-center gap-3 text-center">
-          <div className="w-12 h-12 rounded-2xl bg-rose/35 border border-clay/25 text-clay flex items-center justify-center">
-            <AlertCircle className="w-5 h-5" />
-          </div>
-          <h3 className="text-lg font-serif font-light text-ink">
+        <PortalCard className="flex flex-col items-center gap-3 p-10 text-center">
+          <span className="grid h-12 w-12 place-items-center rounded-cn-p-sm bg-cn-p-bad-bg text-cn-p-bad">
+            <AlertCircle className="h-5 w-5" />
+          </span>
+          <h3 className="text-lg font-bold text-cn-p-ink">
             We couldn&apos;t finish that review
           </h3>
-          <p className="text-sm text-muted font-light max-w-sm leading-relaxed">
+          <p className="max-w-sm text-sm leading-relaxed text-cn-p-ink-2">
             {review.error_message || "Something went wrong while reviewing your media kit."}
           </p>
-          <button
-            type="button"
-            onClick={handleStartOver}
-            className="mt-1 inline-flex items-center gap-2 px-4 py-2 bg-pine hover:bg-moss text-paper font-bold font-mono text-xs uppercase tracking-wider rounded-lg transition cursor-pointer"
-          >
-            <RotateCcw className="w-3.5 h-3.5" />
+          <PortalButton size="sm" onClick={handleStartOver}>
+            <RotateCcw className="h-3.5 w-3.5" />
             Try again
-          </button>
-        </div>
+          </PortalButton>
+        </PortalCard>
       );
     }
 
@@ -147,34 +138,32 @@ export default function BrandValidatorTab() {
     );
   };
 
-  return (
-    <div className="space-y-6">
-      <div className="relative bg-paper border border-line rounded-2xl shadow-sm p-6 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pine via-moss to-gold opacity-80" />
-        <div className="flex items-start gap-4">
-          <div className="w-11 h-11 rounded-2xl bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
-            <ShieldCheck className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-lg font-serif font-light text-ink">The Brand Validator</h2>
-            <p className="text-xs text-muted font-light mt-1 leading-relaxed">
-              Upload your one-page media kit and have it read the way a local business owner
-              would read it — before you send it to one.
-            </p>
-          </div>
-        </div>
-      </div>
+  // The uploader shares the page with past reviews, as the design lays it out;
+  // anything that is a *result* — a review in flight, a finished scorecard, a
+  // failure, a not-a-media-kit — takes the whole width instead, because that
+  // is the one thing the reader is there to read.
+  const isResultView =
+    Boolean(activeReviewId) || isReviewRunning(review) || Boolean(review?.status);
 
-      <TabNav
-        tabs={SECTIONS}
-        activeTab={activeSection}
-        onChange={setActiveSection}
-        ariaLabel="Brand validator sections"
-        size="lg"
+  return (
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Brand validator"
+        subtitle="Upload your one-page media kit and get an AI critique before a sponsor sees it."
       />
 
-      {activeSection === "validator" && renderValidator()}
-      {activeSection === "history" && <MediaKitHistoryList onOpenReview={handleOpenReview} />}
+      {/* Same stable-position rule as the wargamer screen: one wrapper whose
+          columns change, never two different trees holding the same child. */}
+      <div
+        className={
+          isResultView
+            ? "grid grid-cols-[minmax(0,1fr)] gap-6"
+            : "grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]"
+        }
+      >
+        <div className="min-w-0">{renderValidator()}</div>
+        {!isResultView && <MediaKitHistoryList onOpenReview={handleOpenReview} />}
+      </div>
     </div>
   );
 }

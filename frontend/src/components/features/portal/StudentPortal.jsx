@@ -30,8 +30,7 @@ import CoursesTab from "./tabs/CoursesTab";
 import AssignmentsTab from "./tabs/AssignmentsTab";
 import QuizzesTab from "./tabs/QuizzesTab";
 import CertificatesTab from "./tabs/CertificatesTab";
-import DrillTab from "./tabs/DrillTab";
-import QuestsTab from "./tabs/QuestsTab";
+import DailyActivityTab from "./tabs/DailyActivityTab";
 import WargamerTab from "./tabs/WargamerTab";
 import LiveClassesTab from "./tabs/LiveClassesTab";
 import BrandValidatorTab from "./tabs/BrandValidatorTab";
@@ -39,7 +38,6 @@ import WarRoomLiveTab from "./tabs/WarRoomLiveTab";
 import RewardsTab from "./tabs/RewardsTab";
 import StreakTab from "./tabs/StreakTab";
 import AskAdvisorTab from "./tabs/AskAdvisorTab";
-import WarRoomScreen from "@/components/features/warroom/WarRoomScreen";
 import MessagesScreen from "@/components/features/messaging/MessagesScreen";
 
 // Shown at most once per calendar day (persisted per drill_date so a
@@ -122,6 +120,19 @@ function StudentPortalContent({ slug = DEFAULT_PORTAL_SLUG }) {
     router.replace(query ? `${href}?${query}` : href, { scroll: false });
   }, [router, searchParams]);
 
+  // `drill`, `quests` and `warroom` were each their own screen before the
+  // three were folded into "Daily activity". They stay valid slugs so an old
+  // bookmark or link still works, and land on the matching tab rather than
+  // on a dead route or a silent dashboard.
+  useEffect(() => {
+    const MERGED = { drill: "", quests: "/quests", warroom: "/warroom" };
+    const tail = MERGED[activeSlug];
+    if (tail === undefined) return;
+    const query = searchParams.toString();
+    const href = `${portalHref(AUTH_ROLES.STUDENT, "daily")}${tail}`;
+    router.replace(query ? `${href}?${query}` : href, { scroll: false });
+  }, [activeSlug, router, searchParams]);
+
   // Whether today's drill still needs the student's attention — completion is
   // represented differently per drill source (see daily_drill.services).
   const isDrillCompletedToday = useMemo(() => {
@@ -133,7 +144,7 @@ function StudentPortalContent({ slug = DEFAULT_PORTAL_SLUG }) {
   // Nudge the student when they open the Daily Drill screen with today's drill
   // still incomplete — shown at most once per day via localStorage.
   useEffect(() => {
-    if (activeSlug !== "drill" || !drillData) return;
+    if (activeSlug !== "daily" || !drillData) return;
     if (drillData.type === "UNAVAILABLE" || isDrillCompletedToday) return;
 
     const storageKey = `${DRILL_REMINDER_STORAGE_PREFIX}${drillData.drill_date}`;
@@ -262,14 +273,12 @@ function StudentPortalContent({ slug = DEFAULT_PORTAL_SLUG }) {
       {activeSlug === "quizzes" && <QuizzesTab />}
       {activeSlug === "certificates" && <CertificatesTab studentName={displayName} />}
       {activeSlug === "live-classes" && <LiveClassesTab />}
-      {activeSlug === "drill" && <DrillTab onNotify={setLastNotification} />}
-      {activeSlug === "quests" && (
-        <QuestsTab
+      {activeSlug === "daily" && (
+        <DailyActivityTab
           onNotify={setLastNotification}
           onOpenRewards={() => goToSlug("rewards")}
         />
       )}
-      {activeSlug === "warroom" && <WarRoomScreen />}
       {activeSlug === "wargamer" && <WargamerTab />}
       {activeSlug === "brand-validator" && <BrandValidatorTab />}
       {activeSlug === "warroom-live" && <WarRoomLiveTab />}

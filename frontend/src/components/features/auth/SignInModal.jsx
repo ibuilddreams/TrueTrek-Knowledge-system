@@ -7,13 +7,20 @@ import { AnimatePresence, motion } from "motion/react";
 import { useAuth } from "@/hooks/useAuth";
 import { ROUTES } from "@/constants/routes";
 import { buildAuthUrl } from "@/lib/authRedirect";
-import { formatCoursePrice } from "@/lib/store";
 import { toastError } from "@/lib/toast";
 import AuthArtPanel from "@/components/features/auth/AuthArtPanel";
 
-// The design's enrol dialog (`.dlgbox.wide` > `.lgm` > `.lgart` + `.lgmbox`):
-// a visitor taps "Enroll now" and signs in right there, rather than being sent
-// to /login and losing the course they were looking at.
+// The design's sign-in dialog (`.dlgbox.wide` > `.lgm` > `.lgart` + `.lgmbox`):
+// a visitor who hits something that needs an account signs in right there,
+// rather than being sent to /login and losing what they were looking at.
+//
+// It is deliberately generic. `context` is the design's `.lgctx` chip — the
+// icon, the line saying what signing in is *for*, the thing it is for, and an
+// optional trailing value — so one dialog serves a store course ("Sign in to
+// enroll · Acing the First Job Interview · $180") and a pathway whose bundle
+// price is withheld ("Sign in to view pricing · The Coaching Pathway"), rather
+// than each surface growing its own copy of a 250-line form. Omit `context`
+// entirely and it is a plain log-in box.
 //
 // Two things in here are load-bearing rather than cosmetic. The grid is
 // `minmax(0,5fr) minmax(0,6fr)`, **not** `1fr 1fr`: a grid item's default
@@ -24,9 +31,6 @@ import AuthArtPanel from "@/components/features/auth/AuthArtPanel";
 // (`max-h` + `overflow-y-auto`), because at 960px wide and 64px of vertical
 // padding it is taller than a laptop viewport.
 //
-// There is deliberately no "keep me signed in on this device" checkbox, which
-// the design shows: this app's auth has no such option, and a checkbox that
-// changes nothing is worse than none.
 const FIELD =
   "h-[50px] w-full rounded-cn-sm border border-cn-muted bg-cn-paper px-4 text-cn-ink transition-[border-color] duration-[140ms] ease-cn-out hover:border-cn-ink-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cn-accent disabled:cursor-not-allowed disabled:opacity-50";
 const LABEL = "text-cn-sm font-semibold text-cn-ink";
@@ -34,8 +38,15 @@ const LABEL = "text-cn-sm font-semibold text-cn-ink";
 const BUTTON =
   "inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-cn-sm border border-transparent px-6 py-px text-cn-base font-semibold no-underline transition-[background-color,border-color,transform] duration-150 ease-cn-out focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cn-accent";
 
-export default function EnrollSignInModal({ isOpen, course, onClose, onSignedIn }) {
+export default function SignInModal({
+  isOpen,
+  onClose,
+  onSignedIn,
+  context,
+  nextPath = ROUTES.HOME,
+}) {
   const { login } = useAuth();
+  const ContextIcon = context?.icon || BookOpen;
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
@@ -72,7 +83,7 @@ export default function EnrollSignInModal({ isOpen, course, onClose, onSignedIn 
     setIsSubmitting(true);
     try {
       await login({ email, password, remember });
-      onSignedIn?.(course);
+      onSignedIn?.();
     } catch (error) {
       const message = error?.message || "Unable to sign in. Please try again.";
       setFormError(message);
@@ -81,10 +92,6 @@ export default function EnrollSignInModal({ isOpen, course, onClose, onSignedIn 
       setIsSubmitting(false);
     }
   }
-
-  // The course page is where they came from, so that is where signing up
-  // should return them.
-  const nextPath = course?.slug ? `${ROUTES.STORE}/${course.slug}` : ROUTES.STORE;
 
   return (
     <AnimatePresence>
@@ -96,7 +103,7 @@ export default function EnrollSignInModal({ isOpen, course, onClose, onSignedIn 
           transition={{ duration: 0.2 }}
           role="dialog"
           aria-modal="true"
-          aria-label="Sign in to enroll"
+          aria-label={context?.eyebrow || "Sign in"}
           onClick={onClose}
           className="fixed inset-0 z-[600] grid place-items-center bg-cn-ink/50 p-6 backdrop-blur-[4px]"
         >
@@ -132,30 +139,36 @@ export default function EnrollSignInModal({ isOpen, course, onClose, onSignedIn 
                   here.
                 </p>
 
-                {course && (
+                {context?.title && (
                   <div className="flex items-center gap-3 rounded-cn bg-cn-paper-3 px-4 py-3 text-cn-sm">
                     <span className="grid h-9 w-9 flex-none place-items-center rounded-[10px] bg-cn-paper text-cn-accent">
-                      <BookOpen className="h-[18px] w-[18px]" strokeWidth={1.9} />
+                      <ContextIcon className="h-[18px] w-[18px]" strokeWidth={1.9} />
                     </span>
                     <span className="min-w-0 flex-1">
                       <small className="block text-[12px] font-semibold text-cn-accent-3">
-                        Sign in to enroll
+                        {context.eyebrow}
                       </small>
-                      <b className="block truncate">{course.title}</b>
+                      <b className="block truncate">{context.title}</b>
                     </span>
-                    <em className="flex-none font-bold not-italic tabular-nums">
-                      {formatCoursePrice(course.amount)}
-                    </em>
+                    {/* The trailing value is optional on purpose: a withheld
+                        bundle price is the very thing the pathway prompt is
+                        asking them to sign in for, so there is nothing to put
+                        here and the chip must not reserve a gap for it. */}
+                    {context.trailing && (
+                      <em className="flex-none font-bold not-italic tabular-nums">
+                        {context.trailing}
+                      </em>
+                    )}
                   </div>
                 )}
 
                 <form onSubmit={handleSubmit} className="grid min-w-0 grid-cols-[minmax(0,1fr)] gap-4">
                   <div className="grid gap-1">
-                    <label htmlFor="enroll-email" className={LABEL}>
+                    <label htmlFor="signin-modal-email" className={LABEL}>
                       Email
                     </label>
                     <input
-                      id="enroll-email"
+                      id="signin-modal-email"
                       type="email"
                       required
                       autoComplete="email"
@@ -168,7 +181,7 @@ export default function EnrollSignInModal({ isOpen, course, onClose, onSignedIn 
 
                   <div className="grid gap-1">
                     <div className="flex items-baseline justify-between">
-                      <label htmlFor="enroll-password" className={LABEL}>
+                      <label htmlFor="signin-modal-password" className={LABEL}>
                         Password
                       </label>
                       <Link
@@ -180,7 +193,7 @@ export default function EnrollSignInModal({ isOpen, course, onClose, onSignedIn 
                     </div>
                     <div className="relative">
                       <input
-                        id="enroll-password"
+                        id="signin-modal-password"
                         type={showPassword ? "text" : "password"}
                         required
                         autoComplete="current-password"

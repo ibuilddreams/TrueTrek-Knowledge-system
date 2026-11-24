@@ -7,7 +7,7 @@ import { getRewardsCatalog, redeemReward } from "@/services/rewardsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 import Loader from "@/components/ui/Loader";
-import EmptyState from "@/components/ui/EmptyState";
+import { PortalButton, PortalEmpty } from "./shell/PortalUI";
 import RewardCard from "./RewardCard";
 import RedeemConfirmDialog from "./RedeemConfirmDialog";
 
@@ -49,29 +49,25 @@ export default function RewardCatalogGrid({ onRedeemed }) {
 
   if (isLoading) {
     return (
-      <div className="bg-paper border border-line rounded-2xl p-10">
-        <Loader fullScreen={false} label="Loading rewards catalog..." />
+      <div className="p-10">
+        <Loader fullScreen={false} tone="cobalt" label="Loading rewards catalog..." />
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="bg-paper border border-line rounded-2xl p-10 flex flex-col items-center gap-3 text-center">
-        <div className="w-10 h-10 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl flex items-center justify-center">
-          <AlertCircle className="w-5 h-5" />
-        </div>
-        <p className="text-sm text-muted font-light">
+      <div className="flex flex-col items-center gap-3 p-10 text-center">
+        <span className="grid h-10 w-10 place-items-center rounded-cn-p-sm bg-cn-p-bad-bg text-cn-p-bad">
+          <AlertCircle className="h-5 w-5" />
+        </span>
+        <p className="text-sm text-cn-p-ink-2">
           {getApiErrorMessage(error, "Unable to load the rewards catalog.")}
         </p>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-pine hover:bg-moss text-paper font-bold font-mono text-xs uppercase tracking-wider rounded-lg transition"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
+        <PortalButton size="sm" onClick={() => refetch()}>
+          <RefreshCw className="h-3.5 w-3.5" />
           Retry
-        </button>
+        </PortalButton>
       </div>
     );
   }
@@ -81,17 +77,24 @@ export default function RewardCatalogGrid({ onRedeemed }) {
 
   if (rewards.length === 0) {
     return (
-      <div className="bg-paper border border-line rounded-2xl p-6">
-        <EmptyState icon={Gift} label="No rewards available right now." size="lg" />
-      </div>
+      <PortalEmpty
+        icon={Gift}
+        title="No rewards available right now"
+        text="New rewards appear here as the team adds them."
+      />
     );
   }
 
   return (
     <>
-      <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+      <div className="grid gap-5 p-5 sm:grid-cols-2">
         {rewards.map((reward) => (
-          <RewardCard key={reward.id} reward={reward} onRedeem={setConfirmingReward} />
+          <RewardCard
+            key={reward.id}
+            reward={reward}
+            balance={balance}
+            onRedeem={setConfirmingReward}
+          />
         ))}
       </div>
 

@@ -79,7 +79,9 @@ function OptionRow({ option, state, disabled, onPick }) {
           option.key
         )}
       </span>
-      <span className="line-clamp-2 min-w-0 flex-1 text-cn-ink">{option.text}</span>
+      <span className="line-clamp-2 min-w-0 flex-1 text-cn-ink">
+        {option.text}
+      </span>
     </button>
   );
 }
@@ -145,8 +147,6 @@ export default function DailyDrillTile({ className = "" }) {
     if (option.key === result.selected.key) return "missed";
     return "muted";
   }
-
-
 
   return (
     <>

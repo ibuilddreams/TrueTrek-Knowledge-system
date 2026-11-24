@@ -2,22 +2,23 @@
 
 import { useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { Coins, Gift, History, TrendingDown, TrendingUp } from "lucide-react";
+import { Coins, Gift, TrendingUp } from "lucide-react";
 import { getMyPointsSummary } from "@/services/pointsService";
-import StatCard from "@/components/ui/StatCard";
-import TabNav from "@/components/ui/TabNav";
+import PortalCard, { PortalStat } from "../shell/PortalCard";
+import { PortalPageHead, PortalTabs } from "../shell/PortalUI";
 import RewardCatalogGrid from "../RewardCatalogGrid";
 import PointsTransactionsTable from "../PointsTransactionsTable";
 import RedemptionHistoryTable from "../RedemptionHistoryTable";
 
-const SECTIONS = [
-  { id: "catalog", label: "Rewards Catalog", icon: Gift },
-  { id: "transactions", label: "Points History", icon: History },
-  { id: "redemptions", label: "My Redemptions", icon: TrendingDown },
-];
-
+// The design's `SP.rewards`: the three figures that answer "what can I spend",
+// then one card whose tabs swap the catalog, the ledger and what you have
+// already asked for.
+//
+// The three panels render *bare* — this screen owns the card they sit in, as
+// the design's `.card.p0` does, so the tab strip and the content below it read
+// as one surface rather than a tab bar floating above a second box.
 export default function RewardsTab() {
-  const [activeSection, setActiveSection] = useState("catalog");
+  const [tab, setTab] = useState("catalog");
 
   const { data: summary } = useQuery({
     queryKey: ["points", "summary"],
@@ -28,43 +29,53 @@ export default function RewardsTab() {
   });
 
   return (
-    <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard
-          size="lg"
-          label="Points Balance"
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Rewards"
+        subtitle="Earn points from quests, drills and streaks. Spend them on mentorship, merch and access."
+      />
+
+      <div className="grid gap-4 sm:grid-cols-3">
+        <PortalStat
+          label="Points balance"
           value={(summary?.balance ?? 0).toLocaleString()}
+          hint="Available to spend"
           icon={Coins}
-          accent="amber"
-          hint="Available to spend in the rewards catalog"
         />
-        <StatCard
-          size="lg"
-          label="Total Earned"
+        <PortalStat
+          label="Total earned"
           value={(summary?.total_earned ?? 0).toLocaleString()}
+          hint="All time"
           icon={TrendingUp}
-          accent="emerald"
+          tone="ok"
         />
-        <StatCard
-          size="lg"
-          label="Total Spent"
+        <PortalStat
+          label="Total spent"
           value={(summary?.total_spent ?? 0).toLocaleString()}
-          icon={TrendingDown}
-          accent="rose"
+          hint="On rewards you redeemed"
+          icon={Gift}
+          tone="warn"
         />
       </div>
 
-      <TabNav
-        tabs={SECTIONS}
-        activeTab={activeSection}
-        onChange={setActiveSection}
-        ariaLabel="Rewards sections"
-        size="lg"
-      />
+      <PortalCard>
+        <div className="px-4">
+          <PortalTabs
+            ariaLabel="Rewards sections"
+            options={[
+              { value: "catalog", label: "Rewards catalog" },
+              { value: "transactions", label: "Points history" },
+              { value: "redemptions", label: "My redemptions" },
+            ]}
+            value={tab}
+            onChange={setTab}
+          />
+        </div>
 
-      {activeSection === "catalog" && <RewardCatalogGrid />}
-      {activeSection === "transactions" && <PointsTransactionsTable />}
-      {activeSection === "redemptions" && <RedemptionHistoryTable />}
+        {tab === "catalog" && <RewardCatalogGrid />}
+        {tab === "transactions" && <PointsTransactionsTable />}
+        {tab === "redemptions" && <RedemptionHistoryTable />}
+      </PortalCard>
     </div>
   );
 }
