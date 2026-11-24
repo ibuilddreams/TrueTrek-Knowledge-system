@@ -335,8 +335,9 @@ export default function Home() {
   const [isPriceSignInOpen, setIsPriceSignInOpen] = useState(false);
 
   // Inline Interactive Consultation Board states
-  const [selectedConsultAdvisorId, setSelectedConsultAdvisorId] =
-    useState(ADVISORY_TOPICS[0].id);
+  const [selectedConsultAdvisorId, setSelectedConsultAdvisorId] = useState(
+    ADVISORY_TOPICS[0].id,
+  );
   const [consultQuery, setConsultQuery] = useState("");
   const [consultEmail, setConsultEmail] = useState("");
   const [consultAdvice, setConsultAdvice] = useState("");
@@ -1257,7 +1258,10 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
       {/* "Ask the senior advisory council." — the design's `.adv4`: the topic
           pills across the top, the chosen specialist's portrait on the left
           over four columns, the question card on the right over seven. */}
-      <section id="live-advisors-consultation-section" className="cn-section relative z-10">
+      <section
+        id="live-advisors-consultation-section"
+        className="cn-section relative z-10"
+      >
         <div className="cn-container">
           <CobaltSectionHead
             headingId="advisory-council-heading"
@@ -1907,7 +1911,6 @@ Guide them, explain how the curriculum tiers relate to their query, and propose 
         isOpen={isPriceSignInOpen}
         pathwayName={recommended.name}
         intent="price"
-        closeLabel="Keep Browsing"
         nextPath={ROUTES.HOME}
         onClose={() => setIsPriceSignInOpen(false)}
       />

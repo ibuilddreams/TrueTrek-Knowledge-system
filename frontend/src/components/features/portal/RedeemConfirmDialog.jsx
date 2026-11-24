@@ -18,6 +18,7 @@ export default function RedeemConfirmDialog({ isOpen, onClose, onConfirm, reward
 
   return (
     <Modal
+      variant="cobalt"
       isOpen={isOpen}
       onClose={isConfirming ? undefined : onClose}
       icon={Gift}
@@ -25,24 +26,26 @@ export default function RedeemConfirmDialog({ isOpen, onClose, onConfirm, reward
       subtitle="This will deduct points from your balance immediately."
       maxWidth="max-w-sm"
     >
-      <div className="space-y-2 mb-4">
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted font-light">Cost</span>
-          <span className="font-mono font-bold text-ink">{reward.points_required.toLocaleString()} pts</span>
+      {/* The design's `.kv`: the three numbers that answer "can I, and what
+          am I left with" side by side rather than as prose. */}
+      <div className="mb-4 grid grid-cols-3 gap-3">
+        <div className="rounded-cn-p-sm bg-cn-p-page px-3.5 py-3">
+          <span className="block text-xs text-cn-p-ink-2">Cost</span>
+          <b className="block text-base font-bold tabular-nums text-cn-p-ink">{reward.points_required.toLocaleString()}</b>
         </div>
-        <div className="flex items-center justify-between text-sm">
-          <span className="text-muted font-light">Current balance</span>
-          <span className="font-mono text-muted">{balance.toLocaleString()} pts</span>
+        <div className="rounded-cn-p-sm bg-cn-p-page px-3.5 py-3">
+          <span className="block text-xs text-cn-p-ink-2">Balance now</span>
+          <b className="block text-base font-bold tabular-nums text-cn-p-ink">{balance.toLocaleString()}</b>
         </div>
-        <div className="flex items-center justify-between text-sm pt-2 border-t border-line">
-          <span className="text-muted font-light">Remaining balance</span>
-          <span className="font-mono font-bold text-emerald-700">{remaining.toLocaleString()} pts</span>
+        <div className="rounded-cn-p-sm bg-cn-p-page px-3.5 py-3">
+          <span className="block text-xs text-cn-p-ink-2">After</span>
+          <b className="block text-base font-bold tabular-nums text-cn-p-ok">{remaining.toLocaleString()}</b>
         </div>
       </div>
 
       {isSchedulable && (
         <div className="mb-6">
-          <label className="text-[11px] font-mono text-muted block uppercase tracking-wider mb-1.5 font-semibold">
+          <label className="mb-1.5 block text-sm font-semibold text-cn-p-ink">
             Note for the admin (optional)
           </label>
           <textarea
@@ -52,7 +55,7 @@ export default function RedeemConfirmDialog({ isOpen, onClose, onConfirm, reward
             placeholder="e.g. I'd like to discuss my Tier 2 pathway."
             rows={3}
             maxLength={1000}
-            className="w-full px-3 py-2.5 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm text-ink placeholder:text-muted transition disabled:opacity-60 resize-none"
+            className="w-full resize-none rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card px-3.5 py-2.5 text-sm text-cn-p-ink transition-[border-color] duration-150 placeholder:text-cn-p-muted hover:border-cn-p-ink-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cn-p-accent disabled:opacity-60"
           />
         </div>
       )}
@@ -62,7 +65,7 @@ export default function RedeemConfirmDialog({ isOpen, onClose, onConfirm, reward
           type="button"
           onClick={onClose}
           disabled={isConfirming}
-          className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-xs font-semibold font-mono rounded-lg tracking-wider transition-colors duration-150 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+          className="inline-flex h-11 items-center justify-center rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card px-[18px] text-sm font-semibold text-cn-p-ink transition-colors duration-150 hover:border-cn-p-ink disabled:cursor-not-allowed disabled:opacity-60"
         >
           Cancel
         </button>
@@ -70,11 +73,11 @@ export default function RedeemConfirmDialog({ isOpen, onClose, onConfirm, reward
           type="button"
           onClick={() => onConfirm(note)}
           disabled={isConfirming}
-          className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
+          className="inline-flex h-11 items-center justify-center gap-2 rounded-cn-p-sm bg-cn-p-accent px-[18px] text-sm font-semibold text-white transition-colors duration-150 hover:bg-cn-p-accent-hover disabled:cursor-not-allowed disabled:opacity-60"
         >
           {isConfirming ? (
             <>
-              <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               Redeeming...
             </>
           ) : (

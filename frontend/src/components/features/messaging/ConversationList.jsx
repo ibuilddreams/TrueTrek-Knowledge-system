@@ -4,7 +4,7 @@ import { useEffect } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { MessageSquare } from "lucide-react";
 import Loader from "@/components/ui/Loader";
-import EmptyState from "@/components/ui/EmptyState";
+import { PortalEmpty } from "@/components/features/portal/shell/PortalUI";
 import { getConversations } from "@/services/messagingService";
 import ConversationListItem from "./ConversationListItem";
 
@@ -48,19 +48,17 @@ export default function ConversationList({
   if (conversations.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-4">
-        <EmptyState
+        <PortalEmpty
           icon={MessageSquare}
-          label={emptyLabel}
-          description={emptyDescription}
-          compact
-          size="lg"
+          title={emptyLabel}
+          text={emptyDescription}
         />
       </div>
     );
   }
 
   return (
-    <ul className="flex-1 min-h-0 overflow-y-auto divide-y divide-stone-100">
+    <ul className="flex-1 min-h-0 overflow-y-auto divide-y divide-cn-p-line">
       {conversations.map((conversation) => (
         <ConversationListItem
           key={conversation.id}

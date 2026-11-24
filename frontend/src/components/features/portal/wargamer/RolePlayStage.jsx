@@ -49,8 +49,7 @@ export default function RolePlayStage({
 
   return (
     <div className="space-y-4">
-      <div className="bg-paper border border-line rounded-2xl shadow-sm overflow-hidden">
-        <div className="h-1 w-full bg-gradient-to-r from-pine via-moss to-gold opacity-80" />
+      <div className="bg-cn-p-card border border-cn-p-line rounded-2xl shadow-sm overflow-hidden">
 
         <div className="p-5 flex flex-col sm:flex-row sm:items-start gap-4">
           <div
@@ -60,21 +59,21 @@ export default function RolePlayStage({
           </div>
 
           <div className="min-w-0 flex-1">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-muted">
+            <span className="text-[10px] font-semibold text-cn-p-ink-2">
               {scenario.code} &middot; {scenario.relationship_display}
             </span>
-            <h2 className="text-lg font-serif font-light text-ink leading-tight mt-0.5">
+            <h2 className="text-lg font-light text-cn-p-ink leading-tight mt-0.5">
               {scenario.title}
             </h2>
-            <p className="text-xs text-muted font-light mt-2 leading-relaxed">{scenario.setup}</p>
+            <p className="text-xs text-cn-p-ink-2 font-light mt-2 leading-relaxed">{scenario.setup}</p>
 
-            <div className="mt-3 rounded-xl bg-porcelain border border-line p-3 flex gap-2.5">
-              <Target className="w-3.5 h-3.5 text-pine shrink-0 mt-0.5" />
+            <div className="mt-3 rounded-xl bg-cn-p-page border border-cn-p-line p-3 flex gap-2.5">
+              <Target className="w-3.5 h-3.5 text-cn-p-accent shrink-0 mt-0.5" />
               <div className="min-w-0">
-                <p className="text-[10px] font-mono uppercase tracking-widest text-muted">
+                <p className="text-[10px] font-semibold text-cn-p-ink-2">
                   Your job
                 </p>
-                <p className="text-xs text-ink font-light leading-relaxed mt-0.5">
+                <p className="text-xs text-cn-p-ink font-light leading-relaxed mt-0.5">
                   {scenario.exercise}
                 </p>
               </div>
@@ -84,7 +83,7 @@ export default function RolePlayStage({
           <button
             type="button"
             onClick={onQuit}
-            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-[11px] font-mono uppercase tracking-wider rounded-lg text-muted hover:text-clay hover:bg-rose/20 transition cursor-pointer shrink-0"
+            className="inline-flex items-center justify-center gap-1.5 px-3 py-2 text-[11px] font-semibold rounded-lg text-cn-p-ink-2 hover:text-cn-p-bad hover:bg-cn-p-bad-bg transition cursor-pointer shrink-0"
           >
             <DoorClosed className="w-3.5 h-3.5" />
             Walk away
@@ -92,16 +91,16 @@ export default function RolePlayStage({
         </div>
       </div>
 
-      <div className="bg-paper border border-line rounded-2xl shadow-sm overflow-hidden flex flex-col">
-        <div className="px-5 py-3 border-b border-line bg-porcelain flex items-center justify-between gap-3">
+      <div className="bg-cn-p-card border border-cn-p-line rounded-2xl shadow-sm overflow-hidden flex flex-col">
+        <div className="px-5 py-3 border-b border-cn-p-line bg-cn-p-page flex items-center justify-between gap-3">
           <div className="flex items-center gap-2 min-w-0">
-            <span className="w-2 h-2 rounded-full bg-clay animate-pulse shrink-0" />
-            <p className="text-xs font-semibold text-ink truncate">{scenario.counterpart_role}</p>
-            <span className="text-[10px] font-mono uppercase tracking-widest text-muted truncate">
+            <span className="w-2 h-2 rounded-full bg-cn-p-bad animate-pulse shrink-0" />
+            <p className="text-xs font-semibold text-cn-p-ink truncate">{scenario.counterpart_role}</p>
+            <span className="text-[10px] font-semibold text-cn-p-ink-2 truncate">
               {session.persona_display}
             </span>
           </div>
-          <span className="text-[10px] font-mono uppercase tracking-widest text-muted shrink-0">
+          <span className="text-[10px] font-semibold text-cn-p-ink-2 shrink-0">
             {persona.blurb}
           </span>
         </div>
@@ -126,18 +125,18 @@ export default function RolePlayStage({
         </div>
 
         {session.counterpart_conceded && !isClosed && (
-          <div className="px-5 py-3 bg-sage/30 border-t border-pine/20 flex items-center gap-2">
-            <Flag className="w-3.5 h-3.5 text-pine shrink-0" />
-            <p className="text-xs text-pine font-light">
+          <div className="px-5 py-3 bg-cn-p-soft border-t border-cn-p-accent-soft flex items-center gap-2">
+            <Flag className="w-3.5 h-3.5 text-cn-p-accent shrink-0" />
+            <p className="text-xs text-cn-p-accent font-light">
               They&apos;ve backed down. You can keep going, or finish and get scored.
             </p>
           </div>
         )}
 
         {outOfTurns && !isClosed && (
-          <div className="px-5 py-3 bg-gold/10 border-t border-gold/25 flex items-center gap-2">
-            <Flag className="w-3.5 h-3.5 text-gold shrink-0" />
-            <p className="text-xs text-ink font-light">
+          <div className="px-5 py-3 bg-cn-p-warn/10 border-t border-cn-p-warn-bg flex items-center gap-2">
+            <Flag className="w-3.5 h-3.5 text-cn-p-warn shrink-0" />
+            <p className="text-xs text-cn-p-ink font-light">
               That&apos;s every reply in this scene. Finish it to see how you did.
             </p>
           </div>
@@ -154,7 +153,7 @@ export default function RolePlayStage({
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <p className="text-xs text-muted font-light">
+        <p className="text-xs text-cn-p-ink-2 font-light">
           {session.can_evaluate
             ? "Finish whenever you've said your piece — you'll be scored on the whole conversation."
             : "Hold the conversation a little longer before asking for a score."}
@@ -164,11 +163,11 @@ export default function RolePlayStage({
           type="button"
           onClick={onFinish}
           disabled={!session.can_evaluate || isFinishing || isSending}
-          className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-pine hover:bg-moss disabled:opacity-50 disabled:cursor-not-allowed text-paper font-bold font-mono text-xs uppercase tracking-wider rounded-xl shadow-sm transition cursor-pointer shrink-0"
+          className="inline-flex items-center justify-center gap-2 px-6 py-3.5 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold tabular-nums text-xs  rounded-xl shadow-sm transition cursor-pointer shrink-0"
         >
           {isFinishing ? (
             <>
-              <div className="w-4 h-4 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+              <div className="w-4 h-4 border-2 border-cn-p-card border-t-transparent rounded-full animate-spin" />
               Scoring your run...
             </>
           ) : (

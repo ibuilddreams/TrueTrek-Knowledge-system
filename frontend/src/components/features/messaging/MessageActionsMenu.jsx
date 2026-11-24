@@ -21,10 +21,10 @@ export default function MessageActionsMenu({ isOpen, onClose, anchorRef, isMine,
             onSelect();
           }}
           className={`w-full flex items-center gap-2.5 px-3.5 py-2 text-xs font-semibold transition-colors cursor-pointer ${
-            danger ? "text-rose-700 hover:bg-rose-50" : "text-stone-700 hover:bg-stone-50"
+            danger ? "text-cn-p-bad hover:bg-cn-p-bad-bg" : "text-cn-p-ink hover:bg-cn-p-page"
           }`}
         >
-          <Icon className={`w-3.5 h-3.5 ${danger ? "text-rose-500" : "text-stone-400"}`} />
+          <Icon className={`w-3.5 h-3.5 ${danger ? "text-cn-p-bad" : "text-cn-p-muted"}`} />
           {label}
         </button>
       ))}

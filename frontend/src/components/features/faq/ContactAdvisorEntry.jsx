@@ -43,7 +43,18 @@ export default function ContactAdvisorEntry({ id, className, icon: Icon = Messag
         <Icon className="w-4 h-4" />
       </button>
 
-      <AdvisorSignInModal isOpen={isSignInOpen} onClose={() => setIsSignInOpen(false)} />
+      {/* Signing in finishes the action they asked for: the question box opens
+          straight away instead of leaving them to find the button again. An
+          account that is not a student never sees it — this whole component
+          returns null for one on the very next render. */}
+      <AdvisorSignInModal
+        isOpen={isSignInOpen}
+        onClose={() => setIsSignInOpen(false)}
+        onSignedIn={() => {
+          setIsSignInOpen(false);
+          setIsAskOpen(true);
+        }}
+      />
       <AskAdvisorModal isOpen={isAskOpen} onClose={() => setIsAskOpen(false)} />
     </>
   );

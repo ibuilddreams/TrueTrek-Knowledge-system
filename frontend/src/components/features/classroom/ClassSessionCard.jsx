@@ -34,6 +34,80 @@ import {
   willCancelRatherThanDelete,
 } from "./classSessionUtils";
 
+// `variant` is additive, the convention the cobalt rollout follows for a shared
+// component. "classic" is the porcelain card and is byte-for-byte what it has
+// always been, because the **teacher** portal still renders this card and has
+// not been converted; "cobalt" is the student portal's palette. One card, two
+// skins, because both portals show the same class and only one has moved.
+const SKIN = {
+  classic: {
+    card: "bg-paper shadow-sm rounded-2xl",
+    border: "border-line",
+    borderLive: "border-clay/40",
+    seam: "from-pine via-moss to-gold",
+    seamLive: "from-clay via-rose to-clay",
+    avatar: "rounded-2xl border bg-gold/12 text-gold border-gold/25",
+    avatarLive: "rounded-2xl border bg-rose/35 text-clay border-clay/25",
+    badge: "px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest border",
+    badgeAlert: "bg-rose/35 text-clay border-clay/25",
+    badgeNote: "bg-gold/12 text-gold border-gold/25",
+    stateTone: CLASS_STATE_TONE,
+    title: "text-base font-serif font-bold text-ink leading-snug",
+    meta: "text-[11px] font-mono uppercase tracking-wider text-muted",
+    body: "text-xs text-muted font-light",
+    small: "text-[11px] text-muted font-light",
+    danger: "text-xs text-clay font-light",
+    rule: "border-line",
+    bullet: "bg-gold",
+    btnSec:
+      "px-4 py-2 rounded-xl border border-line hover:bg-porcelain text-ink font-bold font-mono text-[11px] uppercase tracking-wider shadow-sm focus-visible:ring-gold",
+    btnIcon:
+      "w-9 h-9 rounded-xl border border-line hover:bg-porcelain text-ink shadow-sm focus-visible:ring-gold",
+    btnPri:
+      "px-4 py-2 rounded-xl bg-gold hover:bg-gold/85 text-ink font-bold font-mono text-[11px] uppercase tracking-wider shadow-sm focus-visible:ring-gold",
+    btnQuiet:
+      "px-3 py-1.5 rounded-lg border border-line text-[11px] font-mono uppercase tracking-wider text-muted hover:text-ink hover:bg-porcelain",
+    btnDanger:
+      "px-3 py-1.5 rounded-lg border border-clay/30 text-[11px] font-mono uppercase tracking-wider text-clay hover:bg-rose/20",
+  },
+  cobalt: {
+    card: "bg-cn-p-card rounded-cn-p",
+    border: "border-cn-p-line",
+    borderLive: "border-cn-p-bad/40",
+    // The portal marks a card with its border and radius, never a seam.
+    seam: null,
+    seamLive: null,
+    avatar: "rounded-cn-p-sm bg-cn-p-soft text-cn-p-soft-ink",
+    avatarLive: "rounded-cn-p-sm bg-cn-p-bad-bg text-cn-p-bad",
+    badge: "h-6 px-2.5 rounded-full text-xs font-semibold",
+    badgeAlert: "bg-cn-p-bad-bg text-cn-p-bad",
+    badgeNote: "bg-cn-p-warn-bg text-cn-p-warn",
+    stateTone: {
+      LIVE: "bg-cn-p-bad-bg text-cn-p-bad",
+      UPCOMING: "bg-cn-p-soft text-cn-p-soft-ink",
+      ENDED: "bg-cn-p-neutral-bg text-cn-p-ink-2",
+      CANCELLED: "bg-cn-p-neutral-bg text-cn-p-ink-2",
+    },
+    title: "text-base font-bold text-cn-p-ink leading-snug",
+    meta: "text-[13px] text-cn-p-muted",
+    body: "text-sm text-cn-p-ink-2",
+    small: "text-[13px] text-cn-p-ink-2",
+    danger: "text-sm text-cn-p-bad",
+    rule: "border-cn-p-line",
+    bullet: "bg-cn-p-accent-soft",
+    btnSec:
+      "h-9 px-3 rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card hover:border-cn-p-ink text-cn-p-ink text-[13px] font-semibold focus-visible:ring-cn-p-accent",
+    btnIcon:
+      "w-9 h-9 rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card hover:border-cn-p-ink text-cn-p-ink focus-visible:ring-cn-p-accent",
+    btnPri:
+      "h-9 px-3 rounded-cn-p-sm bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-[13px] font-semibold focus-visible:ring-cn-p-accent",
+    btnQuiet:
+      "h-8 px-3 rounded-cn-p-sm border border-cn-p-line text-[13px] font-semibold text-cn-p-ink-2 hover:text-cn-p-ink hover:bg-cn-p-page",
+    btnDanger:
+      "h-8 px-3 rounded-cn-p-sm border border-cn-p-bad/30 text-[13px] font-semibold text-cn-p-bad hover:bg-cn-p-bad-bg",
+  },
+};
+
 /**
  * One scheduled class, rendered the same way in both portals.
  *
@@ -58,7 +132,9 @@ export default function ClassSessionCard({
   onCancel,
   onViewAttendance,
   isBusy = false,
+  variant = "classic",
 }) {
+  const skin = SKIN[variant] ?? SKIN.classic;
   const [isRecordingOpen, setIsRecordingOpen] = useState(false);
   const [isNotesOpen, setIsNotesOpen] = useState(false);
   const [isDownloadingNotes, setIsDownloadingNotes] = useState(false);
@@ -112,22 +188,22 @@ export default function ClassSessionCard({
 
   return (
     <div
-      className={`relative bg-paper border rounded-2xl shadow-sm p-5 flex flex-col gap-4 overflow-hidden transition-colors ${
-        isLive ? "border-clay/40" : "border-line"
+      className={`relative border p-5 flex flex-col gap-4 overflow-hidden transition-colors ${skin.card} ${
+        isLive ? skin.borderLive : skin.border
       } ${isCancelled ? "opacity-70" : ""}`}
     >
-      <div
-        className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r opacity-80 ${
-          isLive ? "from-clay via-rose to-clay" : "from-pine via-moss to-gold"
-        }`}
-      />
+      {skin.seam && (
+        <div
+          className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r opacity-80 ${
+            isLive ? skin.seamLive : skin.seam
+          }`}
+        />
+      )}
 
       <div className="flex items-start justify-between gap-3">
         <div
-          className={`w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0 ${
-            isLive
-              ? "bg-rose/35 text-clay border-clay/25"
-              : "bg-gold/12 text-gold border-gold/25"
+          className={`w-11 h-11 flex items-center justify-center shrink-0 ${
+            isLive ? skin.avatarLive : skin.avatar
           }`}
         >
           {isLive ? (
@@ -142,7 +218,7 @@ export default function ClassSessionCard({
               deciding whether to turn their camera on should know before they
               are in the room, not after. */}
           {isBeingRecorded && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest border bg-rose/35 text-clay border-clay/25">
+            <span className={`inline-flex items-center gap-1 ${skin.badge} ${skin.badgeAlert}`}>
               <Circle className="w-2 h-2 fill-current animate-pulse" />
               Rec
             </span>
@@ -153,14 +229,14 @@ export default function ClassSessionCard({
               but the notes haven't arrived should be able to tell that one is
               coming. */}
           {isBeingNoted && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest border bg-gold/12 text-gold border-gold/25">
+            <span className={`inline-flex items-center gap-1 ${skin.badge} ${skin.badgeNote}`}>
               <NotebookPen className="w-2.5 h-2.5" />
               Notes
             </span>
           )}
           <span
-            className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest border ${
-              CLASS_STATE_TONE[state] || CLASS_STATE_TONE.UPCOMING
+            className={`inline-flex items-center ${skin.badge} ${
+              skin.stateTone[state] || skin.stateTone.UPCOMING
             }`}
           >
             {CLASS_STATE_LABEL[state] || state}
@@ -169,22 +245,22 @@ export default function ClassSessionCard({
       </div>
 
       <div className="min-w-0">
-        <h3 className="text-base font-serif font-bold text-ink leading-snug">
+        <h3 className={skin.title}>
           {session.title}
         </h3>
-        <p className="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-muted mt-1">
+        <p className={`inline-flex items-center gap-1.5 mt-1 ${skin.meta}`}>
           <BookMarked className="w-3 h-3" />
           {session.course_code} · {session.course_title}
         </p>
         {session.description && (
-          <p className="text-xs text-muted font-light mt-1.5 leading-relaxed line-clamp-2">
+          <p className={`mt-1.5 leading-relaxed line-clamp-2 ${skin.body}`}>
             {session.description}
           </p>
         )}
       </div>
 
       {isCancelled && session.cancellation_reason && (
-        <p className="text-xs text-clay font-light leading-relaxed">
+        <p className={`leading-relaxed ${skin.danger}`}>
           {session.cancellation_reason}
         </p>
       )}
@@ -194,16 +270,16 @@ export default function ClassSessionCard({
           {session.agenda.slice(0, 3).map((line, index) => (
             <li
               key={`${session.id}-agenda-${index}`}
-              className="text-[11px] text-muted font-light flex items-start gap-1.5 leading-relaxed"
+              className={`flex items-start gap-1.5 leading-relaxed ${skin.small}`}
             >
-              <span className="mt-1.5 w-1 h-1 rounded-full bg-gold shrink-0" />
+              <span className={`mt-1.5 w-1 h-1 rounded-full shrink-0 ${skin.bullet}`} />
               {line}
             </li>
           ))}
         </ul>
       )}
 
-      <div className="flex flex-wrap items-center gap-x-4 gap-y-1.5 text-[11px] text-muted font-light">
+      <div className={`flex flex-wrap items-center gap-x-4 gap-y-1.5 ${skin.small}`}>
         <span className="inline-flex items-center gap-1.5">
           <Calendar className="w-3 h-3" />
           {formatClassDate(session.scheduled_at)} · {formatClassTime(session.scheduled_at)}
@@ -226,8 +302,8 @@ export default function ClassSessionCard({
         )}
       </div>
 
-      <div className="mt-auto pt-3 border-t border-line flex items-center justify-between gap-3">
-        <span className="text-[11px] text-muted font-light">
+      <div className={`mt-auto pt-3 border-t flex items-center justify-between gap-3 ${skin.rule}`}>
+        <span className={skin.small}>
           {isLive
             ? "The room is open"
             : isEnded || isCancelled
@@ -242,7 +318,7 @@ export default function ClassSessionCard({
             <button
               type="button"
               onClick={() => setIsNotesOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-line hover:bg-porcelain text-ink font-bold font-mono text-[11px] uppercase tracking-wider shadow-sm transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
+              className={`inline-flex items-center gap-2 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${skin.btnSec}`}
             >
               <NotebookPen className="w-3.5 h-3.5" />
               Class notes
@@ -255,7 +331,7 @@ export default function ClassSessionCard({
               disabled={isDownloadingNotes}
               title="Download the notes as a PDF"
               aria-label="Download the notes as a PDF"
-              className="inline-flex items-center justify-center w-9 h-9 rounded-xl border border-line hover:bg-porcelain text-ink shadow-sm transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
+              className={`inline-flex items-center justify-center transition-colors cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${skin.btnIcon}`}
             >
               {isDownloadingNotes ? (
                 <Loader2 className="w-3.5 h-3.5 animate-spin" />
@@ -268,7 +344,7 @@ export default function ClassSessionCard({
             <button
               type="button"
               onClick={() => setIsRecordingOpen(true)}
-              className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-gold hover:bg-gold/85 text-ink font-bold font-mono text-[11px] uppercase tracking-wider shadow-sm transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-gold focus-visible:ring-offset-2"
+              className={`inline-flex items-center gap-2 transition-colors cursor-pointer focus:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 ${skin.btnPri}`}
             >
               <Clapperboard className="w-3.5 h-3.5" />
               Watch recording
@@ -279,12 +355,12 @@ export default function ClassSessionCard({
       </div>
 
       {hasTeacherActions && (
-        <div className="flex items-center gap-2 flex-wrap pt-3 border-t border-line">
+        <div className={`flex items-center gap-2 flex-wrap pt-3 border-t ${skin.rule}`}>
           {onViewAttendance && (
             <button
               type="button"
               onClick={() => onViewAttendance(session)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line text-[11px] font-mono uppercase tracking-wider text-muted hover:text-ink hover:bg-porcelain transition-colors cursor-pointer"
+              className={`inline-flex items-center gap-1.5 transition-colors cursor-pointer ${skin.btnQuiet}`}
             >
               <ClipboardList className="w-3 h-3" />
               Attendance
@@ -294,7 +370,7 @@ export default function ClassSessionCard({
             <button
               type="button"
               onClick={() => onEdit(session)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-line text-[11px] font-mono uppercase tracking-wider text-muted hover:text-ink hover:bg-porcelain transition-colors cursor-pointer"
+              className={`inline-flex items-center gap-1.5 transition-colors cursor-pointer ${skin.btnQuiet}`}
             >
               <Pencil className="w-3 h-3" />
               Edit
@@ -311,7 +387,7 @@ export default function ClassSessionCard({
             <button
               type="button"
               onClick={() => onCancel(session)}
-              className="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg border border-clay/30 text-[11px] font-mono uppercase tracking-wider text-clay hover:bg-rose/20 transition-colors cursor-pointer"
+              className={`inline-flex items-center gap-1.5 transition-colors cursor-pointer ${skin.btnDanger}`}
             >
               <CalendarX className="w-3 h-3" />
               {willCancelRatherThanDelete(session) ? "Cancel" : "Delete"}

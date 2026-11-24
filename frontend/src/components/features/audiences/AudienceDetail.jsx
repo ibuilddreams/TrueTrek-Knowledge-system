@@ -205,7 +205,6 @@ export default function AudienceDetail({ slug }) {
         pathwayName={pricePrompt?.name}
         nextPath={`${ROUTES.AUDIENCES}/${profile.slug}`}
         intent="price"
-        closeLabel="Keep Browsing"
       />
     </div>
   );

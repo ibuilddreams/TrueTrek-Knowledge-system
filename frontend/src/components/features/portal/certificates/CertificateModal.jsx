@@ -9,46 +9,46 @@ export default function CertificateModal({ certificate, studentName, onClose }) 
   const course = certificate.course || {};
 
   return (
-    <div className="fixed inset-0 z-[100] bg-ink/60 backdrop-blur-md flex items-center justify-center p-4 print:bg-paper print:backdrop-blur-none print:p-0">
-      <div className="relative bg-paper border border-line rounded-2xl max-w-2xl w-full max-h-[90vh] overflow-y-auto shadow-2xl print:max-w-none print:max-h-none print:overflow-visible print:border-0 print:shadow-none print:rounded-none">
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-pine via-moss to-gold print:hidden" />
-
+    <div className="fixed inset-0 z-[100] flex items-center justify-center bg-cn-p-ink/60 p-4 backdrop-blur-md print:bg-white print:p-0 print:backdrop-blur-none">
+      <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-cn-p border border-cn-p-line bg-cn-p-card shadow-cn-p print:max-h-none print:max-w-none print:overflow-visible print:rounded-none print:border-0 print:shadow-none">
+        {/* No pine-to-gold seam: that is the porcelain system's signature, and
+            the portal marks a dialog with its radius and shadow alone. */}
         <CloseButton
           onClick={onClose}
-          className="absolute top-4 right-4 z-10 text-muted hover:text-ink p-2 hover:bg-porcelain rounded-full transition print:hidden"
+          className="absolute top-4 right-4 z-10 grid h-10 w-10 place-items-center rounded-cn-p-sm bg-cn-p-page text-cn-p-ink-2 transition-colors duration-150 hover:bg-cn-p-line hover:text-cn-p-ink print:hidden"
           title="Close certificate"
         />
 
         <div className="p-6 sm:p-10 print:p-8">
-          <div className="border-4 border-double border-gold/40 rounded-2xl p-8 sm:p-12 text-center space-y-6 bg-gradient-to-br from-gold/12 via-paper to-porcelain">
-            <div className="w-16 h-16 mx-auto rounded-2xl bg-gold/12 border border-gold/25 text-gold flex items-center justify-center">
-              <Award className="w-8 h-8" />
+          <div className="relative space-y-6 rounded-cn-p border border-cn-p-line bg-[linear-gradient(180deg,#fff,#f7f9ff)] p-8 text-center before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[10px] before:border-[1.5px] before:border-cn-p-accent-soft before:content-[''] sm:p-12">
+            <div className="mx-auto grid h-16 w-16 place-items-center rounded-cn-p bg-cn-p-soft text-cn-p-soft-ink">
+              <Award className="h-8 w-8" />
             </div>
 
             <div className="space-y-1.5">
-              <p className="text-[11px] font-mono uppercase tracking-[0.25em] text-gold">
-                Certificate of Completion
+              <p className="text-xs font-semibold tracking-[0.08em] text-cn-p-ink-2 uppercase">
+                Certificate of completion
               </p>
-              <h2 className="font-serif font-black text-2xl sm:text-3xl text-ink">
+              <h2 className="text-2xl font-extrabold tracking-[-0.02em] text-cn-p-ink sm:text-3xl">
                 {course.title}
               </h2>
               {course.code ? (
-                <p className="text-sm font-mono text-muted uppercase tracking-wider">
+                <p className="text-sm font-semibold text-cn-p-muted">
                   {course.code}
                 </p>
               ) : null}
             </div>
 
             <div className="space-y-1">
-              <p className="text-sm text-muted font-light">This certifies that</p>
-              <p className="font-serif font-bold text-xl text-ink">{studentName}</p>
-              <p className="text-sm text-muted font-light">
+              <p className="text-sm text-cn-p-ink-2">This certifies that</p>
+              <p className="text-xl font-bold text-cn-p-ink">{studentName}</p>
+              <p className="text-sm text-cn-p-ink-2">
                 has successfully completed all coursework
                 {course.category ? ` in ${course.category}` : ""}.
               </p>
             </div>
 
-            <div className="pt-4 border-t border-gold/25 flex flex-col sm:flex-row items-center justify-center gap-x-6 gap-y-1 text-xs font-mono text-muted uppercase tracking-wider">
+            <div className="flex flex-col items-center justify-center gap-x-6 gap-y-1 border-t border-cn-p-line pt-4 text-sm text-cn-p-ink-2 sm:flex-row">
               <span>Completed {formatDate(certificate.completed_at)}</span>
               <span>Score {Math.round(certificate.completion_percentage)}%</span>
             </div>
@@ -58,7 +58,7 @@ export default function CertificateModal({ certificate, studentName, onClose }) 
             <button
               type="button"
               onClick={() => window.print()}
-              className="inline-flex items-center gap-2 px-5 py-3 bg-pine hover:bg-moss text-paper font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition"
+              className="inline-flex h-11 items-center justify-center gap-2 rounded-cn-p-sm bg-cn-p-accent px-[18px] text-sm font-semibold text-white transition-colors duration-150 hover:bg-cn-p-accent-hover"
             >
               <Printer className="w-4 h-4" />
               Print / Save as PDF

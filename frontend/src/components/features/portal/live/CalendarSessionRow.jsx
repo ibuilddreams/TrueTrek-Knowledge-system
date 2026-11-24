@@ -29,21 +29,21 @@ export default function CalendarSessionRow({
 
   return (
     <div
-      className={`flex items-start gap-3.5 p-3.5 rounded-xl border bg-paper transition-colors ${
-        isLive ? "border-clay/40" : "border-line"
+      className={`flex items-start gap-3.5 p-3.5 rounded-xl border bg-cn-p-card transition-colors ${
+        isLive ? "border-cn-p-bad-bg" : "border-cn-p-line"
       } ${isCancelled ? "opacity-70" : ""}`}
     >
       <div className="w-16 shrink-0 text-center pt-0.5">
-        <p className="text-sm font-mono font-semibold text-ink leading-tight">
+        <p className="text-sm tabular-nums font-semibold text-cn-p-ink leading-tight">
           {formatSessionTime(session.scheduled_at)}
         </p>
-        <p className="inline-flex items-center gap-1 text-[10px] font-mono text-muted mt-1">
+        <p className="inline-flex items-center gap-1 text-[10px] tabular-nums text-cn-p-ink-2 mt-1">
           <Clock className="w-2.5 h-2.5" />
           {session.duration_minutes}m
         </p>
       </div>
 
-      <div className="w-px self-stretch bg-line" aria-hidden="true" />
+      <div className="w-px self-stretch bg-cn-p-line" aria-hidden="true" />
 
       <div className="min-w-0 flex-1 flex flex-col gap-2">
         {/* Wraps on available space rather than on a viewport breakpoint: this
@@ -57,11 +57,11 @@ export default function CalendarSessionRow({
             onClick={() => onOpenDetail?.(session)}
             className="text-left flex-1 min-w-[150px] cursor-pointer group"
           >
-            <p className="text-sm font-serif font-bold text-ink leading-snug group-hover:text-pine transition-colors">
+            <p className="text-sm font-bold text-cn-p-ink leading-snug group-hover:text-cn-p-accent transition-colors">
               {session.title}
             </p>
             {session.topic && (
-              <p className="text-[10px] font-mono uppercase tracking-wider text-muted mt-0.5">
+              <p className="text-[10px] font-semibold text-cn-p-ink-2 mt-0.5">
                 {session.topic}
               </p>
             )}
@@ -69,13 +69,13 @@ export default function CalendarSessionRow({
 
           <div className="flex items-center gap-1.5 shrink-0 flex-wrap">
             {session.is_rsvped && !isEnded && !isCancelled && (
-              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest border bg-sage/40 text-pine border-pine/20">
+              <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border bg-cn-p-soft text-cn-p-soft-ink border-transparent">
                 <CalendarCheck className="w-3 h-3" />
                 Going
               </span>
             )}
             <span
-              className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest border ${
+              className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${
                 LIVE_STATE_TONE[state] || LIVE_STATE_TONE.UPCOMING
               }`}
             >
@@ -85,7 +85,7 @@ export default function CalendarSessionRow({
         </div>
 
         <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-2">
-          <span className="inline-flex items-center gap-3 text-[11px] text-muted font-light">
+          <span className="inline-flex items-center gap-3 text-[11px] text-cn-p-ink-2 font-light">
             {typeof session.rsvp_count === "number" && (
               <span className="inline-flex items-center gap-1.5">
                 <Users className="w-3 h-3" />

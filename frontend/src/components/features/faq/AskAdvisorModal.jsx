@@ -10,6 +10,10 @@ import { askAdvisor } from "@/services/messagingService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError } from "@/lib/toast";
 
+// The question box itself, opened once the viewer is signed in. Unlike the
+// prompt beside it this is a form rather than a sign-in, so it renders
+// `ui/Modal`'s cobalt variant — the small `.dlgbox` the design file draws —
+// rather than the two-column `SignInModal`.
 export default function AskAdvisorModal({ isOpen, onClose }) {
   const router = useRouter();
   const [body, setBody] = useState("");
@@ -42,12 +46,13 @@ export default function AskAdvisorModal({ isOpen, onClose }) {
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
+      variant="cobalt"
       icon={MessageCircleQuestion}
       title="Ask an Advisor"
       subtitle="An advisor will reply in your Cool Nerdz Portal"
-      maxWidth="max-w-md"
+      maxWidth="max-w-[460px]"
     >
-      <form onSubmit={handleSubmit} className="space-y-5">
+      <form onSubmit={handleSubmit} className="grid gap-5">
         <textarea
           value={body}
           onChange={(event) => setBody(event.target.value)}
@@ -55,23 +60,23 @@ export default function AskAdvisorModal({ isOpen, onClose }) {
           placeholder="What would you like to ask?"
           rows={4}
           autoFocus
-          className="w-full px-4 py-3 bg-cn-paper-2 border border-cn-rule focus:border-cn-accent focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-cn-ink placeholder:text-cn-muted transition disabled:opacity-60 resize-none"
+          className="w-full resize-none rounded-cn-sm border border-cn-muted bg-cn-paper px-4 py-3 text-cn-base text-cn-ink transition-[border-color] duration-[140ms] ease-cn-out placeholder:text-cn-muted hover:border-cn-ink-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cn-accent disabled:cursor-not-allowed disabled:opacity-50"
         />
 
         <button
           type="submit"
           disabled={!body.trim() || askMutation.isPending}
-          className="w-full flex items-center justify-center gap-2 bg-cn-accent hover:bg-cn-accent-2 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold tracking-widest uppercase py-3.5 rounded-full shadow-cn-1 transition"
+          className="inline-flex h-[52px] w-full items-center justify-center gap-2 rounded-cn-sm bg-cn-accent px-6 text-cn-base font-semibold text-white shadow-cn-1 transition-[background-color,transform] duration-150 ease-cn-out enabled:hover:-translate-y-px enabled:hover:bg-cn-accent-2 focus-visible:outline-2 focus-visible:outline-offset-[3px] focus-visible:outline-cn-accent disabled:cursor-not-allowed disabled:opacity-60"
         >
           {askMutation.isPending ? (
             <>
-              <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+              <div className="h-4 w-4 animate-spin rounded-full border-2 border-white border-t-transparent" />
               Sending...
             </>
           ) : (
             <>
-              <Send className="w-4 h-4" />
-              Send Question
+              <Send className="h-[18px] w-[18px]" />
+              Send question
             </>
           )}
         </button>

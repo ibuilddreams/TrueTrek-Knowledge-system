@@ -117,15 +117,15 @@ export default function MessageComposer({ conversationId, editingMessage, onFini
   };
 
   return (
-    <form onSubmit={handleSubmit} className="border-t border-stone-100 p-3 space-y-2 shrink-0">
+    <form onSubmit={handleSubmit} className="border-t border-cn-p-line p-3 space-y-2 shrink-0">
       {isEditing && (
-        <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-amber-50 border border-amber-100">
-          <span className="text-xs font-semibold text-amber-800">Editing message</span>
+        <div className="flex items-center justify-between gap-2 px-3 py-2 rounded-xl bg-cn-p-soft border border-cn-p-accent-soft">
+          <span className="text-xs font-semibold text-cn-p-soft-ink">Editing message</span>
           <button
             type="button"
             onClick={handleCancelEdit}
             aria-label="Cancel edit"
-            className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full text-amber-700 hover:bg-amber-100 transition cursor-pointer"
+            className="w-6 h-6 shrink-0 flex items-center justify-center rounded-full text-cn-p-soft-ink hover:bg-cn-p-soft transition cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
           </button>
@@ -152,7 +152,7 @@ export default function MessageComposer({ conversationId, editingMessage, onFini
           disabled={isSubmitting || isEditing}
           title="Attach a file"
           aria-label="Attach a file"
-          className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl border border-stone-200 text-stone-500 hover:bg-stone-100 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl border border-cn-p-line-2 text-cn-p-ink-2 hover:bg-cn-p-page transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
         >
           <Paperclip className="w-4 h-4" />
         </button>
@@ -164,7 +164,7 @@ export default function MessageComposer({ conversationId, editingMessage, onFini
           disabled={isSubmitting}
           title="Insert emoji"
           aria-label="Insert emoji"
-          className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl border border-stone-200 text-stone-500 hover:bg-stone-100 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl border border-cn-p-line-2 text-cn-p-ink-2 hover:bg-cn-p-page transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
         >
           <Smile className="w-4 h-4" />
         </button>
@@ -177,12 +177,12 @@ export default function MessageComposer({ conversationId, editingMessage, onFini
           rows={1}
           placeholder="Write a message..."
           disabled={isSubmitting}
-          className="flex-1 resize-none px-3.5 py-2.5 text-sm border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-600/20 focus:border-amber-500 disabled:opacity-60 max-h-28"
+          className="flex-1 resize-none px-3.5 py-2.5 text-sm border border-cn-p-line-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-cn-p-accent/20 focus:border-cn-p-accent disabled:opacity-60 max-h-28"
         />
         <button
           type="submit"
           disabled={!canSend}
-          className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-stone-900 hover:bg-stone-800 text-stone-100 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-cn-p-accent hover:bg-cn-p-accent-hover text-white transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           aria-label={isEditing ? "Save edit" : "Send message"}
         >
           <Send className="w-4 h-4" />

@@ -1,33 +1,17 @@
 "use client";
 
-import { useState } from "react";
-import { History, Swords } from "lucide-react";
-import TabNav from "@/components/ui/TabNav";
 import TodaysQuestBoard from "../quests/TodaysQuestBoard";
 import QuestHistoryTable from "../quests/QuestHistoryTable";
 
-const SECTIONS = [
-  { id: "today", label: "Today's Quests", icon: Swords },
-  { id: "history", label: "Quest History", icon: History },
-];
-
+// The quests half of `DailyActivityTab`. It carries no heading and no tab
+// strip of its own — the screen above owns both, and a second row of tabs
+// inside the first is the thing the design does not do: its quests view is
+// today's board with the history beneath it, in one scroll.
 export default function QuestsTab({ onNotify, onOpenRewards }) {
-  const [activeSection, setActiveSection] = useState("today");
-
   return (
-    <div className="space-y-6">
-      <TabNav
-        tabs={SECTIONS}
-        activeTab={activeSection}
-        onChange={setActiveSection}
-        ariaLabel="Quest sections"
-        size="lg"
-      />
-
-      {activeSection === "today" && (
-        <TodaysQuestBoard onNotify={onNotify} onOpenRewards={onOpenRewards} />
-      )}
-      {activeSection === "history" && <QuestHistoryTable />}
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <TodaysQuestBoard onNotify={onNotify} onOpenRewards={onOpenRewards} />
+      <QuestHistoryTable />
     </div>
   );
 }

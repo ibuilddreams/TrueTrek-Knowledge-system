@@ -49,7 +49,6 @@ export default function CurriculumPathwayCards({ pathways = [] }) {
         pathwayName={pricePrompt?.name}
         nextPath={ROUTES.CURRICULUM}
         intent="price"
-        closeLabel="Keep Browsing"
       />
     </section>
   );

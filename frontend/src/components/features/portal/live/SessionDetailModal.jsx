@@ -50,33 +50,33 @@ export default function SessionDetailModal({
       <div className="space-y-5">
         <div className="flex flex-wrap items-center gap-2">
           <span
-            className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest border ${
+            className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-semibold border ${
               LIVE_STATE_TONE[state] || LIVE_STATE_TONE.UPCOMING
             }`}
           >
             {LIVE_STATE_LABEL[state] || state}
           </span>
           {session.is_rsvped && !isEnded && !isCancelled && (
-            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-mono uppercase tracking-widest border bg-sage/40 text-pine border-pine/20">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-semibold border bg-cn-p-soft text-cn-p-soft-ink border-transparent">
               <CalendarCheck className="w-3 h-3" />
               You&apos;re going
             </span>
           )}
-          <span className="text-[10px] font-mono uppercase tracking-widest text-muted">
+          <span className="text-[10px] font-semibold text-cn-p-ink-2">
             {session.meeting_method_display}
           </span>
         </div>
 
         {isCancelled && session.cancellation_reason && (
-          <div className="rounded-xl bg-rose/20 border border-clay/20 p-3.5">
-            <p className="text-xs text-clay font-light leading-relaxed">
+          <div className="rounded-xl bg-cn-p-bad-bg border border-cn-p-bad-bg p-3.5">
+            <p className="text-xs text-cn-p-bad font-light leading-relaxed">
               {session.cancellation_reason}
             </p>
           </div>
         )}
 
         {session.description && (
-          <p className="text-sm text-muted font-light leading-relaxed">{session.description}</p>
+          <p className="text-sm text-cn-p-ink-2 font-light leading-relaxed">{session.description}</p>
         )}
 
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
@@ -100,25 +100,25 @@ export default function SessionDetailModal({
                   : `${session.rsvp_count ?? 0} · ${session.seats_remaining} left`,
             },
           ].map((item) => (
-            <div key={item.label} className="rounded-xl bg-porcelain border border-line p-3.5">
-              <p className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-widest text-muted mb-1">
+            <div key={item.label} className="rounded-xl bg-cn-p-page border border-cn-p-line p-3.5">
+              <p className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-cn-p-ink-2 mb-1">
                 <item.icon className="w-3 h-3" />
                 {item.label}
               </p>
-              <p className="text-sm text-ink font-medium">{item.value}</p>
+              <p className="text-sm text-cn-p-ink font-medium">{item.value}</p>
             </div>
           ))}
         </div>
 
         {talkingPoints.length > 0 && (
           <div>
-            <p className="text-[11px] font-mono uppercase tracking-widest text-muted mb-2.5">
+            <p className="text-[11px] font-semibold text-cn-p-ink-2 mb-2.5">
               What we&apos;ll cover
             </p>
             <ul className="space-y-2">
               {talkingPoints.map((point, index) => (
-                <li key={`${point}-${index}`} className="flex gap-2.5 text-sm text-ink font-light">
-                  <span className="text-gold shrink-0">—</span>
+                <li key={`${point}-${index}`} className="flex gap-2.5 text-sm text-cn-p-ink font-light">
+                  <span className="text-cn-p-warn shrink-0">—</span>
                   <span className="leading-relaxed">{point}</span>
                 </li>
               ))}
@@ -128,7 +128,7 @@ export default function SessionDetailModal({
 
         {(session.speakers || []).length > 0 && (
           <div>
-            <p className="text-[11px] font-mono uppercase tracking-widest text-muted mb-3">
+            <p className="text-[11px] font-semibold text-cn-p-ink-2 mb-3">
               Speakers
             </p>
             <div className="space-y-4">
@@ -136,7 +136,7 @@ export default function SessionDetailModal({
                 <div key={speaker.id}>
                   <SpeakerChip speaker={speaker} size="lg" />
                   {speaker.bio && (
-                    <p className="text-xs text-muted font-light leading-relaxed mt-2 pl-[50px]">
+                    <p className="text-xs text-cn-p-ink-2 font-light leading-relaxed mt-2 pl-[50px]">
                       {speaker.bio}
                     </p>
                   )}
@@ -147,21 +147,21 @@ export default function SessionDetailModal({
         )}
 
         {isEnded && session.recap && (
-          <div className="rounded-xl bg-porcelain border border-line p-4">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-muted mb-2">
+          <div className="rounded-xl bg-cn-p-page border border-cn-p-line p-4">
+            <p className="text-[10px] font-semibold text-cn-p-ink-2 mb-2">
               Session recap
             </p>
-            <p className="text-sm text-ink font-light leading-relaxed whitespace-pre-line">
+            <p className="text-sm text-cn-p-ink font-light leading-relaxed whitespace-pre-line">
               {session.recap}
             </p>
           </div>
         )}
 
-        <div className="flex items-center justify-end gap-3 pt-1 border-t border-line mt-1">
+        <div className="flex items-center justify-end gap-3 pt-1 border-t border-cn-p-line mt-1">
           <button
             type="button"
             onClick={onClose}
-            className="mt-4 px-4 py-2.5 text-xs font-semibold font-mono uppercase tracking-wider rounded-lg border border-line text-muted hover:text-ink hover:bg-porcelain transition cursor-pointer"
+            className="mt-4 px-4 py-2.5 text-xs font-semibold font-semibold rounded-lg border border-cn-p-line text-cn-p-ink-2 hover:text-cn-p-ink hover:bg-cn-p-page transition cursor-pointer"
           >
             Close
           </button>
@@ -177,7 +177,7 @@ export default function SessionDetailModal({
                 <button
                   type="button"
                   onClick={() => onOpenNotes?.(session)}
-                  className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold font-mono uppercase tracking-wider rounded-lg border border-line text-ink hover:bg-porcelain transition cursor-pointer"
+                  className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold font-semibold rounded-lg border border-cn-p-line text-cn-p-ink hover:bg-cn-p-page transition cursor-pointer"
                 >
                   <NotebookPen className="w-3.5 h-3.5" />
                   Session notes
@@ -188,7 +188,7 @@ export default function SessionDetailModal({
                   href={session.recording_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold font-mono uppercase tracking-wider rounded-lg bg-pine hover:bg-moss text-paper shadow-sm transition"
+                  className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold font-semibold rounded-lg bg-cn-p-accent hover:bg-cn-p-accent-hover text-white shadow-sm transition"
                 >
                   <PlayCircle className="w-3.5 h-3.5" />
                   Play recording
@@ -200,7 +200,7 @@ export default function SessionDetailModal({
               type="button"
               onClick={() => onJoin?.(session)}
               disabled={isBusy}
-              className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold font-mono uppercase tracking-wider rounded-lg bg-clay hover:bg-clay/90 text-paper shadow-sm transition disabled:opacity-50 cursor-pointer"
+              className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold font-semibold rounded-lg bg-cn-p-bad hover:bg-cn-p-bad text-white shadow-sm transition disabled:opacity-50 cursor-pointer"
             >
               <Radio className="w-3.5 h-3.5" />
               {session.is_hosted_here ? "Join room" : "Join live"}
@@ -210,7 +210,7 @@ export default function SessionDetailModal({
               type="button"
               onClick={() => onCancelRsvp?.(session)}
               disabled={isBusy}
-              className="mt-4 px-4 py-2.5 text-xs font-semibold font-mono uppercase tracking-wider rounded-lg border border-line text-muted hover:text-ink hover:bg-porcelain transition disabled:opacity-50 cursor-pointer"
+              className="mt-4 px-4 py-2.5 text-xs font-semibold font-semibold rounded-lg border border-cn-p-line text-cn-p-ink-2 hover:text-cn-p-ink hover:bg-cn-p-page transition disabled:opacity-50 cursor-pointer"
             >
               Cancel RSVP
             </button>
@@ -219,7 +219,7 @@ export default function SessionDetailModal({
               type="button"
               onClick={() => onRsvp?.(session)}
               disabled={isBusy || session.seats_remaining === 0}
-              className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold font-mono uppercase tracking-wider rounded-lg bg-pine hover:bg-moss text-paper shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold font-semibold rounded-lg bg-cn-p-accent hover:bg-cn-p-accent-hover text-white shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <CalendarCheck className="w-3.5 h-3.5" />
               {session.seats_remaining === 0 ? "Session full" : "Save my spot"}
@@ -228,7 +228,7 @@ export default function SessionDetailModal({
         </div>
 
         {!isEnded && !isCancelled && !session.can_join && (
-          <p className="text-[11px] text-muted font-light text-center">
+          <p className="text-[11px] text-cn-p-ink-2 font-light text-center">
             {isLive
               ? session.is_hosted_here
                 ? "This session is live, but its room isn't available on this server."

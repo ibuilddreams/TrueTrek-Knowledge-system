@@ -13,9 +13,9 @@ import {
 // both the raw key and its display label, so this map only supplies the icon
 // and tone the label can't carry (same arrangement as questConstants.js).
 export const PRESSURE_TYPE_META = {
-  FINANCIAL: { icon: HandCoins, tone: "bg-gold/12 text-gold border-gold/25" },
-  ACCESS: { icon: DoorOpen, tone: "bg-sky text-blue border-blue/20" },
-  TIME: { icon: Clock, tone: "bg-sage/40 text-pine border-pine/20" },
+  FINANCIAL: { icon: HandCoins, tone: "bg-cn-p-warn-bg text-cn-p-warn border-transparent" },
+  ACCESS: { icon: DoorOpen, tone: "bg-cn-p-soft text-cn-p-soft-ink border-transparent" },
+  TIME: { icon: Clock, tone: "bg-cn-p-soft text-cn-p-soft-ink border-transparent" },
 };
 
 export const RELATIONSHIP_META = {
@@ -28,30 +28,30 @@ export const RELATIONSHIP_META = {
 export const PERSONA_META = {
   GUILT_TRIP: {
     icon: MessageSquareWarning,
-    tone: "bg-gold/12 text-gold border-gold/25",
+    tone: "bg-cn-p-warn-bg text-cn-p-warn border-transparent",
     blurb: "Leans on everything they've done for you.",
   },
   AGGRESSIVE: {
     icon: Flame,
-    tone: "bg-rose/35 text-clay border-clay/25",
+    tone: "bg-cn-p-bad-bg text-cn-p-bad border-transparent",
     blurb: "Gets confrontational and treats hesitation as disrespect.",
   },
   PASSIVE_AGGRESSIVE: {
     icon: MessageSquareWarning,
-    tone: "bg-lavender text-ink border-line",
+    tone: "bg-cn-p-neutral-bg text-cn-p-ink border-transparent",
     blurb: "Sarcasm and hints that you've changed.",
   },
   PERSISTENT: {
     icon: Repeat2,
-    tone: "bg-sage/40 text-pine border-pine/20",
+    tone: "bg-cn-p-soft text-cn-p-soft-ink border-transparent",
     blurb: "Treats every no as an opening bid and counters it.",
   },
 };
 
 export const DIFFICULTY_TONE = {
-  EASY: "bg-sage/40 text-pine border-pine/20",
-  MEDIUM: "bg-gold/12 text-gold border-gold/25",
-  HARD: "bg-rose/35 text-clay border-clay/25",
+  EASY: "bg-cn-p-soft text-cn-p-soft-ink border-transparent",
+  MEDIUM: "bg-cn-p-warn-bg text-cn-p-warn border-transparent",
+  HARD: "bg-cn-p-bad-bg text-cn-p-bad border-transparent",
 };
 
 // The three steps of the method, in the order the module teaches them. Static
@@ -91,16 +91,16 @@ export const ABP_STEPS = [
 // Scored bands, matching BrandScoreGauge's thresholds so a 76 reads the same
 // colour everywhere in the portal.
 export function getScoreTone(score) {
-  if (score === null || score === undefined) return "text-muted";
-  if (score >= 75) return "text-pine";
-  if (score >= 50) return "text-gold";
-  return "text-clay";
+  if (score === null || score === undefined) return "text-cn-p-ink-2";
+  if (score >= 75) return "text-cn-p-ok";
+  if (score >= 50) return "text-cn-p-warn";
+  return "text-cn-p-bad";
 }
 
 export function getScoreBarTone(score) {
-  if (score >= 75) return "bg-pine";
-  if (score >= 50) return "bg-gold";
-  return "bg-clay";
+  if (score >= 75) return "bg-cn-p-ok";
+  if (score >= 50) return "bg-cn-p-warn";
+  return "bg-cn-p-bad";
 }
 
 export function getPressureMeta(pressureType) {

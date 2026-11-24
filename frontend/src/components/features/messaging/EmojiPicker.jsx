@@ -23,7 +23,7 @@ export default function EmojiPicker({ isOpen, onClose, anchorRef, onSelect, alig
               onSelect(emoji);
               onClose();
             }}
-            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-stone-100 text-base transition cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center rounded-lg hover:bg-cn-p-page text-base transition cursor-pointer"
           >
             {emoji}
           </button>

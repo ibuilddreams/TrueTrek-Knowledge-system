@@ -28,7 +28,9 @@ import StoreCourseCard from "./StoreCourseCard";
 import StoreAdvisorSuite from "./StoreAdvisorSuite";
 import StoreBundles from "./StoreBundles";
 
-const PAGE_SIZE = 9;
+// Ten a page: the grid is two columns, so ten fills five even rows rather
+// than leaving a lone card on a row of its own.
+const PAGE_SIZE = 10;
 
 // The AI Advisor suite is fully built but its recommendations are still
 // grounded in the old hardcoded merchandise catalog, not real courses — kept
@@ -133,6 +135,11 @@ export default function MerchantStore() {
       return response?.data || { results: [], count: 0 };
     },
     placeholderData: keepPreviousData,
+    // A page number past the end answers 404 and cannot succeed on a retry,
+    // and every attempt is another second of the pager showing a number the
+    // grid underneath it does not match. Everything else retries as usual.
+    retry: (failureCount, requestError) =>
+      requestError?.status !== 404 && failureCount < 3,
   });
 
   const courses = data?.results || [];
@@ -161,14 +168,33 @@ export default function MerchantStore() {
     Boolean(search.trim()) && !selectedCategoryId && !difficulty;
 
 
-  // If everything on the current store page just got purchased/enrolled, the
-  // refetch after checkout can leave the user stranded on a now-empty page —
-  // send them back to page 1 rather than showing an empty grid.
+  // A 404 from this endpoint means the page number is past the end of the
+  // results. Any other failure is a real error the reader should see and be
+  // able to retry, so it must not be mistaken for one.
+  const isPagePastEnd = isError && error?.status === 404;
+
+  // The page a reader is on can stop existing underneath them — enrol in
+  // everything on the last page and the catalog is a page shorter than it was.
+  //
+  // DRF answers an out-of-range page with a **404, not an empty list**, so the
+  // previous `courses.length === 0` test only caught it second-hand: the query
+  // had to exhaust its retries before TanStack dropped `data` and the length
+  // fell to zero, some seven seconds during which the pager read "3 / 34" over
+  // the previous page's cards. Worse, the error state hides the pager, which is
+  // the reader's only way back. Reading the error itself is immediate.
+  //
+  // Stepping back a page rather than jumping to page 1 keeps the reader roughly
+  // where they were reading; if that page has gone too the next pass steps
+  // again, and page 1 is the floor.
   useEffect(() => {
-    if (!isLoading && !isFetching && courses.length === 0 && page > 1) {
-      setPage(1);
-    }
-  }, [isLoading, isFetching, courses.length, page]);
+    if (isLoading || isFetching || page <= 1) return;
+    if (isPagePastEnd) setPage((current) => Math.max(1, current - 1));
+    // Only a *successful* response can shrink the page count. On any other
+    // failure `data` is undefined, which collapses `totalPages` to 1 — without
+    // this guard a transient 500 would quietly throw the reader back to page 1
+    // instead of showing them the error and its retry.
+    else if (!isError && page > totalPages) setPage(totalPages);
+  }, [isLoading, isFetching, isError, isPagePastEnd, page, totalPages]);
 
   // Each page of the grid reveals as it is scrolled to, and is swept again
   // when a new page or a new filter brings different cards in.

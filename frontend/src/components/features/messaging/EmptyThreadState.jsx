@@ -1,16 +1,15 @@
 "use client";
 
 import { MessageSquare } from "lucide-react";
-import EmptyState from "@/components/ui/EmptyState";
+import { PortalEmpty } from "@/components/features/portal/shell/PortalUI";
 
 export default function EmptyThreadState() {
   return (
     <div className="flex-1 flex items-center justify-center p-6">
-      <EmptyState
+      <PortalEmpty
         icon={MessageSquare}
-        label="Select a conversation"
-        description="Choose a conversation from the list, or start a new message."
-        size="lg"
+        title="Select a conversation"
+        text="Choose a conversation from the list, or start a new message."
       />
     </div>
   );

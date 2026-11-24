@@ -22,8 +22,8 @@ import {
 } from "@/hooks/student/useLiveSessions";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
-import StatCard from "@/components/ui/StatCard";
-import TabNav from "@/components/ui/TabNav";
+import PortalCard, { PortalStat } from "../shell/PortalCard";
+import { PortalPageHead, PortalTabs } from "../shell/PortalUI";
 import SessionCalendar from "../live/SessionCalendar";
 import SessionList from "../live/SessionList";
 import SessionDetailModal from "../live/SessionDetailModal";
@@ -31,9 +31,9 @@ import LiveRoomStage from "@/components/features/liveroom/LiveRoomStage";
 import SessionNotesModal from "@/components/features/liveroom/SessionNotesModal";
 
 const SECTIONS = [
-  { id: "upcoming", label: "Upcoming Sessions", icon: Radio },
-  { id: "calendar", label: "Calendar", icon: CalendarDays },
-  { id: "past", label: "Past & Recordings", icon: PlayCircle },
+  { value: "upcoming", label: "Upcoming" },
+  { value: "calendar", label: "Calendar" },
+  { value: "past", label: "Past & recordings" },
 ];
 
 export default function WarRoomLiveTab() {
@@ -136,57 +136,46 @@ export default function WarRoomLiveTab() {
   };
 
   return (
-    <div className="space-y-6">
-      <div className="relative bg-paper border border-line rounded-2xl shadow-sm p-6 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pine via-moss to-gold opacity-80" />
-        <div className="flex items-start gap-4">
-          <div className="w-11 h-11 rounded-2xl bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
-            <Headphones className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <h2 className="text-lg font-serif font-light text-ink">War Room Live</h2>
-            <p className="text-xs text-muted font-light mt-1 leading-relaxed">
-              Monthly drop-in audio sessions with current college athletes — what they did in
-              high school, what grew their following, and what they wish they&apos;d never posted.
-            </p>
-          </div>
-        </div>
-      </div>
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="War room live"
+        subtitle="Monthly drop-in audio sessions with current college athletes — what they did in high school, what grew their following, and what they wish they'd never posted."
+      />
 
-      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard
-          size="lg"
-          label="Upcoming Sessions"
-          value={stats?.upcoming_count ?? 0}
+      <div className="grid gap-4 sm:grid-cols-3">
+        <PortalStat
           icon={Mic}
-          accent="amber"
+          label="Upcoming sessions"
+          value={stats?.upcoming_count ?? 0}
           hint="Scheduled and open for RSVP"
         />
-        <StatCard
-          size="lg"
-          label="You're Attending"
-          value={stats?.my_rsvp_count ?? 0}
+        <PortalStat
           icon={CalendarCheck}
-          accent="emerald"
+          tone="ok"
+          label="You're attending"
+          value={stats?.my_rsvp_count ?? 0}
           hint="Spots you've reserved"
         />
-        <StatCard
-          size="lg"
+        <PortalStat
+          icon={PlayCircle}
           label="Recordings"
           value={stats?.recordings_available ?? 0}
-          icon={PlayCircle}
-          accent="stone"
           hint="Catch up on sessions you missed"
         />
       </div>
 
-      <TabNav
-        tabs={SECTIONS}
-        activeTab={activeSection}
-        onChange={setActiveSection}
-        ariaLabel="War Room Live sections"
-        size="lg"
-      />
+      {/* The design holds the three views inside one `.card.p0`, so the tab
+          strip owns the top edge of the panel it switches rather than
+          floating above a separate box. */}
+      <PortalCard>
+        <div className="px-4">
+          <PortalTabs
+            ariaLabel="War room live sections"
+            options={SECTIONS}
+            value={activeSection}
+            onChange={setActiveSection}
+          />
+        </div>
 
       {activeSection === "upcoming" && (
         <SessionList
@@ -227,6 +216,8 @@ export default function WarRoomLiveTab() {
           {...sharedHandlers}
         />
       )}
+
+      </PortalCard>
 
       <SessionDetailModal
         isOpen={Boolean(detailSession)}

@@ -1,102 +1,116 @@
 "use client";
 
 import { Sparkles } from "lucide-react";
+import { PortalKicker, PortalPill } from "../shell/PortalUI";
 
 const DIFFICULTY_LABELS = { EASY: "Easy", MEDIUM: "Medium", HARD: "Hard" };
 
+// The design's drill card: what kind of exercise this is, the situation, the
+// goal, then the options as `.opt` buttons — a lettered key beside the move.
+//
+// The dark scenario panel the old card used is gone. The design states the
+// case as plain prose at `--text-xl`, which is what a reader is actually
+// being asked to think about; inverting it made it a decorative banner.
 export default function AIQuestionDrillCard({ data, onSubmit, isSubmitting }) {
   const attempted = data.attempted;
   const selectedKey = data.selected_key;
+  const isCorrect = attempted && selectedKey === data.correct_answer;
 
   return (
-    <div className="bg-paper border border-line rounded-card p-6 space-y-6 shadow-soft">
-      <div className="flex items-center justify-between border-b border-line pb-4">
-        <div>
-          <span className="text-pine text-sm font-mono uppercase tracking-wider flex items-center gap-1.5 mb-0.5">
-            <Sparkles className="w-3.5 h-3.5" />
-            AI-Personalized Drill
-          </span>
-          <h4 className="text-lg font-serif font-bold text-ink">{data.title}</h4>
-        </div>
-        <span className="text-sm font-mono text-muted">
-          {attempted ? "Completed Today" : "Today's Exercise"}
+    <div className="flex flex-col gap-[18px] rounded-cn-p border border-cn-p-line bg-cn-p-card p-8">
+      <div className="flex flex-wrap items-center gap-2">
+        <PortalPill tone="blue">
+          <Sparkles className="h-3.5 w-3.5" />
+          AI-personalised drill
+        </PortalPill>
+        {data.difficulty && (
+          <PortalPill>{DIFFICULTY_LABELS[data.difficulty] || data.difficulty}</PortalPill>
+        )}
+        {data.topic && <PortalPill>{data.topic}</PortalPill>}
+        <span className="text-sm text-cn-p-muted">
+          {attempted ? "Completed today" : "Today's exercise"}
         </span>
       </div>
 
-      <div className="bg-pine text-paper p-6 rounded-2xl border border-moss relative overflow-hidden">
-        <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-gold/10 blur-xl" />
-        <div className="flex gap-3 mb-4 relative z-10">
-          <div className="bg-gold text-pine font-bold px-2.5 py-1 text-[11px] font-mono tracking-widest uppercase rounded">
-            {DIFFICULTY_LABELS[data.difficulty] || "Scenario"}
-          </div>
-          <span className="text-sm text-paper/60 font-mono tracking-wide">{data.topic}</span>
-        </div>
-        <p className="text-sm md:text-base leading-relaxed font-medium text-paper relative z-10">
-          {data.question}
+      <h3 className="text-[22px] leading-[1.4] font-bold text-cn-p-ink">
+        {data.question}
+      </h3>
+
+      {data.context && (
+        <p className="text-sm text-cn-p-ink-2">
+          <b className="font-semibold text-cn-p-ink">Goal:</b> {data.context}
         </p>
-        {data.context && (
-          <p className="text-sm text-gold font-mono mt-4 bg-ink/30 p-2.5 rounded border border-moss/50 relative z-10">
-            Goal: {data.context}
-          </p>
-        )}
-      </div>
+      )}
 
-      <div className="space-y-3.5">
-        <p className="text-sm font-mono uppercase text-muted tracking-wider">Select Your Answer</p>
+      <PortalKicker>Select your action</PortalKicker>
+
+      <div className="flex flex-col gap-2.5">
         {data.options.map((option) => {
-          const isSelected = attempted && option.key === selectedKey;
-          const isCorrectOption = attempted && option.key === data.correct_answer;
-          const highlight = isSelected || isCorrectOption;
-
+          const isChosen = attempted && option.key === selectedKey;
+          const isRight = attempted && option.key === data.correct_answer;
           return (
             <button
               key={option.key}
               type="button"
+              aria-pressed={isChosen}
               disabled={attempted || isSubmitting}
               onClick={() => onSubmit(option.key)}
-              className={`w-full text-left p-4 rounded-xl border flex gap-4 transition-all disabled:cursor-not-allowed ${
-                highlight
-                  ? isCorrectOption
-                    ? "bg-emerald-50 border-emerald-500 text-emerald-950 shadow-xs"
-                    : "bg-rose-50 border-rose-500 text-rose-950 shadow-xs"
-                  : "bg-paper hover:bg-porcelain border-line text-muted disabled:hover:bg-paper"
+              className={`flex w-full items-start gap-3.5 rounded-xl border-[1.5px] p-4 text-left transition-[border-color,background-color] duration-150 disabled:cursor-default ${
+                isRight
+                  ? "border-cn-p-ok bg-cn-p-ok-bg"
+                  : isChosen
+                    ? "border-cn-p-bad bg-cn-p-bad-bg"
+                    : "border-cn-p-line bg-cn-p-card enabled:hover:border-cn-p-accent-soft"
               }`}
             >
               <span
-                className={`w-6 h-6 rounded-full font-mono text-sm font-bold flex items-center justify-center shrink-0 ${
-                  highlight
-                    ? isCorrectOption
-                      ? "bg-emerald-600 text-paper"
-                      : "bg-rose-600 text-paper"
-                    : "bg-porcelain text-muted"
+                className={`grid h-[30px] w-[30px] flex-none place-items-center rounded-lg font-bold ${
+                  isRight
+                    ? "bg-cn-p-ok text-white"
+                    : isChosen
+                      ? "bg-cn-p-bad text-white"
+                      : "bg-cn-p-neutral-bg text-cn-p-ink"
                 }`}
               >
                 {option.key}
               </span>
-              <p className="text-sm font-semibold leading-relaxed flex-1">{option.text}</p>
+              <span className="flex-1 pt-1 text-sm leading-relaxed font-medium text-cn-p-ink">
+                {option.text}
+              </span>
             </button>
           );
         })}
       </div>
 
-      {attempted && data.explanation && (
-        <div className="border-t border-line pt-4 text-xs leading-relaxed text-muted bg-porcelain rounded-xl p-4 border border-line">
-          <p className="font-bold text-ink mb-1">Explanation</p>
-          <p className="font-light">{data.explanation}</p>
+      {/* The design's `.callout`: the verdict and the reasoning in one band,
+          tinted green when the move was the strong one. */}
+      {attempted && (
+        <div
+          className={`rounded-xl px-[18px] py-4 font-medium ${
+            isCorrect
+              ? "bg-cn-p-ok-bg text-cn-p-ok"
+              : "bg-cn-p-soft text-cn-p-soft-ink"
+          }`}
+        >
+          <b className="font-bold">
+            {isCorrect
+              ? `Strong move.${data.points_awarded > 0 ? ` +${data.points_awarded} pts.` : ""}`
+              : "Not the best move."}
+          </b>{" "}
+          {data.explanation ||
+            (isCorrect
+              ? "A new drill arrives tomorrow."
+              : "No points this time — a new drill arrives tomorrow.")}
         </div>
       )}
 
-      <div className="flex items-center justify-between pt-4 border-t border-line gap-4">
-        <span className="text-sm text-muted">
-          {attempted
-            ? data.points_awarded > 0
-              ? `You've completed today's drill and earned +${data.points_awarded} points — a new one arrives tomorrow.`
-              : "You've completed today's drill. That wasn't the correct answer, so 0 points were earned this time — a new one arrives tomorrow."
-            : isSubmitting
-              ? "Submitting your answer..."
-              : "This drill was generated for you based on your recent learning activity."}
+      {!attempted && (
+        <span className="text-sm text-cn-p-muted">
+          {isSubmitting
+            ? "Submitting your answer..."
+            : "This drill was generated for you from your recent learning activity."}
         </span>
-      </div>
+      )}
     </div>
   );
 }

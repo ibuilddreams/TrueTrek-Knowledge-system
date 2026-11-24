@@ -33,17 +33,17 @@ export default function WarRoomScreen() {
 
   if (roomsQuery.isError) {
     return (
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-8 text-center max-w-lg mx-auto">
-        <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+      <div className="bg-white border border-cn-p-line-2 rounded-2xl shadow-sm p-8 text-center max-w-lg mx-auto">
+        <div className="w-12 h-12 bg-cn-p-bad-bg border border-cn-p-bad-bg text-cn-p-bad rounded-2xl flex items-center justify-center mx-auto mb-4">
           <AlertCircle className="w-6 h-6" />
         </div>
-        <p className="text-sm text-stone-500 font-light mb-6">
+        <p className="text-sm text-cn-p-ink-2 font-light mb-6">
           {getApiErrorMessage(roomsQuery.error, "Unable to load War Room.")}
         </p>
         <button
           type="button"
           onClick={() => roomsQuery.refetch()}
-          className="inline-flex items-center gap-2 px-5 py-3 bg-stone-900 hover:bg-stone-800 text-stone-100 font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition"
+          className="inline-flex items-center gap-2 px-5 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-xl shadow-md transition"
         >
           <RefreshCw className="w-4 h-4" />
           Retry
@@ -55,12 +55,11 @@ export default function WarRoomScreen() {
   const showList = rooms.length > 1;
 
   return (
-    <div className="bg-white border border-stone-200/95 rounded-2xl shadow-xl overflow-hidden relative flex flex-col sm:flex-row min-h-120 h-[calc(100vh-16rem)]">
-      <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-600 to-amber-800" />
+    <div className="bg-white border border-cn-p-line-2 rounded-2xl shadow-xl overflow-hidden relative flex flex-col sm:flex-row min-h-120 h-[calc(100vh-16rem)]">
 
       {showList && (
         <div
-          className={`${selectedRoom ? "hidden" : "flex"} sm:flex flex-col w-full sm:w-80 flex-1 sm:flex-none min-h-0 border-b sm:border-b-0 sm:border-r border-stone-100`}
+          className={`${selectedRoom ? "hidden" : "flex"} sm:flex flex-col w-full sm:w-80 flex-1 sm:flex-none min-h-0 border-b sm:border-b-0 sm:border-r border-cn-p-line`}
         >
           <RoomList
             rooms={rooms}
@@ -76,7 +75,7 @@ export default function WarRoomScreen() {
       >
         {roomsQuery.isLoading ? (
           <div className="flex-1 flex items-center justify-center">
-            <RefreshCw className="w-5 h-5 text-stone-300 animate-spin" />
+            <RefreshCw className="w-5 h-5 text-cn-p-muted animate-spin" />
           </div>
         ) : selectedRoom ? (
           <RoomThread room={selectedRoom} onBack={showList ? () => setSelectedRoom(null) : undefined} />

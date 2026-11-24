@@ -8,11 +8,20 @@ import { useDailyDrillToday } from "@/hooks/student/useDailyDrillToday";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError } from "@/lib/toast";
 import Loader from "@/components/ui/Loader";
-import EmptyState from "@/components/ui/EmptyState";
+import PortalCard from "../shell/PortalCard";
+import {
+  PortalButton,
+  PortalEmpty,
+  PortalKicker,
+  PortalKv,
+  PortalKvItem,
+} from "../shell/PortalUI";
 import LegacyQuestionDrillCard from "../drill/LegacyQuestionDrillCard";
 import AIQuestionDrillCard from "../drill/AIQuestionDrillCard";
 import AdminVideoDrillCard from "../drill/AdminVideoDrillCard";
 import StreakReengagementBanner from "../drill/StreakReengagementBanner";
+
+const formatDays = (value) => `${value ?? 0} ${value === 1 ? "day" : "days"}`;
 
 // Points/streak/score are synced into the portal header from StudentPortal.jsx
 // instead of from here — that fetch runs once on portal load regardless of
@@ -68,44 +77,35 @@ export default function DrillTab({ onNotify }) {
 
   if (isLoading) {
     return (
-      <div className="bg-paper border border-line rounded-2xl p-6 min-h-[40vh] flex items-center justify-center">
-        <Loader fullScreen={false} label="Loading today's drill..." />
+      <div className="flex min-h-[40vh] items-center justify-center" aria-busy="true">
+        <Loader fullScreen={false} tone="cobalt" label="Loading today's drill..." />
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="bg-paper border border-line rounded-2xl p-6">
-        <div className="flex flex-col items-center justify-center text-center py-10 gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-red-50 border border-red-100 text-red-500 flex items-center justify-center">
-            <AlertCircle className="w-5 h-5" />
-          </div>
-          <p className="text-sm font-medium text-muted">
-            {getApiErrorMessage(error, "Unable to load today's drill.")}
-          </p>
-          <button
-            type="button"
-            onClick={() => refetch()}
-            className="mt-1 bg-pine hover:bg-moss text-paper font-semibold text-sm py-2 px-4 rounded-lg tracking-wide transition"
-          >
-            Retry
-          </button>
-        </div>
-      </div>
+      <PortalCard className="mx-auto max-w-lg p-10 text-center">
+        <span className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-cn-p-sm bg-cn-p-bad-bg text-cn-p-bad">
+          <AlertCircle className="h-6 w-6" />
+        </span>
+        <p className="mb-6 text-sm text-cn-p-ink-2">
+          {getApiErrorMessage(error, "Unable to load today's drill.")}
+        </p>
+        <PortalButton onClick={() => refetch()}>Retry</PortalButton>
+      </PortalCard>
     );
   }
 
   if (!data || data.type === "UNAVAILABLE") {
     return (
-      <div className="bg-paper border border-line rounded-2xl p-6">
-        <EmptyState
+      <PortalCard>
+        <PortalEmpty
           icon={Swords}
-          label="No drill available today"
-          description="Check back soon — a new situational drill is added regularly."
-          size="lg"
+          title="No drill available today"
+          text="Check back soon — a new situational drill is added regularly."
         />
-      </div>
+      </PortalCard>
     );
   }
 
@@ -116,15 +116,46 @@ export default function DrillTab({ onNotify }) {
   };
 
   return (
-    <div className="space-y-4">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
       <StreakReengagementBanner streakDetail={stats?.streak_detail} />
-      {data.type === "ADMIN_VIDEO" && <AdminVideoDrillCard data={data} onNotify={onNotify} />}
-      {data.type === "AI_QUESTION" && (
-        <AIQuestionDrillCard data={data} onSubmit={handleSubmit} isSubmitting={isSubmitting} />
-      )}
-      {data.type === "LEGACY_QUESTION" && (
-        <LegacyQuestionDrillCard data={data} onSubmit={handleSubmit} isSubmitting={isSubmitting} />
-      )}
+
+      <div className="grid items-start gap-6 xl:grid-cols-[minmax(0,2fr)_minmax(0,1fr)]">
+        <div className="min-w-0">
+          {data.type === "ADMIN_VIDEO" && <AdminVideoDrillCard data={data} onNotify={onNotify} />}
+          {data.type === "AI_QUESTION" && (
+            <AIQuestionDrillCard data={data} onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+          )}
+          {data.type === "LEGACY_QUESTION" && (
+            <LegacyQuestionDrillCard data={data} onSubmit={handleSubmit} isSubmitting={isSubmitting} />
+          )}
+        </div>
+
+        {/* The design's side column. Every figure here is one the server
+            actually sends (see daily_drill stats) — the mock's "this week
+            4 / 5" and "best move rate 80%" are hardcoded in the design and
+            have no field behind them, so they are not repeated as if real. */}
+        <div className="grid gap-5">
+          <PortalCard className="flex flex-col gap-2.5 p-5">
+            <PortalKicker>Your drill record</PortalKicker>
+            <PortalKv columns={2}>
+              <PortalKvItem label="Current streak" value={formatDays(stats?.streak_detail?.current_streak)} />
+              <PortalKvItem label="Longest streak" value={formatDays(stats?.streak_detail?.longest_streak)} />
+              <PortalKvItem label="Drills answered" value={stats?.attempts_count ?? 0} />
+              <PortalKvItem label="Average score" value={`${Math.round(stats?.aggregate_score ?? 0)}%`} />
+            </PortalKv>
+            <span className="text-sm text-cn-p-ink-2">
+              A new drill unlocks every morning. Your scorecard updates as soon
+              as you answer.
+            </span>
+          </PortalCard>
+
+          <PortalCard className="flex flex-col gap-2 p-5">
+            <PortalKicker>Tomorrow</PortalKicker>
+            <b className="font-bold text-cn-p-ink">A new situational drill</b>
+            <span className="text-sm text-cn-p-ink-2">Unlocks at midnight</span>
+          </PortalCard>
+        </div>
+      </div>
     </div>
   );
 }

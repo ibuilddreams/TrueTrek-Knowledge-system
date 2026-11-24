@@ -1,52 +1,33 @@
 "use client";
 
-import Link from "next/link";
-import { LogIn, MessageCircleQuestion, UserPlus } from "lucide-react";
-import Modal from "@/components/ui/Modal";
+import { MessageCircleQuestion } from "lucide-react";
+import SignInModal from "@/components/features/auth/SignInModal";
 import { ROUTES } from "@/constants/routes";
-import { buildAuthUrl } from "@/lib/authRedirect";
 
-export default function AdvisorSignInModal({ isOpen, onClose }) {
+// Shown when a signed-out visitor taps "Ask an Advisor" on /faq.
+//
+// It is the design's sign-in dialog (`features/auth/SignInModal`), the same one
+// the store, the pathway prompts and the bundle builder open. /faq is on the
+// cobalt system; the porcelain/serif dialog this used to render was doubly odd
+// here, because its *body* had already been converted to cobalt tokens while
+// the frame around it had not.
+//
+// Signing in finishes the thing they were trying to do rather than dropping
+// them somewhere to start again: `onSignedIn` hands back to
+// `ContactAdvisorEntry`, which opens the question box. `nextPath` only governs
+// the sign-*up* detour, which leaves the page, so it returns them here.
+export default function AdvisorSignInModal({ isOpen, onClose, onSignedIn }) {
   return (
-    <Modal
+    <SignInModal
       isOpen={isOpen}
       onClose={onClose}
-      icon={MessageCircleQuestion}
-      title="Sign in to contact an advisor"
-      subtitle="A student account is needed to start a conversation"
-      maxWidth="max-w-md"
-    >
-      <div className="space-y-5">
-        <p className="text-sm text-cn-muted font-light leading-relaxed">
-          Sign in to your student account to ask an advisor directly — you&apos;ll find
-          &quot;Ask an Advisor&quot; in your Cool Nerdz Portal once you&apos;re signed in.
-        </p>
-
-        <div className="flex flex-col gap-3">
-          <Link
-            href={buildAuthUrl(ROUTES.LOGIN)}
-            className="w-full flex items-center justify-center gap-2 bg-cn-accent hover:bg-cn-accent-2 text-white text-sm font-semibold h-[50px] rounded-cn-sm transition-colors duration-150"
-          >
-            <LogIn className="w-4 h-4" />
-            Sign In
-          </Link>
-          <Link
-            href={buildAuthUrl(ROUTES.SIGNUP)}
-            className="w-full flex items-center justify-center gap-2 bg-white hover:border-cn-ink border border-cn-rule-strong text-cn-ink text-sm font-semibold h-[50px] rounded-cn-sm shadow-cn-1 transition-colors duration-150"
-          >
-            <UserPlus className="w-4 h-4" />
-            Create Student Account
-          </Link>
-        </div>
-
-        <button
-          type="button"
-          onClick={onClose}
-          className="w-full text-center text-xs font-sans font-medium uppercase tracking-widest text-cn-muted hover:text-cn-ink transition-colors"
-        >
-          Keep Browsing
-        </button>
-      </div>
-    </Modal>
+      nextPath={ROUTES.FAQ}
+      context={{
+        icon: MessageCircleQuestion,
+        eyebrow: "Sign in to continue",
+        title: "Ask an Advisor",
+      }}
+      onSignedIn={onSignedIn}
+    />
   );
 }

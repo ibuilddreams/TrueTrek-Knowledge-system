@@ -5,7 +5,7 @@ import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tansta
 import { MessageSquarePlus, Search } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 import Loader from "@/components/ui/Loader";
-import EmptyState from "@/components/ui/EmptyState";
+import { PortalEmpty } from "@/components/features/portal/shell/PortalUI";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { getInitials } from "@/lib/initials";
 import { getEligibleRecipients, startConversation } from "@/services/messagingService";
@@ -55,23 +55,24 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStarted
       isOpen={isOpen}
       onClose={handleClose}
       icon={MessageSquarePlus}
-      title="New Message"
+      title="New message"
       subtitle="Start a conversation"
+      variant="cobalt"
       maxWidth="max-w-md"
     >
       <div className="space-y-4">
         <div className="relative">
-          <Search className="w-3.5 h-3.5 text-stone-400 absolute left-3 top-1/2 -translate-y-1/2" />
+          <Search className="w-3.5 h-3.5 text-cn-p-muted absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
             value={search}
             onChange={(event) => setSearch(event.target.value)}
             placeholder="Search people..."
-            className="w-full pl-9 pr-8 py-2.5 text-xs border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-600/20 focus:border-amber-500"
+            className="w-full pl-9 pr-8 py-2.5 text-xs border border-cn-p-line-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-cn-p-accent/20 focus:border-cn-p-accent"
           />
           {recipientsQuery.isFetching && !recipientsQuery.isLoading && (
             <div
-              className="w-3.5 h-3.5 border-2 border-amber-600 border-t-transparent rounded-full animate-spin absolute right-3 top-1/2 -translate-y-1/2"
+              className="w-3.5 h-3.5 border-2 border-cn-p-accent border-t-transparent rounded-full animate-spin absolute right-3 top-1/2 -translate-y-1/2"
               aria-hidden="true"
             />
           )}
@@ -81,10 +82,9 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStarted
           {recipientsQuery.isLoading ? (
             <Loader fullScreen={false} label="Loading people..." />
           ) : recipients.length === 0 ? (
-            <EmptyState
+            <PortalEmpty
               icon={MessageSquarePlus}
-              label={debouncedSearch ? "No matching people." : "No one to message yet."}
-              compact
+              title={debouncedSearch ? "No matching people" : "No one to message yet"}
             />
           ) : (
             <ul className="space-y-1">
@@ -94,9 +94,9 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStarted
                     type="button"
                     disabled={startMutation.isPending}
                     onClick={() => startMutation.mutate(recipient.id)}
-                    className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-stone-50 transition text-left cursor-pointer disabled:opacity-60"
+                    className="w-full flex items-center gap-3 px-2 py-2 rounded-xl hover:bg-cn-p-page transition text-left cursor-pointer disabled:opacity-60"
                   >
-                    <span className="w-9 h-9 rounded-full bg-stone-100 border border-stone-200 text-stone-600 flex items-center justify-center shrink-0 text-[11px] font-bold font-mono overflow-hidden">
+                    <span className="w-9 h-9 rounded-full bg-cn-p-neutral-bg border border-cn-p-line-2 text-cn-p-ink-2 flex items-center justify-center shrink-0 text-[11px] font-bold overflow-hidden">
                       {recipient.avatar ? (
                         // eslint-disable-next-line @next/next/no-img-element
                         <img src={recipient.avatar} alt="" className="w-full h-full object-cover" />
@@ -105,10 +105,10 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStarted
                       )}
                     </span>
                     <span className="min-w-0">
-                      <span className="block text-xs font-semibold text-stone-800 truncate">
+                      <span className="block text-xs font-semibold text-cn-p-ink truncate">
                         {recipient.name}
                       </span>
-                      <span className="block text-[10px] font-mono uppercase tracking-wider text-stone-400">
+                      <span className="block text-[10px] uppercase tracking-wider text-cn-p-muted">
                         {recipient.role}
                       </span>
                     </span>

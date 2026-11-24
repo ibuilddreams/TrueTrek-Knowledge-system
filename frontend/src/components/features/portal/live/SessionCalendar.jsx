@@ -19,10 +19,10 @@ import {
 } from "./calendarUtils";
 
 const LEGEND = [
-  { label: "Upcoming", dot: "bg-gold" },
-  { label: "Live now", dot: "bg-clay" },
-  { label: "Ended", dot: "bg-muted/70" },
-  { label: "You're going", dot: "bg-sage border border-pine/25" },
+  { label: "Upcoming", dot: "bg-cn-p-warn" },
+  { label: "Live now", dot: "bg-cn-p-bad" },
+  { label: "Ended", dot: "bg-cn-p-muted/70" },
+  { label: "You're going", dot: "bg-cn-p-soft border border-cn-p-accent-soft" },
 ];
 
 export default function SessionCalendar({
@@ -79,7 +79,7 @@ export default function SessionCalendar({
 
   if (isLoading) {
     return (
-      <div className="bg-paper border border-line rounded-2xl p-10">
+      <div className="bg-cn-p-card border border-cn-p-line rounded-2xl p-10">
         <Loader fullScreen={false} label="Loading calendar..." />
       </div>
     );
@@ -87,17 +87,17 @@ export default function SessionCalendar({
 
   if (isError) {
     return (
-      <div className="bg-paper border border-line rounded-2xl p-10 flex flex-col items-center gap-3 text-center">
-        <div className="w-10 h-10 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl flex items-center justify-center">
+      <div className="bg-cn-p-card border border-cn-p-line rounded-2xl p-10 flex flex-col items-center gap-3 text-center">
+        <div className="w-10 h-10 bg-cn-p-bad-bg border border-cn-p-bad-bg text-cn-p-bad rounded-xl flex items-center justify-center">
           <AlertCircle className="w-5 h-5" />
         </div>
-        <p className="text-sm text-muted font-light">
+        <p className="text-sm text-cn-p-ink-2 font-light">
           {getApiErrorMessage(error, "Unable to load the calendar.")}
         </p>
         <button
           type="button"
           onClick={onRetry}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-pine hover:bg-moss text-paper font-bold font-mono text-xs uppercase tracking-wider rounded-lg transition cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white font-bold tabular-nums text-xs  rounded-lg transition cursor-pointer"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Retry
@@ -108,11 +108,10 @@ export default function SessionCalendar({
 
   return (
     <div className="space-y-4">
-      <div className="relative bg-paper border border-line rounded-2xl shadow-sm p-5 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pine via-moss to-gold opacity-80" />
+      <div className="relative bg-cn-p-card border border-cn-p-line rounded-2xl shadow-sm p-5 overflow-hidden">
 
         <div className="flex flex-wrap items-center justify-between gap-3 mb-5">
-          <h3 className="text-lg font-serif font-light text-ink">
+          <h3 className="text-lg font-light text-cn-p-ink">
             {formatMonthLabel(monthCursor)}
           </h3>
 
@@ -120,7 +119,7 @@ export default function SessionCalendar({
             <button
               type="button"
               onClick={goToToday}
-              className="px-3 py-1.5 text-[11px] font-mono font-semibold uppercase tracking-wider rounded-lg border border-line text-muted hover:text-ink hover:bg-porcelain transition cursor-pointer"
+              className="px-3 py-1.5 text-[11px] tabular-nums font-semibold  rounded-lg border border-cn-p-line text-cn-p-ink-2 hover:text-cn-p-ink hover:bg-cn-p-page transition cursor-pointer"
             >
               Today
             </button>
@@ -128,7 +127,7 @@ export default function SessionCalendar({
               type="button"
               onClick={() => setMonthCursor((current) => addMonths(current, -1))}
               aria-label="Previous month"
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-line text-muted hover:text-ink hover:bg-porcelain transition cursor-pointer"
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-cn-p-line text-cn-p-ink-2 hover:text-cn-p-ink hover:bg-cn-p-page transition cursor-pointer"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
@@ -136,7 +135,7 @@ export default function SessionCalendar({
               type="button"
               onClick={() => setMonthCursor((current) => addMonths(current, 1))}
               aria-label="Next month"
-              className="w-8 h-8 flex items-center justify-center rounded-lg border border-line text-muted hover:text-ink hover:bg-porcelain transition cursor-pointer"
+              className="w-8 h-8 flex items-center justify-center rounded-lg border border-cn-p-line text-cn-p-ink-2 hover:text-cn-p-ink hover:bg-cn-p-page transition cursor-pointer"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
@@ -147,7 +146,7 @@ export default function SessionCalendar({
           {WEEKDAY_LABELS.map((weekday) => (
             <div
               key={weekday}
-              className="text-center text-[10px] font-mono font-semibold uppercase tracking-widest text-muted py-1"
+              className="text-center text-[10px] tabular-nums font-semibold uppercase tracking-widest text-cn-p-ink-2 py-1"
             >
               <span className="hidden sm:inline">{weekday}</span>
               <span className="sm:hidden">{weekday.charAt(0)}</span>
@@ -172,11 +171,11 @@ export default function SessionCalendar({
           })}
         </div>
 
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-5 pt-4 border-t border-line">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-2 mt-5 pt-4 border-t border-cn-p-line">
           {LEGEND.map((item) => (
             <span
               key={item.label}
-              className="inline-flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider text-muted"
+              className="inline-flex items-center gap-1.5 text-[10px] font-semibold text-cn-p-ink-2"
             >
               <span className={`w-2 h-2 rounded-full ${item.dot}`} />
               {item.label}

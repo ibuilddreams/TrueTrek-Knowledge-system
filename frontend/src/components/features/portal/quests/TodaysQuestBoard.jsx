@@ -76,7 +76,7 @@ export default function TodaysQuestBoard({ onNotify, onOpenRewards }) {
 
   if (isLoading) {
     return (
-      <div className="bg-paper border border-line rounded-2xl p-10">
+      <div className="bg-cn-p-card border border-cn-p-line rounded-2xl p-10">
         <Loader fullScreen={false} label="Loading today's quests..." />
       </div>
     );
@@ -84,17 +84,17 @@ export default function TodaysQuestBoard({ onNotify, onOpenRewards }) {
 
   if (isError) {
     return (
-      <div className="bg-paper border border-line rounded-2xl p-10 flex flex-col items-center gap-3 text-center">
-        <div className="w-10 h-10 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl flex items-center justify-center">
+      <div className="bg-cn-p-card border border-cn-p-line rounded-2xl p-10 flex flex-col items-center gap-3 text-center">
+        <div className="w-10 h-10 bg-cn-p-bad-bg border border-cn-p-bad-bg text-cn-p-bad rounded-xl flex items-center justify-center">
           <AlertCircle className="w-5 h-5" />
         </div>
-        <p className="text-sm text-muted font-light">
+        <p className="text-sm text-cn-p-ink-2 font-light">
           {getApiErrorMessage(error, "Unable to load today's quests.")}
         </p>
         <button
           type="button"
           onClick={() => refetch()}
-          className="inline-flex items-center gap-2 px-4 py-2 bg-pine hover:bg-moss text-paper font-bold font-mono text-xs uppercase tracking-wider rounded-lg transition cursor-pointer"
+          className="inline-flex items-center gap-2 px-4 py-2 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white font-bold text-xs  rounded-lg transition cursor-pointer"
         >
           <RefreshCw className="w-3.5 h-3.5" />
           Retry
@@ -108,7 +108,7 @@ export default function TodaysQuestBoard({ onNotify, onOpenRewards }) {
 
   if (quests.length === 0) {
     return (
-      <div className="bg-paper border border-line rounded-2xl p-6">
+      <div className="bg-cn-p-card border border-cn-p-line rounded-2xl p-6">
         <EmptyState
           icon={Swords}
           label="No quests available yet."
@@ -126,19 +126,18 @@ export default function TodaysQuestBoard({ onNotify, onOpenRewards }) {
 
   return (
     <div className="space-y-5">
-      <div className="relative bg-paper border border-line rounded-2xl shadow-sm p-5 sm:p-6 overflow-hidden space-y-5">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pine via-moss to-gold opacity-80" />
+      <div className="relative bg-cn-p-card border border-cn-p-line rounded-2xl shadow-sm p-5 sm:p-6 overflow-hidden space-y-5">
 
         <div className="flex flex-wrap items-start justify-between gap-3">
           <div className="min-w-0">
-            <h2 className="text-xl font-serif font-light text-ink">Today&apos;s Quests</h2>
-            <p className="text-xs text-muted font-light mt-1 leading-relaxed">
+            <h2 className="text-xl font-light text-cn-p-ink">Today&apos;s Quests</h2>
+            <p className="text-xs text-cn-p-ink-2 font-light mt-1 leading-relaxed">
               Small actions that build your brand in the real world. Do one, log it, earn points.
             </p>
           </div>
 
           {allDone && (
-            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold font-mono uppercase tracking-wider rounded-lg bg-sage/40 text-pine border border-pine/20 shrink-0">
+            <span className="inline-flex items-center gap-1.5 px-3 py-1.5 text-[11px] font-semibold font-semibold rounded-lg bg-cn-p-soft text-cn-p-accent border border-cn-p-accent-soft shrink-0">
               <Check className="w-3.5 h-3.5" />
               All done today
             </span>
@@ -164,7 +163,7 @@ export default function TodaysQuestBoard({ onNotify, onOpenRewards }) {
       </div>
 
       {allDone && (
-        <p className="text-center text-xs text-muted font-light">
+        <p className="text-center text-xs text-cn-p-ink-2 font-light">
           {completedCount} of {quests.length} completed · a fresh set lands tomorrow — come back to
           keep your {stats?.current_streak ?? 0} day streak alive.
         </p>

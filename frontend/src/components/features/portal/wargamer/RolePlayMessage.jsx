@@ -23,14 +23,14 @@ export default function RolePlayMessage({
     <div className={`flex ${isAthlete ? "justify-end" : "justify-start"}`}>
       <div className={`max-w-[85%] sm:max-w-[75%] ${isAthlete ? "items-end" : "items-start"} flex flex-col gap-1`}>
         <div className="flex items-center gap-2 px-1">
-          <span className="text-[10px] font-mono uppercase tracking-widest text-muted">
+          <span className="text-[10px] font-semibold text-cn-p-ink-2">
             {isAthlete ? "You" : counterpartRole}
           </span>
           {isAthlete && elapsed && (
-            <span className="text-[10px] font-mono text-muted tabular-nums">{elapsed}</span>
+            <span className="text-[10px] tabular-nums text-cn-p-ink-2 tabular-nums">{elapsed}</span>
           )}
           {isBoundaryTurn && (
-            <span className="text-[10px] font-mono uppercase tracking-widest text-pine">
+            <span className="text-[10px] font-semibold text-cn-p-accent">
               Boundary set
             </span>
           )}
@@ -39,15 +39,15 @@ export default function RolePlayMessage({
         <div
           className={`rounded-2xl px-4 py-3 text-sm font-light leading-relaxed whitespace-pre-wrap break-words ${
             isAthlete
-              ? "bg-pine text-paper rounded-br-md"
-              : "bg-porcelain border border-line text-ink rounded-bl-md"
-          } ${isBoundaryTurn ? "ring-2 ring-gold/50" : ""}`}
+              ? "bg-cn-p-accent text-white rounded-br-md"
+              : "bg-cn-p-page border border-cn-p-line text-cn-p-ink rounded-bl-md"
+          } ${isBoundaryTurn ? "ring-2 ring-cn-p-accent/40" : ""}`}
         >
           {turn.content}
         </div>
 
         {isAthlete && athleteTurnNumber !== null && (
-          <span className="text-[10px] font-mono text-muted px-1 tabular-nums">
+          <span className="text-[10px] tabular-nums text-cn-p-ink-2 px-1 tabular-nums">
             Reply {athleteTurnNumber}
           </span>
         )}

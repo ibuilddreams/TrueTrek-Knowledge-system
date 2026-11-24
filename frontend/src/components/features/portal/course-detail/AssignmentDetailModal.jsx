@@ -48,32 +48,29 @@ export default function AssignmentDetailModal({
           ? `Due ${formatDateTime(assignment.due_date)} · ${assignment.total_marks} marks`
           : ""
       }
+      variant="cobalt"
       maxWidth="max-w-2xl"
     >
       {assignment && (
         <div className="space-y-6">
           <div className="space-y-3">
-            <p
-              className="text-sm font-light leading-relaxed whitespace-pre-line text-muted"
-            >
+            <p className="text-cn-base leading-relaxed whitespace-pre-line text-cn-ink-2">
               {assignment.description ||
                 "No instructions have been added for this assignment."}
             </p>
-            <div className="flex flex-wrap gap-2 text-[11px] font-mono uppercase tracking-wider">
+            <div className="flex flex-wrap gap-2">
               <span
-                className={`inline-flex items-center gap-1 px-2.5 py-1 rounded-lg border ${
+                className={`inline-flex h-6 items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold whitespace-nowrap ${
                   isPastDue
-                    ? "bg-rose-50 text-rose-600 border-rose-100"
-                    : "bg-porcelain text-muted border-line"
+                    ? "bg-cn-p-bad-bg text-cn-p-bad"
+                    : "bg-cn-p-neutral-bg text-cn-p-ink-2"
                 }`}
               >
-                <Calendar className="w-3 h-3" />
+                <Calendar className="h-3.5 w-3.5" />
                 Due {formatDateTime(assignment.due_date)}
               </span>
               {assignment.allow_resubmission ? (
-                <span
-                  className="inline-flex items-center px-2.5 py-1 rounded-lg border bg-gold/12 text-gold border-gold/25"
-                >
+                <span className="inline-flex h-6 items-center rounded-full bg-cn-p-soft px-2.5 text-xs font-semibold whitespace-nowrap text-cn-p-soft-ink">
                   Resubmission allowed
                 </span>
               ) : null}
@@ -82,21 +79,17 @@ export default function AssignmentDetailModal({
 
           {attachments.length > 0 && (
             <div className="space-y-2">
-              <h5
-                className="text-sm font-mono uppercase tracking-wider text-muted"
-              >
+              <h5 className="text-sm font-bold text-cn-p-ink">
                 Reference materials
               </h5>
               <div className="space-y-1.5">
                 {attachments.map((attachment) => (
                   <div
                     key={attachment.id}
-                    className="flex items-center justify-between gap-2 text-[12px] border rounded-lg px-3 py-2 text-muted bg-porcelain border-line"
+                    className="flex items-center justify-between gap-2 rounded-cn-p-sm border border-cn-p-line bg-cn-p-page px-3 py-2.5 text-[13px] text-cn-p-ink-2"
                   >
                     <span className="inline-flex items-center gap-1.5 min-w-0 truncate">
-                      <Paperclip
-                        className="w-3.5 h-3.5 shrink-0 text-muted"
-                      />
+                      <Paperclip className="h-4 w-4 shrink-0 text-cn-p-muted" />
                       <span className="truncate">
                         {attachment.original_name || attachment.file}
                       </span>
@@ -104,7 +97,7 @@ export default function AssignmentDetailModal({
                     <a
                       href={attachment.file}
                       download={attachment.original_name || true}
-                      className="inline-flex items-center gap-1 px-2.5 py-1 border text-[11px] font-mono uppercase tracking-wider rounded-md transition shrink-0 border-line hover:border-pine hover:bg-paper text-muted hover:text-pine"
+                      className="inline-flex shrink-0 items-center gap-1.5 rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card px-2.5 py-1 text-xs font-semibold text-cn-p-ink-2 no-underline transition-colors duration-150 hover:border-cn-p-ink hover:text-cn-p-ink"
                     >
                       <Download className="w-3.5 h-3.5" />
                       Download
@@ -115,9 +108,7 @@ export default function AssignmentDetailModal({
             </div>
           )}
 
-          <div
-            className="pt-4 border-t space-y-4 border-line"
-          >
+          <div className="space-y-4 border-t border-cn-p-line pt-5">
             {isLoadingSubmission ? (
               <div className="flex justify-center py-6" aria-busy="true">
                 <Loader fullScreen={false} label="Loading your submission..." />

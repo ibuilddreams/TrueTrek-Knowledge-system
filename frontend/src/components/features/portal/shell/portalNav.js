@@ -1,7 +1,5 @@
 import {
   Award,
-  BookMarked,
-  Brain,
   BriefcaseBusiness,
   CalendarCheck,
   CircleHelp,
@@ -23,18 +21,18 @@ import {
   MessageSquareQuote,
   Mic,
   Route,
-  Scale,
   ShieldAlert,
   ShieldCheck,
   Swords,
   Tag,
-  Theater,
   TrendingUp,
   UserPlus,
   UserRound,
   Users,
   Video,
   BookOpen,
+  MessageCircle,
+  Target,
 } from "lucide-react";
 import { AUTH_ROLES } from "@/constants/auth";
 import { ROUTES } from "@/constants/routes";
@@ -71,7 +69,7 @@ const STUDENT_NAV = [
     heading: "Learn",
     items: [
       { slug: "dashboard", label: "Dashboard", icon: LayoutDashboard, title: "Dashboard" },
-      { slug: "courses", label: "My courses", icon: BookMarked, title: "My courses" },
+      { slug: "courses", label: "My courses", icon: BookOpen, title: "My courses" },
       { slug: "assignments", label: "Assignments", icon: ClipboardList, title: "Assignments", badge: "assignments" },
       { slug: "quizzes", label: "Quizzes", icon: CircleHelp, title: "Quizzes", badge: "quizzes" },
       { slug: "certificates", label: "Certificates", icon: Award, title: "Certificates" },
@@ -79,16 +77,15 @@ const STUDENT_NAV = [
     ],
   },
   {
-    // The design has one "Daily activity" entry. This app ships the drill,
-    // the quests and the course chat rooms as three separate screens, so they
-    // are listed as three rather than hidden behind a page that does not
-    // exist yet.
+    // "Daily activity" is one entry holding three tabs — the drill, the
+    // quests and the course chat rooms — exactly as the design's sidebar has
+    // it. Each tab is still a real URL (`/studentportal/daily/quests`), so
+    // nothing became unlinkable by being folded in here, and the three slugs
+    // this replaced still resolve (see HIDDEN_PORTAL_SLUGS).
     heading: "Practice",
     items: [
-      { slug: "drill", label: "Daily drill", icon: Brain, title: "Daily drill" },
-      { slug: "quests", label: "Daily quests", icon: CalendarCheck, title: "Daily quests" },
-      { slug: "warroom", label: "War room", icon: Scale, title: "War room" },
-      { slug: "wargamer", label: "Tactical wargamer", icon: Theater, title: "Tactical wargamer" },
+      { slug: "daily", label: "Daily activity", icon: CalendarCheck, title: "Daily activity" },
+      { slug: "wargamer", label: "Tactical wargamer", icon: Target, title: "Tactical wargamer" },
       { slug: "brand-validator", label: "Brand validator", icon: ShieldCheck, title: "Brand validator" },
       { slug: "warroom-live", label: "War room live", icon: Headphones, title: "War room live" },
     ],
@@ -97,7 +94,7 @@ const STUDENT_NAV = [
     heading: "You",
     items: [
       { slug: "rewards", label: "Rewards", icon: Gift, title: "Rewards" },
-      { slug: "advisor", label: "Ask an advisor", icon: MessageCircleQuestion, title: "Ask an advisor" },
+      { slug: "advisor", label: "Ask an advisor", icon: MessageCircle, title: "Ask an advisor" },
       { slug: "messages", label: "Messages", icon: Mail, title: "Messages" },
     ],
   },
@@ -108,7 +105,7 @@ const TEACHER_NAV = [
     heading: "Teach",
     items: [
       { slug: "dashboard", label: "Dashboard", icon: LayoutDashboard, title: "Dashboard" },
-      { slug: "courses", label: "My courses", icon: BookMarked, title: "My courses" },
+      { slug: "courses", label: "My courses", icon: BookOpen, title: "My courses" },
       { slug: "students", label: "Students & scores", icon: Users, title: "Students & scores" },
       { slug: "progress", label: "Progress", icon: TrendingUp, title: "Progress" },
     ],
@@ -117,7 +114,7 @@ const TEACHER_NAV = [
     heading: "Engage",
     items: [
       { slug: "classes", label: "Live classes", icon: Video, title: "Live classes" },
-      { slug: "warroom", label: "War room", icon: Scale, title: "War room" },
+      { slug: "warroom", label: "War room", icon: MessageCircle, title: "War room" },
       { slug: "advisor", label: "Ask an advisor", icon: MessageCircleQuestion, title: "Ask an advisor" },
       { slug: "concerns", label: "Student concerns", icon: Flag, title: "Student concerns" },
     ],
@@ -164,7 +161,7 @@ const ADMIN_NAV = [
     items: [
       { slug: "daily-drills", label: "Daily drills", icon: CalendarCheck, title: "Daily drills" },
       { slug: "quests", label: "Daily quests", icon: Swords, title: "Daily quests" },
-      { slug: "wargamer", label: "Tactical wargamer", icon: Theater, title: "Tactical wargamer" },
+      { slug: "wargamer", label: "Tactical wargamer", icon: Target, title: "Tactical wargamer" },
       { slug: "live-sessions", label: "War room live", icon: Mic, title: "War room live" },
       { slug: "questionnaire", label: "Onboarding questions", icon: HelpCircle, title: "Onboarding questions" },
     ],
@@ -206,8 +203,12 @@ export function portalSlugs(role) {
  * still treat `/studentportal/streak` as a real page rather than redirecting
  * it to the dashboard.
  */
+// Reachable, but not listed in the sidebar. `drill`, `quests` and `warroom`
+// are here because each used to be its own entry: a bookmark, an old email or
+// a link from elsewhere in the app still has to land somewhere sensible, and
+// `StudentPortal` redirects each onto its tab under `daily`.
 export const HIDDEN_PORTAL_SLUGS = {
-  [AUTH_ROLES.STUDENT]: ["streak"],
+  [AUTH_ROLES.STUDENT]: ["streak", "drill", "quests", "warroom"],
 };
 
 export function isValidPortalSlug(role, slug) {

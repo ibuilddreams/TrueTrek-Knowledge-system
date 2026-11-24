@@ -1,50 +1,44 @@
 "use client";
 
 import { useState } from "react";
-import { AlertCircle, Award, CalendarCheck, RefreshCw } from "lucide-react";
-import { motion } from "motion/react";
+import { AlertCircle, Award, RefreshCw } from "lucide-react";
 import { useStudentCertificates } from "@/hooks/student/useStudentCertificates";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatDate } from "@/lib/adminFormatters";
-import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
+import PortalCard from "../shell/PortalCard";
+import { PortalButton, PortalEmpty, PortalPageHead } from "../shell/PortalUI";
 import CertificateModal from "../certificates/CertificateModal";
 
-function CertificateCard({ certificate, onOpen }) {
-  const course = certificate.course || {};
+// The design's `SP.certificates`: a grid of cards, each previewing the
+// certificate itself rather than describing it in a row of metadata. The
+// preview is the point — it is the thing being awarded, so the card shows it.
 
+/**
+ * `.cert` — the certificate face. The inner hairline is the design's
+ * `::before`, an inset rule in the soft accent that reads as an engraved
+ * border; it is decorative, so it is drawn by a pseudo-element rather than a
+ * node a screen reader would have to step over.
+ */
+function CertificateFace({ courseTitle, studentName, className = "" }) {
   return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group w-full text-left rounded-2xl border border-line bg-paper hover:border-pine hover:shadow-[0_10px_30px_-20px_rgba(28,25,23,0.35)] transition p-5 space-y-4"
+    <div
+      className={`relative flex flex-col items-center gap-3 rounded-cn-p border border-cn-p-line bg-[linear-gradient(180deg,#fff,#f7f9ff)] text-center before:pointer-events-none before:absolute before:inset-2.5 before:rounded-[10px] before:border-[1.5px] before:border-cn-p-accent-soft before:content-[''] ${className}`}
     >
-      <div className="flex items-start justify-between gap-3">
-        <div className="min-w-0">
-          <p className="text-[11px] font-mono uppercase tracking-wider text-muted">
-            {course.category || "Course"}
-          </p>
-          <h3 className="font-serif font-bold text-ink mt-0.5 truncate">
-            {course.title}
-          </h3>
-        </div>
-        <span className="w-9 h-9 rounded-xl bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
-          <Award className="w-4 h-4" />
-        </span>
-      </div>
-      <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-muted">
-        <span className="flex items-center gap-1">
-          <CalendarCheck className="w-3.5 h-3.5" />
-          {formatDate(certificate.completed_at)}
-        </span>
-        <span className="text-gold font-bold">
-          {Math.round(certificate.completion_percentage)}%
-        </span>
-      </div>
-      <span className="block text-center text-xs font-mono uppercase tracking-wider text-muted border border-line rounded-xl py-2 group-hover:border-pine">
-        View Certificate
-      </span>
-    </button>
+      <img
+        src="/images/coolnerdz-wordmark.png"
+        alt=""
+        aria-hidden="true"
+        width={480}
+        height={115}
+        className="h-[22px] w-auto object-contain"
+      />
+      <span className="text-xs text-cn-p-muted">Certificate of completion</span>
+      <b className="text-base leading-snug font-bold text-cn-p-ink">{courseTitle}</b>
+      {studentName && (
+        <span className="text-xs text-cn-p-muted">{studentName}</span>
+      )}
+    </div>
   );
 }
 
@@ -58,85 +52,82 @@ export default function CertificatesTab({ studentName }) {
     refetch,
   } = useStudentCertificates();
 
-  let content;
-
   if (isLoading) {
-    content = (
-      <div
-        className="flex min-h-[50vh] items-center justify-center"
-        aria-busy="true"
-      >
+    return (
+      <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
         <Loader fullScreen={false} label="Loading your certificates..." />
       </div>
     );
-  } else if (isError) {
-    content = (
-      <div className="bg-paper border border-line rounded-2xl p-8 text-center max-w-lg mx-auto">
-        <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-          <AlertCircle className="w-6 h-6" />
-        </div>
-        <h2 className="text-xl font-serif font-bold text-ink mb-2">
-          Failed to Load Certificates
+  }
+
+  if (isError) {
+    return (
+      <PortalCard className="mx-auto max-w-lg p-10 text-center">
+        <span className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-cn-p-sm bg-cn-p-bad-bg text-cn-p-bad">
+          <AlertCircle className="h-6 w-6" />
+        </span>
+        <h2 className="mb-2 text-xl font-bold tracking-[-0.015em] text-cn-p-ink">
+          Failed to load certificates
         </h2>
-        <p className="text-sm text-muted font-light mb-6">
+        <p className="mb-6 text-sm text-cn-p-ink-2">
           {getApiErrorMessage(error, "Unable to load your certificates.")}
         </p>
-        <button
-          type="button"
-          onClick={() => refetch()}
-          className="inline-flex items-center gap-2 px-5 py-3 bg-pine hover:bg-moss text-paper font-bold font-mono text-sm uppercase tracking-wider rounded-xl transition"
-        >
-          <RefreshCw className="w-4 h-4" />
+        <PortalButton onClick={() => refetch()}>
+          <RefreshCw className="h-4 w-4" />
           Retry
-        </button>
-      </div>
-    );
-  } else if (certificates.length === 0) {
-    content = (
-      <div className="rounded-2xl border border-dashed border-line bg-paper/70">
-        <EmptyState
-          icon={Award}
-          label="No certificates yet"
-          description="Complete every lesson and quiz in a course to earn its certificate."
-          size="lg"
-        />
-      </div>
-    );
-  } else {
-    content = (
-      <motion.div
-        initial={{ opacity: 0, y: 8 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.25, ease: "easeOut" }}
-        className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-5"
-      >
-        {certificates.map((certificate) => (
-          <CertificateCard
-            key={certificate.id}
-            certificate={certificate}
-            onOpen={() => setOpenCertificate(certificate)}
-          />
-        ))}
-      </motion.div>
+        </PortalButton>
+      </PortalCard>
     );
   }
 
   return (
-    <div className="space-y-6">
-      <div>
-        <p className="text-[11px] font-mono uppercase tracking-[0.2em] text-pine/80 mb-2">
-          Completed courses
-        </p>
-        <h2 className="font-serif font-bold text-2xl sm:text-3xl text-ink">
-          Your certificates
-        </h2>
-        <p className="text-sm text-muted font-light mt-2">
-          Earned automatically once every lesson and quiz in a course is
-          completed.
-        </p>
-      </div>
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Certificates"
+        subtitle="Issued automatically when you finish every lesson, assignment and quiz in a course."
+      />
 
-      {content}
+      {certificates.length === 0 ? (
+        <PortalCard>
+          <PortalEmpty
+            icon={Award}
+            title="No certificates yet"
+            text="Finish a course to earn your first certificate."
+          />
+        </PortalCard>
+      ) : (
+        <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
+          {certificates.map((certificate) => {
+            const course = certificate.course || {};
+            return (
+              <PortalCard key={certificate.id} className="flex flex-col gap-3 p-5">
+                <CertificateFace
+                  courseTitle={course.title}
+                  studentName={studentName}
+                  className="p-6"
+                />
+                <div className="flex items-center justify-between gap-3">
+                  <div className="min-w-0">
+                    <b className="block truncate text-sm font-semibold text-cn-p-ink">
+                      {course.category || "Course"}
+                    </b>
+                    <span className="text-xs text-cn-p-muted">
+                      Issued {formatDate(certificate.completed_at)}
+                    </span>
+                  </div>
+                  <PortalButton
+                    variant="sec"
+                    size="sm"
+                    onClick={() => setOpenCertificate(certificate)}
+                  >
+                    View
+                  </PortalButton>
+                </div>
+              </PortalCard>
+            );
+          })}
+        </div>
+      )}
 
       <CertificateModal
         certificate={openCertificate}

@@ -60,22 +60,21 @@ export default function MediaKitUploader({ onSubmit, isSubmitting }) {
 
   return (
     <form onSubmit={handleSubmit} className="space-y-5">
-      <div className="relative bg-paper border border-line rounded-2xl shadow-sm p-6 overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pine via-moss to-gold opacity-80" />
+      <div className="relative bg-cn-p-card border border-cn-p-line rounded-2xl shadow-sm p-6 overflow-hidden">
 
-        <h3 className="text-base font-serif font-bold text-ink">Upload your media kit</h3>
-        <p className="text-xs text-muted font-light mt-1.5 leading-relaxed">
+        <h3 className="text-base font-bold text-cn-p-ink">Upload your media kit</h3>
+        <p className="text-xs text-cn-p-ink-2 font-light mt-1.5 leading-relaxed">
           One page, as a PDF or an image. A local business owner will read it and tell you
           straight whether they&apos;d write the cheque.
         </p>
 
         {file ? (
-          <div className="mt-5 flex items-center justify-between gap-3 px-4 py-3.5 bg-porcelain border border-line rounded-xl">
+          <div className="mt-5 flex items-center justify-between gap-3 px-4 py-3.5 bg-cn-p-page border border-cn-p-line rounded-xl">
             <span className="inline-flex items-center gap-3 min-w-0">
-              <FileText className="w-5 h-5 shrink-0 text-pine" />
+              <FileText className="w-5 h-5 shrink-0 text-cn-p-accent" />
               <span className="min-w-0">
-                <span className="block text-sm text-ink font-medium truncate">{file.name}</span>
-                <span className="block text-[11px] text-muted font-light">
+                <span className="block text-sm text-cn-p-ink font-medium truncate">{file.name}</span>
+                <span className="block text-[11px] text-cn-p-ink-2 font-light">
                   {(file.size / (1024 * 1024)).toFixed(2)} MB
                 </span>
               </span>
@@ -84,7 +83,7 @@ export default function MediaKitUploader({ onSubmit, isSubmitting }) {
               type="button"
               onClick={clearFile}
               disabled={isSubmitting}
-              className="text-muted hover:text-ink transition cursor-pointer shrink-0 disabled:opacity-50"
+              className="text-cn-p-ink-2 hover:text-cn-p-ink transition cursor-pointer shrink-0 disabled:opacity-50"
               aria-label="Remove selected file"
             >
               <X className="w-4 h-4" />
@@ -107,15 +106,15 @@ export default function MediaKitUploader({ onSubmit, isSubmitting }) {
             }}
             role="button"
             tabIndex={0}
-            className={`mt-5 flex flex-col items-center justify-center gap-2.5 px-6 py-10 rounded-xl border-2 border-dashed cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-pine/40 ${
-              isDragging ? "border-pine bg-sage/20" : "border-line hover:border-pine/40 hover:bg-porcelain/60"
+            className={`mt-5 flex flex-col items-center justify-center gap-2.5 px-6 py-10 rounded-xl border-2 border-dashed cursor-pointer transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-cn-p-accent/40 ${
+              isDragging ? "border-cn-p-accent bg-cn-p-soft" : "border-cn-p-line hover:border-cn-p-accent/40 hover:bg-cn-p-page/60"
             }`}
           >
-            <div className="w-12 h-12 rounded-2xl bg-gold/12 border border-gold/25 text-gold flex items-center justify-center">
+            <div className="w-12 h-12 rounded-2xl bg-cn-p-warn-bg border border-cn-p-warn-bg text-cn-p-warn flex items-center justify-center">
               <UploadCloud className="w-5 h-5" />
             </div>
-            <p className="text-sm text-ink font-medium">Drop your media kit here</p>
-            <p className="text-[11px] text-muted font-light">
+            <p className="text-sm text-cn-p-ink font-medium">Drop your media kit here</p>
+            <p className="text-[11px] text-cn-p-ink-2 font-light">
               or click to browse — PDF, PNG, JPG or WEBP, up to {MAX_SIZE_MB}MB
             </p>
           </div>
@@ -129,13 +128,13 @@ export default function MediaKitUploader({ onSubmit, isSubmitting }) {
           className="hidden"
         />
 
-        {fileError && <p className="text-[11px] text-clay font-light mt-3">{fileError}</p>}
+        {fileError && <p className="text-[11px] text-cn-p-bad font-light mt-3">{fileError}</p>}
       </div>
 
-      <div className="bg-paper border border-line rounded-2xl shadow-sm p-6">
+      <div className="bg-cn-p-card border border-cn-p-line rounded-2xl shadow-sm p-6">
         <label
           htmlFor="athlete-context"
-          className="block text-[11px] font-mono uppercase tracking-widest text-muted mb-2"
+          className="block text-[11px] font-semibold text-cn-p-ink-2 mb-2"
         >
           Tell the sponsor about yourself (optional)
         </label>
@@ -146,9 +145,9 @@ export default function MediaKitUploader({ onSubmit, isSubmitting }) {
           value={athleteContext}
           onChange={(event) => setAthleteContext(event.target.value)}
           placeholder="Junior point guard, 4.0 GPA, looking for local sponsors in my hometown."
-          className="w-full px-3.5 py-2.5 bg-paper border border-line rounded-xl text-sm text-ink font-light placeholder:text-muted/60 focus:outline-none focus:ring-2 focus:ring-pine/30 focus:border-pine transition resize-none"
+          className="w-full px-3.5 py-2.5 bg-cn-p-card border border-cn-p-line rounded-xl text-sm text-cn-p-ink font-light placeholder:text-cn-p-muted focus:outline-none focus:ring-2 focus:ring-cn-p-accent/30 focus:border-cn-p-accent transition resize-none"
         />
-        <p className="text-[11px] text-muted font-light mt-2">
+        <p className="text-[11px] text-cn-p-ink-2 font-light mt-2">
           Context makes the critique specific to you rather than generic.
         </p>
       </div>
@@ -156,7 +155,7 @@ export default function MediaKitUploader({ onSubmit, isSubmitting }) {
       <button
         type="submit"
         disabled={!file || isSubmitting || Boolean(fileError)}
-        className="w-full inline-flex items-center justify-center gap-2 py-3.5 bg-pine hover:bg-moss text-paper font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+        className="w-full inline-flex items-center justify-center gap-2 py-3.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-xl shadow-md transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
       >
         <Sparkles className="w-4 h-4" />
         {isSubmitting ? "Uploading..." : "Validate my brand"}

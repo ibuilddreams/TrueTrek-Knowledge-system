@@ -53,20 +53,20 @@ export default function RolePlayComposer({
   };
 
   return (
-    <div className="border-t border-line bg-paper p-4 space-y-3">
+    <div className="border-t border-cn-p-line bg-cn-p-card p-4 space-y-3">
       <div className="flex items-center gap-2 flex-wrap">
         {ABP_STEPS.map((step) => (
           <span
             key={step.key}
             title={step.summary}
-            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-porcelain border border-line text-[10px] font-mono uppercase tracking-widest text-muted"
+            className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-cn-p-page border border-cn-p-line text-[10px] font-semibold text-cn-p-ink-2"
           >
-            <span className="font-bold text-pine">{step.letter}</span>
+            <span className="font-bold text-cn-p-accent">{step.letter}</span>
             {step.label}
           </span>
         ))}
         {typeof turnsRemaining === "number" && (
-          <span className="ml-auto text-[10px] font-mono uppercase tracking-widest text-muted tabular-nums">
+          <span className="ml-auto text-[10px] font-semibold text-cn-p-ink-2 tabular-nums">
             {turnsRemaining} {turnsRemaining === 1 ? "reply" : "replies"} left
           </span>
         )}
@@ -86,24 +86,24 @@ export default function RolePlayComposer({
               : "Say it the way you would actually say it out loud..."
           }
           aria-label="Your reply"
-          className="flex-1 px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm text-ink placeholder:text-muted transition disabled:opacity-60 resize-none"
+          className="flex-1 px-4 py-3 bg-cn-p-page border border-cn-p-line focus:border-cn-p-accent focus:bg-cn-p-card focus:outline-none rounded-xl text-sm text-cn-p-ink placeholder:text-cn-p-ink-2 transition disabled:opacity-60 resize-none"
         />
         <button
           type="button"
           onClick={handleSend}
           disabled={!canSend}
           aria-label="Send reply"
-          className="h-[52px] px-5 inline-flex items-center justify-center gap-2 bg-pine hover:bg-moss disabled:opacity-50 disabled:cursor-not-allowed text-paper font-bold font-mono text-xs uppercase tracking-wider rounded-xl shadow-sm transition cursor-pointer shrink-0"
+          className="h-[52px] px-5 inline-flex items-center justify-center gap-2 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold tabular-nums text-xs  rounded-xl shadow-sm transition cursor-pointer shrink-0"
         >
           {isSending ? (
-            <div className="w-4 h-4 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-cn-p-card border-t-transparent rounded-full animate-spin" />
           ) : (
             <Send className="w-4 h-4" />
           )}
         </button>
       </div>
 
-      <p className="text-[10px] font-light text-muted">
+      <p className="text-[10px] font-light text-cn-p-ink-2">
         Enter to send &middot; Shift + Enter for a new line
       </p>
     </div>

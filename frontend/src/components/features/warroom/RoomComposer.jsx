@@ -51,7 +51,7 @@ export default function RoomComposer({ courseId }) {
   };
 
   return (
-    <form onSubmit={handleSubmit} className="border-t border-stone-100 p-3 space-y-2 shrink-0">
+    <form onSubmit={handleSubmit} className="border-t border-cn-p-line p-3 space-y-2 shrink-0">
       {attachment && <AttachmentPreview file={attachment} onRemove={() => setAttachment(null)} />}
 
       <div className="flex items-end gap-2">
@@ -69,7 +69,7 @@ export default function RoomComposer({ courseId }) {
           disabled={sendMutation.isPending}
           title="Attach a file"
           aria-label="Attach a file"
-          className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl border border-stone-200 text-stone-500 hover:bg-stone-100 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl border border-cn-p-line-2 text-cn-p-ink-2 hover:bg-cn-p-page transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
         >
           <Paperclip className="w-4 h-4" />
         </button>
@@ -81,12 +81,12 @@ export default function RoomComposer({ courseId }) {
           rows={1}
           placeholder="Message the room..."
           disabled={sendMutation.isPending}
-          className="flex-1 resize-none px-3.5 py-2.5 text-sm border border-stone-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-amber-600/20 focus:border-amber-500 disabled:opacity-60 max-h-28"
+          className="flex-1 resize-none px-3.5 py-2.5 text-sm border border-cn-p-line-2 rounded-xl focus:outline-none focus:ring-2 focus:ring-cn-p-accent/20 focus:border-cn-p-accent disabled:opacity-60 max-h-28"
         />
         <button
           type="submit"
           disabled={!canSend}
-          className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-stone-900 hover:bg-stone-800 text-stone-100 transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          className="w-10 h-10 shrink-0 flex items-center justify-center rounded-xl bg-cn-p-accent hover:bg-cn-p-accent-hover text-white transition disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           aria-label="Send message"
         >
           <Send className="w-4 h-4" />
