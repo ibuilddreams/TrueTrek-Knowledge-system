@@ -26,6 +26,12 @@ import { getApiErrorMessage } from "@/lib/apiErrors";
 import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
 import MyPathwaysSummary from "../MyPathwaysSummary";
+import {
+  CHART_ACCENT,
+  CHART_AXIS,
+  CHART_SERIES,
+  CHART_TOOLTIP,
+} from "@/lib/chartTheme";
 
 function ProgressRing({ value, size = 128, stroke = 10 }) {
   const radius = (size - stroke) / 2;
@@ -48,7 +54,7 @@ function ProgressRing({ value, size = 128, stroke = 10 }) {
           cy={size / 2}
           r={radius}
           fill="none"
-          stroke="#c7a85b"
+          stroke={CHART_ACCENT}
           strokeWidth={stroke}
           strokeLinecap="round"
           strokeDasharray={circumference}
@@ -157,7 +163,7 @@ function CourseAxisTick({ x, y, payload }) {
           dy={12 + index * 13}
           textAnchor="middle"
           fontSize={11}
-          fill="#78716c"
+          fill={CHART_AXIS}
         >
           {line}
         </text>
@@ -196,7 +202,7 @@ export default function DashboardTab() {
           <AlertCircle className="w-6 h-6" />
         </div>
         <h2 className="text-xl font-serif font-bold mb-2 text-ink">
-          Failed to Load Dashboard
+          Failed to load dashboard
         </h2>
         <p className="text-sm font-light mb-6 text-muted">
           {getApiErrorMessage(error, "Unable to load your dashboard.")}
@@ -241,7 +247,8 @@ export default function DashboardTab() {
     );
   }
 
-  const barColors = ["#b45309", "#d97706", "#f59e0b", "#78716c", "#a8a29e"];
+  // The palette lives in lib/chartTheme so the dashboards cannot drift.
+  const barColors = CHART_SERIES;
 
   return (
     <div className="space-y-7">
@@ -312,7 +319,7 @@ export default function DashboardTab() {
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6 sm:gap-4 divide-y sm:divide-y-0 sm:divide-x divide-line">
           <div className="sm:pr-4 pt-0">
             <CourseStat
-              label="Enrolled Courses"
+              label="Enrolled courses"
               value={enrolledCourses}
               icon={BookMarked}
               delay={0.05}
@@ -320,7 +327,7 @@ export default function DashboardTab() {
           </div>
           <div className="sm:px-4 pt-6 sm:pt-0">
             <CourseStat
-              label="Active Courses"
+              label="Active courses"
               value={activeCourses}
               icon={BookOpen}
               delay={0.1}
@@ -328,7 +335,7 @@ export default function DashboardTab() {
           </div>
           <div className="sm:pl-4 pt-6 sm:pt-0">
             <CourseStat
-              label="Completed Courses"
+              label="Completed courses"
               value={completedCourses}
               icon={CheckCircle2}
               delay={0.15}
@@ -339,21 +346,21 @@ export default function DashboardTab() {
 
       <section className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <ActionMetric
-          label="Pending Assignments"
+          label="Pending assignments"
           value={pendingAssignments}
           icon={ClipboardList}
           tone="rose"
           delay={0.08}
         />
         <ActionMetric
-          label="Upcoming Quizzes"
+          label="Upcoming quizzes"
           value={upcomingQuizzes}
           icon={CircleHelp}
           tone="stone"
           delay={0.12}
         />
         <ActionMetric
-          label="Average Grade"
+          label="Average grade"
           value={`${averageGrade}%`}
           icon={TrendingUp}
           tone="amber"
@@ -397,7 +404,7 @@ export default function DashboardTab() {
               >
                 <XAxis
                   dataKey="name"
-                  stroke="#a8a29e"
+                  stroke={CHART_AXIS}
                   tickLine={false}
                   axisLine={false}
                   interval={0}
@@ -405,7 +412,7 @@ export default function DashboardTab() {
                   tick={<CourseAxisTick />}
                 />
                 <YAxis
-                  stroke="#a8a29e"
+                  stroke={CHART_AXIS}
                   fontSize={11}
                   tickLine={false}
                   axisLine={false}
@@ -414,14 +421,13 @@ export default function DashboardTab() {
                 />
                 <Tooltip
                   formatter={(value) => [`${value}%`, "Progress"]}
-                  cursor={{ fill: "rgba(120,113,108,0.06)" }}
+                  cursor={{ fill: "rgba(36, 80, 230, 0.06)" }}
                   contentStyle={{
-                    backgroundColor: "#1c1917",
-                    borderRadius: "12px",
-                    border: "none",
-                    color: "#fff",
+                    ...CHART_TOOLTIP.contentStyle,
                     fontSize: "11px",
                   }}
+                  labelStyle={CHART_TOOLTIP.labelStyle}
+                  itemStyle={CHART_TOOLTIP.itemStyle}
                 />
                 <Bar dataKey="Progress" radius={[8, 8, 0, 0]} maxBarSize={44}>
                   {progressByCourse.map((_, index) => (

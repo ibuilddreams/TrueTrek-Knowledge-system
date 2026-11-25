@@ -829,3 +829,47 @@ body {
 details[open] > summary .cn-accordion-plus {
   transform: rotate(45deg);
 }
+
+/* The portal design's `.sel`: a native <select> dressed as one of its fields.
+   Written here rather than as utilities because the chevron is a background
+   image whose data URI does not survive a Tailwind arbitrary value cleanly,
+   and because `appearance: none` has to come with a replacement arrow or the
+   control loses its only affordance. */
+.cn-p-select {
+  appearance: none;
+  padding-right: 34px;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%234B5563' stroke-width='2.5'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  cursor: pointer;
+}
+
+/* The portal sidebar's scroll area. A full-height rail pins its wordmark and
+   its account button and scrolls only the links between them, so the account
+   button stays reachable however long a role's navigation is — the admin's is
+   six groups. The scrollbar is drawn thin and quiet rather than left as the
+   platform default, which on Windows is a 17px grey trough against a 260px
+   rail. `scrollbar-gutter: stable` keeps the links from shifting sideways
+   when the bar appears. */
+.cn-p-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-cn-p-line-2) transparent;
+  scrollbar-gutter: stable;
+}
+
+.cn-p-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.cn-p-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.cn-p-scroll::-webkit-scrollbar-thumb {
+  background: var(--color-cn-p-line-2);
+  border-radius: 999px;
+}
+
+.cn-p-scroll:hover::-webkit-scrollbar-thumb {
+  background: var(--color-cn-p-muted);
+}

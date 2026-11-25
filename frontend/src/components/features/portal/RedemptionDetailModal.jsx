@@ -75,7 +75,7 @@ export default function RedemptionDetailModal({ isOpen, onClose, redemption }) {
                 className="mt-2 inline-flex items-center gap-1.5 px-4 py-2 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-xs font-semibold  rounded-lg transition"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
-                Join Session
+                Join session
               </a>
             )}
           </div>

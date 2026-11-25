@@ -30,7 +30,7 @@ import { getOrdinalLabel, buildOrdinalOrderOptions } from "@/lib/ordinal";
 const RichTextEditor = dynamic(() => import("@/components/ui/RichTextEditor"), {
   ssr: false,
   loading: () => (
-    <div className="h-40 rounded-xl border border-line bg-porcelain animate-pulse" />
+    <div className="h-40 rounded-xl border border-cn-p-line bg-cn-p-page animate-pulse" />
   ),
 });
 
@@ -65,8 +65,8 @@ const FILE_ICON = {
 };
 
 const VIDEO_SOURCE_MODES = [
-  { value: "UPLOAD", label: "Upload Video", icon: Upload },
-  { value: "LINK", label: "Paste Link", icon: Link2 },
+  { value: "UPLOAD", label: "Upload video", icon: Upload },
+  { value: "LINK", label: "Paste link", icon: Link2 },
 ];
 
 const INITIAL_FORM = {
@@ -82,12 +82,12 @@ const INITIAL_FORM = {
 };
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
+  "w-full px-3 py-3 bg-cn-p-card border border-cn-p-line-2 focus:border-cn-p-accent focus:outline-none rounded-cn-p-sm text-sm text-cn-p-ink placeholder:text-cn-p-muted transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
+  "block mb-1.5 text-[13px] font-semibold text-cn-p-ink";
 
-const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-[11px] text-cn-p-bad mt-1";
 
 function formatFileSize(bytes) {
   if (!bytes) return "0 KB";
@@ -108,15 +108,15 @@ function getFileExtension(name) {
 
 function FilePreviewCard({ file, icon: Icon }) {
   return (
-    <div className="mt-3 flex items-center gap-3 p-3 rounded-xl border border-line bg-porcelain/60">
-      <div className="w-10 h-10 rounded-lg bg-gold/12 text-gold flex items-center justify-center shrink-0">
+    <div className="mt-3 flex items-center gap-3 p-3 rounded-xl border border-cn-p-line bg-cn-p-page">
+      <div className="w-10 h-10 rounded-lg bg-cn-p-soft text-cn-p-soft-ink flex items-center justify-center shrink-0">
         <Icon className="w-5 h-5" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-ink truncate">
+        <p className="text-sm font-semibold text-cn-p-ink truncate">
           {file.name}
         </p>
-        <p className="text-[11px] font-mono uppercase text-muted tracking-wider mt-0.5">
+        <p className="text-[11px] text-cn-p-ink-2 mt-0.5">
           {getFileExtension(file.name)} · {formatFileSize(file.size)}
         </p>
       </div>
@@ -396,11 +396,11 @@ export default function AddLessonModal({
   const orderOptions = buildOrdinalOrderOptions(requiredMaxOrder);
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={Video}
-      title={isEditMode ? "Edit Lesson" : "Add Lesson"}
+      title={isEditMode ? "Edit lesson" : "Add lesson"}
       subtitle={
         isEditMode ? lesson?.title : "Create a new lesson for this course"
       }
@@ -413,7 +413,7 @@ export default function AddLessonModal({
             value={form.module}
             onChange={handleModuleChange}
             disabled={isSubmitting}
-            className={FIELD_CLASS}
+            className={`${FIELD_CLASS} cn-p-select`}
           >
             <option value="">Select a module</option>
             {modules.map((module) => (
@@ -470,11 +470,7 @@ export default function AddLessonModal({
                   type="button"
                   onClick={() => handleContentTypeChange(option.value)}
                   disabled={isSubmitting}
-                  className={`px-3 py-2.5 rounded-xl text-xs font-semibold font-mono tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
-                    isActive
-                      ? "bg-pine text-paper border-pine"
-                      : "bg-porcelain text-muted border-line hover:bg-porcelain"
-                  }`}
+                  className={`px-3 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${ isActive ? "bg-cn-p-accent text-white border-cn-p-accent" : "bg-cn-p-page text-cn-p-ink-2 border-cn-p-line hover:bg-cn-p-page" }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
                   {option.label}
@@ -494,11 +490,7 @@ export default function AddLessonModal({
                   type="button"
                   onClick={() => handleVideoSourceModeChange(mode.value)}
                   disabled={isSubmitting}
-                  className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-semibold font-mono tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
-                    videoSourceMode === mode.value
-                      ? "bg-pine text-paper border-pine"
-                      : "bg-porcelain text-muted border-line hover:bg-porcelain"
-                  }`}
+                  className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${ videoSourceMode === mode.value ? "bg-cn-p-accent text-white border-cn-p-accent" : "bg-cn-p-page text-cn-p-ink-2 border-cn-p-line hover:bg-cn-p-page" }`}
                 >
                   <mode.icon className="w-3.5 h-3.5" />
                   {mode.label}
@@ -520,7 +512,7 @@ export default function AddLessonModal({
               className={FIELD_CLASS}
               autoComplete="off"
             />
-            <p className="mt-1.5 text-[11px] font-mono text-muted">
+            <p className="mt-1.5 text-[11px] text-cn-p-ink-2">
               Paste a video link, or the full &lt;iframe&gt; embed code — we&apos;ll extract the link automatically.
             </p>
             {fieldErrors.video_url && (
@@ -528,7 +520,7 @@ export default function AddLessonModal({
             )}
 
             {trimmedVideoUrl && !isIframeEmbedCode(trimmedVideoUrl) && (
-              <div className="mt-3 rounded-xl overflow-hidden border border-line bg-ink aspect-video">
+              <div className="mt-3 rounded-xl overflow-hidden border border-cn-p-line bg-cn-p-ink aspect-video">
                 {videoEmbedUrl ? (
                   <iframe
                     src={videoEmbedUrl}
@@ -560,13 +552,13 @@ export default function AddLessonModal({
             )}
 
             {!file && existingFileUrl && (
-              <p className="text-[11px] font-mono text-muted mt-2">
+              <p className="text-[11px] text-cn-p-ink-2 mt-2">
                 Current file:{" "}
                 <a
                   href={existingFileUrl}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-pine underline"
+                  className="text-cn-p-accent underline"
                 >
                   view
                 </a>{" "}
@@ -600,7 +592,7 @@ export default function AddLessonModal({
                   rows={8}
                   className={`${FIELD_CLASS} resize-none`}
                 />
-                <p className="mt-1.5 text-[11px] font-mono text-muted">
+                <p className="mt-1.5 text-[11px] text-cn-p-ink-2">
                   This lesson was authored in plain Markdown — edits stay in Markdown.
                 </p>
               </>
@@ -647,13 +639,13 @@ export default function AddLessonModal({
               )}
 
               {!file && existingFileUrl && (
-                <p className="text-[11px] font-mono text-muted mt-2">
+                <p className="text-[11px] text-cn-p-ink-2 mt-2">
                   Current file:{" "}
                   <a
                     href={existingFileUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-pine underline"
+                    className="text-cn-p-accent underline"
                   >
                     view
                   </a>{" "}
@@ -692,7 +684,7 @@ export default function AddLessonModal({
             value={form.order}
             onChange={updateField("order")}
             disabled={isSubmitting || !form.module}
-            className={FIELD_CLASS}
+            className={`${FIELD_CLASS} cn-p-select`}
           >
             {orderOptions.map((position) => (
               <option key={position} value={position}>
@@ -700,7 +692,7 @@ export default function AddLessonModal({
               </option>
             ))}
           </select>
-          <p className="mt-1.5 text-[11px] font-mono text-muted">
+          <p className="mt-1.5 text-[11px] text-cn-p-ink-2">
             {form.module
               ? `This module currently has ${existingLessonsCount} lesson${existingLessonsCount === 1 ? "" : "s"}.`
               : "Select a module to choose a position."}
@@ -710,12 +702,12 @@ export default function AddLessonModal({
           )}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-line">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-cn-p-line">
           <button
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-all flex items-center justify-center gap-2 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 border border-cn-p-line disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -723,11 +715,11 @@ export default function AddLessonModal({
           <button
             type="submit"
             disabled={isSubmitting || modules.length === 0}
-            className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 {isEditMode ? "Saving..." : "Creating..."}
               </>
             ) : (
@@ -740,7 +732,7 @@ export default function AddLessonModal({
         </div>
 
         {modules.length === 0 && (
-          <p className="text-[11px] font-mono text-pine flex items-center gap-1.5">
+          <p className="text-[11px] text-cn-p-accent flex items-center gap-1.5">
             <FilePlus2 className="w-3 h-3" />
             Create a module first before adding a lesson.
           </p>

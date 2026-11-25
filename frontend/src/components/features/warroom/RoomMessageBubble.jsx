@@ -82,7 +82,7 @@ export default function RoomMessageBubble({ courseId, message }) {
         onClose={() => setIsConfirmingDelete(false)}
         onConfirm={() => deleteMutation.mutate()}
         isConfirming={deleteMutation.isPending}
-        title="Delete Message"
+        title="Delete message"
         message="Are you sure you want to delete this message? This cannot be undone."
         confirmLabel="Delete"
         size="lg"

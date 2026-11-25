@@ -1,63 +1,43 @@
 "use client";
 
-import { Suspense, useEffect, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
-import { Lock } from "lucide-react";
-import { useAuth } from "@/hooks/useAuth";
-import { ROUTES } from "@/constants/routes";
-import AuthGateCard from "@/components/ui/AuthGateCard";
+import { Suspense, useState } from "react";
+import { useSearchParams } from "next/navigation";
+import { Mail } from "lucide-react";
 import Loader from "@/components/ui/Loader";
+import PortalCard from "@/components/features/portal/shell/PortalCard";
+import { PortalEmpty, PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 import ConversationList from "./ConversationList";
 import MessageThread from "./MessageThread";
 import EmptyThreadState from "./EmptyThreadState";
 import NewMessageButton from "./NewMessageButton";
 import NewMessageModal from "./NewMessageModal";
+import { useConversations } from "./useConversations";
 
+/**
+ * The design's `messagesPage(role)` — a `.phead` carrying the "New message"
+ * action, then the `.chat` card: a 300px column of conversations beside the
+ * open thread.
+ *
+ * One screen serves all three portals, exactly as the design has it
+ * (`PAGES[role].messages` is the same page for student, teacher and admin —
+ * only the people on the other end differ, and the server already decides
+ * that). It is rendered inside `PortalShell`, so it brings no page frame,
+ * no heading band and no auth gate of its own: the portal route is what
+ * decides who is allowed in, and `/messages` redirects into the portal.
+ */
 function MessagesScreenContent() {
-  const router = useRouter();
   const searchParams = useSearchParams();
-  const { isAuthenticated } = useAuth();
   const [selectedConversation, setSelectedConversation] = useState(null);
   const [isNewMessageOpen, setIsNewMessageOpen] = useState(false);
 
-  // `isAuthenticated` comes from client-only Redux state, which is never
-  // populated during the server/prerendered HTML pass — so branching on it
-  // before mount always mismatches for an already-logged-in user (a hydration
-  // error, since this page is statically prerendered with no session).
-  // Rendering the same neutral loader on the very first pass regardless of
-  // auth state, then switching to the real branch once mounted, keeps the
-  // first paint identical on server and client.
-  const [isMounted, setIsMounted] = useState(false);
-  useEffect(() => {
-    setIsMounted(true);
-  }, []);
-
-  // Deep-linked from elsewhere (e.g. a teacher's "Message Student" action on
-  // the Enrollment & Scores drawer) — ConversationList selects it once loaded.
+  // Deep-linked from elsewhere (e.g. a teacher's "Message student" action on
+  // the Students & scores drawer) — ConversationList selects it once loaded.
   const autoSelectConversationId = searchParams.get("conversation");
 
-  if (!isMounted) {
-    return <Loader label="Loading Messages..." />;
-  }
-
-  if (!isAuthenticated) {
-    return (
-      <AuthGateCard
-        id="messages-gate-container"
-        icon={Lock}
-        title="Sign In Required"
-        subtitle="Sign in to view and send messages."
-      >
-        <button
-          type="button"
-          onClick={() => router.push(ROUTES.LOGIN)}
-          className="w-full py-3.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-xl shadow-md transition"
-        >
-          Go to Sign In
-        </button>
-      </AuthGateCard>
-    );
-  }
+  // Only for the choice of shape below; the list fetches through the same
+  // query key, so this costs no second request.
+  const conversationsQuery = useConversations();
+  const hasConversations = (conversationsQuery.data || []).length > 0;
 
   const handleConversationStarted = (conversation) => {
     setIsNewMessageOpen(false);
@@ -65,46 +45,64 @@ function MessagesScreenContent() {
   };
 
   return (
-    <div className="py-8 px-4 sm:px-6 md:px-10 max-w-[1600px] mx-auto h-[calc(100vh-5rem)] flex flex-col overflow-hidden font-sans">
-      <div className="mb-6 flex flex-col sm:flex-row sm:items-end sm:justify-between gap-4 shrink-0">
-        <div>
-          <span className="text-cn-p-accent text-sm uppercase tracking-widest font-bold block mb-1">
-            Communication
-          </span>
-          <h1 className="text-3xl font-extrabold tracking-tight text-cn-p-ink">Messages</h1>
-          <p className="text-sm text-cn-p-ink-2 font-light mt-0.5">
-            Send and receive direct messages.
-          </p>
-        </div>
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Messages"
+        subtitle="Direct messages with your teachers, students and the Cool Nerdz team."
+      >
         <NewMessageButton onClick={() => setIsNewMessageOpen(true)} />
-      </div>
+      </PortalPageHead>
 
-      <div className="bg-white border border-cn-p-line-2 rounded-2xl shadow-xl overflow-hidden relative flex flex-col sm:flex-row flex-1 min-h-120">
-
-        {/* Below the sm breakpoint there's only room for one panel at a time —
-            show the list OR the open thread (with a back button), not both
-            stacked. At sm and up both panels are always visible side by side. */}
-        <div
-          className={`${selectedConversation ? "hidden" : "flex"} sm:flex flex-col w-full sm:w-80 flex-1 sm:flex-none min-h-0 border-b sm:border-b-0 sm:border-r border-cn-p-line`}
-        >
-          <ConversationList
-            selectedConversationId={selectedConversation?.id}
-            onSelectConversation={setSelectedConversation}
-            autoSelectConversationId={!selectedConversation ? autoSelectConversationId : null}
-          />
-        </div>
-
-        <div className={`${selectedConversation ? "flex" : "hidden"} sm:flex flex-1 min-w-0 flex-col min-h-0`}>
-          {selectedConversation ? (
-            <MessageThread
-              conversation={selectedConversation}
-              onBack={() => setSelectedConversation(null)}
+      {conversationsQuery.isLoading ? (
+        <PortalCard className="grid min-h-[520px] place-items-center">
+          <Loader fullScreen={false} tone="cobalt" label="Loading messages..." />
+        </PortalCard>
+      ) : !hasConversations ? (
+        // The design shows one empty card here rather than a split pane with
+        // an empty state on each side, which is what two panels of "nothing
+        // yet" read as.
+        <PortalCard>
+          <PortalEmpty
+            icon={Mail}
+            title="No conversations yet"
+            text="Start a new message to begin a conversation."
+          >
+            <NewMessageButton onClick={() => setIsNewMessageOpen(true)} />
+          </PortalEmpty>
+        </PortalCard>
+      ) : (
+        <PortalCard className="flex h-[calc(100vh-220px)] min-h-[520px] flex-col overflow-hidden sm:flex-row">
+          {/* Below the sm breakpoint there's only room for one panel at a
+              time — show the list OR the open thread (with a back button),
+              not both stacked. At sm and up both are visible side by side.
+              The mock hides the list outright on a narrow screen; that would
+              leave no way to pick a conversation, so it isn't copied. */}
+          <div
+            className={`${selectedConversation ? "hidden" : "flex"} min-h-0 w-full flex-1 flex-col border-b border-cn-p-line sm:flex sm:w-[300px] sm:flex-none sm:border-b-0 sm:border-r`}
+          >
+            <ConversationList
+              selectedConversationId={selectedConversation?.id}
+              onSelectConversation={setSelectedConversation}
+              autoSelectConversationId={
+                !selectedConversation ? autoSelectConversationId : null
+              }
             />
-          ) : (
-            <EmptyThreadState />
-          )}
-        </div>
-      </div>
+          </div>
+
+          <div
+            className={`${selectedConversation ? "flex" : "hidden"} min-h-0 min-w-0 flex-1 flex-col sm:flex`}
+          >
+            {selectedConversation ? (
+              <MessageThread
+                conversation={selectedConversation}
+                onBack={() => setSelectedConversation(null)}
+              />
+            ) : (
+              <EmptyThreadState />
+            )}
+          </div>
+        </PortalCard>
+      )}
 
       <NewMessageModal
         isOpen={isNewMessageOpen}
@@ -117,7 +115,7 @@ function MessagesScreenContent() {
 
 export default function MessagesScreen() {
   return (
-    <Suspense fallback={<Loader label="Loading Messages..." />}>
+    <Suspense fallback={<Loader fullScreen={false} tone="cobalt" label="Loading messages..." />}>
       <MessagesScreenContent />
     </Suspense>
   );

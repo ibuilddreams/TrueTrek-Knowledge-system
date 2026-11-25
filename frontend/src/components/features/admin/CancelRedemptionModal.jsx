@@ -5,9 +5,9 @@ import { XCircle } from "lucide-react";
 import Modal from "@/components/ui/Modal";
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60 resize-none";
+  "w-full px-3 py-3 bg-cn-p-card border border-cn-p-line-2 focus:border-cn-p-accent focus:outline-none rounded-cn-p-sm text-sm text-cn-p-ink placeholder:text-cn-p-muted transition disabled:opacity-60 resize-none";
 
-const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-[11px] text-cn-p-bad mt-1";
 
 export default function CancelRedemptionModal({ isOpen, onClose, onConfirm, redemption, isSubmitting }) {
   const [reason, setReason] = useState("");
@@ -34,11 +34,11 @@ export default function CancelRedemptionModal({ isOpen, onClose, onConfirm, rede
   };
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={isSubmitting ? undefined : handleClose}
       icon={XCircle}
-      title="Cancel Redemption"
+      title="Cancel redemption"
       subtitle={
         redemption
           ? `Cancelling will refund ${redemption.points_cost?.toLocaleString()} points to ${redemption.student?.name || "the student"}.`
@@ -47,7 +47,7 @@ export default function CancelRedemptionModal({ isOpen, onClose, onConfirm, rede
       maxWidth="max-w-sm"
     >
       <div className="mb-6">
-        <label className="text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium">
+        <label className="text-xs font-sans text-cn-p-ink-2 block mb-1.5 font-medium">
           Reason
         </label>
         <textarea
@@ -69,7 +69,7 @@ export default function CancelRedemptionModal({ isOpen, onClose, onConfirm, rede
           type="button"
           onClick={handleClose}
           disabled={isSubmitting}
-          className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-xs font-semibold font-mono rounded-full tracking-wider transition-colors duration-150 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+          className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-xs font-semibold rounded-cn-p-sm transition-colors duration-150 border border-cn-p-line disabled:opacity-60 disabled:cursor-not-allowed"
         >
           Back
         </button>
@@ -77,7 +77,7 @@ export default function CancelRedemptionModal({ isOpen, onClose, onConfirm, rede
           type="button"
           onClick={handleConfirm}
           disabled={isSubmitting}
-          className="px-6 py-3 bg-rose-600 hover:bg-rose-700 disabled:opacity-60 disabled:cursor-not-allowed text-paper text-xs font-semibold font-mono rounded-full tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
+          className="px-6 py-3 bg-cn-p-bad hover:bg-cn-p-bad disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-full transition-colors duration-150 flex items-center justify-center gap-2"
         >
           {isSubmitting ? (
             <>

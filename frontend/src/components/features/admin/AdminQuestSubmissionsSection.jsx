@@ -23,7 +23,7 @@ const STATUS_FILTERS = [
 ];
 
 const FILTER_CLASS =
-  "px-3.5 py-2.5 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-xs font-mono text-ink transition cursor-pointer";
+  "px-3.5 py-2.5 bg-cn-p-page border border-cn-p-line focus:border-cn-p-accent focus:bg-cn-p-card focus:outline-none rounded-xl text-xs  text-cn-p-ink transition cursor-pointer";
 
 /**
  * "Who completed which quest" — every student's quest activity, filterable.
@@ -76,8 +76,8 @@ export default function AdminQuestSubmissionsSection({ questFilter, onClearQuest
       header: "Student",
       render: (row) => (
         <div className="min-w-0">
-          <span className="font-semibold text-ink">{row.student_name || "—"}</span>
-          <p className="text-[11px] text-muted font-light truncate">{row.student_email}</p>
+          <span className="font-semibold text-cn-p-ink">{row.student_name || "—"}</span>
+          <p className="text-[11px] text-cn-p-ink-2 font-light truncate">{row.student_email}</p>
         </div>
       ),
     },
@@ -86,8 +86,8 @@ export default function AdminQuestSubmissionsSection({ questFilter, onClearQuest
       header: "Quest",
       render: (row) => (
         <div className="min-w-0">
-          <span className="text-ink">{row.quest_title}</span>
-          <p className="text-[11px] text-muted font-light">{row.quest_category}</p>
+          <span className="text-cn-p-ink">{row.quest_title}</span>
+          <p className="text-[11px] text-cn-p-ink-2 font-light">{row.quest_category}</p>
         </div>
       ),
     },
@@ -95,14 +95,14 @@ export default function AdminQuestSubmissionsSection({ questFilter, onClearQuest
       key: "assigned_date",
       header: "Assigned",
       render: (row) => (
-        <span className="text-muted whitespace-nowrap">{formatPlainDate(row.assigned_date)}</span>
+        <span className="text-cn-p-ink-2 whitespace-nowrap">{formatPlainDate(row.assigned_date)}</span>
       ),
     },
     {
       key: "completed_at",
       header: "Completed",
       render: (row) => (
-        <span className="text-muted whitespace-nowrap">
+        <span className="text-cn-p-ink-2 whitespace-nowrap">
           {row.completed_at ? formatDateTime(row.completed_at) : "—"}
         </span>
       ),
@@ -110,16 +110,14 @@ export default function AdminQuestSubmissionsSection({ questFilter, onClearQuest
     {
       key: "status",
       header: "Status",
-      render: (row) => <StatusBadge size="lg" status={row.status} />,
+      render: (row) => <StatusBadge tone="cobalt" size="lg" status={row.status} />,
     },
     {
       key: "points_awarded",
       header: "Points",
       render: (row) => (
         <span
-          className={`font-mono font-bold tabular-nums ${
-            row.points_awarded > 0 ? "text-emerald-700" : "text-muted"
-          }`}
+          className={`font-bold tabular-nums ${ row.points_awarded > 0 ? "text-cn-p-ok" : "text-cn-p-ink-2" }`}
         >
           {row.points_awarded > 0 ? `+${row.points_awarded}` : "—"}
         </span>
@@ -130,12 +128,12 @@ export default function AdminQuestSubmissionsSection({ questFilter, onClearQuest
       header: "Proof",
       render: (row) =>
         row.proof_file_url || row.proof_url ? (
-          <span className="inline-flex items-center gap-1 text-[11px] font-mono uppercase tracking-wider text-pine">
+          <span className="inline-flex items-center gap-1 text-[11px] text-cn-p-accent">
             <Paperclip className="w-3 h-3" />
             Yes
           </span>
         ) : (
-          <span className="text-[11px] font-mono uppercase tracking-wider text-muted">—</span>
+          <span className="text-[11px] text-cn-p-ink-2">—</span>
         ),
     },
     {
@@ -145,7 +143,7 @@ export default function AdminQuestSubmissionsSection({ questFilter, onClearQuest
         <button
           type="button"
           onClick={() => setDetailSubmission(row)}
-          className="inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-pine hover:text-moss transition cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-[11px] text-cn-p-accent hover:text-cn-p-accent-hover transition cursor-pointer"
         >
           <Eye className="w-3.5 h-3.5" />
           View
@@ -157,15 +155,15 @@ export default function AdminQuestSubmissionsSection({ questFilter, onClearQuest
   return (
     <div className="space-y-6">
       {questFilter && (
-        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-pine/25 bg-sage/15 px-4 py-3">
-          <span className="text-xs text-ink font-light">
+        <div className="flex flex-wrap items-center gap-3 rounded-xl border border-cn-p-accent-soft bg-cn-p-ok-bg px-4 py-3">
+          <span className="text-xs text-cn-p-ink font-light">
             Showing submissions for{" "}
             <span className="font-semibold">{questFilter.title}</span>
           </span>
           <button
             type="button"
             onClick={onClearQuestFilter}
-            className="ml-auto text-[11px] font-mono uppercase tracking-wider text-pine hover:text-moss transition cursor-pointer"
+            className="ml-auto text-[11px] text-cn-p-accent hover:text-cn-p-accent-hover transition cursor-pointer"
           >
             Show all quests
           </button>
@@ -173,7 +171,7 @@ export default function AdminQuestSubmissionsSection({ questFilter, onClearQuest
       )}
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <SearchBar
+        <SearchBar tone="cobalt"
           size="lg"
           value={searchInput}
           onChange={setSearchInput}
@@ -183,7 +181,7 @@ export default function AdminQuestSubmissionsSection({ questFilter, onClearQuest
         <select
           value={status}
           onChange={(event) => setStatus(event.target.value)}
-          className={FILTER_CLASS}
+          className={`${FILTER_CLASS} cn-p-select`}
           aria-label="Filter by status"
         >
           {STATUS_FILTERS.map((option) => (
@@ -193,19 +191,19 @@ export default function AdminQuestSubmissionsSection({ questFilter, onClearQuest
           ))}
         </select>
 
-        <label className="inline-flex items-center gap-2 text-xs font-sans text-muted cursor-pointer shrink-0">
+        <label className="inline-flex items-center gap-2 text-xs font-sans text-cn-p-ink-2 cursor-pointer shrink-0">
           <input
             type="checkbox"
             checked={hasProof}
             onChange={(event) => setHasProof(event.target.checked)}
-            className="w-4 h-4 accent-pine cursor-pointer"
+            className="w-4 h-4 accent-cn-p-accent cursor-pointer"
           />
           With proof only
         </label>
       </div>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-        <DataTable
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+        <DataTable tone="cobalt"
           size="lg"
           columns={columns}
           rows={rows}
@@ -214,13 +212,17 @@ export default function AdminQuestSubmissionsSection({ questFilter, onClearQuest
           onRetry={refetch}
           emptyLabel="No quest submissions match these filters."
         />
-        <Pagination
-          size="lg"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalLabel={`${totalCount} submission${totalCount === 1 ? "" : "s"}`}
-        />
+        <div className="px-4 pb-4">
+
+          <Pagination tone="cobalt"
+            size="lg"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalLabel={`${totalCount} submission${totalCount === 1 ? "" : "s"}`}
+          />
+
+        </div>
       </div>
 
       <QuestSubmissionDetailModal

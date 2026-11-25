@@ -15,13 +15,13 @@ import CredentialRow from "./CredentialRow";
 import CredentialUploadForm from "./CredentialUploadForm";
 
 /**
- * Step 3 — the qualification documents.
- *
- * Unlike the other steps, this one writes as it goes rather than on Continue:
- * a file upload is its own request, so there is nothing for the wizard's save
- * to batch. Both mutations invalidate the application query, which is what the
- * list below (and the review step's checklist) re-reads.
- */
+  * Step 3 — the qualification documents.
+   *
+   * Unlike the other steps, this one writes as it goes rather than on Continue:
+   * a file upload is its own request, so there is nothing for the wizard's save
+   * to batch. Both mutations invalidate the application query, which is what the
+   * list below (and the review step's checklist) re-reads.
+   */
 export default function CredentialsStep({ credentials = [], queryKey, disabled }) {
   const queryClient = useQueryClient();
   const [deletingId, setDeletingId] = useState(null);
@@ -60,7 +60,7 @@ export default function CredentialsStep({ credentials = [], queryKey, disabled }
 
   return (
     <div className="space-y-5">
-      <p className="text-sm text-muted font-light leading-relaxed">
+      <p className="text-sm text-cn-p-ink-2 font-light leading-relaxed">
         Upload proof of the qualifications you listed — a degree certificate, a teaching licence,
         or a recent certification. At least one is required, and you can add up to{" "}
         {MAX_CREDENTIALS}.
@@ -78,7 +78,7 @@ export default function CredentialsStep({ credentials = [], queryKey, disabled }
           ))}
         </ul>
       ) : (
-        <EmptyState
+        <EmptyState tone="portal"
           icon={FileText}
           label="No documents yet."
           description="Add your first qualification below."
@@ -87,7 +87,7 @@ export default function CredentialsStep({ credentials = [], queryKey, disabled }
       )}
 
       {isFull ? (
-        <p className="text-xs font-mono text-muted text-center p-4 bg-porcelain border border-line rounded-xl">
+        <p className="text-xs text-cn-p-ink-2 text-center p-4 bg-cn-p-page border border-cn-p-line rounded-xl">
           You have reached the limit of {MAX_CREDENTIALS} documents. Remove one to add another.
         </p>
       ) : (

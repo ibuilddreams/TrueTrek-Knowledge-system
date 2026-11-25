@@ -11,7 +11,7 @@ export default function LegacyQuestionDrillCard({ data, onSubmit, isSubmitting }
       <div className="flex items-center justify-between border-b border-cn-p-line pb-4">
         <div>
           <span className="text-cn-p-accent text-sm font-semibold block mb-0.5">
-            Situational Drills
+            Situational drills
           </span>
           <h4 className="text-lg font-bold text-cn-p-ink">Recruit & NIL Integrity</h4>
         </div>
@@ -24,7 +24,7 @@ export default function LegacyQuestionDrillCard({ data, onSubmit, isSubmitting }
         <div className="absolute -right-6 -bottom-6 w-32 h-32 rounded-full bg-cn-p-warn/10 blur-xl" />
         <div className="flex gap-3 mb-4 relative z-10">
           <div className="bg-cn-p-warn text-cn-p-accent font-bold px-2.5 py-1 text-[11px] tracking-widest uppercase rounded">
-            Dilemma Case
+            Dilemma case
           </div>
           <span className="text-xs text-white/60 tracking-wide">Governance Scenario</span>
         </div>

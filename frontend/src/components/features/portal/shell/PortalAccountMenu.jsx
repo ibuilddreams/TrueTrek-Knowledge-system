@@ -6,7 +6,6 @@ import { ChevronUp, LogOut, Mail, UserRound } from "lucide-react";
 import { useAuth } from "@/hooks/useAuth";
 import { useLogoutFlow } from "@/hooks/useLogoutFlow";
 import { AUTH_ROLES } from "@/constants/auth";
-import { ROUTES } from "@/constants/routes";
 import { portalHref } from "./portalNav";
 
 // The design's `.pop.menu` hung off the sidebar's account button: who is
@@ -68,8 +67,10 @@ export default function PortalAccountMenu({ role, name }) {
     router.push(href);
   };
 
+  // The design's `.pop .pi` — a 12px row with a 10px radius, and no rule
+  // between the rows or under the header.
   const ITEM =
-    "flex w-full items-center gap-3 rounded-cn-p-sm px-3 py-2.5 text-left text-sm text-cn-p-ink transition-colors duration-150 hover:bg-cn-p-page disabled:cursor-not-allowed disabled:opacity-60";
+    "flex w-full items-center gap-3 rounded-cn-p-sm p-3 text-left text-sm text-cn-p-ink transition-colors duration-150 hover:bg-cn-p-page disabled:cursor-not-allowed disabled:opacity-60";
 
   return (
     <div ref={wrapperRef} className="relative mt-auto">
@@ -86,20 +87,18 @@ export default function PortalAccountMenu({ role, name }) {
             <span className="grid min-w-0">
               <b className="truncate text-sm text-cn-p-ink">{displayName}</b>
               {user?.email && (
-                <span className="truncate text-xs text-cn-p-muted">
+                <span className="truncate text-xs text-cn-p-ink-2">
                   {user.email}
                 </span>
               )}
             </span>
           </div>
 
-          <div className="my-1 h-px bg-cn-p-line" />
-
           <button
             type="button"
             role="menuitem"
             className={ITEM}
-            onClick={() => go(ROUTES.PROFILE)}
+            onClick={() => go(portalHref(role, "profile"))}
           >
             <UserRound className="h-[18px] w-[18px] flex-none text-cn-p-ink-2" />
             Profile &amp; settings
@@ -109,28 +108,20 @@ export default function PortalAccountMenu({ role, name }) {
             type="button"
             role="menuitem"
             className={ITEM}
-            onClick={() =>
-              go(
-                role === AUTH_ROLES.STUDENT
-                  ? portalHref(role, "messages")
-                  : ROUTES.MESSAGES,
-              )
-            }
+            onClick={() => go(portalHref(role, "messages"))}
           >
             <Mail className="h-[18px] w-[18px] flex-none text-cn-p-ink-2" />
             Messages
           </button>
-
-          <div className="my-1 h-px bg-cn-p-line" />
 
           <button
             type="button"
             role="menuitem"
             disabled={isSigningOut}
             onClick={signOut}
-            className={`${ITEM} text-cn-p-bad hover:bg-cn-p-bad-bg`}
+            className={ITEM}
           >
-            <LogOut className="h-[18px] w-[18px] flex-none" />
+            <LogOut className="h-[18px] w-[18px] flex-none text-cn-p-ink-2" />
             {isSigningOut ? "Signing out…" : "Sign out"}
           </button>
         </div>

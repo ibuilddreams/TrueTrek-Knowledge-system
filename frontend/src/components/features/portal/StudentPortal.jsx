@@ -39,6 +39,7 @@ import RewardsTab from "./tabs/RewardsTab";
 import StreakTab from "./tabs/StreakTab";
 import AskAdvisorTab from "./tabs/AskAdvisorTab";
 import MessagesScreen from "@/components/features/messaging/MessagesScreen";
+import ProfileForm from "@/components/features/profile/ProfileForm";
 
 // Shown at most once per calendar day (persisted per drill_date so a
 // refresh of the Drill screen doesn't re-nag) — see the reminder effect below.
@@ -285,6 +286,7 @@ function StudentPortalContent({ slug = DEFAULT_PORTAL_SLUG }) {
       {activeSlug === "rewards" && <RewardsTab />}
       {activeSlug === "advisor" && <AskAdvisorTab />}
       {activeSlug === "messages" && <MessagesScreen />}
+      {activeSlug === "profile" && <ProfileForm />}
       {activeSlug === "streak" && (
         <StreakTab onBack={() => goToSlug(DEFAULT_PORTAL_SLUG)} />
       )}
@@ -302,7 +304,7 @@ function StudentPortalContent({ slug = DEFAULT_PORTAL_SLUG }) {
 
 export default function StudentPortal({ slug }) {
   return (
-    <Suspense fallback={<Loader label="Loading Cool Nerdz Portal..." />}>
+    <Suspense fallback={<Loader label="Loading Cool Nerdz portal..." />}>
       <StudentPortalContent slug={slug} />
     </Suspense>
   );

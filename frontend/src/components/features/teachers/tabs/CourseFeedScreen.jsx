@@ -7,7 +7,11 @@ import { createFeedPost, deleteFeedPost, getCourseFeed } from "@/services/classF
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import EmptyState from "@/components/ui/EmptyState";
+import PortalCard from "@/components/features/portal/shell/PortalCard";
+import {
+  PortalEmpty,
+  PortalPageHead,
+} from "@/components/features/portal/shell/PortalUI";
 import FeedPostCard from "@/components/features/classFeed/FeedPostCard";
 import AttachmentPreview from "@/components/features/messaging/AttachmentPreview";
 
@@ -78,36 +82,34 @@ export default function CourseFeedScreen({ courseId, course, onBack }) {
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 px-3.5 py-2 border border-line hover:border-pine/25 hover:text-pine text-muted text-xs font-mono uppercase tracking-wider rounded-xl transition"
+        className="inline-flex cursor-pointer items-center gap-1.5 text-sm font-semibold text-cn-p-ink-2 transition-colors hover:text-cn-p-accent"
       >
-        <ArrowLeft className="w-3.5 h-3.5" />
-        Back to My Courses
+        <ArrowLeft className="h-3.5 w-3.5" />
+        Back to My courses
       </button>
 
-      <div className="flex items-center gap-2">
-        <Megaphone className="w-5 h-5 text-gold" />
-        <h2 className="font-serif font-bold text-xl text-ink">
-          {course?.title ? `${course.title} — Class Feed` : "Class Feed"}
-        </h2>
-      </div>
+      <PortalPageHead
+        title={course?.title ? `${course.title} — class feed` : "Class feed"}
+        subtitle="Posts you publish here appear to every student enrolled in this course."
+      />
 
       <form
         onSubmit={handleSubmit}
-        className="bg-paper border border-line rounded-card shadow-soft p-5 space-y-3"
+        className="bg-cn-p-card border border-cn-p-line rounded-cn-p p-5 space-y-3"
       >
         <input
           type="text"
           value={title}
           onChange={(event) => setTitle(event.target.value)}
           placeholder="Title (optional)"
-          className="w-full bg-porcelain border border-line rounded-xl px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:border-pine transition"
+          className="w-full rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card px-3 py-2.5 text-sm text-cn-p-ink transition outline-none placeholder:text-cn-p-muted focus:border-cn-p-accent"
         />
         <textarea
           value={caption}
           onChange={(event) => setCaption(event.target.value)}
           rows={3}
           placeholder="Share an update, tip, or short video with this class..."
-          className="w-full bg-porcelain border border-line rounded-xl px-4 py-2.5 text-sm text-ink placeholder:text-muted focus:outline-none focus:border-pine transition resize-none"
+          className="w-full resize-none rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card px-3 py-2.5 text-sm text-cn-p-ink transition outline-none placeholder:text-cn-p-muted focus:border-cn-p-accent"
         />
 
         {attachment && <AttachmentPreview file={attachment} onRemove={() => setAttachment(null)} />}
@@ -124,15 +126,15 @@ export default function CourseFeedScreen({ courseId, course, onBack }) {
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={createMutation.isPending}
-            className="inline-flex items-center gap-2 px-3.5 py-2 border border-line hover:bg-porcelain text-muted text-xs font-mono uppercase tracking-wider rounded-xl transition disabled:opacity-40"
+            className="inline-flex items-center gap-2 px-3.5 py-2 border border-cn-p-line hover:bg-cn-p-page text-cn-p-ink-2 text-xs rounded-xl transition disabled:opacity-40"
           >
             <ImagePlus className="w-4 h-4" />
-            Add Image/Video
+            Add image/video
           </button>
           <button
             type="submit"
             disabled={!canPublish}
-            className="inline-flex items-center gap-2 px-5 py-2.5 bg-pine hover:bg-moss text-paper text-xs font-bold font-mono uppercase tracking-wider rounded-xl shadow-md transition disabled:opacity-40"
+            className="inline-flex items-center gap-2 px-5 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-xs font-bold rounded-cn-p-sm transition disabled:opacity-40"
           >
             <Send className="w-3.5 h-3.5" />
             {createMutation.isPending ? "Publishing..." : "Publish"}
@@ -142,26 +144,25 @@ export default function CourseFeedScreen({ courseId, course, onBack }) {
 
       {isLoading && (
         <div className="space-y-3" aria-busy="true">
-          <div className="h-32 rounded-2xl bg-porcelain animate-pulse" />
-          <div className="h-32 rounded-2xl bg-porcelain animate-pulse" />
+          <div className="h-32 rounded-2xl bg-cn-p-page animate-pulse" />
+          <div className="h-32 rounded-2xl bg-cn-p-page animate-pulse" />
         </div>
       )}
 
       {isError && (
-        <p className="text-sm text-rose-600">
+        <p className="text-sm text-cn-p-bad">
           {getApiErrorMessage(error, "Unable to load the class feed.")}
         </p>
       )}
 
       {!isLoading && !isError && posts.length === 0 && (
-        <div className="bg-paper border border-line rounded-card shadow-soft">
-          <EmptyState
+        <PortalCard>
+          <PortalEmpty
             icon={Megaphone}
-            label="No posts yet"
-            description="Posts you publish here appear to every student enrolled in this course."
-            size="lg"
+            title="No posts yet"
+            text="Publish an update and everyone enrolled in this course sees it."
           />
-        </div>
+        </PortalCard>
       )}
 
       <div className="space-y-4">
@@ -176,7 +177,7 @@ export default function CourseFeedScreen({ courseId, course, onBack }) {
         ))}
       </div>
 
-      <ConfirmDialog
+      <ConfirmDialog variant="cobalt"
         isOpen={pendingDeleteId !== null}
         onClose={() => setPendingDeleteId(null)}
         onConfirm={() => deleteMutation.mutate(pendingDeleteId)}

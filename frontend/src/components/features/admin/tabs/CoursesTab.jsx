@@ -41,11 +41,12 @@ import AiCourseModal from "@/components/features/admin/AiCourseModal";
 import AiGenerationBanner from "@/components/features/admin/AiGenerationBanner";
 import UpdateCourseStatusModal from "@/components/features/admin/UpdateCourseStatusModal";
 import ManageModulesModal from "@/components/features/admin/ManageModulesModal";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 
 const PAGE_SIZE = 10;
 
 const STATUS_FILTER_OPTIONS = [
-  { value: "", label: "All Statuses" },
+  { value: "", label: "All statuses" },
   { value: "DRAFT", label: "Draft" },
   { value: "PUBLISHED", label: "Published" },
   { value: "ARCHIVED", label: "Archived" },
@@ -154,7 +155,7 @@ export default function CoursesTab() {
   };
 
   const categoryFilterOptions = [
-    { value: "", label: "All Categories" },
+    { value: "", label: "All categories" },
     ...categories.map((category) => ({
       value: String(category.id),
       label: category.name,
@@ -162,7 +163,7 @@ export default function CoursesTab() {
   ];
 
   const tagFilterOptions = [
-    { value: "", label: "All Tags" },
+    { value: "", label: "All tags" },
     ...tags.map((tag) => ({ value: String(tag.id), label: tag.name })),
   ];
 
@@ -205,7 +206,7 @@ export default function CoursesTab() {
       header: "Code",
       sortable: true,
       render: (course) => (
-        <span className="font-mono text-muted">{course.code || "—"}</span>
+        <span className="text-cn-p-ink-2">{course.code || "—"}</span>
       ),
     },
     {
@@ -213,7 +214,7 @@ export default function CoursesTab() {
       header: "Title",
       sortable: true,
       render: (course) => (
-        <span className="font-semibold text-ink">{course.title}</span>
+        <span className="font-semibold text-cn-p-ink">{course.title}</span>
       ),
     },
     {
@@ -226,14 +227,14 @@ export default function CoursesTab() {
       key: "status",
       header: "Status",
       sortable: true,
-      render: (course) => <StatusBadge size="lg" status={course.status} />,
+      render: (course) => <StatusBadge tone="cobalt" size="lg" status={course.status} />,
     },
     {
       key: "amount",
       header: "Amount",
       sortable: true,
       render: (course) => (
-        <span className="font-mono text-muted">
+        <span className="text-cn-p-ink-2">
           {formatAmount(course.amount)}
         </span>
       ),
@@ -261,7 +262,7 @@ export default function CoursesTab() {
           actions={[
             {
               key: "view",
-              label: "View Details",
+              label: "View details",
               icon: Eye,
               onSelect: () => setViewCourseId(course.id),
             },
@@ -273,19 +274,19 @@ export default function CoursesTab() {
             },
             {
               key: "update-status",
-              label: "Update Status",
+              label: "Update status",
               icon: RefreshCw,
               onSelect: () => setStatusUpdatingCourse(course),
             },
             {
               key: "enroll",
-              label: "Enroll Student",
+              label: "Enroll student",
               icon: UserPlus,
               onSelect: () => setEnrollCourseId(course.id),
             },
             {
               key: "modules",
-              label: "Manage Modules",
+              label: "Manage modules",
               icon: Layers,
               onSelect: () => setManagingModulesCourse(course),
             },
@@ -303,16 +304,21 @@ export default function CoursesTab() {
   ];
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col lg:flex-row lg:items-center gap-3 justify-between">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Courses"
+        subtitle="The full catalog. Teachers build content; you control publishing and ownership."
+      />
+
+      <div className="flex flex-col gap-3 rounded-cn-p border border-cn-p-line bg-cn-p-card p-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 flex-1 min-w-0">
-          <SearchBar size="lg"
+          <SearchBar tone="cobalt" size="lg"
             value={searchInput}
             onChange={setSearchInput}
             placeholder="Search courses by title..."
           />
           <div className="w-full sm:w-48 shrink-0">
-            <SearchableSelect size="lg"
+            <SearchableSelect tone="cobalt" size="lg"
               placeholder="All Statuses"
               options={STATUS_FILTER_OPTIONS}
               value={statusFilter}
@@ -320,7 +326,7 @@ export default function CoursesTab() {
             />
           </div>
           <div className="w-full sm:w-48 shrink-0">
-            <SearchableSelect size="lg"
+            <SearchableSelect tone="cobalt" size="lg"
               placeholder="All Categories"
               options={categoryFilterOptions}
               value={categoryFilter}
@@ -328,7 +334,7 @@ export default function CoursesTab() {
             />
           </div>
           <div className="w-full sm:w-48 shrink-0">
-            <SearchableSelect size="lg"
+            <SearchableSelect tone="cobalt" size="lg"
               placeholder="All Tags"
               options={tagFilterOptions}
               value={tagFilter}
@@ -341,22 +347,22 @@ export default function CoursesTab() {
           <button
             type="button"
             onClick={openAiWizard}
-            className="px-4 py-2.5 bg-paper hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-xl tracking-wider border border-line shadow-sm transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-cn-p-card hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-xl border border-cn-p-line transition-all flex items-center gap-2"
             title="Generate a complete draft course with AI"
             aria-label="Generate a complete draft course with AI"
           >
             <Sparkles className="w-4 h-4" />
-            CREATE WITH AI
+            Create with AI
           </button>
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center gap-2"
             title="Create a new course"
             aria-label="Create a new course"
           >
             <BookPlus className="w-4 h-4" />
-            ADD COURSE
+            Add course
           </button>
         </div>
       </div>
@@ -369,8 +375,8 @@ export default function CoursesTab() {
         />
       )}
 
-      <div ref={tableRef} className="bg-paper border border-line rounded-card shadow-soft p-6 scroll-mt-28">
-        <DataTable size="lg"
+      <div ref={tableRef} className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden scroll-mt-28">
+        <DataTable tone="cobalt" size="lg"
           columns={columns}
           rows={paginatedCourses}
           isLoading={status === "loading" || status === "idle"}
@@ -381,12 +387,16 @@ export default function CoursesTab() {
           sortConfig={sortConfig}
           onSortChange={toggleSort}
         />
-        <Pagination size="lg"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={changePage}
-          totalLabel={`${items.length} course${items.length === 1 ? "" : "s"}`}
-        />
+        <div className="px-4 pb-4">
+
+          <Pagination tone="cobalt" size="lg"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={changePage}
+            totalLabel={`${items.length} course${items.length === 1 ? "" : "s"}`}
+          />
+
+        </div>
       </div>
 
       <CourseDetailModal
@@ -402,12 +412,12 @@ export default function CoursesTab() {
         onEnrolled={() => loadEnrollments({ force: true })}
       />
 
-      <ConfirmDialog size="lg"
+      <ConfirmDialog variant="cobalt" size="lg"
         isOpen={Boolean(deletingCourse)}
         onClose={() => setDeletingCourse(null)}
         onConfirm={handleDeleteConfirm}
         isConfirming={isDeleting}
-        title="Delete Course"
+        title="Delete course"
         message={`Are you sure you want to delete "${deletingCourse?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
       />

@@ -20,11 +20,12 @@ import Pagination from "@/components/ui/Pagination";
 import StatusBadge from "@/components/ui/StatusBadge";
 import ActionMenu from "@/components/ui/ActionMenu";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 
 const PAGE_SIZE = 10;
 
 const STATUS_FILTER_OPTIONS = [
-  { value: "", label: "All Statuses" },
+  { value: "", label: "All statuses" },
   { value: "PENDING", label: "Pending" },
   { value: "PUBLISHED", label: "Published" },
   { value: "HIDDEN", label: "Hidden" },
@@ -125,12 +126,12 @@ export default function TestimonialsTab() {
   const columns = [
     {
       key: "name",
-      header: "Submitted By",
+      header: "Submitted by",
       render: (testimonial) => (
         <div>
-          <p className="font-semibold text-ink">{testimonial.name}</p>
+          <p className="font-semibold text-cn-p-ink">{testimonial.name}</p>
           {(testimonial.role || testimonial.school) && (
-            <p className="text-xs text-muted font-light truncate max-w-xs">
+            <p className="text-xs text-cn-p-ink-2 font-light truncate max-w-xs">
               {[testimonial.role, testimonial.school].filter(Boolean).join(" • ")}
             </p>
           )}
@@ -141,7 +142,7 @@ export default function TestimonialsTab() {
       key: "quote",
       header: "Testimonial",
       render: (testimonial) => (
-        <p className="text-xs text-muted font-light italic truncate max-w-sm">&ldquo;{testimonial.quote}&rdquo;</p>
+        <p className="text-xs text-cn-p-ink-2 font-light italic truncate max-w-sm">&ldquo;{testimonial.quote}&rdquo;</p>
       ),
     },
     {
@@ -150,7 +151,7 @@ export default function TestimonialsTab() {
       render: (testimonial) => (
         <div className="flex items-center gap-0.5">
           {[...Array(testimonial.rating)].map((_, i) => (
-            <Star key={i} className="w-3.5 h-3.5 fill-gold text-gold" />
+            <Star key={i} className="w-3.5 h-3.5 fill-cn-p-accent text-cn-p-soft-ink" />
           ))}
         </div>
       ),
@@ -158,7 +159,7 @@ export default function TestimonialsTab() {
     {
       key: "status",
       header: "Status",
-      render: (testimonial) => <StatusBadge size="lg" status={testimonial.status} />,
+      render: (testimonial) => <StatusBadge tone="cobalt" size="lg" status={testimonial.status} />,
     },
     {
       key: "submitted",
@@ -197,17 +198,22 @@ export default function TestimonialsTab() {
   ];
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Testimonials"
+        subtitle="Quotes shown on the public site. Only publish with written permission."
+      />
+
+      <div className="flex flex-col gap-3 rounded-cn-p border border-cn-p-line bg-cn-p-card p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 min-w-0">
-          <SearchBar
+          <SearchBar tone="cobalt"
             size="lg"
             value={searchInput}
             onChange={setSearchInput}
             placeholder="Search testimonials by name or quote..."
           />
           <div className="w-full sm:w-56 shrink-0">
-            <SearchableSelect
+            <SearchableSelect tone="cobalt"
               size="lg"
               placeholder="All Statuses"
               options={STATUS_FILTER_OPTIONS}
@@ -218,8 +224,8 @@ export default function TestimonialsTab() {
         </div>
       </div>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-        <DataTable
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+        <DataTable tone="cobalt"
           size="lg"
           columns={columns}
           rows={paginatedTestimonials}
@@ -228,24 +234,28 @@ export default function TestimonialsTab() {
           onRetry={refetch}
           emptyLabel="No testimonials found."
         />
-        <Pagination
-          size="lg"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalLabel={`${filteredTestimonials.length} testimonial${
-            filteredTestimonials.length === 1 ? "" : "s"
-          }`}
-        />
+        <div className="px-4 pb-4">
+
+          <Pagination tone="cobalt"
+            size="lg"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalLabel={`${filteredTestimonials.length} testimonial${
+              filteredTestimonials.length === 1 ? "" : "s"
+            }`}
+          />
+
+        </div>
       </div>
 
-      <ConfirmDialog
+      <ConfirmDialog variant="cobalt"
         size="lg"
         isOpen={Boolean(deletingTestimonial)}
         onClose={() => setDeletingTestimonial(null)}
         onConfirm={handleDeleteConfirm}
         isConfirming={deleteMutation.isPending}
-        title="Delete Testimonial"
+        title="Delete testimonial"
         message={`Are you sure you want to delete this testimonial from "${deletingTestimonial?.name}"? This cannot be undone.`}
         confirmLabel="Delete"
       />

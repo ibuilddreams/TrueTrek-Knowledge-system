@@ -4,6 +4,7 @@ import Link from "next/link";
 import { AlertTriangle, CheckCircle2, Pencil, ShoppingBag, Trash2 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
 import { formatCoursePrice } from "@/lib/store";
+import { CN_BTN_PRIMARY, CN_BTN_SECONDARY } from "@/components/ui/cobaltStyles";
 
 // One saved custom pathway. Purchased bundles become read-only — their price
 // and contents have to keep matching what was actually paid for, which the
@@ -33,29 +34,29 @@ export default function SavedCustomPathwayCard({
   return (
     <li
       id={`custom-pathway-${pathway.id}`}
-      className={`rounded-2xl border bg-paper shadow-soft p-5 flex flex-col gap-4 transition ${
-        isEditing ? "border-gold ring-1 ring-gold/40" : "border-line"
+      className={`flex flex-col gap-4 rounded-cn-lg border bg-white p-5 shadow-cn-1 transition ${
+        isEditing ? "border-cn-accent ring-1 ring-cn-accent-soft" : "border-cn-rule"
       }`}
     >
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <h3 className="text-base font-serif font-light text-ink leading-tight truncate">
+          <h3 className="truncate text-cn-base font-bold tracking-[-0.015em] text-cn-ink">
             {pathway.name}
           </h3>
-          <p className="text-[10px] font-sans uppercase tracking-widest font-medium text-muted mt-1">
+          <p className="mt-1 text-[13px] text-cn-muted">
             {pathway.course_count} course{pathway.course_count === 1 ? "" : "s"} ·{" "}
             {formatCoursePrice(pathway.base_price)}
           </p>
         </div>
 
         {isPurchased ? (
-          <span className="flex items-center gap-1 text-[10px] font-sans font-medium uppercase tracking-widest border px-2.5 py-1 rounded-full shrink-0 bg-sage text-moss border-moss/30">
-            <CheckCircle2 className="w-3 h-3 shrink-0 text-moss" />
+          <span className="flex shrink-0 items-center gap-1 rounded-full bg-cn-ok-bg px-2.5 py-1 text-cn-xs font-semibold text-cn-ok">
+            <CheckCircle2 className="h-3 w-3 shrink-0" />
             Purchased
           </span>
         ) : (
           isEditing && (
-            <span className="text-[10px] font-sans font-medium uppercase tracking-widest border px-2.5 py-1 rounded-full shrink-0 bg-gold/15 text-[#8a6f2e] border-gold/30">
+            <span className="shrink-0 rounded-full bg-cn-paper-3 px-2.5 py-1 text-cn-xs font-semibold text-cn-accent-3">
               Editing
             </span>
           )
@@ -63,7 +64,7 @@ export default function SavedCustomPathwayCard({
       </div>
 
       {pathway.summary && (
-        <p className="text-xs font-light leading-relaxed text-muted line-clamp-2">
+        <p className="line-clamp-2 text-cn-sm leading-relaxed text-cn-ink-2">
           {pathway.summary}
         </p>
       )}
@@ -72,10 +73,10 @@ export default function SavedCustomPathwayCard({
         {courses.map((entry) => (
           <li
             key={entry.id}
-            className={`max-w-full truncate text-[11px] font-sans border rounded-full px-2.5 py-1 ${
+            className={`max-w-full truncate rounded-full border px-2.5 py-1 text-[13px] ${
               entry.course && entry.course.status !== "PUBLISHED"
-                ? "bg-rose/30 border-clay/30 text-clay line-through"
-                : "bg-porcelain border-line text-muted"
+                ? "border-cn-live/30 bg-cn-paper-2 text-cn-live line-through"
+                : "border-cn-rule bg-cn-paper-2 text-cn-ink-2"
             }`}
           >
             {entry.course?.title}
@@ -84,7 +85,7 @@ export default function SavedCustomPathwayCard({
       </ul>
 
       {!isPurchased && hasUnavailableCourses && (
-        <p className="flex items-start gap-2 rounded-xl border border-clay/30 bg-rose/20 p-3 text-[11px] leading-relaxed text-clay">
+        <p className="flex items-start gap-2 rounded-cn border border-cn-live/30 bg-cn-paper-2 p-3 text-cn-sm leading-relaxed text-cn-live">
           <AlertTriangle className="w-3.5 h-3.5 shrink-0 mt-px" />
           <span>
             {unavailableCourses.length === 1
@@ -99,9 +100,9 @@ export default function SavedCustomPathwayCard({
         {isPurchased ? (
           <Link
             href={`${ROUTES.STUDENT_PORTAL}/courses`}
-            className="inline-flex items-center justify-center gap-2 bg-pine hover:bg-moss text-paper font-sans text-[11px] font-medium uppercase tracking-widest px-5 py-2.5 rounded-full shadow-soft transition"
+            className={`${CN_BTN_PRIMARY} h-11`}
           >
-            Go To My Courses
+            Go to my courses
           </Link>
         ) : (
           <>
@@ -115,16 +116,16 @@ export default function SavedCustomPathwayCard({
                   ? "Remove the unavailable course(s) before buying"
                   : undefined
               }
-              className="inline-flex items-center justify-center gap-2 bg-gold hover:brightness-95 text-ink font-sans text-[11px] font-semibold uppercase tracking-widest px-5 py-2.5 rounded-full shadow-md transition-all duration-200 disabled:opacity-60 disabled:cursor-not-allowed"
+              className={`${CN_BTN_PRIMARY} h-11`}
             >
               <ShoppingBag className="w-3.5 h-3.5" />
-              {isBuying ? "Processing..." : "Buy Now"}
+              {isBuying ? "Processing..." : "Buy now"}
             </button>
             <button
               type="button"
               onClick={() => onEdit(pathway)}
               disabled={isBusy}
-              className="inline-flex items-center justify-center gap-2 border border-line bg-porcelain hover:bg-line/40 text-ink font-sans text-[11px] font-medium uppercase tracking-widest px-4 py-2.5 rounded-full transition disabled:opacity-60 disabled:cursor-not-allowed"
+              className={`${CN_BTN_SECONDARY} h-11`}
             >
               <Pencil className="w-3.5 h-3.5" />
               Edit
@@ -134,7 +135,7 @@ export default function SavedCustomPathwayCard({
               onClick={() => onDelete(pathway)}
               disabled={isBusy}
               aria-label={`Delete ${pathway.name}`}
-              className="ml-auto inline-flex items-center justify-center w-9 h-9 rounded-full text-muted hover:text-clay hover:bg-rose/30 transition disabled:opacity-60 disabled:cursor-not-allowed focus:outline-none focus-visible:ring-2 focus-visible:ring-pine"
+              className="ml-auto grid h-9 w-9 place-items-center rounded-full text-cn-muted transition hover:bg-cn-paper-3 hover:text-cn-live focus:outline-none focus-visible:outline-2 focus-visible:outline-cn-accent disabled:cursor-not-allowed disabled:opacity-60"
             >
               <Trash2 className="w-4 h-4" />
             </button>

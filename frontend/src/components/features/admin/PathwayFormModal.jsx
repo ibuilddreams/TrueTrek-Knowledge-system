@@ -51,12 +51,12 @@ const INITIAL_BULLETS = {
 };
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
+  "w-full px-3 py-3 bg-cn-p-card border border-cn-p-line-2 focus:border-cn-p-accent focus:outline-none rounded-cn-p-sm text-sm text-cn-p-ink placeholder:text-cn-p-muted transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
+  "block mb-1.5 text-[13px] font-semibold text-cn-p-ink";
 
-const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-[11px] text-cn-p-bad mt-1";
 
 function sanitizeAmountInput(rawValue) {
   const digitsAndDot = rawValue.replace(/[^0-9.]/g, "");
@@ -70,11 +70,11 @@ function sanitizeAmountInput(rawValue) {
 function FormSection({ title, description, children }) {
   return (
     <section className="space-y-4">
-      <div className="border-b border-line pb-2.5">
-        <h4 className="text-xs font-sans font-semibold uppercase tracking-widest text-ink">
+      <div className="border-b border-cn-p-line pb-2.5">
+        <h4 className="text-xs font-sans font-semibold text-cn-p-ink">
           {title}
         </h4>
-        {description && <p className="mt-1 text-[11px] font-mono text-muted">{description}</p>}
+        {description && <p className="mt-1 text-[11px] text-cn-p-ink-2">{description}</p>}
       </div>
       {children}
     </section>
@@ -87,24 +87,22 @@ function FormSection({ title, description, children }) {
 function BulletCard({ title, description, count, error, children }) {
   return (
     <div
-      className={`rounded-2xl border bg-porcelain/40 p-4 transition-colors ${
-        error ? "border-red-300" : "border-line"
-      }`}
+      className={`rounded-2xl border bg-cn-p-page p-4 transition-colors ${ error ? "border-cn-p-bad-bg" : "border-cn-p-line" }`}
     >
       <div className="mb-2.5 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-sans font-semibold uppercase tracking-widest text-ink">
+          <p className="text-xs font-sans font-semibold text-cn-p-ink">
             {title}
           </p>
-          <p className="mt-1 text-[11px] font-mono text-muted">{description}</p>
+          <p className="mt-1 text-[11px] text-cn-p-ink-2">{description}</p>
         </div>
-        <span className="shrink-0 rounded-full border border-line bg-paper px-2 py-0.5 text-[10px] font-mono tabular-nums text-muted">
+        <span className="shrink-0 rounded-full border border-cn-p-line bg-cn-p-card px-2 py-0.5 text-[10px] tabular-nums text-cn-p-ink-2">
           {count}/{MAX_LEARNING_OUTCOMES}
         </span>
       </div>
 
       {count === 0 && (
-        <p className="mb-2.5 rounded-lg border border-dashed border-line px-3 py-2.5 text-[11px] font-mono text-muted">
+        <p className="mb-2.5 rounded-lg border border-dashed border-cn-p-line px-3 py-2.5 text-[11px] text-cn-p-ink-2">
           Nothing added yet — this section stays hidden on the public page.
         </p>
       )}
@@ -302,11 +300,11 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
   };
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={isEditMode ? Edit3 : Route}
-      title={isEditMode ? "Edit Pathway" : "Add Pathway"}
+      title={isEditMode ? "Edit pathway" : "Add pathway"}
       subtitle={
         isEditMode
           ? "Update this pathway and what its public page shows."
@@ -321,7 +319,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
         >
           <div>
             <label className={LABEL_CLASS}>
-              Name <span className="text-clay">*</span>
+              Name <span className="text-cn-p-warn">*</span>
             </label>
             <input
               type="text"
@@ -337,7 +335,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
 
           <div>
             <label className={LABEL_CLASS}>
-              Summary <span className="text-clay">*</span>
+              Summary <span className="text-cn-p-warn">*</span>
             </label>
             <input
               type="text"
@@ -369,7 +367,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
           title="Audience cards"
           description="Which audience pages list this pathway. A pathway can serve several audiences at once; leave it empty to keep it off every audience page."
         >
-          <MultiSelect
+          <MultiSelect tone="cobalt"
             size="lg"
             label="Audiences"
             placeholder="Select audiences"
@@ -439,7 +437,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
                 value={form.status}
                 onChange={updateField("status")}
                 disabled={isBusy}
-                className={FIELD_CLASS}
+                className={`${FIELD_CLASS} cn-p-select`}
               >
                 {STATUS_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -456,7 +454,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
                 value={form.difficulty}
                 onChange={updateField("difficulty")}
                 disabled={isBusy}
-                className={FIELD_CLASS}
+                className={`${FIELD_CLASS} cn-p-select`}
               >
                 {DIFFICULTY_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -478,7 +476,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
                 placeholder="0"
                 className={FIELD_CLASS}
               />
-              <p className="mt-1 text-[11px] font-mono text-muted">
+              <p className="mt-1 text-[11px] text-cn-p-ink-2">
                 Leave at 0 to show “Self-paced” instead.
               </p>
               {fieldErrors.duration_weeks && (
@@ -511,7 +509,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
             count={bullets.learning_outcomes.length}
             error={fieldErrors.learning_outcomes}
           >
-            <LearningOutcomesField
+            <LearningOutcomesField tone="cobalt"
               values={bullets.learning_outcomes}
               onChange={updateBullets("learning_outcomes")}
               disabled={isBusy}
@@ -528,7 +526,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
             count={bullets.who_is_for.length}
             error={fieldErrors.who_is_for}
           >
-            <LearningOutcomesField
+            <LearningOutcomesField tone="cobalt"
               values={bullets.who_is_for}
               onChange={updateBullets("who_is_for")}
               disabled={isBusy}
@@ -545,7 +543,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
             count={bullets.prerequisites.length}
             error={fieldErrors.prerequisites}
           >
-            <LearningOutcomesField
+            <LearningOutcomesField tone="cobalt"
               values={bullets.prerequisites}
               onChange={updateBullets("prerequisites")}
               disabled={isBusy}
@@ -558,12 +556,12 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
         </FormSection>
 
         {/* Stays in reach while the form scrolls. */}
-        <div className="sticky bottom-0 -mx-5 -mb-5 flex flex-col-reverse gap-3 border-t border-line bg-paper/95 px-5 py-4 backdrop-blur-sm sm:-mx-7 sm:-mb-7 sm:flex-row sm:justify-end sm:px-7">
+        <div className="sticky bottom-0 -mx-5 -mb-5 flex flex-col-reverse gap-3 border-t border-cn-p-line bg-cn-p-card px-5 py-4 backdrop-blur-sm sm:-mx-7 sm:-mb-7 sm:flex-row sm:justify-end sm:px-7">
           <button
             type="button"
             onClick={handleClose}
             disabled={isBusy}
-            className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-colors duration-150 flex items-center justify-center gap-2 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-cn-p-sm transition-colors duration-150 flex items-center justify-center gap-2 border border-cn-p-line disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -572,11 +570,11 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
           <button
             type="submit"
             disabled={isBusy}
-            className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
+            className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 {isEditMode ? "Updating..." : "Creating..."}
               </>
             ) : (

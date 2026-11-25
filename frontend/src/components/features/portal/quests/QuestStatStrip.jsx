@@ -10,16 +10,16 @@
  */
 export default function QuestStatStrip({ stats }) {
   const items = [
-    { label: "Points Today", value: (stats?.points_today ?? 0).toLocaleString() },
+    { label: "Points today", value: (stats?.points_today ?? 0).toLocaleString() },
     {
-      label: "Day Streak",
+      label: "Day streak",
       value: stats?.current_streak ?? 0,
     },
     {
-      label: "Done Today",
+      label: "Done today",
       value: `${stats?.completed_today ?? 0} / ${stats?.assigned_today ?? 0}`,
     },
-    { label: "All Time", value: (stats?.total_completed ?? 0).toLocaleString() },
+    { label: "All time", value: (stats?.total_completed ?? 0).toLocaleString() },
   ];
 
   return (

@@ -1,22 +1,49 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Cropper from "react-easy-crop";
-import { motion, AnimatePresence } from "motion/react";
-import { Check, ImagePlus, Loader2, Minus, Plus, RotateCcw, X } from "lucide-react";
+import { Check, ImagePlus, Loader2, Minus, Plus, RotateCcw } from "lucide-react";
 import { getCroppedImage } from "@/lib/imageCrop";
 import { toastError } from "@/lib/toast";
-import IconBadge from "@/components/ui/IconBadge";
+import Modal from "@/components/ui/Modal";
+import { PortalButton } from "@/components/features/portal/shell/PortalUI";
 
 const MIN_ZOOM = 1;
 const MAX_ZOOM = 3;
 const ZOOM_STEP = 0.1;
 
+// The portal dialog (`ui/Modal variant="cobalt"`), not a frame of its own: a
+// crop box is a small form, and the convention for those on a converted screen
+// is the shared dialog rather than another overlay to keep in step.
 export default function AvatarCropModal({ isOpen, imageSrc, onCancel, onSave }) {
   const [crop, setCrop] = useState({ x: 0, y: 0 });
   const [zoom, setZoom] = useState(1);
   const [croppedAreaPixels, setCroppedAreaPixels] = useState(null);
   const [isSaving, setIsSaving] = useState(false);
+
+  // `Modal` closes on a backdrop click, and a drag that starts on the crop
+  // box (or the zoom slider) and is released off the panel dispatches its
+  // click on the backdrop — the panel's own `stopPropagation` never sees it,
+  // because the backdrop *is* the target. Without this, nudging the photo a
+  // little too far throws the crop away. The flag is set by any pointer press
+  // inside the dialog and cleared by the next click anywhere; a genuine
+  // backdrop click presses on the backdrop, so it is never set.
+  const pressedInsideRef = useRef(false);
+
+  useEffect(() => {
+    if (!isOpen) return undefined;
+    const clear = () => {
+      pressedInsideRef.current = false;
+    };
+    // Bubble phase on the document, so React's own handlers have already run.
+    document.addEventListener("click", clear);
+    return () => document.removeEventListener("click", clear);
+  }, [isOpen]);
+
+  const handleRequestClose = () => {
+    if (pressedInsideRef.current) return;
+    onCancel();
+  };
 
   const handleCropComplete = (_, areaPixels) => {
     setCroppedAreaPixels(areaPixels);
@@ -46,150 +73,106 @@ export default function AvatarCropModal({ isOpen, imageSrc, onCancel, onSave }) 
     }
   };
 
+  const ZOOM_BUTTON_CLASS =
+    "grid h-8 w-8 flex-none place-items-center rounded-full border border-cn-p-line-2 bg-cn-p-card text-cn-p-ink-2 transition-colors duration-150 hover:border-cn-p-ink hover:text-cn-p-ink";
+
   return (
-    <AnimatePresence>
-      {isOpen && (
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          exit={{ opacity: 0 }}
-          transition={{ duration: 0.18 }}
-          className="fixed inset-0 z-[100] bg-stone-900/60 backdrop-blur-sm flex items-center justify-center p-4"
-        >
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            exit={{ opacity: 0 }}
-            transition={{ duration: 0.15, ease: "easeOut" }}
-            className="bg-white border border-stone-200 rounded-2xl shadow-2xl w-full max-w-lg overflow-hidden relative"
+    <Modal
+      isOpen={isOpen}
+      onClose={isSaving ? undefined : handleRequestClose}
+      icon={ImagePlus}
+      title="Crop profile photo"
+      subtitle="Drag to reposition, zoom to fit."
+      variant="cobalt"
+    >
+      <div
+        className="flex flex-col gap-4"
+        onPointerDown={() => {
+          pressedInsideRef.current = true;
+        }}
+      >
+        <div className="relative h-72 w-full cursor-move overflow-hidden rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-ink sm:h-80">
+          {imageSrc && (
+            <Cropper
+              image={imageSrc}
+              crop={crop}
+              zoom={zoom}
+              aspect={1}
+              cropShape="round"
+              showGrid={false}
+              onCropChange={setCrop}
+              onZoomChange={setZoom}
+              onCropComplete={handleCropComplete}
+              style={{ containerStyle: { background: "#111827" } }}
+            />
+          )}
+        </div>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={() => adjustZoom(-ZOOM_STEP)}
+            className={ZOOM_BUTTON_CLASS}
+            title="Zoom out"
+            aria-label="Zoom out"
           >
-            <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-amber-600 to-amber-800" />
+            <Minus className="h-3.5 w-3.5" />
+          </button>
 
-            <button
-              type="button"
-              onClick={onCancel}
-              disabled={isSaving}
-              className="absolute top-4 right-4 z-10 w-8 h-8 flex items-center justify-center rounded-full text-stone-400 hover:text-stone-700 hover:bg-stone-100 transition disabled:opacity-60"
-              title="Close"
-              aria-label="Close"
-            >
-              <X className="w-4 h-4" />
-            </button>
+          <input
+            type="range"
+            min={MIN_ZOOM}
+            max={MAX_ZOOM}
+            step={ZOOM_STEP}
+            value={zoom}
+            onChange={(event) => setZoom(Number(event.target.value))}
+            className="w-full cursor-pointer accent-cn-p-accent"
+            aria-label="Zoom"
+          />
 
-            <div className="p-5 sm:p-7">
-              <div className="flex items-center gap-3 mb-5 pr-8">
-                <IconBadge
-                  icon={ImagePlus}
-                  size="w-10 h-10"
-                  iconSize="w-5 h-5"
-                  className="bg-amber-600/10 text-amber-700 rounded-xl border border-amber-200/40 shrink-0"
-                />
-                <div>
-                  <h3 className="text-lg font-serif font-bold text-stone-900 leading-tight">
-                    Crop Profile Photo
-                  </h3>
-                  <p className="text-xs text-stone-500 font-light">
-                    Drag to reposition, zoom to fit perfectly.
-                  </p>
-                </div>
-              </div>
+          <button
+            type="button"
+            onClick={() => adjustZoom(ZOOM_STEP)}
+            className={ZOOM_BUTTON_CLASS}
+            title="Zoom in"
+            aria-label="Zoom in"
+          >
+            <Plus className="h-3.5 w-3.5" />
+          </button>
 
-              <div className="relative w-full h-72 sm:h-80 bg-stone-900 rounded-xl overflow-hidden border border-stone-200 shadow-inner cursor-move">
-                {imageSrc && (
-                  <Cropper
-                    image={imageSrc}
-                    crop={crop}
-                    zoom={zoom}
-                    aspect={1}
-                    cropShape="round"
-                    showGrid={false}
-                    onCropChange={setCrop}
-                    onZoomChange={setZoom}
-                    onCropComplete={handleCropComplete}
-                    style={{ containerStyle: { background: "#1c1917" } }}
-                  />
-                )}
-              </div>
+          <span className="w-11 shrink-0 text-right text-xs font-semibold tabular-nums text-cn-p-muted">
+            {Math.round(zoom * 100)}%
+          </span>
+        </div>
 
-              <div className="flex items-center gap-3 mt-5">
-                <button
-                  type="button"
-                  onClick={() => adjustZoom(-ZOOM_STEP)}
-                  className="w-8 h-8 shrink-0 rounded-full bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-600 flex items-center justify-center transition"
-                  title="Zoom out"
-                  aria-label="Zoom out"
-                >
-                  <Minus className="w-3.5 h-3.5" />
-                </button>
+        <button
+          type="button"
+          onClick={handleReset}
+          className="inline-flex w-fit items-center gap-1.5 text-[13px] font-semibold text-cn-p-ink-2 transition-colors duration-150 hover:text-cn-p-accent"
+        >
+          <RotateCcw className="h-3.5 w-3.5" />
+          Reset
+        </button>
 
-                <input
-                  type="range"
-                  min={MIN_ZOOM}
-                  max={MAX_ZOOM}
-                  step={ZOOM_STEP}
-                  value={zoom}
-                  onChange={(event) => setZoom(Number(event.target.value))}
-                  className="w-full accent-amber-600 cursor-pointer"
-                  aria-label="Zoom"
-                />
-
-                <button
-                  type="button"
-                  onClick={() => adjustZoom(ZOOM_STEP)}
-                  className="w-8 h-8 shrink-0 rounded-full bg-stone-50 hover:bg-stone-100 border border-stone-200 text-stone-600 flex items-center justify-center transition"
-                  title="Zoom in"
-                  aria-label="Zoom in"
-                >
-                  <Plus className="w-3.5 h-3.5" />
-                </button>
-
-                <span className="text-[11px] font-mono font-semibold text-stone-400 w-11 text-right shrink-0">
-                  {Math.round(zoom * 100)}%
-                </span>
-              </div>
-
-              <button
-                type="button"
-                onClick={handleReset}
-                className="inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold text-stone-400 hover:text-amber-800 uppercase tracking-wider transition mt-2"
-              >
-                <RotateCcw className="w-3 h-3" />
-                Reset
-              </button>
-
-              <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-stone-100">
-                <button
-                  type="button"
-                  onClick={onCancel}
-                  className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm"
-                >
-                  <X className="w-3.5 h-3.5" />
-                  Cancel
-                </button>
-
-                <button
-                  type="button"
-                  onClick={handleSave}
-                  disabled={isSaving}
-                  className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2"
-                >
-                  {isSaving ? (
-                    <>
-                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                      Cropping...
-                    </>
-                  ) : (
-                    <>
-                      <Check className="w-3.5 h-3.5" />
-                      Crop & Save
-                    </>
-                  )}
-                </button>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
-    </AnimatePresence>
+        <div className="flex flex-col-reverse gap-3 border-t border-cn-p-line pt-4 sm:flex-row sm:justify-end">
+          <PortalButton variant="sec" onClick={onCancel} disabled={isSaving}>
+            Cancel
+          </PortalButton>
+          <PortalButton onClick={handleSave} disabled={isSaving}>
+            {isSaving ? (
+              <>
+                <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                Cropping...
+              </>
+            ) : (
+              <>
+                <Check aria-hidden="true" className="h-4 w-4" />
+                Crop and save
+              </>
+            )}
+          </PortalButton>
+        </div>
+      </div>
+    </Modal>
   );
 }

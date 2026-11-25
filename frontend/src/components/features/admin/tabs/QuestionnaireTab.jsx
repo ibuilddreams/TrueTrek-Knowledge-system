@@ -14,6 +14,7 @@ import ActionMenu from "@/components/ui/ActionMenu";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import StatusBadge from "@/components/ui/StatusBadge";
 import OnboardingQuestionFormModal from "@/components/features/admin/OnboardingQuestionFormModal";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 
 const PAGE_SIZE = 10;
 
@@ -78,13 +79,13 @@ export default function QuestionnaireTab() {
       key: "text",
       header: "Question",
       render: (question) => (
-        <span className="font-semibold text-ink line-clamp-2">{question.text}</span>
+        <span className="font-semibold text-cn-p-ink line-clamp-2">{question.text}</span>
       ),
     },
     {
       key: "order",
       header: "Order",
-      render: (question) => <span className="font-mono text-muted">{question.order}</span>,
+      render: (question) => <span className="text-cn-p-ink-2">{question.order}</span>,
     },
     {
       key: "options",
@@ -99,7 +100,7 @@ export default function QuestionnaireTab() {
     {
       key: "is_active",
       header: "Status",
-      render: (question) => <StatusBadge size="lg" status={question.is_active ? "ACTIVE" : "DRAFT"} />,
+      render: (question) => <StatusBadge tone="cobalt" size="lg" status={question.is_active ? "ACTIVE" : "DRAFT"} />,
     },
     {
       key: "actions",
@@ -109,7 +110,7 @@ export default function QuestionnaireTab() {
           actions={[
             {
               key: "edit",
-              label: "Edit Question",
+              label: "Edit question",
               icon: Edit3,
               onSelect: () => setEditingQuestion(question),
             },
@@ -127,24 +128,29 @@ export default function QuestionnaireTab() {
   ];
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search questions by text..." />
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Onboarding questions"
+        subtitle="Asked during sign-up. Answers decide which pathway a new student sees first."
+      />
+
+      <div className="flex flex-col gap-3 rounded-cn-p border border-cn-p-line bg-cn-p-card p-4 sm:flex-row sm:items-center sm:justify-between">
+        <SearchBar tone="cobalt" size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search questions by text..." />
 
         <button
           type="button"
           onClick={() => setIsFormOpen(true)}
-          className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2 shrink-0"
+          className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center gap-2 shrink-0"
           title="Create a new question"
           aria-label="Create a new question"
         >
           <HelpCircle className="w-4 h-4" />
-          ADD QUESTION
+          Add question
         </button>
       </div>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-        <DataTable size="lg"
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+        <DataTable tone="cobalt" size="lg"
           columns={columns}
           rows={paginatedQuestions}
           isLoading={isLoading}
@@ -152,12 +158,16 @@ export default function QuestionnaireTab() {
           onRetry={refetch}
           emptyLabel="No questions found."
         />
-        <Pagination size="lg"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalLabel={`${filteredQuestions.length} question${filteredQuestions.length === 1 ? "" : "s"}`}
-        />
+        <div className="px-4 pb-4">
+
+          <Pagination tone="cobalt" size="lg"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalLabel={`${filteredQuestions.length} question${filteredQuestions.length === 1 ? "" : "s"}`}
+          />
+
+        </div>
       </div>
 
       <OnboardingQuestionFormModal
@@ -169,12 +179,12 @@ export default function QuestionnaireTab() {
         }}
       />
 
-      <ConfirmDialog size="lg"
+      <ConfirmDialog variant="cobalt" size="lg"
         isOpen={Boolean(deletingQuestion)}
         onClose={() => setDeletingQuestion(null)}
         onConfirm={handleDeleteConfirm}
         isConfirming={deleteQuestionMutation.isPending}
-        title="Delete Question"
+        title="Delete question"
         message={`Are you sure you want to delete this question? This cannot be undone.`}
         confirmLabel="Delete"
       />

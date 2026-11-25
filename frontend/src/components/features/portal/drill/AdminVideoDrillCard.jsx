@@ -76,7 +76,7 @@ export default function AdminVideoDrillCard({ data, onNotify }) {
         <div>
           <span className="text-cn-p-accent text-sm font-semibold flex items-center gap-1.5 mb-0.5">
             <Film className="w-3.5 h-3.5" />
-            Today's Daily Drill
+            Today's daily drill
           </span>
           <h4 className="text-lg font-bold text-cn-p-ink">{data.title}</h4>
         </div>

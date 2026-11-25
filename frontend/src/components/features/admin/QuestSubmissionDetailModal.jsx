@@ -32,7 +32,7 @@ export default function QuestSubmissionDetailModal({ isOpen, onClose, submission
   ];
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={onClose}
       icon={FileCheck2}
@@ -42,39 +42,39 @@ export default function QuestSubmissionDetailModal({ isOpen, onClose, submission
     >
       <div className="space-y-5">
         <div className="flex items-center gap-2">
-          <StatusBadge size="lg" status={submission.status} />
-          <span className="text-[11px] font-mono uppercase tracking-widest text-muted">
+          <StatusBadge tone="cobalt" size="lg" status={submission.status} />
+          <span className="text-[11px] text-cn-p-ink-2">
             {submission.quest_difficulty}
           </span>
         </div>
 
-        <div className="rounded-xl bg-porcelain border border-line p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
+        <div className="rounded-xl bg-cn-p-page border border-cn-p-line p-4 grid grid-cols-1 sm:grid-cols-2 gap-x-6 gap-y-2.5">
           {facts.map((fact) => (
-            <p key={fact.label} className="text-sm text-muted font-light">
+            <p key={fact.label} className="text-sm text-cn-p-ink-2 font-light">
               {fact.label}:{" "}
-              <span className="text-ink font-semibold break-words">{fact.value || "—"}</span>
+              <span className="text-cn-p-ink font-semibold break-words">{fact.value || "—"}</span>
             </p>
           ))}
         </div>
 
         <div>
-          <p className="text-[11px] font-mono uppercase tracking-widest text-muted mb-2">
+          <p className="text-[11px] text-cn-p-ink-2 mb-2">
             Student&apos;s note
           </p>
           {submission.reflection ? (
-            <p className="text-sm text-ink font-light leading-relaxed whitespace-pre-line rounded-xl border border-line bg-paper p-3.5">
+            <p className="text-sm text-cn-p-ink font-light leading-relaxed whitespace-pre-line rounded-xl border border-cn-p-line bg-cn-p-card p-3.5">
               {submission.reflection}
             </p>
           ) : (
-            <p className="text-xs text-muted font-light">No note was added.</p>
+            <p className="text-xs text-cn-p-ink-2 font-light">No note was added.</p>
           )}
         </div>
 
         <div>
-          <p className="text-[11px] font-mono uppercase tracking-widest text-muted mb-2">Proof</p>
+          <p className="text-[11px] text-cn-p-ink-2 mb-2">Proof</p>
 
           {!submission.proof_file_url && !submission.proof_url && (
-            <p className="text-xs text-muted font-light">
+            <p className="text-xs text-cn-p-ink-2 font-light">
               No proof attached — proof is always optional.
             </p>
           )}
@@ -84,7 +84,7 @@ export default function QuestSubmissionDetailModal({ isOpen, onClose, submission
               href={submission.proof_url}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-xs font-mono text-pine hover:text-moss transition break-all"
+              className="inline-flex items-center gap-1.5 text-xs text-cn-p-accent hover:text-cn-p-accent-hover transition break-all"
             >
               <ExternalLink className="w-3.5 h-3.5 shrink-0" />
               {submission.proof_url}
@@ -101,14 +101,14 @@ export default function QuestSubmissionDetailModal({ isOpen, onClose, submission
                 <img
                   src={submission.proof_file_url}
                   alt={`Proof submitted by ${submission.student_name || "student"}`}
-                  className="max-h-80 w-auto rounded-xl border border-line"
+                  className="max-h-80 w-auto rounded-xl border border-cn-p-line"
                 />
               ) : null}
               <a
                 href={submission.proof_file_url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-mono text-pine hover:text-moss transition mt-2"
+                className="inline-flex items-center gap-1.5 text-xs text-cn-p-accent hover:text-cn-p-accent-hover transition mt-2"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 {submission.proof_original_name || "Open attachment"}

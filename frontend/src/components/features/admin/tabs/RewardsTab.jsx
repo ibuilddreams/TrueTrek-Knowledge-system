@@ -14,6 +14,7 @@ import Pagination from "@/components/ui/Pagination";
 import ActionMenu from "@/components/ui/ActionMenu";
 import StatusBadge from "@/components/ui/StatusBadge";
 import RewardFormModal from "@/components/features/admin/RewardFormModal";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 
 const PAGE_SIZE = 10;
 
@@ -78,9 +79,9 @@ export default function RewardsTab() {
       header: "Reward",
       render: (reward) => (
         <div>
-          <span className="font-semibold text-ink">{reward.name}</span>
+          <span className="font-semibold text-cn-p-ink">{reward.name}</span>
           {reward.description && (
-            <p className="text-[11px] text-muted font-light line-clamp-1 max-w-xs">{reward.description}</p>
+            <p className="text-[11px] text-cn-p-ink-2 font-light line-clamp-1 max-w-xs">{reward.description}</p>
           )}
         </div>
       ),
@@ -89,18 +90,18 @@ export default function RewardsTab() {
       key: "reward_type",
       header: "Type",
       render: (reward) => (
-        <span className="text-[11px] font-mono uppercase tracking-wider text-muted">{reward.reward_type}</span>
+        <span className="text-[11px] text-cn-p-ink-2">{reward.reward_type}</span>
       ),
     },
     {
       key: "points_required",
       header: "Points",
-      render: (reward) => <span className="font-mono font-bold text-ink">{reward.points_required.toLocaleString()}</span>,
+      render: (reward) => <span className="font-bold text-cn-p-ink">{reward.points_required.toLocaleString()}</span>,
     },
     {
       key: "status",
       header: "Status",
-      render: (reward) => <StatusBadge size="lg" status={reward.status} />,
+      render: (reward) => <StatusBadge tone="cobalt" size="lg" status={reward.status} />,
     },
     {
       key: "redemptions_count",
@@ -120,7 +121,7 @@ export default function RewardsTab() {
           actions={[
             {
               key: "edit",
-              label: "Edit Reward",
+              label: "Edit reward",
               icon: Edit3,
               onSelect: () => setEditingReward(reward),
             },
@@ -139,24 +140,29 @@ export default function RewardsTab() {
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search rewards by name..." />
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Rewards catalog"
+        subtitle="What students can spend points on."
+      />
+
+      <div className="flex flex-col gap-3 rounded-cn-p border border-cn-p-line bg-cn-p-card p-4 sm:flex-row sm:items-center sm:justify-between">
+        <SearchBar tone="cobalt" size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search rewards by name..." />
 
         <button
           type="button"
           onClick={() => setIsFormOpen(true)}
-          className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2 shrink-0"
+          className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center gap-2 shrink-0"
           title="Create a new reward"
           aria-label="Create a new reward"
         >
           <Gift className="w-4 h-4" />
-          ADD REWARD
+          Add reward
         </button>
       </div>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-        <DataTable
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+        <DataTable tone="cobalt"
           size="lg"
           columns={columns}
           rows={paginatedRewards}
@@ -165,13 +171,17 @@ export default function RewardsTab() {
           onRetry={refetch}
           emptyLabel="No rewards found."
         />
-        <Pagination
-          size="lg"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalLabel={`${filteredRewards.length} reward${filteredRewards.length === 1 ? "" : "s"}`}
-        />
+        <div className="px-4 pb-4">
+
+          <Pagination tone="cobalt"
+            size="lg"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalLabel={`${filteredRewards.length} reward${filteredRewards.length === 1 ? "" : "s"}`}
+          />
+
+        </div>
       </div>
 
       <RewardFormModal

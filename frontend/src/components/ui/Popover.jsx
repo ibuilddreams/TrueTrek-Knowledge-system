@@ -10,7 +10,17 @@ import { createPortal } from "react-dom";
  * triggered from inside a scrolling container (a plain absolutely-positioned
  * popover would get clipped by that container's overflow).
  */
-export default function Popover({ isOpen, onClose, anchorRef, children, width = 200, align = "end" }) {
+export default function Popover({
+  isOpen,
+  onClose,
+  anchorRef,
+  children,
+  width = 200,
+  align = "end",
+  // The design's `.pop` insets its rows by 8px; the menus that were here
+  // first inset only vertically, so the default is theirs.
+  contentClassName = "py-1.5",
+}) {
   const [position, setPosition] = useState({ top: 0, left: 0 });
   const [mounted, setMounted] = useState(false);
   const popoverRef = useRef(null);
@@ -88,7 +98,7 @@ export default function Popover({ isOpen, onClose, anchorRef, children, width = 
     <div
       ref={popoverRef}
       style={{ position: "fixed", top: position.top, left: position.left, width }}
-      className="z-50 border border-line rounded-xl shadow-elevated bg-paper py-1.5 font-mono"
+      className={`z-50 rounded-[14px] border border-cn-p-line bg-cn-p-card shadow-cn-p ${contentClassName}`}
     >
       {children}
     </div>,

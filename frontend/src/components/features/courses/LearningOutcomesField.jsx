@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from "react";
 import { ChevronDown, ChevronUp, Plus, X } from "lucide-react";
+import { makeSkin } from "@/lib/portalSkin";
 
 export const MAX_LEARNING_OUTCOMES = 12;
 export const MAX_LEARNING_OUTCOME_LENGTH = 300;
@@ -31,7 +32,11 @@ export default function LearningOutcomesField({
   // Lowercase singular used in the button labels and screen-reader names, so the
   // same editor can read as "Add point" or "Add objective".
   itemNoun = "point",
+  // The editor is shared with the admin portal, which is still on the
+  // porcelain system, so the caller says which design it is rendering in.
+  tone = "porcelain",
 }) {
+  const skin = makeSkin(tone);
   const hasChrome = Boolean(label);
   const isFull = values.length >= max;
 
@@ -145,7 +150,7 @@ export default function LearningOutcomesField({
             <li key={index} className="flex items-center gap-2">
               <span
                 aria-hidden="true"
-                className="shrink-0 flex h-7 w-7 items-center justify-center rounded-lg border border-line bg-paper text-[11px] font-mono tabular-nums text-muted"
+                className={skin("shrink-0 flex h-7 w-7 items-center justify-center rounded-lg border border-line bg-paper text-[11px] font-mono tabular-nums text-muted")}
               >
                 {index + 1}
               </span>
@@ -163,7 +168,7 @@ export default function LearningOutcomesField({
                 maxLength={MAX_LEARNING_OUTCOME_LENGTH}
                 placeholder={`e.g. ${placeholderExample}`}
                 aria-label={`Learning ${itemNoun} ${index + 1}`}
-                className={`${FIELD_CLASS} flex-1 min-w-0`}
+                className={skin(`${FIELD_CLASS} flex-1 min-w-0`)}
                 autoComplete="off"
               />
 
@@ -173,7 +178,7 @@ export default function LearningOutcomesField({
                   onClick={() => move(index, -1)}
                   disabled={disabled || index === 0}
                   aria-label={`Move learning ${itemNoun} ${index + 1} up`}
-                  className={`${ICON_BUTTON_CLASS} hover:text-pine`}
+                  className={skin(`${ICON_BUTTON_CLASS} hover:text-pine`)}
                 >
                   <ChevronUp className="w-4 h-4" />
                 </button>
@@ -182,7 +187,7 @@ export default function LearningOutcomesField({
                   onClick={() => move(index, 1)}
                   disabled={disabled || index === values.length - 1}
                   aria-label={`Move learning ${itemNoun} ${index + 1} down`}
-                  className={`${ICON_BUTTON_CLASS} hover:text-pine`}
+                  className={skin(`${ICON_BUTTON_CLASS} hover:text-pine`)}
                 >
                   <ChevronDown className="w-4 h-4" />
                 </button>
@@ -191,7 +196,7 @@ export default function LearningOutcomesField({
                   onClick={() => removeAt(index)}
                   disabled={disabled}
                   aria-label={`Remove learning ${itemNoun} ${index + 1}`}
-                  className={`${ICON_BUTTON_CLASS} hover:text-clay`}
+                  className={skin(`${ICON_BUTTON_CLASS} hover:text-clay`)}
                 >
                   <X className="w-4 h-4" />
                 </button>
@@ -206,7 +211,7 @@ export default function LearningOutcomesField({
           type="button"
           onClick={add}
           disabled={disabled}
-          className="flex w-full items-center gap-2 rounded-xl border border-dashed border-line bg-paper/60 px-4 py-3 text-left text-[11px] font-mono text-muted transition hover:border-pine hover:text-pine disabled:opacity-60 disabled:cursor-not-allowed"
+          className={skin("flex w-full items-center gap-2 rounded-xl border border-dashed border-line bg-paper/60 px-4 py-3 text-left text-[11px] font-mono text-muted transition hover:border-pine hover:text-pine disabled:opacity-60 disabled:cursor-not-allowed")}
         >
           <Plus className="w-3.5 h-3.5 shrink-0" />
           Add your first {itemNoun} — e.g. {placeholderExample}
@@ -217,16 +222,16 @@ export default function LearningOutcomesField({
             type="button"
             onClick={add}
             disabled={disabled || isFull}
-            className="inline-flex items-center gap-1.5 rounded-full border border-line bg-paper px-3 py-1.5 text-[11px] font-mono font-semibold uppercase tracking-wider text-pine transition hover:border-pine hover:bg-sage/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-line disabled:hover:bg-paper"
+            className={skin("inline-flex items-center gap-1.5 rounded-full border border-line bg-paper px-3 py-1.5 text-[11px] font-mono font-semibold uppercase tracking-wider text-pine transition hover:border-pine hover:bg-sage/20 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:border-line disabled:hover:bg-paper")}
           >
             <Plus className="w-3.5 h-3.5" />
             Add {itemNoun}
           </button>
           {droppedNotice ? (
-            <p className="text-[11px] font-mono text-clay">{droppedNotice}</p>
+            <p className={skin("text-[11px] font-mono text-clay")}>{droppedNotice}</p>
           ) : (
             values.length > 0 && (
-              <p className="text-[11px] font-mono text-muted">
+              <p className={skin("text-[11px] font-mono text-muted")}>
                 {isFull ? `Maximum of ${max} ${itemNoun}s reached.` : "Press Enter to add another."}
               </p>
             )
@@ -234,7 +239,7 @@ export default function LearningOutcomesField({
         </div>
       )}
 
-      {error && <p className="text-[11px] font-mono text-red-600 mt-2">{error}</p>}
+      {error && <p className={skin("text-[11px] font-mono text-red-600 mt-2")}>{error}</p>}
     </>
   );
 
@@ -242,20 +247,20 @@ export default function LearningOutcomesField({
 
   return (
     <div
-      className={`rounded-2xl border bg-porcelain/40 p-4 transition-colors ${
+      className={skin(`rounded-2xl border bg-porcelain/40 p-4 transition-colors ${
         error ? "border-red-300" : "border-line"
-      }`}
+      }`)}
     >
       <div className="mb-2.5 flex items-start justify-between gap-3">
         <div className="min-w-0">
-          <p className="text-xs font-sans font-semibold uppercase tracking-widest text-ink">{label}</p>
+          <p className={skin("text-xs font-sans font-semibold uppercase tracking-widest text-ink")}>{label}</p>
           {hint !== null && (
-            <p className="mt-1 text-[11px] font-mono text-muted">
+            <p className={skin("mt-1 text-[11px] font-mono text-muted")}>
               {hint || "Key takeaways shown on the course page."}
             </p>
           )}
         </div>
-        <span className="shrink-0 rounded-full border border-line bg-paper px-2 py-0.5 text-[10px] font-mono tabular-nums text-muted">
+        <span className={skin("shrink-0 rounded-full border border-line bg-paper px-2 py-0.5 text-[10px] font-mono tabular-nums text-muted")}>
           {values.length}/{max}
         </span>
       </div>

@@ -9,7 +9,12 @@ import { formatDateTime } from "@/lib/adminFormatters";
 import DataTable from "@/components/ui/DataTable";
 import Pagination from "@/components/ui/Pagination";
 import StatusBadge from "@/components/ui/StatusBadge";
-import EmptyState from "@/components/ui/EmptyState";
+import PortalCard from "@/components/features/portal/shell/PortalCard";
+import {
+  PortalButton,
+  PortalEmpty,
+  PortalPageHead,
+} from "@/components/features/portal/shell/PortalUI";
 import RequestFormModal from "../RequestFormModal";
 import RequestDetailModal from "../RequestDetailModal";
 
@@ -35,77 +40,62 @@ export default function RequestsTab() {
     {
       key: "title",
       header: "Title",
-      render: (request) => <span className="font-semibold text-ink">{request.title}</span>,
+      render: (request) => <span className="font-semibold text-cn-p-ink">{request.title}</span>,
     },
     {
       key: "request_type",
       header: "Type",
       render: (request) => (
-        <span className="text-muted font-mono text-xs">{request.request_type_display}</span>
+        <span className="text-cn-p-ink-2 text-xs">{request.request_type_display}</span>
       ),
     },
     {
       key: "status",
       header: "Status",
-      render: (request) => <StatusBadge size="lg" status={request.status} />,
+      render: (request) => <StatusBadge tone="cobalt" size="lg" status={request.status} />,
     },
     {
       key: "created_at",
       header: "Submitted",
       render: (request) => (
-        <span className="text-muted whitespace-nowrap">{formatDateTime(request.created_at)}</span>
+        <span className="text-cn-p-ink-2 whitespace-nowrap">{formatDateTime(request.created_at)}</span>
       ),
     },
     {
       key: "updated_at",
-      header: "Last Updated",
+      header: "Last updated",
       render: (request) => (
-        <span className="text-muted whitespace-nowrap">{formatDateTime(request.updated_at)}</span>
+        <span className="text-cn-p-ink-2 whitespace-nowrap">{formatDateTime(request.updated_at)}</span>
       ),
     },
   ];
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <div>
-          <h2 className="text-lg font-serif font-bold text-ink">Requests & Issue Reports</h2>
-          <p className="text-sm text-muted font-light mt-0.5">
-            Ask for a change or flag an error — track it here until the admin team resolves it.
-          </p>
-        </div>
-        <button
-          type="button"
-          onClick={() => setIsFormOpen(true)}
-          className="shrink-0 px-4 py-2.5 bg-pine hover:bg-moss text-paper text-xs font-semibold font-mono rounded-xl tracking-wider uppercase shadow-md hover:shadow-lg transition-all flex items-center gap-2"
-          title="Request a Change / Report an Error"
-          aria-label="Request a Change / Report an Error"
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Requests"
+        subtitle="Ask the admin team to change course content, or report something broken."
         >
-          <FileWarning className="w-3.5 h-3.5" />
-          New Request
-        </button>
-      </div>
+        <PortalButton onClick={() => setIsFormOpen(true)}>
+          <FileWarning className="h-4 w-4" />
+          New request
+        </PortalButton>
+      </PortalPageHead>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
+      <PortalCard className="overflow-hidden">
         {!isLoading && !isError && requests.length === 0 ? (
-          <EmptyState
-            size="lg"
+          <PortalEmpty
             icon={FileWarning}
-            label="You haven't submitted any requests yet."
-            description="Use the button above to request a change or report an error."
-            action={
-              <button
-                type="button"
-                onClick={() => setIsFormOpen(true)}
-                className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition"
+            title="You haven't submitted any requests yet."
+            text="Use the button above to request a change or report an error."
               >
-                New Request
-              </button>
-            }
-          />
+                <PortalButton size="sm" onClick={() => setIsFormOpen(true)} className="mt-2">
+              New request
+            </PortalButton>
+          </PortalEmpty>
         ) : (
           <>
-            <DataTable
+            <DataTable tone="cobalt"
               size="lg"
               columns={columns}
               rows={requests}
@@ -115,16 +105,19 @@ export default function RequestsTab() {
               onRowClick={setSelectedRequest}
               emptyLabel="You haven't submitted any requests yet."
             />
-            <Pagination
-              size="lg"
-              page={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              totalLabel={`${data?.count || 0} request${(data?.count || 0) === 1 ? "" : "s"}`}
-            />
+            <div className="px-4 pb-4">
+              <Pagination
+                tone="cobalt"
+                size="lg"
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                totalLabel={`${data?.count || 0} request${(data?.count || 0) === 1 ? "" : "s"}`}
+              />
+            </div>
           </>
         )}
-      </div>
+      </PortalCard>
 
       <RequestFormModal isOpen={isFormOpen} onClose={() => setIsFormOpen(false)} />
       <RequestDetailModal

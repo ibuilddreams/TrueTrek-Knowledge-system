@@ -11,13 +11,13 @@ import {
 import { getApiErrorMessage } from "@/lib/apiErrors";
 
 /**
- * Who opened the classroom, and when.
- *
- * Headed "arrived", not "attended": the server only hears from a participant
- * when it issues their join token, so a row proves someone came through the
- * door — not that they stayed for the hour (see
- * class_sessions/models.py::ClassSessionAttendance).
- */
+  * Who opened the classroom, and when.
+   *
+   * Headed "arrived", not "attended": the server only hears from a participant
+   * when it issues their join token, so a row proves someone came through the
+   * door — not that they stayed for the hour (see
+   * class_sessions/models.py::ClassSessionAttendance).
+   */
 export default function ClassSessionAttendanceModal({ isOpen, onClose, session }) {
   const {
     data: attendance = [],
@@ -33,8 +33,8 @@ export default function ClassSessionAttendanceModal({ isOpen, onClose, session }
       header: "Name",
       render: (row) => (
         <span className="flex flex-col">
-          <span className="font-medium text-ink">{row.student_name}</span>
-          <span className="text-[11px] text-muted font-light">{row.student_email}</span>
+          <span className="font-medium text-cn-p-ink">{row.student_name}</span>
+          <span className="text-[11px] text-cn-p-ink-2 font-light">{row.student_email}</span>
         </span>
       ),
     },
@@ -42,7 +42,7 @@ export default function ClassSessionAttendanceModal({ isOpen, onClose, session }
       key: "role",
       header: "Role",
       render: (row) => (
-        <span className="text-[10px] font-mono uppercase tracking-widest text-muted">
+        <span className="text-[10px] text-cn-p-ink-2">
           {row.role === "HOST" ? "Instructor" : "Student"}
         </span>
       ),
@@ -57,7 +57,7 @@ export default function ClassSessionAttendanceModal({ isOpen, onClose, session }
       key: "left_at",
       header: "Left",
       render: (row) =>
-        row.left_at ? formatClassTime(row.left_at) : <span className="text-muted">—</span>,
+        row.left_at ? formatClassTime(row.left_at) : <span className="text-cn-p-ink-2">—</span>,
     },
     {
       key: "join_count",
@@ -67,7 +67,7 @@ export default function ClassSessionAttendanceModal({ isOpen, onClose, session }
   ];
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={onClose}
       icon={ClipboardList}
@@ -75,7 +75,7 @@ export default function ClassSessionAttendanceModal({ isOpen, onClose, session }
       subtitle={session?.title}
       maxWidth="max-w-3xl"
     >
-      <DataTable
+      <DataTable tone="cobalt"
         columns={columns}
         rows={attendance}
         isLoading={isLoading}
@@ -85,7 +85,7 @@ export default function ClassSessionAttendanceModal({ isOpen, onClose, session }
         size="lg"
       />
 
-      <p className="mt-4 pt-4 border-t border-line text-[11px] text-muted font-light leading-relaxed">
+      <p className="mt-4 pt-4 border-t border-cn-p-line text-[11px] text-cn-p-ink-2 font-light leading-relaxed">
         &ldquo;Arrived&rdquo; is when someone opened the classroom. A browser that
         closes without warning never reports leaving, so treat &ldquo;Left&rdquo; as
         a best effort rather than a register of minutes attended.

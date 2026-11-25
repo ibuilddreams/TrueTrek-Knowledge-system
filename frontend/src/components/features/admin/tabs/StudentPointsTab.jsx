@@ -9,6 +9,7 @@ import SearchBar from "@/components/ui/SearchBar";
 import DataTable from "@/components/ui/DataTable";
 import Pagination from "@/components/ui/Pagination";
 import StudentPointsDetailModal from "@/components/features/admin/StudentPointsDetailModal";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 
 const PAGE_SIZE = 10;
 
@@ -39,34 +40,39 @@ export default function StudentPointsTab() {
       header: "Student",
       render: (student) => (
         <div>
-          <span className="font-semibold text-ink">{student.name}</span>
-          <p className="text-[11px] text-muted font-light">{student.email}</p>
+          <span className="font-semibold text-cn-p-ink">{student.name}</span>
+          <p className="text-[11px] text-cn-p-ink-2 font-light">{student.email}</p>
         </div>
       ),
     },
     {
       key: "balance",
       header: "Balance",
-      render: (student) => <span className="font-mono font-bold text-ink">{student.balance.toLocaleString()}</span>,
+      render: (student) => <span className="font-bold text-cn-p-ink">{student.balance.toLocaleString()}</span>,
     },
     {
       key: "total_earned",
-      header: "Total Earned",
-      render: (student) => <span className="font-mono text-emerald-700">{student.total_earned.toLocaleString()}</span>,
+      header: "Total earned",
+      render: (student) => <span className="text-cn-p-ok">{student.total_earned.toLocaleString()}</span>,
     },
     {
       key: "total_spent",
-      header: "Total Spent",
-      render: (student) => <span className="font-mono text-rose-600">{student.total_spent.toLocaleString()}</span>,
+      header: "Total spent",
+      render: (student) => <span className="text-cn-p-bad">{student.total_spent.toLocaleString()}</span>,
     },
   ];
 
   return (
-    <div className="space-y-6">
-      <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search students by name or email..." />
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Student points"
+        subtitle="Balances across the platform. Adjust a balance with a reason the student can see."
+      />
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-        <DataTable
+      <SearchBar tone="cobalt" size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search students by name or email..." />
+
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+        <DataTable tone="cobalt"
           size="lg"
           columns={columns}
           rows={students}
@@ -76,13 +82,17 @@ export default function StudentPointsTab() {
           onRowClick={(student) => setSelectedStudent(student)}
           emptyLabel="No students found."
         />
-        <Pagination
-          size="lg"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalLabel={`${data?.count || 0} student${(data?.count || 0) === 1 ? "" : "s"}`}
-        />
+        <div className="px-4 pb-4">
+
+          <Pagination tone="cobalt"
+            size="lg"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalLabel={`${data?.count || 0} student${(data?.count || 0) === 1 ? "" : "s"}`}
+          />
+
+        </div>
       </div>
 
       <StudentPointsDetailModal

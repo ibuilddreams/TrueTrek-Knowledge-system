@@ -1,7 +1,9 @@
 import {
   Award,
-  BriefcaseBusiness,
+  BookOpen,
+  Briefcase,
   CalendarCheck,
+  Check,
   CircleHelp,
   ClipboardList,
   Coins,
@@ -10,29 +12,23 @@ import {
   Gift,
   GraduationCap,
   Headphones,
-  HelpCircle,
   Inbox,
-  Layers3,
+  Layers,
   LayoutDashboard,
-  LineChart,
-  ListChecks,
+  List,
   Mail,
+  MessageCircle,
   MessageCircleQuestion,
-  MessageSquareQuote,
-  Mic,
   Route,
-  ShieldAlert,
   ShieldCheck,
-  Swords,
+  Star,
   Tag,
+  Target,
   TrendingUp,
-  UserPlus,
   UserRound,
   Users,
   Video,
-  BookOpen,
-  MessageCircle,
-  Target,
+  Zap,
 } from "lucide-react";
 import { AUTH_ROLES } from "@/constants/auth";
 import { ROUTES } from "@/constants/routes";
@@ -115,6 +111,7 @@ const TEACHER_NAV = [
     items: [
       { slug: "classes", label: "Live classes", icon: Video, title: "Live classes" },
       { slug: "warroom", label: "War room", icon: MessageCircle, title: "War room" },
+      { slug: "messages", label: "Messages", icon: Mail, title: "Messages" },
       { slug: "advisor", label: "Ask an advisor", icon: MessageCircleQuestion, title: "Ask an advisor" },
       { slug: "concerns", label: "Student concerns", icon: Flag, title: "Student concerns" },
     ],
@@ -122,10 +119,13 @@ const TEACHER_NAV = [
   {
     heading: "Resources",
     items: [
-      { slug: "manuals", label: "Instructional manuals", icon: ListChecks, title: "Instructional manuals" },
+      { slug: "manuals", label: "Instructional manuals", icon: List, title: "Instructional manuals" },
       { slug: "documents", label: "Curriculum documents", icon: Folder, title: "Curriculum documents" },
       { slug: "requests", label: "Requests", icon: Inbox, title: "Requests" },
-      { slug: "profile", label: "Public profile", icon: UserRound, title: "Public profile" },
+      // `public-profile`, not `profile`: the design reserves `profile` for the
+      // account settings every role reaches from the account menu, and this is
+      // the instructor page students read.
+      { slug: "public-profile", label: "Public profile", icon: UserRound, title: "Public profile" },
     ],
   },
 ];
@@ -140,18 +140,18 @@ const ADMIN_NAV = [
     items: [
       { slug: "students", label: "Students", icon: GraduationCap, title: "Students" },
       { slug: "teachers", label: "Teachers", icon: Users, title: "Teachers" },
-      { slug: "teacher-applications", label: "Teacher applications", icon: BriefcaseBusiness, title: "Teacher applications" },
-      { slug: "invitations", label: "Invitations", icon: UserPlus, title: "Invitations" },
+      { slug: "teacher-applications", label: "Teacher applications", icon: Briefcase, badge: "teacherApplications", title: "Teacher applications" },
+      { slug: "invitations", label: "Invitations", icon: Mail, title: "Invitations" },
     ],
   },
   {
     heading: "Learning",
     items: [
       { slug: "courses", label: "Courses", icon: BookOpen, title: "Courses" },
-      { slug: "enrollments", label: "Enrollments", icon: Layers3, title: "Enrollments" },
-      { slug: "progress", label: "Progress", icon: LineChart, title: "Progress" },
+      { slug: "enrollments", label: "Enrollments", icon: Layers, title: "Enrollments" },
+      { slug: "progress", label: "Progress", icon: TrendingUp, title: "Progress" },
       { slug: "pathways", label: "Pathways", icon: Route, title: "Pathways" },
-      { slug: "tiers", label: "Tiers", icon: Layers3, title: "Tiers" },
+      { slug: "tiers", label: "Tiers", icon: Star, title: "Tiers" },
       { slug: "categories", label: "Categories", icon: Folder, title: "Categories" },
       { slug: "tags", label: "Tags", icon: Tag, title: "Tags" },
     ],
@@ -160,10 +160,10 @@ const ADMIN_NAV = [
     heading: "Engagement",
     items: [
       { slug: "daily-drills", label: "Daily drills", icon: CalendarCheck, title: "Daily drills" },
-      { slug: "quests", label: "Daily quests", icon: Swords, title: "Daily quests" },
+      { slug: "quests", label: "Daily quests", icon: Check, title: "Daily quests" },
       { slug: "wargamer", label: "Tactical wargamer", icon: Target, title: "Tactical wargamer" },
-      { slug: "live-sessions", label: "War room live", icon: Mic, title: "War room live" },
-      { slug: "questionnaire", label: "Onboarding questions", icon: HelpCircle, title: "Onboarding questions" },
+      { slug: "live-sessions", label: "War room live", icon: Headphones, title: "War room live" },
+      { slug: "questionnaire", label: "Onboarding questions", icon: List, title: "Onboarding questions" },
     ],
   },
   {
@@ -171,15 +171,15 @@ const ADMIN_NAV = [
     items: [
       { slug: "rewards", label: "Rewards catalog", icon: Gift, title: "Rewards catalog" },
       { slug: "redemptions", label: "Redemptions", icon: Coins, title: "Redemptions" },
-      { slug: "student-points", label: "Student points", icon: Coins, title: "Student points" },
+      { slug: "student-points", label: "Student points", icon: Zap, title: "Student points" },
     ],
   },
   {
     heading: "Support",
     items: [
       { slug: "teacher-requests", label: "Teacher requests", icon: Inbox, title: "Teacher requests" },
-      { slug: "student-concerns", label: "Student concerns", icon: ShieldAlert, title: "Student concerns" },
-      { slug: "testimonials", label: "Testimonials", icon: MessageSquareQuote, title: "Testimonials" },
+      { slug: "student-concerns", label: "Student concerns", icon: Flag, title: "Student concerns" },
+      { slug: "testimonials", label: "Testimonials", icon: Star, title: "Testimonials" },
     ],
   },
 ];
@@ -208,7 +208,24 @@ export function portalSlugs(role) {
 // a link from elsewhere in the app still has to land somewhere sensible, and
 // `StudentPortal` redirects each onto its tab under `daily`.
 export const HIDDEN_PORTAL_SLUGS = {
-  [AUTH_ROLES.STUDENT]: ["streak", "drill", "quests", "warroom"],
+  // `profile` is here for every role: the design's sidebars don't list the
+  // account settings either — all three reach it from the account menu at the
+  // foot of the rail, which is also where Messages lives for an admin.
+  [AUTH_ROLES.STUDENT]: ["streak", "drill", "quests", "warroom", "profile"],
+  [AUTH_ROLES.FACULTY]: ["profile"],
+  [AUTH_ROLES.ADMIN]: ["messages", "profile"],
+};
+
+/**
+ * The top bar's heading for a slug the sidebar doesn't list, since
+ * `portalTitle` has no nav entry to read one from.
+ */
+const PROFILE_TITLE = "Profile & settings";
+
+const HIDDEN_PORTAL_TITLES = {
+  [AUTH_ROLES.STUDENT]: { profile: PROFILE_TITLE },
+  [AUTH_ROLES.FACULTY]: { profile: PROFILE_TITLE },
+  [AUTH_ROLES.ADMIN]: { messages: "Messages", profile: PROFILE_TITLE },
 };
 
 export function isValidPortalSlug(role, slug) {
@@ -224,7 +241,7 @@ export function portalTitle(role, slug) {
     const match = group.items.find((item) => item.slug === slug);
     if (match) return match.title ?? match.label;
   }
-  return "Dashboard";
+  return HIDDEN_PORTAL_TITLES[role]?.[slug] ?? "Dashboard";
 }
 
 /** `/studentportal/courses` — the root alone for the default screen. */

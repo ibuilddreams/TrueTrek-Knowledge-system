@@ -13,7 +13,7 @@ import AdjustPointsModal from "./AdjustPointsModal";
 function AmountCell({ amount }) {
   const isPositive = amount >= 0;
   return (
-    <span className={`font-mono font-bold ${isPositive ? "text-emerald-700" : "text-rose-600"}`}>
+    <span className={`font-bold ${isPositive ? "text-cn-p-ok" : "text-cn-p-bad"}`}>
       {isPositive ? "+" : ""}
       {amount.toLocaleString()}
     </span>
@@ -36,7 +36,7 @@ export default function StudentPointsDetailModal({ isOpen, onClose, student }) {
 
   return (
     <>
-      <Modal
+      <Modal variant="cobalt"
         isOpen={isOpen}
         onClose={onClose}
         icon={User}
@@ -45,29 +45,29 @@ export default function StudentPointsDetailModal({ isOpen, onClose, student }) {
         maxWidth="max-w-2xl"
       >
         {isLoading ? (
-          <Loader fullScreen={false} label="Loading points detail..." />
+          <Loader tone="cobalt" fullScreen={false} label="Loading points detail..." />
         ) : (
           <div className="space-y-6">
             <div className="grid grid-cols-3 gap-3">
-              <div className="bg-gold/12 border border-gold/25 rounded-xl p-4 text-center">
-                <p className="text-[10px] font-mono uppercase tracking-widest text-gold font-semibold">
+              <div className="bg-cn-p-soft border border-cn-p-soft rounded-xl p-4 text-center">
+                <p className="text-[10px] text-cn-p-soft-ink font-semibold">
                   Balance
                 </p>
-                <p className="text-2xl font-serif font-bold text-ink mt-1">{(data?.balance ?? 0).toLocaleString()}</p>
+                <p className="text-2xl font-bold text-cn-p-ink mt-1">{(data?.balance ?? 0).toLocaleString()}</p>
               </div>
-              <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
-                <p className="text-[10px] font-mono uppercase tracking-widest text-emerald-700/80 font-semibold">
-                  Total Earned
+              <div className="bg-cn-p-ok-bg border border-cn-p-ok-bg rounded-xl p-4 text-center">
+                <p className="text-[10px] text-cn-p-ok font-semibold">
+                  Total earned
                 </p>
-                <p className="text-2xl font-serif font-bold text-ink mt-1">
+                <p className="text-2xl font-bold text-cn-p-ink mt-1">
                   {(data?.total_earned ?? 0).toLocaleString()}
                 </p>
               </div>
-              <div className="bg-rose-50 border border-rose-100 rounded-xl p-4 text-center">
-                <p className="text-[10px] font-mono uppercase tracking-widest text-rose-700/80 font-semibold">
-                  Total Spent
+              <div className="bg-cn-p-bad-bg border border-cn-p-bad-bg rounded-xl p-4 text-center">
+                <p className="text-[10px] text-cn-p-bad font-semibold">
+                  Total spent
                 </p>
-                <p className="text-2xl font-serif font-bold text-ink mt-1">
+                <p className="text-2xl font-bold text-cn-p-ink mt-1">
                   {(data?.total_spent ?? 0).toLocaleString()}
                 </p>
               </div>
@@ -76,28 +76,28 @@ export default function StudentPointsDetailModal({ isOpen, onClose, student }) {
             <button
               type="button"
               onClick={() => setIsAdjustOpen(true)}
-              className="w-full py-2.5 bg-pine hover:bg-moss text-paper text-xs font-semibold font-mono uppercase tracking-wider rounded-xl shadow-sm transition flex items-center justify-center gap-2"
+              className="w-full py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-xs font-semibold rounded-xl transition flex items-center justify-center gap-2"
             >
               <Sparkles className="w-3.5 h-3.5" />
-              Adjust Points
+              Adjust points
             </button>
 
             <div>
-              <p className="text-[11px] font-mono text-muted uppercase tracking-wider font-semibold mb-2">
-                Recent Activity
+              <p className="text-[11px] text-cn-p-ink-2 font-semibold mb-2">
+                Recent activity
               </p>
 
               {transactions.length === 0 ? (
-                <EmptyState icon={Coins} label="No points activity yet." compact />
+                <EmptyState tone="portal" icon={Coins} label="No points activity yet." compact />
               ) : (
-                <div className="divide-y divide-line border border-line rounded-xl overflow-hidden">
+                <div className="divide-y divide-cn-p-line border border-cn-p-line rounded-xl overflow-hidden">
                   {transactions.map((transaction) => (
                     <div key={transaction.id} className="flex items-center justify-between gap-3 px-4 py-3">
                       <div className="min-w-0">
-                        <p className="text-sm text-muted truncate">
+                        <p className="text-sm text-cn-p-ink-2 truncate">
                           {transaction.reason || formatActivityType(transaction.transaction_type)}
                         </p>
-                        <p className="text-[11px] text-muted font-light">
+                        <p className="text-[11px] text-cn-p-ink-2 font-light">
                           {formatDateTime(transaction.created_at)}
                         </p>
                       </div>

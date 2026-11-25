@@ -475,3 +475,57 @@ class TeacherSelfServiceViewsTests(APITestCase):
         )
 
         self.assertEqual(response.status_code, status.HTTP_404_NOT_FOUND)
+
+
+class StudentDetailExtrasTests(APITestCase):
+    """The admin's student page shows an enrolment count, an average progress
+    and a last login that the student *list* deliberately does not carry."""
+
+    def setUp(self):
+        self.admin = UserModel.objects.create_user(
+            username="detailadmin",
+            email="detailadmin@example.com",
+            password="StrongPass123!",
+            role=UserModel.Roles.ADMIN,
+        )
+        self.student = UserModel.objects.create_user(
+            username="detailstudent",
+            email="detailstudent@example.com",
+            password="StrongPass123!",
+            role=UserModel.Roles.STUDENT,
+        )
+        self.url = reverse("student-detail", kwargs={"pk": self.student.pk})
+        self.client.force_authenticate(user=self.admin)
+
+    def test_detail_reports_zeroes_for_a_student_with_no_activity(self):
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, status.HTTP_200_OK)
+        data = response.data["data"]
+        self.assertEqual(data["enrollment_count"], 0)
+        self.assertEqual(data["average_progress"], 0.0)
+        self.assertIn("last_login", data)
+
+    def test_detail_averages_progress_across_the_students_courses(self):
+        teacher = UserModel.objects.create_user(
+            username="detailteacher",
+            email="detailteacher@example.com",
+            password="StrongPass123!",
+            role=UserModel.Roles.TEACHER,
+        )
+        category = Category.objects.create(name="Detail category")
+        first = Course.objects.create(
+            title="Detail course one", code="DET-901", category=category
+        )
+        second = Course.objects.create(
+            title="Detail course two", code="DET-902", category=category
+        )
+        for course in (first, second):
+            Enrollment.objects.create(student=self.student, course=course, teacher=teacher)
+        CourseProgress.objects.create(student=self.student, course=first, completion_percentage=20)
+        CourseProgress.objects.create(student=self.student, course=second, completion_percentage=80)
+
+        data = self.client.get(self.url).data["data"]
+
+        self.assertEqual(data["enrollment_count"], 2)
+        self.assertEqual(data["average_progress"], 50.0)

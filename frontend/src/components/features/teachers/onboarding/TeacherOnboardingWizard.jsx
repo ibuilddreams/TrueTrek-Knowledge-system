@@ -76,13 +76,13 @@ function stepIndexOf(stepKey) {
 }
 
 /**
- * The five-step application a teacher fills in before an admin reviews it.
- *
- * Each step saves as it is left rather than everything at the end, and the
- * step itself is saved with it — so closing the browser and signing in again
- * resumes where they stopped, the same promise `onboarding.OnboardingProgress`
- * makes to students.
- */
+  * The five-step application a teacher fills in before an admin reviews it.
+   *
+   * Each step saves as it is left rather than everything at the end, and the
+   * step itself is saved with it — so closing the browser and signing in again
+   * resumes where they stopped, the same promise `onboarding.OnboardingProgress`
+   * makes to students.
+   */
 export default function TeacherOnboardingWizard({ application, queryKey }) {
   const queryClient = useQueryClient();
   // Lazy initial state on purpose: the application query refetches whenever a
@@ -251,7 +251,7 @@ export default function TeacherOnboardingWizard({ application, queryKey }) {
 
   return (
     <div className="space-y-6">
-      <div className="p-5 sm:p-6 bg-paper border border-line rounded-card shadow-soft">
+      <div className="p-5 sm:p-6 bg-cn-p-card border border-cn-p-line rounded-cn-p">
         <OnboardingStepper
           steps={ONBOARDING_STEPS}
           activeIndex={activeIndex}
@@ -260,10 +260,10 @@ export default function TeacherOnboardingWizard({ application, queryKey }) {
         />
       </div>
 
-      <div className="p-5 sm:p-7 bg-paper border border-line rounded-card shadow-soft">
+      <div className="p-5 sm:p-7 bg-cn-p-card border border-cn-p-line rounded-cn-p">
         <div className="mb-6">
-          <h2 className="text-xl sm:text-2xl font-serif font-light text-ink">{copy.title}</h2>
-          <p className="text-sm text-muted font-light mt-1">{copy.subtitle}</p>
+          <h2 className="text-xl sm:text-2xl font-light text-cn-p-ink">{copy.title}</h2>
+          <p className="text-sm text-cn-p-ink-2 font-light mt-1">{copy.subtitle}</p>
         </div>
 
         {activeStep.key === "PROFILE" && (
@@ -300,7 +300,7 @@ export default function TeacherOnboardingWizard({ application, queryKey }) {
           />
         )}
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-7 mt-7 border-t border-line">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-between gap-3 pt-7 mt-7 border-t border-cn-p-line">
           <button
             type="button"
             onClick={() => goToStep(activeIndex - 1)}
@@ -325,7 +325,7 @@ export default function TeacherOnboardingWizard({ application, queryKey }) {
                 </>
               ) : (
                 <>
-                  Save and Continue
+                  Save and continue
                   <ArrowRight className="w-3.5 h-3.5" />
                 </>
               )}

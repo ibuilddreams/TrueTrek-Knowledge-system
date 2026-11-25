@@ -2,10 +2,20 @@
 
 import { useMemo, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { ArrowLeft, LineChart, Search, TrendingUp, Users } from "lucide-react";
+import { ArrowLeft, LineChart, TrendingUp, Users } from "lucide-react";
 import { getTeacherCourseStudents } from "@/services/teacherCoursesService";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import SearchBar from "@/components/ui/SearchBar";
+import Loader from "@/components/ui/Loader";
+import PortalCard, {
+  PortalStat,
+} from "@/components/features/portal/shell/PortalCard";
+import {
+  PortalEmpty,
+  PortalPageHead,
+  PortalSegmented,
+  PortalToolbar,
+} from "@/components/features/portal/shell/PortalUI";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import DataTable from "@/components/ui/DataTable";
 import Pagination from "@/components/ui/Pagination";
@@ -23,17 +33,8 @@ const STATUS_FILTERS = [
 const SORT_OPTIONS = [
   { value: "name_asc", label: "Name (A-Z)" },
   { value: "name_desc", label: "Name (Z-A)" },
-  { value: "progress_desc", label: "Progress (High-Low)" },
-  { value: "progress_asc", label: "Progress (Low-High)" },
-];
-
-const AVATAR_COLORS = [
-  "bg-pine",
-  "bg-sky-600",
-  "bg-emerald-700",
-  "bg-violet-600",
-  "bg-rose-700",
-  "bg-ink",
+  { value: "progress_desc", label: "Progress (high-low)" },
+  { value: "progress_asc", label: "Progress (low-high)" },
 ];
 
 function initialsFor(name) {
@@ -45,7 +46,7 @@ function initialsFor(name) {
     .toUpperCase();
 }
 
-function mapApiStudent(student, index) {
+function mapApiStudent(student) {
   return {
     id: student.student_id,
     name: student.name,
@@ -56,7 +57,6 @@ function mapApiStudent(student, index) {
     assigns: student.assignments?.submitted ?? 0,
     quizAvg: Math.round(student.quiz_performance?.average_percentage ?? 0),
     status: student.status,
-    avatarColor: AVATAR_COLORS[index % AVATAR_COLORS.length],
   };
 }
 
@@ -131,14 +131,14 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
       render: (student) => (
         <div className="flex items-center gap-3 min-w-0">
           <div
-            className={`w-9 h-9 rounded-full ${student.avatarColor} text-paper flex items-center justify-center font-bold text-xs shrink-0`}
+            className="w-9 h-9 rounded-full bg-cn-p-soft text-cn-p-soft-ink flex items-center justify-center font-bold text-xs shrink-0"
           >
             {initialsFor(student.name)}
           </div>
           <div className="min-w-0">
-            <p className="text-sm font-semibold text-ink truncate">{student.name}</p>
+            <p className="text-sm font-semibold text-cn-p-ink truncate">{student.name}</p>
             {student.email && (
-              <p className="text-[11px] font-mono text-muted truncate">{student.email}</p>
+              <p className="text-[11px] text-cn-p-ink-2 truncate">{student.email}</p>
             )}
           </div>
         </div>
@@ -155,17 +155,13 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
       render: (student) => (
         <div className="min-w-[7rem]">
           <span
-            className={`text-sm font-mono font-bold ${
-              student.progress >= 75 ? "text-emerald-700" : "text-gold"
-            }`}
+            className={`text-sm font-bold ${ student.progress >= 75 ? "text-emerald-700" : "text-cn-p-soft-ink" }`}
           >
             {student.progress}%
           </span>
-          <div className="h-1.5 rounded-full bg-porcelain overflow-hidden mt-1">
+          <div className="h-1.5 rounded-full bg-cn-p-page overflow-hidden mt-1">
             <div
-              className={`h-full rounded-full ${
-                student.progress >= 75 ? "bg-emerald-600" : "bg-gold"
-              }`}
+              className={`h-full rounded-full ${ student.progress >= 75 ? "bg-emerald-600" : "bg-cn-p-accent" }`}
               style={{ width: `${student.progress}%` }}
             />
           </div>
@@ -176,12 +172,10 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
     { key: "assigns", header: "Assigns", render: (student) => student.assigns },
     {
       key: "quizAvg",
-      header: "Quiz Avg",
+      header: "Quiz avg",
       render: (student) => (
         <span
-          className={`text-sm font-mono font-bold ${
-            student.quizAvg >= 70 ? "text-emerald-700" : "text-gold"
-          }`}
+          className={`text-sm font-bold ${ student.quizAvg >= 70 ? "text-emerald-700" : "text-cn-p-soft-ink" }`}
         >
           {student.quizAvg}%
         </span>
@@ -190,7 +184,7 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
     {
       key: "status",
       header: "Status",
-      render: (student) => <StatusBadge status={student.status} size="lg" />,
+      render: (student) => <StatusBadge tone="cobalt" status={student.status} size="lg" />,
     },
     {
       key: "actions",
@@ -198,7 +192,7 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
       render: () => (
         <button
           type="button"
-          className="w-8 h-8 flex items-center justify-center rounded-lg border border-line text-muted hover:bg-porcelain cursor-pointer transition"
+          className="w-8 h-8 flex items-center justify-center rounded-lg border border-cn-p-line text-cn-p-ink-2 hover:bg-cn-p-page cursor-pointer transition"
           title="View student progress"
           aria-label="View student progress"
         >
@@ -213,119 +207,101 @@ export default function CourseStudentsScreen({ courseId, course, onBack }) {
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-sm font-mono font-semibold text-muted hover:text-pine transition-colors cursor-pointer"
+        className="inline-flex items-center gap-1.5 text-sm font-semibold text-cn-p-ink-2 hover:text-cn-p-accent transition-colors cursor-pointer"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
-        Back to Courses
+        Back to My courses
       </button>
 
-      <div className="relative bg-paper border border-line rounded-card shadow-soft overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pine to-moss opacity-80" />
-        <div className="p-6 sm:p-7 flex flex-col lg:flex-row lg:items-center justify-between gap-5">
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="w-12 h-12 rounded-2xl bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
-              <Users className="w-5 h-5" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-gold font-mono text-[11px] uppercase tracking-widest font-bold block mb-1">
-                Enrolled Students
-              </span>
-              <h2 className="text-2xl font-serif font-black text-ink truncate">
-                {course?.title || "Course"}
-              </h2>
-            </div>
-          </div>
+      <PortalPageHead
+        title={course?.title || "Course"}
+        subtitle="Everyone enrolled in this course, with how far each of them has got."
+      />
 
-          <div className="flex items-center gap-3 shrink-0">
-            <div className="text-center px-4 py-2.5 rounded-xl border border-line bg-porcelain/80">
-              <p className="text-lg font-serif font-bold text-ink">{enrolledCount}</p>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-muted">Enrolled</p>
-            </div>
-            <div className="text-center px-4 py-2.5 rounded-xl border border-line bg-porcelain/80">
-              <p className="text-lg font-serif font-bold text-emerald-700">{activeCount}</p>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-muted">Active</p>
-            </div>
-            <div className="text-center px-4 py-2.5 rounded-xl border border-line bg-porcelain/80">
-              <p className="text-lg font-serif font-bold text-gold flex items-center gap-1 justify-center">
-                <TrendingUp className="w-3.5 h-3.5" />
-                {avgProgress}%
-              </p>
-              <p className="text-[10px] font-mono uppercase tracking-widest text-muted">Avg Progress</p>
-            </div>
-          </div>
-        </div>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <PortalStat label="Enrolled" value={enrolledCount} icon={Users} />
+        <PortalStat label="Active" value={activeCount} icon={Users} tone="ok" />
+        <PortalStat label="Average progress" value={`${avgProgress}%`} icon={TrendingUp} />
       </div>
 
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <div className="relative flex-1 min-w-0">
-          <SearchBar
-            value={searchInput}
-            onChange={(value) => {
-              setSearchInput(value);
-              setPage(1);
-            }}
-            placeholder="Search by name or email..."
-            size="lg"
-          />
-        </div>
+      <PortalToolbar className="rounded-cn-p border border-cn-p-line bg-cn-p-card">
+        <SearchBar
+          tone="cobalt"
+          value={searchInput}
+          onChange={(value) => {
+            setSearchInput(value);
+            setPage(1);
+          }}
+          placeholder="Search by name or email"
+          className="w-full sm:w-[280px]"
+          size="lg"
+        />
 
-        <div className="flex items-center gap-1 rounded-xl border border-line bg-porcelain p-1 shrink-0">
-          {STATUS_FILTERS.map((filter) => (
-            <button
-              key={filter.value}
-              type="button"
-              onClick={() => {
-                setStatusFilter(filter.value);
-                setPage(1);
-              }}
-              className={`px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
-                statusFilter === filter.value
-                  ? "bg-paper text-pine shadow-xs border border-pine/20"
-                  : "text-muted hover:text-ink"
-              }`}
-            >
-              {filter.label}
-            </button>
-          ))}
-        </div>
+        <PortalSegmented
+          ariaLabel="Enrolment status"
+          value={statusFilter}
+          onChange={(value) => {
+            setStatusFilter(value);
+            setPage(1);
+          }}
+          options={STATUS_FILTERS}
+        />
 
         <div className="w-full sm:w-52 shrink-0">
-          <SearchableSelect options={SORT_OPTIONS} value={sortOption} onChange={setSortOption} size="lg" />
+          <SearchableSelect
+            tone="cobalt"
+            options={SORT_OPTIONS}
+            value={sortOption}
+            onChange={setSortOption}
+            size="lg"
+          />
         </div>
-      </div>
+      </PortalToolbar>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
+      <PortalCard className="overflow-hidden">
         {isLoading ? (
-          <div className="py-10 text-center">
-            <p className="text-sm font-medium text-muted">Loading students...</p>
+          <div className="p-10">
+            <Loader tone="cobalt" fullScreen={false} label="Loading students..." />
           </div>
         ) : paginatedStudents.length === 0 ? (
-          <div className="py-10 text-center">
-            <div className="w-12 h-12 mx-auto mb-3 rounded-2xl bg-porcelain border border-line text-muted flex items-center justify-center">
-              <Search className="w-5 h-5" />
-            </div>
-            <p className="text-sm font-medium text-muted">
-              {students.length === 0
-                ? "No students are enrolled in this course yet."
-                : "No students match your filters."}
-            </p>
-          </div>
+          <PortalEmpty
+            icon={Users}
+            title={
+              students.length === 0
+                ? "No students are enrolled in this course yet"
+                : "No students match your filters"
+            }
+            text={
+              students.length === 0
+                ? "Enrolled students appear here with their progress."
+                : "Clear the search or the status filter to see everyone again."
+            }
+          />
         ) : (
-          <DataTable columns={columns} rows={paginatedStudents} keyField="id" size="lg" />
-        )}
-        {!isLoading && (
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            totalLabel={`Showing ${Math.min((page - 1) * PAGE_SIZE + 1, filteredStudents.length)}-${Math.min(
-              page * PAGE_SIZE,
-              filteredStudents.length,
-            )} of ${filteredStudents.length}`}
+          <DataTable
+            tone="cobalt"
+            columns={columns}
+            rows={paginatedStudents}
+            keyField="id"
             size="lg"
           />
         )}
-      </div>
+        {!isLoading && (
+          <div className="px-4 pb-4">
+            <Pagination
+              tone="cobalt"
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalLabel={`Showing ${Math.min((page - 1) * PAGE_SIZE + 1, filteredStudents.length)}-${Math.min(
+                page * PAGE_SIZE,
+                filteredStudents.length,
+              )} of ${filteredStudents.length}`}
+              size="lg"
+            />
+          </div>
+        )}
+      </PortalCard>
     </div>
   );
 }

@@ -17,8 +17,13 @@ import { formatDateTime } from "@/lib/adminFormatters";
 import { QUIZ_STATUS_OPTIONS, PAGE_SIZE, BULK_FETCH_SIZE } from "./progressConstants";
 import { formatSeconds, paginate } from "./progressUtils";
 import QuizAttemptDetailModal from "./QuizAttemptDetailModal";
+import { makeSkin } from "@/lib/portalSkin";
 
-export default function QuizProgressPanel({ courseId }) {
+// Rendered by both the admin and the teacher portal, so the palette comes
+// from the caller: "porcelain" (the default, unchanged) or the signed-in
+// portal's cobalt.
+export default function QuizProgressPanel({ courseId, tone = "porcelain" }) {
+  const skin = makeSkin(tone);
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, 300);
   const [quizFilter, setQuizFilter] = useState("");
@@ -83,7 +88,7 @@ export default function QuizProgressPanel({ courseId }) {
 
   const quizFilterOptions = useMemo(
     () => [
-      { value: "", label: "All Quizzes" },
+      { value: "", label: "All quizzes" },
       ...quizzes.map((quiz) => ({ value: String(quiz.id), label: quiz.title })),
     ],
     [quizzes],
@@ -95,13 +100,13 @@ export default function QuizProgressPanel({ courseId }) {
       header: "Student",
       render: (row) => (
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-stone-800 truncate">{row.student.name}</p>
-          <p className="text-[11px] font-mono text-stone-400 truncate">{row.student.email}</p>
+          <p className={skin("text-sm font-semibold text-stone-800 truncate")}>{row.student.name}</p>
+          <p className={skin("text-[11px] font-mono text-stone-400 truncate")}>{row.student.email}</p>
         </div>
       ),
     },
     { key: "quiz", header: "Quiz", render: (row) => row.quiz.title },
-    { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} size="lg" /> },
+    { key: "status", header: "Status", render: (row) => <StatusBadge tone={tone} status={row.status} size="lg" /> },
     {
       key: "score",
       header: "Score",
@@ -114,7 +119,7 @@ export default function QuizProgressPanel({ courseId }) {
     },
     {
       key: "time_taken_seconds",
-      header: "Time Taken",
+      header: "Time taken",
       render: (row) => formatSeconds(row.time_taken_seconds),
     },
     {
@@ -132,12 +137,12 @@ export default function QuizProgressPanel({ courseId }) {
                   label: `${row.student.name} · ${row.quiz.title}`,
                 })
               }
-              className="text-xs font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer"
+              className={skin(`text-xs font-semibold transition cursor-pointer ${tone === "cobalt" ? "text-cn-p-accent hover:underline" : "font-mono text-amber-700 hover:text-amber-900"}`)}
             >
               History
             </button>
           ) : (
-            <span className="text-xs font-mono text-stone-300">—</span>
+            <span className={skin("text-xs font-mono text-stone-300")}>—</span>
           )}
         </div>
       ),
@@ -147,30 +152,30 @@ export default function QuizProgressPanel({ courseId }) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 lg:grid-cols-5 gap-4">
-        <StatCard label="Average Score" value={`${stats?.average_score ?? 0}%`} icon={Target} size="lg" />
-        <StatCard
-          label="Pass Rate"
+        <StatCard tone={tone} label="Average score" value={`${stats?.average_score ?? 0}%`} icon={Target} size="lg" />
+        <StatCard tone={tone}
+          label="Pass rate"
           value={`${stats?.pass_rate ?? 0}%`}
           icon={Trophy}
           accent="emerald"
           size="lg"
         />
-        <StatCard
-          label="Total Attempts"
+        <StatCard tone={tone}
+          label="Total attempts"
           value={stats?.total_attempts ?? "—"}
           icon={ListChecks}
           accent="stone"
           size="lg"
         />
-        <StatCard
-          label="Completed Quizzes"
+        <StatCard tone={tone}
+          label="Completed quizzes"
           value={stats?.completed_quizzes ?? "—"}
           icon={CheckCircle2}
           accent="rose"
           size="lg"
         />
-        <StatCard
-          label="Abandoned/Expired"
+        <StatCard tone={tone}
+          label="Abandoned/expired"
           value={stats?.abandoned_attempts ?? "—"}
           icon={AlertTriangle}
           accent="amber"
@@ -179,7 +184,7 @@ export default function QuizProgressPanel({ courseId }) {
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <SearchBar
+        <SearchBar tone={tone}
           value={searchInput}
           onChange={(value) => {
             setSearchInput(value);
@@ -189,7 +194,7 @@ export default function QuizProgressPanel({ courseId }) {
           size="lg"
         />
         <div className="w-full sm:w-56 shrink-0">
-          <SearchableSelect
+          <SearchableSelect tone={tone}
             options={quizFilterOptions}
             value={quizFilter}
             onChange={(value) => {
@@ -201,7 +206,7 @@ export default function QuizProgressPanel({ courseId }) {
           />
         </div>
         <div className="w-full sm:w-48 shrink-0">
-          <SearchableSelect
+          <SearchableSelect tone={tone}
             options={QUIZ_STATUS_OPTIONS}
             value={statusFilter}
             onChange={(value) => {
@@ -214,8 +219,8 @@ export default function QuizProgressPanel({ courseId }) {
         </div>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
-        <DataTable
+      <div className={skin("bg-white border border-stone-200 rounded-2xl shadow-sm p-6")}>
+        <DataTable tone={tone}
           columns={columns}
           rows={pageItems}
           keyField="rowId"
@@ -229,7 +234,7 @@ export default function QuizProgressPanel({ courseId }) {
           emptyLabel="No quizzes or attempts found."
           size="lg"
         />
-        <Pagination
+        <Pagination tone={tone}
           page={safePage}
           totalPages={totalPages}
           onPageChange={setPage}
@@ -238,41 +243,41 @@ export default function QuizProgressPanel({ courseId }) {
         />
       </div>
 
-      <Modal
+      <Modal variant={tone === "cobalt" ? "cobalt" : "classic"}
         isOpen={Boolean(attemptHistory)}
         onClose={() => setAttemptHistory(null)}
         icon={ListChecks}
-        title="Attempt History"
+        title="Attempt history"
         subtitle={attemptHistory?.label}
       >
-        {attemptsQuery.isLoading && <p className="text-sm text-stone-400">Loading...</p>}
+        {attemptsQuery.isLoading && <p className={skin("text-sm text-stone-400")}>Loading...</p>}
         <ul className="space-y-2">
           {(attemptsQuery.data || []).map((attempt) => (
             <li
               key={attempt.attempt_id}
-              className="flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-stone-100 bg-stone-50/60"
+              className={skin("flex items-center justify-between gap-3 px-3 py-2.5 rounded-lg border border-stone-100 bg-stone-50/60")}
             >
               <div>
-                <p className="text-sm font-semibold text-stone-800">Attempt {attempt.attempt_number}</p>
-                <p className="text-[11px] font-mono text-stone-400 mt-0.5">
+                <p className={skin("text-sm font-semibold text-stone-800")}>Attempt {attempt.attempt_number}</p>
+                <p className={skin("text-[11px] font-mono text-stone-400 mt-0.5")}>
                   {formatDateTime(attempt.started_at)} · {formatSeconds(attempt.time_taken_seconds)}
                 </p>
               </div>
               <div className="flex items-center gap-3">
                 <div className="text-right">
                   <p
-                    className={`text-sm font-mono font-bold ${
+                    className={skin(`text-sm font-mono font-bold ${
                       attempt.is_passed ? "text-emerald-700" : "text-rose-600"
-                    }`}
+                    }`)}
                   >
                     {attempt.percentage !== null ? `${attempt.percentage}%` : "—"}
                   </p>
-                  <p className="text-[11px] font-mono uppercase text-stone-400">{attempt.status}</p>
+                  <p className={skin("text-[11px] font-mono uppercase text-stone-400")}>{attempt.status}</p>
                 </div>
                 <button
                   type="button"
                   onClick={() => setViewingAttemptId(attempt.attempt_id)}
-                  className="text-xs font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer shrink-0"
+                  className={skin("text-xs font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer shrink-0")}
                 >
                   View
                 </button>
@@ -282,7 +287,7 @@ export default function QuizProgressPanel({ courseId }) {
         </ul>
       </Modal>
 
-      <QuizAttemptDetailModal
+      <QuizAttemptDetailModal tone={tone}
         attemptId={viewingAttemptId}
         onClose={() => setViewingAttemptId(null)}
         courseId={courseId}

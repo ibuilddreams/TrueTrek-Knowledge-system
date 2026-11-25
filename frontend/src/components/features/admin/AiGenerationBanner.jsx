@@ -45,35 +45,35 @@ export default function AiGenerationBanner({ job, onOpen, onDismiss }) {
       <section
         role="status"
         aria-live="polite"
-        className="bg-paper border border-line rounded-card shadow-soft p-4 sm:p-5"
+        className="bg-cn-p-card border border-cn-p-line rounded-cn-p p-4 sm:p-5"
       >
         <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-          <div className="w-10 h-10 shrink-0 rounded-full border-[3px] border-porcelain border-t-pine animate-spin" />
+          <div className="w-10 h-10 shrink-0 rounded-full border-[3px] border-cn-p-line border-t-cn-p-accent animate-spin" />
 
           <div className="min-w-0 flex-1">
-            <p className="text-[11px] font-mono uppercase tracking-widest text-muted flex items-center gap-1.5">
-              <Sparkles className="w-3.5 h-3.5 text-pine" />
+            <p className="text-[11px] text-cn-p-ink-2 flex items-center gap-1.5">
+              <Sparkles className="w-3.5 h-3.5 text-cn-p-accent" />
               Generating with AI
             </p>
-            <p className="text-sm font-semibold text-ink mt-1 truncate">
+            <p className="text-sm font-semibold text-cn-p-ink mt-1 truncate">
               {job.step || "Starting..."}
             </p>
             {job.step_detail && (
-              <p className="text-xs text-ink/70 truncate">{job.step_detail}</p>
+              <p className="text-xs text-cn-p-ink-2 truncate">{job.step_detail}</p>
             )}
 
-            <div className="mt-2 h-2 bg-porcelain rounded-full overflow-hidden">
+            <div className="mt-2 h-2 bg-cn-p-page rounded-full overflow-hidden">
               <div
-                className="h-full bg-pine transition-all duration-500"
+                className="h-full bg-cn-p-accent transition-all duration-500"
                 style={{ width: `${job.progress_percent || 0}%` }}
               />
             </div>
-            <p className="mt-2 text-[11px] font-mono text-muted">
+            <p className="mt-2 text-[11px] text-cn-p-ink-2">
               {job.progress_percent || 0}% · {formatElapsed(elapsed)} elapsed · this keeps
               running if you close it or switch tabs.
             </p>
             {isStalled && (
-              <p className="mt-1 text-[11px] font-mono text-gold">
+              <p className="mt-1 text-[11px] text-cn-p-soft-ink">
                 No new progress from the AI service for {formatElapsed(sinceLastChange)} —
                 still waiting, not given up on.
               </p>
@@ -83,9 +83,9 @@ export default function AiGenerationBanner({ job, onOpen, onDismiss }) {
           <button
             type="button"
             onClick={onOpen}
-            className="shrink-0 px-4 py-2.5 bg-paper hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-xl tracking-wider border border-line shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="shrink-0 px-4 py-2.5 bg-cn-p-card hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-xl border border-cn-p-line transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
-            View Progress
+            View progress
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
@@ -95,19 +95,19 @@ export default function AiGenerationBanner({ job, onOpen, onDismiss }) {
 
   if (job.status === "FAILED") {
     return (
-      <section className="border border-red-200 bg-red-50/70 rounded-card shadow-soft p-4 sm:p-5">
+      <section className="border border-cn-p-bad-bg bg-cn-p-bad-bg rounded-cn-p p-4 sm:p-5">
         <div className="flex flex-col sm:flex-row sm:items-start gap-4">
-          <XCircle className="w-6 h-6 shrink-0 text-red-600" />
+          <XCircle className="w-6 h-6 shrink-0 text-cn-p-bad" />
 
           <div className="min-w-0 flex-1">
-            <p className="text-sm font-bold text-ink">AI course generation failed</p>
-            <p className="text-[11px] font-mono text-muted mt-0.5">
+            <p className="text-sm font-bold text-cn-p-ink">AI course generation failed</p>
+            <p className="text-[11px] text-cn-p-ink-2 mt-0.5">
               No course was created — nothing was saved.
             </p>
             {job.error_message && (
               /* Clamped: a generation that failed before the service's own error
                  was parsed still carries a raw JSON body here. */
-              <p className="mt-2 text-xs text-red-800 leading-relaxed max-h-20 overflow-y-auto break-words whitespace-pre-wrap">
+              <p className="mt-2 text-xs text-cn-p-bad leading-relaxed max-h-20 overflow-y-auto break-words whitespace-pre-wrap">
                 {job.error_message}
               </p>
             )}
@@ -117,10 +117,10 @@ export default function AiGenerationBanner({ job, onOpen, onDismiss }) {
             <button
               type="button"
               onClick={onOpen}
-              className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+              className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
             >
               <RotateCcw className="w-3.5 h-3.5" />
-              Try Again
+              Try again
             </button>
             <DismissButton onDismiss={onDismiss} label="Dismiss this failed generation" />
           </div>
@@ -131,10 +131,10 @@ export default function AiGenerationBanner({ job, onOpen, onDismiss }) {
 
   if (job.status === "CANCELLED") {
     return (
-      <section className="bg-paper border border-line rounded-card shadow-soft p-4 sm:p-5">
+      <section className="bg-cn-p-card border border-cn-p-line rounded-cn-p p-4 sm:p-5">
         <div className="flex items-center gap-4">
-          <AlertTriangle className="w-5 h-5 shrink-0 text-muted" />
-          <p className="text-sm font-semibold text-ink flex-1">AI course generation cancelled</p>
+          <AlertTriangle className="w-5 h-5 shrink-0 text-cn-p-ink-2" />
+          <p className="text-sm font-semibold text-cn-p-ink flex-1">AI course generation cancelled</p>
           <DismissButton onDismiss={onDismiss} label="Dismiss this cancelled generation" />
         </div>
       </section>
@@ -142,18 +142,18 @@ export default function AiGenerationBanner({ job, onOpen, onDismiss }) {
   }
 
   return (
-    <section className="border border-emerald-200 bg-emerald-50/60 rounded-card shadow-soft p-4 sm:p-5">
+    <section className="border border-cn-p-ok-bg bg-cn-p-ok-bg rounded-cn-p p-4 sm:p-5">
       <div className="flex flex-col sm:flex-row sm:items-center gap-4">
-        <CheckCircle2 className="w-6 h-6 shrink-0 text-emerald-600" />
+        <CheckCircle2 className="w-6 h-6 shrink-0 text-cn-p-ok" />
 
         <div className="min-w-0 flex-1">
-          <p className="text-[11px] font-mono uppercase tracking-widest text-emerald-700">
+          <p className="text-[11px] text-cn-p-ok">
             Course generated
           </p>
-          <p className="text-sm font-bold text-ink mt-0.5 truncate">
+          <p className="text-sm font-bold text-cn-p-ink mt-0.5 truncate">
             {job.course?.title || "Draft course ready"}
           </p>
-          <p className="text-[11px] font-mono text-muted mt-0.5">
+          <p className="text-[11px] text-cn-p-ink-2 mt-0.5">
             Saved as {job.course?.status || "DRAFT"} — it is in the list below.
             {warningCount > 0 &&
               ` ${warningCount} item${warningCount === 1 ? "" : "s"} need attention.`}
@@ -164,7 +164,7 @@ export default function AiGenerationBanner({ job, onOpen, onDismiss }) {
           <button
             type="button"
             onClick={onOpen}
-            className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             Review &amp; Edit
             <ArrowRight className="w-3.5 h-3.5" />
@@ -183,7 +183,7 @@ function DismissButton({ onDismiss, label }) {
       onClick={onDismiss}
       title={label}
       aria-label={label}
-      className="p-2.5 rounded-xl text-muted hover:text-ink hover:bg-paper/70 transition-colors cursor-pointer"
+      className="p-2.5 rounded-xl text-cn-p-ink-2 hover:text-cn-p-ink hover:bg-cn-p-page transition-colors cursor-pointer"
     >
       <X className="w-4 h-4" />
     </button>

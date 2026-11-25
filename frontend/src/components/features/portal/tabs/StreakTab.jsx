@@ -21,7 +21,7 @@ function BackToPortalLink({ onBack }) {
       className="inline-flex items-center gap-1.5 px-3.5 py-2 border text-xs font-mono uppercase tracking-wider rounded-xl transition border-line hover:border-pine hover:text-pine text-muted"
     >
       <ArrowLeft className="w-3.5 h-3.5" />
-      Back to Dashboard
+      Back to dashboard
     </button>
   );
 }
@@ -70,10 +70,10 @@ export default function StreakTab({ onBack }) {
       <BackToPortalLink onBack={onBack} />
 
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-        <StatCard label="Current Streak" value={`${data.current_streak} Days`} icon={Flame} accent="amber" />
-        <StatCard label="Longest Streak" value={`${data.longest_streak} Days`} icon={Trophy} accent="emerald" />
+        <StatCard label="Current streak" value={`${data.current_streak} Days`} icon={Flame} accent="amber" />
+        <StatCard label="Longest streak" value={`${data.longest_streak} Days`} icon={Trophy} accent="emerald" />
         <StatCard
-          label="Active Days"
+          label="Active days"
           value={data.total_active_days}
           icon={CalendarCheck}
           accent="stone"
@@ -85,7 +85,7 @@ export default function StreakTab({ onBack }) {
         <div className="flex items-center justify-between mb-5">
           <p className="flex items-center gap-1.5 text-xs font-mono uppercase tracking-wider text-muted">
             <Flame className="w-3.5 h-3.5 text-gold" />
-            Daily Drill Activity
+            Daily drill activity
           </p>
           <div className="flex items-center gap-1.5 text-[10px] font-mono uppercase tracking-wider">
             <span className="text-muted">Missed</span>

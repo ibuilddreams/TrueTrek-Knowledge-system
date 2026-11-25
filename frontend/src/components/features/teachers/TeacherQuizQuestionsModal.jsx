@@ -49,32 +49,30 @@ function SortableTeacherQuestionRow({ question, onEdit, onDelete, onManageChoice
     <li
       ref={setNodeRef}
       style={style}
-      className={`p-3 rounded-xl border border-line bg-paper ${
-        isDragging ? "z-10 shadow-lg opacity-90" : ""
-      }`}
+      className={`p-3 rounded-xl border border-cn-p-line bg-cn-p-card ${ isDragging ? "z-10 shadow-lg opacity-90" : "" }`}
     >
       <div className="flex items-start gap-3">
         <span
           {...attributes}
           {...listeners}
-          className="text-muted cursor-grab shrink-0 touch-none mt-1.5"
+          className="text-cn-p-ink-2 cursor-grab shrink-0 touch-none mt-1.5"
           title="Drag to reorder"
           aria-hidden="true"
         >
           <GripVertical className="w-4 h-4" />
         </span>
-        <div className="w-8 h-8 rounded-lg bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0 text-sm font-bold font-mono">
+        <div className="w-8 h-8 rounded-lg bg-cn-p-soft border border-cn-p-soft text-cn-p-soft-ink flex items-center justify-center shrink-0 text-sm font-bold">
           {question.order ?? "—"}
         </div>
         <div className="min-w-0 flex-1">
-          <p className="text-sm font-semibold text-ink">{question.text}</p>
-          <p className="text-[11px] font-mono uppercase text-muted tracking-wider mt-1 flex items-center gap-1.5 flex-wrap">
+          <p className="text-sm font-semibold text-cn-p-ink">{question.text}</p>
+          <p className="text-[11px] text-cn-p-ink-2 mt-1 flex items-center gap-1.5 flex-wrap">
             <span>{QUESTION_TYPE_LABELS[question.question_type] || question.question_type}</span>
-            <span className="text-muted">·</span>
+            <span className="text-cn-p-ink-2">·</span>
             <span>{question.marks} mark{question.marks === 1 ? "" : "s"}</span>
             {question.question_type !== "SHORT_ANSWER" && (
               <>
-                <span className="text-muted">·</span>
+                <span className="text-cn-p-ink-2">·</span>
                 <span>{question.choices?.length || 0} choice{question.choices?.length === 1 ? "" : "s"}</span>
               </>
             )}
@@ -87,7 +85,7 @@ function SortableTeacherQuestionRow({ question, onEdit, onDelete, onManageChoice
               onClick={() => onManageChoices(question)}
               title="Manage choices"
               aria-label="Manage choices"
-              className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
+              className="w-7 h-7 flex items-center justify-center rounded-lg border border-cn-p-line bg-cn-p-card text-cn-p-ink-2 hover:bg-cn-p-page transition cursor-pointer"
             >
               <ListChecks className="w-3.5 h-3.5" />
             </button>
@@ -97,7 +95,7 @@ function SortableTeacherQuestionRow({ question, onEdit, onDelete, onManageChoice
             onClick={() => onEdit(question)}
             title="Edit question"
             aria-label="Edit question"
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-cn-p-line bg-cn-p-card text-cn-p-ink-2 hover:bg-cn-p-page transition cursor-pointer"
           >
             <Edit3 className="w-3.5 h-3.5" />
           </button>
@@ -106,7 +104,7 @@ function SortableTeacherQuestionRow({ question, onEdit, onDelete, onManageChoice
             onClick={() => onDelete(question)}
             title="Delete question"
             aria-label="Delete question"
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-line text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-cn-p-line text-cn-p-bad hover:bg-cn-p-bad-bg transition cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -207,19 +205,19 @@ export default function TeacherQuizQuestionsModal({ isOpen, onClose, quiz }) {
 
   return (
     <>
-      <Modal
+      <Modal variant="cobalt"
         isOpen={isOpen && !isFormOpen}
         onClose={onClose}
         icon={HelpCircle}
-        title="Quiz Questions"
+        title="Quiz questions"
         subtitle={quiz?.title}
         maxWidth="max-w-2xl"
       >
         <div className="space-y-3">
           {questionsQuery.isLoading ? (
-            <Loader fullScreen={false} label="Loading questions..." />
+            <Loader tone="cobalt" fullScreen={false} label="Loading questions..." />
           ) : displayQuestions.length === 0 ? (
-            <EmptyState
+            <EmptyState tone="portal"
               icon={HelpCircle}
               label="No questions yet."
               description="Add questions for students to answer in this quiz."
@@ -250,10 +248,10 @@ export default function TeacherQuizQuestionsModal({ isOpen, onClose, quiz }) {
           <button
             type="button"
             onClick={openAddQuestion}
-            className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-line rounded-lg text-xs font-mono uppercase tracking-wider text-muted hover:border-pine hover:text-pine transition cursor-pointer"
+            className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-cn-p-line rounded-lg text-xs text-cn-p-ink-2 hover:border-cn-p-accent hover:text-cn-p-accent transition cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
-            Add Question
+            Add question
           </button>
         </div>
       </Modal>
@@ -273,12 +271,12 @@ export default function TeacherQuizQuestionsModal({ isOpen, onClose, quiz }) {
         quizId={quizId}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog variant="cobalt"
         isOpen={Boolean(deletingQuestion)}
         onClose={() => setDeletingQuestion(null)}
         onConfirm={() => deleteMutation.mutate(deletingQuestion.id)}
         isConfirming={deleteMutation.isPending}
-        title="Delete Question"
+        title="Delete question"
         message="Are you sure you want to delete this question? This cannot be undone."
         confirmLabel="Delete"
         size="lg"

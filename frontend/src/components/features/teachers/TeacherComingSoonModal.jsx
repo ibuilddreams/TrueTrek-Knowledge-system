@@ -5,14 +5,14 @@ import Modal from "@/components/ui/Modal";
 
 export default function TeacherComingSoonModal({ isOpen, onClose, title, description }) {
   return (
-    <Modal isOpen={isOpen} onClose={onClose} icon={Sparkles} title={title} subtitle={description} maxWidth="max-w-sm">
+    <Modal variant="cobalt" isOpen={isOpen} onClose={onClose} icon={Sparkles} title={title} subtitle={description} maxWidth="max-w-sm">
       <div className="flex justify-end mt-2">
         <button
           type="button"
           onClick={onClose}
-          className="px-6 py-3 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-all cursor-pointer"
+          className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all cursor-pointer"
         >
-          Got It
+          Got it
         </button>
       </div>
     </Modal>

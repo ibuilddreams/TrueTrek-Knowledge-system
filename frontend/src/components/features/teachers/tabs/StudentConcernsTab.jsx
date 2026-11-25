@@ -9,7 +9,11 @@ import { formatDateTime } from "@/lib/adminFormatters";
 import DataTable from "@/components/ui/DataTable";
 import Pagination from "@/components/ui/Pagination";
 import StatusBadge from "@/components/ui/StatusBadge";
-import EmptyState from "@/components/ui/EmptyState";
+import PortalCard from "@/components/features/portal/shell/PortalCard";
+import {
+  PortalEmpty,
+  PortalPageHead,
+} from "@/components/features/portal/shell/PortalUI";
 import StudentConcernDetailModal from "../StudentConcernDetailModal";
 
 const PAGE_SIZE = 10;
@@ -35,8 +39,8 @@ export default function StudentConcernsTab() {
       header: "Student",
       render: (concern) => (
         <div>
-          <span className="font-semibold text-ink">{concern.student?.name}</span>
-          <p className="text-[11px] text-muted font-light">{concern.student?.email}</p>
+          <span className="font-semibold text-cn-p-ink">{concern.student?.name}</span>
+          <p className="text-[11px] text-cn-p-ink-2 font-light">{concern.student?.email}</p>
         </div>
       ),
     },
@@ -44,56 +48,53 @@ export default function StudentConcernsTab() {
       key: "category",
       header: "Category",
       render: (concern) => (
-        <span className="text-muted font-mono text-xs">{concern.category_display}</span>
+        <span className="text-cn-p-ink-2 text-xs">{concern.category_display}</span>
       ),
     },
     {
       key: "requires_admin_attention",
-      header: "Admin Notified",
+      header: "Admin notified",
       render: (concern) =>
         concern.requires_admin_attention ? (
-          <span className="inline-flex items-center gap-1 text-[11px] font-mono uppercase text-rose-700">
+          <span className="inline-flex items-center gap-1 text-[11px] text-cn-p-bad">
             <ShieldAlert className="w-3.5 h-3.5" />
             Yes
           </span>
         ) : (
-          <span className="text-[11px] font-mono uppercase text-muted">No</span>
+          <span className="text-[11px] text-cn-p-ink-2">No</span>
         ),
     },
     {
       key: "status",
       header: "Status",
-      render: (concern) => <StatusBadge size="lg" status={concern.status} />,
+      render: (concern) => <StatusBadge tone="cobalt" size="lg" status={concern.status} />,
     },
     {
       key: "created_at",
       header: "Flagged",
       render: (concern) => (
-        <span className="text-muted whitespace-nowrap">{formatDateTime(concern.created_at)}</span>
+        <span className="text-cn-p-ink-2 whitespace-nowrap">{formatDateTime(concern.created_at)}</span>
       ),
     },
   ];
 
   return (
-    <div className="space-y-5">
-      <div>
-        <h2 className="text-lg font-serif font-bold text-ink">Flagged Student Concerns</h2>
-        <p className="text-sm text-muted font-light mt-0.5">
-          Concerns you've flagged from a student's dossier, and how the admin team resolved them.
-        </p>
-      </div>
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Student concerns"
+        subtitle="Concerns you have flagged and where the admin team has got to."
+      />
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
+      <PortalCard className="overflow-hidden">
         {!isLoading && !isError && concerns.length === 0 ? (
-          <EmptyState
-            size="lg"
+          <PortalEmpty
             icon={ShieldAlert}
-            label="You haven't flagged any student concerns yet."
-            description="Open a student's dossier from Enrollment & Scores to flag a concern."
+            title="You haven't flagged any student concerns yet."
+            text="Open a student from Students & scores and choose Flag concern."
           />
         ) : (
           <>
-            <DataTable
+            <DataTable tone="cobalt"
               size="lg"
               columns={columns}
               rows={concerns}
@@ -103,16 +104,19 @@ export default function StudentConcernsTab() {
               onRowClick={setSelectedConcern}
               emptyLabel="You haven't flagged any student concerns yet."
             />
-            <Pagination
-              size="lg"
-              page={page}
-              totalPages={totalPages}
-              onPageChange={setPage}
-              totalLabel={`${data?.count || 0} concern${(data?.count || 0) === 1 ? "" : "s"}`}
-            />
+            <div className="px-4 pb-4">
+              <Pagination
+                tone="cobalt"
+                size="lg"
+                page={page}
+                totalPages={totalPages}
+                onPageChange={setPage}
+                totalLabel={`${data?.count || 0} concern${(data?.count || 0) === 1 ? "" : "s"}`}
+              />
+            </div>
           </>
         )}
-      </div>
+      </PortalCard>
 
       <StudentConcernDetailModal
         isOpen={Boolean(selectedConcern)}

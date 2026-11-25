@@ -61,7 +61,7 @@ export default function CertificateModal({ certificate, studentName, onClose }) 
               className="inline-flex h-11 items-center justify-center gap-2 rounded-cn-p-sm bg-cn-p-accent px-[18px] text-sm font-semibold text-white transition-colors duration-150 hover:bg-cn-p-accent-hover"
             >
               <Printer className="w-4 h-4" />
-              Print / Save as PDF
+              Print / save as PDF
             </button>
           </div>
         </div>

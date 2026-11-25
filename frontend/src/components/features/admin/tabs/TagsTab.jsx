@@ -14,6 +14,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import EmptyState from "@/components/ui/EmptyState";
 import IconBadge from "@/components/ui/IconBadge";
 import TagFormModal from "@/components/features/admin/TagFormModal";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 
 const PAGE_SIZE = 12;
 
@@ -74,79 +75,84 @@ export default function TagsTab() {
   };
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search tags by name..." />
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Tags"
+        subtitle="Free-form labels that help students and teachers find courses."
+      />
+
+      <div className="flex flex-col gap-3 rounded-cn-p border border-cn-p-line bg-cn-p-card p-4 sm:flex-row sm:items-center sm:justify-between">
+        <SearchBar tone="cobalt" size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search tags by name..." />
 
         <button
           type="button"
           onClick={() => setIsFormOpen(true)}
-          className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2 shrink-0"
+          className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center gap-2 shrink-0"
           title="Create a new tag"
           aria-label="Create a new tag"
         >
           <TagIcon className="w-4 h-4" />
-          ADD TAG
+          Add tag
         </button>
       </div>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
         {isLoading ? (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {Array.from({ length: 6 }).map((_, index) => (
               <div
                 key={index}
-                className="flex items-center gap-3 p-4 rounded-xl border border-line bg-porcelain/60 animate-pulse"
+                className="flex items-center gap-3 p-4 rounded-xl border border-cn-p-line bg-cn-p-page animate-pulse"
               >
-                <div className="w-9 h-9 rounded-lg bg-line shrink-0" />
+                <div className="w-9 h-9 rounded-lg bg-cn-p-line shrink-0" />
                 <div className="flex-1 space-y-2">
-                  <div className="h-3 w-2/3 rounded bg-line" />
-                  <div className="h-2.5 w-1/3 rounded bg-line" />
+                  <div className="h-3 w-2/3 rounded bg-cn-p-line" />
+                  <div className="h-2.5 w-1/3 rounded bg-cn-p-line" />
                 </div>
               </div>
             ))}
           </div>
         ) : isError ? (
           <div className="flex flex-col items-center justify-center gap-3 py-10 text-center">
-            <div className="w-10 h-10 bg-rose-50 border border-rose-100 text-rose-600 rounded-xl flex items-center justify-center">
+            <div className="w-10 h-10 bg-cn-p-bad-bg border border-cn-p-bad-bg text-cn-p-bad rounded-xl flex items-center justify-center">
               <AlertCircle className="w-5 h-5" />
             </div>
-            <p className="text-sm text-muted font-light">
+            <p className="text-sm text-cn-p-ink-2 font-light">
               {getApiErrorMessage(error, "Unable to load tags.")}
             </p>
             <button
               type="button"
               onClick={refetch}
-              className="inline-flex items-center gap-2 px-4 py-2 bg-pine hover:bg-moss text-paper font-bold font-mono text-xs uppercase tracking-wider rounded-lg transition"
+              className="inline-flex items-center gap-2 px-4 py-2 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white font-bold text-xs rounded-cn-p-sm transition"
             >
               <RefreshCw className="w-3.5 h-3.5" />
               Retry
             </button>
           </div>
         ) : paginatedTags.length === 0 ? (
-          <EmptyState size="lg" icon={TagIcon} label="No tags found." />
+          <EmptyState tone="portal" size="lg" icon={TagIcon} label="No tags found." />
         ) : (
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {paginatedTags.map((tag) => (
               <div
                 key={tag.id}
-                className="group flex items-center gap-3 p-4 rounded-xl border border-line bg-porcelain/60 hover:bg-paper hover:border-gold/30 hover:shadow-sm transition-all"
+                className="group flex items-center gap-3 p-4 rounded-xl border border-cn-p-line bg-cn-p-page hover:bg-cn-p-card hover:border-cn-p-soft hover:shadow-sm transition-all"
               >
                 <IconBadge
                   icon={TagIcon}
                   size="w-9 h-9"
                   iconSize="w-4 h-4"
-                  className="bg-gold/12 text-gold rounded-lg border border-gold/25 shrink-0"
+                  className="bg-cn-p-soft text-cn-p-soft-ink rounded-lg border border-cn-p-soft shrink-0"
                 />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-ink truncate">{tag.name}</p>
-                  <p className="text-xs font-mono text-muted truncate">/{tag.slug}</p>
+                  <p className="text-sm font-semibold text-cn-p-ink truncate">{tag.name}</p>
+                  <p className="text-xs text-cn-p-ink-2 truncate">/{tag.slug}</p>
                 </div>
                 <ActionMenu
                   actions={[
                     {
                       key: "edit",
-                      label: "Edit Tag",
+                      label: "Edit tag",
                       icon: Edit3,
                       onSelect: () => setEditingTag(tag),
                     },
@@ -164,12 +170,18 @@ export default function TagsTab() {
           </div>
         )}
 
-        <Pagination size="lg"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalLabel={`${filteredTags.length} tag${filteredTags.length === 1 ? "" : "s"}`}
-        />
+        <div className="px-4 pb-4">
+
+
+          <Pagination tone="cobalt" size="lg"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalLabel={`${filteredTags.length} tag${filteredTags.length === 1 ? "" : "s"}`}
+          />
+
+
+        </div>
       </div>
 
       <TagFormModal
@@ -181,12 +193,12 @@ export default function TagsTab() {
         }}
       />
 
-      <ConfirmDialog size="lg"
+      <ConfirmDialog variant="cobalt" size="lg"
         isOpen={Boolean(deletingTag)}
         onClose={() => setDeletingTag(null)}
         onConfirm={handleDeleteConfirm}
         isConfirming={deleteTagMutation.isPending}
-        title="Delete Tag"
+        title="Delete tag"
         message={`Are you sure you want to delete "${deletingTag?.name}"? This cannot be undone.`}
         confirmLabel="Delete"
       />

@@ -87,12 +87,12 @@ const INITIAL_FORM = {
 const TERMINAL_STATUSES = ["SUCCEEDED", "PARTIAL", "FAILED", "CANCELLED"];
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
+  "w-full px-3 py-3 bg-cn-p-card border border-cn-p-line-2 focus:border-cn-p-accent focus:outline-none rounded-cn-p-sm text-sm text-cn-p-ink placeholder:text-cn-p-muted transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
+  "block mb-1.5 text-[13px] font-semibold text-cn-p-ink";
 
-const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-[11px] text-cn-p-bad mt-1";
 
 function StepDots({ step }) {
   return (
@@ -100,24 +100,16 @@ function StepDots({ step }) {
       {STEPS.map((item, index) => (
         <div key={item.key} className="flex items-center gap-2">
           <div
-            className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-mono font-bold transition-colors ${
-              step === item.key
-                ? "bg-pine text-paper"
-                : step > item.key
-                  ? "bg-gold/12 text-gold"
-                  : "bg-porcelain text-muted"
-            }`}
+            className={`w-6 h-6 rounded-full flex items-center justify-center text-[11px] font-bold transition-colors ${ step === item.key ? "bg-cn-p-accent text-white" : step > item.key ? "bg-cn-p-soft text-cn-p-soft-ink" : "bg-cn-p-page text-cn-p-ink-2" }`}
           >
             {item.key}
           </div>
           <span
-            className={`text-[11px] font-mono uppercase tracking-wider ${
-              step === item.key ? "text-ink font-semibold" : "text-muted"
-            }`}
+            className={`text-[11px] ${ step === item.key ? "text-cn-p-ink font-semibold" : "text-cn-p-ink-2" }`}
           >
             {item.label}
           </span>
-          {index < STEPS.length - 1 && <div className="w-6 h-px bg-line" />}
+          {index < STEPS.length - 1 && <div className="w-6 h-px bg-cn-p-line" />}
         </div>
       ))}
     </div>
@@ -434,7 +426,7 @@ export default function AiCourseModal({
   };
 
   const isSubmitting = startMutation.isPending;
-  const modalTitle = phase === "form" ? "Create Course with AI" : "AI Course Generation";
+  const modalTitle = phase === "form" ? "Create course with AI" : "AI course generation";
   const modalSubtitle =
     phase === "form"
       ? "Generate a full draft curriculum from a title, description, and structure."
@@ -443,7 +435,7 @@ export default function AiCourseModal({
         : "Starting...";
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={Sparkles}
@@ -483,7 +475,7 @@ export default function AiCourseModal({
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
-                  <SearchableSelect size="lg"
+                  <SearchableSelect tone="cobalt" size="lg"
                     label="Category"
                     placeholder="Select a category"
                     searchPlaceholder="Search categories..."
@@ -500,7 +492,7 @@ export default function AiCourseModal({
                 </div>
 
                 <div>
-                  <SearchableSelect size="lg"
+                  <SearchableSelect tone="cobalt" size="lg"
                     label="Difficulty"
                     options={DIFFICULTY_OPTIONS}
                     value={form.difficulty}
@@ -510,7 +502,7 @@ export default function AiCourseModal({
               </div>
 
               <div>
-                <MultiSelect size="lg"
+                <MultiSelect tone="cobalt" size="lg"
                   label="Instructors"
                   placeholder="Select instructors"
                   searchPlaceholder="Search instructors..."
@@ -523,7 +515,7 @@ export default function AiCourseModal({
                   loading={isLoadingOptions}
                   emptyLabel="No teachers found."
                 />
-                <p className="mt-1.5 text-[11px] font-mono text-muted">
+                <p className="mt-1.5 text-[11px] text-cn-p-ink-2">
                   Required — a course with no instructor can never be enrolled.
                 </p>
                 {fieldErrors.instructors && <p className={ERROR_CLASS}>{fieldErrors.instructors}</p>}
@@ -547,7 +539,7 @@ export default function AiCourseModal({
 
           {step === 2 && (
             <div className="space-y-4">
-              <p className="text-[11px] font-mono text-muted">
+              <p className="text-[11px] text-cn-p-ink-2">
                 Everything on this step is optional — it steers the AI&apos;s tone and
                 coverage. Skip it and the AI decides for itself.
               </p>
@@ -562,28 +554,28 @@ export default function AiCourseModal({
                   className={FIELD_CLASS}
                   autoComplete="off"
                 />
-                <p className="mt-1.5 text-[11px] font-mono text-muted">
+                <p className="mt-1.5 text-[11px] text-cn-p-ink-2">
                   Who the course is written for — sets the reading level, tone, and the
                   kind of examples used.
                 </p>
               </div>
 
-              <LearningOutcomesField
+              <LearningOutcomesField tone="cobalt"
                 values={objectives}
                 onChange={(next) => {
                   setObjectives(next);
                   setFieldErrors((prev) => ({ ...prev, objectives: null }));
                 }}
                 error={fieldErrors.objectives}
-                label="Learning Objectives"
+                label="Learning objectives"
                 hint={`Teaching targets every module must cover between them. Leave this empty and the AI proposes its own — either way it writes the course's "What you'll learn" points for you.`}
                 placeholderExample="Understand NCAA eligibility rules"
                 itemNoun="objective"
               />
 
               <div>
-                <SearchableSelect size="lg"
-                  label="Tier Context"
+                <SearchableSelect tone="cobalt" size="lg"
+                  label="Tier context"
                   placeholder="No tier context"
                   searchPlaceholder="Search tiers..."
                   options={tierOptions}
@@ -592,7 +584,7 @@ export default function AiCourseModal({
                   loading={tiersQuery.isLoading}
                   emptyLabel="No tiers found."
                 />
-                <p className="mt-1.5 text-[11px] font-mono text-muted">
+                <p className="mt-1.5 text-[11px] text-cn-p-ink-2">
                   Read-only context for tone/audience — the AI never attaches this course to a tier.
                 </p>
               </div>
@@ -630,14 +622,14 @@ export default function AiCourseModal({
                 </div>
               </div>
 
-              <div className="flex items-center gap-3 p-3 rounded-xl border border-line bg-porcelain/60">
+              <div className="flex items-center gap-3 p-3 rounded-xl border border-cn-p-line bg-cn-p-page">
                 <input
                   type="checkbox"
                   id="include_quizzes"
                   checked={form.include_quizzes}
                   onChange={updateField("include_quizzes")}
                 />
-                <label htmlFor="include_quizzes" className="text-sm font-mono text-muted flex-1">
+                <label htmlFor="include_quizzes" className="text-sm text-cn-p-ink-2 flex-1">
                   Include a quiz per module
                 </label>
                 {form.include_quizzes && (
@@ -655,33 +647,33 @@ export default function AiCourseModal({
               </div>
               {fieldErrors.questions_per_quiz && <p className={ERROR_CLASS}>{fieldErrors.questions_per_quiz}</p>}
 
-              <div className="flex items-center gap-3 p-3 rounded-xl border border-line bg-porcelain/60">
+              <div className="flex items-center gap-3 p-3 rounded-xl border border-cn-p-line bg-cn-p-page">
                 <input
                   type="checkbox"
                   id="include_assignments"
                   checked={form.include_assignments}
                   onChange={updateField("include_assignments")}
                 />
-                <label htmlFor="include_assignments" className="text-sm font-mono text-muted flex-1">
+                <label htmlFor="include_assignments" className="text-sm text-cn-p-ink-2 flex-1">
                   Include an assignment per module
                 </label>
               </div>
 
               {(form.include_quizzes || form.include_assignments) && (
-                <div className="flex items-center gap-3 p-3 rounded-xl border border-line bg-porcelain/60">
+                <div className="flex items-center gap-3 p-3 rounded-xl border border-cn-p-line bg-cn-p-page">
                   <input
                     type="checkbox"
                     id="ai_grading"
                     checked={form.ai_grading}
                     onChange={updateField("ai_grading")}
                   />
-                  <label htmlFor="ai_grading" className="text-sm font-mono text-muted flex-1">
+                  <label htmlFor="ai_grading" className="text-sm text-cn-p-ink-2 flex-1">
                     AI-grade generated quizzes &amp; assignments
                   </label>
                 </div>
               )}
               {(form.include_quizzes || form.include_assignments) && (
-                <p className="text-[11px] font-mono text-muted -mt-2">
+                <p className="text-[11px] text-cn-p-ink-2 -mt-2">
                   When enabled, short-answer quiz questions and assignment submissions from this
                   course are graded automatically by AI instead of waiting on manual review.
                 </p>
@@ -696,7 +688,7 @@ export default function AiCourseModal({
                   onChange={updateField("weeks_between_modules")}
                   className={FIELD_CLASS}
                 />
-                <p className="mt-1.5 text-[11px] font-mono text-muted">
+                <p className="mt-1.5 text-[11px] text-cn-p-ink-2">
                   Used to space out assignment due dates.
                 </p>
                 {fieldErrors.weeks_between_modules && (
@@ -717,12 +709,12 @@ export default function AiCourseModal({
             </div>
           )}
 
-          <div className="flex items-center justify-between gap-3 mt-6 pt-5 border-t border-line">
+          <div className="flex items-center justify-between gap-3 mt-6 pt-5 border-t border-cn-p-line">
             <button
               type="button"
               onClick={step === 1 ? handleClose : () => goToStep(step - 1)}
               disabled={isSubmitting}
-              className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-all flex items-center justify-center gap-2 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+              className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 border border-cn-p-line disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >
               {step === 1 ? (
                 <>
@@ -741,7 +733,7 @@ export default function AiCourseModal({
               <button
                 type="button"
                 onClick={() => goToStep(step + 1)}
-                className="px-6 py-3 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 Next
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -751,17 +743,17 @@ export default function AiCourseModal({
                 type="button"
                 onClick={handleGenerate}
                 disabled={isSubmitting}
-                className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-lg tracking-wider uppercase shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 {isSubmitting ? (
                   <>
-                    <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+                    <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                     Starting...
                   </>
                 ) : (
                   <>
                     <Sparkles className="w-3.5 h-3.5" />
-                    Generate Course
+                    Generate course
                   </>
                 )}
               </button>
@@ -773,33 +765,33 @@ export default function AiCourseModal({
       {phase === "generating" && (
         <div className="py-4">
           <div className="flex flex-col items-center text-center gap-4 py-6">
-            <div className="w-14 h-14 rounded-full border-4 border-porcelain border-t-pine animate-spin" />
+            <div className="w-14 h-14 rounded-full border-4 border-cn-p-line border-t-cn-p-accent animate-spin" />
             <div>
-              <p className="text-sm font-semibold text-ink">{job?.step || "Starting..."}</p>
+              <p className="text-sm font-semibold text-cn-p-ink">{job?.step || "Starting..."}</p>
               {/* The AI service reports a coarse stage and a fuller sentence for
                   the same moment; this is the sentence, shown only when it says
                   more than the step above already does. */}
               {job?.step_detail && (
-                <p className="text-xs text-ink/70 mt-1">{job.step_detail}</p>
+                <p className="text-xs text-cn-p-ink-2 mt-1">{job.step_detail}</p>
               )}
-              <p className="text-xs font-mono text-muted mt-1">
+              <p className="text-xs text-cn-p-ink-2 mt-1">
                 This can take a while, and it is never given up on. Hide this and keep
                 working — the Courses page tracks it and tells you how it ended.
               </p>
             </div>
             <div className="w-full">
-              <div className="w-full h-2 bg-porcelain rounded-full overflow-hidden">
+              <div className="w-full h-2 bg-cn-p-page rounded-full overflow-hidden">
                 <div
-                  className="h-full bg-pine transition-all duration-500"
+                  className="h-full bg-cn-p-accent transition-all duration-500"
                   style={{ width: `${progressPercent}%` }}
                 />
               </div>
               <div className="flex items-center justify-between mt-2">
-                <span className="text-[11px] font-mono text-muted">{progressPercent}%</span>
-                <span className="text-[11px] font-mono text-muted">{formatElapsed(elapsedSeconds)} elapsed</span>
+                <span className="text-[11px] text-cn-p-ink-2">{progressPercent}%</span>
+                <span className="text-[11px] text-cn-p-ink-2">{formatElapsed(elapsedSeconds)} elapsed</span>
               </div>
               {isStalled && (
-                <p className="mt-3 text-[11px] font-mono text-gold leading-relaxed">
+                <p className="mt-3 text-[11px] text-cn-p-soft-ink leading-relaxed">
                   The AI service has not reported new progress for{" "}
                   {formatElapsed(sinceLastChange)}. The job is still being waited on —
                   nothing is given up on a slow generation — but if this stays still for
@@ -809,11 +801,11 @@ export default function AiCourseModal({
             </div>
           </div>
 
-          <div className="flex justify-end gap-3 pt-5 border-t border-line">
+          <div className="flex justify-end gap-3 pt-5 border-t border-cn-p-line">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-all border border-line shadow-sm cursor-pointer"
+              className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-cn-p-sm transition-all border border-cn-p-line cursor-pointer"
             >
               Hide
             </button>
@@ -821,10 +813,10 @@ export default function AiCourseModal({
               type="button"
               onClick={handleCancel}
               disabled={cancelMutation.isPending}
-              className="px-4 py-3 bg-red-50 hover:bg-red-100 text-red-700 text-sm font-semibold font-mono rounded-lg tracking-wider transition-all border border-red-200 shadow-sm disabled:opacity-60 cursor-pointer flex items-center gap-2"
+              className="px-4 py-3 bg-cn-p-bad-bg hover:bg-cn-p-bad-bg text-cn-p-bad text-sm font-semibold rounded-lg transition-all border border-cn-p-bad-bg disabled:opacity-60 cursor-pointer flex items-center gap-2"
             >
               <X className="w-3.5 h-3.5" />
-              Cancel Generation
+              Cancel generation
             </button>
           </div>
         </div>
@@ -834,56 +826,56 @@ export default function AiCourseModal({
         <div className="py-2">
           <div className="flex items-start gap-3 mb-4">
             {(job.status === "SUCCEEDED" || job.status === "PARTIAL") && (
-              <CheckCircle2 className="w-6 h-6 text-emerald-600 shrink-0 mt-0.5" />
+              <CheckCircle2 className="w-6 h-6 text-cn-p-ok shrink-0 mt-0.5" />
             )}
-            {job.status === "FAILED" && <XCircle className="w-6 h-6 text-red-600 shrink-0 mt-0.5" />}
-            {job.status === "CANCELLED" && <AlertTriangle className="w-6 h-6 text-muted shrink-0 mt-0.5" />}
+            {job.status === "FAILED" && <XCircle className="w-6 h-6 text-cn-p-bad shrink-0 mt-0.5" />}
+            {job.status === "CANCELLED" && <AlertTriangle className="w-6 h-6 text-cn-p-ink-2 shrink-0 mt-0.5" />}
 
             <div className="min-w-0">
               {job.status !== "FAILED" && job.status !== "CANCELLED" && job.course && (
                 <>
-                  <p className="text-sm font-bold text-ink">{job.course.title}</p>
-                  <p className="text-[11px] font-mono uppercase tracking-wider text-muted mt-0.5">
+                  <p className="text-sm font-bold text-cn-p-ink">{job.course.title}</p>
+                  <p className="text-[11px] text-cn-p-ink-2 mt-0.5">
                     Status: {job.course.status}
                   </p>
                 </>
               )}
               {job.status === "FAILED" && (
                 <>
-                  <p className="text-sm font-bold text-ink">Generation failed</p>
-                  <p className="text-[11px] font-mono text-muted mt-0.5">
+                  <p className="text-sm font-bold text-cn-p-ink">Generation failed</p>
+                  <p className="text-[11px] text-cn-p-ink-2 mt-0.5">
                     No course was created — nothing was saved.
                   </p>
                 </>
               )}
-              {job.status === "CANCELLED" && <p className="text-sm font-bold text-ink">Generation cancelled</p>}
+              {job.status === "CANCELLED" && <p className="text-sm font-bold text-cn-p-ink">Generation cancelled</p>}
             </div>
           </div>
 
           {job.status === "FAILED" && job.error_message && (
-            <div className="mb-4 p-3 rounded-xl border border-red-200 bg-red-50/70">
-              <p className="text-[11px] font-mono uppercase tracking-wider text-red-700 font-semibold mb-2 flex items-center gap-1.5">
+            <div className="mb-4 p-3 rounded-xl border border-cn-p-bad-bg bg-cn-p-bad-bg">
+              <p className="text-[11px] text-cn-p-bad font-semibold mb-2 flex items-center gap-1.5">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 What went wrong
               </p>
               {/* Capped and wrapped: generations that failed before the provider
                   errors were parsed server-side still carry a raw JSON body here,
                   and unbounded it filled the whole dialog. */}
-              <p className="text-xs text-red-800 leading-relaxed max-h-40 overflow-y-auto break-words whitespace-pre-wrap">
+              <p className="text-xs text-cn-p-bad leading-relaxed max-h-40 overflow-y-auto break-words whitespace-pre-wrap">
                 {job.error_message}
               </p>
             </div>
           )}
 
           {job.warnings?.length > 0 && (
-            <div className="mb-4 p-3 rounded-xl border border-gold/25 bg-gold/12">
-              <p className="text-[11px] font-mono uppercase tracking-wider text-gold font-semibold mb-2 flex items-center gap-1.5">
+            <div className="mb-4 p-3 rounded-xl border border-cn-p-soft bg-cn-p-soft">
+              <p className="text-[11px] text-cn-p-soft-ink font-semibold mb-2 flex items-center gap-1.5">
                 <AlertTriangle className="w-3.5 h-3.5" />
                 {job.warnings.length} item{job.warnings.length === 1 ? "" : "s"} need attention
               </p>
               <ul className="space-y-1 max-h-40 overflow-y-auto">
                 {job.warnings.map((warning, index) => (
-                  <li key={index} className="text-xs font-mono text-gold">
+                  <li key={index} className="text-xs text-cn-p-soft-ink">
                     • {warning}
                   </li>
                 ))}
@@ -891,11 +883,11 @@ export default function AiCourseModal({
             </div>
           )}
 
-          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-5 border-t border-line">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-5 border-t border-cn-p-line">
             <button
               type="button"
               onClick={handleClose}
-              className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-all border border-line shadow-sm cursor-pointer"
+              className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-cn-p-sm transition-all border border-cn-p-line cursor-pointer"
             >
               Close
             </button>
@@ -904,17 +896,17 @@ export default function AiCourseModal({
                 type="button"
                 onClick={handleRetry}
                 disabled={retryMutation.isPending}
-                className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 text-paper text-sm font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 <RotateCcw className="w-3.5 h-3.5" />
-                Try Again
+                Try again
               </button>
             )}
             {(job.status === "SUCCEEDED" || job.status === "PARTIAL") && (
               <button
                 type="button"
                 onClick={handleReviewAndEdit}
-                className="px-6 py-3 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-lg tracking-wider uppercase shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 cursor-pointer"
+                className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
               >
                 Review &amp; Edit
                 <ArrowRight className="w-3.5 h-3.5" />

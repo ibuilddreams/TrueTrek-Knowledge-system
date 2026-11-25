@@ -22,7 +22,7 @@ export default function ProfileStep({ form, errors, onChange, disabled }) {
     <div className="space-y-5">
       <div>
         <label htmlFor="onboarding-headline" className={LABEL_CLASS}>
-          Professional headline <span className="text-clay">*</span>
+          Professional headline <span className="text-cn-p-warn">*</span>
         </label>
         <input
           id="onboarding-headline"
@@ -43,7 +43,7 @@ export default function ProfileStep({ form, errors, onChange, disabled }) {
 
       <div>
         <label htmlFor="onboarding-bio" className={LABEL_CLASS}>
-          About you <span className="text-clay">*</span>
+          About you <span className="text-cn-p-warn">*</span>
         </label>
         <textarea
           id="onboarding-bio"
@@ -62,9 +62,7 @@ export default function ProfileStep({ form, errors, onChange, disabled }) {
             <p className={HINT_CLASS}>At least {MIN_BIO_LENGTH} characters.</p>
           )}
           <p
-            className={`text-[11px] font-mono mt-1.5 shrink-0 ${
-              bioLength >= MIN_BIO_LENGTH ? "text-pine" : "text-muted"
-            }`}
+            className={`text-[11px] mt-1.5 shrink-0 ${ bioLength >= MIN_BIO_LENGTH ? "text-cn-p-accent" : "text-cn-p-ink-2" }`}
           >
             {bioLength}/{MIN_BIO_LENGTH}
           </p>
@@ -74,14 +72,14 @@ export default function ProfileStep({ form, errors, onChange, disabled }) {
       <div className="grid gap-5 sm:grid-cols-2">
         <div>
           <label htmlFor="onboarding-qualification" className={LABEL_CLASS}>
-            Highest qualification <span className="text-clay">*</span>
+            Highest qualification <span className="text-cn-p-warn">*</span>
           </label>
           <select
             id="onboarding-qualification"
             value={form.highest_qualification}
             onChange={(event) => onChange("highest_qualification", event.target.value)}
             disabled={disabled}
-            className={FIELD_CLASS}
+            className={`${FIELD_CLASS} cn-p-select`}
           >
             <option value="">Select a qualification</option>
             {QUALIFICATION_OPTIONS.map((option) => (
@@ -97,7 +95,7 @@ export default function ProfileStep({ form, errors, onChange, disabled }) {
 
         <div>
           <label htmlFor="onboarding-experience" className={LABEL_CLASS}>
-            Years of teaching experience <span className="text-clay">*</span>
+            Years of teaching experience <span className="text-cn-p-warn">*</span>
           </label>
           <input
             id="onboarding-experience"
@@ -109,7 +107,7 @@ export default function ProfileStep({ form, errors, onChange, disabled }) {
             onChange={(event) => onChange("years_of_experience", event.target.value)}
             disabled={disabled}
             placeholder="0"
-            className={FIELD_CLASS}
+            className={`${FIELD_CLASS} cn-p-select`}
           />
           {errors.years_of_experience && (
             <p className={ERROR_CLASS}>{errors.years_of_experience}</p>
@@ -129,7 +127,7 @@ export default function ProfileStep({ form, errors, onChange, disabled }) {
             onChange={(event) => onChange("linkedin_url", event.target.value)}
             disabled={disabled}
             placeholder="https://linkedin.com/in/you"
-            className={FIELD_CLASS}
+            className={`${FIELD_CLASS} cn-p-select`}
           />
           {errors.linkedin_url && <p className={ERROR_CLASS}>{errors.linkedin_url}</p>}
         </div>
@@ -145,7 +143,7 @@ export default function ProfileStep({ form, errors, onChange, disabled }) {
             onChange={(event) => onChange("portfolio_url", event.target.value)}
             disabled={disabled}
             placeholder="https://yoursite.com"
-            className={FIELD_CLASS}
+            className={`${FIELD_CLASS} cn-p-select`}
           />
           {errors.portfolio_url && <p className={ERROR_CLASS}>{errors.portfolio_url}</p>}
         </div>

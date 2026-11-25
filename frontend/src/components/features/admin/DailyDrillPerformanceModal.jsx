@@ -17,31 +17,31 @@ export default function DailyDrillPerformanceModal({ isOpen, onClose, schedule }
   });
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={onClose}
       icon={BarChart3}
-      title="Daily Drill Performance"
+      title="Daily drill performance"
       subtitle={schedule?.title}
       maxWidth="max-w-sm"
     >
       {isLoading ? (
-        <Loader fullScreen={false} label="Loading performance..." />
+        <Loader tone="cobalt" fullScreen={false} label="Loading performance..." />
       ) : (
         <div className="grid grid-cols-3 gap-3">
-          <div className="bg-porcelain border border-line rounded-xl p-4 text-center">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-muted font-semibold">Viewed</p>
-            <p className="text-2xl font-serif font-bold text-ink mt-1">{data?.viewed_count ?? 0}</p>
+          <div className="bg-cn-p-page border border-cn-p-line rounded-xl p-4 text-center">
+            <p className="text-[10px] text-cn-p-ink-2 font-semibold">Viewed</p>
+            <p className="text-2xl font-bold text-cn-p-ink mt-1">{data?.viewed_count ?? 0}</p>
           </div>
-          <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 text-center">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-emerald-700/80 font-semibold">
+          <div className="bg-cn-p-ok-bg border border-cn-p-ok-bg rounded-xl p-4 text-center">
+            <p className="text-[10px] text-cn-p-ok font-semibold">
               Completed
             </p>
-            <p className="text-2xl font-serif font-bold text-ink mt-1">{data?.completed_count ?? 0}</p>
+            <p className="text-2xl font-bold text-cn-p-ink mt-1">{data?.completed_count ?? 0}</p>
           </div>
-          <div className="bg-gold/12 border border-gold/25 rounded-xl p-4 text-center">
-            <p className="text-[10px] font-mono uppercase tracking-widest text-gold font-semibold">Points</p>
-            <p className="text-2xl font-serif font-bold text-ink mt-1">{data?.points_awarded_total ?? 0}</p>
+          <div className="bg-cn-p-soft border border-cn-p-soft rounded-xl p-4 text-center">
+            <p className="text-[10px] text-cn-p-soft-ink font-semibold">Points</p>
+            <p className="text-2xl font-bold text-cn-p-ink mt-1">{data?.points_awarded_total ?? 0}</p>
           </div>
         </div>
       )}

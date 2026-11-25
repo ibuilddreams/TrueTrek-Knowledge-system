@@ -25,14 +25,14 @@ const EMPTY_FORM = {
 const CURRENT_YEAR = new Date().getFullYear();
 
 /**
- * Adds one qualification document.
- *
- * The size and extension are checked here as well as on the server, because
- * the alternative is a teacher on a phone connection uploading a 200MB video
- * of their graduation before being told it is the wrong thing — the server
- * re-checks regardless, and `constants/teacherOnboarding.js` says which file
- * the two lists have to move with.
- */
+  * Adds one qualification document.
+   *
+   * The size and extension are checked here as well as on the server, because
+   * the alternative is a teacher on a phone connection uploading a 200MB video
+   * of their graduation before being told it is the wrong thing — the server
+   * re-checks regardless, and `constants/teacherOnboarding.js` says which file
+   * the two lists have to move with.
+   */
 export default function CredentialUploadForm({ onUpload, isUploading, disabled }) {
   const [form, setForm] = useState(EMPTY_FORM);
   const [file, setFile] = useState(null);
@@ -103,7 +103,7 @@ export default function CredentialUploadForm({ onUpload, isUploading, disabled }
   return (
     <form
       onSubmit={handleSubmit}
-      className="p-5 bg-paper border border-line rounded-card space-y-4"
+      className="p-5 bg-cn-p-card border border-cn-p-line rounded-cn-p space-y-4"
     >
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
@@ -115,7 +115,7 @@ export default function CredentialUploadForm({ onUpload, isUploading, disabled }
             value={form.credential_type}
             onChange={updateField("credential_type")}
             disabled={disabled || isUploading}
-            className={FIELD_CLASS}
+            className={`${FIELD_CLASS} cn-p-select`}
           >
             {CREDENTIAL_TYPE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -127,7 +127,7 @@ export default function CredentialUploadForm({ onUpload, isUploading, disabled }
 
         <div>
           <label htmlFor="credential-title" className={LABEL_CLASS}>
-            Title <span className="text-clay">*</span>
+            Title <span className="text-cn-p-warn">*</span>
           </label>
           <input
             id="credential-title"
@@ -180,19 +180,19 @@ export default function CredentialUploadForm({ onUpload, isUploading, disabled }
 
       <div>
         <span className={LABEL_CLASS}>
-          File <span className="text-clay">*</span>
+          File <span className="text-cn-p-warn">*</span>
         </span>
         <div className="flex flex-col sm:flex-row sm:items-center gap-3">
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
             disabled={disabled || isUploading}
-            className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-line bg-porcelain hover:bg-paper text-sm font-mono text-ink transition disabled:opacity-60"
+            className="inline-flex items-center gap-2 px-4 py-3 rounded-xl border border-cn-p-line bg-cn-p-page hover:bg-cn-p-card text-sm text-cn-p-ink transition disabled:opacity-60"
           >
             <Paperclip className="w-4 h-4" />
             {file ? "Choose a different file" : "Choose a file"}
           </button>
-          <p className="text-xs font-mono text-muted truncate min-w-0">
+          <p className="text-xs text-cn-p-ink-2 truncate min-w-0">
             {file ? file.name : "No file chosen"}
           </p>
           <input
@@ -224,7 +224,7 @@ export default function CredentialUploadForm({ onUpload, isUploading, disabled }
           ) : (
             <>
               <Upload className="w-3.5 h-3.5" />
-              Add Document
+              Add document
             </>
           )}
         </button>

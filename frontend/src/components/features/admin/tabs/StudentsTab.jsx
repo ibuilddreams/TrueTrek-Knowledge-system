@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Edit3, Eye, Trash2, Upload, UserCheck, UserPlus, UserX } from "lucide-react";
 import { useMutation } from "@tanstack/react-query";
 import { useAdminStudents } from "@/hooks/admin/useAdminStudents";
@@ -25,21 +26,25 @@ import Pagination from "@/components/ui/Pagination";
 import StatusBadge from "@/components/ui/StatusBadge";
 import ActionMenu from "@/components/ui/ActionMenu";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
-import StudentProfileModal from "@/components/features/admin/StudentProfileModal";
 import CreateStudentModal from "@/components/features/admin/CreateStudentModal";
 import EditStudentModal from "@/components/features/admin/EditStudentModal";
 import BulkImportModal from "@/components/features/admin/BulkImportModal";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
+import AdminStudentDetailScreen from "@/components/features/admin/AdminStudentDetailScreen";
 
 const PAGE_SIZE = 10;
 
 const STATUS_FILTER_OPTIONS = [
-  { value: "", label: "All Statuses" },
+  { value: "", label: "All statuses" },
   { value: "ACTIVE", label: "Active" },
   { value: "SUSPENDED", label: "Suspended" },
   { value: "DEACTIVATED", label: "Deactivated" },
 ];
 
 export default function StudentsTab() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
   const { items, status, error, loadStudents } = useAdminStudents();
   const { items: enrollments, loadEnrollments } = useAdminEnrollments();
 
@@ -49,7 +54,22 @@ export default function StudentsTab() {
   const [page, setPage] = useState(1);
   const [sortConfig, toggleSort] = useSortConfig();
 
-  const [viewStudentId, setViewStudentId] = useState(null);
+  // The detail screen is a route, not a modal, so it can be linked to and the
+  // browser's back button leaves it. A query param rather than a path segment
+  // because the portal's route only forwards its first slug — the same shape
+  // the teacher portal's own drill-downs use (`?courseId=`).
+  const detailId = searchParams.get("studentId");
+  const openDetail = (id) => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("studentId", String(id));
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+  };
+  const closeDetail = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.delete("studentId");
+    const query = params.toString();
+    router.push(query ? `${pathname}?${query}` : pathname, { scroll: false });
+  };
   const [editingStudent, setEditingStudent] = useState(null);
   const [deactivatingStudent, setDeactivatingStudent] = useState(null);
   const [isDeactivating, setIsDeactivating] = useState(false);
@@ -150,26 +170,26 @@ export default function StudentsTab() {
   const columns = [
     {
       key: "name",
-      header: "Student Name",
+      header: "Student name",
       sortable: true,
-      render: (student) => <span className="font-semibold text-ink">{student.full_name}</span>,
+      render: (student) => <span className="font-semibold text-cn-p-ink">{student.full_name}</span>,
     },
     { key: "email", header: "Email", sortable: true, render: (student) => student.email },
     {
       key: "status",
       header: "Status",
       sortable: true,
-      render: (student) => <StatusBadge size="lg" status={student.account_status} />,
+      render: (student) => <StatusBadge tone="cobalt" size="lg" status={student.account_status} />,
     },
     {
       key: "enrollments",
-      header: "Total Enrollments",
+      header: "Total enrollments",
       sortable: true,
       render: (student) => enrollmentCountByStudentId[student.id] || 0,
     },
     {
       key: "joined",
-      header: "Joined Date",
+      header: "Joined date",
       sortable: true,
       render: (student) => formatDate(student.date_joined),
     },
@@ -179,8 +199,8 @@ export default function StudentsTab() {
       render: (student) => (
         <ActionMenu
           actions={[
-            { key: "view", label: "View Profile", icon: Eye, onSelect: () => setViewStudentId(student.id) },
-            { key: "edit", label: "Edit Student", icon: Edit3, onSelect: () => setEditingStudent(student) },
+            { key: "view", label: "View profile", icon: Eye, onSelect: () => openDetail(student.id) },
+            { key: "edit", label: "Edit student", icon: Edit3, onSelect: () => setEditingStudent(student) },
             student.account_status !== "DEACTIVATED" && {
               key: "deactivate",
               label: "Deactivate",
@@ -196,7 +216,7 @@ export default function StudentsTab() {
             },
             {
               key: "delete",
-              label: "Delete Permanently",
+              label: "Delete permanently",
               icon: Trash2,
               tone: "danger",
               onSelect: () => setDeletingStudent(student),
@@ -207,13 +227,22 @@ export default function StudentsTab() {
     },
   ];
 
+  if (detailId) {
+    return <AdminStudentDetailScreen studentId={detailId} onBack={closeDetail} />;
+  }
+
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Students"
+        subtitle="Every learner account on the platform."
+      />
+
+      <div className="flex flex-col gap-3 rounded-cn-p border border-cn-p-line bg-cn-p-card p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 min-w-0">
-          <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search students by name or email..." />
+          <SearchBar tone="cobalt" size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search students by name or email..." />
           <div className="w-full sm:w-56 shrink-0">
-            <SearchableSelect size="lg"
+            <SearchableSelect tone="cobalt" size="lg"
               placeholder="All Statuses"
               options={STATUS_FILTER_OPTIONS}
               value={statusFilter}
@@ -226,28 +255,28 @@ export default function StudentsTab() {
           <button
             type="button"
             onClick={() => setIsBulkImportOpen(true)}
-            className="px-4 py-2.5 bg-paper hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-xl tracking-wider border border-line shadow-sm transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-cn-p-card hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-xl border border-cn-p-line transition-all flex items-center gap-2"
             title="Bulk add students from a CSV or XLSX file"
             aria-label="Bulk add students from a CSV or XLSX file"
           >
             <Upload className="w-4 h-4" />
-            BULK ADD
+            Bulk add
           </button>
           <button
             type="button"
             onClick={() => setIsCreateModalOpen(true)}
-            className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center gap-2"
             title="Create a new student account"
             aria-label="Create a new student account"
           >
             <UserPlus className="w-4 h-4" />
-            ADD STUDENT
+            Add student
           </button>
         </div>
       </div>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-        <DataTable size="lg"
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+        <DataTable tone="cobalt" size="lg"
           columns={columns}
           rows={paginatedStudents}
           isLoading={status === "loading" || status === "idle"}
@@ -257,49 +286,46 @@ export default function StudentsTab() {
           sortConfig={sortConfig}
           onSortChange={toggleSort}
         />
-        <Pagination size="lg"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalLabel={`${filteredStudents.length} student${filteredStudents.length === 1 ? "" : "s"}`}
-        />
+        <div className="px-4 pb-4">
+
+          <Pagination tone="cobalt" size="lg"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalLabel={`${filteredStudents.length} student${filteredStudents.length === 1 ? "" : "s"}`}
+          />
+
+        </div>
       </div>
 
-      <StudentProfileModal
-        isOpen={Boolean(viewStudentId)}
-        onClose={() => setViewStudentId(null)}
-        studentId={viewStudentId}
-        enrollmentCount={enrollmentCountByStudentId[viewStudentId] || 0}
-      />
-
-      <ConfirmDialog size="lg"
+      <ConfirmDialog variant="cobalt" size="lg"
         isOpen={Boolean(deactivatingStudent)}
         onClose={() => setDeactivatingStudent(null)}
         onConfirm={handleDeactivateConfirm}
         isConfirming={isDeactivating}
-        title="Deactivate Student"
+        title="Deactivate student"
         message={`Are you sure you want to deactivate "${deactivatingStudent?.full_name}"?`}
         confirmLabel="Deactivate"
       />
 
-      <ConfirmDialog size="lg"
+      <ConfirmDialog variant="cobalt" size="lg"
         isOpen={Boolean(activatingStudent)}
         onClose={() => setActivatingStudent(null)}
         onConfirm={handleActivateConfirm}
         isConfirming={isActivating}
-        title="Activate Student"
+        title="Activate student"
         message={`Are you sure you want to activate "${activatingStudent?.full_name}"?`}
         confirmLabel="Activate"
       />
 
-      <ConfirmDialog size="lg"
+      <ConfirmDialog variant="cobalt" size="lg"
         isOpen={Boolean(deletingStudent)}
         onClose={() => setDeletingStudent(null)}
         onConfirm={handleDeleteConfirm}
         isConfirming={deleteStudentMutation.isPending}
-        title="Permanently Delete Student"
+        title="Permanently delete student"
         message={`Are you sure you want to permanently delete "${deletingStudent?.full_name}"? This action cannot be undone and will remove all of their enrollments, progress, quiz attempts, and assignment submissions.`}
-        confirmLabel="Delete Permanently"
+        confirmLabel="Delete permanently"
       />
 
       <CreateStudentModal

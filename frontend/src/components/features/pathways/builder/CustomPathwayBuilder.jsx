@@ -39,6 +39,12 @@ import EmptyState from "@/components/ui/EmptyState";
 import Loader from "@/components/ui/Loader";
 import Pagination from "@/components/ui/Pagination";
 import SearchBar from "@/components/ui/SearchBar";
+import CobaltPageHeader from "@/components/ui/CobaltPageHeader";
+import {
+  CN_BTN_PRIMARY,
+  CN_BTN_SECONDARY,
+  CN_CARD,
+} from "@/components/ui/cobaltStyles";
 import PathwayCheckoutModal from "@/components/features/pathways/PathwayCheckoutModal";
 import BuilderCourseCard from "./BuilderCourseCard";
 import BuilderSummaryPanel from "./BuilderSummaryPanel";
@@ -47,8 +53,7 @@ import SavedCustomPathwaysPanel from "./SavedCustomPathwaysPanel";
 const PAGE_SIZE = 9;
 const CUSTOM_PATHWAYS_QUERY_KEY = ["my-custom-pathways"];
 
-const PRIMARY_LINK =
-  "inline-flex items-center justify-center gap-2 bg-pine hover:bg-moss text-paper text-xs font-sans font-medium uppercase tracking-widest px-6 py-3 rounded-full shadow-soft transition";
+const PRIMARY_LINK = CN_BTN_PRIMARY;
 
 export default function CustomPathwayBuilder() {
   const router = useRouter();
@@ -275,15 +280,16 @@ export default function CustomPathwayBuilder() {
   if (!isAuthResolved) {
     gate = (
       <div className="flex min-h-[40vh] items-center justify-center" aria-busy="true">
-        <Loader fullScreen={false} label="Loading builder..." />
+        <Loader fullScreen={false} tone="cobalt" label="Loading builder..." />
       </div>
     );
   } else if (!isAuthenticated) {
     // Reached by deep link rather than the /pathways banner (which prompts
     // with a modal first); same destination either way.
     gate = (
-      <div className="rounded-card border border-line bg-paper shadow-soft">
+      <div className={CN_CARD}>
         <EmptyState
+          tone="cobalt"
           icon={Wand2}
           size="lg"
           label="Sign in to build your pathway"
@@ -295,14 +301,14 @@ export default function CustomPathwayBuilder() {
                 className={PRIMARY_LINK}
               >
                 <LogIn className="w-4 h-4" />
-                Sign In
+                Sign in
               </Link>
               <Link
                 href={buildAuthUrl(ROUTES.SIGNUP, ROUTES.PATHWAY_BUILDER)}
-                className="inline-flex items-center justify-center gap-2 bg-porcelain hover:bg-line/40 border border-line text-ink text-xs font-sans font-medium uppercase tracking-widest px-6 py-3 rounded-full transition"
+                className={CN_BTN_SECONDARY}
               >
                 <UserPlus className="w-4 h-4" />
-                Create Student Account
+                Create student account
               </Link>
             </div>
           }
@@ -311,8 +317,9 @@ export default function CustomPathwayBuilder() {
     );
   } else if (!isStudent) {
     gate = (
-      <div className="rounded-card border border-line bg-paper shadow-soft">
+      <div className={CN_CARD}>
         <EmptyState
+          tone="cobalt"
           icon={Wand2}
           size="lg"
           label="Building pathways is for student accounts"
@@ -323,7 +330,7 @@ export default function CustomPathwayBuilder() {
               onClick={() => router.push(getPortalRouteForRole(role))}
               className={PRIMARY_LINK}
             >
-              Open My Portal
+              Open my portal
             </button>
           }
         />
@@ -332,51 +339,51 @@ export default function CustomPathwayBuilder() {
   }
 
   return (
-    <div id="pathway-builder-container" className="min-h-screen cn-page-bg text-ink pb-24">
-      <div className="bg-pine text-paper py-16 px-6 border-b border-white/10 relative overflow-hidden">
-        <div
-          aria-hidden="true"
-          className="absolute top-1/2 left-1/4 w-96 h-96 rounded-full bg-gold/12 blur-[130px] -translate-y-1/2"
-        />
-        <div className="max-w-6xl mx-auto relative z-10 space-y-3">
-          <Link
-            href={ROUTES.PATHWAYS}
-            className="inline-flex items-center gap-1.5 text-paper/70 hover:text-gold font-sans text-xs uppercase tracking-widest font-medium transition-colors"
-          >
-            <ArrowLeft className="w-3.5 h-3.5" />
-            Back to Pathways
-          </Link>
-          <h1 className="text-4xl md:text-5xl font-serif font-light leading-[0.92] tracking-tight text-paper">
-            Build Your Own Pathway
-          </h1>
-          <p className="text-paper/70 text-xs md:text-sm font-light max-w-xl leading-relaxed">
-            Pick the courses you want, name your bundle, and buy it in one go —
-            you&apos;ll be enrolled in every course inside it straight away.
-          </p>
-        </div>
-      </div>
+    <div
+      id="pathway-builder-container"
+      className="min-h-screen bg-cn-paper pb-32 text-cn-ink"
+    >
+      {/* The same inner-page header every other cobalt page uses, so the
+          builder stops announcing itself as a different product. */}
+      <CobaltPageHeader
+        id="pathway-builder-banner"
+        eyebrow="Pathways"
+        title="Build your own pathway."
+        lead="Pick the courses you want, name your bundle, and buy it in one go — you'll be enrolled in every course inside it straight away."
+      />
 
-      <div className="max-w-6xl mx-auto px-6 mt-12">
+      <div className="cn-container pt-12 md:pt-16">
+        <Link
+          href={ROUTES.PATHWAYS}
+          className="mb-8 inline-flex items-center gap-1.5 text-sm font-semibold text-cn-muted transition-colors hover:text-cn-ink"
+        >
+          <ArrowLeft className="h-3.5 w-3.5" />
+          Back to pathways
+        </Link>
+
         {gate || (
           <>
             <div className="grid grid-cols-1 lg:grid-cols-[1fr_22rem] gap-8 items-start">
               <div ref={builderRef} className="min-w-0 scroll-mt-24">
-                <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-6">
+                <div className="mb-6 flex flex-col justify-between gap-3 sm:flex-row sm:items-center">
                   <div>
-                    <span className="text-[10px] font-sans font-medium uppercase tracking-widest text-gold">
+                    <span className="text-xs font-semibold tracking-widest text-cn-accent uppercase">
                       Step 1
                     </span>
-                    <h2 className="text-2xl font-serif font-light text-ink leading-tight">
+                    <h2 className="text-cn-xl font-bold tracking-[-0.015em] text-cn-ink">
                       Choose your courses
                     </h2>
                   </div>
+                  {/* `tone` rather than `inputClassName`: the classic path
+                      hardcodes its own border and focus colours into the base
+                      class string, so overriding the fill alone leaves them. */}
                   <SearchBar
                     id="pathway-builder-course-search"
+                    tone="cobalt"
                     value={searchInput}
                     onChange={setSearchInput}
-                    placeholder="Search courses..."
+                    placeholder="Search courses"
                     className="w-full sm:max-w-xs"
-                    inputClassName="bg-paper font-sans focus:bg-paper"
                   />
                 </div>
 
@@ -385,35 +392,36 @@ export default function CustomPathwayBuilder() {
                     className="flex min-h-[40vh] items-center justify-center"
                     aria-busy="true"
                   >
-                    <Loader fullScreen={false} label="Loading courses..." />
+                    <Loader fullScreen={false} tone="cobalt" label="Loading courses..." />
                   </div>
                 )}
 
                 {isCoursesError && (
-                  <div className="border border-line bg-paper rounded-2xl p-8 text-center">
-                    <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-                      <AlertCircle className="w-6 h-6" />
+                  <div className={`${CN_CARD} p-8 text-center`}>
+                    <div className="mx-auto mb-4 grid h-12 w-12 place-items-center rounded-cn bg-cn-paper-3 text-cn-live">
+                      <AlertCircle className="h-6 w-6" />
                     </div>
-                    <h3 className="text-xl font-serif font-light mb-2 text-ink">
-                      Failed to Load Courses
+                    <h3 className="mb-2 text-cn-lg font-bold tracking-[-0.015em] text-cn-ink">
+                      We couldn&apos;t load the courses
                     </h3>
-                    <p className="text-xs font-light mb-6 text-muted">
+                    <p className="mb-6 text-sm leading-relaxed text-cn-ink-2">
                       {getApiErrorMessage(coursesError, "Unable to load courses right now.")}
                     </p>
                     <button
                       type="button"
                       onClick={() => refetchCourses()}
-                      className="inline-flex items-center gap-2 px-5 py-3 font-sans font-medium text-xs uppercase tracking-widest rounded-full transition border border-line text-ink hover:bg-porcelain"
+                      className={CN_BTN_SECONDARY}
                     >
-                      <RefreshCw className="w-4 h-4" />
+                      <RefreshCw className="h-4 w-4" />
                       Retry
                     </button>
                   </div>
                 )}
 
                 {!isLoadingCourses && !isCoursesError && courses.length === 0 && (
-                  <div className="rounded-2xl border border-dashed border-line bg-paper/70">
+                  <div className="rounded-cn-lg border border-dashed border-cn-rule bg-white">
                     <EmptyState
+                      tone="cobalt"
                       icon={BookOpen}
                       label={
                         debouncedSearch
@@ -451,6 +459,7 @@ export default function CustomPathwayBuilder() {
                     </motion.div>
 
                     <Pagination
+                      tone="cobalt"
                       page={page}
                       totalPages={totalPages}
                       onPageChange={setPage}
@@ -491,6 +500,7 @@ export default function CustomPathwayBuilder() {
       </div>
 
       <PathwayCheckoutModal
+        tone="cobalt"
         isOpen={isCheckoutOpen}
         pathways={checkoutPathway ? [checkoutPathway] : []}
         isSubmitting={checkoutMutation.isPending}
@@ -499,6 +509,7 @@ export default function CustomPathwayBuilder() {
       />
 
       <ConfirmDialog
+        variant="cobalt"
         isOpen={isDeleteOpen}
         onClose={() => setIsDeleteOpen(false)}
         onConfirm={() => pendingDelete && deleteMutation.mutate(pendingDelete.id)}

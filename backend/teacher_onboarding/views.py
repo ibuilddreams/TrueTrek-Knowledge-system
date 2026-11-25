@@ -190,9 +190,17 @@ class AdminTeacherOnboardingListView(generics.ListAPIView):
 
         params = self.request.query_params
 
+        # A comma-separated list as well as a single value, because two of the
+        # admin queue's tabs cover more than one status — "Awaiting review" is
+        # SUBMITTED plus UNDER_REVIEW, and "Still drafting" is DRAFT plus
+        # CHANGES_REQUESTED. Filtering those client-side would mean merging two
+        # paginated responses, which cannot be paged correctly. A single value
+        # still behaves exactly as it did.
         status_filter = params.get("status")
         if status_filter:
-            queryset = queryset.filter(status=status_filter.upper())
+            statuses = [s.strip().upper() for s in status_filter.split(",") if s.strip()]
+            if statuses:
+                queryset = queryset.filter(status__in=statuses)
 
         search = params.get("search")
         if search:

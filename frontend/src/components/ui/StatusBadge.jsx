@@ -26,8 +26,63 @@ const STATUS_COLORS = {
   HIDDEN: "bg-clay/12 text-clay border-clay/25",
 };
 
-export default function StatusBadge({ status, size = "base" }) {
+// The portal design has no bordered, uppercase, monospaced badge: it has one
+// `.pill`, a 24px rounded chip in one of five tones. `tone="cobalt"` renders
+// that; the default is the porcelain badge above, byte-identical, because the
+// admin portal and the public site still read it.
+const COBALT_TONES = {
+  ok: "bg-cn-p-ok-bg text-cn-p-ok",
+  warn: "bg-cn-p-warn-bg text-cn-p-warn",
+  bad: "bg-cn-p-bad-bg text-cn-p-bad",
+  blue: "bg-cn-p-soft text-cn-p-soft-ink",
+  neutral: "bg-cn-p-neutral-bg text-cn-p-ink-2",
+};
+
+// Keyed on the same vocabulary as STATUS_COLORS, plus the words the teacher
+// screens pass through as display strings (concern severities, class states).
+const COBALT_STATUS_TONES = {
+  ACTIVE: "ok", PUBLISHED: "ok", PASSED: "ok", GRADED: "ok", APPROVED: "ok",
+  COMPLETED: "ok", RESOLVED: "ok", AVAILABLE: "ok", ACCEPTED: "ok",
+  SUSPENDED: "warn", IN_PROGRESS: "warn", EVALUATING: "warn", SUBMITTED: "warn",
+  PENDING: "warn", CHANGES_REQUESTED: "warn", OPEN: "warn", MEDIUM: "warn",
+  STARTING: "warn", RECORDING: "warn", PROCESSING: "warn", TRANSCRIBING: "warn",
+  COLLECTING: "warn", SUMMARIZING: "warn", PAUSED: "warn",
+  CANCELLED: "bad", DEACTIVATED: "bad", FAILED: "bad", REJECTED: "bad",
+  EXPIRED: "bad", HIDDEN: "bad", HIGH: "bad", OVERDUE: "bad", SAFETY: "bad",
+  UNDER_REVIEW: "blue", SCHEDULED: "blue", LIVE: "blue",
+  DRAFT: "neutral", ARCHIVED: "neutral", NOT_ATTEMPTED: "neutral",
+  ABANDONED: "neutral", LOW: "neutral", ENDED: "neutral",
+};
+
+export default function StatusBadge({ status, size = "base", tone = "porcelain" }) {
   const normalized = (status || "").toUpperCase();
+
+  if (tone === "cobalt") {
+    // A caller may pass either the stored code (`IN_PROGRESS`) or the display
+    // string the API sent alongside it (`In Progress`), so both resolve here —
+    // the classic path above is left exactly as it was.
+    const key = normalized.replace(/[\s-]+/g, "_");
+    const toneClass = COBALT_TONES[COBALT_STATUS_TONES[key] ?? "neutral"];
+    // The design's pills are sentence case: "Published", "In progress". Both
+    // spellings a caller can arrive with are rewritten to it — the stored code
+    // (`IN_PROGRESS`) and the Title Case display string Django's own `choices`
+    // send alongside it (`In Progress`) — so the same status never reads two
+    // ways depending on which field the screen happened to render. Only
+    // statuses pass through here, so there is no brand or acronym to protect.
+    const text =
+      typeof status === "string" && /^[A-Za-z][A-Za-z0-9_ ]*$/.test(status)
+        ? status.charAt(0).toUpperCase() +
+          status.slice(1).toLowerCase().replace(/_/g, " ")
+        : status || "Unknown";
+    return (
+      <span
+        className={`inline-flex h-6 flex-none items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold whitespace-nowrap ${toneClass}`}
+      >
+        {text}
+      </span>
+    );
+  }
+
   const colorClass = STATUS_COLORS[normalized] || "bg-porcelain text-muted border-line";
 
   return (

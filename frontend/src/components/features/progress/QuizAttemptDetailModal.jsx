@@ -8,13 +8,15 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import { getQuizAttemptDetail, gradeQuizAnswer, retryQuizAnswerAiGrading } from "@/services/quizzesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
+import { makeSkin } from "@/lib/portalSkin";
 
 const ATTEMPT_STATUS_NOTES = {
   EXPIRED: "This attempt ended automatically once its time limit ran out.",
   ABANDONED: "The student never submitted this attempt — it was auto-closed after a long period of inactivity.",
 };
 
-export default function QuizAttemptDetailModal({ attemptId, onClose, courseId }) {
+export default function QuizAttemptDetailModal({ attemptId, onClose, courseId, tone = "porcelain" }) {
+  const skin = makeSkin(tone);
   const queryClient = useQueryClient();
   const [gradingAnswerId, setGradingAnswerId] = useState(null);
   const [marksAwarded, setMarksAwarded] = useState("");
@@ -66,49 +68,49 @@ export default function QuizAttemptDetailModal({ attemptId, onClose, courseId })
   const data = detailQuery.data;
 
   return (
-    <Modal
+    <Modal variant={tone === "cobalt" ? "cobalt" : "classic"}
       isOpen={Boolean(attemptId)}
       onClose={onClose}
       icon={ListChecks}
-      title="Attempt Detail"
+      title="Attempt detail"
       subtitle={
         data ? `${data.student.name} · ${data.quiz.title} · Attempt ${data.attempt_number}` : ""
       }
       maxWidth="max-w-2xl"
     >
-      {detailQuery.isLoading && <p className="text-sm text-stone-400">Loading...</p>}
+      {detailQuery.isLoading && <p className={skin("text-sm text-stone-400")}>Loading...</p>}
       {data && (
         <div className="space-y-4">
-          <div className="flex items-center gap-3 text-sm font-mono flex-wrap">
+          <div className={skin("flex items-center gap-3 text-sm font-mono flex-wrap")}>
             <StatusBadge status={data.status} size="lg" />
             <span
-              className={`font-bold ${data.is_passed ? "text-emerald-700" : "text-rose-600"}`}
+              className={skin(`font-bold ${data.is_passed ? "text-emerald-700" : "text-rose-600"}`)}
             >
               {data.percentage !== null ? `${data.percentage}% Score` : "Not fully graded yet"}
             </span>
-            <span className="text-stone-400">Passing: {data.quiz.passing_score}%</span>
+            <span className={skin("text-stone-400")}>Passing: {data.quiz.passing_score}%</span>
           </div>
           {ATTEMPT_STATUS_NOTES[data.status] ? (
-            <p className="text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2">
+            <p className={skin("text-sm text-amber-800 bg-amber-50 border border-amber-100 rounded-lg px-3 py-2")}>
               {ATTEMPT_STATUS_NOTES[data.status]}
             </p>
           ) : null}
 
           <ul className="space-y-3 max-h-[55vh] overflow-y-auto pr-1">
             {data.questions.map((question, index) => (
-              <li key={question.id} className="rounded-xl border border-stone-200 p-4">
+              <li key={question.id} className={skin("rounded-xl border border-stone-200 p-4")}>
                 <div className="flex items-start justify-between gap-3 mb-3">
-                  <p className="text-sm font-semibold text-stone-800">
+                  <p className={skin("text-sm font-semibold text-stone-800")}>
                     {index + 1}. {question.text}
                   </p>
-                  <span className="text-[11px] font-mono uppercase text-stone-400 shrink-0">
+                  <span className={skin("text-[11px] font-mono uppercase text-stone-400 shrink-0")}>
                     {question.marks} marks
                   </span>
                 </div>
 
                 {question.question_type === "SHORT_ANSWER" ? (
                   <div className="space-y-2">
-                    <p className="text-sm text-stone-600 bg-stone-50 border border-stone-100 rounded-lg p-3 whitespace-pre-wrap">
+                    <p className={skin("text-sm text-stone-600 bg-stone-50 border border-stone-100 rounded-lg p-3 whitespace-pre-wrap")}>
                       {question.text_answer || "No answer provided."}
                     </p>
                     {gradingAnswerId === question.answer_id ? (
@@ -120,7 +122,7 @@ export default function QuizAttemptDetailModal({ attemptId, onClose, courseId })
                         className="flex flex-col sm:flex-row sm:items-end gap-2"
                       >
                         <div className="flex-1">
-                          <label className="text-[11px] font-mono uppercase text-stone-450 block mb-1">
+                          <label className={skin("text-[11px] font-mono uppercase text-stone-450 block mb-1")}>
                             Marks (of {question.marks})
                           </label>
                           <input
@@ -130,32 +132,32 @@ export default function QuizAttemptDetailModal({ attemptId, onClose, courseId })
                             value={marksAwarded}
                             onChange={(event) => setMarksAwarded(event.target.value)}
                             required
-                            className="w-full px-3 py-2 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-lg text-sm font-mono transition"
+                            className={skin("w-full px-3 py-2 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-lg text-sm font-mono transition")}
                           />
                         </div>
                         <div className="flex-1">
-                          <label className="text-[11px] font-mono uppercase text-stone-450 block mb-1">
+                          <label className={skin("text-[11px] font-mono uppercase text-stone-450 block mb-1")}>
                             Feedback
                           </label>
                           <input
                             type="text"
                             value={answerFeedback}
                             onChange={(event) => setAnswerFeedback(event.target.value)}
-                            className="w-full px-3 py-2 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-lg text-sm font-mono transition"
+                            className={skin("w-full px-3 py-2 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-lg text-sm font-mono transition")}
                           />
                         </div>
                         <div className="flex items-center gap-2 shrink-0">
                           <button
                             type="submit"
                             disabled={gradeAnswerMutation.isPending}
-                            className="px-3 py-2 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 text-white text-[11px] font-mono font-semibold uppercase tracking-wider rounded-lg transition cursor-pointer"
+                            className={skin("px-3 py-2 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 text-white text-[11px] font-mono font-semibold uppercase tracking-wider rounded-lg transition cursor-pointer")}
                           >
                             {gradeAnswerMutation.isPending ? "Saving..." : "Save"}
                           </button>
                           <button
                             type="button"
                             onClick={() => setGradingAnswerId(null)}
-                            className="px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-stone-500 hover:text-stone-700 transition cursor-pointer"
+                            className={skin("px-3 py-2 text-[11px] font-mono uppercase tracking-wider text-stone-500 hover:text-stone-700 transition cursor-pointer")}
                           >
                             Cancel
                           </button>
@@ -164,11 +166,11 @@ export default function QuizAttemptDetailModal({ attemptId, onClose, courseId })
                     ) : (
                       <div className="flex items-center justify-between">
                         <span
-                          className={`text-[11px] font-mono uppercase tracking-wider ${
+                          className={skin(`text-[11px] font-mono uppercase tracking-wider ${
                             question.grading_status === "PENDING_GRADING"
                               ? "text-amber-700"
                               : "text-emerald-700"
-                          }`}
+                          }`)}
                         >
                           {question.marks_awarded !== null
                             ? `${question.marks_awarded}/${question.marks} marks`
@@ -182,7 +184,7 @@ export default function QuizAttemptDetailModal({ attemptId, onClose, courseId })
                                 type="button"
                                 onClick={() => retryAiMutation.mutate(question.answer_id)}
                                 disabled={retryingAnswerId === question.answer_id}
-                                className="text-xs font-mono font-semibold text-sky-700 hover:text-sky-900 disabled:opacity-50 transition cursor-pointer"
+                                className={skin("text-xs font-mono font-semibold text-sky-700 hover:text-sky-900 disabled:opacity-50 transition cursor-pointer")}
                               >
                                 {retryingAnswerId === question.answer_id ? "Retrying…" : "Retry with AI"}
                               </button>
@@ -194,13 +196,13 @@ export default function QuizAttemptDetailModal({ attemptId, onClose, courseId })
                                 setMarksAwarded(question.marks_awarded ?? "");
                                 setAnswerFeedback(question.feedback || "");
                               }}
-                              className="text-xs font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer"
+                              className={skin("text-xs font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer")}
                             >
                               {question.marks_awarded !== null ? "Edit Grade" : "Grade"}
                             </button>
                           </div>
                         ) : (
-                          <span className="text-[11px] font-mono text-stone-300">No answer recorded</span>
+                          <span className={skin("text-[11px] font-mono text-stone-300")}>No answer recorded</span>
                         )}
                       </div>
                     )}
@@ -210,13 +212,13 @@ export default function QuizAttemptDetailModal({ attemptId, onClose, courseId })
                     {question.choices.map((choice) => (
                       <li
                         key={choice.id}
-                        className={`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border ${
+                        className={skin(`flex items-center gap-2 px-3 py-2 rounded-lg text-sm border ${
                           choice.is_correct
                             ? "border-emerald-200 bg-emerald-50 text-emerald-800"
                             : choice.is_selected
                               ? "border-rose-200 bg-rose-50 text-rose-700"
                               : "border-stone-100 bg-stone-50/60 text-stone-600"
-                        }`}
+                        }`)}
                       >
                         {choice.is_correct && <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />}
                         {!choice.is_correct && choice.is_selected && (
@@ -224,7 +226,7 @@ export default function QuizAttemptDetailModal({ attemptId, onClose, courseId })
                         )}
                         <span className="flex-1">{choice.text}</span>
                         {choice.is_selected && (
-                          <span className="text-[10px] font-mono uppercase tracking-wider shrink-0">
+                          <span className={skin("text-[10px] font-mono uppercase tracking-wider shrink-0")}>
                             Selected
                           </span>
                         )}

@@ -115,7 +115,7 @@ export default function QuestTaskCard({ assignment, onComplete, onSkip, isBusy =
               className="w-full inline-flex items-center justify-center gap-2 py-3 text-xs font-semibold font-semibold rounded-xl bg-cn-p-accent hover:bg-cn-p-accent-hover text-white shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <Check className="w-4 h-4" />
-              I Did This
+              I did this
             </button>
             <button
               type="button"

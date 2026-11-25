@@ -26,11 +26,12 @@ import EnrollmentDetailModal from "@/components/features/admin/EnrollmentDetailM
 import EnrollmentStatusModal from "@/components/features/admin/EnrollmentStatusModal";
 import EnrollStudentModal from "@/components/features/admin/EnrollStudentModal";
 import BulkImportModal from "@/components/features/admin/BulkImportModal";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 
 const PAGE_SIZE = 10;
 
 const STATUS_FILTER_OPTIONS = [
-  { value: "", label: "All Statuses" },
+  { value: "", label: "All statuses" },
   { value: "ACTIVE", label: "Active" },
   { value: "COMPLETED", label: "Completed" },
   { value: "CANCELLED", label: "Cancelled" },
@@ -107,8 +108,8 @@ export default function EnrollmentsTab() {
       sortable: true,
       render: (enrollment) => (
         <div>
-          <p className="font-semibold text-ink">{enrollment.student?.name}</p>
-          <p className="text-xs text-muted font-mono">{enrollment.student?.email}</p>
+          <p className="font-semibold text-cn-p-ink">{enrollment.student?.name}</p>
+          <p className="text-xs text-cn-p-ink-2">{enrollment.student?.email}</p>
         </div>
       ),
     },
@@ -128,7 +129,7 @@ export default function EnrollmentsTab() {
       key: "status",
       header: "Status",
       sortable: true,
-      render: (enrollment) => <StatusBadge size="lg" status={enrollment.status} />,
+      render: (enrollment) => <StatusBadge tone="cobalt" size="lg" status={enrollment.status} />,
     },
     {
       key: "enrolled_at",
@@ -142,11 +143,11 @@ export default function EnrollmentsTab() {
       render: (enrollment) => (
         <ActionMenu
           actions={[
-            { key: "view", label: "View Details", icon: Eye, onSelect: () => setViewEnrollment(enrollment) },
-            { key: "edit", label: "Edit Status", icon: Edit3, onSelect: () => setEditEnrollment(enrollment) },
+            { key: "view", label: "View details", icon: Eye, onSelect: () => setViewEnrollment(enrollment) },
+            { key: "edit", label: "Edit status", icon: Edit3, onSelect: () => setEditEnrollment(enrollment) },
             {
               key: "remove",
-              label: "Remove Enrollment",
+              label: "Remove enrollment",
               icon: Trash2,
               tone: "danger",
               onSelect: () => setRemovingEnrollment(enrollment),
@@ -158,12 +159,17 @@ export default function EnrollmentsTab() {
   ];
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Enrollments"
+        subtitle="Who has access to which course."
+      />
+
+      <div className="flex flex-col gap-3 rounded-cn-p border border-cn-p-line bg-cn-p-card p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1">
-          <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search by student or course..." />
+          <SearchBar tone="cobalt" size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search by student or course..." />
           <div className="w-full sm:w-56">
-            <SearchableSelect size="lg"
+            <SearchableSelect tone="cobalt" size="lg"
               placeholder="All Statuses"
               options={STATUS_FILTER_OPTIONS}
               value={statusFilter}
@@ -176,28 +182,28 @@ export default function EnrollmentsTab() {
           <button
             type="button"
             onClick={() => setIsBulkImportOpen(true)}
-            className="px-4 py-2.5 bg-paper hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-xl tracking-wider border border-line shadow-sm transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-cn-p-card hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-xl border border-cn-p-line transition-all flex items-center gap-2"
             title="Bulk enroll students from CSV or XLSX"
             aria-label="Bulk enroll students from CSV or XLSX"
           >
             <Upload className="w-4 h-4" />
-            BULK ENROLLMENT
+            Bulk enrollment
           </button>
           <button
             type="button"
             onClick={() => setIsEnrollModalOpen(true)}
-            className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2"
+            className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center gap-2"
             title="Enroll a student into a course"
             aria-label="Enroll a student into a course"
           >
             <UserPlus className="w-4 h-4" />
-            ENROLL STUDENT
+            Enroll student
           </button>
         </div>
       </div>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-        <DataTable size="lg"
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+        <DataTable tone="cobalt" size="lg"
           columns={columns}
           rows={paginatedEnrollments}
           isLoading={status === "loading" || status === "idle"}
@@ -207,12 +213,16 @@ export default function EnrollmentsTab() {
           sortConfig={sortConfig}
           onSortChange={toggleSort}
         />
-        <Pagination size="lg"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalLabel={`${filteredEnrollments.length} enrollment${filteredEnrollments.length === 1 ? "" : "s"}`}
-        />
+        <div className="px-4 pb-4">
+
+          <Pagination tone="cobalt" size="lg"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalLabel={`${filteredEnrollments.length} enrollment${filteredEnrollments.length === 1 ? "" : "s"}`}
+          />
+
+        </div>
       </div>
 
       <EnrollmentDetailModal
@@ -228,12 +238,12 @@ export default function EnrollmentsTab() {
         onUpdated={() => loadEnrollments({ force: true })}
       />
 
-      <ConfirmDialog size="lg"
+      <ConfirmDialog variant="cobalt" size="lg"
         isOpen={Boolean(removingEnrollment)}
         onClose={() => setRemovingEnrollment(null)}
         onConfirm={handleRemoveConfirm}
         isConfirming={removeEnrollmentMutation.isPending}
-        title="Remove Enrollment"
+        title="Remove enrollment"
         message={`Are you sure you want to remove "${removingEnrollment?.student?.name}" from "${removingEnrollment?.course?.title}"? This cannot be undone and will delete their progress, quiz attempts, and assignment submissions for this course.`}
         confirmLabel="Remove"
       />

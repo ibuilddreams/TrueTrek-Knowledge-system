@@ -42,16 +42,16 @@ const DECISION_OPTIONS = [
 ];
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
+  "w-full px-3 py-3 bg-cn-p-card border border-cn-p-line-2 focus:border-cn-p-accent focus:outline-none rounded-cn-p-sm text-sm text-cn-p-ink placeholder:text-cn-p-muted transition disabled:opacity-60";
 const LABEL_CLASS =
-  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
+  "block mb-1.5 text-[13px] font-semibold text-cn-p-ink";
 
 function InfoRow({ label, value }) {
   if (!value) return null;
   return (
     <div className="flex items-center justify-between gap-4 text-sm py-1.5">
-      <span className="text-muted font-light shrink-0">{label}</span>
-      <span className="text-ink font-medium text-right truncate">{value}</span>
+      <span className="text-cn-p-ink-2 font-light shrink-0">{label}</span>
+      <span className="text-cn-p-ink font-medium text-right truncate">{value}</span>
     </div>
   );
 }
@@ -124,7 +124,7 @@ export default function TeacherOnboardingDetailModal({ isOpen, onClose, applicat
   };
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={Gavel}
@@ -132,10 +132,10 @@ export default function TeacherOnboardingDetailModal({ isOpen, onClose, applicat
       subtitle={data?.teacher?.email || "Review this application"}
       maxWidth="max-w-3xl"
     >
-      {isLoading && <Loader label="Loading application..." />}
+      {isLoading && <Loader tone="cobalt" label="Loading application..." />}
 
       {isError && (
-        <p className="text-sm text-muted font-light py-6 text-center">
+        <p className="text-sm text-cn-p-ink-2 font-light py-6 text-center">
           {getApiErrorMessage(error, "Unable to load this application.")}
         </p>
       )}
@@ -143,14 +143,14 @@ export default function TeacherOnboardingDetailModal({ isOpen, onClose, applicat
       {data && (
         <div className="space-y-5">
           <div className="flex items-center justify-between gap-3">
-            <span className="text-xs font-mono uppercase tracking-wider text-muted font-semibold">
+            <span className="text-xs text-cn-p-ink-2 font-semibold">
               {data.credentials?.length || 0} document
               {(data.credentials?.length || 0) === 1 ? "" : "s"}
             </span>
-            <StatusBadge size="lg" status={data.status} />
+            <StatusBadge tone="cobalt" size="lg" status={data.status} />
           </div>
 
-          <div className="border-t border-line pt-3">
+          <div className="border-t border-cn-p-line pt-3">
             <InfoRow label="Submitted" value={formatDateTime(data.submitted_at)} />
             <InfoRow label="Last updated" value={formatDateTime(data.updated_at)} />
             <InfoRow label="Reviewed by" value={data.reviewed_by?.name} />
@@ -158,33 +158,33 @@ export default function TeacherOnboardingDetailModal({ isOpen, onClose, applicat
           </div>
 
           {data.review_notes && (
-            <div className="p-4 rounded-xl bg-porcelain border border-line">
-              <p className="text-[10px] font-sans uppercase tracking-widest text-muted font-medium mb-1.5">
+            <div className="p-4 rounded-xl bg-cn-p-page border border-cn-p-line">
+              <p className="text-[10px] font-sans text-cn-p-ink-2 font-medium mb-1.5">
                 Previous review notes
               </p>
-              <p className="text-sm text-ink font-light leading-relaxed whitespace-pre-wrap">
+              <p className="text-sm text-cn-p-ink font-light leading-relaxed whitespace-pre-wrap">
                 {data.review_notes}
               </p>
             </div>
           )}
 
-          <div className="border-t border-line pt-1">
+          <div className="border-t border-cn-p-line pt-1">
             <ApplicationSummary application={data} withDocuments />
           </div>
 
           {isApproved ? (
-            <div className="flex items-center gap-2 text-sm text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+            <div className="flex items-center gap-2 text-sm text-cn-p-ok bg-cn-p-ok-bg border border-cn-p-ok-bg rounded-xl p-4">
               <Check className="w-4 h-4 shrink-0" />
               This teacher has been approved. To withdraw their access, suspend the account from
               Admin → Teachers.
             </div>
           ) : isDraft ? (
-            <div className="text-sm text-muted font-light bg-porcelain border border-line rounded-xl p-4">
+            <div className="text-sm text-cn-p-ink-2 font-light bg-cn-p-page border border-cn-p-line rounded-xl p-4">
               This application hasn't been submitted yet, so there's nothing to decide on. It
               will appear in the queue as soon as the teacher sends it.
             </div>
           ) : (
-            <div className="border-t border-line pt-5 space-y-4">
+            <div className="border-t border-cn-p-line pt-5 space-y-4">
               <div>
                 <label htmlFor="onboarding-decision" className={LABEL_CLASS}>
                   Decision
@@ -197,7 +197,7 @@ export default function TeacherOnboardingDetailModal({ isOpen, onClose, applicat
                     setFieldError("");
                   }}
                   disabled={isSubmitting}
-                  className={FIELD_CLASS}
+                  className={`${FIELD_CLASS} cn-p-select`}
                 >
                   {DECISION_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
@@ -209,7 +209,7 @@ export default function TeacherOnboardingDetailModal({ isOpen, onClose, applicat
 
               <div>
                 <label htmlFor="onboarding-review-notes" className={LABEL_CLASS}>
-                  Notes to the teacher {requiresNotes && <span className="text-red-500">*</span>}
+                  Notes to the teacher {requiresNotes && <span className="text-cn-p-bad">*</span>}
                 </label>
                 <textarea
                   id="onboarding-review-notes"
@@ -225,7 +225,7 @@ export default function TeacherOnboardingDetailModal({ isOpen, onClose, applicat
                   className={`${FIELD_CLASS} resize-none`}
                 />
                 {fieldError && (
-                  <p className="text-[11px] font-mono text-red-600 mt-1">{fieldError}</p>
+                  <p className="text-[11px] text-cn-p-bad mt-1">{fieldError}</p>
                 )}
               </div>
 
@@ -234,7 +234,7 @@ export default function TeacherOnboardingDetailModal({ isOpen, onClose, applicat
                   type="button"
                   onClick={handleClose}
                   disabled={isSubmitting}
-                  className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-colors duration-150 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                  className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-cn-p-sm transition-colors duration-150 border border-cn-p-line disabled:opacity-60 disabled:cursor-not-allowed"
                 >
                   Cancel
                 </button>
@@ -242,7 +242,7 @@ export default function TeacherOnboardingDetailModal({ isOpen, onClose, applicat
                   type="button"
                   onClick={handleSave}
                   disabled={isSubmitting}
-                  className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
+                  className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-colors duration-150 flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     <>
@@ -252,7 +252,7 @@ export default function TeacherOnboardingDetailModal({ isOpen, onClose, applicat
                   ) : (
                     <>
                       <Gavel className="w-3.5 h-3.5" />
-                      Record Decision
+                      Record decision
                     </>
                   )}
                 </button>

@@ -43,7 +43,7 @@ export default function InviteCoursesField({ role, values, onChange, enabled, di
   return (
     <div className="space-y-2 text-sm">
       <span className="block">{copy.label}</span>
-      <MultiSelect
+      <MultiSelect tone="cobalt"
         size="lg"
         placeholder={copy.placeholder}
         searchPlaceholder="Search courses..."
@@ -55,14 +55,14 @@ export default function InviteCoursesField({ role, values, onChange, enabled, di
         emptyLabel={role === "STUDENT" ? "No published courses with a teacher are available." : "No courses found."}
       />
       {isError ? (
-        <p role="alert" className="text-xs text-rose-700">
+        <p role="alert" className="text-xs text-cn-p-bad">
           Unable to load courses.{" "}
           <button type="button" className="font-medium underline" onClick={() => refetch()}>
             Retry
           </button>
         </p>
       ) : (
-        <p className="text-xs leading-relaxed text-muted">{copy.hint}</p>
+        <p className="text-xs leading-relaxed text-cn-p-ink-2">{copy.hint}</p>
       )}
     </div>
   );

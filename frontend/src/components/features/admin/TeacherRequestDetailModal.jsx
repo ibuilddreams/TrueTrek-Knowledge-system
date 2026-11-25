@@ -12,24 +12,24 @@ import { toastError, toastSuccess } from "@/lib/toast";
 
 const STATUS_OPTIONS = [
   { value: "PENDING", label: "Pending" },
-  { value: "IN_PROGRESS", label: "In Progress" },
+  { value: "IN_PROGRESS", label: "In progress" },
   { value: "COMPLETED", label: "Completed" },
 ];
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
+  "w-full px-3 py-3 bg-cn-p-card border border-cn-p-line-2 focus:border-cn-p-accent focus:outline-none rounded-cn-p-sm text-sm text-cn-p-ink placeholder:text-cn-p-muted transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
+  "block mb-1.5 text-[13px] font-semibold text-cn-p-ink";
 
-const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-[11px] text-cn-p-bad mt-1";
 
 function InfoRow({ label, value }) {
   if (!value) return null;
   return (
     <div className="flex items-center justify-between text-sm py-1.5">
-      <span className="text-muted font-light">{label}</span>
-      <span className="text-ink font-medium text-right">{value}</span>
+      <span className="text-cn-p-ink-2 font-light">{label}</span>
+      <span className="text-cn-p-ink font-medium text-right">{value}</span>
     </div>
   );
 }
@@ -84,7 +84,7 @@ export default function TeacherRequestDetailModal({ isOpen, onClose, request }) 
   };
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={FileWarning}
@@ -94,24 +94,24 @@ export default function TeacherRequestDetailModal({ isOpen, onClose, request }) 
     >
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <span className="text-xs font-mono uppercase tracking-wider text-muted font-semibold">
+          <span className="text-xs text-cn-p-ink-2 font-semibold">
             {request.request_type_display}
           </span>
-          <StatusBadge size="lg" status={request.status} />
+          <StatusBadge tone="cobalt" size="lg" status={request.status} />
         </div>
 
         <div>
-          <p className="text-[11px] font-mono uppercase tracking-wider text-muted font-semibold mb-1.5">
-            Teacher's Description
+          <p className="text-[11px] text-cn-p-ink-2 font-semibold mb-1.5">
+            Teacher's description
           </p>
-          <p className="text-sm text-muted whitespace-pre-wrap leading-relaxed">{request.description}</p>
+          <p className="text-sm text-cn-p-ink-2 whitespace-pre-wrap leading-relaxed">{request.description}</p>
         </div>
 
-        <div className="border-t border-line pt-3">
+        <div className="border-t border-cn-p-line pt-3">
           <InfoRow label="Submitted" value={formatDateTime(request.created_at)} />
-          <InfoRow label="Last Updated" value={formatDateTime(request.updated_at)} />
+          <InfoRow label="Last updated" value={formatDateTime(request.updated_at)} />
           {request.handled_by && (
-            <InfoRow label="Handled By" value={request.handled_by?.name || request.handled_by?.email} />
+            <InfoRow label="Handled by" value={request.handled_by?.name || request.handled_by?.email} />
           )}
           {request.completed_at && (
             <InfoRow label="Completed" value={formatDateTime(request.completed_at)} />
@@ -119,12 +119,12 @@ export default function TeacherRequestDetailModal({ isOpen, onClose, request }) 
         </div>
 
         {isCompleted ? (
-          <div className="flex items-center gap-2 text-sm text-emerald-800 bg-emerald-50 border border-emerald-100 rounded-xl p-4">
+          <div className="flex items-center gap-2 text-sm text-cn-p-ok bg-cn-p-ok-bg border border-cn-p-ok-bg rounded-xl p-4">
             <Check className="w-4 h-4 shrink-0" />
             This request has been completed and can no longer be modified.
           </div>
         ) : (
-          <div className="border-t border-line pt-4 space-y-4">
+          <div className="border-t border-cn-p-line pt-4 space-y-4">
             <div>
               <label className={LABEL_CLASS}>Status</label>
               <select
@@ -134,7 +134,7 @@ export default function TeacherRequestDetailModal({ isOpen, onClose, request }) 
                   setFieldError("");
                 }}
                 disabled={isSubmitting}
-                className={FIELD_CLASS}
+                className={`${FIELD_CLASS} cn-p-select`}
               >
                 {STATUS_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -146,7 +146,7 @@ export default function TeacherRequestDetailModal({ isOpen, onClose, request }) 
 
             <div>
               <label className={LABEL_CLASS}>
-                Completion / Fix Description {status === "COMPLETED" && <span className="text-red-500">*</span>}
+                Completion / Fix Description {status === "COMPLETED" && <span className="text-cn-p-bad">*</span>}
               </label>
               <textarea
                 value={resolutionDescription}
@@ -168,7 +168,7 @@ export default function TeacherRequestDetailModal({ isOpen, onClose, request }) 
                 type="button"
                 onClick={handleClose}
                 disabled={isSubmitting}
-                className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-colors duration-150 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+                className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-cn-p-sm transition-colors duration-150 border border-cn-p-line disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 Cancel
               </button>
@@ -176,7 +176,7 @@ export default function TeacherRequestDetailModal({ isOpen, onClose, request }) 
                 type="button"
                 onClick={handleSave}
                 disabled={isSubmitting}
-                className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
+                className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-colors duration-150 flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>

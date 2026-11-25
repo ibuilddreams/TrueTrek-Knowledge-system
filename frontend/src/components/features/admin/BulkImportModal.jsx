@@ -57,19 +57,19 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
       icon: CheckCircle2,
       label: "Import completed successfully",
       detail: `${success} row${success === 1 ? "" : "s"} imported with no errors.`,
-      wrap: "border-emerald-200 bg-emerald-50/70",
-      iconWrap: "bg-emerald-100 text-emerald-700",
-      labelClass: "text-emerald-900",
-      detailClass: "text-emerald-700/80",
+      wrap: "border-cn-p-ok-bg bg-cn-p-ok-bg",
+      iconWrap: "bg-cn-p-ok-bg text-cn-p-ok",
+      labelClass: "text-cn-p-ok",
+      detailClass: "text-cn-p-ok",
     },
     partial: {
       icon: AlertTriangle,
       label: "Import completed with some rows skipped or failed",
       detail: `${success} created, ${skipped} skipped as duplicates, ${failed} failed. Review the details below.`,
-      wrap: "border-gold/25 bg-gold/10",
-      iconWrap: "bg-gold/15 text-gold",
-      labelClass: "text-gold",
-      detailClass: "text-gold/80",
+      wrap: "border-cn-p-soft bg-cn-p-soft",
+      iconWrap: "bg-cn-p-soft text-cn-p-soft-ink",
+      labelClass: "text-cn-p-soft-ink",
+      detailClass: "text-cn-p-soft-ink",
     },
     failed: {
       icon: XCircle,
@@ -78,10 +78,10 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
         skipped > 0 && failed === 0
           ? `All ${skipped} row${skipped === 1 ? "" : "s"} matched existing accounts and were skipped.`
           : `All ${total} row${total === 1 ? "" : "s"} were skipped or failed. Review the details below.`,
-      wrap: "border-rose-200 bg-rose-50/70",
-      iconWrap: "bg-rose-100 text-rose-700",
-      labelClass: "text-rose-950",
-      detailClass: "text-rose-700/80",
+      wrap: "border-cn-p-bad-bg bg-cn-p-bad-bg",
+      iconWrap: "bg-cn-p-bad-bg text-cn-p-bad",
+      labelClass: "text-cn-p-bad",
+      detailClass: "text-cn-p-bad",
     },
   }[outcome];
 
@@ -101,12 +101,12 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
     }));
   }, [errors]);
 
-  const cardWrap = "border-line bg-paper";
-  const cardHeaderWrap = "border-line bg-porcelain/80";
-  const mutedLabel = "text-muted";
-  const mutedText = "text-muted";
-  const chipWrap = "bg-porcelain border-line text-muted";
-  const divideClass = "divide-line";
+  const cardWrap = "border-cn-p-line bg-cn-p-card";
+  const cardHeaderWrap = "border-cn-p-line bg-cn-p-page";
+  const mutedLabel = "text-cn-p-ink-2";
+  const mutedText = "text-cn-p-ink-2";
+  const chipWrap = "bg-cn-p-page border-cn-p-line text-cn-p-ink-2";
+  const divideClass = "divide-cn-p-line";
 
   return (
     <div className="space-y-4">
@@ -117,7 +117,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
           <OutcomeIcon className="w-5 h-5" />
         </div>
         <div className="min-w-0">
-          <p className={`text-sm font-serif font-bold leading-tight ${outcomeMeta.labelClass}`}>
+          <p className={`text-sm font-bold leading-tight ${outcomeMeta.labelClass}`}>
             {outcomeMeta.label}
           </p>
           <p className={`text-sm mt-1 leading-relaxed ${outcomeMeta.detailClass}`}>
@@ -128,34 +128,34 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
 
       <div className="grid grid-cols-4 gap-2.5">
         <div className={`rounded-2xl border p-3.5 ${cardWrap}`}>
-          <p className={`text-[11px] font-mono uppercase tracking-wider font-semibold ${mutedLabel}`}>
+          <p className={`text-[11px] font-semibold ${mutedLabel}`}>
             Total
           </p>
-          <p className="text-2xl font-serif font-bold mt-1 tabular-nums text-ink">
+          <p className="text-2xl font-bold mt-1 tabular-nums text-cn-p-ink">
             {total}
           </p>
         </div>
-        <div className="rounded-2xl border p-3.5 border-emerald-200/80 bg-emerald-50/40">
-          <p className="text-[11px] font-mono uppercase tracking-wider font-semibold text-emerald-700">
+        <div className="rounded-2xl border p-3.5 border-cn-p-ok-bg bg-cn-p-ok-bg">
+          <p className="text-[11px] font-semibold text-cn-p-ok">
             Created
           </p>
-          <p className="text-2xl font-serif font-bold mt-1 tabular-nums text-emerald-700">
+          <p className="text-2xl font-bold mt-1 tabular-nums text-cn-p-ok">
             {success}
           </p>
         </div>
-        <div className="rounded-2xl border p-3.5 border-gold/25 bg-gold/10">
-          <p className="text-[11px] font-mono uppercase tracking-wider font-semibold text-gold">
+        <div className="rounded-2xl border p-3.5 border-cn-p-soft bg-cn-p-soft">
+          <p className="text-[11px] font-semibold text-cn-p-soft-ink">
             Skipped
           </p>
-          <p className="text-2xl font-serif font-bold mt-1 tabular-nums text-gold">
+          <p className="text-2xl font-bold mt-1 tabular-nums text-cn-p-soft-ink">
             {skipped}
           </p>
         </div>
-        <div className="rounded-2xl border p-3.5 border-rose-200/80 bg-rose-50/40">
-          <p className="text-[11px] font-mono uppercase tracking-wider font-semibold text-rose-700">
+        <div className="rounded-2xl border p-3.5 border-cn-p-bad-bg bg-cn-p-bad-bg">
+          <p className="text-[11px] font-semibold text-cn-p-bad">
             Failed
           </p>
-          <p className="text-2xl font-serif font-bold mt-1 tabular-nums text-rose-700">
+          <p className="text-2xl font-bold mt-1 tabular-nums text-cn-p-bad">
             {failed}
           </p>
         </div>
@@ -163,22 +163,16 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
 
       <div className={`rounded-2xl border p-3.5 space-y-2 ${cardWrap}`}>
         <div className="flex items-center justify-between gap-2">
-          <p className="text-[11px] font-mono uppercase tracking-wider font-semibold text-muted">
+          <p className="text-[11px] font-semibold text-cn-p-ink-2">
             Success rate
           </p>
-          <p className="text-sm font-mono font-semibold tabular-nums text-muted">
+          <p className="text-sm font-semibold tabular-nums text-cn-p-ink-2">
             {successRate}%
           </p>
         </div>
-        <div className="h-2.5 rounded-full overflow-hidden bg-porcelain">
+        <div className="h-2.5 rounded-full overflow-hidden bg-cn-p-page">
           <div
-            className={`h-full rounded-full transition-all duration-500 ${
-              outcome === "failed"
-                ? "bg-rose-500"
-                : outcome === "partial"
-                  ? "bg-gradient-to-r from-gold to-emerald-500"
-                  : "bg-emerald-500"
-            }`}
+            className={`h-full rounded-full transition-all duration-500 ${ outcome === "failed" ? "bg-cn-p-bad" : outcome === "partial" ? "bg-cn-p-ok" : "bg-cn-p-ok" }`}
             style={{ width: `${successRate}%` }}
           />
         </div>
@@ -188,7 +182,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
         <div className={`rounded-2xl border overflow-hidden ${cardWrap}`}>
           <div className={`px-4 py-3 border-b flex items-center justify-between gap-3 ${cardHeaderWrap}`}>
             <div>
-              <p className={`text-[11px] font-mono uppercase tracking-wider font-semibold ${mutedLabel}`}>
+              <p className={`text-[11px] font-semibold ${mutedLabel}`}>
                 Skipped duplicates
               </p>
               <p className={`text-xs mt-0.5 ${mutedText}`}>
@@ -200,10 +194,10 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
               <button
                 type="button"
                 onClick={onDownloadSkipped}
-                className="shrink-0 px-3 py-2 rounded-lg border text-[11px] font-mono uppercase tracking-wider font-semibold transition flex items-center gap-1.5 border-gold/25 bg-gold/10 hover:bg-gold/15 text-gold"
+                className="shrink-0 px-3 py-2 rounded-lg border text-[11px] font-semibold transition flex items-center gap-1.5 border-cn-p-soft bg-cn-p-soft hover:bg-cn-p-soft text-cn-p-soft-ink"
               >
                 <Download className="w-3 h-3" />
-                Skipped Report
+                Skipped report
               </button>
             )}
           </div>
@@ -216,22 +210,22 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
                   key={`${entry.row}-${entry.email || entry.student_email}`}
                   className="px-4 py-3 flex items-start gap-2.5"
                 >
-                  <div className="w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 bg-gold/10 border-gold/25 text-gold">
+                  <div className="w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 bg-cn-p-soft border-cn-p-soft text-cn-p-soft-ink">
                     <AlertTriangle className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0 flex-1 flex items-start justify-between gap-2">
                     <div className="min-w-0">
-                      <p className="text-sm font-medium truncate text-ink">
+                      <p className="text-sm font-medium truncate text-cn-p-ink">
                         {display.title}
                       </p>
-                      <p className="text-xs mt-0.5 truncate text-muted">
+                      <p className="text-xs mt-0.5 truncate text-cn-p-ink-2">
                         {display.subtitle}
                       </p>
-                      <p className="text-xs mt-0.5 truncate text-gold">
+                      <p className="text-xs mt-0.5 truncate text-cn-p-soft-ink">
                         {entry.reason}
                       </p>
                     </div>
-                    <span className="shrink-0 text-[11px] font-mono font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-gold/10 border border-gold/25 text-gold">
+                    <span className="shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-md bg-cn-p-soft border border-cn-p-soft text-cn-p-soft-ink">
                       R{entry.row}
                     </span>
                   </div>
@@ -246,7 +240,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
         <div className={`rounded-2xl border overflow-hidden ${cardWrap}`}>
           <div className={`px-4 py-3 border-b flex items-center justify-between gap-3 ${cardHeaderWrap}`}>
             <div>
-              <p className={`text-[11px] font-mono uppercase tracking-wider font-semibold ${mutedLabel}`}>
+              <p className={`text-[11px] font-semibold ${mutedLabel}`}>
                 Row errors
               </p>
               <p className={`text-xs mt-0.5 ${mutedText}`}>
@@ -257,10 +251,10 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
             <button
               type="button"
               onClick={onDownloadErrors}
-              className="shrink-0 px-3 py-2 rounded-lg border text-[11px] font-mono uppercase tracking-wider font-semibold transition flex items-center gap-1.5 border-gold/25 bg-gold/10 hover:bg-gold/15 text-gold"
+              className="shrink-0 px-3 py-2 rounded-lg border text-[11px] font-semibold transition flex items-center gap-1.5 border-cn-p-soft bg-cn-p-soft hover:bg-cn-p-soft text-cn-p-soft-ink"
             >
               <Download className="w-3 h-3" />
-              Error Report
+              Error report
             </button>
           </div>
 
@@ -268,15 +262,15 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
             {groupedErrors.map((group) => (
               <div key={group.message} className="px-4 py-3.5">
                 <div className="flex items-start gap-2.5">
-                  <div className="w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 bg-rose-50 border-rose-100 text-rose-600">
+                  <div className="w-7 h-7 rounded-lg border flex items-center justify-center shrink-0 mt-0.5 bg-cn-p-bad-bg border-cn-p-bad-bg text-cn-p-bad">
                     <AlertCircle className="w-3.5 h-3.5" />
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-start justify-between gap-2">
-                      <p className="text-sm font-medium leading-relaxed text-rose-800">
+                      <p className="text-sm font-medium leading-relaxed text-cn-p-bad">
                         {group.message}
                       </p>
-                      <span className="shrink-0 text-[11px] font-mono font-semibold uppercase tracking-wider px-2 py-0.5 rounded-md bg-rose-50 border border-rose-100 text-rose-600">
+                      <span className="shrink-0 text-[11px] font-semibold px-2 py-0.5 rounded-md bg-cn-p-bad-bg border border-cn-p-bad-bg text-cn-p-bad">
                         {group.count}×
                       </span>
                     </div>
@@ -289,14 +283,14 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
                         return (
                           <span
                             key={`${entry.row}-${email}-${course}`}
-                            className={`inline-flex items-center gap-1.5 max-w-full px-2 py-1 rounded-lg border text-[11px] font-mono ${chipWrap}`}
+                            className={`inline-flex items-center gap-1.5 max-w-full px-2 py-1 rounded-lg border text-[11px] ${chipWrap}`}
                             title={[email, course].filter(Boolean).join(" · ")}
                           >
-                            <span className="font-semibold text-ink">
+                            <span className="font-semibold text-cn-p-ink">
                               R{entry.row}
                             </span>
                             {email && (
-                              <span className="truncate max-w-[120px] text-muted">
+                              <span className="truncate max-w-[120px] text-cn-p-ink-2">
                                 {email}
                               </span>
                             )}
@@ -304,7 +298,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
                         );
                       })}
                       {group.rows.length > 8 && (
-                        <span className="inline-flex items-center px-2 py-1 rounded-lg text-[11px] font-mono bg-porcelain text-muted">
+                        <span className="inline-flex items-center px-2 py-1 rounded-lg text-[11px] bg-cn-p-page text-cn-p-ink-2">
                           +{group.rows.length - 8} more
                         </span>
                       )}
@@ -318,7 +312,7 @@ function ImportSummary({ result, type, onDownloadErrors, onDownloadSkipped }) {
       )}
 
       {errors.length === 0 && type === "enrollments" && (
-        <p className="text-xs font-mono text-center text-muted">
+        <p className="text-xs text-center text-cn-p-ink-2">
           All enrollment rows were processed successfully.
         </p>
       )}
@@ -472,11 +466,11 @@ export default function BulkImportModal({
   };
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={Upload}
-      title={result ? "Import Summary" : config.title}
+      title={result ? "Import summary" : config.title}
       subtitle={
         result
           ? "Review the results of your bulk import."
@@ -494,15 +488,15 @@ export default function BulkImportModal({
           />
         ) : (
           <>
-            <div className="rounded-xl border p-4 border-gold/25 bg-gold/12">
-              <p className="text-[11px] font-mono uppercase tracking-wider font-semibold mb-2 text-gold">
+            <div className="rounded-xl border p-4 border-cn-p-soft bg-cn-p-soft">
+              <p className="text-[11px] font-semibold mb-2 text-cn-p-soft-ink">
                 Instructions
               </p>
               <ul className="space-y-1.5">
                 {config.instructions.map((item) => (
                   <li
                     key={item}
-                    className="text-sm font-light leading-relaxed pl-3 relative before:content-[''] before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-gold text-muted"
+                    className="text-sm font-light leading-relaxed pl-3 relative before:content-[''] before:absolute before:left-0 before:top-2 before:w-1.5 before:h-1.5 before:rounded-full before:bg-cn-p-accent text-cn-p-ink-2"
                   >
                     {item}
                   </li>
@@ -515,7 +509,7 @@ export default function BulkImportModal({
                 type="button"
                 onClick={() => handleDownloadSample("csv")}
                 disabled={isDownloading || isUploading}
-                className="flex-1 px-4 py-3 text-sm font-semibold font-mono rounded-xl tracking-wider transition-all flex items-center justify-center gap-2 border shadow-sm disabled:opacity-60 disabled:cursor-not-allowed bg-transparent hover:bg-porcelain text-ink border-line"
+                className="flex-1 px-4 py-3 text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 border disabled:opacity-60 disabled:cursor-not-allowed bg-transparent hover:bg-cn-p-page text-cn-p-ink border-cn-p-line"
               >
                 <Download className="w-3.5 h-3.5" />
                 Sample CSV
@@ -524,7 +518,7 @@ export default function BulkImportModal({
                 type="button"
                 onClick={() => handleDownloadSample("xlsx")}
                 disabled={isDownloading || isUploading}
-                className="flex-1 px-4 py-3 text-sm font-semibold font-mono rounded-xl tracking-wider transition-all flex items-center justify-center gap-2 border shadow-sm disabled:opacity-60 disabled:cursor-not-allowed bg-transparent hover:bg-porcelain text-ink border-line"
+                className="flex-1 px-4 py-3 text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 border disabled:opacity-60 disabled:cursor-not-allowed bg-transparent hover:bg-cn-p-page text-cn-p-ink border-cn-p-line"
               >
                 <Download className="w-3.5 h-3.5" />
                 Sample XLSX
@@ -532,21 +526,17 @@ export default function BulkImportModal({
             </div>
 
             <div>
-              <label className="text-[11px] font-mono block uppercase tracking-wider mb-1.5 font-semibold text-muted">
-                Upload File
+              <label className="text-[11px] block mb-1.5 font-semibold text-cn-p-ink-2">
+                Upload file
               </label>
               <label
-                className={`flex flex-col items-center justify-center gap-2 w-full min-h-[140px] rounded-xl border border-dashed px-4 py-6 transition cursor-pointer ${
-                  isUploading
-                    ? "border-line bg-porcelain opacity-60 cursor-not-allowed"
-                    : "border-line bg-porcelain/70 hover:border-pine hover:bg-porcelain"
-                }`}
+                className={`flex flex-col items-center justify-center gap-2 w-full min-h-[140px] rounded-xl border border-dashed px-4 py-6 transition cursor-pointer ${ isUploading ? "border-cn-p-line bg-cn-p-page opacity-60 cursor-not-allowed" : "border-cn-p-line bg-cn-p-page hover:border-cn-p-accent hover:bg-cn-p-page" }`}
               >
-                <FileUp className="w-6 h-6 text-gold" />
-                <span className="text-sm font-mono text-center text-muted">
+                <FileUp className="w-6 h-6 text-cn-p-soft-ink" />
+                <span className="text-sm text-center text-cn-p-ink-2">
                   {file ? file.name : "Choose CSV or XLSX file"}
                 </span>
-                <span className="text-[11px] font-mono uppercase tracking-wider text-muted">
+                <span className="text-[11px] text-cn-p-ink-2">
                   Max 5MB
                 </span>
                 <input
@@ -561,7 +551,7 @@ export default function BulkImportModal({
             </div>
 
             {validationError && (
-              <div className="flex items-start gap-2 rounded-xl border px-3.5 py-3 text-sm border-rose-200 bg-rose-50 text-rose-700">
+              <div className="flex items-start gap-2 rounded-xl border px-3.5 py-3 text-sm border-cn-p-bad-bg bg-cn-p-bad-bg text-cn-p-bad">
                 <AlertCircle className="w-4 h-4 shrink-0 mt-0.5" />
                 <p>{validationError}</p>
               </div>
@@ -569,13 +559,13 @@ export default function BulkImportModal({
 
             {(isUploading || uploadProgress > 0) && (
               <div className="space-y-2">
-                <div className="flex items-center justify-between text-[11px] font-mono uppercase tracking-wider text-muted">
+                <div className="flex items-center justify-between text-[11px] text-cn-p-ink-2">
                   <span>{isUploading ? "Uploading..." : "Ready"}</span>
                   <span>{uploadProgress}%</span>
                 </div>
-                <div className="h-2 rounded-full overflow-hidden bg-porcelain">
+                <div className="h-2 rounded-full overflow-hidden bg-cn-p-page">
                   <div
-                    className="h-full bg-gradient-to-r from-pine to-moss transition-all duration-200"
+                    className="h-full bg-cn-p-accent transition-all duration-200"
                     style={{ width: `${uploadProgress}%` }}
                   />
                 </div>
@@ -584,12 +574,12 @@ export default function BulkImportModal({
           </>
         )}
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2 border-t border-line">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-2 border-t border-cn-p-line">
           <button
             type="button"
             onClick={handleClose}
             disabled={isUploading}
-            className="px-4 py-3 text-sm font-semibold font-mono rounded-full tracking-wider transition-all flex items-center justify-center gap-2 border shadow-sm disabled:opacity-60 disabled:cursor-not-allowed bg-transparent hover:bg-porcelain text-ink border-line"
+            className="px-4 py-3 text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 border disabled:opacity-60 disabled:cursor-not-allowed bg-transparent hover:bg-cn-p-page text-cn-p-ink border-cn-p-line"
           >
             <X className="w-3.5 h-3.5" />
             Close
@@ -598,17 +588,17 @@ export default function BulkImportModal({
             <button
               type="button"
               onClick={handleImportAnother}
-              className="px-6 py-3 text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-all flex items-center justify-center gap-2 bg-pine hover:bg-moss"
+              className="px-6 py-3 text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 bg-cn-p-accent hover:bg-cn-p-accent-hover"
             >
               <Upload className="w-3.5 h-3.5" />
-              Import Another
+              Import another
             </button>
           ) : (
             <button
               type="button"
               onClick={handleUpload}
               disabled={!file || isUploading || Boolean(validationError)}
-              className="px-6 py-3 disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-all flex items-center justify-center gap-2 bg-pine hover:bg-moss"
+              className="px-6 py-3 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 bg-cn-p-accent hover:bg-cn-p-accent-hover"
             >
               {isUploading ? (
                 <>
@@ -618,7 +608,7 @@ export default function BulkImportModal({
               ) : (
                 <>
                   <Upload className="w-3.5 h-3.5" />
-                  Start Import
+                  Start import
                 </>
               )}
             </button>

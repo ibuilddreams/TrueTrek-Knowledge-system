@@ -26,7 +26,7 @@ export default function DailyDrillReminderModal({ isOpen, onClose, onLater, onSt
           onClick={onStartDrill}
           className="px-6 py-3 text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-colors duration-150 text-paper bg-pine hover:bg-moss"
         >
-          Start Drill
+          Start drill
         </button>
       </div>
     </Modal>

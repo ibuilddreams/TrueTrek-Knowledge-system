@@ -135,17 +135,17 @@ export default function DailyDrillQuizModal({ isOpen, onClose, onSaved, schedule
   if (!schedule) return null;
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={HelpCircle}
-      title="Manage Quiz"
+      title="Manage quiz"
       subtitle={`${schedule.title} — 1 to ${MAX_QUESTIONS} questions, one correct choice each.`}
       maxWidth="max-w-2xl"
     >
       <form onSubmit={handleSubmit} className="space-y-5">
         {questions.map((question, questionIndex) => (
-          <div key={questionIndex} className="border border-line rounded-xl p-4 space-y-3 bg-porcelain/60">
+          <div key={questionIndex} className="border border-cn-p-line rounded-xl p-4 space-y-3 bg-cn-p-page">
             <div className="flex items-start gap-2">
               <input
                 type="text"
@@ -153,14 +153,14 @@ export default function DailyDrillQuizModal({ isOpen, onClose, onSaved, schedule
                 onChange={(event) => updateQuestionText(questionIndex, event.target.value)}
                 disabled={saveMutation.isPending}
                 placeholder={`Question ${questionIndex + 1}`}
-                className="flex-1 px-3 py-2 bg-paper border border-line focus:border-pine focus:outline-none rounded-lg text-sm font-mono text-ink"
+                className="flex-1 px-3 py-2 bg-cn-p-card border border-cn-p-line focus:border-cn-p-accent focus:outline-none rounded-lg text-sm text-cn-p-ink"
               />
               {questions.length > 1 && (
                 <button
                   type="button"
                   onClick={() => removeQuestion(questionIndex)}
                   disabled={saveMutation.isPending}
-                  className="p-2 text-rose-500 hover:bg-rose-50 rounded-lg transition"
+                  className="p-2 text-cn-p-bad hover:bg-cn-p-bad-bg rounded-lg transition"
                   aria-label="Remove question"
                 >
                   <Trash2 className="w-4 h-4" />
@@ -176,11 +176,9 @@ export default function DailyDrillQuizModal({ isOpen, onClose, onSaved, schedule
                     onClick={() => setCorrectChoice(questionIndex, choiceIndex)}
                     disabled={saveMutation.isPending}
                     title="Mark as correct"
-                    className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center ${
-                      choice.is_correct ? "bg-emerald-500 border-emerald-500" : "border-line"
-                    }`}
+                    className={`w-5 h-5 rounded-full border-2 shrink-0 flex items-center justify-center ${ choice.is_correct ? "bg-cn-p-ok border-cn-p-ok" : "border-cn-p-line" }`}
                   >
-                    {choice.is_correct && <Check className="w-3 h-3 text-paper" />}
+                    {choice.is_correct && <Check className="w-3 h-3 text-white" />}
                   </button>
                   <input
                     type="text"
@@ -188,14 +186,14 @@ export default function DailyDrillQuizModal({ isOpen, onClose, onSaved, schedule
                     onChange={(event) => updateChoiceText(questionIndex, choiceIndex, event.target.value)}
                     disabled={saveMutation.isPending}
                     placeholder={`Choice ${choiceIndex + 1}`}
-                    className="flex-1 px-3 py-1.5 bg-paper border border-line focus:border-pine focus:outline-none rounded-lg text-xs font-mono text-ink"
+                    className="flex-1 px-3 py-1.5 bg-cn-p-card border border-cn-p-line focus:border-cn-p-accent focus:outline-none rounded-lg text-xs text-cn-p-ink"
                   />
                   {question.choices.length > 2 && (
                     <button
                       type="button"
                       onClick={() => removeChoice(questionIndex, choiceIndex)}
                       disabled={saveMutation.isPending}
-                      className="p-1.5 text-muted hover:text-rose-500 transition"
+                      className="p-1.5 text-cn-p-ink-2 hover:text-cn-p-bad transition"
                       aria-label="Remove choice"
                     >
                       <X className="w-3.5 h-3.5" />
@@ -207,46 +205,46 @@ export default function DailyDrillQuizModal({ isOpen, onClose, onSaved, schedule
                 type="button"
                 onClick={() => addChoice(questionIndex)}
                 disabled={saveMutation.isPending}
-                className="text-[11px] font-mono uppercase tracking-wider text-pine hover:text-moss flex items-center gap-1 pt-1"
+                className="text-[11px] text-cn-p-accent hover:text-cn-p-accent-hover flex items-center gap-1 pt-1"
               >
                 <Plus className="w-3 h-3" />
-                Add Choice
+                Add choice
               </button>
             </div>
           </div>
         ))}
 
-        {error && <p className="text-[11px] font-mono text-red-600">{error}</p>}
+        {error && <p className="text-[11px] text-cn-p-bad">{error}</p>}
 
         {questions.length < MAX_QUESTIONS && (
           <button
             type="button"
             onClick={addQuestion}
             disabled={saveMutation.isPending}
-            className="w-full py-2.5 border-2 border-dashed border-line hover:border-pine text-muted hover:text-pine rounded-xl text-xs font-mono uppercase tracking-wider transition flex items-center justify-center gap-1.5"
+            className="w-full py-2.5 border-2 border-dashed border-cn-p-line hover:border-cn-p-accent text-cn-p-ink-2 hover:text-cn-p-accent rounded-xl text-xs transition flex items-center justify-center gap-1.5"
           >
             <Plus className="w-3.5 h-3.5" />
-            Add Question
+            Add question
           </button>
         )}
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-line">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-4 border-t border-cn-p-line">
           <button
             type="button"
             onClick={handleClose}
             disabled={saveMutation.isPending}
-            className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-colors duration-150 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-cn-p-sm transition-colors duration-150 border border-cn-p-line disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={saveMutation.isPending}
-            className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
+            className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-colors duration-150 flex items-center justify-center gap-2"
           >
             {saveMutation.isPending ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Saving...
               </>
             ) : (

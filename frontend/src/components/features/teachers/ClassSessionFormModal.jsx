@@ -32,12 +32,12 @@ const INITIAL_FORM = {
 };
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
+  "w-full px-3 py-3 bg-cn-p-card border border-cn-p-line-2 focus:border-cn-p-accent focus:outline-none rounded-cn-p-sm text-sm text-cn-p-ink placeholder:text-cn-p-muted transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
+  "block mb-1.5 text-[13px] font-semibold text-cn-p-ink";
 
-const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-xs text-cn-p-bad mt-1";
 
 // The form's own fields are camelCase while the API answers under the
 // serializer's snake_case names, so a message for one input can arrive under
@@ -74,12 +74,12 @@ function extractFieldErrors(error) {
 }
 
 /**
- * Schedule or edit a live class.
- *
- * The course can only be chosen when creating: moving an existing class onto
- * another course would change who is expected to attend it, under students
- * who have already been told about it, so the backend refuses it too.
- */
+  * Schedule or edit a live class.
+   *
+   * The course can only be chosen when creating: moving an existing class onto
+   * another course would change who is expected to attend it, under students
+   * who have already been told about it, so the backend refuses it too.
+   */
 export default function ClassSessionFormModal({ isOpen, onClose, editingSession }) {
   const isEditMode = Boolean(editingSession);
   const queryClient = useQueryClient();
@@ -206,11 +206,11 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
   };
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={Video}
-      title={isEditMode ? "Edit Live Class" : "Schedule a Live Class"}
+      title={isEditMode ? "Edit live class" : "Schedule a live class"}
       subtitle={
         isEditMode
           ? editingSession?.title
@@ -222,16 +222,16 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
         {isEditMode ? (
           <div>
             <label className={LABEL_CLASS}>Course</label>
-            <p className="px-4 py-3 bg-porcelain border border-line rounded-xl text-sm font-mono text-muted">
+            <p className="px-4 py-3 bg-cn-p-page border border-cn-p-line rounded-xl text-sm text-cn-p-ink-2">
               {editingSession.course_code} · {editingSession.course_title}
             </p>
-            <p className="mt-1.5 text-[11px] font-mono text-muted">
+            <p className="mt-1.5 text-[11px] text-cn-p-ink-2">
               A class stays with the course it was announced to.
             </p>
           </div>
         ) : (
           <div>
-            <SearchableSelect
+            <SearchableSelect tone="cobalt"
               label="Course"
               placeholder="Select one of your courses"
               searchPlaceholder="Search your courses..."
@@ -277,7 +277,7 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
               disabled={isSubmitting}
               className={FIELD_CLASS}
             />
-            <p className="mt-1.5 text-[11px] font-mono text-muted">Your local time</p>
+            <p className="mt-1.5 text-[11px] text-cn-p-ink-2">Your local time</p>
             {fieldErrors.scheduled_at && (
               <p className={ERROR_CLASS}>{fieldErrors.scheduled_at}</p>
             )}
@@ -295,7 +295,7 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
               disabled={isSubmitting}
               className={FIELD_CLASS}
             />
-            <p className="mt-1.5 text-[11px] font-mono text-muted">
+            <p className="mt-1.5 text-[11px] text-cn-p-ink-2">
               The room opens at the start time
             </p>
             {fieldErrors.duration_minutes && (
@@ -318,7 +318,7 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
         </div>
 
         <div>
-          <label className="flex items-start gap-3 px-4 py-3 bg-porcelain border border-line rounded-xl cursor-pointer hover:border-pine/40 transition-colors">
+          <label className="flex items-start gap-3 px-4 py-3 bg-cn-p-page border border-cn-p-line rounded-xl cursor-pointer hover:border-cn-p-accent-soft transition-colors">
             <input
               type="checkbox"
               checked={form.isRecorded}
@@ -326,13 +326,13 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
                 setForm((prev) => ({ ...prev, isRecorded: event.target.checked }))
               }
               disabled={isSubmitting}
-              className="mt-0.5 w-4 h-4 accent-pine cursor-pointer"
+              className="mt-0.5 w-4 h-4 accent-cn-p-accent cursor-pointer"
             />
             <span className="min-w-0">
-              <span className="block text-sm font-mono text-ink">
+              <span className="block text-sm text-cn-p-ink">
                 Record this class
               </span>
-              <span className="block text-[11px] font-light text-muted mt-0.5 leading-relaxed">
+              <span className="block text-[11px] font-light text-cn-p-ink-2 mt-0.5 leading-relaxed">
                 Recording starts when you open the room and stops when you
                 leave. Everyone in the class is shown that it is on, and the
                 students on this course are notified when the recording is
@@ -345,7 +345,7 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
         </div>
 
         <div>
-          <label className="flex items-start gap-3 px-4 py-3 bg-porcelain border border-line rounded-xl cursor-pointer hover:border-pine/40 transition-colors">
+          <label className="flex items-start gap-3 px-4 py-3 bg-cn-p-page border border-cn-p-line rounded-xl cursor-pointer hover:border-cn-p-accent-soft transition-colors">
             <input
               type="checkbox"
               checked={form.takesNotes}
@@ -353,13 +353,13 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
                 setForm((prev) => ({ ...prev, takesNotes: event.target.checked }))
               }
               disabled={isSubmitting}
-              className="mt-0.5 w-4 h-4 accent-pine cursor-pointer"
+              className="mt-0.5 w-4 h-4 accent-cn-p-accent cursor-pointer"
             />
             <span className="min-w-0">
-              <span className="block text-sm font-mono text-ink">
+              <span className="block text-sm text-cn-p-ink">
                 Take AI notes on this class
               </span>
-              <span className="block text-[11px] font-light text-muted mt-0.5 leading-relaxed">
+              <span className="block text-[11px] font-light text-cn-p-ink-2 mt-0.5 leading-relaxed">
                 The class is transcribed while you teach and written up into
                 notes afterwards — a summary, what was covered, the key points
                 and any homework you set. Everyone in the class is shown that
@@ -386,12 +386,12 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
           {fieldErrors.agenda && <p className={ERROR_CLASS}>{fieldErrors.agenda}</p>}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-line">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-cn-p-line">
           <button
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-all flex items-center justify-center gap-2 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 border border-cn-p-line disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -399,11 +399,11 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 {isEditMode ? "Saving..." : "Scheduling..."}
               </>
             ) : (

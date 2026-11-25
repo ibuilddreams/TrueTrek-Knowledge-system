@@ -35,12 +35,12 @@ const INITIAL_FORM = {
 };
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
+  "w-full px-3 py-3 bg-cn-p-card border border-cn-p-line-2 focus:border-cn-p-accent focus:outline-none rounded-cn-p-sm text-sm text-cn-p-ink placeholder:text-cn-p-muted transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
+  "block mb-1.5 text-[13px] font-semibold text-cn-p-ink";
 
-const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-[11px] text-cn-p-bad mt-1";
 
 export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) {
   const isEditMode = Boolean(course);
@@ -317,11 +317,11 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
   const isBusy = isSubmitting || isLoadingCourse;
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={isEditMode ? Edit3 : BookPlus}
-      title={isEditMode ? "Edit Course" : "Add Course"}
+      title={isEditMode ? "Edit course" : "Add course"}
       subtitle={isEditMode ? "Update the course details." : "Create a new course."}
       maxWidth="max-w-2xl"
     >
@@ -367,7 +367,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
           {fieldErrors.description && <p className={ERROR_CLASS}>{fieldErrors.description}</p>}
         </div>
 
-        <LearningOutcomesField
+        <LearningOutcomesField tone="cobalt"
           values={learningOutcomes}
           onChange={(next) => {
             setLearningOutcomes(next);
@@ -384,9 +384,9 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
               <img
                 src={existingThumbnailUrl}
                 alt="Current thumbnail"
-                className="w-14 h-14 object-cover rounded-lg border border-line"
+                className="w-14 h-14 object-cover rounded-lg border border-cn-p-line"
               />
-              <span className="text-[11px] font-mono text-muted">Current thumbnail</span>
+              <span className="text-[11px] text-cn-p-ink-2">Current thumbnail</span>
             </div>
           )}
           <input
@@ -394,14 +394,14 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
             accept="image/*"
             onChange={(event) => setThumbnailFile(event.target.files?.[0] || null)}
             disabled={isBusy}
-            className={`${FIELD_CLASS} file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-sage/40 file:text-pine file:text-[11px] file:font-mono file:uppercase file:tracking-wider`}
+            className={`${FIELD_CLASS} file:mr-3 file:px-3 file:py-1.5 file:rounded-lg file:border-0 file:bg-cn-p-soft file:text-cn-p-soft-ink file:text-xs file:font-semibold`}
           />
           {fieldErrors.thumbnail && <p className={ERROR_CLASS}>{fieldErrors.thumbnail}</p>}
         </div>
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <SearchableSelect size="lg"
+            <SearchableSelect tone="cobalt" size="lg"
               label="Category"
               placeholder="Select a category"
               searchPlaceholder="Search categories..."
@@ -421,7 +421,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
           </div>
 
           <div>
-            <MultiSelect size="lg"
+            <MultiSelect tone="cobalt" size="lg"
               label="Tags"
               placeholder="Select tags"
               searchPlaceholder="Search tags..."
@@ -445,7 +445,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
               value={form.status}
               onChange={updateField("status")}
               disabled={isBusy || isLoadingOptions}
-              className={`${FIELD_CLASS} mt-auto`}
+              className={`${FIELD_CLASS} cn-p-select mt-auto`}
             >
               {statusOptions.length === 0 && <option value={form.status}>Loading...</option>}
               {statusOptions.map((option) => (
@@ -463,7 +463,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
               value={form.difficulty}
               onChange={updateField("difficulty")}
               disabled={isBusy}
-              className={`${FIELD_CLASS} mt-auto`}
+              className={`${FIELD_CLASS} cn-p-select mt-auto`}
             >
               {DIFFICULTY_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -503,7 +503,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
         </div>
 
         <div>
-          <MultiSelect size="lg"
+          <MultiSelect tone="cobalt" size="lg"
             label="Instructors"
             placeholder="Select instructors"
             searchPlaceholder="Search instructors..."
@@ -524,19 +524,19 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
                 return (
                   <li
                     key={instructorId}
-                    className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-line bg-porcelain/60 text-sm"
+                    className="flex items-center justify-between gap-3 p-2.5 rounded-lg border border-cn-p-line bg-cn-p-page text-sm"
                   >
-                    <span className="font-semibold text-ink">
+                    <span className="font-semibold text-cn-p-ink">
                       {instructor.full_name || instructor.email}
                     </span>
-                    <label className="flex items-center gap-1.5 text-[11px] font-mono text-muted uppercase tracking-wider">
+                    <label className="flex items-center gap-1.5 text-[11px] text-cn-p-ink-2">
                       <input
                         type="checkbox"
                         checked={leadInstructorIds.includes(instructorId)}
                         onChange={() => toggleLeadInstructor(instructorId)}
                         disabled={isBusy}
                       />
-                      Lead Instructor
+                      Lead instructor
                     </label>
                   </li>
                 );
@@ -545,12 +545,12 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
           )}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-line">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-cn-p-line">
           <button
             type="button"
             onClick={handleClose}
             disabled={isBusy}
-            className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-all flex items-center justify-center gap-2 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 border border-cn-p-line disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -559,11 +559,11 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
           <button
             type="submit"
             disabled={isBusy}
-            className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 {isEditMode ? "Updating..." : "Creating..."}
               </>
             ) : (

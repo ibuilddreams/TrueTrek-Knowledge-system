@@ -1,8 +1,9 @@
 "use client";
 
 import { useState } from "react";
-import { ArrowLeft, LineChart } from "lucide-react";
+import { ArrowLeft } from "lucide-react";
 import TabNav from "@/components/ui/TabNav";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 import TabTransition from "@/components/ui/TabTransition";
 import { SUB_TABS } from "@/components/features/progress/progressConstants";
 import LessonProgressPanel from "@/components/features/progress/LessonProgressPanel";
@@ -13,34 +14,23 @@ export default function TeacherCourseProgressScreen({ courseId, course, onBack }
   const [activeSubTab, setActiveSubTab] = useState("lessons");
 
   return (
-    <div className="space-y-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-sm font-mono font-semibold text-muted hover:text-pine transition-colors cursor-pointer"
+        className="inline-flex items-center gap-1.5 text-sm font-semibold text-cn-p-ink-2 hover:text-cn-p-accent transition-colors cursor-pointer"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
-        Back to Courses
+        Back to My courses
       </button>
 
-      <div className="relative bg-paper border border-line rounded-card shadow-soft overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pine via-moss to-gold opacity-80" />
-        <div className="p-6 sm:p-7 flex items-center gap-4">
-          <div className="w-12 h-12 rounded-card bg-pine/8 border border-pine/15 text-pine flex items-center justify-center shrink-0">
-            <LineChart className="w-5 h-5" />
-          </div>
-          <div className="min-w-0">
-            <span className="text-pine font-sans text-xs uppercase tracking-widest font-medium block mb-1">
-              Student Progress
-            </span>
-            <h2 className="text-2xl font-serif font-light text-ink leading-[0.92] truncate">
-              {course?.title || "Course"}
-            </h2>
-          </div>
-        </div>
-      </div>
+      <PortalPageHead
+        title={course?.title || "Course"}
+        subtitle="Completion per lesson, assignment and quiz for every enrolled student."
+      />
 
       <TabNav
+        tone="cobalt"
         tabs={SUB_TABS}
         activeTab={activeSubTab}
         onChange={setActiveSubTab}
@@ -49,9 +39,15 @@ export default function TeacherCourseProgressScreen({ courseId, course, onBack }
       />
 
       <TabTransition activeKey={activeSubTab}>
-        {activeSubTab === "lessons" && <LessonProgressPanel courseId={courseId} />}
-        {activeSubTab === "assignments" && <AssignmentProgressPanel courseId={courseId} />}
-        {activeSubTab === "quizzes" && <QuizProgressPanel courseId={courseId} />}
+        {activeSubTab === "lessons" && (
+          <LessonProgressPanel courseId={courseId} tone="cobalt" />
+        )}
+        {activeSubTab === "assignments" && (
+          <AssignmentProgressPanel courseId={courseId} tone="cobalt" />
+        )}
+        {activeSubTab === "quizzes" && (
+          <QuizProgressPanel courseId={courseId} tone="cobalt" />
+        )}
       </TabTransition>
     </div>
   );

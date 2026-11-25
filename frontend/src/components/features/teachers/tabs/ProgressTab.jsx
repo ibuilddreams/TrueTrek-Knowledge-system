@@ -11,6 +11,13 @@ import SearchBar from "@/components/ui/SearchBar";
 import DataTable from "@/components/ui/DataTable";
 import Pagination from "@/components/ui/Pagination";
 import StatusBadge from "@/components/ui/StatusBadge";
+import PortalCard from "@/components/features/portal/shell/PortalCard";
+import {
+  PortalButton,
+  PortalPageHead,
+  PortalToolbar,
+  PortalToolbarCount,
+} from "@/components/features/portal/shell/PortalUI";
 import TeacherCourseProgressScreen from "../TeacherCourseProgressScreen";
 
 const PAGE_SIZE = 10;
@@ -76,7 +83,7 @@ export default function ProgressTab() {
   const columns = [
     { key: "title", header: "Course", render: (course) => course.title },
     { key: "category", header: "Category", render: (course) => course.category?.name || "—" },
-    { key: "status", header: "Status", render: (course) => <StatusBadge status={course.status} size="lg" /> },
+    { key: "status", header: "Status", render: (course) => <StatusBadge tone="cobalt" status={course.status} size="lg" /> },
     { key: "total_students", header: "Students", render: (course) => course.total_students ?? 0 },
     {
       key: "actions",
@@ -85,49 +92,58 @@ export default function ProgressTab() {
         <button
           type="button"
           onClick={() => handleSelectCourse(course)}
-          className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-pine hover:text-moss transition cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-cn-p-accent hover:text-cn-p-accent-hover transition cursor-pointer"
         >
           <LineChart className="w-3.5 h-3.5" />
-          View Progress
+          View progress
         </button>
       ),
     },
   ];
 
   return (
-    <div className="space-y-5">
-      <SearchBar
-        value={searchInput}
-        onChange={(value) => {
-          setSearchInput(value);
-          setPage(1);
-        }}
-        placeholder="Search courses by title..."
-        size="lg"
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Progress"
+        subtitle="How far students have got in each of your courses."
       />
 
       {!isLoading && isError && (
-        <div className="bg-paper border border-line rounded-card shadow-soft p-8 text-center max-w-lg mx-auto">
-          <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-6 h-6" />
-          </div>
-          <p className="text-sm text-muted font-light mb-6">
+        <PortalCard className="mx-auto flex max-w-lg flex-col items-center gap-3 p-10 text-center">
+          <span className="grid h-12 w-12 place-items-center rounded-cn-p-sm bg-cn-p-bad-bg text-cn-p-bad">
+            <AlertCircle className="h-6 w-6" />
+          </span>
+          <p className="text-sm text-cn-p-ink-2">
             {getApiErrorMessage(error, "Unable to load your assigned courses.")}
           </p>
-          <button
-            type="button"
-            onClick={() => refetch()}
-            className="inline-flex items-center gap-2 px-5 py-3 bg-pine hover:bg-moss text-paper font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-soft transition cursor-pointer"
-          >
-            <RefreshCw className="w-4 h-4" />
+          <PortalButton size="sm" onClick={() => refetch()}>
+            <RefreshCw className="h-3.5 w-3.5" />
             Retry
-          </button>
-        </div>
+          </PortalButton>
+        </PortalCard>
       )}
 
       {!isError && (
-        <div className="bg-paper border border-line rounded-card shadow-soft p-6">
+        <PortalCard className="overflow-hidden">
+          <PortalToolbar>
+            <SearchBar
+              tone="cobalt"
+              value={searchInput}
+              onChange={(value) => {
+                setSearchInput(value);
+                setPage(1);
+              }}
+              placeholder="Search courses"
+              className="w-full sm:w-[280px]"
+              size="lg"
+            />
+            <PortalToolbarCount>
+              {courses.length} course{courses.length === 1 ? "" : "s"}
+            </PortalToolbarCount>
+          </PortalToolbar>
+
           <DataTable
+            tone="cobalt"
             columns={columns}
             rows={paginatedCourses}
             keyField="id"
@@ -135,14 +151,17 @@ export default function ProgressTab() {
             emptyLabel="No assigned courses found."
             size="lg"
           />
-          <Pagination
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            totalLabel={`${courses.length} course${courses.length === 1 ? "" : "s"}`}
-            size="lg"
-          />
-        </div>
+          <div className="px-4 pb-4">
+            <Pagination
+              tone="cobalt"
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalLabel={`${courses.length} course${courses.length === 1 ? "" : "s"}`}
+              size="lg"
+            />
+          </div>
+        </PortalCard>
       )}
     </div>
   );

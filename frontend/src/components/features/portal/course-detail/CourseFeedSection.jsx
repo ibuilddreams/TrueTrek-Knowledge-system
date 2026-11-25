@@ -43,7 +43,7 @@ export default function CourseFeedSection({ courseId }) {
       <div>
         <h4 className="font-serif font-bold text-ink flex items-center gap-2">
           <Megaphone className="w-4 h-4 text-pine" />
-          Class Feed
+          Class feed
         </h4>
         <p className="text-sm text-muted font-light mt-0.5">
           Updates and short videos your instructor has shared with this class.

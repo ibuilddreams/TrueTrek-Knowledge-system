@@ -129,6 +129,7 @@ function PathwayDetailBody({ pathway }) {
       />
 
       <PathwayCheckoutModal
+        tone="cobalt"
         isOpen={purchase.isCheckoutOpen}
         pathways={[pathway]}
         isSubmitting={purchase.isSubmitting}

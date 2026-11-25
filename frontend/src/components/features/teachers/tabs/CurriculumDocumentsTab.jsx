@@ -1,6 +1,13 @@
 "use client";
 
-import { Clock, Eye, Download } from 'lucide-react';
+import { Clock, Download, Eye, FileText } from "lucide-react";
+import PortalCard from "@/components/features/portal/shell/PortalCard";
+import {
+  PortalButton,
+  PortalIcon,
+  PortalPageHead,
+  PortalPill,
+} from "@/components/features/portal/shell/PortalUI";
 
 const CURRICULUM_DOCUMENTS = [
   {
@@ -43,73 +50,63 @@ const CURRICULUM_DOCUMENTS = [
 
 export default function CurriculumDocumentsTab() {
   return (
-    <div className="space-y-8">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Curriculum documents"
+        subtitle="Syllabi, facilitator guides and credentials. Always the latest version."
+      />
 
-      {/* Document Repository list */}
-      <div className="bg-paper border border-line rounded-card p-6 sm:p-8 shadow-soft">
+      <div className="grid gap-3 md:grid-cols-2">
+        {CURRICULUM_DOCUMENTS.map((doc) => (
+          <PortalCard key={doc.id} className="flex items-start gap-4 p-5">
+            <PortalIcon icon={FileText} size="lg" />
 
-        <div className="flex flex-col sm:flex-row justify-between sm:items-center pb-6 border-b border-line gap-4 mb-6">
-          <div>
-            <h3 className="font-serif font-black text-xl text-ink">Document Locker & Credentials Assets</h3>
-            <p className="text-sm text-muted font-light mt-0.5">Deploy licensed publications directly with classrooms, students, and legal guardians.</p>
-          </div>
+            <div className="flex min-w-0 flex-1 flex-col gap-1.5">
+              <PortalPill tone="blue" className="self-start">
+                {doc.category}
+              </PortalPill>
+              <h3 className="text-base font-bold text-cn-p-ink">{doc.title}</h3>
+              <p className="text-sm leading-relaxed text-cn-p-ink-2">{doc.description}</p>
+              <p className="flex flex-wrap items-center gap-x-2 text-xs text-cn-p-muted">
+                <span>{doc.version}</span>
+                <span aria-hidden="true">·</span>
+                <span className="inline-flex items-center gap-1">
+                  <Clock aria-hidden="true" className="h-3.5 w-3.5" />
+                  Compiled {doc.lastUpdated}
+                </span>
+                <span aria-hidden="true">·</span>
+                <span>{doc.format}</span>
+              </p>
 
-          <span className="text-sm font-mono bg-gold/12 text-gold px-3 py-1.5 border border-gold/25 rounded-xl font-bold">
-            4 LICID REPOSITORY ASSETS ACTIVE
-          </span>
-        </div>
-
-        <div className="divide-y divide-line">
-          {CURRICULUM_DOCUMENTS.map((doc) => (
-            <div
-              key={doc.id}
-              className="py-6 flex flex-col sm:flex-row sm:items-center justify-between gap-6 hover:bg-porcelain/50 px-4 -mx-4 rounded-xl transition-colors duration-250"
-            >
-              <div className="space-y-1.5 max-w-2xl">
-                <div className="flex items-center gap-2">
-                  <span className="font-mono text-[10px] uppercase font-bold text-gold bg-gold/12 px-2 py-0.5 border border-gold/25 rounded">
-                    {doc.category}
-                  </span>
-                  <span className="text-[11px] font-mono text-muted">Version {doc.version}</span>
-                </div>
-                <h4 className="font-serif font-bold text-ink text-base leading-snug">
-                  {doc.title}
-                </h4>
-                <p className="text-sm text-muted leading-relaxed font-light">
-                  {doc.description}
-                </p>
-                <div className="flex items-center gap-4 text-xs font-mono text-muted pt-1">
-                  <span className="flex items-center gap-1">
-                    <Clock className="w-3.5 h-3.5 stroke-2" />
-                    Compiled: {doc.lastUpdated}
-                  </span>
-                  <span>Format: {doc.format}</span>
-                </div>
-              </div>
-
-              <div className="shrink-0 flex items-center gap-2">
-                <button
-                  onClick={() => window.alert(`Syllabus framework preview for "${doc.title}" initiated. Contact licensing representatve for physical prints.`)}
-                  className="px-4 py-2 bg-transparent border border-line hover:bg-porcelain rounded-xl text-ink text-sm font-mono font-semibold flex items-center gap-1.5 transition"
+              <div className="mt-2 flex flex-wrap items-center gap-2">
+                <PortalButton
+                  variant="sec"
+                  size="sm"
+                  onClick={() =>
+                    window.alert(
+                      `Preview for "${doc.title}" is not wired up yet. Contact your licensing representative for printed copies.`,
+                    )
+                  }
                 >
-                  <Eye className="w-3.5 h-3.5" />
-                  PREVIEW
-                </button>
-                <button
-                  onClick={() => window.alert(`Licensing Verified. Download of "${doc.title}" formatted for institutional use has begun. Check your browser downloads directory.`)}
-                  className="px-4 py-2 bg-pine hover:bg-moss rounded-xl text-paper text-sm font-mono font-bold flex items-center gap-1.5 transition"
+                  <Eye className="h-3.5 w-3.5" />
+                  Preview
+                </PortalButton>
+                <PortalButton
+                  size="sm"
+                  onClick={() =>
+                    window.alert(
+                      `Download for "${doc.title}" is not wired up yet.`,
+                    )
+                  }
                 >
-                  <Download className="w-3.5 h-3.5" />
-                  DOWNLOAD PDF
-                </button>
+                  <Download className="h-3.5 w-3.5" />
+                  Download
+                </PortalButton>
               </div>
-
             </div>
-          ))}
-        </div>
-
+          </PortalCard>
+        ))}
       </div>
-
     </div>
   );
 }

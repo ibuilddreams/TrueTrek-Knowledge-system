@@ -58,9 +58,9 @@ export default function AdminSpeakersSection() {
       header: "Speaker",
       render: (speaker) => (
         <div>
-          <span className="font-semibold text-ink">{speaker.name}</span>
+          <span className="font-semibold text-cn-p-ink">{speaker.name}</span>
           {speaker.headline && (
-            <p className="text-[11px] text-muted font-light line-clamp-1 max-w-xs">
+            <p className="text-[11px] text-cn-p-ink-2 font-light line-clamp-1 max-w-xs">
               {speaker.headline}
             </p>
           )}
@@ -70,23 +70,23 @@ export default function AdminSpeakersSection() {
     {
       key: "sport",
       header: "Sport",
-      render: (speaker) => <span className="text-muted">{speaker.sport || "—"}</span>,
+      render: (speaker) => <span className="text-cn-p-ink-2">{speaker.sport || "—"}</span>,
     },
     {
       key: "school",
       header: "School",
-      render: (speaker) => <span className="text-muted">{speaker.school || "—"}</span>,
+      render: (speaker) => <span className="text-cn-p-ink-2">{speaker.school || "—"}</span>,
     },
     {
       key: "graduation_year",
-      header: "Grad Year",
-      render: (speaker) => <span className="text-muted">{speaker.graduation_year || "—"}</span>,
+      header: "Grad year",
+      render: (speaker) => <span className="text-cn-p-ink-2">{speaker.graduation_year || "—"}</span>,
     },
     {
       key: "is_active",
       header: "Status",
       render: (speaker) => (
-        <StatusBadge size="lg" status={speaker.is_active ? "ACTIVE" : "ARCHIVED"} />
+        <StatusBadge tone="cobalt" size="lg" status={speaker.is_active ? "ACTIVE" : "ARCHIVED"} />
       ),
     },
     {
@@ -97,13 +97,13 @@ export default function AdminSpeakersSection() {
           actions={[
             {
               key: "edit",
-              label: "Edit Speaker",
+              label: "Edit speaker",
               icon: Edit3,
               onSelect: () => setEditingSpeaker(speaker),
             },
             {
               key: "remove",
-              label: "Deactivate / Delete",
+              label: "Deactivate / delete",
               icon: Trash2,
               tone: "danger",
               onSelect: () => setRemovingSpeaker(speaker),
@@ -117,7 +117,7 @@ export default function AdminSpeakersSection() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <SearchBar
+        <SearchBar tone="cobalt"
           size="lg"
           value={searchInput}
           onChange={setSearchInput}
@@ -127,17 +127,17 @@ export default function AdminSpeakersSection() {
         <button
           type="button"
           onClick={() => setIsFormOpen(true)}
-          className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+          className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center gap-2 shrink-0 cursor-pointer"
           title="Add a new speaker"
           aria-label="Add a new speaker"
         >
           <UserRound className="w-4 h-4" />
-          ADD SPEAKER
+          Add speaker
         </button>
       </div>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-        <DataTable
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+        <DataTable tone="cobalt"
           size="lg"
           columns={columns}
           rows={speakers}
@@ -157,7 +157,7 @@ export default function AdminSpeakersSection() {
         }}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog variant="cobalt"
         isOpen={Boolean(removingSpeaker)}
         onClose={() => setRemovingSpeaker(null)}
         onConfirm={handleRemove}
@@ -169,7 +169,7 @@ export default function AdminSpeakersSection() {
             ? `${removingSpeaker.name} will be deactivated if they already appear on a session, so past line-ups stay intact. If they appear on none, they will be deleted outright.`
             : ""
         }
-        confirmLabel="Remove Speaker"
+        confirmLabel="Remove speaker"
       />
     </div>
   );

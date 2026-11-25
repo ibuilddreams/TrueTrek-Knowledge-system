@@ -215,6 +215,7 @@ export default function MorePathwaysPicker() {
       />
 
       <PathwayCheckoutModal
+        tone="cobalt"
         isOpen={isCheckoutOpen}
         pathways={selectedPathway ? [selectedPathway] : []}
         isSubmitting={checkoutMutation.isPending}

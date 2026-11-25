@@ -1,29 +1,21 @@
 "use client";
 
 import { useEffect } from "react";
-import { useQuery } from "@tanstack/react-query";
-import { MessageSquare } from "lucide-react";
+import { Mail } from "lucide-react";
 import Loader from "@/components/ui/Loader";
 import { PortalEmpty } from "@/components/features/portal/shell/PortalUI";
-import { getConversations } from "@/services/messagingService";
 import ConversationListItem from "./ConversationListItem";
+import { useConversations } from "./useConversations";
 
 export default function ConversationList({
   selectedConversationId,
   onSelectConversation,
   autoSelectConversationId,
   conversationType,
-  emptyLabel = "No conversations yet.",
+  emptyLabel = "No conversations yet",
   emptyDescription = "Start a new message to begin a conversation.",
 }) {
-  const conversationsQuery = useQuery({
-    queryKey: ["conversations", conversationType || "all"],
-    queryFn: async () => {
-      const response = await getConversations({ pageSize: 50, conversationType });
-      return response?.data?.results || [];
-    },
-    refetchInterval: 15000,
-  });
+  const conversationsQuery = useConversations(conversationType);
 
   const conversations = conversationsQuery.data || [];
 
@@ -40,7 +32,7 @@ export default function ConversationList({
   if (conversationsQuery.isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <Loader fullScreen={false} label="Loading conversations..." />
+        <Loader fullScreen={false} tone="cobalt" label="Loading conversations..." />
       </div>
     );
   }
@@ -48,11 +40,7 @@ export default function ConversationList({
   if (conversations.length === 0) {
     return (
       <div className="flex-1 flex items-center justify-center p-4">
-        <PortalEmpty
-          icon={MessageSquare}
-          title={emptyLabel}
-          text={emptyDescription}
-        />
+        <PortalEmpty icon={Mail} title={emptyLabel} text={emptyDescription} />
       </div>
     );
   }

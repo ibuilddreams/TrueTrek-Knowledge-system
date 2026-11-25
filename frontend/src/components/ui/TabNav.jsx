@@ -274,7 +274,13 @@ export default function TabNav({
   ariaLabel = "Sections",
   variant = "bar",
   size = "base",
+  // "cobalt" renders the portal design's `.tabs` strip. Only the bar variant
+  // has one — the sidebar variant is the pre-PortalShell navigation and no
+  // cobalt surface uses it.
+  tone = "porcelain",
 }) {
+  const isCobalt = tone === "cobalt" && variant !== "sidebar";
+
   if (variant === "sidebar") {
     return (
       <SidebarTabNav
@@ -291,7 +297,11 @@ export default function TabNav({
     <div
       role="tablist"
       aria-label={ariaLabel}
-      className={`flex border-b border-line overflow-x-auto whitespace-nowrap scrollbar-none gap-2 sm:gap-4 font-mono ${size === "lg" ? "text-xs sm:text-sm" : "text-[11px] sm:text-xs"} font-semibold tracking-wider uppercase text-muted`}
+      className={
+        isCobalt
+          ? "flex gap-1 overflow-x-auto border-b border-cn-p-line whitespace-nowrap"
+          : `flex border-b border-line overflow-x-auto whitespace-nowrap scrollbar-none gap-2 sm:gap-4 font-mono ${size === "lg" ? "text-xs sm:text-sm" : "text-[11px] sm:text-xs"} font-semibold tracking-wider uppercase text-muted`
+      }
     >
       {tabs.map((tab) => {
         const TabIcon = tab.icon;
@@ -306,13 +316,25 @@ export default function TabNav({
             onClick={() => onChange(tab.id)}
             title={tab.title || tab.label}
             aria-label={tab.title || tab.label}
-            className={`shrink-0 pb-4 px-1 sm:px-3 flex items-center gap-2 border-b-2 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-pine focus-visible:ring-offset-2 ${
-              isActive
-                ? "border-pine text-pine font-bold"
-                : "border-transparent hover:text-ink"
-            }`}
+            className={
+              isCobalt
+                ? `-mb-px inline-flex h-11 flex-none items-center gap-2 border-0 border-b-2 bg-transparent px-3.5 text-sm font-semibold whitespace-nowrap transition-colors duration-150 ${
+                    isActive
+                      ? "border-cn-p-accent text-cn-p-accent"
+                      : "border-transparent text-cn-p-ink-2 hover:text-cn-p-ink"
+                  }`
+                : `shrink-0 pb-4 px-1 sm:px-3 flex items-center gap-2 border-b-2 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-pine focus-visible:ring-offset-2 ${
+                    isActive
+                      ? "border-pine text-pine font-bold"
+                      : "border-transparent hover:text-ink"
+                  }`
+            }
           >
-            {TabIcon && <TabIcon className="w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0" />}
+            {TabIcon && (
+              <TabIcon
+                className={isCobalt ? "h-4 w-4 shrink-0" : "w-3.5 h-3.5 sm:w-4 sm:h-4 shrink-0"}
+              />
+            )}
             <span>{tab.label}</span>
           </button>
         );
