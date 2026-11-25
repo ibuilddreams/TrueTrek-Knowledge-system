@@ -34,7 +34,7 @@ export default function StreakTab({ onBack }) {
       <div className="space-y-4">
         <BackToPortalLink onBack={onBack} />
         <div className="rounded-2xl p-6 min-h-[40vh] flex items-center justify-center border bg-paper border-line">
-          <Loader fullScreen={false} label="Loading your streak history..." />
+          <Loader fullScreen={false} tone="portal" label="Loading your streak history..." />
         </div>
       </div>
     );

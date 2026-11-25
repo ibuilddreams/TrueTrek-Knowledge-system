@@ -55,7 +55,7 @@ export default function CertificatesTab({ studentName }) {
   if (isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
-        <Loader fullScreen={false} label="Loading your certificates..." />
+        <Loader fullScreen={false} tone="portal" label="Loading your certificates..." />
       </div>
     );
   }

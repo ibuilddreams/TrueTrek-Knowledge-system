@@ -96,7 +96,7 @@ export default function MessageThread({ conversation, onBack }) {
 
       <div className="flex-1 min-h-0 overflow-y-auto px-4 py-4 space-y-3">
         {messagesQuery.isLoading ? (
-          <Loader fullScreen={false} label="Loading messages..." />
+          <Loader fullScreen={false} tone="portal" label="Loading messages..." />
         ) : messages.length === 0 ? (
           <PortalEmpty
             icon={MessageCircle}

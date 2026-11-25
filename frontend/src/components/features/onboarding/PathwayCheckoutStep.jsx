@@ -12,6 +12,7 @@ import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 import { formatCoursePrice } from "@/lib/store";
 import Loader from "@/components/ui/Loader";
+import { CN_BTN_PRIMARY, CN_BTN_SECONDARY } from "@/components/ui/cobaltStyles";
 
 // Same helpers as StorePaymentModal.jsx's dummy card form.
 function formatCardNumber(value) {
@@ -25,8 +26,12 @@ function formatExpiry(value) {
   return `${digits.slice(0, 2)}/${digits.slice(2)}`;
 }
 
-const FIELD_CLASS =
-  "w-full px-3.5 py-2.5 bg-stone-50 border border-stone-200 focus:border-amber-600 rounded-xl text-xs font-mono text-stone-800 placeholder:text-stone-400 focus:outline-none focus:bg-white transition";
+// The design's 50px control, the same field /login and /signup use — this step
+// is the last screen of the journey those two start, so its inputs match rather
+// than borrowing the store modal's shorter one.
+const FIELD =
+  "h-[50px] w-full rounded-cn-sm border border-cn-muted bg-white px-4 text-cn-ink transition-colors duration-150 hover:border-cn-ink-2 focus-visible:outline-2 focus-visible:outline-offset-1 focus-visible:outline-cn-accent";
+const LABEL = "text-cn-sm font-semibold text-cn-ink";
 
 export default function PathwayCheckoutStep({ selectedPathwayIds, onBack, onComplete }) {
   const queryClient = useQueryClient();
@@ -130,135 +135,147 @@ export default function PathwayCheckoutStep({ selectedPathwayIds, onBack, onComp
 
   if (isLoadingPathways) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader fullScreen={false} label="Preparing checkout..." />
+      <div className="flex min-h-[320px] items-center justify-center" aria-busy="true">
+        <Loader fullScreen={false} tone="cobalt" label="Preparing checkout..." />
       </div>
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-10">
-      <div className="bg-white border border-stone-200/85 rounded-2xl shadow-xl relative overflow-hidden p-8 sm:p-10">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 to-amber-800" />
-
-        <div className="flex items-center gap-2.5 mb-6">
-          <div className="w-9 h-9 rounded-xl bg-stone-950 text-white flex items-center justify-center shrink-0">
-            <CreditCard className="w-4 h-4" />
-          </div>
-          <div>
-            <h2 className="font-serif font-bold text-stone-900 text-xl">Checkout</h2>
-            <p className="text-[10px] font-mono uppercase tracking-wider text-stone-400">
-              Simulated payment — no real charge
-            </p>
-          </div>
-        </div>
-
-        <div className="rounded-xl border border-stone-200 bg-stone-50/80 p-4 space-y-2 mb-6">
-          {pathways.map((pathway) => (
-            <div key={pathway.id} className="flex items-center justify-between gap-3 text-xs">
-              <span className="text-stone-600 truncate">{pathway.name}</span>
-              <span className="font-mono text-stone-800 shrink-0">
-                {formatCoursePrice(pathway.base_price)}
-              </span>
-            </div>
-          ))}
-          {discountPercent > 0 && (
-            <div className="flex items-center justify-between gap-3 text-xs text-emerald-700">
-              <span>Bundle discount ({selectedPathwayIds.length} pathways)</span>
-              <span className="font-mono">-{discountPercent}%</span>
-            </div>
-          )}
-          <div className="flex items-center justify-between pt-2 border-t border-stone-200 text-xs font-bold">
-            <span className="text-stone-900">Estimated Total</span>
-            <span className="font-mono text-amber-800">{formatCoursePrice(estimatedTotal)}</span>
-          </div>
-          <p className="text-[9px] font-mono uppercase tracking-wider text-stone-400 pt-1">
-            Estimate only — the final price is calculated at checkout.
+    <>
+      <div className="flex items-start gap-3">
+        <span
+          aria-hidden="true"
+          className="grid h-10 w-10 flex-none place-items-center rounded-cn bg-cn-accent text-white"
+        >
+          <CreditCard className="h-[18px] w-[18px]" />
+        </span>
+        <div>
+          <h2 className="text-cn-2xl leading-[1.04] font-extrabold tracking-[-0.035em] text-cn-ink">
+            Checkout.
+          </h2>
+          <p className="mt-2 text-cn-ink-2">
+            Simulated payment — no card is charged and nothing is stored.
           </p>
         </div>
-
-        <form onSubmit={handleSubmit} className="space-y-3.5">
-          <div>
-            <label className="text-[9px] font-mono uppercase tracking-wider text-stone-400 block mb-1.5">
-              Cardholder Name
-            </label>
-            <input
-              placeholder="Jane Doe"
-              value={card.cardholderName}
-              onChange={updateCardField("cardholderName")}
-              autoComplete="off"
-              className={FIELD_CLASS}
-            />
-          </div>
-          <div>
-            <label className="text-[9px] font-mono uppercase tracking-wider text-stone-400 block mb-1.5">
-              Card Number
-            </label>
-            <input
-              placeholder="4242 4242 4242 4242"
-              inputMode="numeric"
-              value={card.cardNumber}
-              onChange={updateCardField("cardNumber", formatCardNumber)}
-              autoComplete="off"
-              className={FIELD_CLASS}
-            />
-          </div>
-          <div className="grid grid-cols-2 gap-3.5">
-            <div>
-              <label className="text-[9px] font-mono uppercase tracking-wider text-stone-400 block mb-1.5">
-                Expiry Date
-              </label>
-              <input
-                placeholder="MM/YY"
-                inputMode="numeric"
-                value={card.expiry}
-                onChange={updateCardField("expiry", formatExpiry)}
-                autoComplete="off"
-                className={FIELD_CLASS}
-              />
-            </div>
-            <div>
-              <label className="text-[9px] font-mono uppercase tracking-wider text-stone-400 block mb-1.5">
-                CVV
-              </label>
-              <input
-                placeholder="123"
-                inputMode="numeric"
-                type="password"
-                value={card.cvv}
-                onChange={updateCardField("cvv", (v) => v.replace(/\D/g, "").slice(0, 4))}
-                autoComplete="off"
-                className={FIELD_CLASS}
-              />
-            </div>
-          </div>
-
-          <p className="flex items-center gap-1.5 text-[10px] text-stone-400">
-            <Lock className="w-3 h-3 shrink-0" />
-            This is a demo checkout. Card details are never sent or stored.
-          </p>
-
-          <div className="flex items-center gap-3 pt-2">
-            <button
-              type="button"
-              onClick={onBack}
-              disabled={checkoutMutation.isPending}
-              className="flex items-center justify-center gap-2 border border-stone-200 text-stone-600 hover:bg-stone-50 font-mono text-xs font-bold uppercase tracking-wider py-3.5 px-5 rounded-xl transition disabled:opacity-50"
-            >
-              <ArrowLeft className="w-3.5 h-3.5" />
-              Back
-            </button>
-            <button
-              type="submit"
-              disabled={checkoutMutation.isPending}
-              className="flex-1 flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-mono text-xs font-extrabold uppercase tracking-wider py-3.5 rounded-xl shadow-md transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
-            >
-              <ShieldCheck className="w-4 h-4" />
-              {checkoutMutation.isPending ? "Processing..." : "Confirm Payment"}
-            </button>
-          </div>
-        </form>
       </div>
-    </div>
+
+      <div className="grid gap-2 rounded-cn border border-cn-rule bg-cn-paper-2 p-4 text-cn-sm">
+        {pathways.map((pathway) => (
+          <div key={pathway.id} className="flex items-baseline justify-between gap-3">
+            <span className="truncate text-cn-ink-2">{pathway.name}</span>
+            <span className="shrink-0 font-semibold tabular-nums text-cn-ink">
+              {formatCoursePrice(pathway.base_price)}
+            </span>
+          </div>
+        ))}
+
+        {discountPercent > 0 && (
+          <div className="flex items-baseline justify-between gap-3 text-cn-ok">
+            <span>Bundle discount ({selectedPathwayIds.length} pathways)</span>
+            <span className="font-semibold tabular-nums">-{discountPercent}%</span>
+          </div>
+        )}
+
+        <div className="flex items-baseline justify-between gap-3 border-t border-cn-rule pt-2 font-semibold">
+          <span className="text-cn-ink">Estimated total</span>
+          <span className="tabular-nums text-cn-accent">
+            {formatCoursePrice(estimatedTotal)}
+          </span>
+        </div>
+
+        <p className="text-cn-xs text-cn-muted">
+          An estimate — the final price is calculated when you confirm.
+        </p>
+      </div>
+
+      <form onSubmit={handleSubmit} className="grid gap-6">
+        <div className="grid gap-1">
+          <label htmlFor="input-checkout-name" className={LABEL}>
+            Cardholder name
+          </label>
+          <input
+            id="input-checkout-name"
+            placeholder="Jane Doe"
+            value={card.cardholderName}
+            onChange={updateCardField("cardholderName")}
+            autoComplete="off"
+            className={FIELD}
+          />
+        </div>
+
+        <div className="grid gap-1">
+          <label htmlFor="input-checkout-number" className={LABEL}>
+            Card number
+          </label>
+          <input
+            id="input-checkout-number"
+            placeholder="4242 4242 4242 4242"
+            inputMode="numeric"
+            value={card.cardNumber}
+            onChange={updateCardField("cardNumber", formatCardNumber)}
+            autoComplete="off"
+            className={FIELD}
+          />
+        </div>
+
+        <div className="grid gap-4 sm:grid-cols-2">
+          <div className="grid gap-1">
+            <label htmlFor="input-checkout-expiry" className={LABEL}>
+              Expiry date
+            </label>
+            <input
+              id="input-checkout-expiry"
+              placeholder="MM/YY"
+              inputMode="numeric"
+              value={card.expiry}
+              onChange={updateCardField("expiry", formatExpiry)}
+              autoComplete="off"
+              className={FIELD}
+            />
+          </div>
+          <div className="grid gap-1">
+            <label htmlFor="input-checkout-cvv" className={LABEL}>
+              CVV
+            </label>
+            <input
+              id="input-checkout-cvv"
+              placeholder="123"
+              inputMode="numeric"
+              type="password"
+              value={card.cvv}
+              onChange={updateCardField("cvv", (v) => v.replace(/\D/g, "").slice(0, 4))}
+              autoComplete="off"
+              className={FIELD}
+            />
+          </div>
+        </div>
+
+        <p className="flex items-center gap-2 text-cn-sm text-cn-muted">
+          <Lock className="h-3.5 w-3.5 shrink-0" />
+          This is a demo checkout. Card details are never sent or stored.
+        </p>
+
+        <div className="flex items-center gap-3">
+          <button
+            type="button"
+            onClick={onBack}
+            disabled={checkoutMutation.isPending}
+            className={CN_BTN_SECONDARY}
+          >
+            <ArrowLeft className="h-[18px] w-[18px]" />
+            Back
+          </button>
+          <button
+            type="submit"
+            disabled={checkoutMutation.isPending}
+            className={`${CN_BTN_PRIMARY} flex-1`}
+          >
+            <ShieldCheck className="h-[18px] w-[18px]" />
+            {checkoutMutation.isPending ? "Processing..." : "Confirm payment"}
+          </button>
+        </div>
+      </form>
+    </>
   );
 }

@@ -158,3 +158,11 @@ export function resolvePortalTab(tabParam) {
   if (tabParam && VALID_PORTAL_TABS.has(tabParam)) return tabParam;
   return DEFAULT_PORTAL_TAB;
 }
+
+// Opening the portal passes through up to three separate loading renders — the
+// route's own auth check, the `useSearchParams` Suspense boundary, and the
+// pathway-access check inside `StudentPortalContent` — each on a different
+// component, so React cannot keep one spinner mounted across them. They
+// therefore share one label and one tone, or the hand-off reads as two or
+// three different loading *screens* flashing by instead of one wait.
+export const PORTAL_LOADING_LABEL = "Opening your portal...";

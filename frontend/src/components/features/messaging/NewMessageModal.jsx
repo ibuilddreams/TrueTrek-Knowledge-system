@@ -80,7 +80,7 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStarted
 
         <div className="max-h-72 overflow-y-auto -mx-2">
           {recipientsQuery.isLoading ? (
-            <Loader fullScreen={false} label="Loading people..." />
+            <Loader fullScreen={false} tone="portal" label="Loading people..." />
           ) : recipients.length === 0 ? (
             <PortalEmpty
               icon={MessageSquarePlus}

@@ -44,7 +44,7 @@ export default function PathwayCoursesModal({ pathway, isOpen, onClose }) {
 
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <Loader fullScreen={false} label="Loading courses..." />
+          <Loader fullScreen={false} tone="portal" label="Loading courses..." />
         </div>
       )}
 

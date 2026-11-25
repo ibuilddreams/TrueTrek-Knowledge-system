@@ -161,7 +161,7 @@ export default function StudentDashboard({ onNavigate }) {
   const upcomingClasses = classesQuery.data ?? [];
 
   if (statsQuery.isLoading) {
-    return <Loader fullScreen={false} label="Loading your dashboard..." />;
+    return <Loader fullScreen={false} tone="portal" label="Loading your dashboard..." />;
   }
 
   return (

@@ -43,7 +43,7 @@ export default function ContentPlayerPanel({
     return (
       <Reader>
         <div className="flex min-h-[40vh] items-center justify-center" aria-busy="true">
-          <Loader fullScreen={false} label="Loading content..." />
+          <Loader fullScreen={false} tone="portal" label="Loading content..." />
         </div>
       </Reader>
     );

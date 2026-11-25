@@ -247,7 +247,7 @@ export default function QuizzesTab() {
   if (isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
-        <Loader fullScreen={false} label="Loading your quizzes..." />
+        <Loader fullScreen={false} tone="portal" label="Loading your quizzes..." />
       </div>
     );
   }

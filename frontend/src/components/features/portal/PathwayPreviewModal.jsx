@@ -48,7 +48,7 @@ export default function PathwayPreviewModal({ pathway, isOpen, onClose, onPurcha
     >
       {isLoading && (
         <div className="flex items-center justify-center py-12">
-          <Loader fullScreen={false} label="Loading pathway..." />
+          <Loader fullScreen={false} tone="portal" label="Loading pathway..." />
         </div>
       )}
 

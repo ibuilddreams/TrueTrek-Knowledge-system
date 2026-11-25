@@ -153,7 +153,7 @@ export default function PathwayDetailPage({ slug }) {
         className="flex min-h-[60vh] items-center justify-center"
         aria-busy="true"
       >
-        <Loader fullScreen={false} label="Loading pathway..." />
+        <Loader fullScreen={false} tone="cobalt" label="Loading pathway..." />
       </div>
     );
   }

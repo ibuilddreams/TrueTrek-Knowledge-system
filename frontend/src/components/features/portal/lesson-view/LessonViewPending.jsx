@@ -33,7 +33,7 @@ export default function LessonViewPending({ isError, errorMessage, onRetry }) {
   return (
     <PortalCard>
       <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
-        <Loader fullScreen={false} label="Loading lesson..." />
+        <Loader fullScreen={false} tone="portal" label="Loading lesson..." />
       </div>
     </PortalCard>
   );

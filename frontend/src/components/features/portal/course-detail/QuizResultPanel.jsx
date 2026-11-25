@@ -17,7 +17,7 @@ export default function QuizResultPanel({ attemptId, onClose }) {
   if (isLoading) {
     return (
       <div className="flex justify-center py-10" aria-busy="true">
-        <Loader fullScreen={false} label="Grading your attempt..." />
+        <Loader fullScreen={false} tone="portal" label="Grading your attempt..." />
       </div>
     );
   }

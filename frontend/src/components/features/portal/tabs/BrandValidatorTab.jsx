@@ -95,7 +95,7 @@ export default function BrandValidatorTab() {
     if (isLoadingReview && !review) {
       return (
         <div className="bg-cn-p-card border border-cn-p-line rounded-2xl p-10">
-          <Loader fullScreen={false} label="Loading your brand review..." />
+          <Loader fullScreen={false} tone="portal" label="Loading your brand review..." />
         </div>
       );
     }

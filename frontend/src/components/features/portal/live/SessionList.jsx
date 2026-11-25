@@ -24,7 +24,7 @@ export default function SessionList({
   if (isLoading) {
     return (
       <div className="bg-cn-p-card border border-cn-p-line rounded-2xl p-10">
-        <Loader fullScreen={false} label="Loading sessions..." />
+        <Loader fullScreen={false} tone="portal" label="Loading sessions..." />
       </div>
     );
   }

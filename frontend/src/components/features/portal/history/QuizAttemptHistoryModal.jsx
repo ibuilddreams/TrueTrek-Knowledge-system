@@ -43,7 +43,7 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
       variant="cobalt"
       maxWidth="max-w-2xl"
     >
-      {isLoading && <Loader fullScreen={false} label="Loading attempt..." />}
+      {isLoading && <Loader fullScreen={false} tone="portal" label="Loading attempt..." />}
 
       {data && (
         <div className="space-y-4">
