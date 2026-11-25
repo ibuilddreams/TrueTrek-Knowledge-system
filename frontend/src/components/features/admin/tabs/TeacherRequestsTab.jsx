@@ -13,20 +13,21 @@ import DataTable from "@/components/ui/DataTable";
 import Pagination from "@/components/ui/Pagination";
 import StatusBadge from "@/components/ui/StatusBadge";
 import TeacherRequestDetailModal from "@/components/features/admin/TeacherRequestDetailModal";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 
 const PAGE_SIZE = 10;
 
 const STATUS_FILTER_OPTIONS = [
-  { value: "", label: "All Statuses" },
+  { value: "", label: "All statuses" },
   { value: "PENDING", label: "Pending" },
-  { value: "IN_PROGRESS", label: "In Progress" },
+  { value: "IN_PROGRESS", label: "In progress" },
   { value: "COMPLETED", label: "Completed" },
 ];
 
 const TYPE_FILTER_OPTIONS = [
-  { value: "", label: "All Types" },
-  { value: "CHANGE_REQUEST", label: "Request a Change" },
-  { value: "ERROR_REPORT", label: "Report an Error" },
+  { value: "", label: "All types" },
+  { value: "CHANGE_REQUEST", label: "Request a change" },
+  { value: "ERROR_REPORT", label: "Report an error" },
 ];
 
 export default function TeacherRequestsTab() {
@@ -65,8 +66,8 @@ export default function TeacherRequestsTab() {
       header: "Teacher",
       render: (request) => (
         <div>
-          <span className="font-semibold text-ink">{request.teacher?.name}</span>
-          <p className="text-[11px] text-muted font-light">{request.teacher?.email}</p>
+          <span className="font-semibold text-cn-p-ink">{request.teacher?.name}</span>
+          <p className="text-[11px] text-cn-p-ink-2 font-light">{request.teacher?.email}</p>
         </div>
       ),
     },
@@ -79,35 +80,40 @@ export default function TeacherRequestsTab() {
       key: "request_type",
       header: "Type",
       render: (request) => (
-        <span className="text-muted font-mono text-xs">{request.request_type_display}</span>
+        <span className="text-cn-p-ink-2 text-xs">{request.request_type_display}</span>
       ),
     },
     {
       key: "status",
       header: "Status",
-      render: (request) => <StatusBadge size="lg" status={request.status} />,
+      render: (request) => <StatusBadge tone="cobalt" size="lg" status={request.status} />,
     },
     {
       key: "created_at",
       header: "Submitted",
       render: (request) => (
-        <span className="text-muted whitespace-nowrap">{formatDateTime(request.created_at)}</span>
+        <span className="text-cn-p-ink-2 whitespace-nowrap">{formatDateTime(request.created_at)}</span>
       ),
     },
     {
       key: "updated_at",
-      header: "Last Updated",
+      header: "Last updated",
       render: (request) => (
-        <span className="text-muted whitespace-nowrap">{formatDateTime(request.updated_at)}</span>
+        <span className="text-cn-p-ink-2 whitespace-nowrap">{formatDateTime(request.updated_at)}</span>
       ),
     },
   ];
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Teacher requests"
+        subtitle="Content changes and error reports from faculty."
+      />
+
+      <div className="flex flex-col gap-3 rounded-cn-p border border-cn-p-line bg-cn-p-card p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 min-w-0">
-          <SearchBar
+          <SearchBar tone="cobalt"
             size="lg"
             value={searchInput}
             onChange={(value) => {
@@ -117,7 +123,7 @@ export default function TeacherRequestsTab() {
             placeholder="Search by title or teacher..."
           />
           <div className="w-full sm:w-48 shrink-0">
-            <SearchableSelect
+            <SearchableSelect tone="cobalt"
               size="lg"
               placeholder="All Statuses"
               options={STATUS_FILTER_OPTIONS}
@@ -126,7 +132,7 @@ export default function TeacherRequestsTab() {
             />
           </div>
           <div className="w-full sm:w-56 shrink-0">
-            <SearchableSelect
+            <SearchableSelect tone="cobalt"
               size="lg"
               placeholder="All Types"
               options={TYPE_FILTER_OPTIONS}
@@ -137,8 +143,8 @@ export default function TeacherRequestsTab() {
         </div>
       </div>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-        <DataTable
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+        <DataTable tone="cobalt"
           size="lg"
           columns={columns}
           rows={requests}
@@ -148,13 +154,17 @@ export default function TeacherRequestsTab() {
           onRowClick={setSelectedRequest}
           emptyLabel="No teacher requests found."
         />
-        <Pagination
-          size="lg"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalLabel={`${data?.count || 0} request${(data?.count || 0) === 1 ? "" : "s"}`}
-        />
+        <div className="px-4 pb-4">
+
+          <Pagination tone="cobalt"
+            size="lg"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalLabel={`${data?.count || 0} request${(data?.count || 0) === 1 ? "" : "s"}`}
+          />
+
+        </div>
       </div>
 
       <TeacherRequestDetailModal

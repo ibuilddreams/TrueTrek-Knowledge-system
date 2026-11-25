@@ -7,7 +7,7 @@ export default function QuestProgressBar({ completed = 0, total = 0 }) {
     <div>
       <div className="flex items-baseline justify-between gap-3 mb-2">
         <span className="text-[11px] font-semibold text-cn-p-ink-2">
-          Today&apos;s Progress
+          Today&apos;s progress
         </span>
         <span className="text-[11px] text-cn-p-ink-2 tabular-nums">{percent}%</span>
       </div>

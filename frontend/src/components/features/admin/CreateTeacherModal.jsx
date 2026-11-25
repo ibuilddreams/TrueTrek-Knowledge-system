@@ -17,10 +17,10 @@ const INITIAL_FORM = {
 };
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
+  "w-full px-3 py-3 bg-cn-p-card border border-cn-p-line-2 focus:border-cn-p-accent focus:outline-none rounded-cn-p-sm text-sm text-cn-p-ink placeholder:text-cn-p-muted transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
+  "block mb-1.5 text-[13px] font-semibold text-cn-p-ink";
 
 export default function CreateTeacherModal({ isOpen, onClose, onCreated }) {
   const [form, setForm] = useState(INITIAL_FORM);
@@ -80,11 +80,11 @@ export default function CreateTeacherModal({ isOpen, onClose, onCreated }) {
   };
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={UserPlus}
-      title="Add Teacher"
+      title="Add teacher"
       subtitle="Create a new teacher account."
       maxWidth="max-w-xl"
     >
@@ -158,7 +158,7 @@ export default function CreateTeacherModal({ isOpen, onClose, onCreated }) {
               type="button"
               onClick={() => setShowPassword((prev) => !prev)}
               disabled={isSubmitting}
-              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-muted hover:text-ink transition disabled:opacity-60"
+              className="absolute inset-y-0 right-0 pr-3.5 flex items-center text-cn-p-ink-2 hover:text-cn-p-ink transition disabled:opacity-60"
               title={showPassword ? "Hide password" : "Show password"}
               aria-label={showPassword ? "Hide password" : "Show password"}
             >
@@ -171,7 +171,7 @@ export default function CreateTeacherModal({ isOpen, onClose, onCreated }) {
           </div>
         </div>
 
-        <label className="flex items-center gap-2.5 p-3 rounded-xl border border-line bg-porcelain/60 text-sm font-mono text-ink cursor-pointer">
+        <label className="flex items-center gap-2.5 p-3 rounded-xl border border-cn-p-line bg-cn-p-page text-sm text-cn-p-ink cursor-pointer">
           <input
             type="checkbox"
             checked={form.is_advisor}
@@ -180,18 +180,18 @@ export default function CreateTeacherModal({ isOpen, onClose, onCreated }) {
           />
           <span>
             Advisor
-            <span className="block text-xs font-sans text-muted normal-case tracking-normal">
+            <span className="block text-xs font-sans text-cn-p-ink-2 normal-case tracking-normal">
               Students can reach this teacher directly from "Ask an Advisor"
             </span>
           </span>
         </label>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-line">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-cn-p-line">
           <button
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-all flex items-center justify-center gap-2 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 border border-cn-p-line disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -200,17 +200,17 @@ export default function CreateTeacherModal({ isOpen, onClose, onCreated }) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-all flex items-center justify-center gap-2"
+            className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2"
           >
             {isSubmitting ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Creating...
               </>
             ) : (
               <>
                 <Check className="w-3.5 h-3.5" />
-                Create Teacher
+                Create teacher
               </>
             )}
           </button>

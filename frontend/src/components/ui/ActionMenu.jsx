@@ -83,11 +83,11 @@ export default function ActionMenu({ actions = [] }) {
           event.stopPropagation();
           setIsOpen((prev) => !prev);
         }}
-        className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-pine focus-visible:ring-offset-2 ${
-          isOpen
-            ? "bg-porcelain border-line text-ink"
-            : "border-line text-muted hover:bg-porcelain hover:text-ink"
-        }`}
+        className={`w-8 h-8 flex items-center justify-center rounded-lg border transition-colors duration-150 focus:outline-none focus-visible:ring-2 focus-visible:ring-cn-p-accent focus-visible:ring-offset-2 ${
+ isOpen
+ ? "bg-cn-p-page border-cn-p-line text-cn-p-ink"
+ : "border-cn-p-line text-cn-p-ink-2 hover:bg-cn-p-page hover:text-cn-p-ink"
+ }`}
         title="Open row actions"
         aria-label="Open row actions"
         aria-haspopup="menu"
@@ -108,7 +108,7 @@ export default function ActionMenu({ actions = [] }) {
                 exit={{ opacity: 0, y: -4 }}
                 transition={{ duration: 0.15, ease: "easeOut" }}
                 style={menuStyle}
-                className="font-sans border rounded-xl shadow-elevated py-1.5 origin-top-right bg-paper border-line"
+                className="font-sans border rounded-xl shadow-elevated py-1.5 origin-top-right bg-cn-p-card border-cn-p-line"
               >
                 {visibleActions.map(({ key, label, icon: Icon, onSelect, tone = "default", disabled }) => (
                   <button
@@ -122,16 +122,16 @@ export default function ActionMenu({ actions = [] }) {
                       onSelect?.();
                     }}
                     className={`w-full flex items-center gap-2.5 px-4 py-2.5 text-sm font-semibold text-left whitespace-nowrap transition-colors duration-150 focus:outline-none disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-transparent ${
-                      tone === "danger"
-                        ? "text-rose-600 hover:bg-rose-50 focus:bg-rose-50"
-                        : "text-ink hover:bg-porcelain focus:bg-porcelain"
-                    }`}
+ tone === "danger"
+ ? "text-cn-p-bad hover:bg-cn-p-bad-bg focus:bg-cn-p-bad-bg"
+ : "text-cn-p-ink hover:bg-cn-p-page focus:bg-cn-p-page"
+ }`}
                   >
                     {Icon && (
                       <Icon
                         className={`w-4 h-4 shrink-0 ${
-                          tone === "danger" ? "text-rose-500" : "text-muted"
-                        }`}
+ tone === "danger" ? "text-cn-p-bad" : "text-cn-p-ink-2"
+ }`}
                       />
                     )}
                     {label}

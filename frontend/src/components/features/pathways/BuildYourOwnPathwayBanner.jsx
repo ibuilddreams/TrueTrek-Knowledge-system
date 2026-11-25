@@ -47,7 +47,7 @@ export default function BuildYourOwnPathwayBanner() {
           <div className="min-w-0 space-y-2">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-white/15 px-3 py-1 text-xs font-semibold tracking-widest text-white uppercase backdrop-blur-[6px]">
               <Sparkles className="w-3 h-3" />
-              Build Your Own
+              Build your own
             </span>
             <h3 className="text-cn-xl leading-tight font-bold tracking-[-0.015em] text-white">
               Can&apos;t find the right mix? Create your own pathway.
@@ -67,7 +67,7 @@ export default function BuildYourOwnPathwayBanner() {
             onClick={handleStartBuilding}
             className="inline-flex h-[50px] shrink-0 items-center justify-center gap-2 rounded-cn-sm bg-white px-6 text-sm font-semibold text-cn-accent-3 transition-transform duration-150 ease-cn-out hover:-translate-y-px lg:ml-auto"
           >
-            Start Building
+            Start building
             <ArrowRight className="w-4 h-4" />
           </button>
         </div>

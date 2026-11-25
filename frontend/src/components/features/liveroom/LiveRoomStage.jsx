@@ -277,7 +277,7 @@ export default function LiveRoomStage({ session, onClose }) {
                 {current.title}
               </h1>
               <p className="text-[11px] text-paper/60 font-light truncate">
-                War Room Live
+                War room live
                 {current.topic ? ` · ${current.topic}` : ""} · started{" "}
                 {formatSessionTime(current.scheduled_at)}
               </p>

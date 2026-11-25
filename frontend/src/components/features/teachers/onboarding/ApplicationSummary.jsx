@@ -6,11 +6,11 @@ import CredentialRow from "./CredentialRow";
 
 function SummaryBlock({ label, children }) {
   return (
-    <div className="py-3 border-b border-line last:border-b-0 last:pb-0">
-      <p className="text-[10px] font-sans uppercase tracking-widest text-muted font-medium mb-1">
+    <div className="py-3 border-b border-cn-p-line last:border-b-0 last:pb-0">
+      <p className="text-[10px] font-sans text-cn-p-ink-2 font-medium mb-1">
         {label}
       </p>
-      <div className="text-sm text-ink font-light leading-relaxed break-words whitespace-pre-wrap">
+      <div className="text-sm text-cn-p-ink font-light leading-relaxed break-words whitespace-pre-wrap">
         {children}
       </div>
     </div>
@@ -22,18 +22,18 @@ function qualificationLabel(value) {
 }
 
 /**
- * Everything an application says, rendered once.
- *
- * Three screens show this: the teacher's review step before they submit, the
- * read-only panel they see while it is with the review team, and the admin's
- * review modal. They are deliberately the same component — a reviewer
- * approving something laid out differently from what the applicant sent is
- * how a detail goes missing.
- *
- * `withDocuments` swaps the plain document list for the full rows with their
- * open links, which is what the reviewer needs and the applicant has already
- * seen on the credentials step.
- */
+  * Everything an application says, rendered once.
+   *
+   * Three screens show this: the teacher's review step before they submit, the
+   * read-only panel they see while it is with the review team, and the admin's
+   * review modal. They are deliberately the same component — a reviewer
+   * approving something laid out differently from what the applicant sent is
+   * how a detail goes missing.
+   *
+   * `withDocuments` swaps the plain document list for the full rows with their
+   * open links, which is what the reviewer needs and the applicant has already
+   * seen on the credentials step.
+   */
 export default function ApplicationSummary({ application, withDocuments = false }) {
   const videoUrl = application.intro_video_display_url;
 
@@ -53,7 +53,7 @@ export default function ApplicationSummary({ application, withDocuments = false 
             {application.expertise.map((subject) => (
               <span
                 key={subject}
-                className="inline-flex items-center rounded-full bg-porcelain border border-line px-3 py-1 text-xs font-sans text-ink"
+                className="inline-flex items-center rounded-full bg-cn-p-page border border-cn-p-line px-3 py-1 text-xs font-sans text-cn-p-ink"
               >
                 {subject}
               </span>
@@ -76,7 +76,7 @@ export default function ApplicationSummary({ application, withDocuments = false 
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="inline-flex items-center gap-1.5 text-pine hover:text-moss transition truncate"
+                className="inline-flex items-center gap-1.5 text-cn-p-accent hover:text-cn-p-accent-hover transition truncate"
               >
                 <ExternalLink className="w-3.5 h-3.5 shrink-0" />
                 <span className="truncate">{url}</span>
@@ -98,10 +98,10 @@ export default function ApplicationSummary({ application, withDocuments = false 
             <ul className="space-y-1.5">
               {application.credentials.map((credential) => (
                 <li key={credential.id} className="flex items-center gap-2">
-                  <FileText className="w-3.5 h-3.5 text-muted shrink-0" />
+                  <FileText className="w-3.5 h-3.5 text-cn-p-ink-2 shrink-0" />
                   <span className="truncate">
                     {credential.title}
-                    <span className="text-muted"> · {credential.credential_type_display}</span>
+                    <span className="text-cn-p-ink-2"> · {credential.credential_type_display}</span>
                   </span>
                 </li>
               ))}
@@ -120,14 +120,14 @@ export default function ApplicationSummary({ application, withDocuments = false 
                 src={application.intro_video_file_url}
                 controls
                 preload="metadata"
-                className="w-full max-h-64 rounded-xl bg-ink"
+                className="w-full max-h-64 rounded-xl bg-cn-p-ink"
               />
             )}
             <a
               href={videoUrl}
               target="_blank"
               rel="noopener noreferrer"
-              className="inline-flex items-center gap-1.5 text-pine hover:text-moss transition"
+              className="inline-flex items-center gap-1.5 text-cn-p-accent hover:text-cn-p-accent-hover transition"
             >
               <Film className="w-3.5 h-3.5" />
               {application.intro_video_name || "Open video"}

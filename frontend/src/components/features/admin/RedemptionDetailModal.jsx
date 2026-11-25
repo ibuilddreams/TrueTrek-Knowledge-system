@@ -8,9 +8,9 @@ import { formatDateTime, formatPlainDate, formatPlainTime } from "@/lib/adminFor
 function InfoRow({ label, value }) {
   if (!value) return null;
   return (
-    <div className="flex items-center justify-between text-sm py-1.5 border-b border-line last:border-0">
-      <span className="text-muted font-light">{label}</span>
-      <span className="text-ink font-medium text-right">{value}</span>
+    <div className="flex items-center justify-between text-sm py-1.5 border-b border-cn-p-line last:border-0">
+      <span className="text-cn-p-ink-2 font-light">{label}</span>
+      <span className="text-cn-p-ink font-medium text-right">{value}</span>
     </div>
   );
 }
@@ -21,19 +21,19 @@ export default function RedemptionDetailModal({ isOpen, onClose, redemption }) {
   const fulfillment = redemption.fulfillment;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} title="Redemption Details" maxWidth="max-w-lg">
+    <Modal variant="cobalt" isOpen={isOpen} onClose={onClose} title="Redemption details" maxWidth="max-w-lg">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="font-serif font-bold text-lg text-ink">{redemption.student?.name}</p>
-            <p className="text-xs text-muted">{redemption.student?.email}</p>
+            <p className="font-bold text-lg text-cn-p-ink">{redemption.student?.name}</p>
+            <p className="text-xs text-cn-p-ink-2">{redemption.student?.email}</p>
           </div>
-          <StatusBadge size="lg" status={redemption.status} />
+          <StatusBadge tone="cobalt" size="lg" status={redemption.status} />
         </div>
 
-        <div className="bg-porcelain border border-line rounded-xl p-4">
+        <div className="bg-cn-p-page border border-cn-p-line rounded-xl p-4">
           <InfoRow label="Reward" value={redemption.reward?.name} />
-          <InfoRow label="Reward Type" value={redemption.reward?.reward_type} />
+          <InfoRow label="Reward type" value={redemption.reward?.reward_type} />
           {redemption.reward?.duration_minutes && (
             <InfoRow label="Duration" value={`${redemption.reward.duration_minutes} minutes`} />
           )}
@@ -48,34 +48,34 @@ export default function RedemptionDetailModal({ isOpen, onClose, redemption }) {
         </div>
 
         {redemption.student_note && (
-          <div className="bg-gold/12 border border-gold/25 rounded-xl p-4">
-            <p className="text-[11px] font-mono uppercase tracking-wider text-gold font-semibold mb-1">
+          <div className="bg-cn-p-soft border border-cn-p-soft rounded-xl p-4">
+            <p className="text-[11px] text-cn-p-soft-ink font-semibold mb-1">
               Student message
             </p>
-            <p className="text-sm text-ink">{redemption.student_note}</p>
+            <p className="text-sm text-cn-p-ink">{redemption.student_note}</p>
           </div>
         )}
 
         {fulfillment && (fulfillment.scheduled_date || fulfillment.notes) && (
-          <div className="bg-emerald-50 border border-emerald-100 rounded-xl p-4 space-y-1.5">
-            <p className="text-[11px] font-mono uppercase tracking-wider text-emerald-700/80 font-semibold mb-1">
+          <div className="bg-cn-p-ok-bg border border-cn-p-ok-bg rounded-xl p-4 space-y-1.5">
+            <p className="text-[11px] text-cn-p-ok font-semibold mb-1">
               Fulfillment
             </p>
             {fulfillment.scheduled_date && (
-              <div className="flex items-center gap-2 text-sm text-emerald-900">
+              <div className="flex items-center gap-2 text-sm text-cn-p-ok">
                 <Calendar className="w-4 h-4" />
                 {formatPlainDate(fulfillment.scheduled_date)}
               </div>
             )}
             {fulfillment.start_time && (
-              <div className="flex items-center gap-2 text-sm text-emerald-900">
+              <div className="flex items-center gap-2 text-sm text-cn-p-ok">
                 <Clock className="w-4 h-4" />
                 {formatPlainTime(fulfillment.start_time)}
                 {fulfillment.end_time ? ` – ${formatPlainTime(fulfillment.end_time)}` : ""}
               </div>
             )}
             {fulfillment.mentor && (
-              <div className="flex items-center gap-2 text-sm text-emerald-900">
+              <div className="flex items-center gap-2 text-sm text-cn-p-ok">
                 <User className="w-4 h-4" />
                 {fulfillment.mentor.name}
               </div>
@@ -85,22 +85,22 @@ export default function RedemptionDetailModal({ isOpen, onClose, redemption }) {
                 href={fulfillment.meeting_url}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex items-center gap-1.5 text-xs font-mono text-emerald-800 underline"
+                className="inline-flex items-center gap-1.5 text-xs text-cn-p-ok underline"
               >
                 <ExternalLink className="w-3.5 h-3.5" />
                 {fulfillment.meeting_url}
               </a>
             )}
-            {fulfillment.notes && <p className="text-sm text-emerald-800 font-mono mt-1">{fulfillment.notes}</p>}
+            {fulfillment.notes && <p className="text-sm text-cn-p-ok mt-1">{fulfillment.notes}</p>}
           </div>
         )}
 
         {redemption.cancellation_reason && (
-          <div className="bg-rose-50 border border-rose-100 rounded-xl p-4">
-            <p className="text-[11px] font-mono uppercase tracking-wider text-rose-700/80 font-semibold mb-1">
+          <div className="bg-cn-p-bad-bg border border-cn-p-bad-bg rounded-xl p-4">
+            <p className="text-[11px] text-cn-p-bad font-semibold mb-1">
               Cancellation reason
             </p>
-            <p className="text-sm text-rose-900">{redemption.cancellation_reason}</p>
+            <p className="text-sm text-cn-p-bad">{redemption.cancellation_reason}</p>
           </div>
         )}
       </div>

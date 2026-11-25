@@ -12,6 +12,7 @@ import DataTable from "@/components/ui/DataTable";
 import Pagination from "@/components/ui/Pagination";
 import StatusBadge from "@/components/ui/StatusBadge";
 import AdminCourseProgressScreen from "../AdminCourseProgressScreen";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 
 const PAGE_SIZE = 10;
 
@@ -72,7 +73,7 @@ export default function ProgressTab() {
   const columns = [
     { key: "title", header: "Course", render: (course) => course.title },
     { key: "category", header: "Category", render: (course) => course.category?.name || "—" },
-    { key: "status", header: "Status", render: (course) => <StatusBadge size="lg" status={course.status} /> },
+    { key: "status", header: "Status", render: (course) => <StatusBadge tone="cobalt" size="lg" status={course.status} /> },
     {
       key: "actions",
       header: "",
@@ -80,18 +81,23 @@ export default function ProgressTab() {
         <button
           type="button"
           onClick={() => handleSelectCourse(course)}
-          className="inline-flex items-center gap-1.5 text-xs font-mono font-semibold text-pine hover:text-moss transition cursor-pointer"
+          className="inline-flex items-center gap-1.5 text-xs font-semibold text-cn-p-accent hover:text-cn-p-accent-hover transition cursor-pointer"
         >
           <LineChart className="w-3.5 h-3.5" />
-          View Progress
+          View progress
         </button>
       ),
     },
   ];
 
   return (
-    <div className="space-y-5">
-      <SearchBar size="lg"
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Progress"
+        subtitle="Completion across every course on the platform."
+      />
+
+      <SearchBar tone="cobalt" size="lg"
         value={searchInput}
         onChange={(value) => {
           setSearchInput(value);
@@ -101,17 +107,17 @@ export default function ProgressTab() {
       />
 
       {!isLoading && isError && (
-        <div className="bg-paper border border-line rounded-card shadow-soft p-8 text-center max-w-lg mx-auto">
-          <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+        <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p p-8 text-center max-w-lg mx-auto">
+          <div className="w-12 h-12 bg-cn-p-bad-bg border border-cn-p-bad-bg text-cn-p-bad rounded-2xl flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <p className="text-sm text-muted font-light mb-6">
+          <p className="text-sm text-cn-p-ink-2 font-light mb-6">
             {getApiErrorMessage(error, "Unable to load courses.")}
           </p>
           <button
             type="button"
             onClick={() => refetch()}
-            className="inline-flex items-center gap-2 px-5 py-3 bg-pine hover:bg-moss text-paper font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-soft transition cursor-pointer"
+            className="inline-flex items-center gap-2 px-5 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white font-bold text-sm rounded-cn-p-sm transition cursor-pointer"
           >
             <RefreshCw className="w-4 h-4" />
             Retry
@@ -120,20 +126,24 @@ export default function ProgressTab() {
       )}
 
       {!isError && (
-        <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-          <DataTable size="lg"
+        <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+          <DataTable tone="cobalt" size="lg"
             columns={columns}
             rows={paginatedCourses}
             keyField="id"
             isLoading={isLoading}
             emptyLabel="No courses found."
           />
-          <Pagination size="lg"
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            totalLabel={`${courses.length} course${courses.length === 1 ? "" : "s"}`}
-          />
+          <div className="px-4 pb-4">
+
+            <Pagination tone="cobalt" size="lg"
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalLabel={`${courses.length} course${courses.length === 1 ? "" : "s"}`}
+            />
+
+          </div>
         </div>
       )}
     </div>

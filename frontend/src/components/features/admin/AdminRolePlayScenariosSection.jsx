@@ -77,8 +77,8 @@ export default function AdminRolePlayScenariosSection({ onViewSessions }) {
       header: "Scenario",
       render: (scenario) => (
         <div>
-          <span className="font-semibold text-ink">{scenario.title}</span>
-          <p className="text-[11px] text-muted font-light line-clamp-1 max-w-xs">
+          <span className="font-semibold text-cn-p-ink">{scenario.title}</span>
+          <p className="text-[11px] text-cn-p-ink-2 font-light line-clamp-1 max-w-xs">
             {scenario.code} &middot; {scenario.setup}
           </p>
         </div>
@@ -88,7 +88,7 @@ export default function AdminRolePlayScenariosSection({ onViewSessions }) {
       key: "pressure_type",
       header: "Pressure",
       render: (scenario) => (
-        <span className="text-[11px] font-mono uppercase tracking-wider text-muted">
+        <span className="text-[11px] text-cn-p-ink-2">
           {scenario.pressure_type_display}
         </span>
       ),
@@ -98,8 +98,8 @@ export default function AdminRolePlayScenariosSection({ onViewSessions }) {
       header: "AI Plays",
       render: (scenario) => (
         <div>
-          <span className="text-xs text-ink">{scenario.counterpart_role}</span>
-          <p className="text-[11px] font-mono uppercase tracking-wider text-muted">
+          <span className="text-xs text-cn-p-ink">{scenario.counterpart_role}</span>
+          <p className="text-[11px] text-cn-p-ink-2">
             {scenario.persona_display}
           </p>
         </div>
@@ -109,14 +109,14 @@ export default function AdminRolePlayScenariosSection({ onViewSessions }) {
       key: "points_reward",
       header: "Points",
       render: (scenario) => (
-        <span className="font-mono font-bold text-ink">{scenario.points_reward}</span>
+        <span className="font-bold text-cn-p-ink">{scenario.points_reward}</span>
       ),
     },
     {
       key: "completion_count",
       header: "Runs",
       render: (scenario) => (
-        <span className="text-muted">
+        <span className="text-cn-p-ink-2">
           {scenario.completion_count ?? 0}
           <span className="text-[11px] font-light"> / {scenario.session_count ?? 0}</span>
         </span>
@@ -125,7 +125,7 @@ export default function AdminRolePlayScenariosSection({ onViewSessions }) {
     {
       key: "status",
       header: "Status",
-      render: (scenario) => <StatusBadge size="lg" status={scenario.status} />,
+      render: (scenario) => <StatusBadge tone="cobalt" size="lg" status={scenario.status} />,
     },
     {
       key: "created_at",
@@ -140,19 +140,19 @@ export default function AdminRolePlayScenariosSection({ onViewSessions }) {
           actions={[
             {
               key: "sessions",
-              label: "View Runs",
+              label: "View runs",
               icon: ListChecks,
               onSelect: () => onViewSessions?.(scenario),
             },
             {
               key: "edit",
-              label: "Edit Scenario",
+              label: "Edit scenario",
               icon: Edit3,
               onSelect: () => setEditingScenario(scenario),
             },
             {
               key: "archive",
-              label: "Archive / Delete",
+              label: "Archive / delete",
               icon: Archive,
               tone: "danger",
               onSelect: () => setArchivingScenario(scenario),
@@ -166,7 +166,7 @@ export default function AdminRolePlayScenariosSection({ onViewSessions }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <SearchBar
+        <SearchBar tone="cobalt"
           size="lg"
           value={searchInput}
           onChange={setSearchInput}
@@ -176,17 +176,17 @@ export default function AdminRolePlayScenariosSection({ onViewSessions }) {
         <button
           type="button"
           onClick={() => setIsFormOpen(true)}
-          className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+          className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center gap-2 shrink-0 cursor-pointer"
           title="Create a new role-play scenario"
           aria-label="Create a new role-play scenario"
         >
           <Theater className="w-4 h-4" />
-          ADD SCENARIO
+          Add scenario
         </button>
       </div>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-        <DataTable
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+        <DataTable tone="cobalt"
           size="lg"
           columns={columns}
           rows={scenarios}
@@ -195,13 +195,17 @@ export default function AdminRolePlayScenariosSection({ onViewSessions }) {
           onRetry={refetch}
           emptyLabel="No scenarios found."
         />
-        <Pagination
-          size="lg"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalLabel={`${totalCount} scenario${totalCount === 1 ? "" : "s"}`}
-        />
+        <div className="px-4 pb-4">
+
+          <Pagination tone="cobalt"
+            size="lg"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalLabel={`${totalCount} scenario${totalCount === 1 ? "" : "s"}`}
+          />
+
+        </div>
       </div>
 
       <RolePlayScenarioFormModal
@@ -213,7 +217,7 @@ export default function AdminRolePlayScenariosSection({ onViewSessions }) {
         }}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog variant="cobalt"
         isOpen={Boolean(archivingScenario)}
         onClose={() => setArchivingScenario(null)}
         onConfirm={handleArchive}
@@ -225,7 +229,7 @@ export default function AdminRolePlayScenariosSection({ onViewSessions }) {
             ? `"${archivingScenario.title}" will be archived if students have already run it, so their transcripts and points stay intact. If nobody has ever opened it, it will be deleted outright.`
             : ""
         }
-        confirmLabel="Remove Scenario"
+        confirmLabel="Remove scenario"
       />
     </div>
   );

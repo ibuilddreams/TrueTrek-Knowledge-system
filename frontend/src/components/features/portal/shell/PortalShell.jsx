@@ -27,8 +27,6 @@ export default function PortalShell({
   chip,
   title,
   today,
-  unreadCount,
-  onOpenNotifications,
   onSearch,
   children,
 }) {
@@ -83,12 +81,11 @@ export default function PortalShell({
 
       <div className="flex min-w-0 flex-col">
         <PortalTopbar
+          role={role}
           title={title ?? portalTitle(role, activeSlug)}
           today={today}
           chip={chip}
-          unreadCount={unreadCount}
           onOpenNav={() => setIsNavOpen(true)}
-          onOpenNotifications={onOpenNotifications}
           onSearch={onSearch}
         />
         <main

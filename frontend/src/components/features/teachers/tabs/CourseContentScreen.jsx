@@ -36,6 +36,11 @@ import { toastError, toastSuccess } from "@/lib/toast";
 import EmptyState from "@/components/ui/EmptyState";
 import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import StatusBadge from "@/components/ui/StatusBadge";
+import { PortalStat } from "@/components/features/portal/shell/PortalCard";
+import {
+  PortalButton,
+  PortalPageHead,
+} from "@/components/features/portal/shell/PortalUI";
 import TeacherModuleRow from "@/components/features/teachers/TeacherModuleRow";
 import TeacherModuleFormModal from "@/components/features/teachers/TeacherModuleFormModal";
 import TeacherLessonFormModal from "@/components/features/teachers/TeacherLessonFormModal";
@@ -281,68 +286,45 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
       <button
         type="button"
         onClick={onBack}
-        className="inline-flex items-center gap-1.5 text-sm font-mono font-semibold text-muted hover:text-pine transition-colors cursor-pointer"
+        className="inline-flex items-center gap-1.5 text-sm font-semibold text-cn-p-ink-2 hover:text-cn-p-accent transition-colors cursor-pointer"
       >
         <ArrowLeft className="w-3.5 h-3.5" />
-        Back to Courses
+        Back to My courses
       </button>
 
-      <div className="relative bg-paper border border-line/90 rounded-2xl shadow-sm overflow-hidden">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pine to-moss opacity-80" />
-        <div className="p-6 sm:p-7 flex flex-col lg:flex-row lg:items-start justify-between gap-5">
-          <div className="flex items-center gap-4 min-w-0">
-            <div className="w-12 h-12 rounded-2xl bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
-              <Layers className="w-5 h-5" />
-            </div>
-            <div className="min-w-0">
-              <span className="text-gold font-mono text-[11px] uppercase tracking-widest font-bold block mb-1">
-                Course Content
-              </span>
-              <div className="flex items-center gap-2.5 flex-wrap">
-                <h2 className="text-2xl font-serif font-black text-ink truncate">
-                  {course?.title || "Course"}
-                </h2>
-                {course?.status && <StatusBadge status={course.status} size="lg" />}
-              </div>
-            </div>
-          </div>
+      <PortalPageHead
+        title={course?.title || "Course"}
+        subtitle="Build the modules, lessons, assignments and quizzes students work through."
+      >
+        {course?.status && <StatusBadge tone="cobalt" status={course.status} size="lg" />}
+        <PortalButton onClick={openCreateModuleForm}>
+          <ListPlus className="h-4 w-4" />
+          New module
+        </PortalButton>
+      </PortalPageHead>
 
-          <button
-            type="button"
-            onClick={openCreateModuleForm}
-            className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0 cursor-pointer"
-          >
-            <ListPlus className="w-4 h-4" />
-            NEW MODULE
-          </button>
-        </div>
-
-        <div className="grid grid-cols-2 sm:grid-cols-4 divide-x divide-y sm:divide-y-0 divide-line border-t border-line">
-          {stats.map((stat) => (
-            <div key={stat.key} className="flex items-center gap-3 px-5 py-4">
-              <div className="w-9 h-9 rounded-xl bg-gold/12 text-gold flex items-center justify-center shrink-0">
-                <stat.icon className="w-4 h-4" />
-              </div>
-              <div>
-                <p className="text-lg font-serif font-bold text-ink">{stat.value}</p>
-                <p className="text-[10px] font-mono uppercase tracking-widest text-muted">{stat.label}</p>
-              </div>
-            </div>
-          ))}
-        </div>
+      <div className="grid gap-3 grid-cols-2 lg:grid-cols-4">
+        {stats.map((stat) => (
+          <PortalStat
+            key={stat.key}
+            label={stat.label}
+            value={stat.value}
+            icon={stat.icon}
+          />
+        ))}
       </div>
 
       <div className="space-y-4">
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
           <div>
-            <h3 className="font-serif font-bold text-lg text-ink">Modules</h3>
-            <p className="text-sm text-muted font-light">
+            <h3 className="text-lg font-bold tracking-[-0.01em] text-cn-p-ink">Modules</h3>
+            <p className="text-sm text-cn-p-ink-2">
               {modules.length} module{modules.length === 1 ? "" : "s"}
             </p>
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-muted">
+            <span className="hidden sm:inline-flex items-center gap-1.5 text-[11px] text-cn-p-ink-2">
               <MoveVertical className="w-3.5 h-3.5" />
               Drag the handle to reorder
             </span>
@@ -350,7 +332,7 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
               <button
                 type="button"
                 onClick={toggleExpandAll}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-paper hover:bg-porcelain text-muted text-xs font-semibold font-mono rounded-xl tracking-wider border border-line shadow-sm transition-all cursor-pointer"
+                className="inline-flex h-9 cursor-pointer items-center gap-1.5 rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card px-3 text-[13px] font-semibold text-cn-p-ink transition hover:border-cn-p-ink"
               >
                 {areAllExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
                 {areAllExpanded ? "Collapse All" : "Expand All"}
@@ -362,12 +344,12 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         {modulesQuery.isLoading ? (
           <div className="grid grid-cols-1 gap-3" aria-busy="true" aria-label="Loading modules">
             {Array.from({ length: 3 }).map((_, index) => (
-              <div key={index} className="h-20 rounded-2xl bg-porcelain animate-pulse" />
+              <div key={index} className="h-20 rounded-2xl bg-cn-p-page animate-pulse" />
             ))}
           </div>
         ) : modules.length === 0 ? (
-          <div className="bg-paper border border-line rounded-2xl shadow-sm">
-            <EmptyState
+          <div className="bg-cn-p-card border border-cn-p-line rounded-2xl">
+            <EmptyState tone="portal"
               icon={Layers}
               label="No modules yet."
               description="Create your first module to start organizing this course's content."
@@ -411,45 +393,45 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         nextOrder={modules.length + 1}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog variant="cobalt"
         isOpen={Boolean(deletingModule)}
         onClose={() => setDeletingModule(null)}
         onConfirm={handleDeleteModuleConfirm}
         isConfirming={deleteModuleMutation.isPending}
-        title="Delete Module"
+        title="Delete module"
         message={`Are you sure you want to delete "${deletingModule?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
         size="lg"
       />
 
-      <ConfirmDialog
+      <ConfirmDialog variant="cobalt"
         isOpen={Boolean(deletingLesson)}
         onClose={() => setDeletingLesson(null)}
         onConfirm={handleDeleteLessonConfirm}
         isConfirming={deleteLessonMutation.isPending}
-        title="Delete Lesson"
+        title="Delete lesson"
         message={`Are you sure you want to delete "${deletingLesson?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
         size="lg"
       />
 
-      <ConfirmDialog
+      <ConfirmDialog variant="cobalt"
         isOpen={Boolean(deletingAssignment)}
         onClose={() => setDeletingAssignment(null)}
         onConfirm={handleDeleteAssignmentConfirm}
         isConfirming={deleteAssignmentMutation.isPending}
-        title="Delete Assignment"
+        title="Delete assignment"
         message={`Are you sure you want to delete "${deletingAssignment?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
         size="lg"
       />
 
-      <ConfirmDialog
+      <ConfirmDialog variant="cobalt"
         isOpen={Boolean(deletingQuiz)}
         onClose={() => setDeletingQuiz(null)}
         onConfirm={handleDeleteQuizConfirm}
         isConfirming={deleteQuizMutation.isPending}
-        title="Delete Quiz"
+        title="Delete quiz"
         message={`Are you sure you want to delete "${deletingQuiz?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
         size="lg"

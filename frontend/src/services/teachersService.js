@@ -41,3 +41,12 @@ export async function downloadTeacherImportSample(format = "csv") {
   );
   downloadBlob(blob, filename || `teacher_import_sample.${format}`);
 }
+
+export async function getAdminTeacherAssignedCourses(teacherId) {
+  return backendClient.get(`/teacher/${teacherId}/assignedcourses`);
+}
+
+/** The public instructor profile, which is where a teacher's rating lives. */
+export async function getInstructorProfile(teacherId) {
+  return backendClient.get(`/instructors/${teacherId}/`);
+}

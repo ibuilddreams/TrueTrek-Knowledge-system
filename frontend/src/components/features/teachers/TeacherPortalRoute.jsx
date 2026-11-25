@@ -13,6 +13,8 @@ import {
   isValidPortalSlug,
 } from "@/components/features/portal/shell/portalNav";
 
+const UNGATED_SLUGS = new Set(["messages", "profile"]);
+
 export default function TeacherPortalRoute({ slug }) {
   const router = useRouter();
   const { role, status, isAuthenticated } = useAuth();
@@ -41,23 +43,31 @@ export default function TeacherPortalRoute({ slug }) {
   }, [isUnknownSlug, router]);
 
   if (isResolving) {
-    return <Loader label="Loading Teacher Portal..." />;
+    return <Loader tone="cobalt" label="Loading teacher portal..." />;
   }
 
   if (!isAuthenticated) {
-    return <Loader label="Redirecting to Sign In..." />;
+    return <Loader tone="cobalt" label="Redirecting to sign in..." />;
   }
 
   if (role !== AUTH_ROLES.FACULTY) {
-    return <Loader label="Redirecting..." />;
+    return <Loader tone="cobalt" label="Redirecting..." />;
   }
 
   // A teacher who signed themselves up completes an application here first;
   // one an admin created falls straight through to the portal. The gate asks
   // the server which this is rather than guessing — see
   // components/features/teachers/onboarding/TeacherOnboardingGate.jsx.
+  //
+  // Messages and Profile & settings are the two screens it doesn't stand in
+  // front of. Neither is a teaching surface — one is how a teacher still
+  // drafting an application reaches the admin reviewing it, the other is
+  // their own account details — and both were reachable from the account menu
+  // before they moved inside the portal. Every other slug still meets the
+  // gate, so following any other link from here lands back on the
+  // application.
   return (
-    <TeacherOnboardingGate>
+    <TeacherOnboardingGate enabled={!UNGATED_SLUGS.has(resolvedSlug)}>
       <TeacherPortal slug={isUnknownSlug ? DEFAULT_PORTAL_SLUG : resolvedSlug} />
     </TeacherOnboardingGate>
   );

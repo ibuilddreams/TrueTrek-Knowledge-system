@@ -8,7 +8,39 @@ export default function StatCard({
   hint,
   accent = "amber",
   size = "base",
+  // "cobalt" renders the portal design's own stat tile — flat, no seam, one
+  // accent — so a screen on the new design can keep using StatCard. The
+  // default is the porcelain card, unchanged, which the admin portal reads.
+  tone = "porcelain",
 }) {
+  if (tone === "cobalt") {
+    const TILES = {
+      amber: "bg-cn-p-soft text-cn-p-accent",
+      stone: "bg-cn-p-neutral-bg text-cn-p-ink-2",
+      emerald: "bg-cn-p-ok-bg text-cn-p-ok",
+      rose: "bg-cn-p-warn-bg text-cn-p-warn",
+    };
+    return (
+      <section className="rounded-cn-p border border-cn-p-line bg-cn-p-card p-5">
+        <div className="flex items-start justify-between gap-3">
+          <p className="text-sm text-cn-p-ink-2">{label}</p>
+          {Icon && (
+            <span
+              className={`grid h-9 w-9 flex-none place-items-center rounded-cn-p-sm ${TILES[accent] || TILES.amber}`}
+            >
+              <Icon className="h-[18px] w-[18px]" strokeWidth={1.9} />
+            </span>
+          )}
+        </div>
+        <p className="mt-3 truncate text-[32px] leading-none font-extrabold tracking-[-0.02em] tabular-nums text-cn-p-ink">
+          {value}
+        </p>
+        {hint && <p className="mt-2 text-[13px] text-cn-p-muted">{hint}</p>}
+        {footer}
+      </section>
+    );
+  }
+
   const accents = {
     amber: {
       bar: "from-gold/60 via-gold to-gold/60",
@@ -32,14 +64,14 @@ export default function StatCard({
     },
   };
 
-  const tone = accents[accent] || accents.amber;
+  const skin = accents[accent] || accents.amber;
 
   return (
     <div
-      className={`tt-card group relative bg-paper border border-line p-5 sm:p-6 rounded-card shadow-soft overflow-hidden transition-shadow duration-200 ${tone.glow}`}
+      className={`tt-card group relative bg-paper border border-line p-5 sm:p-6 rounded-card shadow-soft overflow-hidden transition-shadow duration-200 ${skin.glow}`}
     >
       <div
-        className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${tone.bar} opacity-90`}
+        className={`absolute top-0 left-0 w-full h-1 bg-gradient-to-r ${skin.bar} opacity-90`}
       />
       <div className="flex items-start justify-between gap-3">
         <div className="min-w-0">
@@ -62,7 +94,7 @@ export default function StatCard({
         </div>
         {Icon && (
           <div
-            className={`w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0 ${tone.icon}`}
+            className={`w-11 h-11 rounded-2xl border flex items-center justify-center shrink-0 ${skin.icon}`}
           >
             <Icon className="w-5 h-5" />
           </div>

@@ -73,8 +73,8 @@ export default function AdminQuestCatalogSection({ onViewSubmissions }) {
       header: "Quest",
       render: (quest) => (
         <div>
-          <span className="font-semibold text-ink">{quest.title}</span>
-          <p className="text-[11px] text-muted font-light line-clamp-1 max-w-xs">
+          <span className="font-semibold text-cn-p-ink">{quest.title}</span>
+          <p className="text-[11px] text-cn-p-ink-2 font-light line-clamp-1 max-w-xs">
             {quest.instructions}
           </p>
         </div>
@@ -84,7 +84,7 @@ export default function AdminQuestCatalogSection({ onViewSubmissions }) {
       key: "category",
       header: "Category",
       render: (quest) => (
-        <span className="text-[11px] font-mono uppercase tracking-wider text-muted">
+        <span className="text-[11px] text-cn-p-ink-2">
           {quest.category_display}
         </span>
       ),
@@ -93,7 +93,7 @@ export default function AdminQuestCatalogSection({ onViewSubmissions }) {
       key: "difficulty",
       header: "Difficulty",
       render: (quest) => (
-        <span className="text-[11px] font-mono uppercase tracking-wider text-muted">
+        <span className="text-[11px] text-cn-p-ink-2">
           {quest.difficulty_display}
         </span>
       ),
@@ -102,14 +102,14 @@ export default function AdminQuestCatalogSection({ onViewSubmissions }) {
       key: "points_reward",
       header: "Points",
       render: (quest) => (
-        <span className="font-mono font-bold text-ink">{quest.points_reward}</span>
+        <span className="font-bold text-cn-p-ink">{quest.points_reward}</span>
       ),
     },
     {
       key: "completion_count",
       header: "Completions",
       render: (quest) => (
-        <span className="text-muted">
+        <span className="text-cn-p-ink-2">
           {quest.completion_count ?? 0}
           <span className="text-[11px] font-light"> / {quest.assignment_count ?? 0}</span>
         </span>
@@ -118,7 +118,7 @@ export default function AdminQuestCatalogSection({ onViewSubmissions }) {
     {
       key: "status",
       header: "Status",
-      render: (quest) => <StatusBadge size="lg" status={quest.status} />,
+      render: (quest) => <StatusBadge tone="cobalt" size="lg" status={quest.status} />,
     },
     {
       key: "created_at",
@@ -133,19 +133,19 @@ export default function AdminQuestCatalogSection({ onViewSubmissions }) {
           actions={[
             {
               key: "submissions",
-              label: "View Submissions",
+              label: "View submissions",
               icon: ListChecks,
               onSelect: () => onViewSubmissions?.(quest),
             },
             {
               key: "edit",
-              label: "Edit Quest",
+              label: "Edit quest",
               icon: Edit3,
               onSelect: () => setEditingQuest(quest),
             },
             {
               key: "archive",
-              label: "Archive / Delete",
+              label: "Archive / delete",
               icon: Archive,
               tone: "danger",
               onSelect: () => setArchivingQuest(quest),
@@ -159,7 +159,7 @@ export default function AdminQuestCatalogSection({ onViewSubmissions }) {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <SearchBar
+        <SearchBar tone="cobalt"
           size="lg"
           value={searchInput}
           onChange={setSearchInput}
@@ -169,17 +169,17 @@ export default function AdminQuestCatalogSection({ onViewSubmissions }) {
         <button
           type="button"
           onClick={() => setIsFormOpen(true)}
-          className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+          className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center gap-2 shrink-0 cursor-pointer"
           title="Create a new quest"
           aria-label="Create a new quest"
         >
           <Swords className="w-4 h-4" />
-          ADD QUEST
+          Add quest
         </button>
       </div>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-        <DataTable
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+        <DataTable tone="cobalt"
           size="lg"
           columns={columns}
           rows={quests}
@@ -188,13 +188,17 @@ export default function AdminQuestCatalogSection({ onViewSubmissions }) {
           onRetry={refetch}
           emptyLabel="No quests found."
         />
-        <Pagination
-          size="lg"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalLabel={`${totalCount} quest${totalCount === 1 ? "" : "s"}`}
-        />
+        <div className="px-4 pb-4">
+
+          <Pagination tone="cobalt"
+            size="lg"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalLabel={`${totalCount} quest${totalCount === 1 ? "" : "s"}`}
+          />
+
+        </div>
       </div>
 
       <QuestFormModal
@@ -206,7 +210,7 @@ export default function AdminQuestCatalogSection({ onViewSubmissions }) {
         }}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog variant="cobalt"
         isOpen={Boolean(archivingQuest)}
         onClose={() => setArchivingQuest(null)}
         onConfirm={handleArchive}
@@ -218,7 +222,7 @@ export default function AdminQuestCatalogSection({ onViewSubmissions }) {
             ? `"${archivingQuest.title}" will be archived if students have already been assigned it, so their history and points stay intact. If it has never been assigned, it will be deleted outright.`
             : ""
         }
-        confirmLabel="Remove Quest"
+        confirmLabel="Remove quest"
       />
     </div>
   );

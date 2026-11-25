@@ -11,9 +11,9 @@ import { formatDateTime } from "@/lib/adminFormatters";
 
 function Metric({ label, value }) {
   return (
-    <div className="rounded-xl bg-porcelain border border-line p-3">
-      <p className="text-[10px] font-mono uppercase tracking-widest text-muted">{label}</p>
-      <p className="text-lg font-serif font-light text-ink tabular-nums mt-0.5">{value}</p>
+    <div className="rounded-xl bg-cn-p-page border border-cn-p-line p-3">
+      <p className="text-[10px] text-cn-p-ink-2">{label}</p>
+      <p className="text-lg font-light text-cn-p-ink tabular-nums mt-0.5">{value}</p>
     </div>
   );
 }
@@ -37,11 +37,11 @@ export default function RolePlaySessionDetailModal({ sessionId, onClose }) {
   const scenario = data?.scenario;
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={Boolean(sessionId)}
       onClose={onClose}
       icon={Theater}
-      title="Role-Play Run"
+      title="Role-play run"
       subtitle={
         data
           ? `${data.student_name || data.student_email} · ${scenario?.title || ""}`
@@ -49,10 +49,10 @@ export default function RolePlaySessionDetailModal({ sessionId, onClose }) {
       }
       maxWidth="max-w-3xl"
     >
-      {isLoading && <Loader fullScreen={false} label="Loading the transcript..." />}
+      {isLoading && <Loader tone="cobalt" fullScreen={false} label="Loading the transcript..." />}
 
       {isError && (
-        <p className="text-sm text-rose-700 font-light">
+        <p className="text-sm text-cn-p-bad font-light">
           {getApiErrorMessage(error, "Unable to load this run.")}
         </p>
       )}
@@ -60,11 +60,11 @@ export default function RolePlaySessionDetailModal({ sessionId, onClose }) {
       {data && (
         <div className="space-y-5">
           <div className="flex flex-wrap items-center gap-3">
-            <StatusBadge size="lg" status={data.status} />
-            <span className="text-[11px] font-mono uppercase tracking-wider text-muted">
+            <StatusBadge tone="cobalt" size="lg" status={data.status} />
+            <span className="text-[11px] text-cn-p-ink-2">
               {scenario?.code} &middot; {data.persona_display}
             </span>
-            <span className="text-[11px] text-muted font-light ml-auto">
+            <span className="text-[11px] text-cn-p-ink-2 font-light ml-auto">
               {formatDateTime(data.created_at)}
             </span>
           </div>
@@ -79,20 +79,20 @@ export default function RolePlaySessionDetailModal({ sessionId, onClose }) {
               </div>
 
               {data.verdict && (
-                <div className="rounded-xl bg-porcelain border border-line p-4">
-                  <p className="text-[10px] font-mono uppercase tracking-widest text-muted mb-1">
+                <div className="rounded-xl bg-cn-p-page border border-cn-p-line p-4">
+                  <p className="text-[10px] text-cn-p-ink-2 mb-1">
                     {data.passed ? "Passed" : "Did not pass"} &middot; {data.verdict}
                   </p>
-                  <p className="text-sm text-ink font-light leading-relaxed">{data.summary}</p>
+                  <p className="text-sm text-cn-p-ink font-light leading-relaxed">{data.summary}</p>
                 </div>
               )}
 
               {data.used_fabricated_excuse && (
-                <div className="rounded-xl border border-amber-200 bg-amber-50 p-4">
-                  <p className="text-[10px] font-mono uppercase tracking-widest text-amber-800 mb-1">
+                <div className="rounded-xl border border-cn-p-warn-bg bg-cn-p-warn-bg p-4">
+                  <p className="text-[10px] text-cn-p-warn mb-1">
                     Made-up excuse flagged
                   </p>
-                  <p className="text-sm text-ink font-light leading-relaxed">
+                  <p className="text-sm text-cn-p-ink font-light leading-relaxed">
                     {data.fabrication_note}
                   </p>
                 </div>
@@ -101,12 +101,12 @@ export default function RolePlaySessionDetailModal({ sessionId, onClose }) {
           )}
 
           {data.status === "EVALUATING" && data.error_message && (
-            <div className="rounded-xl border border-rose-200 bg-rose-50 p-4">
-              <p className="text-[10px] font-mono uppercase tracking-widest text-rose-700 mb-1">
+            <div className="rounded-xl border border-cn-p-bad-bg bg-cn-p-bad-bg p-4">
+              <p className="text-[10px] text-cn-p-bad mb-1">
                 Scoring didn&apos;t finish
               </p>
-              <p className="text-sm text-ink font-light leading-relaxed">{data.error_message}</p>
-              <p className="text-[11px] text-muted font-light mt-2">
+              <p className="text-sm text-cn-p-ink font-light leading-relaxed">{data.error_message}</p>
+              <p className="text-[11px] text-cn-p-ink-2 font-light mt-2">
                 The transcript is intact — the student can ask for their score again from their
                 portal.
               </p>
@@ -114,7 +114,7 @@ export default function RolePlaySessionDetailModal({ sessionId, onClose }) {
           )}
 
           <div>
-            <p className="text-[10px] font-mono uppercase tracking-widest text-muted mb-3">
+            <p className="text-[10px] text-cn-p-ink-2 mb-3">
               Transcript
             </p>
             <div className="space-y-3 max-h-[42vh] overflow-y-auto pr-1">
@@ -127,18 +127,12 @@ export default function RolePlaySessionDetailModal({ sessionId, onClose }) {
                   >
                     <div className="max-w-[80%] flex flex-col gap-1">
                       <span
-                        className={`text-[10px] font-mono uppercase tracking-widest text-muted ${
-                          isAthlete ? "text-right" : ""
-                        }`}
+                        className={`text-[10px] text-cn-p-ink-2 ${ isAthlete ? "text-right" : "" }`}
                       >
                         {isAthlete ? "Student" : scenario?.counterpart_role}
                       </span>
                       <div
-                        className={`rounded-2xl px-4 py-3 text-sm font-light leading-relaxed whitespace-pre-wrap break-words ${
-                          isAthlete
-                            ? "bg-pine text-paper rounded-br-md"
-                            : "bg-porcelain border border-line text-ink rounded-bl-md"
-                        }`}
+                        className={`rounded-2xl px-4 py-3 text-sm font-light leading-relaxed whitespace-pre-wrap break-words ${ isAthlete ? "bg-cn-p-accent text-white rounded-br-md" : "bg-cn-p-page border border-cn-p-line text-cn-p-ink rounded-bl-md" }`}
                       >
                         {turn.content}
                       </div>

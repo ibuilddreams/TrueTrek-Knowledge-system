@@ -40,15 +40,15 @@ export default function AdminPortalRoute({ slug }) {
   }, [isUnknownSlug, router]);
 
   if (isResolving) {
-    return <Loader label="Loading Admin Portal..." />;
+    return <Loader tone="cobalt" label="Loading admin portal..." />;
   }
 
   if (!isAuthenticated) {
-    return <Loader label="Redirecting to Sign In..." />;
+    return <Loader tone="cobalt" label="Redirecting to sign in..." />;
   }
 
   if (role !== AUTH_ROLES.ADMIN) {
-    return <Loader label="Redirecting..." />;
+    return <Loader tone="cobalt" label="Redirecting..." />;
   }
 
   return <AdminDashboard slug={isUnknownSlug ? DEFAULT_PORTAL_SLUG : resolvedSlug} />;

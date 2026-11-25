@@ -25,8 +25,8 @@ export default function SessionAttendeesModal({ isOpen, onClose, session }) {
       header: "Student",
       render: (rsvp) => (
         <div>
-          <span className="font-semibold text-ink">{rsvp.student_name || "—"}</span>
-          <p className="text-[11px] text-muted font-light">{rsvp.student_email}</p>
+          <span className="font-semibold text-cn-p-ink">{rsvp.student_name || "—"}</span>
+          <p className="text-[11px] text-cn-p-ink-2 font-light">{rsvp.student_email}</p>
         </div>
       ),
     },
@@ -34,14 +34,14 @@ export default function SessionAttendeesModal({ isOpen, onClose, session }) {
       key: "attended",
       header: "Joined",
       render: (rsvp) => (
-        <StatusBadge size="lg" status={rsvp.attended ? "COMPLETED" : "PENDING"} />
+        <StatusBadge tone="cobalt" size="lg" status={rsvp.attended ? "COMPLETED" : "PENDING"} />
       ),
     },
     {
       key: "joined_at",
-      header: "Joined At",
+      header: "Joined at",
       render: (rsvp) => (
-        <span className="text-muted whitespace-nowrap">
+        <span className="text-cn-p-ink-2 whitespace-nowrap">
           {rsvp.joined_at ? formatDateTime(rsvp.joined_at) : "—"}
         </span>
       ),
@@ -49,20 +49,20 @@ export default function SessionAttendeesModal({ isOpen, onClose, session }) {
   ];
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={onClose}
       icon={Users}
-      title="Session Attendees"
+      title="Session attendees"
       subtitle={session?.title}
       maxWidth="max-w-2xl"
     >
-      <p className="text-[11px] text-muted font-light mb-4">
+      <p className="text-[11px] text-cn-p-ink-2 font-light mb-4">
         &ldquo;Joined&rdquo; means the student opened the join link — it records arrival, not how
         long they stayed.
       </p>
 
-      <DataTable
+      <DataTable tone="cobalt"
         size="lg"
         columns={columns}
         rows={data || []}

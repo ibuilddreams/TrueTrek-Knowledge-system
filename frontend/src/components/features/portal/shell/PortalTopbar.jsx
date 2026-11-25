@@ -1,6 +1,7 @@
 "use client";
 
-import { Bell, Flame, Menu, Search } from "lucide-react";
+import { Flame, Menu, Search } from "lucide-react";
+import NotificationBell from "@/components/ui/NotificationBell";
 
 // The design's `.top`: today's date over the page title, a search field, one
 // role-specific chip and the notification bell. It sticks to the top of the
@@ -19,14 +20,13 @@ function formatToday(date) {
 }
 
 export default function PortalTopbar({
+  role,
   title,
   today,
   chip,
-  unreadCount = 0,
   onOpenNav,
   onSearch,
   searchPlaceholder = "Search courses, lessons, people",
-  onOpenNotifications,
 }) {
   return (
     <header className="sticky top-0 z-20 flex items-center gap-3 border-b border-cn-p-line bg-white/92 px-8 py-4 backdrop-blur-[8px] max-[60rem]:px-4 max-[60rem]:py-3">
@@ -59,17 +59,7 @@ export default function PortalTopbar({
 
       {chip ? <div className="max-[60rem]:hidden">{chip}</div> : null}
 
-      <button
-        type="button"
-        onClick={onOpenNotifications}
-        aria-label={`Notifications, ${unreadCount} unread`}
-        className="relative grid h-11 w-11 flex-none place-items-center rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card text-cn-p-ink transition-colors duration-150 hover:border-cn-p-ink"
-      >
-        <Bell className="h-5 w-5" />
-        {unreadCount > 0 && (
-          <span className="absolute top-[9px] right-2.5 h-2 w-2 rounded-full bg-cn-live" />
-        )}
-      </button>
+      <NotificationBell role={role} />
     </header>
   );
 }

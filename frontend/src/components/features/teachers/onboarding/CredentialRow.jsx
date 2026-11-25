@@ -10,12 +10,12 @@ function formatSize(bytes) {
 }
 
 /**
- * One uploaded qualification document.
- *
- * `readOnly` is what the admin review modal renders it with: the same row,
- * minus the delete button, so a reviewer sees exactly the list the applicant
- * sees rather than a second rendering of the same data.
- */
+  * One uploaded qualification document.
+   *
+   * `readOnly` is what the admin review modal renders it with: the same row,
+   * minus the delete button, so a reviewer sees exactly the list the applicant
+   * sees rather than a second rendering of the same data.
+   */
 export default function CredentialRow({ credential, onDelete, isDeleting = false, readOnly = false }) {
   const size = formatSize(credential.file_size);
   const meta = [
@@ -26,20 +26,20 @@ export default function CredentialRow({ credential, onDelete, isDeleting = false
     .join(" · ");
 
   return (
-    <li className="flex items-start gap-3 p-4 bg-porcelain border border-line rounded-xl">
-      <span className="w-9 h-9 shrink-0 rounded-lg bg-paper border border-line text-pine flex items-center justify-center">
+    <li className="flex items-start gap-3 p-4 bg-cn-p-page border border-cn-p-line rounded-xl">
+      <span className="w-9 h-9 shrink-0 rounded-lg bg-cn-p-card border border-cn-p-line text-cn-p-accent flex items-center justify-center">
         <FileText className="w-4 h-4" />
       </span>
 
       <div className="min-w-0 flex-1">
         <div className="flex flex-wrap items-center gap-2">
-          <p className="text-sm font-semibold text-ink truncate">{credential.title}</p>
-          <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-paper border border-line text-muted shrink-0">
+          <p className="text-sm font-semibold text-cn-p-ink truncate">{credential.title}</p>
+          <span className="text-[10px] px-2 py-0.5 rounded bg-cn-p-card border border-cn-p-line text-cn-p-ink-2 shrink-0">
             {credential.credential_type_display}
           </span>
         </div>
-        {meta && <p className="text-xs text-muted font-light mt-0.5">{meta}</p>}
-        <p className="text-[11px] text-muted font-mono mt-1 truncate">
+        {meta && <p className="text-xs text-cn-p-ink-2 font-light mt-0.5">{meta}</p>}
+        <p className="text-[11px] text-cn-p-ink-2 mt-1 truncate">
           {credential.original_name}
           {size ? ` · ${size}` : ""}
           {credential.created_at ? ` · ${formatDate(credential.created_at)}` : ""}
@@ -54,7 +54,7 @@ export default function CredentialRow({ credential, onDelete, isDeleting = false
             rel="noopener noreferrer"
             title={`Open ${credential.title}`}
             aria-label={`Open ${credential.title}`}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-pine hover:bg-paper transition"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-cn-p-ink-2 hover:text-cn-p-accent hover:bg-cn-p-card transition"
           >
             <ExternalLink className="w-4 h-4" />
           </a>
@@ -66,7 +66,7 @@ export default function CredentialRow({ credential, onDelete, isDeleting = false
             disabled={isDeleting}
             title={`Remove ${credential.title}`}
             aria-label={`Remove ${credential.title}`}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-muted hover:text-clay hover:bg-paper transition disabled:opacity-60"
+            className="w-8 h-8 rounded-lg flex items-center justify-center text-cn-p-ink-2 hover:text-cn-p-warn hover:bg-cn-p-card transition disabled:opacity-60"
           >
             {isDeleting ? (
               <Loader2 className="w-4 h-4 animate-spin" />

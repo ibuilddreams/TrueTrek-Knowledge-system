@@ -19,7 +19,7 @@ const MEETING_METHOD_OPTIONS = [
   { value: "GOOGLE_MEET", label: "Google Meet" },
   { value: "TEAMS", label: "Microsoft Teams" },
   { value: "X_SPACES", label: "X Spaces" },
-  { value: "DISCORD", label: "Discord Stage" },
+  { value: "DISCORD", label: "Discord stage" },
   { value: "OTHER", label: "Other" },
 ];
 
@@ -56,12 +56,12 @@ const INITIAL_FORM = {
 };
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
+  "w-full px-3 py-3 bg-cn-p-card border border-cn-p-line-2 focus:border-cn-p-accent focus:outline-none rounded-cn-p-sm text-sm text-cn-p-ink placeholder:text-cn-p-muted transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
+  "block mb-1.5 text-[13px] font-semibold text-cn-p-ink";
 
-const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-[11px] text-cn-p-bad mt-1";
 
 function sanitizeIntegerInput(rawValue) {
   return rawValue.replace(/[^0-9]/g, "");
@@ -236,11 +236,11 @@ export default function LiveSessionFormModal({ isOpen, onClose, onSaved, session
   };
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={isEditMode ? Edit3 : Mic}
-      title={isEditMode ? "Edit Session" : "Schedule Session"}
+      title={isEditMode ? "Edit session" : "Schedule session"}
       subtitle={
         isEditMode
           ? "Update this War Room Live session."
@@ -342,7 +342,7 @@ export default function LiveSessionFormModal({ isOpen, onClose, onSaved, session
               value={form.meeting_method}
               onChange={updateField("meeting_method")}
               disabled={isSubmitting}
-              className={FIELD_CLASS}
+              className={`${FIELD_CLASS} cn-p-select`}
             >
               {MEETING_METHOD_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -376,7 +376,7 @@ export default function LiveSessionFormModal({ isOpen, onClose, onSaved, session
                 value={form.audience_access}
                 onChange={updateField("audience_access")}
                 disabled={isSubmitting}
-                className={FIELD_CLASS}
+                className={`${FIELD_CLASS} cn-p-select`}
               >
                 {AUDIENCE_ACCESS_OPTIONS.map((option) => (
                   <option key={option.value} value={option.value}>
@@ -384,7 +384,7 @@ export default function LiveSessionFormModal({ isOpen, onClose, onSaved, session
                   </option>
                 ))}
               </select>
-              <p className="text-[11px] font-light text-muted mt-1.5">
+              <p className="text-[11px] font-light text-cn-p-ink-2 mt-1.5">
                 You can open and close the floor from inside the room at any
                 point, without editing the session.
               </p>
@@ -394,7 +394,7 @@ export default function LiveSessionFormModal({ isOpen, onClose, onSaved, session
             </div>
 
             <div>
-              <label className="flex items-start gap-3 px-4 py-3 bg-porcelain border border-line rounded-xl cursor-pointer hover:border-pine/40 transition-colors">
+              <label className="flex items-start gap-3 px-4 py-3 bg-cn-p-page border border-cn-p-line rounded-xl cursor-pointer hover:border-cn-p-accent-soft transition-colors">
                 <input
                   type="checkbox"
                   checked={form.takes_notes}
@@ -402,13 +402,13 @@ export default function LiveSessionFormModal({ isOpen, onClose, onSaved, session
                     setForm((prev) => ({ ...prev, takes_notes: event.target.checked }))
                   }
                   disabled={isSubmitting}
-                  className="mt-0.5 w-4 h-4 accent-pine cursor-pointer"
+                  className="mt-0.5 w-4 h-4 accent-cn-p-accent cursor-pointer"
                 />
                 <span className="min-w-0">
-                  <span className="block text-sm font-mono text-ink">
+                  <span className="block text-sm text-cn-p-ink">
                     Take AI notes on this session
                   </span>
-                  <span className="block text-[11px] font-light text-muted mt-0.5 leading-relaxed">
+                  <span className="block text-[11px] font-light text-cn-p-ink-2 mt-0.5 leading-relaxed">
                     The room is recorded while it runs and written up
                     afterwards — a summary, what was covered, the key points
                     and anything the guest told people to go and do. Everyone
@@ -433,14 +433,14 @@ export default function LiveSessionFormModal({ isOpen, onClose, onSaved, session
               className={FIELD_CLASS}
               autoComplete="off"
             />
-            <p className="text-[11px] font-light text-muted mt-1.5">
+            <p className="text-[11px] font-light text-cn-p-ink-2 mt-1.5">
               Released to students only once the room opens — 15 minutes before the start time.
             </p>
             {fieldErrors.meeting_url && <p className={ERROR_CLASS}>{fieldErrors.meeting_url}</p>}
           </div>
         )}
 
-        <MultiSelect
+        <MultiSelect tone="cobalt"
           size="lg"
           label="Speakers"
           placeholder="Select speakers"
@@ -460,7 +460,7 @@ export default function LiveSessionFormModal({ isOpen, onClose, onSaved, session
               value={form.status}
               onChange={updateField("status")}
               disabled={isSubmitting}
-              className={FIELD_CLASS}
+              className={`${FIELD_CLASS} cn-p-select`}
             >
               {STATUS_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -517,12 +517,12 @@ export default function LiveSessionFormModal({ isOpen, onClose, onSaved, session
           {fieldErrors.recap && <p className={ERROR_CLASS}>{fieldErrors.recap}</p>}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-line">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-cn-p-line">
           <button
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-colors duration-150 flex items-center justify-center gap-2 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-cn-p-sm transition-colors duration-150 flex items-center justify-center gap-2 border border-cn-p-line disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -531,11 +531,11 @@ export default function LiveSessionFormModal({ isOpen, onClose, onSaved, session
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
+            className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 {isEditMode ? "Updating..." : "Scheduling..."}
               </>
             ) : (

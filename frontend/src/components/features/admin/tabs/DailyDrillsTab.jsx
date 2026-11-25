@@ -16,6 +16,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import DailyDrillScheduleFormModal from "@/components/features/admin/DailyDrillScheduleFormModal";
 import DailyDrillQuizModal from "@/components/features/admin/DailyDrillQuizModal";
 import DailyDrillPerformanceModal from "@/components/features/admin/DailyDrillPerformanceModal";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 
 const PAGE_SIZE = 10;
 
@@ -78,11 +79,11 @@ export default function DailyDrillsTab() {
   const columns = [
     {
       key: "title",
-      header: "Daily Drill",
+      header: "Daily drill",
       render: (schedule) => (
         <div>
-          <span className="font-semibold text-ink">{schedule.title}</span>
-          <p className="text-[11px] text-muted font-light">
+          <span className="font-semibold text-cn-p-ink">{schedule.title}</span>
+          <p className="text-[11px] text-cn-p-ink-2 font-light">
             {schedule.quiz_question_count} question{schedule.quiz_question_count === 1 ? "" : "s"}
           </p>
         </div>
@@ -91,17 +92,17 @@ export default function DailyDrillsTab() {
     {
       key: "scheduled_date",
       header: "Scheduled",
-      render: (schedule) => <span className="font-mono text-muted">{formatDate(schedule.scheduled_date)}</span>,
+      render: (schedule) => <span className="text-cn-p-ink-2">{formatDate(schedule.scheduled_date)}</span>,
     },
     {
       key: "reward_points",
       header: "Points",
-      render: (schedule) => <span className="font-mono font-bold text-ink">{schedule.reward_points}</span>,
+      render: (schedule) => <span className="font-bold text-cn-p-ink">{schedule.reward_points}</span>,
     },
     {
       key: "status",
       header: "Status",
-      render: (schedule) => <StatusBadge size="lg" status={schedule.status} />,
+      render: (schedule) => <StatusBadge tone="cobalt" size="lg" status={schedule.status} />,
     },
     {
       key: "created_at",
@@ -114,9 +115,9 @@ export default function DailyDrillsTab() {
       render: (schedule) => (
         <ActionMenu
           actions={[
-            { key: "edit", label: "Edit Drill", icon: Edit3, onSelect: () => setEditingSchedule(schedule) },
-            { key: "quiz", label: "Manage Quiz", icon: HelpCircle, onSelect: () => setManagingQuizSchedule(schedule) },
-            { key: "performance", label: "View Performance", icon: BarChart3, onSelect: () => setPerformanceSchedule(schedule) },
+            { key: "edit", label: "Edit drill", icon: Edit3, onSelect: () => setEditingSchedule(schedule) },
+            { key: "quiz", label: "Manage quiz", icon: HelpCircle, onSelect: () => setManagingQuizSchedule(schedule) },
+            { key: "performance", label: "View performance", icon: BarChart3, onSelect: () => setPerformanceSchedule(schedule) },
             {
               key: "toggle",
               label: schedule.status === "PUBLISHED" ? "Deactivate" : "Activate",
@@ -132,24 +133,29 @@ export default function DailyDrillsTab() {
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search Daily Drills by title..." />
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Daily drills"
+        subtitle="One situational drill unlocks for every student each morning."
+      />
+
+      <div className="flex flex-col gap-3 rounded-cn-p border border-cn-p-line bg-cn-p-card p-4 sm:flex-row sm:items-center sm:justify-between">
+        <SearchBar tone="cobalt" size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search Daily Drills by title..." />
 
         <button
           type="button"
           onClick={() => setIsFormOpen(true)}
-          className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2 shrink-0"
+          className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center gap-2 shrink-0"
           title="Schedule a new Daily Drill"
           aria-label="Schedule a new Daily Drill"
         >
           <Calendar className="w-4 h-4" />
-          SCHEDULE DRILL
+          Schedule drill
         </button>
       </div>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-        <DataTable
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+        <DataTable tone="cobalt"
           size="lg"
           columns={columns}
           rows={paginatedSchedules}
@@ -158,13 +164,17 @@ export default function DailyDrillsTab() {
           onRetry={refetch}
           emptyLabel="No Daily Drills scheduled yet."
         />
-        <Pagination
-          size="lg"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalLabel={`${filteredSchedules.length} drill${filteredSchedules.length === 1 ? "" : "s"}`}
-        />
+        <div className="px-4 pb-4">
+
+          <Pagination tone="cobalt"
+            size="lg"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalLabel={`${filteredSchedules.length} drill${filteredSchedules.length === 1 ? "" : "s"}`}
+          />
+
+        </div>
       </div>
 
       <DailyDrillScheduleFormModal

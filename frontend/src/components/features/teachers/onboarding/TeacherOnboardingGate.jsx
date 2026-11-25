@@ -7,17 +7,17 @@ import TeacherOnboardingScreen from "./TeacherOnboardingScreen";
 import { TEACHER_ONBOARDING_STATUS_QUERY_KEY } from "./queryKeys";
 
 /**
- * Stands in front of the Faculty Portal.
- *
- * A teacher an admin created holds no application and falls straight through —
- * which is the whole reason the server answers "requires_onboarding" rather
- * than the client guessing from a role. A teacher who signed themselves up
- * sees the application instead of the portal until an admin approves it.
- *
- * The gate is the honest part of the story, not the enforcement: the server
- * refuses course creation from an unapproved account regardless of what this
- * renders (`teacher_onboarding.permissions.IsApprovedTeacher`).
- */
+  * Stands in front of the Faculty Portal.
+   *
+   * A teacher an admin created holds no application and falls straight through —
+   * which is the whole reason the server answers "requires_onboarding" rather
+   * than the client guessing from a role. A teacher who signed themselves up
+   * sees the application instead of the portal until an admin approves it.
+   *
+   * The gate is the honest part of the story, not the enforcement: the server
+   * refuses course creation from an unapproved account regardless of what this
+   * renders (`teacher_onboarding.permissions.IsApprovedTeacher`).
+   */
 export default function TeacherOnboardingGate({ enabled = true, children }) {
   const { data, isLoading, isError } = useQuery({
     queryKey: TEACHER_ONBOARDING_STATUS_QUERY_KEY,
@@ -38,7 +38,7 @@ export default function TeacherOnboardingGate({ enabled = true, children }) {
   if (!enabled) return children;
 
   if (isLoading) {
-    return <Loader label="Checking your access..." />;
+    return <Loader tone="cobalt" label="Checking your access..." />;
   }
 
   // A failed check never locks a teacher out of a portal they may well be

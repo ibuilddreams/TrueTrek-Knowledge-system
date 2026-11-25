@@ -16,8 +16,13 @@ import { getApiErrorMessage } from "@/lib/apiErrors";
 import { formatDate } from "@/lib/adminFormatters";
 import { PAGE_SIZE, BULK_FETCH_SIZE } from "./progressConstants";
 import { paginate } from "./progressUtils";
+import { makeSkin } from "@/lib/portalSkin";
 
-export default function LessonProgressPanel({ courseId }) {
+// Rendered by both the admin and the teacher portal, so the palette comes
+// from the caller: "porcelain" (the default, unchanged) or the signed-in
+// portal's cobalt.
+export default function LessonProgressPanel({ courseId, tone = "porcelain" }) {
+  const skin = makeSkin(tone);
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, 300);
   const [moduleFilter, setModuleFilter] = useState("");
@@ -67,7 +72,7 @@ export default function LessonProgressPanel({ courseId }) {
 
   const moduleFilterOptions = useMemo(
     () => [
-      { value: "", label: "All Modules" },
+      { value: "", label: "All modules" },
       ...modules.map((module) => ({ value: String(module.id), label: module.title })),
     ],
     [modules],
@@ -79,8 +84,8 @@ export default function LessonProgressPanel({ courseId }) {
       header: "Student",
       render: (row) => (
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-stone-800 truncate">{row.name}</p>
-          <p className="text-[11px] font-mono text-stone-400 truncate">{row.email}</p>
+          <p className={skin("text-sm font-semibold text-stone-800 truncate")}>{row.name}</p>
+          <p className={skin("text-[11px] font-mono text-stone-400 truncate")}>{row.email}</p>
         </div>
       ),
     },
@@ -90,17 +95,17 @@ export default function LessonProgressPanel({ courseId }) {
       render: (row) => (
         <div className="min-w-[7rem]">
           <span
-            className={`text-sm font-mono font-bold ${
+            className={skin(`text-sm font-mono font-bold ${
               row.completion_percentage >= 75 ? "text-emerald-700" : "text-amber-700"
-            }`}
+            }`)}
           >
             {row.completion_percentage}%
           </span>
-          <div className="h-1.5 rounded-full bg-stone-200 overflow-hidden mt-1">
+          <div className={skin("h-1.5 rounded-full bg-stone-200 overflow-hidden mt-1")}>
             <div
-              className={`h-full rounded-full ${
+              className={skin(`h-full rounded-full ${
                 row.completion_percentage >= 75 ? "bg-emerald-600" : "bg-amber-600"
-              }`}
+              }`)}
               style={{ width: `${row.completion_percentage}%` }}
             />
           </div>
@@ -115,7 +120,7 @@ export default function LessonProgressPanel({ courseId }) {
     { key: "pending_lessons", header: "Pending", render: (row) => row.pending_lessons },
     {
       key: "last_completed_at",
-      header: "Last Activity",
+      header: "Last activity",
       render: (row) => formatDate(row.last_completed_at),
     },
     {
@@ -125,7 +130,7 @@ export default function LessonProgressPanel({ courseId }) {
         <button
           type="button"
           onClick={() => setViewingStudent(row)}
-          className="text-xs font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer"
+          className={skin(`text-xs font-semibold transition cursor-pointer ${tone === "cobalt" ? "text-cn-p-accent hover:underline" : "font-mono text-amber-700 hover:text-amber-900"}`)}
         >
           View
         </button>
@@ -136,23 +141,23 @@ export default function LessonProgressPanel({ courseId }) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard label="Total Students" value={stats?.total_students ?? "—"} icon={Users} size="lg" />
-        <StatCard
-          label="Completed Lessons"
+        <StatCard tone={tone} label="Total students" value={stats?.total_students ?? "—"} icon={Users} size="lg" />
+        <StatCard tone={tone}
+          label="Completed lessons"
           value={stats?.completed_lessons ?? "—"}
           icon={CheckCircle2}
           accent="emerald"
           size="lg"
         />
-        <StatCard
-          label="Pending Lessons"
+        <StatCard tone={tone}
+          label="Pending lessons"
           value={stats?.pending_lessons ?? "—"}
           icon={Clock}
           accent="rose"
           size="lg"
         />
-        <StatCard
-          label="Avg Completion"
+        <StatCard tone={tone}
+          label="Avg completion"
           value={`${stats?.average_completion ?? 0}%`}
           icon={TrendingUp}
           accent="stone"
@@ -161,7 +166,7 @@ export default function LessonProgressPanel({ courseId }) {
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <SearchBar
+        <SearchBar tone={tone}
           value={searchInput}
           onChange={(value) => {
             setSearchInput(value);
@@ -171,7 +176,7 @@ export default function LessonProgressPanel({ courseId }) {
           size="lg"
         />
         <div className="w-full sm:w-56 shrink-0">
-          <SearchableSelect
+          <SearchableSelect tone={tone}
             options={moduleFilterOptions}
             value={moduleFilter}
             onChange={(value) => {
@@ -184,8 +189,8 @@ export default function LessonProgressPanel({ courseId }) {
         </div>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
-        <DataTable
+      <div className={skin("bg-white border border-stone-200 rounded-2xl shadow-sm p-6")}>
+        <DataTable tone={tone}
           columns={columns}
           rows={pageItems}
           keyField="student_id"
@@ -199,7 +204,7 @@ export default function LessonProgressPanel({ courseId }) {
           emptyLabel="No students enrolled in this course yet."
           size="lg"
         />
-        <Pagination
+        <Pagination tone={tone}
           page={safePage}
           totalPages={totalPages}
           onPageChange={setPage}
@@ -208,35 +213,35 @@ export default function LessonProgressPanel({ courseId }) {
         />
       </div>
 
-      <Modal
+      <Modal variant={tone === "cobalt" ? "cobalt" : "classic"}
         isOpen={Boolean(viewingStudent)}
         onClose={() => setViewingStudent(null)}
         icon={PlayCircle}
-        title="Lesson Breakdown"
+        title="Lesson breakdown"
         subtitle={viewingStudent ? `${viewingStudent.name} · ${viewingStudent.completion_percentage}% complete` : ""}
         maxWidth="max-w-xl"
       >
-        {detailQuery.isLoading && <p className="text-sm text-stone-400">Loading...</p>}
+        {detailQuery.isLoading && <p className={skin("text-sm text-stone-400")}>Loading...</p>}
         <div className="space-y-4">
           {detailQuery.data?.modules?.map((module) => (
             <div key={module.id} className="space-y-2">
-              <p className="text-xs font-mono uppercase tracking-wider text-stone-500 font-semibold">
+              <p className={skin("text-xs font-mono uppercase tracking-wider text-stone-500 font-semibold")}>
                 {module.title}
               </p>
               <ul className="space-y-1.5">
                 {module.lessons.map((lesson) => (
                   <li
                     key={lesson.id}
-                    className="flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-stone-100 bg-stone-50/60"
+                    className={skin("flex items-center justify-between gap-3 px-3 py-2 rounded-lg border border-stone-100 bg-stone-50/60")}
                   >
-                    <span className="text-sm text-stone-700 truncate">{lesson.title}</span>
+                    <span className={skin("text-sm text-stone-700 truncate")}>{lesson.title}</span>
                     {lesson.is_completed ? (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-mono uppercase text-emerald-700 shrink-0">
+                      <span className={skin("inline-flex items-center gap-1 text-[11px] font-mono uppercase text-emerald-700 shrink-0")}>
                         <CheckCircle2 className="w-3.5 h-3.5" />
                         {formatDate(lesson.completed_at)}
                       </span>
                     ) : (
-                      <span className="inline-flex items-center gap-1 text-[11px] font-mono uppercase text-stone-400 shrink-0">
+                      <span className={skin("inline-flex items-center gap-1 text-[11px] font-mono uppercase text-stone-400 shrink-0")}>
                         <XCircle className="w-3.5 h-3.5" />
                         Pending
                       </span>

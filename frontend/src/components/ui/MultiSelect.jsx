@@ -3,6 +3,7 @@
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { createPortal } from "react-dom";
 import { Check, ChevronDown, Plus, Search, X } from "lucide-react";
+import { SELECT_PALETTES } from "@/components/ui/SearchableSelect";
 
 const DROPDOWN_ESTIMATED_HEIGHT = 300;
 
@@ -19,7 +20,9 @@ export default function MultiSelect({
   onCreate,
   createLabel = "Add New",
   size = "base",
+  tone = "porcelain",
 }) {
+  const P = SELECT_PALETTES[tone] ?? SELECT_PALETTES.porcelain;
   const smallSize = size === "lg" ? "text-[11px]" : "text-[10px]";
   const bodySize = size === "lg" ? "text-sm" : "text-xs";
   const [isOpen, setIsOpen] = useState(false);
@@ -162,7 +165,7 @@ export default function MultiSelect({
     <div ref={containerRef} className="relative">
       {label && (
         <label
-          className={`${smallSize} font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium`}
+          className={`${smallSize} ${P.label}`}
         >
           {label}
         </label>
@@ -174,13 +177,13 @@ export default function MultiSelect({
           type="button"
           onClick={() => setIsOpen((prev) => !prev)}
           disabled={disabled || loading}
-          className={`w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl ${bodySize} font-mono text-ink flex items-center justify-between gap-2 transition disabled:opacity-60 disabled:cursor-not-allowed`}
+          className={`w-full focus:outline-none ${P.trigger} ${bodySize} flex items-center justify-between gap-2 transition disabled:opacity-60 disabled:cursor-not-allowed`}
         >
-          <span className={selectedOptions.length ? "text-ink" : "text-muted"}>
+          <span className={selectedOptions.length ? P.value : P.placeholder}>
             {loading ? "Loading..." : selectedOptions.length ? `${selectedOptions.length} selected` : placeholder}
           </span>
           <ChevronDown
-            className={`w-3.5 h-3.5 text-muted shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
+            className={`w-3.5 h-3.5 ${P.chevron} shrink-0 transition-transform ${isOpen ? "rotate-180" : ""}`}
           />
         </button>
 
@@ -191,23 +194,23 @@ export default function MultiSelect({
             <div
               ref={popupRef}
               style={{ ...popupStyle, zIndex: 200 }}
-              className="bg-paper border border-line rounded-xl shadow-elevated overflow-hidden flex flex-col"
+              className={`${P.popup} overflow-hidden flex flex-col`}
             >
-            <div className="p-2 border-b border-line flex items-center gap-2">
-              <Search className="w-3.5 h-3.5 text-muted shrink-0" />
+            <div className={`p-2 ${P.searchRow} flex items-center gap-2`}>
+              <Search className={`w-3.5 h-3.5 ${P.searchIcon} shrink-0`} />
               <input
                 autoFocus
                 type="text"
                 value={query}
                 onChange={(event) => setQuery(event.target.value)}
                 placeholder={searchPlaceholder}
-                className={`w-full ${bodySize} font-mono text-ink placeholder:text-muted focus:outline-none`}
+                className={`w-full ${bodySize} ${P.searchInput} focus:outline-none`}
               />
             </div>
 
             <ul className="max-h-56 overflow-y-auto py-1">
               {filteredOptions.length === 0 ? (
-                <li className={`px-4 py-3 ${bodySize} text-muted font-light`}>{emptyLabel}</li>
+                <li className={`px-4 py-3 ${bodySize} ${P.empty}`}>{emptyLabel}</li>
               ) : (
                 filteredOptions.map((option) => {
                   const isSelected = values.includes(option.value);
@@ -216,10 +219,10 @@ export default function MultiSelect({
                       <button
                         type="button"
                         onClick={() => toggleOption(option)}
-                        className={`w-full flex items-center justify-between gap-2 px-4 py-2.5 ${bodySize} font-mono text-ink hover:bg-porcelain transition-colors text-left`}
+                        className={`w-full flex items-center justify-between gap-2 ${P.option} ${bodySize} transition-colors text-left`}
                       >
                         <span>{option.label}</span>
-                        {isSelected && <Check className="w-3.5 h-3.5 text-pine shrink-0" />}
+                        {isSelected && <Check className={`w-3.5 h-3.5 ${P.check} shrink-0`} />}
                       </button>
                     </li>
                   );
@@ -228,7 +231,7 @@ export default function MultiSelect({
             </ul>
 
             {onCreate && (
-              <div className="border-t border-line shrink-0">
+              <div className={`${P.createRule} shrink-0`}>
                 {isCreating ? (
                   <div className="p-2.5 space-y-1.5">
                     <input
@@ -244,10 +247,10 @@ export default function MultiSelect({
                       }}
                       disabled={isSubmittingCreate}
                       placeholder={`${createLabel} name`}
-                      className={`w-full px-3 py-2 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-lg ${bodySize} font-mono text-ink placeholder:text-muted transition disabled:opacity-60`}
+                      className={`w-full focus:outline-none ${P.createInput} ${bodySize} transition disabled:opacity-60`}
                     />
                     {createError && (
-                      <p className={`${smallSize} font-mono text-red-600`}>{createError}</p>
+                      <p className={`${smallSize} ${P.createError}`}>{createError}</p>
                     )}
                     <div className="flex items-center justify-end gap-2 pt-1">
                       <button
@@ -258,7 +261,7 @@ export default function MultiSelect({
                           setCreateError("");
                         }}
                         disabled={isSubmittingCreate}
-                        className={`px-3 py-1.5 ${smallSize} font-mono uppercase tracking-wider text-muted hover:text-ink disabled:opacity-60 disabled:cursor-not-allowed transition-colors`}
+                        className={`px-3 py-1.5 ${smallSize} ${P.createCancel} disabled:opacity-60 disabled:cursor-not-allowed transition-colors`}
                       >
                         Cancel
                       </button>
@@ -266,11 +269,11 @@ export default function MultiSelect({
                         type="button"
                         onClick={handleCreateSubmit}
                         disabled={isSubmittingCreate}
-                        className={`px-3 py-1.5 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper ${smallSize} font-mono uppercase tracking-wider rounded-lg transition-all flex items-center gap-1.5`}
+                        className={`px-3 py-1.5 ${P.createSave} ${smallSize} disabled:opacity-60 disabled:cursor-not-allowed transition-all flex items-center gap-1.5`}
                       >
                         {isSubmittingCreate ? (
                           <>
-                            <span className="w-3 h-3 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+                            <span className="w-3 h-3 border-2 border-current border-t-transparent rounded-full animate-spin" />
                             Saving...
                           </>
                         ) : (
@@ -283,7 +286,7 @@ export default function MultiSelect({
                   <button
                     type="button"
                     onClick={() => setIsCreating(true)}
-                    className={`w-full flex items-center gap-2 px-4 py-2.5 ${bodySize} font-mono font-semibold text-pine hover:bg-sage/30 transition-colors text-left`}
+                    className={`w-full flex items-center gap-2 ${P.createOpen} ${bodySize} transition-colors text-left`}
                   >
                     <Plus className="w-3.5 h-3.5" />
                     {createLabel}
@@ -301,14 +304,14 @@ export default function MultiSelect({
           {selectedOptions.map((option) => (
             <span
               key={option.value}
-              className={`inline-flex items-center gap-1 px-2.5 py-1 bg-gold/12 border border-gold/25 text-gold ${smallSize} font-mono rounded-lg`}
+              className={`inline-flex items-center gap-1 ${P.chip} ${smallSize}`}
             >
               {option.label}
               <button
                 type="button"
                 onClick={() => removeOption(option.value)}
                 disabled={disabled}
-                className="hover:text-ink"
+                className={P.chipRemove}
                 aria-label={`Remove ${option.label}`}
               >
                 <X className="w-3 h-3" />

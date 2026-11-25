@@ -5,6 +5,8 @@ import Link from "next/link";
 import { useInfiniteQuery, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Camera, Check, ExternalLink, Star, Trash2 } from "lucide-react";
 import { ROUTES } from "@/constants/routes";
+import { AUTH_ROLES } from "@/constants/auth";
+import { portalHref } from "@/components/features/portal/shell/portalNav";
 import {
   getMyInstructorFeedback,
   getMyInstructorProfile,
@@ -14,6 +16,7 @@ import { getApiErrorMessage } from "@/lib/apiErrors";
 import { pluralize } from "@/lib/courseOutline";
 import { toastError, toastSuccess } from "@/lib/toast";
 import Loader from "@/components/ui/Loader";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 import InstructorFeedbackCard from "@/components/features/instructors/InstructorFeedbackCard";
 import SkillsTagInput from "@/components/features/teachers/SkillsTagInput";
 import AvatarCropModal from "@/components/features/profile/AvatarCropModal";
@@ -37,9 +40,9 @@ const URL_FIELDS = [
 ];
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
-const LABEL_CLASS = "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
-const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
+  "w-full px-3 py-3 bg-cn-p-card border border-cn-p-line-2 focus:border-cn-p-accent focus:outline-none rounded-cn-p-sm text-sm text-cn-p-ink placeholder:text-cn-p-muted transition disabled:opacity-60";
+const LABEL_CLASS = "block mb-1.5 text-[13px] font-semibold text-cn-p-ink";
+const ERROR_CLASS = "text-xs text-cn-p-bad mt-1";
 
 const HEADLINE_MAX = 120;
 const BIO_MAX = 4000;
@@ -198,16 +201,16 @@ export default function InstructorProfileTab() {
   if (profileQuery.isLoading) {
     return (
       <div className="flex min-h-[40vh] items-center justify-center" aria-busy="true">
-        <Loader fullScreen={false} label="Loading your profile..." />
+        <Loader tone="cobalt" fullScreen={false} label="Loading your profile..." />
       </div>
     );
   }
 
   if (profileQuery.isError) {
     return (
-      <div role="alert" className="rounded-card border border-line bg-paper p-6 text-sm text-muted">
+      <div role="alert" className="rounded-cn-p border border-cn-p-line bg-cn-p-card p-6 text-sm text-cn-p-ink-2">
         {getApiErrorMessage(profileQuery.error, "Unable to load your profile.")}{" "}
-        <button type="button" onClick={() => profileQuery.refetch()} className="font-semibold text-pine underline">
+        <button type="button" onClick={() => profileQuery.refetch()} className="font-semibold text-cn-p-accent underline">
           Retry
         </button>
       </div>
@@ -218,20 +221,25 @@ export default function InstructorProfileTab() {
   const displayedAvatar = removeAvatar ? null : avatarPreview || profile.avatar;
 
   return (
-    <div className="space-y-10">
-      <section className="rounded-card border border-line bg-paper p-6 shadow-soft flex flex-col sm:flex-row sm:items-center gap-5">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Public profile"
+        subtitle="Everything here appears on your instructor page in the course catalog."
+      />
+
+      <section className="flex flex-col gap-5 rounded-cn-p border border-cn-p-line bg-cn-p-card p-6 sm:flex-row sm:items-center">
         <div className="shrink-0 flex flex-col items-center gap-2.5">
           {displayedAvatar ? (
             <img
               src={displayedAvatar}
               alt={profile.name}
-              className="w-24 h-24 rounded-full object-cover ring-4 ring-sage/60"
+              className="w-24 h-24 rounded-full object-cover ring-4 ring-cn-p-soft"
               referrerPolicy="no-referrer"
             />
           ) : (
             <span
               aria-hidden="true"
-              className="w-24 h-24 rounded-full bg-gradient-to-br from-pine to-moss text-paper ring-4 ring-sage/60 flex items-center justify-center font-serif text-4xl"
+              className="w-24 h-24 rounded-full bg-cn-p-soft text-cn-p-soft-ink ring-4 ring-cn-p-soft flex items-center justify-center text-4xl font-bold"
             >
               {(profile.name || "?").trim().charAt(0).toUpperCase()}
             </span>
@@ -249,7 +257,7 @@ export default function InstructorProfileTab() {
               type="button"
               onClick={() => fileInputRef.current?.click()}
               disabled={isBusy}
-              className="inline-flex items-center gap-1.5 rounded-lg border border-line bg-porcelain px-3 py-1.5 text-[11px] font-mono font-semibold uppercase tracking-wider text-ink hover:bg-paper disabled:opacity-60 transition"
+              className="inline-flex items-center gap-1.5 rounded-lg border border-cn-p-line bg-cn-p-page px-3 py-1.5 text-[11px] font-semibold text-cn-p-ink hover:bg-cn-p-card disabled:opacity-60 transition"
             >
               <Camera className="w-3 h-3" />
               {displayedAvatar ? "Change" : "Upload"}
@@ -261,7 +269,7 @@ export default function InstructorProfileTab() {
                 disabled={isBusy}
                 aria-label="Remove photo"
                 title="Remove photo"
-                className="rounded-lg border border-line p-1.5 text-muted hover:text-clay hover:bg-porcelain disabled:opacity-60 transition"
+                className="rounded-lg border border-cn-p-line p-1.5 text-cn-p-ink-2 hover:text-cn-p-warn hover:bg-cn-p-page disabled:opacity-60 transition"
               >
                 <Trash2 className="w-3.5 h-3.5" />
               </button>
@@ -269,16 +277,21 @@ export default function InstructorProfileTab() {
           </div>
         </div>
         <div className="flex-1 min-w-0 space-y-1">
-          <h2 className="text-xl font-serif text-ink">{profile.name}</h2>
-          <p className="text-xs text-muted">
+          <h2 className="text-xl font-bold tracking-[-0.01em] text-cn-p-ink">
+            {profile.name}
+          </h2>
+          <p className="text-xs text-cn-p-ink-2">
             This is how students see you. Your photo appears on your instructor page and on your
             course pages, and is the same photo as your{" "}
-            <Link href={ROUTES.PROFILE} className="font-semibold text-pine underline">
+            <Link
+              href={portalHref(AUTH_ROLES.FACULTY, "profile")}
+              className="font-semibold text-cn-p-accent underline"
+            >
               account profile
             </Link>
             . Save to apply changes.
           </p>
-          <p className="text-xs text-muted">
+          <p className="text-xs text-cn-p-ink-2">
             {pluralize(profile.stats.students, "learner")} · {pluralize(profile.stats.courses, "published course")}
             {profile.stats.rating != null && ` · ${profile.stats.rating.toFixed(1)} rating`}
           </p>
@@ -287,24 +300,19 @@ export default function InstructorProfileTab() {
           <Link
             href={`${ROUTES.INSTRUCTORS}/${profile.id}`}
             target="_blank"
-            className="inline-flex items-center justify-center gap-2 border border-pine text-pine hover:bg-pine hover:text-paper text-xs font-sans font-medium uppercase tracking-widest px-5 py-3 rounded-full transition"
+            className="inline-flex items-center justify-center gap-2 border border-cn-p-accent text-cn-p-accent hover:bg-cn-p-accent-hover hover:text-white text-xs font-sans font-medium px-5 py-3 rounded-cn-p-sm transition"
           >
             <ExternalLink className="w-3.5 h-3.5" />
             View public page
           </Link>
         ) : (
-          <p className="max-w-56 text-xs text-muted">
+          <p className="max-w-56 text-xs text-cn-p-ink-2">
             Your public page goes live once one of your courses is published.
           </p>
         )}
       </section>
 
-      <form onSubmit={handleSubmit} className="rounded-card border border-line bg-paper p-6 md:p-8 shadow-soft space-y-5">
-        <div>
-          <h2 className="text-xl font-serif text-ink">Public profile</h2>
-          <p className="mt-1 text-xs text-muted">Everything below is shown on your instructor page.</p>
-        </div>
-
+      <form onSubmit={handleSubmit} className="rounded-cn-p border border-cn-p-line bg-cn-p-card p-6 md:p-8 space-y-5">
         <div>
           <label className={LABEL_CLASS} htmlFor="instructor-headline">Headline</label>
           <input
@@ -333,7 +341,7 @@ export default function InstructorProfileTab() {
             placeholder="Your background, teaching approach and what students can expect."
             className={`${FIELD_CLASS} resize-y`}
           />
-          <p className="mt-1 text-right text-[11px] font-mono text-muted">
+          <p className="mt-1 text-right text-[11px] text-cn-p-ink-2">
             {form.bio.length}/{BIO_MAX}
           </p>
           {fieldErrors.bio && <p className={ERROR_CLASS}>{fieldErrors.bio}</p>}
@@ -386,15 +394,15 @@ export default function InstructorProfileTab() {
           {fieldErrors.intro_video_url && <p className={ERROR_CLASS}>{fieldErrors.intro_video_url}</p>}
         </div>
 
-        <div className="flex justify-end pt-2 border-t border-line">
+        <div className="flex justify-end pt-2 border-t border-cn-p-line">
           <button
             type="submit"
             disabled={isBusy || !isDirty}
-            className="mt-5 px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-all flex items-center gap-2"
+            className="mt-5 px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center gap-2"
           >
             {isBusy ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Saving...
               </>
             ) : (
@@ -410,38 +418,43 @@ export default function InstructorProfileTab() {
       <section aria-labelledby="my-feedback-heading" className="space-y-5">
         <div className="flex flex-wrap items-end justify-between gap-3">
           <div>
-            <h2 id="my-feedback-heading" className="text-xl font-serif text-ink">
+            <h2
+              id="my-feedback-heading"
+              className="text-xl font-bold tracking-[-0.01em] text-cn-p-ink"
+            >
               Student feedback
             </h2>
-            <p className="mt-1 text-xs text-muted">What students enrolled in your courses have shared.</p>
+            <p className="mt-1 text-sm text-cn-p-ink-2">
+              What students enrolled in your courses have shared.
+            </p>
           </div>
           {summary?.rating != null && (
-            <p className="inline-flex items-center gap-2 text-sm text-ink">
-              <Star className="w-4 h-4 fill-gold text-gold" aria-hidden="true" />
+            <p className="inline-flex items-center gap-2 text-sm text-cn-p-ink">
+              <Star className="w-4 h-4 fill-cn-p-accent text-cn-p-soft-ink" aria-hidden="true" />
               <span className="font-semibold">{summary.rating.toFixed(1)}</span>
-              <span className="text-muted">· {pluralize(summary.reviews, "review")}</span>
+              <span className="text-cn-p-ink-2">· {pluralize(summary.reviews, "review")}</span>
             </p>
           )}
         </div>
 
         {feedbackQuery.isLoading ? (
-          <p className="text-sm text-muted" aria-busy="true">Loading feedback…</p>
+          <p className="text-sm text-cn-p-ink-2" aria-busy="true">Loading feedback…</p>
         ) : feedbackQuery.isError ? (
-          <p className="text-sm text-muted">
+          <p className="text-sm text-cn-p-ink-2">
             Couldn&apos;t load feedback.{" "}
-            <button type="button" onClick={() => feedbackQuery.refetch()} className="font-semibold text-pine underline">
+            <button type="button" onClick={() => feedbackQuery.refetch()} className="font-semibold text-cn-p-accent underline">
               Retry
             </button>
           </p>
         ) : feedback.length === 0 ? (
-          <p className="rounded-card border border-dashed border-line bg-paper/70 px-6 py-5 text-sm text-muted">
+          <p className="rounded-cn-p border border-dashed border-cn-p-line bg-cn-p-card px-6 py-5 text-sm text-cn-p-ink-2">
             No feedback yet. Students enrolled in your courses can leave it from your public page.
           </p>
         ) : (
           <>
             <ul className="grid grid-cols-1 md:grid-cols-2 gap-5">
               {feedback.map((item) => (
-                <InstructorFeedbackCard key={item.id} feedback={item} />
+                <InstructorFeedbackCard key={item.id} feedback={item} tone="cobalt" />
               ))}
             </ul>
             {feedbackQuery.hasNextPage && (
@@ -450,7 +463,7 @@ export default function InstructorProfileTab() {
                   type="button"
                   onClick={() => feedbackQuery.fetchNextPage()}
                   disabled={feedbackQuery.isFetchingNextPage}
-                  className="text-xs font-sans font-medium uppercase tracking-widest text-pine hover:text-moss disabled:opacity-60 transition"
+                  className="text-xs font-sans font-medium text-cn-p-accent hover:text-cn-p-accent-hover disabled:opacity-60 transition"
                 >
                   {feedbackQuery.isFetchingNextPage ? "Loading..." : "Load more feedback"}
                 </button>

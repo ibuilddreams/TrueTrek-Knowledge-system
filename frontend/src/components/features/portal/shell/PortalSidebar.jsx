@@ -8,6 +8,13 @@ import PortalAccountMenu from "./PortalAccountMenu";
 // The design's `.side`: a 260px rail of grouped links with the wordmark above
 // and the account button pinned to the bottom. Below 60rem it becomes a
 // drawer that slides in over the content, which is what `isOpen` drives.
+//
+// Three rows, and only the middle one scrolls. The rail used to scroll as a
+// whole, which meant the account button was simply off the bottom of a long
+// navigation — the admin's is six groups and twenty-three links — and the
+// only way to reach it was to scroll the wordmark away first. Pinning both
+// ends and giving the links their own scroll container costs nothing on a
+// short navigation and makes the long ones behave.
 export default function PortalSidebar({
   role,
   activeSlug,
@@ -21,13 +28,13 @@ export default function PortalSidebar({
   return (
     <aside
       aria-label="Portal navigation"
-      className={`flex h-screen w-[260px] flex-col gap-6 overflow-y-auto border-r border-cn-p-line bg-cn-p-card px-4 py-6 max-[60rem]:fixed max-[60rem]:top-0 max-[60rem]:left-0 max-[60rem]:z-[55] max-[60rem]:w-[280px] max-[60rem]:transition-transform max-[60rem]:duration-200 min-[60.0625rem]:sticky min-[60.0625rem]:top-0 ${
+      className={`flex h-screen w-[260px] flex-col gap-6 overflow-hidden border-r border-cn-p-line bg-cn-p-card px-4 py-6 max-[60rem]:fixed max-[60rem]:top-0 max-[60rem]:left-0 max-[60rem]:z-[55] max-[60rem]:w-[280px] max-[60rem]:transition-transform max-[60rem]:duration-200 min-[60.0625rem]:sticky min-[60.0625rem]:top-0 ${
         isOpen
           ? "max-[60rem]:translate-x-0 max-[60rem]:shadow-cn-p"
           : "max-[60rem]:-translate-x-full"
       }`}
     >
-      <div className="flex h-11 items-center px-2">
+      <div className="flex h-11 flex-none items-center px-2">
         <Link href={ROUTES.HOME} aria-label="Cool Nerdz home">
           {/* The same wordmark the site header uses, at the design's 30px
               sidebar height (the artwork is 480x115). */}
@@ -41,7 +48,10 @@ export default function PortalSidebar({
         </Link>
       </div>
 
-      <nav className="flex flex-col gap-[22px]">
+      {/* `min-h-0` is what actually lets this shrink: a flex child's default
+          `min-height: auto` refuses to go below its content, so without it the
+          nav would push the account button off the rail instead of scrolling. */}
+      <nav className="cn-p-scroll flex min-h-0 flex-1 flex-col gap-[22px] overflow-y-auto">
         {groups.map((group) => (
           <div key={group.heading} className="flex flex-col gap-0.5">
             <p className="mb-1.5 px-3 text-[11px] font-bold tracking-[0.1em] text-cn-p-muted uppercase">
@@ -83,7 +93,9 @@ export default function PortalSidebar({
         ))}
       </nav>
 
-      <PortalAccountMenu role={role} name={user?.name} />
+      <div className="flex-none">
+        <PortalAccountMenu role={role} name={user?.name} />
+      </div>
     </aside>
   );
 }

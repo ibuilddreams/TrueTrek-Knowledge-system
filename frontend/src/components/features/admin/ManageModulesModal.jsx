@@ -81,11 +81,11 @@ import { toastError, toastSuccess } from "@/lib/toast";
 const INITIAL_FORM = { title: "", description: "", order: "1" };
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
+  "w-full px-3 py-3 bg-cn-p-card border border-cn-p-line-2 focus:border-cn-p-accent focus:outline-none rounded-cn-p-sm text-sm text-cn-p-ink placeholder:text-cn-p-muted transition disabled:opacity-60";
 
-const LABEL_CLASS = "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
+const LABEL_CLASS = "text-xs font-sans text-cn-p-ink-2 block mb-1.5 font-medium";
 
-const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-[11px] text-cn-p-bad mt-1";
 
 const TABS = [
   { key: "lessons", label: "Lessons", icon: PlayCircle },
@@ -135,25 +135,23 @@ function SortableLessonItem({ lesson, moduleId, onEditLesson, onDeleteLesson }) 
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-3 p-3 rounded-xl border border-line bg-paper ${
-        isDragging ? "z-10 shadow-lg opacity-90" : ""
-      }`}
+      className={`flex items-center gap-3 p-3 rounded-xl border border-cn-p-line bg-cn-p-card ${ isDragging ? "z-10 shadow-lg opacity-90" : "" }`}
     >
       <span
         {...attributes}
         {...listeners}
-        className="text-muted cursor-grab shrink-0 touch-none"
+        className="text-cn-p-ink-2 cursor-grab shrink-0 touch-none"
         title="Drag to reorder"
         aria-hidden="true"
       >
         <GripVertical className="w-4 h-4" />
       </span>
-      <div className="w-9 h-9 rounded-lg bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
+      <div className="w-9 h-9 rounded-lg bg-cn-p-soft border border-cn-p-soft text-cn-p-soft-ink flex items-center justify-center shrink-0">
         <LessonIcon className="w-4 h-4" />
       </div>
       <div className="min-w-0 flex-1">
-        <p className="text-sm font-semibold text-ink truncate">{lesson.title}</p>
-        <p className="text-[11px] font-mono uppercase text-muted tracking-wider mt-0.5">
+        <p className="text-sm font-semibold text-cn-p-ink truncate">{lesson.title}</p>
+        <p className="text-[11px] text-cn-p-ink-2 mt-0.5">
           {lesson.content_type}
           {lesson.duration_minutes ? ` · ${lesson.duration_minutes} min` : ""} ·{" "}
           {formatLessonDate(lesson.created_at)}
@@ -165,7 +163,7 @@ function SortableLessonItem({ lesson, moduleId, onEditLesson, onDeleteLesson }) 
           onClick={() => onEditLesson(lesson)}
           title="Edit lesson"
           aria-label="Edit lesson"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-cn-p-line bg-cn-p-card text-cn-p-ink-2 hover:bg-cn-p-page transition cursor-pointer"
         >
           <Edit3 className="w-3.5 h-3.5" />
         </button>
@@ -174,7 +172,7 @@ function SortableLessonItem({ lesson, moduleId, onEditLesson, onDeleteLesson }) 
           onClick={() => onDeleteLesson({ id: lesson.id, title: lesson.title, moduleId })}
           title="Delete lesson"
           aria-label="Delete lesson"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-cn-p-line text-cn-p-bad hover:bg-cn-p-bad-bg transition cursor-pointer"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -268,10 +266,10 @@ function ModuleLessonsList({ moduleId, onAddLesson, onEditLesson, onDeleteLesson
       <button
         type="button"
         onClick={() => onAddLesson(moduleId)}
-        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-line rounded-lg text-xs font-mono uppercase tracking-wider text-muted hover:border-pine hover:text-pine transition cursor-pointer"
+        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-cn-p-line rounded-lg text-xs text-cn-p-ink-2 hover:border-cn-p-accent hover:text-cn-p-accent transition cursor-pointer"
       >
         <Plus className="w-3.5 h-3.5" />
-        Add Lesson
+        Add lesson
       </button>
     </div>
   );
@@ -301,31 +299,29 @@ function SortableAssignmentItem({
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-3 p-3 rounded-xl border border-line bg-paper ${
-        isDragging ? "z-10 shadow-lg opacity-90" : ""
-      }`}
+      className={`flex items-center gap-3 p-3 rounded-xl border border-cn-p-line bg-cn-p-card ${ isDragging ? "z-10 shadow-lg opacity-90" : "" }`}
     >
       <span
         {...attributes}
         {...listeners}
-        className="text-muted cursor-grab shrink-0 touch-none"
+        className="text-cn-p-ink-2 cursor-grab shrink-0 touch-none"
         title="Drag to reorder"
         aria-hidden="true"
       >
         <GripVertical className="w-4 h-4" />
       </span>
-      <div className="w-9 h-9 rounded-lg bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
+      <div className="w-9 h-9 rounded-lg bg-cn-p-soft border border-cn-p-soft text-cn-p-soft-ink flex items-center justify-center shrink-0">
         <ClipboardCheck className="w-4 h-4" />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-ink truncate">{assignment.title}</p>
-          <StatusBadge size="lg" status={assignment.status} />
+          <p className="text-sm font-semibold text-cn-p-ink truncate">{assignment.title}</p>
+          <StatusBadge tone="cobalt" size="lg" status={assignment.status} />
         </div>
-        <p className="text-[11px] font-mono uppercase text-muted tracking-wider mt-0.5 flex items-center gap-1 flex-wrap">
+        <p className="text-[11px] text-cn-p-ink-2 mt-0.5 flex items-center gap-1 flex-wrap">
           <Calendar className="w-2.5 h-2.5" />
-          <span className={overdue ? "text-rose-500" : ""}>{formatDueDate(assignment.due_date)}</span>
-          <span className="text-muted">·</span>
+          <span className={overdue ? "text-cn-p-bad" : ""}>{formatDueDate(assignment.due_date)}</span>
+          <span className="text-cn-p-ink-2">·</span>
           <span>{assignment.total_marks} marks</span>
         </p>
       </div>
@@ -335,11 +331,11 @@ function SortableAssignmentItem({
           onClick={() => onManageAttachments(assignment)}
           title="Manage attachments"
           aria-label="Manage attachments"
-          className="relative w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
+          className="relative w-7 h-7 flex items-center justify-center rounded-lg border border-cn-p-line bg-cn-p-card text-cn-p-ink-2 hover:bg-cn-p-page transition cursor-pointer"
         >
           <Paperclip className="w-3.5 h-3.5" />
           {assignment.attachments?.length > 0 && (
-            <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-gold text-ink text-[10px] font-mono font-bold flex items-center justify-center">
+            <span className="absolute -top-1.5 -right-1.5 min-w-4 h-4 px-1 rounded-full bg-cn-p-accent text-cn-p-ink text-[10px] font-bold flex items-center justify-center">
               {assignment.attachments.length}
             </span>
           )}
@@ -351,7 +347,7 @@ function SortableAssignmentItem({
             disabled={isPublishing}
             title="Publish assignment"
             aria-label="Publish assignment"
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-emerald-600 hover:bg-emerald-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-cn-p-line bg-cn-p-card text-cn-p-ok hover:bg-cn-p-ok-bg transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Send className="w-3.5 h-3.5" />
           </button>
@@ -361,7 +357,7 @@ function SortableAssignmentItem({
           onClick={() => onEditAssignment(assignment)}
           title="Edit assignment"
           aria-label="Edit assignment"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-cn-p-line bg-cn-p-card text-cn-p-ink-2 hover:bg-cn-p-page transition cursor-pointer"
         >
           <Edit3 className="w-3.5 h-3.5" />
         </button>
@@ -370,7 +366,7 @@ function SortableAssignmentItem({
           onClick={() => onDeleteAssignment({ id: assignment.id, title: assignment.title, moduleId })}
           title="Delete assignment"
           aria-label="Delete assignment"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-cn-p-line text-cn-p-bad hover:bg-cn-p-bad-bg transition cursor-pointer"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -453,7 +449,7 @@ function ModuleAssignmentsList({ moduleId, onAddAssignment, onEditAssignment, on
   return (
     <div className="space-y-2">
       {displayAssignments.length === 0 ? (
-        <EmptyState size="lg"
+        <EmptyState tone="portal" size="lg"
           icon={ClipboardCheck}
           label="No assignments in this module yet."
           description="Create an assignment for students to submit work against."
@@ -490,10 +486,10 @@ function ModuleAssignmentsList({ moduleId, onAddAssignment, onEditAssignment, on
       <button
         type="button"
         onClick={() => onAddAssignment(moduleId)}
-        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-line rounded-lg text-xs font-mono uppercase tracking-wider text-muted hover:border-pine hover:text-pine transition cursor-pointer"
+        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-cn-p-line rounded-lg text-xs text-cn-p-ink-2 hover:border-cn-p-accent hover:text-cn-p-accent transition cursor-pointer"
       >
         <Plus className="w-3.5 h-3.5" />
-        Add Assignment
+        Add assignment
       </button>
 
       <AssignmentAttachmentsModal
@@ -528,32 +524,30 @@ function SortableQuizItem({
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-3 p-3 rounded-xl border border-line bg-paper ${
-        isDragging ? "z-10 shadow-lg opacity-90" : ""
-      }`}
+      className={`flex items-center gap-3 p-3 rounded-xl border border-cn-p-line bg-cn-p-card ${ isDragging ? "z-10 shadow-lg opacity-90" : "" }`}
     >
       <span
         {...attributes}
         {...listeners}
-        className="text-muted cursor-grab shrink-0 touch-none"
+        className="text-cn-p-ink-2 cursor-grab shrink-0 touch-none"
         title="Drag to reorder"
         aria-hidden="true"
       >
         <GripVertical className="w-4 h-4" />
       </span>
-      <div className="w-9 h-9 rounded-lg bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
+      <div className="w-9 h-9 rounded-lg bg-cn-p-soft border border-cn-p-soft text-cn-p-soft-ink flex items-center justify-center shrink-0">
         <HelpCircle className="w-4 h-4" />
       </div>
       <div className="min-w-0 flex-1">
         <div className="flex items-center gap-2">
-          <p className="text-sm font-semibold text-ink truncate">{quiz.title}</p>
-          <StatusBadge size="lg" status={quiz.status} />
+          <p className="text-sm font-semibold text-cn-p-ink truncate">{quiz.title}</p>
+          <StatusBadge tone="cobalt" size="lg" status={quiz.status} />
         </div>
-        <p className="text-[11px] font-mono uppercase text-muted tracking-wider mt-0.5 flex items-center gap-1 flex-wrap">
+        <p className="text-[11px] text-cn-p-ink-2 mt-0.5 flex items-center gap-1 flex-wrap">
           <span>{quiz.total_marks} marks</span>
-          <span className="text-muted">·</span>
+          <span className="text-cn-p-ink-2">·</span>
           <span>{quiz.passing_score}% to pass</span>
-          <span className="text-muted">·</span>
+          <span className="text-cn-p-ink-2">·</span>
           <span>{quiz.number_of_questions} question{quiz.number_of_questions === 1 ? "" : "s"}</span>
         </p>
       </div>
@@ -563,7 +557,7 @@ function SortableQuizItem({
           onClick={() => onManageQuestions(quiz)}
           title="Manage questions"
           aria-label="Manage questions"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-cn-p-line bg-cn-p-card text-cn-p-ink-2 hover:bg-cn-p-page transition cursor-pointer"
         >
           <ListChecks className="w-3.5 h-3.5" />
         </button>
@@ -574,7 +568,7 @@ function SortableQuizItem({
             disabled={isPublishing}
             title="Publish quiz"
             aria-label="Publish quiz"
-            className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-emerald-600 hover:bg-emerald-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-7 h-7 flex items-center justify-center rounded-lg border border-cn-p-line bg-cn-p-card text-cn-p-ok hover:bg-cn-p-ok-bg transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             <Send className="w-3.5 h-3.5" />
           </button>
@@ -584,7 +578,7 @@ function SortableQuizItem({
           onClick={() => onEditQuiz(quiz)}
           title="Edit quiz"
           aria-label="Edit quiz"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-cn-p-line bg-cn-p-card text-cn-p-ink-2 hover:bg-cn-p-page transition cursor-pointer"
         >
           <Edit3 className="w-3.5 h-3.5" />
         </button>
@@ -593,7 +587,7 @@ function SortableQuizItem({
           onClick={() => onDeleteQuiz({ id: quiz.id, title: quiz.title, moduleId })}
           title="Delete quiz"
           aria-label="Delete quiz"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-cn-p-line text-cn-p-bad hover:bg-cn-p-bad-bg transition cursor-pointer"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -676,7 +670,7 @@ function ModuleQuizzesList({ moduleId, onAddQuiz, onEditQuiz, onDeleteQuiz }) {
   return (
     <div className="space-y-2">
       {displayQuizzes.length === 0 ? (
-        <EmptyState size="lg"
+        <EmptyState tone="portal" size="lg"
           icon={HelpCircle}
           label="No quizzes in this module yet."
           description="Create a quiz to assess what students have learned."
@@ -706,10 +700,10 @@ function ModuleQuizzesList({ moduleId, onAddQuiz, onEditQuiz, onDeleteQuiz }) {
       <button
         type="button"
         onClick={() => onAddQuiz(moduleId)}
-        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-line rounded-lg text-xs font-mono uppercase tracking-wider text-muted hover:border-pine hover:text-pine transition cursor-pointer"
+        className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-cn-p-line rounded-lg text-xs text-cn-p-ink-2 hover:border-cn-p-accent hover:text-cn-p-accent transition cursor-pointer"
       >
         <Plus className="w-3.5 h-3.5" />
-        Add Quiz
+        Add quiz
       </button>
 
       <QuizQuestionsModal
@@ -752,15 +746,13 @@ function SortableModuleItem({
     <li
       ref={setNodeRef}
       style={style}
-      className={`rounded-2xl border border-line bg-porcelain overflow-hidden ${
-        isDragging ? "z-10 shadow-lg opacity-90" : ""
-      }`}
+      className={`rounded-2xl border border-cn-p-line bg-cn-p-page overflow-hidden ${ isDragging ? "z-10 shadow-lg opacity-90" : "" }`}
     >
       <div className="flex items-center gap-3 p-4">
         <span
           {...attributes}
           {...listeners}
-          className="text-muted cursor-grab shrink-0 touch-none"
+          className="text-cn-p-ink-2 cursor-grab shrink-0 touch-none"
           title="Drag to reorder"
           aria-hidden="true"
         >
@@ -770,13 +762,13 @@ function SortableModuleItem({
           type="button"
           onClick={() => toggleExpand(module.id)}
           aria-label={isExpanded ? "Collapse module" : "Expand module"}
-          className="w-8 h-8 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition shrink-0 cursor-pointer"
+          className="w-8 h-8 flex items-center justify-center rounded-lg border border-cn-p-line bg-cn-p-card text-cn-p-ink-2 hover:bg-cn-p-page transition shrink-0 cursor-pointer"
         >
           {isExpanded ? <ChevronUp className="w-4 h-4" /> : <ChevronDown className="w-4 h-4" />}
         </button>
         <div className="min-w-0 flex-1">
-          <p className="font-serif text-lg font-bold text-ink truncate">{module.title}</p>
-          <p className="text-[11px] font-mono uppercase text-muted tracking-wider mt-1">
+          <p className="text-lg font-bold text-cn-p-ink truncate">{module.title}</p>
+          <p className="text-[11px] text-cn-p-ink-2 mt-1">
             Order {module.order} · {module.lessons_count} lesson
             {module.lessons_count === 1 ? "" : "s"} · {module.total_duration_minutes} min
           </p>
@@ -785,7 +777,7 @@ function SortableModuleItem({
           <button
             type="button"
             onClick={() => openAddLesson(module.id)}
-            className="px-3.5 py-2 bg-paper hover:bg-porcelain text-muted text-xs font-semibold font-mono rounded-xl tracking-wider border border-line shadow-sm transition-all flex items-center gap-1.5 cursor-pointer"
+            className="px-3.5 py-2 bg-cn-p-card hover:bg-cn-p-page text-cn-p-ink-2 text-xs font-semibold rounded-xl border border-cn-p-line transition-all flex items-center gap-1.5 cursor-pointer"
           >
             <Plus className="w-3.5 h-3.5" />
             Lesson
@@ -795,7 +787,7 @@ function SortableModuleItem({
             onClick={() => openEditForm(module)}
             title="Edit module"
             aria-label="Edit module"
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-cn-p-line bg-cn-p-card text-cn-p-ink-2 hover:bg-cn-p-page transition cursor-pointer"
           >
             <Edit3 className="w-3.5 h-3.5" />
           </button>
@@ -804,7 +796,7 @@ function SortableModuleItem({
             onClick={() => setDeletingModule(module)}
             title="Delete module"
             aria-label="Delete module"
-            className="w-8 h-8 flex items-center justify-center rounded-lg border border-line bg-paper text-rose-600 hover:bg-rose-50 transition cursor-pointer"
+            className="w-8 h-8 flex items-center justify-center rounded-lg border border-cn-p-line bg-cn-p-card text-cn-p-bad hover:bg-cn-p-bad-bg transition cursor-pointer"
           >
             <Trash2 className="w-3.5 h-3.5" />
           </button>
@@ -812,18 +804,14 @@ function SortableModuleItem({
       </div>
 
       {isExpanded && (
-        <div className="border-t border-line bg-porcelain/60 px-4 py-4 space-y-4">
-          <div className="inline-flex items-center gap-1 rounded-xl border border-line bg-paper p-1">
+        <div className="border-t border-cn-p-line bg-cn-p-page px-4 py-4 space-y-4">
+          <div className="inline-flex items-center gap-1 rounded-xl border border-cn-p-line bg-cn-p-card p-1">
             {TABS.map((tab) => (
               <button
                 key={tab.key}
                 type="button"
                 onClick={() => setActiveTab(tab.key)}
-                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-mono font-semibold uppercase tracking-wider rounded-lg transition-colors cursor-pointer ${
-                  activeTab === tab.key
-                    ? "bg-gold/12 text-gold border border-gold/25"
-                    : "text-muted hover:text-ink"
-                }`}
+                className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer ${ activeTab === tab.key ? "bg-cn-p-soft text-cn-p-soft-ink border border-cn-p-soft" : "text-cn-p-ink-2 hover:text-cn-p-ink" }`}
               >
                 <tab.icon className="w-3.5 h-3.5" />
                 {tab.label} ·{" "}
@@ -1174,11 +1162,11 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
   };
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={Layers}
-      title="Course Modules"
+      title="Course modules"
       subtitle={course?.title ? `Manage Modules — ${course.title}` : "Manage Modules"}
       maxWidth="max-w-2xl"
     >
@@ -1217,7 +1205,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
               value={form.order}
               onChange={updateField("order")}
               disabled={isSubmitting}
-              className={FIELD_CLASS}
+              className={`${FIELD_CLASS} cn-p-select`}
             >
               {moduleOrderOptions.map((position) => (
                 <option key={position} value={position}>
@@ -1225,13 +1213,13 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
                 </option>
               ))}
             </select>
-            <p className="mt-1.5 text-[11px] font-mono text-muted">
+            <p className="mt-1.5 text-[11px] text-cn-p-ink-2">
               This course currently has {modules.length} module{modules.length === 1 ? "" : "s"}.
             </p>
             {fieldErrors.order && <p className={ERROR_CLASS}>{fieldErrors.order}</p>}
           </div>
 
-          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-line">
+          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-cn-p-line">
             <button
               type="button"
               onClick={() => {
@@ -1239,7 +1227,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
                 setEditingModule(null);
               }}
               disabled={isSubmitting}
-              className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-colors duration-150 flex items-center justify-center gap-2 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+              className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-cn-p-sm transition-colors duration-150 flex items-center justify-center gap-2 border border-cn-p-line disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >
               <X className="w-3.5 h-3.5" />
               Cancel
@@ -1247,11 +1235,11 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
             <button
               type="submit"
               disabled={isSubmitting}
-              className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
+              className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
             >
               {isSubmitting ? (
                 <>
-                  <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+                  <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                   {editingModule ? "Updating..." : "Creating..."}
                 </>
               ) : (
@@ -1270,7 +1258,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
               <button
                 type="button"
                 onClick={toggleExpandAll}
-                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-paper hover:bg-porcelain text-muted text-xs font-semibold font-mono rounded-xl tracking-wider border border-line shadow-sm transition-all cursor-pointer"
+                className="inline-flex items-center gap-1.5 px-3.5 py-2 bg-cn-p-card hover:bg-cn-p-page text-cn-p-ink-2 text-xs font-semibold rounded-xl border border-cn-p-line transition-all cursor-pointer"
               >
                 {areAllExpanded ? <Minimize2 className="w-3.5 h-3.5" /> : <Maximize2 className="w-3.5 h-3.5" />}
                 {areAllExpanded ? "Collapse All" : "Expand All"}
@@ -1281,17 +1269,17 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
             <button
               type="button"
               onClick={openCreateForm}
-              className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 cursor-pointer"
+              className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center gap-2 cursor-pointer"
             >
               <ListPlus className="w-4 h-4" />
-              Add Module
+              Add module
             </button>
           </div>
 
           {modulesQuery.isLoading ? (
-            <Loader fullScreen={false} label="Loading modules..." />
+            <Loader tone="cobalt" fullScreen={false} label="Loading modules..." />
           ) : modules.length === 0 ? (
-            <EmptyState size="lg" label="No modules found." />
+            <EmptyState tone="portal" size="lg" label="No modules found." />
           ) : (
             <DndContext
               sensors={dndSensors}
@@ -1329,42 +1317,42 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
         </div>
       )}
 
-      <ConfirmDialog size="lg"
+      <ConfirmDialog variant="cobalt" size="lg"
         isOpen={Boolean(deletingModule)}
         onClose={() => setDeletingModule(null)}
         onConfirm={handleDeleteConfirm}
         isConfirming={deleteModuleMutation.isPending}
-        title="Delete Module"
+        title="Delete module"
         message={`Are you sure you want to delete "${deletingModule?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
       />
 
-      <ConfirmDialog size="lg"
+      <ConfirmDialog variant="cobalt" size="lg"
         isOpen={Boolean(deletingLesson)}
         onClose={() => setDeletingLesson(null)}
         onConfirm={handleDeleteLessonConfirm}
         isConfirming={deleteLessonMutation.isPending}
-        title="Delete Lesson"
+        title="Delete lesson"
         message={`Are you sure you want to delete "${deletingLesson?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
       />
 
-      <ConfirmDialog size="lg"
+      <ConfirmDialog variant="cobalt" size="lg"
         isOpen={Boolean(deletingAssignment)}
         onClose={() => setDeletingAssignment(null)}
         onConfirm={handleDeleteAssignmentConfirm}
         isConfirming={deleteAssignmentMutation.isPending}
-        title="Delete Assignment"
+        title="Delete assignment"
         message={`Are you sure you want to delete "${deletingAssignment?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
       />
 
-      <ConfirmDialog size="lg"
+      <ConfirmDialog variant="cobalt" size="lg"
         isOpen={Boolean(deletingQuiz)}
         onClose={() => setDeletingQuiz(null)}
         onConfirm={handleDeleteQuizConfirm}
         isConfirming={deleteQuizMutation.isPending}
-        title="Delete Quiz"
+        title="Delete quiz"
         message={`Are you sure you want to delete "${deletingQuiz?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
       />

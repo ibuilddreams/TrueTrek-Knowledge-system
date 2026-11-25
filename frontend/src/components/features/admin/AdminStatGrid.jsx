@@ -13,7 +13,7 @@ import StatCard from "@/components/ui/StatCard";
 const CARDS = [
   {
     key: "total_users",
-    label: "Total Users",
+    label: "Total users",
     icon: Users,
     accent: "amber",
     hint: "All platform accounts",
@@ -21,7 +21,7 @@ const CARDS = [
   },
   {
     key: "total_students",
-    label: "Total Students",
+    label: "Total students",
     icon: GraduationCap,
     accent: "emerald",
     hint: "Active learner roster",
@@ -29,7 +29,7 @@ const CARDS = [
   },
   {
     key: "total_teachers",
-    label: "Total Teachers",
+    label: "Total teachers",
     icon: UserRound,
     accent: "stone",
     hint: "Faculty & instructors",
@@ -37,7 +37,7 @@ const CARDS = [
   },
   {
     key: "total_courses",
-    label: "Total Courses",
+    label: "Total courses",
     icon: BookOpen,
     accent: "amber",
     hint: "Published & draft catalog",
@@ -45,7 +45,7 @@ const CARDS = [
   },
   {
     key: "total_enrollments",
-    label: "Total Enrollments",
+    label: "Total enrollments",
     icon: ClipboardList,
     accent: "stone",
     hint: "Seat assignments across courses",
@@ -53,7 +53,7 @@ const CARDS = [
   },
   {
     key: "average_course_completion",
-    label: "Avg. Completion",
+    label: "Avg. completion",
     icon: TrendingUp,
     accent: "emerald",
     hint: "Mean progress across courses",
@@ -65,7 +65,7 @@ export default function AdminStatGrid({ statistics = {} }) {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4 sm:gap-5">
       {CARDS.map((card) => (
-        <StatCard
+        <StatCard tone="cobalt"
           key={card.key}
           label={card.label}
           value={card.format(statistics)}

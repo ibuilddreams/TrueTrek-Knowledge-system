@@ -110,7 +110,7 @@ export default function StudentCourseCard({ enrollment, number, onClick }) {
           <span className="truncate">Enrolled {formatDate(enrollment.enrolled_at)}</span>
         </span>
         <span className="shrink-0 text-sm font-semibold flex items-center gap-0.5 group-hover:gap-1.5 transition-all text-pine">
-          View Course Details
+          View course details
           <ChevronRight className="w-3.5 h-3.5" />
         </span>
       </div>

@@ -167,7 +167,7 @@ export default function PathwayPreviewModal({ pathway, isOpen, onClose, onPurcha
 
           <p className="text-xs font-light text-muted">
             Purchasing enrolls you in every course above, ready to start right away in
-            My Courses.
+            My courses.
           </p>
         </div>
       )}

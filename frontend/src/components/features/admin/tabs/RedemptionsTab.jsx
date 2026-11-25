@@ -16,11 +16,12 @@ import CancelRedemptionModal from "@/components/features/admin/CancelRedemptionM
 import ScheduleRewardModal from "@/components/features/admin/ScheduleRewardModal";
 import MarkReadyModal from "@/components/features/admin/MarkReadyModal";
 import RedemptionDetailModal from "@/components/features/admin/RedemptionDetailModal";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 
 const PAGE_SIZE = 10;
 
 const STATUS_FILTERS = [
-  { value: "", label: "All Statuses" },
+  { value: "", label: "All statuses" },
   { value: "PENDING", label: "Pending" },
   { value: "APPROVED", label: "Approved" },
   { value: "SCHEDULED", label: "Scheduled" },
@@ -118,7 +119,7 @@ export default function RedemptionsTab() {
   const buildActions = (redemption) => {
     const fulfillmentType = redemption.reward?.fulfillment_type;
     const actions = [
-      { key: "view", label: "View Details", icon: Eye, onSelect: () => setViewingRedemption(redemption) },
+      { key: "view", label: "View details", icon: Eye, onSelect: () => setViewingRedemption(redemption) },
     ];
 
     if (redemption.status === "PENDING") {
@@ -134,11 +135,11 @@ export default function RedemptionsTab() {
         });
       } else if (READY_TYPES.has(fulfillmentType)) {
         actions.push({
-          key: "ready", label: "Mark Ready", icon: PackageCheck, onSelect: () => setMarkingReadyRedemption(redemption),
+          key: "ready", label: "Mark ready", icon: PackageCheck, onSelect: () => setMarkingReadyRedemption(redemption),
         });
       } else {
         actions.push({
-          key: "complete", label: "Mark Completed", icon: CheckCircle2, onSelect: () => setCompletingRedemption(redemption),
+          key: "complete", label: "Mark completed", icon: CheckCircle2, onSelect: () => setCompletingRedemption(redemption),
         });
       }
     }
@@ -148,19 +149,19 @@ export default function RedemptionsTab() {
         key: "reschedule", label: "Reschedule", icon: Calendar, onSelect: () => setSchedulingRedemption(redemption),
       });
       actions.push({
-        key: "complete", label: "Mark Completed", icon: CheckCircle2, onSelect: () => setCompletingRedemption(redemption),
+        key: "complete", label: "Mark completed", icon: CheckCircle2, onSelect: () => setCompletingRedemption(redemption),
       });
     }
 
     if (redemption.status === "READY") {
       actions.push({
-        key: "complete", label: "Mark Completed", icon: CheckCircle2, onSelect: () => setCompletingRedemption(redemption),
+        key: "complete", label: "Mark completed", icon: CheckCircle2, onSelect: () => setCompletingRedemption(redemption),
       });
     }
 
     if (["PENDING", "APPROVED", "SCHEDULED", "READY"].includes(redemption.status)) {
       actions.push({
-        key: "cancel", label: "Cancel & Refund", icon: XCircle, tone: "danger", onSelect: () => setCancellingRedemption(redemption),
+        key: "cancel", label: "Cancel & refund", icon: XCircle, tone: "danger", onSelect: () => setCancellingRedemption(redemption),
       });
     }
 
@@ -173,8 +174,8 @@ export default function RedemptionsTab() {
       header: "Student",
       render: (redemption) => (
         <div>
-          <span className="font-semibold text-ink">{redemption.student?.name}</span>
-          <p className="text-[11px] text-muted font-light">{redemption.student?.email}</p>
+          <span className="font-semibold text-cn-p-ink">{redemption.student?.name}</span>
+          <p className="text-[11px] text-cn-p-ink-2 font-light">{redemption.student?.email}</p>
         </div>
       ),
     },
@@ -187,20 +188,20 @@ export default function RedemptionsTab() {
       key: "points_cost",
       header: "Points",
       render: (redemption) => (
-        <span className="font-mono font-bold text-ink">{redemption.points_cost.toLocaleString()}</span>
+        <span className="font-bold text-cn-p-ink">{redemption.points_cost.toLocaleString()}</span>
       ),
     },
     {
       key: "created_at",
       header: "Redeemed",
       render: (redemption) => (
-        <span className="text-muted whitespace-nowrap">{formatDateTime(redemption.created_at)}</span>
+        <span className="text-cn-p-ink-2 whitespace-nowrap">{formatDateTime(redemption.created_at)}</span>
       ),
     },
     {
       key: "status",
       header: "Status",
-      render: (redemption) => <StatusBadge size="lg" status={redemption.status} />,
+      render: (redemption) => <StatusBadge tone="cobalt" size="lg" status={redemption.status} />,
     },
     {
       key: "actions",
@@ -210,15 +211,20 @@ export default function RedemptionsTab() {
   ];
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Redemptions"
+        subtitle="Approve each request, then move it along until it is delivered. Cancelling refunds the points."
+      />
+
+      <div className="flex flex-col gap-3 rounded-cn-p border border-cn-p-line bg-cn-p-card p-4 sm:flex-row sm:items-center sm:justify-between">
         <select
           value={statusFilter}
           onChange={(event) => {
             setStatusFilter(event.target.value);
             setPage(1);
           }}
-          className="px-4 py-2.5 bg-paper border border-line rounded-xl text-sm font-mono text-muted focus:border-pine focus:outline-none"
+          className="cn-p-select px-4 py-2.5 bg-cn-p-card border border-cn-p-line rounded-xl text-sm text-cn-p-ink-2 focus:border-cn-p-accent focus:outline-none"
         >
           {STATUS_FILTERS.map((option) => (
             <option key={option.value} value={option.value}>
@@ -228,8 +234,8 @@ export default function RedemptionsTab() {
         </select>
       </div>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-        <DataTable
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+        <DataTable tone="cobalt"
           size="lg"
           columns={columns}
           rows={redemptions}
@@ -238,13 +244,17 @@ export default function RedemptionsTab() {
           onRetry={refetch}
           emptyLabel="No redemptions found."
         />
-        <Pagination
-          size="lg"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalLabel={`${data?.count || 0} redemption${(data?.count || 0) === 1 ? "" : "s"}`}
-        />
+        <div className="px-4 pb-4">
+
+          <Pagination tone="cobalt"
+            size="lg"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalLabel={`${data?.count || 0} redemption${(data?.count || 0) === 1 ? "" : "s"}`}
+          />
+
+        </div>
       </div>
 
       <RedemptionDetailModal
@@ -253,14 +263,14 @@ export default function RedemptionsTab() {
         redemption={viewingRedemption}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog variant="cobalt"
         size="lg"
         tone="default"
         isOpen={Boolean(approvingRedemption)}
         onClose={() => setApprovingRedemption(null)}
         onConfirm={handleApproveConfirm}
         isConfirming={processMutation.isPending}
-        title="Approve Redemption"
+        title="Approve redemption"
         message={`Approve "${approvingRedemption?.reward?.name}" for ${approvingRedemption?.student?.name}? This does not fulfill the reward yet.`}
         confirmLabel="Approve"
       />
@@ -279,16 +289,16 @@ export default function RedemptionsTab() {
         isSubmitting={processMutation.isPending}
       />
 
-      <ConfirmDialog
+      <ConfirmDialog variant="cobalt"
         size="lg"
         tone="default"
         isOpen={Boolean(completingRedemption)}
         onClose={() => setCompletingRedemption(null)}
         onConfirm={handleCompleteConfirm}
         isConfirming={processMutation.isPending}
-        title="Mark as Completed"
+        title="Mark as completed"
         message={`Mark "${completingRedemption?.reward?.name}" as fulfilled for ${completingRedemption?.student?.name}?`}
-        confirmLabel="Mark Completed"
+        confirmLabel="Mark completed"
       />
 
       <CancelRedemptionModal

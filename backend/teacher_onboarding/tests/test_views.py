@@ -384,6 +384,25 @@ class AdminQueueViewTests(TempMediaMixin, APITestCase):
         self.assertEqual(len(results), 1)
         self.assertEqual(results[0]["teacher_email"], "pending@example.com")
 
+    def test_the_queue_filters_by_several_statuses_at_once(self):
+        """The admin queue's tabs cover more than one status each — "Still
+        drafting" is DRAFT plus CHANGES_REQUESTED — so the filter takes a
+        comma-separated list as well as a single value."""
+        response = self.client.get(ADMIN_URL, {"status": "submitted,draft"})
+
+        results = response.data["data"]["results"]
+        self.assertEqual(
+            {row["teacher_email"] for row in results},
+            {"pending@example.com", "draft@example.com"},
+        )
+
+    def test_the_queue_ignores_blank_entries_in_a_status_list(self):
+        response = self.client.get(ADMIN_URL, {"status": "submitted, ,"})
+
+        results = response.data["data"]["results"]
+        self.assertEqual(len(results), 1)
+        self.assertEqual(results[0]["teacher_email"], "pending@example.com")
+
     def test_the_queue_searches_by_name_and_email(self):
         response = self.client.get(ADMIN_URL, {"search": "dana"})
 

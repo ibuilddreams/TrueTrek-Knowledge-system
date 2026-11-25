@@ -9,12 +9,12 @@ import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
+  "w-full px-3 py-3 bg-cn-p-card border border-cn-p-line-2 focus:border-cn-p-accent focus:outline-none rounded-cn-p-sm text-sm text-cn-p-ink placeholder:text-cn-p-muted transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
+  "block mb-1.5 text-[13px] font-semibold text-cn-p-ink";
 
-const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-[11px] text-cn-p-bad mt-1";
 
 export default function AdjustPointsModal({ isOpen, onClose, onAdjusted, student }) {
   const queryClient = useQueryClient();
@@ -85,11 +85,11 @@ export default function AdjustPointsModal({ isOpen, onClose, onAdjusted, student
   if (!student) return null;
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={Sparkles}
-      title="Adjust Points"
+      title="Adjust points"
       subtitle={`Manually add or remove points for ${student.name}. Every adjustment is recorded with a reason.`}
       maxWidth="max-w-md"
     >
@@ -99,27 +99,19 @@ export default function AdjustPointsModal({ isOpen, onClose, onAdjusted, student
             type="button"
             onClick={() => setDirection("add")}
             disabled={adjustMutation.isPending}
-            className={`py-2.5 rounded-xl text-xs font-semibold font-mono uppercase tracking-wider border flex items-center justify-center gap-1.5 transition ${
-              direction === "add"
-                ? "bg-emerald-50 border-emerald-300 text-emerald-700"
-                : "bg-porcelain border-line text-muted"
-            }`}
+            className={`py-2.5 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 transition ${ direction === "add" ? "bg-cn-p-ok-bg border-cn-p-ok-bg text-cn-p-ok" : "bg-cn-p-page border-cn-p-line text-cn-p-ink-2" }`}
           >
             <Plus className="w-3.5 h-3.5" />
-            Add Points
+            Add points
           </button>
           <button
             type="button"
             onClick={() => setDirection("remove")}
             disabled={adjustMutation.isPending}
-            className={`py-2.5 rounded-xl text-xs font-semibold font-mono uppercase tracking-wider border flex items-center justify-center gap-1.5 transition ${
-              direction === "remove"
-                ? "bg-rose-50 border-rose-300 text-rose-700"
-                : "bg-porcelain border-line text-muted"
-            }`}
+            className={`py-2.5 rounded-xl text-xs font-semibold border flex items-center justify-center gap-1.5 transition ${ direction === "remove" ? "bg-cn-p-bad-bg border-cn-p-bad-bg text-cn-p-bad" : "bg-cn-p-page border-cn-p-line text-cn-p-ink-2" }`}
           >
             <Minus className="w-3.5 h-3.5" />
-            Remove Points
+            Remove points
           </button>
         </div>
 
@@ -156,23 +148,23 @@ export default function AdjustPointsModal({ isOpen, onClose, onAdjusted, student
           {fieldErrors.reason && <p className={ERROR_CLASS}>{fieldErrors.reason}</p>}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-3 border-t border-line">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 pt-3 border-t border-cn-p-line">
           <button
             type="button"
             onClick={handleClose}
             disabled={adjustMutation.isPending}
-            className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-xs font-semibold font-mono rounded-full tracking-wider transition-colors duration-150 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed"
+            className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-xs font-semibold rounded-cn-p-sm transition-colors duration-150 border border-cn-p-line disabled:opacity-60 disabled:cursor-not-allowed"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={adjustMutation.isPending}
-            className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-xs font-semibold font-mono rounded-full tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2"
+            className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold rounded-cn-p-sm transition-colors duration-150 flex items-center justify-center gap-2"
           >
             {adjustMutation.isPending ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Saving...
               </>
             ) : (

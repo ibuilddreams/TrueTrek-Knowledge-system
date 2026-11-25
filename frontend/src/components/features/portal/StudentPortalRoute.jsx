@@ -32,7 +32,7 @@ export default function StudentPortalRoute({ slug }) {
     if (isUnknownSlug) router.replace(ROUTES.STUDENT_PORTAL);
   }, [isUnknownSlug, router]);
 
-  if (isResolving) return <Loader label="Loading Cool Nerdz Portal..." />;
+  if (isResolving) return <Loader label="Loading Cool Nerdz portal..." />;
   if (isWrongRole) return <Loader label="Redirecting..." />;
 
   return <StudentPortal slug={isUnknownSlug ? DEFAULT_PORTAL_SLUG : resolvedSlug} />;

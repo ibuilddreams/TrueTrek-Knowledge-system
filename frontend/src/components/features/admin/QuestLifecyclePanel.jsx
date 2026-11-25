@@ -38,27 +38,26 @@ const STEPS = [
  */
 export default function QuestLifecyclePanel({ questsPerDay }) {
   return (
-    <div className="relative bg-paper border border-line rounded-card shadow-soft p-6 overflow-hidden">
-      <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-pine via-moss to-gold opacity-80" />
+    <div className="relative bg-cn-p-card border border-cn-p-line rounded-cn-p p-6 overflow-hidden">
 
-      <h3 className="text-base font-serif font-light text-ink">How Daily Quests work</h3>
-      <p className="text-xs text-muted font-light mt-1">
+      <h3 className="text-base font-light text-cn-p-ink">How Daily Quests work</h3>
+      <p className="text-xs text-cn-p-ink-2 font-light mt-1">
         Each student is automatically given{" "}
-        <span className="font-semibold text-ink">{questsPerDay ?? 3} quests per day</span> from the
+        <span className="font-semibold text-cn-p-ink">{questsPerDay ?? 3} quests per day</span> from the
         published catalog below.
       </p>
 
       <ol className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4 gap-4 mt-5">
         {STEPS.map((step, index) => (
-          <li key={step.title} className="rounded-xl bg-porcelain border border-line p-4">
+          <li key={step.title} className="rounded-xl bg-cn-p-page border border-cn-p-line p-4">
             <div className="flex items-center gap-2.5 mb-2">
-              <span className="w-7 h-7 rounded-lg bg-pine text-paper text-[11px] font-mono font-bold flex items-center justify-center shrink-0">
+              <span className="w-7 h-7 rounded-lg bg-cn-p-accent text-white text-[11px] font-bold flex items-center justify-center shrink-0">
                 {index + 1}
               </span>
-              <step.icon className="w-4 h-4 text-pine shrink-0" />
+              <step.icon className="w-4 h-4 text-cn-p-accent shrink-0" />
             </div>
-            <p className="text-sm font-semibold text-ink leading-snug">{step.title}</p>
-            <p className="text-[11px] text-muted font-light mt-1 leading-relaxed">{step.detail}</p>
+            <p className="text-sm font-semibold text-cn-p-ink leading-snug">{step.title}</p>
+            <p className="text-[11px] text-cn-p-ink-2 font-light mt-1 leading-relaxed">{step.detail}</p>
           </li>
         ))}
       </ol>

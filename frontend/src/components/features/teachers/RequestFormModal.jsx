@@ -9,8 +9,8 @@ import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
 
 const REQUEST_TYPE_OPTIONS = [
-  { value: "CHANGE_REQUEST", label: "Request a Change" },
-  { value: "ERROR_REPORT", label: "Report an Error" },
+  { value: "CHANGE_REQUEST", label: "Request a change" },
+  { value: "ERROR_REPORT", label: "Report an error" },
 ];
 
 const INITIAL_FORM = {
@@ -20,12 +20,12 @@ const INITIAL_FORM = {
 };
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
+  "w-full px-3 py-3 bg-cn-p-card border border-cn-p-line-2 focus:border-cn-p-accent focus:outline-none rounded-cn-p-sm text-sm text-cn-p-ink placeholder:text-cn-p-muted transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
+  "block mb-1.5 text-[13px] font-semibold text-cn-p-ink";
 
-const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-xs text-cn-p-bad mt-1";
 
 export default function RequestFormModal({ isOpen, onClose }) {
   const queryClient = useQueryClient();
@@ -92,11 +92,11 @@ export default function RequestFormModal({ isOpen, onClose }) {
   };
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={FileWarning}
-      title="Request a Change / Report an Error"
+      title="Request a change / report an error"
       subtitle="Let the admin team know what needs attention — you'll be able to track its status here."
       maxWidth="max-w-lg"
     >
@@ -107,7 +107,7 @@ export default function RequestFormModal({ isOpen, onClose }) {
             value={form.request_type}
             onChange={updateField("request_type")}
             disabled={isSubmitting}
-            className={FIELD_CLASS}
+            className={`${FIELD_CLASS} cn-p-select`}
           >
             {REQUEST_TYPE_OPTIONS.map((option) => (
               <option key={option.value} value={option.value}>
@@ -146,12 +146,12 @@ export default function RequestFormModal({ isOpen, onClose }) {
           {fieldErrors.description && <p className={ERROR_CLASS}>{fieldErrors.description}</p>}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-line">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-cn-p-line">
           <button
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-colors duration-150 flex items-center justify-center gap-2 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-cn-p-sm transition-colors duration-150 flex items-center justify-center gap-2 border border-cn-p-line disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -160,17 +160,17 @@ export default function RequestFormModal({ isOpen, onClose }) {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
+            className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-colors duration-150 flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 Submitting...
               </>
             ) : (
               <>
                 <Check className="w-3.5 h-3.5" />
-                Submit Request
+                Submit request
               </>
             )}
           </button>

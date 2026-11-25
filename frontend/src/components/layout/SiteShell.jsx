@@ -67,9 +67,10 @@ export default function SiteShell({ children }) {
     // Covers /pathways and every pathway's own page.
     ROUTES.PATHWAYS,
   ];
-  // The custom-bundle builder sits under /pathways but has not been moved
-  // across yet, so it keeps the porcelain background its components expect.
-  const COBALT_EXCEPTIONS = [ROUTES.PATHWAY_BUILDER];
+  // Nothing is excepted any more: the custom-bundle builder, the last page
+  // under /pathways still on porcelain, moved across on 2026-11-25. The list
+  // stays because the next page to be converted will want it again.
+  const COBALT_EXCEPTIONS = [];
   const isCobaltPage =
     !COBALT_EXCEPTIONS.some(
       (route) => pathname === route || pathname?.startsWith(`${route}/`),

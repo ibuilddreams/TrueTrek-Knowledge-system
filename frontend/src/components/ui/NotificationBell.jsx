@@ -1,27 +1,43 @@
 "use client";
 
 import { useRef, useState } from "react";
+import { useRouter } from "next/navigation";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, ShieldAlert } from "lucide-react";
+import { Bell } from "lucide-react";
 import Popover from "@/components/ui/Popover";
 import Loader from "@/components/ui/Loader";
-import EmptyState from "@/components/ui/EmptyState";
+import { PortalEmpty, PortalIcon } from "@/components/features/portal/shell/PortalUI";
+import { notificationHref } from "@/components/features/portal/shell/notificationRoutes";
 import { formatDateTime } from "@/lib/adminFormatters";
 import {
   getNotifications,
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/services/notificationsService";
-import { useAdminNotificationsCount } from "@/hooks/useAdminNotifications";
+import { useNotificationsCount } from "@/hooks/useNotifications";
 
-export default function NotificationBell({ onSelectNotification }) {
+/**
+ * The design's bell: the top bar's `.iconbtn` carrying a `.dot` when
+ * something is unread, and the 360px `.pop` panel under it.
+ *
+ * A plain dot rather than a count, as the design has it — the number is in
+ * the button's label for anyone who can't see the dot, and the panel itself
+ * is one tap away for anyone who can.
+ *
+ * It routes by `related_object_type` through `notificationRoutes.js`, which
+ * knows where each kind of event lives for each role.
+ */
+const POPOVER_WIDTH = 360;
+
+export default function NotificationBell({ role }) {
+  const router = useRouter();
   const queryClient = useQueryClient();
   const buttonRef = useRef(null);
   const [isOpen, setIsOpen] = useState(false);
-  const unreadCount = useAdminNotificationsCount();
+  const unreadCount = useNotificationsCount();
 
   const notificationsQuery = useQuery({
-    queryKey: ["adminNotifications"],
+    queryKey: ["notifications"],
     queryFn: async () => {
       const response = await getNotifications({ pageSize: 10 });
       return response?.data?.results || [];
@@ -32,19 +48,22 @@ export default function NotificationBell({ onSelectNotification }) {
   const notifications = notificationsQuery.data || [];
 
   const invalidate = () => {
-    queryClient.invalidateQueries({ queryKey: ["adminNotifications"] });
-    queryClient.invalidateQueries({ queryKey: ["adminNotificationsUnreadCount"] });
+    queryClient.invalidateQueries({ queryKey: ["notifications"] });
+    queryClient.invalidateQueries({ queryKey: ["notificationsUnreadCount"] });
   };
 
   const handleSelect = async (notification) => {
     setIsOpen(false);
-    onSelectNotification?.(notification);
+
+    const href = notificationHref(role, notification);
+    if (href) router.push(href);
+
     if (notification.is_read) return;
     try {
       await markNotificationRead(notification.id);
       invalidate();
     } catch {
-      // Best-effort — navigating to the concern matters more than the read receipt.
+      // Best-effort: opening what it points at matters more than the receipt.
     }
   };
 
@@ -53,91 +72,88 @@ export default function NotificationBell({ onSelectNotification }) {
       await markAllNotificationsRead();
       invalidate();
     } catch {
-      // ignore — the badge will settle on the next poll
+      // Ignore — the dot settles on the next poll.
     }
   };
 
   return (
-    <div className="relative inline-block">
+    <div className="relative inline-block flex-none">
       <button
         ref={buttonRef}
         type="button"
         onClick={() => setIsOpen((prev) => !prev)}
-        title="Notifications"
-        aria-label="Notifications"
-        className={`relative w-11 h-11 flex items-center justify-center rounded-xl border shadow-sm transition ${
-          isOpen
-            ? "bg-paper border-gold/30 ring-2 ring-gold/15"
-            : "bg-porcelain hover:bg-paper border-line hover:border-pine/25"
-        }`}
+        aria-expanded={isOpen}
+        aria-label={`Notifications, ${unreadCount} unread`}
+        className="relative grid h-11 w-11 place-items-center rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card text-cn-p-ink transition-colors duration-150 hover:border-cn-p-ink"
       >
-        <Bell className="w-4 h-4 text-muted" />
+        <Bell className="h-5 w-5" />
         {unreadCount > 0 && (
-          <span className="absolute -top-1 -right-1 min-w-4.5 h-4.5 px-1 rounded-full bg-rose-600 text-paper text-[10px] font-bold font-mono flex items-center justify-center">
-            {unreadCount > 99 ? "99+" : unreadCount}
-          </span>
+          <span className="absolute top-[9px] right-2.5 h-2 w-2 rounded-full bg-cn-live" />
         )}
       </button>
 
-      <Popover isOpen={isOpen} onClose={() => setIsOpen(false)} anchorRef={buttonRef} width={320} align="end">
-        <div className="flex items-center justify-between px-3.5 py-2 border-b border-line">
-          <p className="text-[11px] uppercase tracking-widest text-muted font-semibold">
-            Notifications
-          </p>
+      <Popover
+        isOpen={isOpen}
+        onClose={() => setIsOpen(false)}
+        anchorRef={buttonRef}
+        width={POPOVER_WIDTH}
+        align="end"
+        contentClassName="p-2"
+      >
+        <div className="flex items-center justify-between gap-3 px-3 py-2">
+          <b className="text-sm text-cn-p-ink">Notifications</b>
           {unreadCount > 0 && (
             <button
               type="button"
               onClick={handleMarkAllRead}
-              className="text-[11px] font-semibold text-pine hover:text-moss cursor-pointer"
+              className="border-0 bg-transparent p-0 text-sm font-semibold whitespace-nowrap text-cn-p-accent hover:underline"
             >
               Mark all read
             </button>
           )}
         </div>
 
-        <div className="max-h-96 overflow-y-auto">
+        <div className="max-h-[min(26rem,60vh)] overflow-y-auto">
           {notificationsQuery.isLoading ? (
             <div className="p-4">
-              <Loader fullScreen={false} label="Loading..." />
+              <Loader fullScreen={false} tone="cobalt" label="Loading..." />
             </div>
           ) : notifications.length === 0 ? (
-            <div className="p-4">
-              <EmptyState icon={Bell} label="No notifications yet." compact size="base" />
-            </div>
+            <PortalEmpty
+              icon={Bell}
+              title="All caught up"
+              text="New activity shows up here."
+            />
           ) : (
             notifications.map((notification) => (
               <button
                 key={notification.id}
                 type="button"
                 onClick={() => handleSelect(notification)}
-                className={`w-full text-left px-3.5 py-3 border-b border-line last:border-b-0 hover:bg-porcelain transition cursor-pointer ${
-                  !notification.is_read ? "bg-gold/10" : ""
-                }`}
+                className="flex w-full items-start gap-3 rounded-cn-p-sm p-3 text-left transition-colors duration-150 hover:bg-cn-p-page"
               >
-                <div className="flex items-start gap-2.5">
-                  <ShieldAlert
-                    className={`w-4 h-4 mt-0.5 shrink-0 ${
-                      !notification.is_read ? "text-gold" : "text-muted"
-                    }`}
-                  />
-                  <div className="min-w-0">
-                    <p
-                      className={`text-xs ${
-                        !notification.is_read ? "font-bold text-ink" : "font-semibold text-ink"
-                      }`}
-                    >
-                      {notification.title}
-                    </p>
-                    {notification.message && (
-                      <p className="text-[11px] text-muted font-light mt-0.5 line-clamp-2">
-                        {notification.message}
-                      </p>
+                <PortalIcon icon={Bell} />
+                <span className="grid min-w-0 gap-0.5">
+                  <span className="text-[15px] font-semibold text-cn-p-ink">
+                    {notification.title}
+                    {/* The design marks an unread row with a cobalt dot after
+                        its title rather than a tinted row. */}
+                    {!notification.is_read && (
+                      <span
+                        aria-label="Unread"
+                        className="ml-2 inline-block h-[7px] w-[7px] rounded-full bg-cn-p-accent align-middle"
+                      />
                     )}
-                    <p className="text-[10px] font-mono text-muted mt-1">
-                      {formatDateTime(notification.created_at)}
-                    </p>
-                  </div>
-                </div>
+                  </span>
+                  {notification.message && (
+                    <span className="text-[13px] text-cn-p-ink-2">
+                      {notification.message}
+                    </span>
+                  )}
+                  <span className="text-xs text-cn-p-muted">
+                    {formatDateTime(notification.created_at)}
+                  </span>
+                </span>
               </button>
             ))
           )}

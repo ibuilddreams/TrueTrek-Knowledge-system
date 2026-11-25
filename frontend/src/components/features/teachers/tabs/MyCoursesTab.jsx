@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, BookMarked, BookPlus, RefreshCw } from "lucide-react";
+import { AlertCircle, BookOpen, BookPlus, RefreshCw, Send, Users } from "lucide-react";
 import { getTeacherAssignedCourses } from "@/services/teacherCoursesService";
 import { getCategories } from "@/services/categoriesService";
 import { getTags } from "@/services/tagsService";
@@ -12,8 +12,19 @@ import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import SearchBar from "@/components/ui/SearchBar";
 import SearchableSelect from "@/components/ui/SearchableSelect";
 import Pagination from "@/components/ui/Pagination";
-import EmptyState from "@/components/ui/EmptyState";
-import TeacherCourseCard from "@/components/features/teachers/TeacherCourseCard";
+import StatusBadge from "@/components/ui/StatusBadge";
+import PortalCard from "@/components/features/portal/shell/PortalCard";
+import {
+  PortalButton,
+  PortalEmpty,
+  PortalPageHead,
+  PortalTable,
+  PortalTd,
+  PortalTh,
+  PortalToolbar,
+  PortalToolbarCount,
+  PortalTr,
+} from "@/components/features/portal/shell/PortalUI";
 import TeacherCourseFormModal from "@/components/features/teachers/TeacherCourseFormModal";
 import CourseStudentsScreen from "./CourseStudentsScreen";
 import CourseContentScreen from "./CourseContentScreen";
@@ -22,7 +33,7 @@ import CourseFeedScreen from "./CourseFeedScreen";
 const PAGE_SIZE = 10;
 
 const STATUS_FILTER_OPTIONS = [
-  { value: "", label: "All Statuses" },
+  { value: "", label: "All statuses" },
   { value: "DRAFT", label: "Draft" },
   { value: "PUBLISHED", label: "Published" },
   { value: "ARCHIVED", label: "Archived" },
@@ -131,7 +142,7 @@ export default function MyCoursesTab() {
 
   const categoryFilterOptions = useMemo(
     () => [
-      { value: "", label: "All Categories" },
+      { value: "", label: "All categories" },
       ...categories.map((category) => ({
         value: String(category.id),
         label: category.name,
@@ -142,7 +153,7 @@ export default function MyCoursesTab() {
 
   const tagFilterOptions = useMemo(
     () => [
-      { value: "", label: "All Tags" },
+      { value: "", label: "All tags" },
       ...tags.map((tag) => ({ value: String(tag.id), label: tag.name })),
     ],
     [tags],
@@ -174,8 +185,8 @@ export default function MyCoursesTab() {
     if (isCoursesLoading) {
       return (
         <div className="space-y-5" aria-busy="true" aria-label="Loading course">
-          <div className="h-24 rounded-2xl bg-porcelain animate-pulse" />
-          <div className="h-96 rounded-2xl bg-porcelain animate-pulse" />
+          <div className="h-24 rounded-2xl bg-cn-p-page animate-pulse" />
+          <div className="h-96 rounded-2xl bg-cn-p-page animate-pulse" />
         </div>
       );
     }
@@ -214,55 +225,63 @@ export default function MyCoursesTab() {
   }
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col lg:flex-row lg:items-center gap-3 justify-between">
-        <div className="flex flex-col sm:flex-row sm:flex-wrap sm:items-center gap-3 flex-1 min-w-0">
-          <SearchBar
-            value={searchInput}
-            onChange={setSearchInput}
-            placeholder="Search courses by title..."
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="My courses"
+        subtitle="Courses you teach. Open one to build modules, lessons, assignments and quizzes."
+      >
+        <PortalButton onClick={() => setIsAddCourseModalOpen(true)}>
+          <BookPlus className="h-4 w-4" />
+          Add course
+        </PortalButton>
+      </PortalPageHead>
+
+      {/* The design's `.toolbar` normally sits on the top edge of the card it
+          filters. Here it is its own bar, because the filters apply to the
+          whole result set rather than to the page of it the table shows. */}
+      <PortalToolbar className="rounded-cn-p border border-cn-p-line bg-cn-p-card">
+        <SearchBar
+          tone="cobalt"
+          value={searchInput}
+          onChange={setSearchInput}
+          placeholder="Search courses"
+          className="w-full sm:w-[280px]"
+          size="lg"
+        />
+        <div className="w-full sm:w-44 shrink-0">
+          <SearchableSelect
+            tone="cobalt"
+            placeholder="All Statuses"
+            options={STATUS_FILTER_OPTIONS}
+            value={statusFilter}
+            onChange={setStatusFilter}
             size="lg"
           />
-          <div className="w-full sm:w-48 shrink-0">
-            <SearchableSelect
-              placeholder="All Statuses"
-              options={STATUS_FILTER_OPTIONS}
-              value={statusFilter}
-              onChange={setStatusFilter}
-              size="lg"
-            />
-          </div>
-          <div className="w-full sm:w-48 shrink-0">
-            <SearchableSelect
-              placeholder="All Categories"
-              options={categoryFilterOptions}
-              value={categoryFilter}
-              onChange={setCategoryFilter}
-              size="lg"
-            />
-          </div>
-          <div className="w-full sm:w-48 shrink-0">
-            <SearchableSelect
-              placeholder="All Tags"
-              options={tagFilterOptions}
-              value={tagFilter}
-              onChange={setTagFilter}
-              size="lg"
-            />
-          </div>
         </div>
-
-        <button
-          type="button"
-          onClick={() => setIsAddCourseModalOpen(true)}
-          className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center gap-2 shrink-0 cursor-pointer"
-          title="Add a new course"
-          aria-label="Add a new course"
-        >
-          <BookPlus className="w-4 h-4" />
-          ADD COURSE
-        </button>
-      </div>
+        <div className="w-full sm:w-44 shrink-0">
+          <SearchableSelect
+            tone="cobalt"
+            placeholder="All Categories"
+            options={categoryFilterOptions}
+            value={categoryFilter}
+            onChange={setCategoryFilter}
+            size="lg"
+          />
+        </div>
+        <div className="w-full sm:w-44 shrink-0">
+          <SearchableSelect
+            tone="cobalt"
+            placeholder="All Tags"
+            options={tagFilterOptions}
+            value={tagFilter}
+            onChange={setTagFilter}
+            size="lg"
+          />
+        </div>
+        <PortalToolbarCount>
+          {filteredCourses.length} course{filteredCourses.length === 1 ? "" : "s"}
+        </PortalToolbarCount>
+      </PortalToolbar>
 
       <TeacherCourseFormModal
         isOpen={isAddCourseModalOpen}
@@ -270,66 +289,132 @@ export default function MyCoursesTab() {
         onSaved={() => refetchCourses()}
       />
 
+      {/* A plain element rather than PortalCard: the card takes only a tone
+          and a className, so the ARIA attributes would be dropped. */}
       {isCoursesLoading && (
         <div
-          className="grid grid-cols-1 lg:grid-cols-2 gap-5"
+          className="h-96 animate-pulse rounded-cn-p border border-cn-p-line bg-cn-p-card"
           aria-busy="true"
           aria-label="Loading assigned courses"
-        >
-          {Array.from({ length: 4 }).map((_, index) => (
-            <div key={index} className="h-64 rounded-2xl bg-porcelain animate-pulse" />
-          ))}
-        </div>
+        />
       )}
 
       {!isCoursesLoading && isCoursesError && (
-        <div className="bg-paper border border-line rounded-card shadow-soft p-8 text-center max-w-lg mx-auto">
-          <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-6 h-6" />
-          </div>
-          <h2 className="text-xl font-serif font-bold text-ink mb-2">
-            Failed to Load Your Courses
+        <PortalCard className="mx-auto flex max-w-lg flex-col items-center gap-3 p-10 text-center">
+          <span className="grid h-12 w-12 place-items-center rounded-cn-p-sm bg-cn-p-bad-bg text-cn-p-bad">
+            <AlertCircle className="h-6 w-6" />
+          </span>
+          <h2 className="text-lg font-bold text-cn-p-ink">
+            We couldn&apos;t load your courses
           </h2>
-          <p className="text-sm text-muted font-light mb-6">
+          <p className="text-sm text-cn-p-ink-2">
             {getApiErrorMessage(coursesError, "Unable to load your assigned courses.")}
           </p>
-          <button
-            type="button"
-            onClick={() => refetchCourses()}
-            className="inline-flex items-center gap-2 px-5 py-3 bg-pine hover:bg-moss text-paper font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition cursor-pointer"
-          >
-            <RefreshCw className="w-4 h-4" />
+          <PortalButton size="sm" onClick={() => refetchCourses()}>
+            <RefreshCw className="h-3.5 w-3.5" />
             Retry
-          </button>
-        </div>
+          </PortalButton>
+        </PortalCard>
       )}
 
-      {!isCoursesLoading && !isCoursesError && paginatedCourses.length === 0 && (
-        <div className="bg-paper border border-line rounded-card shadow-soft">
-          <EmptyState
-            icon={BookMarked}
-            label="No assigned courses found."
-            description="Courses you've been assigned to teach will appear here."
-            size="lg"
-          />
-        </div>
-      )}
-
-      {!isCoursesLoading && !isCoursesError && paginatedCourses.length > 0 && (
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-          {paginatedCourses.map((course) => (
-            <TeacherCourseCard
-              key={course.id}
-              course={course}
-              onViewCourse={() => handleViewCourse(course)}
-              onViewStudents={() => handleViewStudents(course)}
-              onViewFeed={() => handleViewFeed(course)}
+      {!isCoursesLoading && !isCoursesError && (
+        <PortalCard className="overflow-hidden">
+          {paginatedCourses.length === 0 ? (
+            <PortalEmpty
+              icon={BookOpen}
+              title="No courses found"
+              text="Courses you have been assigned to teach appear here."
             />
-          ))}
-        </div>
+          ) : (
+            <PortalTable>
+              <thead>
+                <tr>
+                  <PortalTh>Course</PortalTh>
+                  <PortalTh>Category</PortalTh>
+                  <PortalTh>Status</PortalTh>
+                  <PortalTh align="right">Modules</PortalTh>
+                  <PortalTh align="right">Lessons</PortalTh>
+                  <PortalTh align="right">Assignments</PortalTh>
+                  <PortalTh align="right">Quizzes</PortalTh>
+                  <PortalTh align="right">Students</PortalTh>
+                  <PortalTh>
+                    <span className="sr-only">Actions</span>
+                  </PortalTh>
+                </tr>
+              </thead>
+              <tbody>
+                {paginatedCourses.map((course) => (
+                  <PortalTr key={course.id} onOpen={() => handleViewCourse(course)}>
+                    <PortalTd>
+                      <b className="block font-semibold text-cn-p-ink">{course.title}</b>
+                      {/* Most seeded titles already open with the code
+                          ("CEO-101: ..."), so repeating it underneath is
+                          noise — it only shows where the title omits it. */}
+                      {course.code && !course.title?.startsWith(course.code) && (
+                        <span className="block text-xs text-cn-p-muted">{course.code}</span>
+                      )}
+                    </PortalTd>
+                    <PortalTd className="text-sm text-cn-p-ink-2">
+                      {course.category?.name || "Uncategorized"}
+                    </PortalTd>
+                    <PortalTd>
+                      <StatusBadge tone="cobalt" status={course.status} />
+                    </PortalTd>
+                    <PortalTd align="right" numeric>
+                      {course.modules_count ?? 0}
+                    </PortalTd>
+                    <PortalTd align="right" numeric>
+                      {course.lessons_count ?? 0}
+                    </PortalTd>
+                    <PortalTd align="right" numeric>
+                      {course.assignments_count ?? 0}
+                    </PortalTd>
+                    <PortalTd align="right" numeric>
+                      {course.quizzes_count ?? 0}
+                    </PortalTd>
+                    <PortalTd align="right" numeric>
+                      {course.total_students ?? 0}
+                    </PortalTd>
+                    <PortalTd>
+                      {/* These stop propagation because the row itself opens
+                          the course builder. */}
+                      <span className="flex items-center justify-end gap-1">
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleViewStudents(course);
+                          }}
+                          aria-label={`View students enrolled in ${course.title}`}
+                          title="Enrolled students"
+                          className="grid h-9 w-9 place-items-center rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card text-cn-p-ink-2 transition hover:border-cn-p-ink hover:text-cn-p-ink"
+                        >
+                          <Users className="h-4 w-4" />
+                        </button>
+                        <button
+                          type="button"
+                          onClick={(event) => {
+                            event.stopPropagation();
+                            handleViewFeed(course);
+                          }}
+                          aria-label={`Post to the class feed for ${course.title}`}
+                          title="Class feed"
+                          className="grid h-9 w-9 place-items-center rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card text-cn-p-ink-2 transition hover:border-cn-p-ink hover:text-cn-p-ink"
+                        >
+                          <Send className="h-4 w-4" />
+                        </button>
+                      </span>
+                    </PortalTd>
+                  </PortalTr>
+                ))}
+              </tbody>
+            </PortalTable>
+          )}
+        </PortalCard>
       )}
 
       <Pagination
+        tone="cobalt"
         page={page}
         totalPages={totalPages}
         onPageChange={setPage}

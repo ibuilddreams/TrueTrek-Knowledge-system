@@ -74,9 +74,10 @@ const PILL_TONES = {
 };
 
 /** `.pill` — a 24px status chip. */
-export function PortalPill({ tone = "neutral", className = "", children }) {
+export function PortalPill({ tone = "neutral", title, className = "", children }) {
   return (
     <span
+      title={title}
       className={`inline-flex h-6 flex-none items-center gap-1.5 rounded-full px-2.5 text-xs font-semibold whitespace-nowrap ${
         PILL_TONES[tone] ?? PILL_TONES.neutral
       } ${className}`}
@@ -142,6 +143,25 @@ export function PortalSearchBox({ value, onChange, placeholder, className = "" }
       />
     </label>
   );
+}
+
+/**
+ * `.toolbar` — the search/filter strip the design puts at the top of a
+ * `.card.p0`, over a hairline rule and above the table it filters.
+ */
+export function PortalToolbar({ className = "", children }) {
+  return (
+    <div
+      className={`flex flex-wrap items-center gap-2.5 border-b border-cn-p-line p-4 ${className}`}
+    >
+      {children}
+    </div>
+  );
+}
+
+/** The right-hand count the design ends a toolbar with. */
+export function PortalToolbarCount({ children }) {
+  return <span className="ml-auto text-sm text-cn-p-ink-2">{children}</span>;
 }
 
 /** `.seg` — the segmented filter. */

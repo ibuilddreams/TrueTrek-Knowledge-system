@@ -41,7 +41,7 @@ const STATUS_OPTIONS = [
 const GRADING_MODE_OPTIONS = [
   {
     value: "MANUAL",
-    label: "Manual Review",
+    label: "Manual review",
     description: "You grade each submission by hand.",
   },
   {
@@ -54,23 +54,23 @@ const GRADING_MODE_OPTIONS = [
 const GRADING_METHOD_OPTIONS = [
   {
     value: "RUBRIC",
-    label: "Rubric / Criteria Based",
+    label: "Rubric / criteria based",
     description: "Grade the whole submission holistically against named criteria (e.g. Understanding, Accuracy).",
   },
   {
     value: "QUESTION_BASED",
-    label: "Question Based",
+    label: "Question based",
     description: "Grade each question separately — use when the assignment has clearly identifiable questions with their own marks.",
   },
 ];
 
 const FIELD_CLASS =
-  "w-full px-4 py-3 bg-porcelain border border-line focus:border-pine focus:bg-paper focus:outline-none rounded-xl text-sm font-mono text-ink placeholder:text-muted transition disabled:opacity-60";
+  "w-full px-3 py-3 bg-cn-p-card border border-cn-p-line-2 focus:border-cn-p-accent focus:outline-none rounded-cn-p-sm text-sm text-cn-p-ink placeholder:text-cn-p-muted transition disabled:opacity-60";
 
 const LABEL_CLASS =
-  "text-xs font-sans text-muted block uppercase tracking-widest mb-1.5 font-medium";
+  "block mb-1.5 text-[13px] font-semibold text-cn-p-ink";
 
-const ERROR_CLASS = "text-[11px] font-mono text-red-600 mt-1";
+const ERROR_CLASS = "text-xs text-cn-p-bad mt-1";
 
 function toDatetimeLocalValue(isoString) {
   if (!isoString) return "";
@@ -386,11 +386,11 @@ export default function TeacherAssignmentFormModal({
   const marksSumMismatch = form.grading_mode === "AI" && criteriaMarksSum !== totalMarksNumber;
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={ClipboardCheck}
-      title={isEditMode ? "Edit Assignment" : "Add Assignment"}
+      title={isEditMode ? "Edit assignment" : "Add assignment"}
       subtitle={isEditMode ? assignment?.title : "Create a new assignment for this module"}
       titleClassName="text-2xl"
       maxWidth="max-w-xl"
@@ -402,7 +402,7 @@ export default function TeacherAssignmentFormModal({
             value={form.module}
             onChange={handleModuleChange}
             disabled={isSubmitting}
-            className={FIELD_CLASS}
+            className={`${FIELD_CLASS} cn-p-select`}
           >
             <option value="">Select a module</option>
             {modules.map((module) => (
@@ -430,7 +430,7 @@ export default function TeacherAssignmentFormModal({
 
         {showTitleSuggestions && (
           <AiSuggestionsPanel
-            heading="Title Suggestions"
+            heading="Title suggestions"
             suggestions={titleSuggestionsQuery.data?.data?.suggestions || []}
             isLoading={titleSuggestionsQuery.isFetching}
             isError={titleSuggestionsQuery.isError}
@@ -455,7 +455,7 @@ export default function TeacherAssignmentFormModal({
 
         {showDescriptionSuggestions && (
           <AiSuggestionsPanel
-            heading="Description Suggestions"
+            heading="Description suggestions"
             suggestions={descriptionSuggestionsQuery.data?.data?.suggestions || []}
             isLoading={descriptionSuggestionsQuery.isFetching}
             isError={descriptionSuggestionsQuery.isError}
@@ -499,7 +499,7 @@ export default function TeacherAssignmentFormModal({
               value={form.status}
               onChange={updateField("status")}
               disabled={isSubmitting}
-              className={FIELD_CLASS}
+              className={`${FIELD_CLASS} cn-p-select`}
             >
               {STATUS_OPTIONS.map((option) => (
                 <option key={option.value} value={option.value}>
@@ -525,7 +525,7 @@ export default function TeacherAssignmentFormModal({
               disabled={isSubmitting}
               className={FIELD_CLASS}
             />
-            <p className="mt-1.5 text-xs font-mono text-muted">1 = first position</p>
+            <p className="mt-1.5 text-xs text-cn-p-ink-2">1 = first position</p>
             {fieldErrors.order && <p className={ERROR_CLASS}>{fieldErrors.order}</p>}
           </div>
         </div>
@@ -540,23 +540,19 @@ export default function TeacherAssignmentFormModal({
                 onClick={() => setForm((prev) => ({ ...prev, grading_mode: option.value }))}
                 disabled={isSubmitting}
                 title={option.description}
-                className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-semibold font-mono tracking-wider uppercase transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
-                  form.grading_mode === option.value
-                    ? "bg-pine text-paper border-pine"
-                    : "bg-porcelain text-muted border-line hover:bg-porcelain"
-                }`}
+                className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all flex items-center justify-center gap-1.5 border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${ form.grading_mode === option.value ? "bg-cn-p-accent text-white border-cn-p-accent" : "bg-cn-p-page text-cn-p-ink-2 border-cn-p-line hover:bg-cn-p-page" }`}
               >
                 {option.label}
               </button>
             ))}
           </div>
-          <p className="text-xs font-mono text-muted tracking-wider mt-1.5">
+          <p className="text-xs text-cn-p-ink-2 mt-1.5">
             {GRADING_MODE_OPTIONS.find((option) => option.value === form.grading_mode)?.description}
           </p>
         </div>
 
         {form.grading_mode === "AI" && (
-          <div className="space-y-4 p-3 rounded-xl border border-gold/25 bg-gold/12">
+          <div className="space-y-4 p-3 rounded-xl border border-cn-p-soft bg-cn-p-soft">
             <div>
               <label className={LABEL_CLASS}>Grading Method</label>
               <div className="flex gap-2">
@@ -567,17 +563,13 @@ export default function TeacherAssignmentFormModal({
                     onClick={() => setForm((prev) => ({ ...prev, grading_method: option.value }))}
                     disabled={isSubmitting}
                     title={option.description}
-                    className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-semibold font-mono tracking-wider uppercase transition-all border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${
-                      form.grading_method === option.value
-                        ? "bg-pine text-paper border-pine"
-                        : "bg-paper text-muted border-line hover:bg-porcelain"
-                    }`}
+                    className={`flex-1 px-3 py-2.5 rounded-xl text-xs font-semibold transition-all border disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer ${ form.grading_method === option.value ? "bg-cn-p-accent text-white border-cn-p-accent" : "bg-cn-p-card text-cn-p-ink-2 border-cn-p-line hover:bg-cn-p-page" }`}
                   >
                     {option.label}
                   </button>
                 ))}
               </div>
-              <p className="text-xs font-mono text-muted tracking-wider mt-1.5 grading-callout-hint">
+              <p className="text-xs text-cn-p-ink-2 mt-1.5 grading-callout-hint">
                 {GRADING_METHOD_OPTIONS.find((option) => option.value === form.grading_method)?.description}
               </p>
             </div>
@@ -590,7 +582,7 @@ export default function TeacherAssignmentFormModal({
                 {rubricCriteria.map((criterion, index) => (
                   <div
                     key={index}
-                    className="flex gap-2 items-start p-2.5 rounded-xl border border-line bg-paper"
+                    className="flex gap-2 items-start p-2.5 rounded-xl border border-cn-p-line bg-cn-p-card"
                   >
                     <div className="flex-1 space-y-1.5">
                       <input
@@ -629,7 +621,7 @@ export default function TeacherAssignmentFormModal({
                       disabled={isSubmitting}
                       title={`Remove ${itemNoun.toLowerCase()}`}
                       aria-label={`Remove ${itemNoun.toLowerCase()}`}
-                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-line text-rose-600 hover:bg-rose-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                      className="w-9 h-9 flex items-center justify-center rounded-lg border border-cn-p-line text-cn-p-bad hover:bg-cn-p-bad-bg transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                     >
                       <Trash2 className="w-3.5 h-3.5" />
                     </button>
@@ -640,7 +632,7 @@ export default function TeacherAssignmentFormModal({
                 type="button"
                 onClick={addCriterion}
                 disabled={isSubmitting}
-                className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-line rounded-lg text-xs font-mono uppercase tracking-wider text-muted grading-callout-hint hover:border-pine hover:text-pine transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="mt-2 w-full flex items-center justify-center gap-2 py-2.5 border border-dashed border-cn-p-line rounded-lg text-xs text-cn-p-ink-2 grading-callout-hint hover:border-cn-p-accent hover:text-cn-p-accent transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Plus className="w-3.5 h-3.5" />
                 Add {itemNoun}
@@ -648,8 +640,8 @@ export default function TeacherAssignmentFormModal({
               <p
                 className={
                   marksSumMismatch
-                    ? "mt-1.5 text-xs font-mono tracking-wider text-pine font-semibold"
-                    : "mt-1.5 text-xs font-mono tracking-wider text-muted grading-callout-hint"
+                    ? "mt-1.5 text-xs tracking-wider text-cn-p-accent font-semibold"
+                    : "mt-1.5 text-xs tracking-wider text-cn-p-ink-2 grading-callout-hint"
                 }
               >
                 {itemNoun} marks total: {criteriaMarksSum} / {totalMarksNumber || "—"}
@@ -660,10 +652,10 @@ export default function TeacherAssignmentFormModal({
           </div>
         )}
 
-        <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-line bg-porcelain/60">
+        <div className="flex items-center justify-between gap-3 p-3 rounded-xl border border-cn-p-line bg-cn-p-page">
           <div>
-            <p className="text-sm font-semibold text-ink">Allow Resubmission</p>
-            <p className="text-xs font-mono text-muted tracking-wider mt-0.5">
+            <p className="text-sm font-semibold text-cn-p-ink">Allow Resubmission</p>
+            <p className="text-xs text-cn-p-ink-2 mt-0.5">
               Let students resubmit after the due date
             </p>
           </div>
@@ -672,7 +664,7 @@ export default function TeacherAssignmentFormModal({
             checked={form.allow_resubmission}
             onChange={updateField("allow_resubmission")}
             disabled={isSubmitting}
-            className="w-4 h-4 accent-pine cursor-pointer"
+            className="w-4 h-4 accent-cn-p-accent cursor-pointer"
           />
         </div>
 
@@ -682,10 +674,10 @@ export default function TeacherAssignmentFormModal({
             <button
               type="button"
               onClick={() => setIsAttachmentsModalOpen(true)}
-              className="w-full flex items-center justify-center gap-2 py-3 border border-line rounded-xl text-xs font-mono uppercase tracking-wider text-muted bg-porcelain/60 hover:bg-porcelain hover:border-pine hover:text-pine transition cursor-pointer"
+              className="w-full flex items-center justify-center gap-2 py-3 border border-cn-p-line rounded-xl text-xs text-cn-p-ink-2 bg-cn-p-page hover:bg-cn-p-page hover:border-cn-p-accent hover:text-cn-p-accent transition cursor-pointer"
             >
               <Paperclip className="w-3.5 h-3.5" />
-              Manage Attachments
+              Manage attachments
             </button>
           ) : (
             <div className="space-y-2">
@@ -694,14 +686,14 @@ export default function TeacherAssignmentFormModal({
                   {pendingAttachments.map((file, index) => (
                     <li
                       key={`${file.name}-${file.lastModified}-${index}`}
-                      className="flex items-center gap-3 p-2.5 rounded-xl border border-line bg-paper"
+                      className="flex items-center gap-3 p-2.5 rounded-xl border border-cn-p-line bg-cn-p-card"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
+                      <div className="w-8 h-8 rounded-lg bg-cn-p-soft border border-cn-p-soft text-cn-p-soft-ink flex items-center justify-center shrink-0">
                         <FileText className="w-3.5 h-3.5" />
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-ink truncate">{file.name}</p>
-                        <p className="text-xs font-mono uppercase text-muted tracking-wider mt-0.5">
+                        <p className="text-sm font-semibold text-cn-p-ink truncate">{file.name}</p>
+                        <p className="text-xs text-cn-p-ink-2 mt-0.5">
                           {formatFileSize(file.size)}
                         </p>
                       </div>
@@ -711,7 +703,7 @@ export default function TeacherAssignmentFormModal({
                         disabled={isSubmitting}
                         title="Remove attachment"
                         aria-label="Remove attachment"
-                        className="w-7 h-7 flex items-center justify-center rounded-lg border border-line text-rose-600 hover:bg-rose-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                        className="w-7 h-7 flex items-center justify-center rounded-lg border border-cn-p-line text-cn-p-bad hover:bg-cn-p-bad-bg transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
                       >
                         <Trash2 className="w-3.5 h-3.5" />
                       </button>
@@ -730,12 +722,12 @@ export default function TeacherAssignmentFormModal({
                 type="button"
                 onClick={() => pendingAttachmentInputRef.current?.click()}
                 disabled={isSubmitting}
-                className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-line rounded-lg text-xs font-mono uppercase tracking-wider text-muted hover:border-pine hover:text-pine transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+                className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-cn-p-line rounded-lg text-xs text-cn-p-ink-2 hover:border-cn-p-accent hover:text-cn-p-accent transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
               >
                 <Upload className="w-3.5 h-3.5" />
-                Add Attachment
+                Add attachment
               </button>
-              <p className="text-xs font-mono text-muted tracking-wider">
+              <p className="text-xs text-cn-p-ink-2">
                 Files upload once the assignment is created · PDF, DOC/DOCX, PPT/PPTX, ZIP, JPG/PNG/WEBP · up to
                 50MB
               </p>
@@ -743,12 +735,12 @@ export default function TeacherAssignmentFormModal({
           )}
         </div>
 
-        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-line">
+        <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-6 pt-5 border-t border-cn-p-line">
           <button
             type="button"
             onClick={handleClose}
             disabled={isSubmitting}
-            className="px-4 py-3 bg-transparent hover:bg-porcelain text-ink text-sm font-semibold font-mono rounded-full tracking-wider transition-all flex items-center justify-center gap-2 border border-line shadow-sm disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
+            className="px-4 py-3 bg-transparent hover:bg-cn-p-page text-cn-p-ink text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 border border-cn-p-line disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
           >
             <X className="w-3.5 h-3.5" />
             Cancel
@@ -756,11 +748,11 @@ export default function TeacherAssignmentFormModal({
           <button
             type="submit"
             disabled={isSubmitting || modules.length === 0}
-            className="px-6 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-full tracking-wider uppercase transition-all flex items-center justify-center gap-2 cursor-pointer"
+            className="px-6 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 cursor-pointer"
           >
             {isSubmitting ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-paper border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-white border-t-transparent rounded-full animate-spin" />
                 {isEditMode ? "Saving..." : "Creating..."}
               </>
             ) : (
@@ -773,7 +765,7 @@ export default function TeacherAssignmentFormModal({
         </div>
 
         {modules.length === 0 && (
-          <p className="text-[11px] font-mono text-pine flex items-center gap-1.5">
+          <p className="text-[11px] text-cn-p-accent flex items-center gap-1.5">
             Create a module first before adding an assignment.
           </p>
         )}

@@ -2,19 +2,34 @@
 
 import { useEffect, useState } from 'react';
 import {
-  Users, TrendingUp, AlertCircle, Sparkles, RefreshCw, BookMarked,
+  Users, TrendingUp, AlertCircle, Sparkles, RefreshCw,
   GraduationCap, BookOpen, ClipboardList, CircleHelp, BookText,
 } from 'lucide-react';
 import { motion } from 'motion/react';
 import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer,
-  Cell, AreaChart, Area,
 } from 'recharts';
 import { useTeacherDashboard } from '@/hooks/useTeacherDashboard';
 import { requestAdvisorAdvice } from '@/services/advisorService';
-import StatCard from '@/components/ui/StatCard';
-import EmptyState from '@/components/ui/EmptyState';
 import MarkdownMiniRenderer from '@/components/ui/MarkdownMiniRenderer';
+import { useAuth } from '@/hooks/useAuth';
+import PortalCard, {
+  PortalCardHead,
+  PortalStat,
+} from '@/components/features/portal/shell/PortalCard';
+import {
+  PortalButton,
+  PortalEmpty,
+  PortalPill,
+} from '@/components/features/portal/shell/PortalUI';
+
+// Seeded course titles open with their code ("CEO-101: The Athlete CEO..."),
+// which is all that fits on a bar chart's axis — and is how the design labels
+// these bars. A title without a code falls back to being wrapped.
+function axisLabelFor(value) {
+  const code = String(value).match(/^([A-Z]{2,4}-\d{3})\b/);
+  return code ? code[1] : String(value);
+}
 
 function wrapAxisLabel(value, maxCharsPerLine = 16) {
   const words = String(value).split(" ");
@@ -35,7 +50,7 @@ function wrapAxisLabel(value, maxCharsPerLine = 16) {
 }
 
 function CourseAxisTick({ x, y, payload }) {
-  const lines = wrapAxisLabel(payload.value);
+  const lines = wrapAxisLabel(axisLabelFor(payload.value));
   return (
     <g transform={`translate(${x},${y})`}>
       {lines.map((line, index) => (
@@ -46,8 +61,7 @@ function CourseAxisTick({ x, y, payload }) {
           dy={12 + index * 13}
           textAnchor="middle"
           fontSize={11}
-          fontFamily="monospace"
-          fill="#78716c"
+                    fill="#6b7280"
         >
           {line}
         </text>
@@ -57,6 +71,8 @@ function CourseAxisTick({ x, y, payload }) {
 }
 
 export default function DashboardTab({ students }) {
+  const { user } = useAuth();
+  const teacherFirstName = (user?.name || "").trim().split(" ")[0] || "";
   const {
     data: dashboardData,
     status: dashboardStatus,
@@ -100,15 +116,26 @@ export default function DashboardTab({ students }) {
   const liveTotalQuizzes = dashboardStatistics.total_quizzes || 0;
   const liveAverageProgress = Math.round(dashboardStatistics.average_student_progress || 0);
 
-  const liveStudentsPerCourse = (dashboardCharts.students_per_course || []).map((row) => ({
-    name: row.course__title,
-    Enrollments: row.count
-  }));
+  // The design charts the ten biggest courses, not all of them: a teacher
+  // here holds 38, and thirty-eight labels on one axis is an unreadable
+  // smear. The headline count above each chart still covers the whole set.
+  const CHART_COURSE_LIMIT = 10;
 
-  const liveCompletionByCourse = (dashboardCharts.completion_by_course || []).map((row) => ({
-    name: row.course__title,
-    Completion: Math.round(row.avg || 0)
-  }));
+  const liveStudentsPerCourse = (dashboardCharts.students_per_course || [])
+    .map((row) => ({
+      name: row.course__title,
+      Enrollments: row.count,
+    }))
+    .sort((a, b) => b.Enrollments - a.Enrollments)
+    .slice(0, CHART_COURSE_LIMIT);
+
+  const liveCompletionByCourse = (dashboardCharts.completion_by_course || [])
+    .map((row) => ({
+      name: row.course__title,
+      Completion: Math.round(row.avg || 0),
+    }))
+    .sort((a, b) => b.Completion - a.Completion)
+    .slice(0, CHART_COURSE_LIMIT);
 
   const handleGenerateClassReport = async () => {
     setIsGeneratingAiReport(true);
@@ -156,82 +183,80 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
   };
 
   return (
-    <div className="space-y-10">
-
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
       {(dashboardStatus === 'loading' || dashboardStatus === 'idle') && (
-        <div className="space-y-10" aria-busy="true" aria-label="Loading dashboard statistics">
-          <div className="h-40 rounded-2xl bg-porcelain animate-pulse" />
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+        <div
+          className="grid grid-cols-[minmax(0,1fr)] gap-6"
+          aria-busy="true"
+          aria-label="Loading dashboard statistics"
+        >
+          <div className="h-40 animate-pulse rounded-cn-p bg-cn-p-page" />
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
             {Array.from({ length: 6 }).map((_, i) => (
-              <div key={i} className="h-32 rounded-2xl bg-porcelain animate-pulse" />
+              <div key={i} className="h-32 animate-pulse rounded-cn-p bg-cn-p-page" />
             ))}
           </div>
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-            <div className="h-72 rounded-2xl bg-porcelain animate-pulse" />
-            <div className="h-72 rounded-2xl bg-porcelain animate-pulse" />
+          <div className="grid gap-6 lg:grid-cols-2">
+            <div className="h-72 animate-pulse rounded-cn-p bg-cn-p-page" />
+            <div className="h-72 animate-pulse rounded-cn-p bg-cn-p-page" />
           </div>
         </div>
       )}
 
       {dashboardStatus === 'failed' && (
-        <div className="bg-paper border border-line rounded-card shadow-soft p-8 text-center max-w-lg mx-auto">
-          <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-6 h-6" />
-          </div>
-          <h2 className="text-xl font-serif font-bold text-ink mb-2">
-            Failed to Load Dashboard
+        <PortalCard className="mx-auto flex max-w-lg flex-col items-center gap-3 p-10 text-center">
+          <span className="grid h-12 w-12 place-items-center rounded-cn-p-sm bg-cn-p-bad-bg text-cn-p-bad">
+            <AlertCircle className="h-6 w-6" />
+          </span>
+          <h2 className="text-lg font-bold text-cn-p-ink">
+            We couldn&apos;t load your dashboard
           </h2>
-          <p className="text-sm text-muted font-light mb-6">{dashboardError}</p>
-          <button
-            type="button"
-            onClick={() => loadDashboard({ force: true })}
-            className="inline-flex items-center gap-2 px-5 py-3 bg-pine hover:bg-moss text-paper font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition"
-          >
-            <RefreshCw className="w-4 h-4" />
+          <p className="text-sm text-cn-p-ink-2">{dashboardError}</p>
+          <PortalButton size="sm" onClick={() => loadDashboard({ force: true })}>
+            <RefreshCw className="h-3.5 w-3.5" />
             Retry
-          </button>
-        </div>
+          </PortalButton>
+        </PortalCard>
       )}
 
       {dashboardStatus === 'succeeded' && isDashboardEmpty && (
-        <div className="bg-paper border border-line rounded-card shadow-soft">
-          <EmptyState
+        <PortalCard>
+          <PortalEmpty
             icon={GraduationCap}
-            label="No dashboard data yet"
-            description="Once you're assigned courses and students begin enrolling, your compliance metrics and analytics will appear here."
-            size="lg"
+            title="No dashboard data yet"
+            text="Once you are assigned courses and students begin enrolling, your figures and charts appear here."
           />
-        </div>
+        </PortalCard>
       )}
 
       {dashboardStatus === 'succeeded' && !isDashboardEmpty && (
         <>
           {/* Live Student Portal Performance Feedback */}
-          {/*<div id="live-compliance-feedback-panel" className="bg-gradient-to-r from-gold/10 via-gold/5 to-transparent border border-gold/20 rounded-2xl p-6 relative overflow-hidden">
+          {/*<div id="live-compliance-feedback-panel" className="bg-gradient-to-r from-gold/10 via-gold/5 to-transparent border border-cn-p-soft rounded-2xl p-6 relative overflow-hidden">
             <div className="absolute right-0 top-0 bottom-0 w-1/3 opacity-10 bg-[radial-gradient(circle_at_right,_var(--tw-gradient-stops))] from-gold to-transparent pointer-events-none" />
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 relative z-10">
               <div className="flex-1">
                 <div className="flex items-center gap-2 mb-1.5">
                   <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-                  <span className="text-[11px] font-mono uppercase tracking-widest text-muted font-bold">Real-time Portal Synchronization Active</span>
+                  <span className="text-[11px] text-cn-p-ink-2 font-bold">Real-time Portal Synchronization Active</span>
                 </div>
-                <h4 className="text-xl font-serif text-ink font-bold">Scholar-Athlete Current Compliance Index</h4>
-                <p className="text-sm text-muted mt-1 max-w-xl leading-relaxed font-sans">
+                <h4 className="text-xl text-cn-p-ink font-bold">Scholar-Athlete Current Compliance Index</h4>
+                <p className="text-sm text-cn-p-ink-2 mt-1 max-w-xl leading-relaxed font-sans">
                   Live average course completion across every cohort you teach, refreshed straight from the faculty dashboard API.
                 </p>
               </div>
 
               <div className="flex flex-col sm:flex-row gap-4 shrink-0 w-full md:w-auto">
-                <div className="sm:w-72 w-full bg-paper border border-line/80 p-4 rounded-xl shadow-xs flex flex-col justify-between">
+                <div className="sm:w-72 w-full bg-cn-p-card border border-cn-p-line p-4 rounded-xl flex flex-col justify-between">
                   <div>
                     <div className="flex items-center justify-between mb-2">
-                      <span className="text-[11px] font-mono text-muted font-bold uppercase">Aggregate Portal Score</span>
-                      <span className="text-sm font-mono font-bold text-gold">{complianceIndex}%</span>
+                      <span className="text-[11px] text-cn-p-ink-2 font-bold">Aggregate Portal Score</span>
+                      <span className="text-sm font-bold text-cn-p-soft-ink">{complianceIndex}%</span>
                     </div>
 
-                    <div className="w-full bg-porcelain rounded-full h-3.5 overflow-hidden mb-2 relative">
+                    <div className="w-full bg-cn-p-page rounded-full h-3.5 overflow-hidden mb-2 relative">
                       <motion.div
-                        className="bg-gradient-to-r from-gold to-gold/70 h-full rounded-full"
+                        className="bg-cn-p-accent h-full rounded-full"
                         initial={{ width: 0 }}
                         animate={{ width: `${complianceIndex}%` }}
                         transition={{ duration: 0.8, ease: "easeOut" }}
@@ -239,23 +264,23 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
                     </div>
                   </div>
 
-                  <div className="flex justify-between items-center text-[10px] font-mono text-muted mt-2">
+                  <div className="flex justify-between items-center text-[10px] text-cn-p-ink-2 mt-2">
                     <span>MIN: 0%</span>
-                    <span className="text-gold font-bold">STABILITY: EXCELLENT</span>
+                    <span className="text-cn-p-soft-ink font-bold">STABILITY: EXCELLENT</span>
                     <span>MAX: 100%</span>
                   </div>
                 </div>
 
-                <div className="sm:w-72 w-full bg-paper border border-line/80 p-4 rounded-xl shadow-xs flex flex-col justify-between">
+                <div className="sm:w-72 w-full bg-cn-p-card border border-cn-p-line p-4 rounded-xl flex flex-col justify-between">
                   <div className="flex items-center justify-between mb-1">
-                    <span className="text-[11px] font-mono text-muted font-bold uppercase">7-Day Compliance Trend</span>
-                    <span className="text-[10px] font-mono font-bold text-emerald-600 flex items-center gap-0.5">
+                    <span className="text-[11px] text-cn-p-ink-2 font-bold">7-Day Compliance Trend</span>
+                    <span className="text-[10px] font-bold text-emerald-600 flex items-center gap-0.5">
                       <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                       LIVE
                     </span>
                   </div>
 
-                  <div className="h-16 w-full text-[8px] font-mono mt-1">
+                  <div className="h-16 w-full text-[8px] mt-1">
                     <ResponsiveContainer width="100%" height="100%">
                       <AreaChart data={liveTrendData} margin={{ top: 2, right: 2, left: -28, bottom: -5 }}>
                         <defs>
@@ -280,253 +305,228 @@ Frame your advice beautifully in highly structural Markdown. Format with bullet 
           </div>
           </div> */}
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-            <StatCard
-              label="My Courses"
+          {/* The design's hero band: the greeting, the one number that
+              decides what the teacher does next, and the way to it. */}
+          <PortalCard tone="accent" className="p-8">
+            <p className="text-sm font-semibold text-white/80">
+              Welcome back{teacherFirstName ? `, ${teacherFirstName}` : ""}
+            </p>
+            <h2 className="mt-2 text-[26px] leading-[1.2] font-bold tracking-[-0.015em]">
+              {livePendingGrading} submission{livePendingGrading === 1 ? "" : "s"} waiting
+              for your grade.
+            </h2>
+            <p className="mt-1 text-white/80">
+              {liveEnrolledStudents} students across {liveMyCourses} course
+              {liveMyCourses === 1 ? "" : "s"}, averaging {liveAverageProgress}% progress.
+            </p>
+          </PortalCard>
+
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <PortalStat
+              label="My courses"
               value={liveMyCourses}
+              hint="Courses assigned to you"
               icon={BookOpen}
-              footer={
-                <p className="text-xs text-muted font-medium mt-1 font-mono">
-                  Courses assigned to you
-                </p>
-              }
-              size="lg"
             />
-            <StatCard
-              label="Enrolled Students"
+            <PortalStat
+              label="Enrolled students"
               value={liveEnrolledStudents}
+              hint="Active learners across your courses"
               icon={Users}
-              footer={
-                <p className="text-xs text-emerald-600 font-medium flex items-center gap-1 mt-1 font-mono">
-                  <span>● Active learners across your courses</span>
-                </p>
-              }
-              size="lg"
+              tone="ok"
             />
-            <StatCard
-              label="Published Lessons"
+            <PortalStat
+              label="Published lessons"
               value={livePublishedLessons}
+              hint="Lessons available in your courses"
               icon={BookText}
-              footer={
-                <p className="text-xs text-muted font-medium mt-1 font-mono">
-                  Lessons available in your courses
-                </p>
-              }
-              size="lg"
             />
-            <StatCard
-              label="Pending Grading"
+            <PortalStat
+              label="Pending grading"
               value={livePendingGrading}
+              hint="Submissions awaiting your review"
               icon={ClipboardList}
-              accent="rose"
-              footer={
-                <p className="text-xs text-muted font-medium mt-1 font-mono">
-                  Submissions awaiting your review
-                </p>
-              }
-              size="lg"
+              tone="warn"
             />
-            <StatCard
-              label="Total Quizzes"
+            <PortalStat
+              label="Total quizzes"
               value={liveTotalQuizzes}
+              hint="Quizzes across your courses"
               icon={CircleHelp}
-              footer={
-                <p className="text-xs text-muted font-medium mt-1 font-mono">
-                  Quizzes across your courses
-                </p>
-              }
-              size="lg"
             />
-            <StatCard
-              label="Average Student Progress"
+            <PortalStat
+              label="Average student progress"
               value={`${liveAverageProgress}%`}
+              hint="Across everyone you teach"
               icon={TrendingUp}
-              accent="emerald"
-              footer={
-                <div className="w-24 bg-porcelain h-1.5 rounded-full mt-2.5 overflow-hidden">
-                  <div className="bg-emerald-600 h-full" style={{ width: `${liveAverageProgress}%` }} />
-                </div>
-              }
-              size="lg"
+              tone="ok"
             />
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
 
-            <div className="bg-paper border border-line p-6 rounded-card shadow-soft">
-              <div className="flex items-center justify-between mb-6 pb-4 border-b border-line">
-                <div>
-                  <h3 className="font-serif font-bold text-base text-ink">Enrolled Students by Course</h3>
-                  <p className="text-sm text-muted font-light mt-0.5">Active registration load across your taught courses</p>
-                </div>
-                <span className="text-[11px] font-mono uppercase px-2.5 py-1 bg-porcelain border border-line text-muted rounded-lg">{liveMyCourses} Courses</span>
+            <PortalCard>
+              <div className="flex items-center justify-between gap-4 border-b border-cn-p-line px-5 py-4">
+                <h3 className="text-base font-bold tracking-[-0.01em] text-cn-p-ink">
+                  Enrolled students by course
+                </h3>
+                <span className="text-sm text-cn-p-ink-2">
+                  {liveStudentsPerCourse.length < liveMyCourses
+                    ? `Top ${liveStudentsPerCourse.length} of ${liveMyCourses}`
+                    : `${liveMyCourses} course${liveMyCourses === 1 ? "" : "s"}`}
+                </span>
               </div>
 
-              <div className="h-72 w-full text-sm font-mono">
+              <div className="h-72 w-full p-5 text-sm">
                 {liveStudentsPerCourse.length === 0 ? (
-                  <EmptyState
-                    icon={BookMarked}
-                    label="No enrollment data yet"
-                    description="Student counts per course will appear once enrollments come in."
-                    compact
-                    size="lg"
+                  <PortalEmpty
+                    icon={BookOpen}
+                    title="No enrolment data yet"
+                    text="Student counts per course appear once enrolments come in."
                   />
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={liveStudentsPerCourse} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e3e7f0" />
                       <XAxis
                         dataKey="name"
-                        stroke="#78716c"
+                        stroke="#6b7280"
                         interval={0}
                         height={42}
                         tick={<CourseAxisTick />}
                       />
-                      <YAxis allowDecimals={false} stroke="#78716c" tick={{ fontSize: 12 }} />
+                      <YAxis allowDecimals={false} stroke="#6b7280" tick={{ fontSize: 12 }} />
                       <Tooltip
-                        contentStyle={{ backgroundColor: '#1c1917', border: '1px solid #44403c', borderRadius: '12px' }}
-                        labelStyle={{ color: '#fff', fontFamily: 'serif', fontWeight: 'bold' }}
-                        itemStyle={{ fontFamily: 'monospace', color: '#f59e0b' }}
+                        contentStyle={{ backgroundColor: '#111827', border: 'none', borderRadius: '10px' }}
+                        labelStyle={{ color: '#fff', fontWeight: 700 }}
+                        itemStyle={{ color: '#c7d0e6' }}
                       />
-                      <Bar dataKey="Enrollments" fill="#d97706" radius={[4, 4, 0, 0]}>
-                        {liveStudentsPerCourse.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#b45309' : '#d97706'} />
-                        ))}
-                      </Bar>
+                      <Bar dataKey="Enrollments" fill="#2450e6" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
               </div>
-            </div>
+            </PortalCard>
 
-            <div className="bg-paper border border-line p-6 rounded-card shadow-soft">
-              <div className="flex items-center justify-between mb-6 pb-4 border-b border-line">
-                <div>
-                  <h3 className="font-serif font-bold text-base text-ink">Average Completion by Course</h3>
-                  <p className="text-sm text-muted font-light mt-0.5">Course progress velocity across enrolled students</p>
-                </div>
-                <span className="text-[11px] font-mono uppercase px-2.5 py-1 bg-porcelain border border-line text-muted rounded-lg">{livePublishedLessons} Lessons</span>
+            <PortalCard>
+              <div className="flex items-center justify-between gap-4 border-b border-cn-p-line px-5 py-4">
+                <h3 className="text-base font-bold tracking-[-0.01em] text-cn-p-ink">
+                  Average completion by course
+                </h3>
+                <span className="text-sm text-cn-p-ink-2">
+                  {liveCompletionByCourse.length < liveMyCourses
+                    ? `Top ${liveCompletionByCourse.length} of ${liveMyCourses}`
+                    : `${liveMyCourses} course${liveMyCourses === 1 ? "" : "s"}`}
+                </span>
               </div>
 
-              <div className="h-72 w-full text-sm font-mono">
+              <div className="h-72 w-full p-5 text-sm">
                 {liveCompletionByCourse.length === 0 ? (
-                  <EmptyState
+                  <PortalEmpty
                     icon={TrendingUp}
-                    label="No progress data yet"
-                    description="Course completion averages will populate as learners engage."
-                    compact
-                    size="lg"
+                    title="No progress data yet"
+                    text="Course completion averages fill in as learners work through the material."
                   />
                 ) : (
                   <ResponsiveContainer width="100%" height="100%">
                     <BarChart data={liveCompletionByCourse} margin={{ top: 10, right: 10, left: -20, bottom: 5 }}>
-                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f5f5f4" />
+                      <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#e3e7f0" />
                       <XAxis
                         dataKey="name"
-                        stroke="#78716c"
+                        stroke="#6b7280"
                         interval={0}
                         height={42}
                         tick={<CourseAxisTick />}
                       />
-                      <YAxis allowDecimals={false} domain={[0, 100]} stroke="#78716c" tick={{ fontSize: 12 }} />
+                      <YAxis allowDecimals={false} domain={[0, 100]} stroke="#6b7280" tick={{ fontSize: 12 }} />
                       <Tooltip
-                        contentStyle={{ backgroundColor: '#1c1917', border: '1px solid #44403c', borderRadius: '12px' }}
-                        labelStyle={{ color: '#fff', fontFamily: 'serif', fontWeight: 'bold' }}
-                        itemStyle={{ fontFamily: 'monospace', color: '#f59e0b' }}
+                        contentStyle={{ backgroundColor: '#111827', border: 'none', borderRadius: '10px' }}
+                        labelStyle={{ color: '#fff', fontWeight: 700 }}
+                        itemStyle={{ color: '#c7d0e6' }}
                         formatter={(value) => [`${value}%`, 'Completion']}
                       />
-                      <Bar dataKey="Completion" fill="#b45309" radius={[4, 4, 0, 0]}>
-                        {liveCompletionByCourse.map((entry, index) => (
-                          <Cell key={`cell-${index}`} fill={index % 2 === 0 ? '#b45309' : '#d97706'} />
-                        ))}
-                      </Bar>
+                      <Bar dataKey="Completion" fill="#2450e6" radius={[4, 4, 0, 0]} />
                     </BarChart>
                   </ResponsiveContainer>
                 )}
               </div>
-            </div>
-
+            </PortalCard>
           </div>
         </>
       )}
 
-      <div className="cn-page-bg-vault border border-paper/10 rounded-3xl p-6 md:p-8 relative overflow-hidden text-paper/85">
-        <div className="pointer-events-none absolute inset-0 opacity-[0.06] bg-[linear-gradient(to_right,#fff_1px,transparent_1px),linear-gradient(to_bottom,#fff_1px,transparent_1px)] bg-size-[28px_28px]" />
-        <div className="absolute -top-12 -right-12 w-80 h-80 rounded-full bg-gold/10 blur-[110px] pointer-events-none"></div>
-
-        <div className="max-w-3xl relative z-10">
-          <div className="flex items-center gap-2 mb-4">
-            <div className="px-2.5 py-1 rounded bg-gold/20 border border-gold/20 text-gold font-mono text-[10px] uppercase tracking-widest font-black">AI Advisory Council</div>
-            <span className="flex h-2 w-2 relative">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-gold opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-gold"></span>
-            </span>
+      {/* The design's "AI cohort assessment" block — a soft panel inside the
+          dashboard rather than a dark band of its own, so it reads as one more
+          card on the page. */}
+      <PortalCard className="p-6 md:p-8">
+        <div className="max-w-3xl">
+          <div className="flex items-center gap-2">
+            <PortalPill tone="blue">AI advisory</PortalPill>
           </div>
 
-          <h3 className="text-xl md:text-2xl font-serif font-bold text-paper tracking-tight mb-2">Faculty Automated Cohort Assessment</h3>
-          <p className="text-paper/60 text-sm sm:text-sm font-light leading-relaxed mb-6">
-            Connect current registration and testing score logs instantly with our model engine. Frame strategic action plans on which compliance modules require classroom focus.
+          <h3 className="mt-3 text-xl font-bold tracking-[-0.01em] text-cn-p-ink">
+            Cohort assessment
+          </h3>
+          <p className="mt-1 text-cn-p-ink-2">
+            A summary of where your cohort is stuck, built from progress, grades and
+            activity across your courses.
           </p>
 
-          <div className="flex flex-col sm:flex-row gap-3">
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row">
             <input
               type="text"
               value={aiPrompt}
               onChange={(e) => setAiPrompt(e.target.value)}
-              className="flex-grow bg-paper/5 border border-paper/15 focus:border-gold focus:outline-none rounded-xl px-4 py-3 text-paper text-sm font-mono placeholder:text-paper/30"
-              placeholder="Specify your faculty assessment objective..."
+              aria-label="What should the assessment focus on?"
+              className="h-11 flex-grow rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card px-3 text-sm text-cn-p-ink transition outline-none placeholder:text-cn-p-muted focus:border-cn-p-accent"
+              placeholder="What should the assessment focus on?"
             />
-            <button
+            <PortalButton
               onClick={handleGenerateClassReport}
               disabled={isGeneratingAiReport}
-              className="px-6 py-3 bg-gold hover:bg-gold/90 disabled:bg-paper/10 text-ink font-mono font-black text-sm uppercase tracking-wider rounded-xl transition flex items-center justify-center gap-2"
+              className="flex-none"
             >
               {isGeneratingAiReport ? (
                 <>
-                  <div className="w-4 h-4 border-2 border-ink/40 border-t-transparent rounded-full animate-spin"></div>
-                  Processing Logs...
+                  <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-transparent" />
+                  Compiling...
                 </>
               ) : (
                 <>
-                  <Sparkles className="w-4 h-4 text-ink" />
-                  COMPILE REPORT
+                  <Sparkles className="h-4 w-4" />
+                  Compile report
                 </>
               )}
-            </button>
+            </PortalButton>
           </div>
 
           {(isGeneratingAiReport || aiReport) && (
             <motion.div
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
-              className="mt-8 bg-paper/5 border border-paper/10 rounded-2xl p-6 relative overflow-hidden"
+              className="mt-6 rounded-cn-p bg-cn-p-page p-5"
             >
-              <div className="flex items-center justify-between mb-4 pb-3 border-b border-paper/10">
-                <div className="flex items-center gap-2">
-                  <GraduationCap className="w-4 h-4 text-gold" />
-                  <span className="font-serif text-sm font-bold text-paper/85">Assessment Briefing Document</span>
-                </div>
-                <span className="text-[11px] font-mono text-paper/50">GEN DIRECTIVE: DEAN_REVIEWS_v4</span>
+              <div className="mb-4 flex items-center gap-2 border-b border-cn-p-line pb-3">
+                <GraduationCap className="h-4 w-4 text-cn-p-accent" />
+                <span className="text-sm font-bold text-cn-p-ink">Assessment briefing</span>
               </div>
 
-              <div className="prose prose-sm prose-invert font-light leading-relaxed text-sm sm:text-sm text-paper/75 max-w-none space-y-3">
+              <div className="max-w-none space-y-3 text-sm leading-relaxed text-cn-p-ink-2">
                 {aiReport ? (
                   <MarkdownMiniRenderer text={aiReport} className="select-text select-all" />
                 ) : (
                   <div className="space-y-3 py-4">
-                    <div className="h-4 bg-paper/10 rounded w-3/4 animate-pulse"></div>
-                    <div className="h-4 bg-paper/10 rounded w-5/6 animate-pulse"></div>
-                    <div className="h-4 bg-paper/10 rounded w-2/3 animate-pulse"></div>
-                    <div className="h-4 bg-paper/10 rounded w-1/2 animate-pulse"></div>
+                    <div className="h-4 w-3/4 animate-pulse rounded bg-cn-p-track" />
+                    <div className="h-4 w-5/6 animate-pulse rounded bg-cn-p-track" />
+                    <div className="h-4 w-2/3 animate-pulse rounded bg-cn-p-track" />
+                    <div className="h-4 w-1/2 animate-pulse rounded bg-cn-p-track" />
                   </div>
                 )}
               </div>
             </motion.div>
           )}
-
         </div>
-      </div>
-
+      </PortalCard>
     </div>
   );
 }

@@ -17,7 +17,7 @@ export default function ExpertiseStep({ form, errors, onChange, disabled }) {
     <div className="space-y-5">
       <div>
         <span className={LABEL_CLASS}>
-          Subjects you can teach <span className="text-clay">*</span>
+          Subjects you can teach <span className="text-cn-p-warn">*</span>
         </span>
         <SkillsTagInput
           values={form.expertise}
@@ -29,7 +29,7 @@ export default function ExpertiseStep({ form, errors, onChange, disabled }) {
 
       <div>
         <label htmlFor="onboarding-teaching-statement" className={LABEL_CLASS}>
-          Your teaching approach <span className="text-clay">*</span>
+          Your teaching approach <span className="text-cn-p-warn">*</span>
         </label>
         <textarea
           id="onboarding-teaching-statement"
@@ -51,9 +51,7 @@ export default function ExpertiseStep({ form, errors, onChange, disabled }) {
             </p>
           )}
           <p
-            className={`text-[11px] font-mono mt-1.5 shrink-0 ${
-              statementLength >= MIN_TEACHING_STATEMENT_LENGTH ? "text-pine" : "text-muted"
-            }`}
+            className={`text-[11px] mt-1.5 shrink-0 ${ statementLength >= MIN_TEACHING_STATEMENT_LENGTH ? "text-cn-p-accent" : "text-cn-p-ink-2" }`}
           >
             {statementLength}/{MIN_TEACHING_STATEMENT_LENGTH}
           </p>

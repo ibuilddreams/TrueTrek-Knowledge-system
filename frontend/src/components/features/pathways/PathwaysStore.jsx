@@ -245,7 +245,7 @@ export default function PathwaysStore() {
                 className={`${CN_BTN_PRIMARY} h-11 shrink-0`}
               >
                 <LogIn className="w-3 h-3" />
-                Sign In
+                Sign in
               </button>
             </>
           )}
@@ -268,7 +268,7 @@ export default function PathwaysStore() {
               <AlertCircle className="w-6 h-6" />
             </div>
             <h2 className="mb-2 text-cn-xl font-bold tracking-[-0.015em] text-cn-ink">
-              Failed to Load Pathways
+              Failed to load pathways
             </h2>
             <p className="mb-6 text-sm leading-relaxed text-cn-ink-2">
               {getApiErrorMessage(error, "Unable to load pathways right now.")}
@@ -374,6 +374,7 @@ export default function PathwaysStore() {
       />
 
       <PathwayCheckoutModal
+        tone="cobalt"
         isOpen={isCheckoutOpen}
         pathways={selectedPathways}
         isSubmitting={checkoutMutation.isPending}

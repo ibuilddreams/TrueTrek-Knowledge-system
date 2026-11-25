@@ -72,20 +72,18 @@ function SortableTeacherAttachmentRow({ attachment, onReplace, onDelete, isRepla
     <li
       ref={setNodeRef}
       style={style}
-      className={`flex items-center gap-3 p-3 rounded-xl border border-line bg-paper ${
-        isDragging ? "z-10 shadow-lg opacity-90" : ""
-      }`}
+      className={`flex items-center gap-3 p-3 rounded-xl border border-cn-p-line bg-cn-p-card ${ isDragging ? "z-10 shadow-lg opacity-90" : "" }`}
     >
       <span
         {...attributes}
         {...listeners}
-        className="text-muted cursor-grab shrink-0 touch-none"
+        className="text-cn-p-ink-2 cursor-grab shrink-0 touch-none"
         title="Drag to reorder"
         aria-hidden="true"
       >
         <GripVertical className="w-4 h-4" />
       </span>
-      <div className="w-9 h-9 rounded-lg bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
+      <div className="w-9 h-9 rounded-lg bg-cn-p-soft border border-cn-p-soft text-cn-p-soft-ink flex items-center justify-center shrink-0">
         <Icon className="w-4 h-4" />
       </div>
       <div className="min-w-0 flex-1">
@@ -93,11 +91,11 @@ function SortableTeacherAttachmentRow({ attachment, onReplace, onDelete, isRepla
           href={attachment.file}
           target="_blank"
           rel="noreferrer"
-          className="text-sm font-semibold text-ink truncate hover:text-pine hover:underline block"
+          className="text-sm font-semibold text-cn-p-ink truncate hover:text-cn-p-accent hover:underline block"
         >
           {attachment.original_name}
         </a>
-        <p className="text-[11px] font-mono uppercase text-muted tracking-wider mt-0.5">
+        <p className="text-[11px] text-cn-p-ink-2 mt-0.5">
           {attachment.file_type || "FILE"} · {formatUploadedDate(attachment.created_at)}
         </p>
       </div>
@@ -118,7 +116,7 @@ function SortableTeacherAttachmentRow({ attachment, onReplace, onDelete, isRepla
           disabled={isReplacing}
           title="Replace file"
           aria-label="Replace file"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line bg-paper text-muted hover:bg-porcelain transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-cn-p-line bg-cn-p-card text-cn-p-ink-2 hover:bg-cn-p-page transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <Pencil className="w-3.5 h-3.5" />
         </button>
@@ -128,7 +126,7 @@ function SortableTeacherAttachmentRow({ attachment, onReplace, onDelete, isRepla
           disabled={isDeleting}
           title="Delete attachment"
           aria-label="Delete attachment"
-          className="w-7 h-7 flex items-center justify-center rounded-lg border border-line text-rose-600 hover:bg-rose-50 transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+          className="w-7 h-7 flex items-center justify-center rounded-lg border border-cn-p-line text-cn-p-bad hover:bg-cn-p-bad-bg transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
         >
           <Trash2 className="w-3.5 h-3.5" />
         </button>
@@ -257,19 +255,19 @@ export default function TeacherAssignmentAttachmentsModal({ isOpen, onClose, ass
 
   return (
     <>
-      <Modal
+      <Modal variant="cobalt"
         isOpen={isOpen}
         onClose={onClose}
         icon={Paperclip}
-        title="Assignment Attachments"
+        title="Assignment attachments"
         subtitle={assignment?.title}
         maxWidth="max-w-lg"
       >
         <div className="space-y-3">
           {attachmentsQuery.isLoading ? (
-            <Loader fullScreen={false} label="Loading attachments..." />
+            <Loader tone="cobalt" fullScreen={false} label="Loading attachments..." />
           ) : displayAttachments.length === 0 ? (
-            <EmptyState
+            <EmptyState tone="portal"
               icon={Paperclip}
               label="No attachments yet."
               description="Upload reference material for students to download."
@@ -303,32 +301,32 @@ export default function TeacherAssignmentAttachmentsModal({ isOpen, onClose, ass
             type="button"
             onClick={handleUploadClick}
             disabled={uploadMutation.isPending}
-            className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-line rounded-lg text-xs font-mono uppercase tracking-wider text-muted hover:border-pine hover:text-pine transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
+            className="w-full flex items-center justify-center gap-2 py-3 border border-dashed border-cn-p-line rounded-lg text-xs text-cn-p-ink-2 hover:border-cn-p-accent hover:text-cn-p-accent transition cursor-pointer disabled:opacity-60 disabled:cursor-not-allowed"
           >
             {uploadMutation.isPending ? (
               <>
-                <div className="w-3.5 h-3.5 border-2 border-line border-t-transparent rounded-full animate-spin" />
+                <div className="w-3.5 h-3.5 border-2 border-cn-p-line border-t-transparent rounded-full animate-spin" />
                 Uploading...
               </>
             ) : (
               <>
                 <Upload className="w-3.5 h-3.5" />
-                Upload Attachment
+                Upload attachment
               </>
             )}
           </button>
-          <p className="text-[11px] font-mono text-muted tracking-wider">
+          <p className="text-[11px] text-cn-p-ink-2">
             Allowed: PDF, DOC/DOCX, PPT/PPTX, ZIP, JPG/PNG/WEBP · up to 50MB
           </p>
         </div>
       </Modal>
 
-      <ConfirmDialog
+      <ConfirmDialog variant="cobalt"
         isOpen={Boolean(deletingAttachment)}
         onClose={() => setDeletingAttachment(null)}
         onConfirm={handleDeleteConfirm}
         isConfirming={deleteMutation.isPending}
-        title="Delete Attachment"
+        title="Delete attachment"
         message={`Are you sure you want to delete "${deletingAttachment?.original_name}"? This cannot be undone.`}
         confirmLabel="Delete"
         size="lg"

@@ -67,7 +67,7 @@ export default function ClassRecordingModal({ session, isOpen, onClose }) {
       isOpen={isOpen}
       onClose={onClose}
       icon={Clapperboard}
-      title="Class Recording"
+      title="Class recording"
       subtitle={session?.title}
       maxWidth="max-w-4xl"
     >

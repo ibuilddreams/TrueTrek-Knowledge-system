@@ -26,6 +26,7 @@ from .serializers import (
     TeacherCourseStatsSerializer,
     TeacherSerializer,
     TeacherUpdateSerializer,
+    StudentDetailSerializer,
 )
 from courses.models import Course
 from courses.services import get_course_students_detail, is_course_instructor
@@ -197,7 +198,10 @@ class StudentDetailView(generics.RetrieveUpdateDestroyAPIView):
     def get_serializer_class(self):
         if self.request.method == "PATCH":
             return StudentUpdateSerializer
-        return StudentSerializer
+        # The detail serializer adds the enrolment count, average progress and
+        # last login the admin's student page shows; the list keeps the lighter
+        # one.
+        return StudentDetailSerializer
 
     def retrieve(self, request, *args, **kwargs):
         student = self.get_object()

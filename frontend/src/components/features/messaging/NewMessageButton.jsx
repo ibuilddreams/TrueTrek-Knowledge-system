@@ -1,16 +1,14 @@
 "use client";
 
 import { Plus } from "lucide-react";
+import { PortalButton } from "@/components/features/portal/shell/PortalUI";
 
+/** The design's `btn("New message", …, "pri", "", "plus")`. */
 export default function NewMessageButton({ onClick }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="inline-flex items-center gap-2 px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-xl shadow-md transition cursor-pointer shrink-0"
-    >
-      <Plus className="w-3.5 h-3.5" />
-      New Message
-    </button>
+    <PortalButton onClick={onClick} className="flex-none">
+      <Plus aria-hidden="true" className="h-[18px] w-[18px]" />
+      New message
+    </PortalButton>
   );
 }

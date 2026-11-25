@@ -18,6 +18,7 @@ import StatusBadge from "@/components/ui/StatusBadge";
 import PathwayFormModal from "@/components/features/admin/PathwayFormModal";
 import ManagePathwayCoursesModal from "@/components/features/admin/ManagePathwayCoursesModal";
 import BundleRuleFormModal from "@/components/features/admin/BundleRuleFormModal";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 
 const PAGE_SIZE = 10;
 
@@ -112,12 +113,12 @@ export default function PathwaysTab() {
   const columns = [
     {
       key: "name",
-      header: "Pathway Name",
-      render: (pathway) => <span className="font-semibold text-ink">{pathway.name}</span>,
+      header: "Pathway name",
+      render: (pathway) => <span className="font-semibold text-cn-p-ink">{pathway.name}</span>,
     },
     {
       key: "audiences",
-      header: "Audience Cards",
+      header: "Audience cards",
       render: (pathway) =>
         pathway.audiences?.length ? (
           <div className="flex flex-wrap gap-1.5">
@@ -127,7 +128,7 @@ export default function PathwaysTab() {
                 <abbr
                   key={audience.slug}
                   title={name}
-                  className="rounded-full bg-sage/40 px-2.5 py-1 font-sans text-[10px] font-semibold uppercase tracking-widest text-pine no-underline"
+                  className="rounded-full bg-cn-p-ok-bg px-2.5 py-1 font-sans text-[10px] font-semibold text-cn-p-accent no-underline"
                 >
                   {code}
                 </abbr>
@@ -135,19 +136,19 @@ export default function PathwaysTab() {
             })}
           </div>
         ) : (
-          <span className="text-xs text-muted">Unassigned</span>
+          <span className="text-xs text-cn-p-ink-2">Unassigned</span>
         ),
     },
     {
       key: "status",
       header: "Status",
-      render: (pathway) => <StatusBadge size="lg" status={pathway.status} />,
+      render: (pathway) => <StatusBadge tone="cobalt" size="lg" status={pathway.status} />,
     },
     {
       key: "base_price",
-      header: "Base Price",
+      header: "Base price",
       render: (pathway) => (
-        <span className="font-mono text-muted">{formatAmount(pathway.base_price)}</span>
+        <span className="text-cn-p-ink-2">{formatAmount(pathway.base_price)}</span>
       ),
     },
     {
@@ -159,14 +160,14 @@ export default function PathwaysTab() {
             {pathway.tiers.map((tier) => (
               <span
                 key={tier.id}
-                className="text-[11px] font-mono uppercase tracking-wider text-muted bg-porcelain border border-line rounded-md px-2 py-1"
+                className="text-[11px] text-cn-p-ink-2 bg-cn-p-page border border-cn-p-line rounded-md px-2 py-1"
               >
                 #{tier.level} {tier.name}
               </span>
             ))}
           </div>
         ) : (
-          <span className="text-[11px] font-mono uppercase tracking-wider text-muted">Unassigned</span>
+          <span className="text-[11px] text-cn-p-ink-2">Unassigned</span>
         ),
     },
     {
@@ -187,13 +188,13 @@ export default function PathwaysTab() {
           actions={[
             {
               key: "edit",
-              label: "Edit Pathway",
+              label: "Edit pathway",
               icon: Edit3,
               onSelect: () => setEditingPathway(pathway),
             },
             {
               key: "manage-courses",
-              label: "Manage Courses",
+              label: "Manage courses",
               icon: Layers,
               onSelect: () => setManagingCoursesPathway(pathway),
             },
@@ -213,13 +214,13 @@ export default function PathwaysTab() {
   const ruleColumns = [
     {
       key: "pathway_count",
-      header: "Pathway Count",
-      render: (rule) => <span className="font-mono text-muted">{rule.pathway_count}</span>,
+      header: "Pathway count",
+      render: (rule) => <span className="text-cn-p-ink-2">{rule.pathway_count}</span>,
     },
     {
       key: "discount_percent",
       header: "Discount",
-      render: (rule) => <span className="font-mono text-muted">{rule.discount_percent}%</span>,
+      render: (rule) => <span className="text-cn-p-ink-2">{rule.discount_percent}%</span>,
     },
     {
       key: "actions",
@@ -229,7 +230,7 @@ export default function PathwaysTab() {
           actions={[
             {
               key: "edit",
-              label: "Edit Rule",
+              label: "Edit rule",
               icon: Edit3,
               onSelect: () => setEditingRule(rule),
             },
@@ -247,31 +248,36 @@ export default function PathwaysTab() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Pathways"
+        subtitle="Bundles of courses students buy or are enrolled into together."
+      />
+
       <div className="space-y-5">
-        <p className="text-xs font-light leading-relaxed text-muted">
+        <p className="text-xs font-light leading-relaxed text-cn-p-ink-2">
           Audience codes show which audience pages list a pathway — hover one for
           its full name. Change them under{" "}
-          <strong className="font-medium text-ink">Edit Pathway → Audience cards</strong>;
+          <strong className="font-medium text-cn-p-ink">Edit Pathway → Audience cards</strong>;
           a pathway can belong to more than one audience.
         </p>
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-          <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search pathways by name..." />
+        <div className="flex flex-col gap-3 rounded-cn-p border border-cn-p-line bg-cn-p-card p-4 sm:flex-row sm:items-center sm:justify-between">
+          <SearchBar tone="cobalt" size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search pathways by name..." />
 
           <button
             type="button"
             onClick={() => setIsFormOpen(true)}
-            className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2 shrink-0"
+            className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center gap-2 shrink-0"
             title="Create a new pathway"
             aria-label="Create a new pathway"
           >
             <Route className="w-4 h-4" />
-            ADD PATHWAY
+            Add pathway
           </button>
         </div>
 
-        <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-          <DataTable size="lg"
+        <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+          <DataTable tone="cobalt" size="lg"
             columns={columns}
             rows={paginatedPathways}
             isLoading={isLoading}
@@ -279,24 +285,28 @@ export default function PathwaysTab() {
             onRetry={refetch}
             emptyLabel="No pathways found."
           />
-          <Pagination size="lg"
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            totalLabel={`${filteredPathways.length} pathway${filteredPathways.length === 1 ? "" : "s"}`}
-          />
+          <div className="px-4 pb-4">
+
+            <Pagination tone="cobalt" size="lg"
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalLabel={`${filteredPathways.length} pathway${filteredPathways.length === 1 ? "" : "s"}`}
+            />
+
+          </div>
         </div>
       </div>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
         <div className="flex items-center justify-between gap-3 mb-4">
           <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-lg bg-gold/12 border border-gold/25 text-gold flex items-center justify-center shrink-0">
+            <div className="w-8 h-8 rounded-lg bg-cn-p-soft border border-cn-p-soft text-cn-p-soft-ink flex items-center justify-center shrink-0">
               <Percent className="w-4 h-4" />
             </div>
             <div>
-              <h3 className="text-sm font-serif font-bold text-ink leading-tight">Bundle Pricing</h3>
-              <p className="text-xs text-muted font-light">
+              <h3 className="text-sm font-bold text-cn-p-ink leading-tight">Bundle Pricing</h3>
+              <p className="text-xs text-cn-p-ink-2 font-light">
                 Discount rules applied when students bundle multiple pathways.
               </p>
             </div>
@@ -304,16 +314,16 @@ export default function PathwaysTab() {
           <button
             type="button"
             onClick={() => setIsRuleFormOpen(true)}
-            className="px-3.5 py-2 bg-paper hover:bg-porcelain text-ink text-xs font-semibold font-mono rounded-xl tracking-wider border border-line shadow-sm transition-all flex items-center gap-1.5 shrink-0"
+            className="px-3.5 py-2 bg-cn-p-card hover:bg-cn-p-page text-cn-p-ink text-xs font-semibold rounded-xl border border-cn-p-line transition-all flex items-center gap-1.5 shrink-0"
             title="Add a bundle pricing rule"
             aria-label="Add a bundle pricing rule"
           >
             <Plus className="w-3.5 h-3.5" />
-            ADD RULE
+            Add rule
           </button>
         </div>
 
-        <DataTable size="lg"
+        <DataTable tone="cobalt" size="lg"
           columns={ruleColumns}
           rows={bundleRules}
           isLoading={bundleRulesQuery.isLoading}
@@ -351,22 +361,22 @@ export default function PathwaysTab() {
         }}
       />
 
-      <ConfirmDialog size="lg"
+      <ConfirmDialog variant="cobalt" size="lg"
         isOpen={Boolean(deletingPathway)}
         onClose={() => setDeletingPathway(null)}
         onConfirm={handleDeleteConfirm}
         isConfirming={deletePathwayMutation.isPending}
-        title="Delete Pathway"
+        title="Delete pathway"
         message={`Are you sure you want to delete "${deletingPathway?.name}"? This cannot be undone.`}
         confirmLabel="Delete"
       />
 
-      <ConfirmDialog size="lg"
+      <ConfirmDialog variant="cobalt" size="lg"
         isOpen={Boolean(deletingRule)}
         onClose={() => setDeletingRule(null)}
         onConfirm={handleDeleteRuleConfirm}
         isConfirming={deleteBundleRuleMutation.isPending}
-        title="Delete Bundle Rule"
+        title="Delete bundle rule"
         message={`Are you sure you want to delete the ${deletingRule?.pathway_count}-pathway bundle rule? This cannot be undone.`}
         confirmLabel="Delete"
       />

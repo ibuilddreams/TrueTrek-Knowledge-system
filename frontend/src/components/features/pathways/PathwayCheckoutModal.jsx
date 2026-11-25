@@ -54,15 +54,15 @@ const TONES = {
       "absolute top-4 right-4 z-10 rounded-full border border-cn-rule bg-white/90 p-2 text-cn-muted shadow-cn-1 transition-colors duration-150 hover:text-cn-ink",
     badge: "rounded-cn bg-cn-accent text-white",
     title: "text-cn-lg font-bold tracking-[-0.015em] text-cn-ink",
-    eyebrow: "text-[10px] uppercase tracking-widest font-semibold text-cn-muted",
+    eyebrow: "text-[13px] text-cn-muted",
     summary: "rounded-cn border border-cn-rule bg-cn-paper-2",
     lineLabel: "text-cn-muted truncate",
     linePrice: "font-semibold text-cn-ink shrink-0",
     totalRule: "border-cn-rule",
     totalLabel: "text-cn-ink",
     totalPrice: "font-semibold text-cn-accent",
-    fieldLabel:
-      "text-[9px] font-semibold uppercase tracking-widest text-cn-muted block mb-1.5",
+    // The design's `.flabel` is a 13px semibold label, not a tracked kicker.
+    fieldLabel: "mb-1.5 block text-[13px] font-semibold text-cn-ink",
     field:
       "w-full px-3.5 py-2.5 bg-cn-paper-2 border border-cn-rule focus:border-cn-accent rounded-cn-sm text-xs text-cn-ink placeholder:text-cn-muted focus:outline-none focus:bg-white transition-colors duration-150",
     note: "text-cn-muted",
@@ -163,7 +163,7 @@ export default function PathwayCheckoutModal({
 
               <form onSubmit={handleSubmit} className="space-y-3.5">
                 <Field
-                  label="Cardholder Name"
+                  label="Cardholder name"
                   placeholder="Jane Doe"
                   value={form.cardholderName}
                   onChange={updateField("cardholderName")}
@@ -171,7 +171,7 @@ export default function PathwayCheckoutModal({
                   styles={styles}
                 />
                 <Field
-                  label="Card Number"
+                  label="Card number"
                   placeholder="4242 4242 4242 4242"
                   inputMode="numeric"
                   value={form.cardNumber}
@@ -181,7 +181,7 @@ export default function PathwayCheckoutModal({
                 />
                 <div className="grid grid-cols-2 gap-3.5">
                   <Field
-                    label="Expiry Date"
+                    label="Expiry date"
                     placeholder="MM/YY"
                     inputMode="numeric"
                     value={form.expiry}

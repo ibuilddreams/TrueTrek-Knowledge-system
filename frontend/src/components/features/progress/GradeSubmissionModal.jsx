@@ -15,6 +15,7 @@ import Modal from "@/components/ui/Modal";
 import { gradeAssignmentSubmission } from "@/services/assignmentsService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
+import { makeSkin } from "@/lib/portalSkin";
 
 const FILE_TYPE_ICONS = {
   DOCUMENT: FileText,
@@ -39,7 +40,8 @@ function getFileExtension(name) {
   return dotIndex > -1 ? name.slice(dotIndex + 1).toUpperCase() : "";
 }
 
-export default function GradeSubmissionModal({ row, onClose, courseId }) {
+export default function GradeSubmissionModal({ row, onClose, courseId, tone = "porcelain" }) {
+  const skin = makeSkin(tone);
   const queryClient = useQueryClient();
   const [marks, setMarks] = useState("");
   const [feedback, setFeedback] = useState("");
@@ -66,11 +68,11 @@ export default function GradeSubmissionModal({ row, onClose, courseId }) {
   });
 
   return (
-    <Modal
+    <Modal variant={tone === "cobalt" ? "cobalt" : "classic"}
       isOpen={Boolean(row)}
       onClose={onClose}
       icon={ClipboardCheck}
-      title="Grade Submission"
+      title="Grade submission"
       subtitle={row ? `${row.student.name} · ${row.assignment.title}` : ""}
     >
       {row && (
@@ -83,7 +85,7 @@ export default function GradeSubmissionModal({ row, onClose, courseId }) {
         >
           {row.files?.length > 0 && (
             <div>
-              <label className="text-[11px] font-mono uppercase tracking-wider text-stone-450 font-semibold mb-1.5 block">
+              <label className={skin("text-[11px] font-mono uppercase tracking-wider text-stone-450 font-semibold mb-1.5 block")}>
                 Attachments
               </label>
               <ul className="space-y-2">
@@ -97,22 +99,22 @@ export default function GradeSubmissionModal({ row, onClose, courseId }) {
                         href={file.file}
                         target="_blank"
                         rel="noreferrer"
-                        className="flex items-center gap-2.5 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl hover:border-amber-300 hover:bg-amber-50/60 transition group"
+                        className={skin("flex items-center gap-2.5 px-3 py-2 bg-stone-50 border border-stone-200 rounded-xl hover:border-amber-300 hover:bg-amber-50/60 transition group")}
                       >
-                        <span className="w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-amber-600/10 text-amber-700">
+                        <span className={skin("w-8 h-8 shrink-0 flex items-center justify-center rounded-lg bg-amber-600/10 text-amber-700")}>
                           <Icon className="w-4 h-4" />
                         </span>
                         <span className="min-w-0 flex-1">
-                          <span className="block text-sm font-mono font-semibold text-stone-800 truncate">
+                          <span className={skin("block text-sm font-mono font-semibold text-stone-800 truncate")}>
                             {name}
                           </span>
                           {extension && (
-                            <span className="block text-[11px] font-mono text-stone-400 mt-0.5">
+                            <span className={skin("block text-[11px] font-mono text-stone-400 mt-0.5")}>
                               {extension} file
                             </span>
                           )}
                         </span>
-                        <Download className="w-4 h-4 text-stone-400 group-hover:text-amber-700 transition shrink-0" />
+                        <Download className={skin("w-4 h-4 text-stone-400 group-hover:text-amber-700 transition shrink-0")} />
                       </a>
                     </li>
                   );
@@ -122,8 +124,8 @@ export default function GradeSubmissionModal({ row, onClose, courseId }) {
           )}
 
           {row.assignment.grading_mode === "AI" && row.ai_review && (
-            <div className="rounded-xl border border-amber-200 bg-amber-50/40 p-3 space-y-1.5">
-              <p className="flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-amber-700 font-semibold">
+            <div className={skin("rounded-xl border border-amber-200 bg-amber-50/40 p-3 space-y-1.5")}>
+              <p className={skin("flex items-center gap-1.5 text-[11px] font-mono uppercase tracking-wider text-amber-700 font-semibold")}>
                 <Sparkles className="w-3.5 h-3.5" />
                 AI Grading — {row.ai_review.status}
                 {row.ai_review.score !== null && row.ai_review.score !== undefined
@@ -131,16 +133,16 @@ export default function GradeSubmissionModal({ row, onClose, courseId }) {
                   : ""}
               </p>
               {row.ai_review.feedback && (
-                <p className="text-sm text-stone-700">{row.ai_review.feedback}</p>
+                <p className={skin("text-sm text-stone-700")}>{row.ai_review.feedback}</p>
               )}
-              <p className="text-[11px] font-mono text-stone-400">
+              <p className={skin("text-[11px] font-mono text-stone-400")}>
                 This is a read-only AI evaluation. You can still override the marks/feedback below.
               </p>
             </div>
           )}
 
           <div>
-            <label className="text-[11px] font-mono uppercase tracking-wider text-stone-450 font-semibold mb-1.5 block">
+            <label className={skin("text-[11px] font-mono uppercase tracking-wider text-stone-450 font-semibold mb-1.5 block")}>
               Marks (out of {row.assignment.total_marks})
             </label>
             <input
@@ -150,19 +152,19 @@ export default function GradeSubmissionModal({ row, onClose, courseId }) {
               value={marks}
               onChange={(event) => setMarks(event.target.value)}
               required
-              className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-850 transition"
+              className={skin("w-full px-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-850 transition")}
             />
           </div>
 
           <div>
-            <label className="text-[11px] font-mono uppercase tracking-wider text-stone-450 font-semibold mb-1.5 block">
+            <label className={skin("text-[11px] font-mono uppercase tracking-wider text-stone-450 font-semibold mb-1.5 block")}>
               Feedback
             </label>
             <textarea
               rows={3}
               value={feedback}
               onChange={(event) => setFeedback(event.target.value)}
-              className="w-full px-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-850 transition resize-none"
+              className={skin("w-full px-4 py-2.5 bg-stone-50 border border-stone-200 focus:border-amber-600 focus:bg-white focus:outline-none rounded-xl text-sm font-mono text-stone-850 transition resize-none")}
               placeholder="Optional feedback for the student..."
             />
           </div>
@@ -171,14 +173,14 @@ export default function GradeSubmissionModal({ row, onClose, courseId }) {
             <button
               type="button"
               onClick={onClose}
-              className="px-4 py-2.5 text-sm font-mono font-semibold uppercase tracking-wider text-stone-500 hover:text-stone-700 transition-colors cursor-pointer"
+              className={skin("px-4 py-2.5 text-sm font-mono font-semibold uppercase tracking-wider text-stone-500 hover:text-stone-700 transition-colors cursor-pointer")}
             >
               Cancel
             </button>
             <button
               type="submit"
               disabled={gradeMutation.isPending}
-              className="px-5 py-2.5 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-mono font-semibold uppercase tracking-wider rounded-xl transition-all cursor-pointer"
+              className={skin("px-5 py-2.5 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-mono font-semibold uppercase tracking-wider rounded-xl transition-all cursor-pointer")}
             >
               {gradeMutation.isPending ? "Saving..." : "Save Grade"}
             </button>

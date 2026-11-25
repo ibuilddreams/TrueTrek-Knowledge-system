@@ -16,6 +16,7 @@ import ConfirmDialog from "@/components/ui/ConfirmDialog";
 import StatusBadge from "@/components/ui/StatusBadge";
 import TierFormModal from "@/components/features/admin/TierFormModal";
 import ManageTierPathwaysModal from "@/components/features/admin/ManageTierPathwaysModal";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 
 const PAGE_SIZE = 10;
 
@@ -80,22 +81,22 @@ export default function TiersTab() {
     {
       key: "level",
       header: "Level",
-      render: (tier) => <span className="font-mono text-muted">#{tier.level}</span>,
+      render: (tier) => <span className="text-cn-p-ink-2">#{tier.level}</span>,
     },
     {
       key: "name",
-      header: "Tier Name",
-      render: (tier) => <span className="font-semibold text-ink">{tier.name}</span>,
+      header: "Tier name",
+      render: (tier) => <span className="font-semibold text-cn-p-ink">{tier.name}</span>,
     },
     {
       key: "audience",
       header: "Audience",
-      render: (tier) => <span className="text-muted">{tier.audience || "—"}</span>,
+      render: (tier) => <span className="text-cn-p-ink-2">{tier.audience || "—"}</span>,
     },
     {
       key: "status",
       header: "Status",
-      render: (tier) => <StatusBadge size="lg" status={tier.status} />,
+      render: (tier) => <StatusBadge tone="cobalt" size="lg" status={tier.status} />,
     },
     {
       key: "pathway_count",
@@ -115,13 +116,13 @@ export default function TiersTab() {
           actions={[
             {
               key: "edit",
-              label: "Edit Tier",
+              label: "Edit tier",
               icon: Edit3,
               onSelect: () => setEditingTier(tier),
             },
             {
               key: "manage-pathways",
-              label: "Manage Pathways",
+              label: "Manage pathways",
               icon: Route,
               onSelect: () => setManagingPathwaysTier(tier),
             },
@@ -139,25 +140,30 @@ export default function TiersTab() {
   ];
 
   return (
-    <div className="space-y-6">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Tiers"
+        subtitle="The nine tiers of the Cool Nerdz curriculum. Each pathway sits in one tier."
+      />
+
       <div className="space-y-5">
-        <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-          <SearchBar size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search tiers by name..." />
+        <div className="flex flex-col gap-3 rounded-cn-p border border-cn-p-line bg-cn-p-card p-4 sm:flex-row sm:items-center sm:justify-between">
+          <SearchBar tone="cobalt" size="lg" value={searchInput} onChange={setSearchInput} placeholder="Search tiers by name..." />
 
           <button
             type="button"
             onClick={() => setIsFormOpen(true)}
-            className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2 shrink-0"
+            className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center gap-2 shrink-0"
             title="Create a new tier"
             aria-label="Create a new tier"
           >
             <Layers3 className="w-4 h-4" />
-            ADD TIER
+            Add tier
           </button>
         </div>
 
-        <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-          <DataTable size="lg"
+        <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+          <DataTable tone="cobalt" size="lg"
             columns={columns}
             rows={paginatedTiers}
             isLoading={isLoading}
@@ -165,12 +171,16 @@ export default function TiersTab() {
             onRetry={refetch}
             emptyLabel="No tiers found."
           />
-          <Pagination size="lg"
-            page={page}
-            totalPages={totalPages}
-            onPageChange={setPage}
-            totalLabel={`${filteredTiers.length} tier${filteredTiers.length === 1 ? "" : "s"}`}
-          />
+          <div className="px-4 pb-4">
+
+            <Pagination tone="cobalt" size="lg"
+              page={page}
+              totalPages={totalPages}
+              onPageChange={setPage}
+              totalLabel={`${filteredTiers.length} tier${filteredTiers.length === 1 ? "" : "s"}`}
+            />
+
+          </div>
         </div>
       </div>
 
@@ -189,12 +199,12 @@ export default function TiersTab() {
         onClose={() => setManagingPathwaysTier(null)}
       />
 
-      <ConfirmDialog size="lg"
+      <ConfirmDialog variant="cobalt" size="lg"
         isOpen={Boolean(deletingTier)}
         onClose={() => setDeletingTier(null)}
         onConfirm={handleDeleteConfirm}
         isConfirming={deleteTierMutation.isPending}
-        title="Delete Tier"
+        title="Delete tier"
         message={`Are you sure you want to delete "${deletingTier?.name}"? This cannot be undone.`}
         confirmLabel="Delete"
       />

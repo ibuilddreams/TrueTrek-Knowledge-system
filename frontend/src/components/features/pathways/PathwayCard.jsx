@@ -114,7 +114,7 @@ export default function PathwayCard({
               title="You already have access to this pathway"
             >
               <CheckCircle2 className="w-3.5 h-3.5" />
-              Already Purchased
+              Already purchased
             </span>
           ) : canSelect ? (
             <button
@@ -134,7 +134,7 @@ export default function PathwayCard({
               title="Only student accounts can purchase pathways"
             >
               <GraduationCap className="w-3.5 h-3.5" />
-              Student Only
+              Student only
             </span>
           )}
         </div>

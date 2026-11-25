@@ -187,19 +187,19 @@ export default function ManageTierPathwaysModal({ isOpen, onClose, tier }) {
   const isLoading = tierDetailQuery.isLoading;
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={Layers3}
-      title="Manage Tier Pathways"
+      title="Manage tier pathways"
       subtitle={tier?.name ? `Attach and reorder pathways — ${tier.name}` : "Attach and reorder pathways"}
       maxWidth="max-w-2xl"
     >
       <div className="space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-end gap-3">
           <div className="flex-1 min-w-0">
-            <SearchableSelect size="lg"
-              label="Add a Pathway"
+            <SearchableSelect tone="cobalt" size="lg"
+              label="Add a pathway"
               placeholder="Select a pathway to attach"
               searchPlaceholder="Search pathways..."
               options={availablePathwayOptions}
@@ -214,7 +214,7 @@ export default function ManageTierPathwaysModal({ isOpen, onClose, tier }) {
             type="button"
             onClick={handleAttach}
             disabled={!selectedPathwayId || attachMutation.isPending}
-            className="px-4 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 shrink-0"
+            className="px-4 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 shrink-0"
           >
             <Plus className="w-4 h-4" />
             {attachMutation.isPending ? "Attaching..." : "Attach"}
@@ -222,14 +222,14 @@ export default function ManageTierPathwaysModal({ isOpen, onClose, tier }) {
         </div>
 
         <div>
-          <p className="text-xs font-sans text-muted uppercase tracking-widest mb-2 font-medium">
-            Attached Pathways
+          <p className="text-xs font-sans text-cn-p-ink-2 mb-2 font-medium">
+            Attached pathways
           </p>
 
           {isLoading ? (
-            <Loader fullScreen={false} label="Loading pathways..." />
+            <Loader tone="cobalt" fullScreen={false} label="Loading pathways..." />
           ) : displayPathways.length === 0 ? (
-            <EmptyState size="lg"
+            <EmptyState tone="portal" size="lg"
               icon={Route}
               label="No pathways attached yet."
               description="Use the picker above to attach a pathway to this tier."
@@ -255,12 +255,12 @@ export default function ManageTierPathwaysModal({ isOpen, onClose, tier }) {
         </div>
       </div>
 
-      <ConfirmDialog size="lg"
+      <ConfirmDialog variant="cobalt" size="lg"
         isOpen={Boolean(detachingPathway)}
         onClose={() => setDetachingPathway(null)}
         onConfirm={handleDetachConfirm}
         isConfirming={detachMutation.isPending}
-        title="Remove Pathway"
+        title="Remove pathway"
         message={`Are you sure you want to remove "${detachingPathway?.name}" from this tier?`}
         confirmLabel="Remove"
       />

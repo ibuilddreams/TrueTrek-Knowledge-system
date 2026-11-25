@@ -164,19 +164,19 @@ export default function ManagePathwayCoursesModal({ isOpen, onClose, pathway }) 
   const isLoading = pathwayDetailQuery.isLoading;
 
   return (
-    <Modal
+    <Modal variant="cobalt"
       isOpen={isOpen}
       onClose={handleClose}
       icon={Layers}
-      title="Manage Pathway Courses"
+      title="Manage pathway courses"
       subtitle={pathway?.name ? `Attach and reorder courses — ${pathway.name}` : "Attach and reorder courses"}
       maxWidth="max-w-2xl"
     >
       <div className="space-y-5">
         <div className="flex flex-col sm:flex-row sm:items-end gap-3">
           <div className="flex-1 min-w-0">
-            <SearchableSelect size="lg"
-              label="Add a Course"
+            <SearchableSelect tone="cobalt" size="lg"
+              label="Add a course"
               placeholder="Select a course to attach"
               searchPlaceholder="Search courses..."
               options={availableCourseOptions}
@@ -191,7 +191,7 @@ export default function ManagePathwayCoursesModal({ isOpen, onClose, pathway }) 
             type="button"
             onClick={handleAttach}
             disabled={!selectedCourseId || attachMutation.isPending}
-            className="px-4 py-3 bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-md hover:shadow-lg transition-all flex items-center justify-center gap-2 shrink-0"
+            className="px-4 py-3 bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center justify-center gap-2 shrink-0"
           >
             <Plus className="w-4 h-4" />
             {attachMutation.isPending ? "Attaching..." : "Attach"}
@@ -199,14 +199,14 @@ export default function ManagePathwayCoursesModal({ isOpen, onClose, pathway }) 
         </div>
 
         <div>
-          <p className="text-xs font-sans text-muted uppercase tracking-widest mb-2 font-medium">
-            Attached Courses
+          <p className="text-xs font-sans text-cn-p-ink-2 mb-2 font-medium">
+            Attached courses
           </p>
 
           {isLoading ? (
-            <Loader fullScreen={false} label="Loading courses..." />
+            <Loader tone="cobalt" fullScreen={false} label="Loading courses..." />
           ) : displayCourses.length === 0 ? (
-            <EmptyState size="lg"
+            <EmptyState tone="portal" size="lg"
               icon={BookOpen}
               label="No courses attached yet."
               description="Use the picker above to attach a course to this pathway."
@@ -232,12 +232,12 @@ export default function ManagePathwayCoursesModal({ isOpen, onClose, pathway }) 
         </div>
       </div>
 
-      <ConfirmDialog
+      <ConfirmDialog variant="cobalt"
         isOpen={Boolean(detachingCourse)}
         onClose={() => setDetachingCourse(null)}
         onConfirm={handleDetachConfirm}
         isConfirming={detachMutation.isPending}
-        title="Detach Course"
+        title="Detach course"
         message={`Are you sure you want to detach "${detachingCourse?.course?.title}" from this pathway?`}
         confirmLabel="Detach"
         size="lg"

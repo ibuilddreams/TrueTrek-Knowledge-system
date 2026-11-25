@@ -103,7 +103,7 @@ export default function SessionNotesModal({ session, isOpen, onClose }) {
       isOpen={isOpen}
       onClose={onClose}
       icon={NotebookPen}
-      title="Session Notes"
+      title="Session notes"
       subtitle={session?.title}
       maxWidth="max-w-3xl"
     >

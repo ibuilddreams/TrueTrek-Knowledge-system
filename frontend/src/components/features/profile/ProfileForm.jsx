@@ -1,29 +1,42 @@
 "use client";
 
 import { useEffect, useMemo, useRef, useState } from "react";
-import { useRouter } from "next/navigation";
-import { motion } from "motion/react";
-import {
-  AtSign,
-  BadgeCheck,
-  Calendar,
-  Camera,
-  Loader2,
-  Mail,
-  Phone,
-  Save,
-  User,
-  X,
-} from "lucide-react";
+import { KeyRound, Loader2, Upload } from "lucide-react";
+import Link from "next/link";
 import { getProfile, updateProfile } from "@/services/profileService";
 import { toastError, toastSuccess } from "@/lib/toast";
-import { getPortalRouteForRole } from "@/constants/routes";
+import { getInitials } from "@/lib/initials";
+import { ROUTES } from "@/constants/routes";
 import { useAuth } from "@/hooks/useAuth";
-import AuthField from "@/components/ui/AuthField";
 import Loader from "@/components/ui/Loader";
+import ConfirmDialog from "@/components/ui/ConfirmDialog";
+import PortalCard from "@/components/features/portal/shell/PortalCard";
+import {
+  PortalButton,
+  PortalPageHead,
+  PortalPill,
+} from "@/components/features/portal/shell/PortalUI";
+import {
+  ERROR_CLASS,
+  FIELD_CLASS,
+  HINT_CLASS,
+  LABEL_CLASS,
+} from "@/components/features/teachers/onboarding/fieldStyles";
 import AvatarCropModal from "./AvatarCropModal";
-import DiscardChangesDialog from "./DiscardChangesDialog";
 
+/**
+ * The design's `profilePage(role)` — the account card on the left, the forms
+ * on the right (`.g12`), rendered inside the portal shell for all three roles.
+ *
+ * Two of the design's cards are deliberately not built. Its "Gender" select
+ * has no field behind it (`users.UserProfile` carries avatar, bio, date of
+ * birth, phone, address, city, country and website, and nothing else), and its
+ * "Notifications" card has no preferences endpoint at all — three checkboxes
+ * that save nowhere are worse than no checkboxes. Its "Password" card is kept,
+ * because the mechanism this app really has for a signed-in user is the
+ * emailed reset link, so the card says so and sends them to it rather than
+ * offering a current/new pair nothing would accept.
+ */
 const EMPTY_FORM = {
   fullName: "",
   email: "",
@@ -54,8 +67,7 @@ function validateForm(form) {
 }
 
 export default function ProfileForm() {
-  const router = useRouter();
-  const { updateUserName, role } = useAuth();
+  const { updateUserName } = useAuth();
   const fileInputRef = useRef(null);
 
   const [form, setForm] = useState(EMPTY_FORM);
@@ -111,10 +123,6 @@ export default function ProfileForm() {
     setErrors((prev) => ({ ...prev, [field]: undefined }));
   };
 
-  const handleAvatarClick = () => {
-    fileInputRef.current?.click();
-  };
-
   const handleAvatarChange = (event) => {
     const file = event.target.files?.[0];
     if (!file) return;
@@ -132,29 +140,15 @@ export default function ProfileForm() {
     closeCropModal();
   };
 
-  const resetFormToInitial = () => {
+  // The portal's rail is always on screen now, so there is nothing to
+  // navigate "back" to — discarding puts the form back as it was loaded and
+  // leaves the reader where they are.
+  const handleDiscardChanges = () => {
     setForm(initialForm);
     setErrors({});
     setAvatarPreview(initialAvatarPreview);
     setAvatarFile(null);
     if (fileInputRef.current) fileInputRef.current.value = "";
-  };
-
-  const handleCancel = () => {
-    if (hasUnsavedChanges) {
-      setIsDiscardDialogOpen(true);
-      return;
-    }
-    router.push(getPortalRouteForRole(role));
-  };
-
-  const handleDiscardChanges = () => {
-    resetFormToInitial();
-    setIsDiscardDialogOpen(false);
-    router.push(getPortalRouteForRole(role));
-  };
-
-  const handleContinueEditing = () => {
     setIsDiscardDialogOpen(false);
   };
 
@@ -195,188 +189,189 @@ export default function ProfileForm() {
   };
 
   if (isLoading) {
-    return <Loader label="Loading Profile..." />;
+    return (
+      <PortalCard className="grid min-h-[320px] place-items-center">
+        <Loader fullScreen={false} tone="cobalt" label="Loading your profile..." />
+      </PortalCard>
+    );
   }
 
   return (
-    <div className="py-10 px-4 sm:px-6 md:px-10 max-w-3xl mx-auto min-h-[85vh] font-sans">
-      <div className="mb-8">
-        <span className="text-moss font-sans text-xs uppercase tracking-widest font-medium block mb-1">
-          Account Settings
-        </span>
-        <h1 className="text-3xl font-serif font-light tracking-tight text-ink">
-          Profile
-        </h1>
-        <p className="text-sm text-muted font-light mt-0.5">
-          Manage your personal details and how they appear across the platform.
-        </p>
-      </div>
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Profile & settings"
+        subtitle="Your account details and how Cool Nerdz contacts you."
+      />
 
-      <motion.div
-        initial={{ opacity: 0, y: 14 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.35, ease: "easeOut" }}
-        className="bg-paper border border-line rounded-panel shadow-elevated overflow-hidden relative"
-      >
-        <div className="absolute top-0 left-0 w-full h-1.5 bg-gradient-to-r from-pine via-moss to-gold" />
+      {/* The design's `.g12` — a 1fr account card beside a 2fr column of
+          forms, collapsing to one column on a narrow screen. */}
+      <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1fr)_minmax(0,2fr)]">
+        <PortalCard className="flex flex-col items-center gap-3 p-6 text-center">
+          <span className="grid h-[88px] w-[88px] flex-none place-items-center overflow-hidden rounded-full bg-cn-p-soft text-[28px] font-bold text-cn-p-soft-ink">
+            {avatarPreview ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={avatarPreview}
+                alt=""
+                className="h-full w-full object-cover"
+              />
+            ) : (
+              getInitials(form.fullName)
+            )}
+          </span>
 
-        <form onSubmit={handleSubmit} className="p-6 sm:p-8">
-          <div className="flex flex-col sm:flex-row sm:items-center gap-6 mb-8 pb-8 border-b border-line">
-            <div className="relative shrink-0 mx-auto sm:mx-0">
-              <div className="w-28 h-28 rounded-full bg-porcelain ring-4 ring-gold/20 border border-line flex items-center justify-center overflow-hidden shadow-inner">
-                {avatarPreview ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={avatarPreview}
-                    alt="Profile avatar"
-                    className="w-full h-full object-cover"
+          <b className="w-full truncate text-lg text-cn-p-ink">
+            {form.fullName || "Your name"}
+          </b>
+          <span className="w-full truncate text-sm text-cn-p-ink-2">
+            {form.email}
+          </span>
+          {roleLabel && <PortalPill tone="blue">{roleLabel}</PortalPill>}
+
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            onChange={handleAvatarChange}
+            className="hidden"
+          />
+          <PortalButton
+            variant="sec"
+            size="sm"
+            onClick={() => fileInputRef.current?.click()}
+          >
+            <Upload aria-hidden="true" className="h-4 w-4" />
+            Change photo
+          </PortalButton>
+        </PortalCard>
+
+        <div className="flex flex-col gap-5">
+          <PortalCard className="p-6">
+            <form onSubmit={handleSubmit} className="flex flex-col gap-4">
+              <h3 className="text-lg font-bold text-cn-p-ink">Basic information</h3>
+
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="sm:col-span-2">
+                  <label htmlFor="input-profile-username" className={LABEL_CLASS}>
+                    Username
+                  </label>
+                  <input
+                    id="input-profile-username"
+                    type="text"
+                    value={username}
+                    readOnly
+                    tabIndex={-1}
+                    className={`${FIELD_CLASS} cursor-not-allowed bg-cn-p-page text-cn-p-ink-2`}
                   />
-                ) : (
-                  <User className="w-11 h-11 text-muted" />
-                )}
-              </div>
-              <input
-                ref={fileInputRef}
-                type="file"
-                accept="image/*"
-                onChange={handleAvatarChange}
-                className="hidden"
-              />
-            </div>
+                  <p className={HINT_CLASS}>Username cannot be changed.</p>
+                </div>
 
-            <div className="flex-1 text-center sm:text-left">
-              <div className="flex flex-col sm:flex-row sm:items-center gap-2 justify-center sm:justify-start">
-                <h2 className="text-xl font-serif font-bold text-stone-900 truncate">
-                  {form.fullName || "Your Name"}
-                </h2>
-                {roleLabel && (
-                  <span className="inline-flex items-center gap-1 bg-amber-50 text-amber-700 border border-amber-200/60 rounded-full px-2.5 py-0.5 text-[10px] font-mono font-bold uppercase tracking-wider w-fit mx-auto sm:mx-0">
-                    <BadgeCheck className="w-3 h-3" />
-                    {roleLabel}
-                  </span>
-                )}
+                <div>
+                  <label htmlFor="input-profile-full-name" className={LABEL_CLASS}>
+                    Full name <span className="text-cn-p-warn">*</span>
+                  </label>
+                  <input
+                    id="input-profile-full-name"
+                    type="text"
+                    autoComplete="name"
+                    value={form.fullName}
+                    onChange={handleFieldChange("fullName")}
+                    className={FIELD_CLASS}
+                  />
+                  {errors.fullName && <p className={ERROR_CLASS}>{errors.fullName}</p>}
+                </div>
+
+                <div>
+                  <label htmlFor="input-profile-email" className={LABEL_CLASS}>
+                    Email address <span className="text-cn-p-warn">*</span>
+                  </label>
+                  <input
+                    id="input-profile-email"
+                    type="email"
+                    autoComplete="email"
+                    value={form.email}
+                    onChange={handleFieldChange("email")}
+                    className={FIELD_CLASS}
+                  />
+                  {errors.email && <p className={ERROR_CLASS}>{errors.email}</p>}
+                </div>
+
+                <div>
+                  <label htmlFor="input-profile-phone" className={LABEL_CLASS}>
+                    Phone number
+                  </label>
+                  <input
+                    id="input-profile-phone"
+                    type="tel"
+                    autoComplete="tel"
+                    placeholder="+1 555 000 0000"
+                    value={form.phone}
+                    onChange={handleFieldChange("phone")}
+                    className={FIELD_CLASS}
+                  />
+                </div>
+
+                <div>
+                  <label htmlFor="input-profile-dob" className={LABEL_CLASS}>
+                    Date of birth
+                  </label>
+                  <input
+                    id="input-profile-dob"
+                    type="date"
+                    value={form.dob}
+                    onChange={handleFieldChange("dob")}
+                    className={FIELD_CLASS}
+                  />
+                </div>
               </div>
-              <p className="text-xs text-stone-400 font-mono mt-1 truncate">
-                {form.email}
-              </p>
-              <button
-                type="button"
-                onClick={handleAvatarClick}
-                className="mt-3 inline-flex items-center gap-1.5 text-[11px] font-mono font-semibold text-stone-500 hover:text-amber-800 uppercase tracking-wider transition bg-stone-50 hover:bg-stone-100 border border-stone-200 rounded-lg px-3 py-1.5"
+
+              <div className="flex flex-wrap items-center justify-end gap-3">
+                {hasUnsavedChanges && (
+                  <PortalButton
+                    variant="sec"
+                    onClick={() => setIsDiscardDialogOpen(true)}
+                    disabled={isSubmitting}
+                  >
+                    Discard changes
+                  </PortalButton>
+                )}
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  aria-busy={isSubmitting}
+                  className="inline-flex h-11 items-center justify-center gap-2 rounded-cn-p-sm bg-cn-p-accent px-[18px] text-sm font-semibold whitespace-nowrap text-white transition-colors duration-150 hover:bg-cn-p-accent-hover active:translate-y-px disabled:cursor-not-allowed disabled:opacity-50"
+                >
+                  {isSubmitting && (
+                    <Loader2 aria-hidden="true" className="h-4 w-4 animate-spin" />
+                  )}
+                  {isSubmitting ? "Saving..." : "Save changes"}
+                </button>
+              </div>
+            </form>
+          </PortalCard>
+
+          <PortalCard className="flex flex-col gap-3 p-6">
+            <h3 className="text-lg font-bold text-cn-p-ink">Password</h3>
+            <p className="max-w-[70ch] text-sm text-cn-p-ink-2">
+              Your password is changed through a link emailed to{" "}
+              <span className="font-semibold text-cn-p-ink">
+                {form.email || "your address"}
+              </span>
+              , so nobody using your computer can change it without opening your
+              inbox.
+            </p>
+            <div className="flex justify-end">
+              <Link
+                href={ROUTES.FORGOT_PASSWORD}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-cn-p-sm border border-cn-p-line-2 bg-cn-p-card px-[18px] text-sm font-semibold whitespace-nowrap text-cn-p-ink no-underline transition-colors duration-150 hover:border-cn-p-ink"
               >
-                <Camera className="w-3 h-3" />
-                Change Photo
-              </button>
+                <KeyRound aria-hidden="true" className="h-4 w-4" />
+                Email me a reset link
+              </Link>
             </div>
-          </div>
-
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-amber-600 font-bold shrink-0">
-              Basic Information
-            </span>
-            <div className="flex-1 h-px bg-stone-100" />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5 mb-8">
-            <div>
-              <AuthField
-                id="input-profile-username"
-                label="Username"
-                icon={AtSign}
-                readOnly
-                tabIndex={-1}
-                value={username}
-                onChange={() => {}}
-                inputClassName="w-full p-3 pl-10 rounded-lg border border-stone-200 text-xs font-mono bg-stone-100 text-stone-500 cursor-not-allowed focus:outline-none"
-              />
-              <p className="text-[10px] text-stone-400 font-light mt-1.5">
-                Username cannot be changed.
-              </p>
-            </div>
-
-            <AuthField
-              id="input-profile-full-name"
-              label="Full Name"
-              icon={User}
-              required
-              autoComplete="name"
-              value={form.fullName}
-              onChange={handleFieldChange("fullName")}
-              error={errors.fullName}
-            />
-
-            <AuthField
-              id="input-profile-email"
-              label="Email Address"
-              type="email"
-              icon={Mail}
-              required
-              autoComplete="email"
-              value={form.email}
-              onChange={handleFieldChange("email")}
-              error={errors.email}
-            />
-          </div>
-
-          <div className="flex items-center gap-3 mb-4">
-            <span className="text-[10px] font-mono uppercase tracking-widest text-amber-600 font-bold shrink-0">
-              Additional Details
-            </span>
-            <div className="flex-1 h-px bg-stone-100" />
-          </div>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-5">
-            <AuthField
-              id="input-profile-phone"
-              label="Phone Number"
-              type="tel"
-              icon={Phone}
-              autoComplete="tel"
-              value={form.phone}
-              onChange={handleFieldChange("phone")}
-            />
-
-            <AuthField
-              id="input-profile-dob"
-              label="Date of Birth"
-              type="date"
-              icon={Calendar}
-              value={form.dob}
-              onChange={handleFieldChange("dob")}
-            />
-          </div>
-
-          <div className="flex flex-col-reverse sm:flex-row sm:justify-end gap-3 mt-8 pt-6 border-t border-stone-100">
-            <button
-              type="button"
-              onClick={handleCancel}
-              className="px-4 py-3 bg-stone-50 hover:bg-stone-100 text-stone-700 text-xs font-semibold font-mono rounded-lg tracking-wider transition-all flex items-center justify-center gap-2 border border-stone-200 shadow-sm"
-            >
-              <X className="w-3.5 h-3.5" />
-              Cancel
-            </button>
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              aria-busy={isSubmitting}
-              className="px-6 py-3 bg-stone-900 hover:bg-stone-800 disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold font-mono rounded-lg tracking-wider uppercase transition-all flex items-center justify-center gap-2"
-            >
-              {isSubmitting ? (
-                <>
-                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
-                  Saving...
-                </>
-              ) : (
-                <>
-                  <Save className="w-3.5 h-3.5" />
-                  Save Changes
-                </>
-              )}
-            </button>
-          </div>
-        </form>
-      </motion.div>
+          </PortalCard>
+        </div>
+      </div>
 
       <AvatarCropModal
         isOpen={Boolean(cropSource)}
@@ -385,10 +380,14 @@ export default function ProfileForm() {
         onSave={handleCropSave}
       />
 
-      <DiscardChangesDialog
+      <ConfirmDialog
         isOpen={isDiscardDialogOpen}
-        onDiscard={handleDiscardChanges}
-        onContinue={handleContinueEditing}
+        onClose={() => setIsDiscardDialogOpen(false)}
+        onConfirm={handleDiscardChanges}
+        title="Discard unsaved changes?"
+        message="The details you have edited will go back to what they were when this page loaded."
+        confirmLabel="Discard changes"
+        variant="cobalt"
       />
     </div>
   );

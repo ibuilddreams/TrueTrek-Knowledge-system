@@ -28,6 +28,8 @@ import {
   portalHref,
 } from "@/components/features/portal/shell/portalNav";
 import WarRoomScreen from "@/components/features/warroom/WarRoomScreen";
+import MessagesScreen from "@/components/features/messaging/MessagesScreen";
+import ProfileForm from "@/components/features/profile/ProfileForm";
 import TeacherApplicationBanner from "@/components/features/teachers/onboarding/TeacherApplicationBanner";
 import DashboardTab from "./tabs/DashboardTab";
 import MyCoursesTab from "./tabs/MyCoursesTab";
@@ -82,23 +84,22 @@ function TeacherPortalContent({ slug = DEFAULT_PORTAL_SLUG }) {
   if (!isFacultyLoggedIn) {
     return (
       <div className="min-h-[70vh] flex items-center justify-center px-6">
-        <div className="w-full max-w-md bg-paper border border-line rounded-2xl shadow-xl p-8 text-center relative overflow-hidden">
-          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-gold/60 via-gold to-gold/60" />
-          <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-gold/12 border border-gold/25 text-gold flex items-center justify-center">
+        <div className="w-full max-w-md bg-cn-p-card border border-cn-p-line rounded-2xl p-8 text-center relative overflow-hidden">
+          <div className="w-12 h-12 mx-auto mb-4 rounded-xl bg-cn-p-soft border border-cn-p-soft text-cn-p-soft-ink flex items-center justify-center">
             <Lock className="w-6 h-6" />
           </div>
-          <h2 className="text-2xl font-serif font-bold text-ink mb-1.5">
-            Faculty Access Required
+          <h2 className="text-2xl font-bold text-cn-p-ink mb-1.5">
+            Faculty access required
           </h2>
-          <p className="text-sm text-muted font-light mb-6">
+          <p className="text-sm text-cn-p-ink-2 font-light mb-6">
             Sign in with a teacher account to open the Faculty Suite.
           </p>
           <button
             type="button"
             onClick={() => router.push(ROUTES.LOGIN)}
-            className="w-full py-3.5 bg-pine hover:bg-moss text-paper font-bold font-mono text-sm uppercase tracking-wider rounded-xl shadow-md transition"
+            className="w-full py-3.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white font-bold text-sm rounded-xl transition"
           >
-            Go to Sign In
+            Go to sign in
           </button>
         </div>
       </div>
@@ -125,11 +126,13 @@ function TeacherPortalContent({ slug = DEFAULT_PORTAL_SLUG }) {
         {activeTab === "students" && <EnrollmentScoresTab />}
         {activeTab === "classes" && <LiveClassesTab />}
         {activeTab === "warroom" && <WarRoomScreen />}
+        {activeTab === "messages" && <MessagesScreen />}
         {activeTab === "advisor" && user?.isAdvisor && <AdvisorQuestionsTab />}
         {activeTab === "progress" && <ProgressTab />}
         {activeTab === "manuals" && <InstructionalManualsTab />}
         {activeTab === "documents" && <CurriculumDocumentsTab />}
-        {activeTab === "profile" && <InstructorProfileTab />}
+        {activeTab === "public-profile" && <InstructorProfileTab />}
+        {activeTab === "profile" && <ProfileForm />}
         {activeTab === "requests" && <RequestsTab />}
         {activeTab === "concerns" && <StudentConcernsTab />}
       </TabTransition>
@@ -139,7 +142,7 @@ function TeacherPortalContent({ slug = DEFAULT_PORTAL_SLUG }) {
 
 export default function TeacherPortal({ slug }) {
   return (
-    <Suspense fallback={<Loader label="Loading Teacher Portal..." />}>
+    <Suspense fallback={<Loader tone="cobalt" label="Loading teacher portal..." />}>
       <TeacherPortalContent slug={slug} />
     </Suspense>
   );

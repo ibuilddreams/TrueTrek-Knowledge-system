@@ -1,6 +1,6 @@
 "use client";
 
-import { Suspense, useCallback, useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   BookOpen,
@@ -28,12 +28,12 @@ import {
   UserPlus,
   Users,
 } from "lucide-react";
+import { useQuery } from "@tanstack/react-query";
 import { useAuth } from "@/hooks/useAuth";
+import { getAdminTeacherApplicationSummary } from "@/services/teacherOnboardingService";
 import { useAdminEnrollments } from "@/hooks/admin/useAdminEnrollments";
 import { ROUTES } from "@/constants/routes";
 import AuthGateCard from "@/components/ui/AuthGateCard";
-import AccountMenu from "@/components/ui/AccountMenu";
-import NotificationBell from "@/components/ui/NotificationBell";
 import TabTransition from "@/components/ui/TabTransition";
 import { AUTH_ROLES } from "@/constants/auth";
 import PortalShell from "@/components/features/portal/shell/PortalShell";
@@ -68,6 +68,8 @@ import WargamerTab from "@/components/features/admin/tabs/WargamerTab";
 import LiveSessionsTab from "@/components/features/admin/tabs/LiveSessionsTab";
 import InvitationsTab from "@/components/features/admin/tabs/InvitationsTab";
 import TestimonialsTab from "@/components/features/admin/tabs/TestimonialsTab";
+import MessagesScreen from "@/components/features/messaging/MessagesScreen";
+import ProfileForm from "@/components/features/profile/ProfileForm";
 
 const TABS = [
   { id: "dashboard", label: "Dashboard", icon: LayoutDashboard },
@@ -76,23 +78,23 @@ const TABS = [
   { id: "students", label: "Students", icon: GraduationCap },
   { id: "testimonials", label: "Testimonials", icon: MessageSquareQuote },
   { id: "teachers", label: "Teachers", icon: Users },
-  { id: "teacher-applications", label: "Teacher Applications", icon: UserCheck },
+  { id: "teacher-applications", label: "Teacher applications", icon: UserCheck },
   { id: "invitations", label: "Invitations", icon: UserPlus },
-  { id: "teacher-requests", label: "Teacher Requests", icon: FileWarning },
-  { id: "student-concerns", label: "Student Concerns", icon: ShieldAlert },
+  { id: "teacher-requests", label: "Teacher requests", icon: FileWarning },
+  { id: "student-concerns", label: "Student concerns", icon: ShieldAlert },
   { id: "progress", label: "Progress", icon: LineChart },
   { id: "tags", label: "Tags", icon: Tag },
   { id: "categories", label: "Categories", icon: Folder },
   { id: "tiers", label: "Tiers", icon: Layers3 },
   { id: "pathways", label: "Pathways", icon: Route },
   { id: "questionnaire", label: "Questionnaire", icon: HelpCircle },
-  { id: "daily-drills", label: "Daily Drills", icon: Calendar },
-  { id: "quests", label: "Daily Quests", icon: Swords },
-  { id: "wargamer", label: "Tactical Wargamer", icon: Theater },
-  { id: "live-sessions", label: "War Room Live", icon: Mic },
+  { id: "daily-drills", label: "Daily drills", icon: Calendar },
+  { id: "quests", label: "Daily quests", icon: Swords },
+  { id: "wargamer", label: "Tactical wargamer", icon: Theater },
+  { id: "live-sessions", label: "War room live", icon: Mic },
   { id: "rewards", label: "Rewards", icon: Gift },
   { id: "redemptions", label: "Redemptions", icon: ClipboardList },
-  { id: "student-points", label: "Student Points", icon: Coins },
+  { id: "student-points", label: "Student points", icon: Coins },
 ];
 
 const TAB_COMPONENTS = {
@@ -120,6 +122,10 @@ const TAB_COMPONENTS = {
   rewards: RewardsTab,
   redemptions: RedemptionsTab,
   "student-points": StudentPointsTab,
+  // Neither is in the admin sidebar (the design doesn't list them there
+  // either) — both are reached from the account menu at the foot of the rail.
+  messages: MessagesScreen,
+  profile: ProfileForm,
 };
 
 const VALID_TABS = new Set(TABS.map((tab) => tab.id));
@@ -132,11 +138,6 @@ function resolveTab(tabParam) {
 
 const DETAIL_PARAMS = ["progressCourseId", "concern", "application"];
 
-const NOTIFICATION_DESTINATIONS = {
-  student_concern: { tab: "student-concerns", param: "concern" },
-  teacher_onboarding: { tab: "teacher-applications", param: "application" },
-};
-
 function AdminDashboardContent({ slug = DEFAULT_PORTAL_SLUG }) {
   const router = useRouter();
   const pathname = usePathname();
@@ -144,6 +145,15 @@ function AdminDashboardContent({ slug = DEFAULT_PORTAL_SLUG }) {
   const { isAdmin, isAuthenticated, user } = useAuth();
   const { loadEnrollments } = useAdminEnrollments();
   const [isEnrollModalOpen, setIsEnrollModalOpen] = useState(false);
+
+  // The design badges the applications queue with what is waiting on an admin.
+  // The same summary endpoint the queue itself reads, so opening that tab is
+  // served from cache rather than fetched twice.
+  const { data: applicationSummary } = useQuery({
+    queryKey: ["teacher-onboarding", "admin", "summary"],
+    queryFn: async () => (await getAdminTeacherApplicationSummary())?.data || {},
+  });
+  const awaitingApplications = applicationSummary?.AWAITING_REVIEW ?? 0;
 
   const activeTab = isValidPortalSlug(AUTH_ROLES.ADMIN, slug)
     ? slug
@@ -164,42 +174,21 @@ function AdminDashboardContent({ slug = DEFAULT_PORTAL_SLUG }) {
     router.replace(query ? `${href}?${query}` : href, { scroll: false });
   }, [router, searchParams]);
 
-  // Which tab a notification opens, and which query param carries the row it
-  // points at. Keyed on `related_object_type`, which every producer sets (see
-  // notifications/services.py) — before this existed every notification
-  // landed on Student Concerns, which was right only because that was the
-  // only producer.
-  const handleSelectNotification = useCallback(
-    (notification) => {
-      const destination = NOTIFICATION_DESTINATIONS[notification.related_object_type];
-      if (!destination) return;
-
-      const params = new URLSearchParams();
-      if (notification.related_object_id) {
-        params.set(destination.param, String(notification.related_object_id));
-      }
-      const href = portalHref(AUTH_ROLES.ADMIN, destination.tab);
-      const query = params.toString();
-      router.push(query ? `${href}?${query}` : href);
-    },
-    [router]
-  );
-
   if (!isAuthenticated || !isAdmin) {
     return (
       <AuthGateCard
         id="admin-gate-container"
         icon={Lock}
-        title="Admin Access Required"
+        title="Admin access required"
         subtitle="Sign in with an administrator account to view system-wide statistics and activity."
         size="lg"
       >
         <button
           type="button"
           onClick={() => router.push(ROUTES.LOGIN)}
-          className="w-full py-3.5 bg-pine hover:bg-moss text-paper font-medium font-sans text-xs uppercase tracking-widest rounded-full shadow-md transition"
+          className="w-full py-3.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white font-medium font-sans text-xs rounded-full transition"
         >
-          Go to Sign In
+          Go to sign in
         </button>
       </AuthGateCard>
     );
@@ -213,7 +202,7 @@ function AdminDashboardContent({ slug = DEFAULT_PORTAL_SLUG }) {
       activeSlug={activeTab}
       user={{ name: user?.name }}
       today={new Date()}
-      onOpenNotifications={undefined}
+      badges={{ teacherApplications: awaitingApplications || null }}
     >
       <TabTransition activeKey={activeTab}>
         <ActiveTabComponent />
@@ -230,7 +219,7 @@ function AdminDashboardContent({ slug = DEFAULT_PORTAL_SLUG }) {
 
 export default function AdminDashboard({ slug }) {
   return (
-    <Suspense fallback={<Loader label="Loading Dashboard..." />}>
+    <Suspense fallback={<Loader tone="cobalt" label="Loading dashboard..." />}>
       <AdminDashboardContent slug={slug} />
     </Suspense>
   );

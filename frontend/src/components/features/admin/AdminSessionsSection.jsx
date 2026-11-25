@@ -87,9 +87,9 @@ export default function AdminSessionsSection() {
       header: "Session",
       render: (session) => (
         <div>
-          <span className="font-semibold text-ink">{session.title}</span>
+          <span className="font-semibold text-cn-p-ink">{session.title}</span>
           {session.topic && (
-            <p className="text-[11px] text-muted font-light line-clamp-1 max-w-xs">
+            <p className="text-[11px] text-cn-p-ink-2 font-light line-clamp-1 max-w-xs">
               {session.topic}
             </p>
           )}
@@ -100,7 +100,7 @@ export default function AdminSessionsSection() {
       key: "scheduled_at",
       header: "Scheduled",
       render: (session) => (
-        <span className="text-muted whitespace-nowrap">
+        <span className="text-cn-p-ink-2 whitespace-nowrap">
           {formatDateTime(session.scheduled_at)}
         </span>
       ),
@@ -109,7 +109,7 @@ export default function AdminSessionsSection() {
       key: "speakers",
       header: "Speakers",
       render: (session) => (
-        <span className="text-muted">
+        <span className="text-cn-p-ink-2">
           {(session.speakers || []).map((speaker) => speaker.name).join(", ") || "—"}
         </span>
       ),
@@ -118,13 +118,13 @@ export default function AdminSessionsSection() {
       key: "rsvp_count",
       header: "RSVPs",
       render: (session) => (
-        <span className="font-mono font-bold text-ink">{session.rsvp_count ?? 0}</span>
+        <span className="font-bold text-cn-p-ink">{session.rsvp_count ?? 0}</span>
       ),
     },
     {
       key: "live_state",
       header: "State",
-      render: (session) => <StatusBadge size="lg" status={session.live_state} />,
+      render: (session) => <StatusBadge tone="cobalt" size="lg" status={session.live_state} />,
     },
     {
       key: "actions",
@@ -139,7 +139,7 @@ export default function AdminSessionsSection() {
               ? [
                   {
                     key: "room",
-                    label: "Open Room",
+                    label: "Open room",
                     icon: Radio,
                     onSelect: () => setRoomSession(session),
                   },
@@ -149,7 +149,7 @@ export default function AdminSessionsSection() {
               ? [
                   {
                     key: "notes",
-                    label: "Session Notes",
+                    label: "Session notes",
                     icon: NotebookPen,
                     onSelect: () => setNotesSession(session),
                   },
@@ -157,19 +157,19 @@ export default function AdminSessionsSection() {
               : []),
             {
               key: "edit",
-              label: "Edit Session",
+              label: "Edit session",
               icon: Edit3,
               onSelect: () => setEditingSession(session),
             },
             {
               key: "attendees",
-              label: "View Attendees",
+              label: "View attendees",
               icon: Users,
               onSelect: () => setAttendeesSession(session),
             },
             {
               key: "remove",
-              label: "Cancel / Delete",
+              label: "Cancel / delete",
               icon: Trash2,
               tone: "danger",
               onSelect: () => setRemovingSession(session),
@@ -183,7 +183,7 @@ export default function AdminSessionsSection() {
   return (
     <div className="space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
-        <SearchBar
+        <SearchBar tone="cobalt"
           size="lg"
           value={searchInput}
           onChange={setSearchInput}
@@ -193,17 +193,17 @@ export default function AdminSessionsSection() {
         <button
           type="button"
           onClick={() => setIsFormOpen(true)}
-          className="px-4 py-2.5 bg-pine hover:bg-moss text-paper text-sm font-semibold font-mono rounded-xl tracking-wider shadow-soft hover:shadow-elevated transition-all flex items-center gap-2 shrink-0 cursor-pointer"
+          className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-sm font-semibold rounded-cn-p-sm transition-all flex items-center gap-2 shrink-0 cursor-pointer"
           title="Schedule a new session"
           aria-label="Schedule a new session"
         >
           <Mic className="w-4 h-4" />
-          SCHEDULE SESSION
+          Schedule session
         </button>
       </div>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-        <DataTable
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+        <DataTable tone="cobalt"
           size="lg"
           columns={columns}
           rows={sessions}
@@ -212,13 +212,17 @@ export default function AdminSessionsSection() {
           onRetry={refetch}
           emptyLabel="No sessions scheduled."
         />
-        <Pagination
-          size="lg"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalLabel={`${totalCount} session${totalCount === 1 ? "" : "s"}`}
-        />
+        <div className="px-4 pb-4">
+
+          <Pagination tone="cobalt"
+            size="lg"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalLabel={`${totalCount} session${totalCount === 1 ? "" : "s"}`}
+          />
+
+        </div>
       </div>
 
       <LiveSessionFormModal
@@ -257,7 +261,7 @@ export default function AdminSessionsSection() {
         />
       )}
 
-      <ConfirmDialog
+      <ConfirmDialog variant="cobalt"
         isOpen={Boolean(removingSession)}
         onClose={() => setRemovingSession(null)}
         onConfirm={handleRemove}
@@ -269,7 +273,7 @@ export default function AdminSessionsSection() {
             ? `"${removingSession.title}" will be cancelled if students have already RSVP'd, so they still see it with a reason. If nobody has RSVP'd, it will be deleted outright.`
             : ""
         }
-        confirmLabel="Remove Session"
+        confirmLabel="Remove session"
       />
     </div>
   );

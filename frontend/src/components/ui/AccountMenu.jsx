@@ -9,8 +9,8 @@ import { useLogoutFlow } from "@/hooks/useLogoutFlow";
 import { useUnreadMessagesCount } from "@/hooks/useUnreadMessagesCount";
 import { getProfile } from "@/services/profileService";
 
-const FALLBACK_LABEL = "My Account";
-const MENU_WIDTH = 208;
+const FALLBACK_LABEL = "My account";
+const MENU_WIDTH = 240;  // the design's `.pop.menu`
 const NAVBAR_HEIGHT = 80;
 
 function getFirstName(name) {
@@ -61,6 +61,7 @@ export default function AccountMenu({
   }, []);
 
   const avatarUrl = backendProfile?.profile?.avatar || null;
+  const accountEmail = backendProfile?.email || user?.email || "";
   const displayLabel =
     label || getFirstName(backendProfile?.full_name || user?.name);
   const rawRoleLabel = !label ? backendProfile?.role || undefined : undefined;
@@ -175,7 +176,7 @@ export default function AccountMenu({
   const menuItems = [
     {
       key: "profile",
-      label: "Profile",
+      label: "Profile & settings",
       icon: User,
       onSelect: onProfile,
       disabled: false,
@@ -190,11 +191,10 @@ export default function AccountMenu({
     },
     {
       key: "sign-out",
-      label: isSigningOut ? "Signing Out..." : "Sign Out",
+      label: isSigningOut ? "Signing out..." : "Sign out",
       icon: LogOut,
       onSelect: signOut,
       disabled: isSigningOut,
-      danger: true,
     },
   ];
 
@@ -215,23 +215,27 @@ export default function AccountMenu({
             left: menuPosition.left,
             width: MENU_WIDTH,
           }}
-          className="max-w-[calc(100vw-2rem)] font-sans border rounded-xl shadow-elevated py-1.5 z-40 bg-paper border-line"
+          className="z-40 max-w-[calc(100vw-2rem)] rounded-[14px] border border-cn-p-line bg-cn-p-card p-2 font-sans shadow-cn-p"
         >
-          <div className="px-3.5 py-2 mb-1 border-b border-line">
-            <p
-              className={`${size === "lg" ? "text-[11px]" : "text-[10px]"} uppercase tracking-widest text-muted font-semibold`}
-            >
-              Account
-            </p>
-            <p
-              className={`${size === "lg" ? "text-sm" : "text-xs"} font-semibold truncate mt-0.5 text-ink`}
-            >
-              {displayLabel}
-            </p>
+          <div className="flex items-center gap-3 p-3">
+            <span className="grid h-10 w-10 flex-none place-items-center overflow-hidden rounded-full bg-cn-p-soft text-[13px] font-bold text-cn-p-soft-ink">
+              {avatarUrl ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
+              ) : (
+                <User className="h-[18px] w-[18px]" />
+              )}
+            </span>
+            <span className="grid min-w-0">
+              <b className="truncate text-sm text-cn-p-ink">{displayLabel}</b>
+              {accountEmail && (
+                <span className="truncate text-xs text-cn-p-ink-2">{accountEmail}</span>
+              )}
+            </span>
           </div>
           {menuItems.map(
             (
-              { key, label: itemLabel, icon: Icon, onSelect, disabled, danger, badge },
+              { key, label: itemLabel, icon: Icon, onSelect, disabled, badge },
               index
             ) => (
               <button
@@ -249,20 +253,13 @@ export default function AccountMenu({
                 onKeyDown={(event) =>
                   handleItemKeyDown(event, index, menuItems.length)
                 }
-                className={
-                  `w-full flex items-center gap-2.5 px-3.5 py-2.5 ${size === "lg" ? "text-sm" : "text-xs"} font-semibold focus:outline-none transition-colors disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:bg-transparent ` +
-                  (danger
-                    ? "text-rose-700 hover:bg-rose-50 focus:bg-rose-50"
-                    : "text-ink hover:bg-porcelain focus:bg-porcelain")
-                }
+                className="flex w-full items-center gap-3 rounded-cn-p-sm p-3 text-left text-sm text-cn-p-ink transition-colors duration-150 hover:bg-cn-p-page focus:bg-cn-p-page focus:outline-none disabled:cursor-not-allowed disabled:opacity-60 disabled:hover:bg-transparent"
               >
-                <Icon
-                  className={`w-4 h-4 ${danger ? "text-rose-500" : "text-muted"}`}
-                />
+                <Icon className="h-[18px] w-[18px] flex-none text-cn-p-ink-2" />
                 <span className="flex-1 text-left">{itemLabel}</span>
                 {badge ? (
                   <span
-                    className={`min-w-4.5 h-4.5 px-1 rounded-full bg-gold text-ink ${size === "lg" ? "text-[10px]" : "text-[9px]"} font-bold font-sans flex items-center justify-center shrink-0`}
+                    className="flex h-[18px] min-w-[18px] shrink-0 items-center justify-center rounded-full bg-cn-p-accent px-1 text-[10px] font-bold text-white"
                   >
                     {badge}
                   </span>
@@ -290,14 +287,14 @@ export default function AccountMenu({
         aria-haspopup="menu"
         aria-expanded={isOpen}
         className={
-          `w-full px-3.5 py-2.5 ${size === "lg" ? "text-sm" : "text-xs"} font-semibold font-sans rounded-xl tracking-wide transition-all duration-200 flex items-center gap-2 border shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-pine focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed ` +
+          `w-full px-3.5 py-2.5 ${size === "lg" ? "text-sm" : "text-xs"} font-semibold font-sans rounded-xl tracking-wide transition-all duration-200 flex items-center gap-2 border shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-cn-p-accent focus-visible:ring-offset-2 disabled:opacity-60 disabled:cursor-not-allowed ` +
           (isOpen
             ? isDark
               ? "bg-white/10 border-white/15 shadow-md"
-              : "bg-white border-pine/25 ring-2 ring-pine/15"
+              : "bg-white border-cn-p-accent-soft ring-2 ring-cn-p-soft"
             : isDark
-              ? "bg-ink/40 hover:bg-ink/60 border-white/10 hover:border-white/20 hover:shadow-md"
-              : "bg-porcelain hover:bg-white border-line hover:border-pine/25")
+              ? "bg-cn-p-ink/40 hover:bg-cn-p-ink/60 border-white/10 hover:border-white/20 hover:shadow-md"
+              : "bg-cn-p-page hover:bg-white border-cn-p-line hover:border-cn-p-accent-soft")
         }
         title="Open account menu"
         aria-label="Open account menu"
@@ -306,8 +303,8 @@ export default function AccountMenu({
           className={
             "w-8 h-8 rounded-lg overflow-hidden flex items-center justify-center shrink-0 " +
             (isDark
-              ? "bg-ink/60 text-gold border border-white/15 shadow-inner"
-              : "bg-gold/15 text-[#8a6f2e] border border-gold/25")
+              ? "bg-cn-p-ink/60 text-cn-p-soft-ink border border-white/15 shadow-inner"
+              : "bg-cn-p-soft text-cn-p-soft-ink border border-cn-p-soft")
           }
         >
           {avatarUrl ? (
@@ -320,28 +317,28 @@ export default function AccountMenu({
         <span className="flex flex-col items-start leading-tight text-left min-w-0 gap-0.5">
           <span
             className={`font-semibold truncate max-w-36 ${
-              isDark ? "text-paper" : "text-ink"
-            }`}
+ isDark ? "text-white" : "text-cn-p-ink"
+ }`}
           >
             {displayLabel}
           </span>
           {roleLabel && (
             <span
               className={`${size === "lg" ? "text-[11px]" : "text-[10px]"} font-normal tracking-normal normal-case truncate max-w-36 ${
-                isDark ? "text-sage/60" : "text-muted"
-              }`}
+ isDark ? "text-white/60" : "text-cn-p-ink-2"
+ }`}
             >
               {roleLabel}
             </span>
           )}
         </span>
         <span
-          className={`w-px h-6 shrink-0 ${isDark ? "bg-white/15" : "bg-line"}`}
+          className={`w-px h-6 shrink-0 ${isDark ? "bg-white/15" : "bg-cn-p-line"}`}
         />
         <ChevronDown
-          className={`w-3.5 h-3.5 text-muted transition-transform duration-200 shrink-0 ${
-            isOpen ? "rotate-180" : ""
-          }`}
+          className={`w-3.5 h-3.5 text-cn-p-ink-2 transition-transform duration-200 shrink-0 ${
+ isOpen ? "rotate-180" : ""
+ }`}
         />
       </button>
 

@@ -16,8 +16,13 @@ import { formatDateTime } from "@/lib/adminFormatters";
 import { ASSIGNMENT_STATUS_OPTIONS, PAGE_SIZE, BULK_FETCH_SIZE } from "./progressConstants";
 import { paginate } from "./progressUtils";
 import GradeSubmissionModal from "./GradeSubmissionModal";
+import { makeSkin } from "@/lib/portalSkin";
 
-export default function AssignmentProgressPanel({ courseId }) {
+// Rendered by both the admin and the teacher portal, so the palette comes
+// from the caller: "porcelain" (the default, unchanged) or the signed-in
+// portal's cobalt.
+export default function AssignmentProgressPanel({ courseId, tone = "porcelain" }) {
+  const skin = makeSkin(tone);
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, 300);
   const [assignmentFilter, setAssignmentFilter] = useState("");
@@ -72,7 +77,7 @@ export default function AssignmentProgressPanel({ courseId }) {
 
   const assignmentFilterOptions = useMemo(
     () => [
-      { value: "", label: "All Assignments" },
+      { value: "", label: "All assignments" },
       ...assignments.map((assignment) => ({ value: String(assignment.id), label: assignment.title })),
     ],
     [assignments],
@@ -84,8 +89,8 @@ export default function AssignmentProgressPanel({ courseId }) {
       header: "Student",
       render: (row) => (
         <div className="min-w-0">
-          <p className="text-sm font-semibold text-stone-800 truncate">{row.student.name}</p>
-          <p className="text-[11px] font-mono text-stone-400 truncate">{row.student.email}</p>
+          <p className={skin("text-sm font-semibold text-stone-800 truncate")}>{row.student.name}</p>
+          <p className={skin("text-[11px] font-mono text-stone-400 truncate")}>{row.student.email}</p>
         </div>
       ),
     },
@@ -96,14 +101,14 @@ export default function AssignmentProgressPanel({ courseId }) {
         <span className="inline-flex items-center gap-1.5">
           {row.assignment.title}
           {row.assignment.grading_mode === "AI" && (
-            <span className="text-[10px] font-mono font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200">
+            <span className={skin("text-[10px] font-mono font-semibold uppercase tracking-wider px-1.5 py-0.5 rounded border bg-amber-50 text-amber-700 border-amber-200")}>
               AI
             </span>
           )}
         </span>
       ),
     },
-    { key: "status", header: "Status", render: (row) => <StatusBadge status={row.status} size="lg" /> },
+    { key: "status", header: "Status", render: (row) => <StatusBadge tone={tone} status={row.status} size="lg" /> },
     { key: "submitted_at", header: "Submitted", render: (row) => formatDateTime(row.submitted_at) || "—" },
     {
       key: "marks",
@@ -118,12 +123,12 @@ export default function AssignmentProgressPanel({ courseId }) {
           <button
             type="button"
             onClick={() => setGradingRow(row)}
-            className="text-xs font-mono font-semibold text-amber-700 hover:text-amber-900 transition cursor-pointer"
+            className={skin(`text-xs font-semibold transition cursor-pointer ${tone === "cobalt" ? "text-cn-p-accent hover:underline" : "font-mono text-amber-700 hover:text-amber-900"}`)}
           >
             {row.status === "GRADED" ? "Edit Grade" : "Grade"}
           </button>
         ) : (
-          <span className="text-xs font-mono text-stone-300">—</span>
+          <span className={skin("text-xs font-mono text-stone-300")}>—</span>
         ),
     },
   ];
@@ -131,31 +136,31 @@ export default function AssignmentProgressPanel({ courseId }) {
   return (
     <div className="space-y-5">
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard
-          label="Total Assignments"
+        <StatCard tone={tone}
+          label="Total assignments"
           value={stats?.total_assignments ?? "—"}
           icon={ClipboardCheck}
           size="lg"
         />
-        <StatCard
-          label="Total Submissions"
+        <StatCard tone={tone}
+          label="Total submissions"
           value={stats?.total_submissions ?? "—"}
           icon={CheckCircle2}
           accent="emerald"
           size="lg"
         />
-        <StatCard
-          label="Pending Reviews"
+        <StatCard tone={tone}
+          label="Pending reviews"
           value={stats?.pending_reviews ?? "—"}
           icon={Clock}
           accent="rose"
           size="lg"
         />
-        <StatCard label="Graded" value={stats?.graded ?? "—"} icon={Trophy} accent="stone" size="lg" />
+        <StatCard tone={tone} label="Graded" value={stats?.graded ?? "—"} icon={Trophy} accent="stone" size="lg" />
       </div>
 
       <div className="flex flex-col sm:flex-row sm:items-center gap-3">
-        <SearchBar
+        <SearchBar tone={tone}
           value={searchInput}
           onChange={(value) => {
             setSearchInput(value);
@@ -165,7 +170,7 @@ export default function AssignmentProgressPanel({ courseId }) {
           size="lg"
         />
         <div className="w-full sm:w-56 shrink-0">
-          <SearchableSelect
+          <SearchableSelect tone={tone}
             options={assignmentFilterOptions}
             value={assignmentFilter}
             onChange={(value) => {
@@ -177,7 +182,7 @@ export default function AssignmentProgressPanel({ courseId }) {
           />
         </div>
         <div className="w-full sm:w-48 shrink-0">
-          <SearchableSelect
+          <SearchableSelect tone={tone}
             options={ASSIGNMENT_STATUS_OPTIONS}
             value={statusFilter}
             onChange={(value) => {
@@ -190,8 +195,8 @@ export default function AssignmentProgressPanel({ courseId }) {
         </div>
       </div>
 
-      <div className="bg-white border border-stone-200 rounded-2xl shadow-sm p-6">
-        <DataTable
+      <div className={skin("bg-white border border-stone-200 rounded-2xl shadow-sm p-6")}>
+        <DataTable tone={tone}
           columns={columns}
           rows={pageItems}
           keyField="rowId"
@@ -205,7 +210,7 @@ export default function AssignmentProgressPanel({ courseId }) {
           emptyLabel="No assignments or submissions found."
           size="lg"
         />
-        <Pagination
+        <Pagination tone={tone}
           page={safePage}
           totalPages={totalPages}
           onPageChange={setPage}
@@ -214,7 +219,12 @@ export default function AssignmentProgressPanel({ courseId }) {
         />
       </div>
 
-      <GradeSubmissionModal row={gradingRow} onClose={() => setGradingRow(null)} courseId={courseId} />
+      <GradeSubmissionModal
+        row={gradingRow}
+        onClose={() => setGradingRow(null)}
+        courseId={courseId}
+        tone={tone}
+      />
     </div>
   );
 }

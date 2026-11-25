@@ -35,14 +35,12 @@ export default function SkillsTagInput({ values, onChange, disabled = false, err
   return (
     <div>
       <div
-        className={`flex flex-wrap items-center gap-2 px-3 py-2.5 bg-porcelain border rounded-xl transition focus-within:border-pine focus-within:bg-paper ${
-          error ? "border-red-400" : "border-line"
-        } ${disabled ? "opacity-60" : ""}`}
+        className={`flex flex-wrap items-center gap-2 px-3 py-2.5 bg-cn-p-page border rounded-xl transition focus-within:border-cn-p-accent focus-within:bg-cn-p-card ${ error ? "border-red-400" : "border-cn-p-line" } ${disabled ? "opacity-60" : ""}`}
       >
         {values.map((skill) => (
           <span
             key={skill}
-            className="inline-flex items-center gap-1.5 rounded-full bg-paper border border-line pl-3 pr-1.5 py-1 text-xs font-sans text-ink"
+            className="inline-flex items-center gap-1.5 rounded-full bg-cn-p-card border border-cn-p-line pl-3 pr-1.5 py-1 text-xs font-sans text-cn-p-ink"
           >
             {skill}
             <button
@@ -50,7 +48,7 @@ export default function SkillsTagInput({ values, onChange, disabled = false, err
               onClick={() => onChange(values.filter((value) => value !== skill))}
               disabled={disabled}
               aria-label={`Remove ${skill}`}
-              className="w-5 h-5 rounded-full flex items-center justify-center text-muted hover:bg-porcelain hover:text-clay transition"
+              className="w-5 h-5 rounded-full flex items-center justify-center text-cn-p-ink-2 hover:bg-cn-p-page hover:text-cn-p-warn transition"
             >
               <X className="w-3 h-3" />
             </button>
@@ -66,13 +64,13 @@ export default function SkillsTagInput({ values, onChange, disabled = false, err
           maxLength={MAX_SKILL_LENGTH}
           placeholder={isFull ? "Maximum reached" : values.length ? "Add another…" : "e.g. Algebra, Latin, Public speaking"}
           aria-label="Add a skill"
-          className="flex-1 min-w-32 bg-transparent text-sm font-mono text-ink placeholder:text-muted focus:outline-none"
+          className="flex-1 min-w-32 bg-transparent text-sm text-cn-p-ink placeholder:text-cn-p-muted focus:outline-none"
         />
       </div>
-      <p className="mt-1.5 text-[11px] font-mono text-muted">
+      <p className="mt-1.5 text-[11px] text-cn-p-ink-2">
         Press Enter or comma to add. Up to {MAX_SKILLS} skills.
       </p>
-      {error && <p className="text-[11px] font-mono text-red-600 mt-1">{error}</p>}
+      {error && <p className="text-[11px] text-red-600 mt-1">{error}</p>}
     </div>
   );
 }

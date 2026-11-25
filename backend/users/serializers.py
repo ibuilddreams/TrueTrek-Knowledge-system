@@ -1,4 +1,5 @@
 from django.conf import settings
+from django.db.models import Avg
 from django.contrib.auth import authenticate, get_user_model
 from django.contrib.auth.password_validation import validate_password
 from django.contrib.auth.tokens import default_token_generator
@@ -287,6 +288,35 @@ class StudentSerializer(serializers.ModelSerializer):
             "date_joined",
         ]
         read_only_fields = fields
+
+
+class StudentDetailSerializer(StudentSerializer):
+    """One student, for the admin's detail page.
+
+    The three extras are computed per request rather than annotated onto the
+    list, because the list renders a hundred rows and this renders one: an
+    average over a student's `CourseProgress` rows and their enrolment count
+    are two small queries here and two hundred there.
+    """
+
+    enrollment_count = serializers.SerializerMethodField()
+    average_progress = serializers.SerializerMethodField()
+    last_login = serializers.DateTimeField(read_only=True)
+
+    class Meta(StudentSerializer.Meta):
+        fields = StudentSerializer.Meta.fields + [
+            "enrollment_count",
+            "average_progress",
+            "last_login",
+        ]
+        read_only_fields = fields
+
+    def get_enrollment_count(self, student):
+        return student.enrollments.count()
+
+    def get_average_progress(self, student):
+        average = student.course_progress.aggregate(avg=Avg("completion_percentage"))["avg"]
+        return round(float(average), 2) if average is not None else 0.0
 
 
 class StudentUpdateSerializer(serializers.ModelSerializer):

@@ -14,18 +14,19 @@ import DataTable from "@/components/ui/DataTable";
 import Pagination from "@/components/ui/Pagination";
 import StatusBadge from "@/components/ui/StatusBadge";
 import StudentConcernDetailModal from "@/components/features/admin/StudentConcernDetailModal";
+import { PortalPageHead } from "@/components/features/portal/shell/PortalUI";
 
 const PAGE_SIZE = 10;
 
 const STATUS_FILTER_OPTIONS = [
-  { value: "", label: "All Statuses" },
+  { value: "", label: "All statuses" },
   { value: "PENDING", label: "Pending" },
-  { value: "IN_PROGRESS", label: "In Progress" },
+  { value: "IN_PROGRESS", label: "In progress" },
   { value: "RESOLVED", label: "Resolved" },
 ];
 
 const CATEGORY_FILTER_OPTIONS = [
-  { value: "", label: "All Categories" },
+  { value: "", label: "All categories" },
   { value: "ACADEMIC", label: "Academic" },
   { value: "BEHAVIORAL", label: "Behavioral" },
   { value: "ATTENDANCE", label: "Attendance" },
@@ -34,8 +35,8 @@ const CATEGORY_FILTER_OPTIONS = [
 ];
 
 const ATTENTION_FILTER_OPTIONS = [
-  { value: "", label: "All Concerns" },
-  { value: "true", label: "Needs Admin Attention" },
+  { value: "", label: "All concerns" },
+  { value: "true", label: "Needs admin attention" },
 ];
 
 export default function StudentConcernsTab() {
@@ -115,23 +116,23 @@ export default function StudentConcernsTab() {
       header: "Student",
       render: (concern) => (
         <div>
-          <span className="font-semibold text-ink">{concern.student?.name}</span>
-          <p className="text-[11px] text-muted font-light">{concern.student?.email}</p>
+          <span className="font-semibold text-cn-p-ink">{concern.student?.name}</span>
+          <p className="text-[11px] text-cn-p-ink-2 font-light">{concern.student?.email}</p>
         </div>
       ),
     },
     {
       key: "teacher",
-      header: "Flagged By",
+      header: "Flagged by",
       render: (concern) => (
-        <span className="text-muted">{concern.teacher?.name}</span>
+        <span className="text-cn-p-ink-2">{concern.teacher?.name}</span>
       ),
     },
     {
       key: "category",
       header: "Category",
       render: (concern) => (
-        <span className="text-muted font-mono text-xs">{concern.category_display}</span>
+        <span className="text-cn-p-ink-2 text-xs">{concern.category_display}</span>
       ),
     },
     {
@@ -139,33 +140,38 @@ export default function StudentConcernsTab() {
       header: "Attention",
       render: (concern) =>
         concern.requires_admin_attention ? (
-          <span className="inline-flex items-center gap-1 text-[11px] font-mono uppercase text-rose-700">
+          <span className="inline-flex items-center gap-1 text-[11px] text-cn-p-bad">
             <ShieldAlert className="w-3.5 h-3.5" />
             Needed
           </span>
         ) : (
-          <span className="text-[11px] font-mono uppercase text-muted">—</span>
+          <span className="text-[11px] text-cn-p-ink-2">—</span>
         ),
     },
     {
       key: "status",
       header: "Status",
-      render: (concern) => <StatusBadge size="lg" status={concern.status} />,
+      render: (concern) => <StatusBadge tone="cobalt" size="lg" status={concern.status} />,
     },
     {
       key: "created_at",
       header: "Flagged",
       render: (concern) => (
-        <span className="text-muted whitespace-nowrap">{formatDateTime(concern.created_at)}</span>
+        <span className="text-cn-p-ink-2 whitespace-nowrap">{formatDateTime(concern.created_at)}</span>
       ),
     },
   ];
 
   return (
-    <div className="space-y-5">
-      <div className="flex flex-col sm:flex-row sm:items-center gap-3 justify-between">
+    <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      <PortalPageHead
+        title="Student concerns"
+        subtitle="Flagged by teachers. High severity is reviewed the same day."
+      />
+
+      <div className="flex flex-col gap-3 rounded-cn-p border border-cn-p-line bg-cn-p-card p-4 sm:flex-row sm:items-center sm:justify-between">
         <div className="flex flex-col sm:flex-row sm:items-center gap-3 flex-1 min-w-0">
-          <SearchBar
+          <SearchBar tone="cobalt"
             size="lg"
             value={searchInput}
             onChange={(value) => {
@@ -175,7 +181,7 @@ export default function StudentConcernsTab() {
             placeholder="Search by student, teacher, or description..."
           />
           <div className="w-full sm:w-48 shrink-0">
-            <SearchableSelect
+            <SearchableSelect tone="cobalt"
               size="lg"
               placeholder="All Statuses"
               options={STATUS_FILTER_OPTIONS}
@@ -184,7 +190,7 @@ export default function StudentConcernsTab() {
             />
           </div>
           <div className="w-full sm:w-48 shrink-0">
-            <SearchableSelect
+            <SearchableSelect tone="cobalt"
               size="lg"
               placeholder="All Categories"
               options={CATEGORY_FILTER_OPTIONS}
@@ -193,7 +199,7 @@ export default function StudentConcernsTab() {
             />
           </div>
           <div className="w-full sm:w-56 shrink-0">
-            <SearchableSelect
+            <SearchableSelect tone="cobalt"
               size="lg"
               placeholder="All Concerns"
               options={ATTENTION_FILTER_OPTIONS}
@@ -204,8 +210,8 @@ export default function StudentConcernsTab() {
         </div>
       </div>
 
-      <div className="bg-paper border border-line rounded-card shadow-soft p-6">
-        <DataTable
+      <div className="bg-cn-p-card border border-cn-p-line rounded-cn-p overflow-hidden">
+        <DataTable tone="cobalt"
           size="lg"
           columns={columns}
           rows={concerns}
@@ -215,13 +221,17 @@ export default function StudentConcernsTab() {
           onRowClick={setSelectedConcern}
           emptyLabel="No student concerns found."
         />
-        <Pagination
-          size="lg"
-          page={page}
-          totalPages={totalPages}
-          onPageChange={setPage}
-          totalLabel={`${data?.count || 0} concern${(data?.count || 0) === 1 ? "" : "s"}`}
-        />
+        <div className="px-4 pb-4">
+
+          <Pagination tone="cobalt"
+            size="lg"
+            page={page}
+            totalPages={totalPages}
+            onPageChange={setPage}
+            totalLabel={`${data?.count || 0} concern${(data?.count || 0) === 1 ? "" : "s"}`}
+          />
+
+        </div>
       </div>
 
       <StudentConcernDetailModal
