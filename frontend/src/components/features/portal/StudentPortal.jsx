@@ -22,6 +22,7 @@ import {
   isValidPortalSlug,
   portalHref,
 } from "./shell/portalNav";
+import { PORTAL_LOADING_LABEL } from "./portalConstants";
 import PortalToast from "./PortalToast";
 import DailyDrillReminderModal from "./DailyDrillReminderModal";
 import BuyCourseModal from "./BuyCourseModal";
@@ -245,7 +246,7 @@ function StudentPortalContent({ slug = DEFAULT_PORTAL_SLUG }) {
   }
 
   if (isCheckingOnboarding || needsOnboarding) {
-    return <Loader label="Checking your pathway access..." />;
+    return <Loader tone="portal" label={PORTAL_LOADING_LABEL} />;
   }
 
   return (
@@ -304,7 +305,7 @@ function StudentPortalContent({ slug = DEFAULT_PORTAL_SLUG }) {
 
 export default function StudentPortal({ slug }) {
   return (
-    <Suspense fallback={<Loader label="Loading Cool Nerdz portal..." />}>
+    <Suspense fallback={<Loader tone="portal" label={PORTAL_LOADING_LABEL} />}>
       <StudentPortalContent slug={slug} />
     </Suspense>
   );

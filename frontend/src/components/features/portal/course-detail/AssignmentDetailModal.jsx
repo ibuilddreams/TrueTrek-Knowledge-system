@@ -111,7 +111,7 @@ export default function AssignmentDetailModal({
           <div className="space-y-4 border-t border-cn-p-line pt-5">
             {isLoadingSubmission ? (
               <div className="flex justify-center py-6" aria-busy="true">
-                <Loader fullScreen={false} label="Loading your submission..." />
+                <Loader fullScreen={false} tone="portal" label="Loading your submission..." />
               </div>
             ) : (
               <>

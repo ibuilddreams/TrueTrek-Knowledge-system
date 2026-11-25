@@ -190,7 +190,7 @@ export default function DashboardTab() {
   if (isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
-        <Loader fullScreen={false} label="Loading your dashboard..." />
+        <Loader fullScreen={false} tone="portal" label="Loading your dashboard..." />
       </div>
     );
   }

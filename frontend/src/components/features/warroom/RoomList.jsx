@@ -9,7 +9,7 @@ export default function RoomList({ rooms, isLoading, selectedRoomId, onSelectRoo
   if (isLoading) {
     return (
       <div className="flex-1 flex items-center justify-center">
-        <Loader fullScreen={false} label="Loading rooms..." />
+        <Loader fullScreen={false} tone="portal" label="Loading rooms..." />
       </div>
     );
   }

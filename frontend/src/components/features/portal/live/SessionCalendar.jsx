@@ -80,7 +80,7 @@ export default function SessionCalendar({
   if (isLoading) {
     return (
       <div className="bg-cn-p-card border border-cn-p-line rounded-2xl p-10">
-        <Loader fullScreen={false} label="Loading calendar..." />
+        <Loader fullScreen={false} tone="portal" label="Loading calendar..." />
       </div>
     );
   }

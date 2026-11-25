@@ -195,7 +195,7 @@ export default function AssignmentsTab() {
   if (isLoading) {
     return (
       <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
-        <Loader fullScreen={false} label="Loading your assignments..." />
+        <Loader fullScreen={false} tone="portal" label="Loading your assignments..." />
       </div>
     );
   }

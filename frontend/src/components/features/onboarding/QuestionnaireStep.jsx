@@ -2,12 +2,14 @@
 
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useQuery } from "@tanstack/react-query";
-import { AlertCircle, ArrowLeft, ArrowRight, ClipboardList, RefreshCw } from "lucide-react";
+import { ArrowLeft, ArrowRight } from "lucide-react";
 import { getQuestionnaireQuestions, submitQuestionnaireAnswers } from "@/services/onboardingService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError } from "@/lib/toast";
 import Loader from "@/components/ui/Loader";
+import { CN_BTN_PRIMARY, CN_BTN_SECONDARY } from "@/components/ui/cobaltStyles";
 import QuestionnaireQuestion from "./QuestionnaireQuestion";
+import OnboardingErrorPanel from "./OnboardingErrorPanel";
 
 // Single-select questions advance on their own so the flow feels like a
 // conversation rather than a form; the delay lets the selected state land
@@ -151,118 +153,103 @@ export default function QuestionnaireStep({ answers, onAnswersChange, onContinue
 
   if (isLoading) {
     return (
-      <div className="flex min-h-[50vh] items-center justify-center">
-        <Loader fullScreen={false} label="Loading questionnaire..." />
+      <div className="flex min-h-[320px] items-center justify-center" aria-busy="true">
+        <Loader fullScreen={false} tone="cobalt" label="Loading questionnaire..." />
       </div>
     );
   }
 
   if (isError) {
     return (
-      <div className="max-w-2xl mx-auto px-6 py-10">
-        <div className="border border-stone-200 bg-white rounded-2xl p-8 text-center">
-          <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
-            <AlertCircle className="w-6 h-6" />
-          </div>
-          <h2 className="text-xl font-serif font-bold mb-2 text-stone-900">
-            Failed to Load Questionnaire
-          </h2>
-          <p className="text-xs font-light mb-6 text-stone-500">
-            {getApiErrorMessage(error, "Unable to load the questionnaire right now.")}
-          </p>
-          <button
-            type="button"
-            onClick={() => refetch()}
-            className="inline-flex items-center gap-2 px-5 py-3 font-bold font-mono text-xs uppercase tracking-wider rounded-xl transition bg-stone-900 hover:bg-stone-800 text-stone-100"
-          >
-            <RefreshCw className="w-4 h-4" />
-            Retry
-          </button>
-        </div>
-      </div>
+      <OnboardingErrorPanel
+        title="We couldn't load the questions."
+        message={getApiErrorMessage(error, "Unable to load the questionnaire right now.")}
+        onRetry={() => refetch()}
+      />
     );
   }
 
   return (
-    <div className="max-w-2xl mx-auto px-6 py-10">
-      <div className="bg-white border border-stone-200/85 rounded-2xl shadow-xl relative overflow-hidden p-8 sm:p-10">
-        <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-amber-600 to-amber-800" />
+    <>
+      <div>
+        <h2 className="text-cn-2xl leading-[1.04] font-extrabold tracking-[-0.035em] text-cn-ink">
+          Tell us where you are.
+        </h2>
+        <p className="mt-2 text-cn-ink-2">
+          A few quick questions, so we can point you at the right pathway.
+        </p>
+      </div>
 
-        <div className="text-center mb-7">
-          <div className="w-12 h-12 mx-auto mb-4 rounded-xl border bg-amber-600/10 text-amber-700 border-amber-200/40 flex items-center justify-center">
-            <ClipboardList className="w-6 h-6" />
+      {totalQuestions > 0 && (
+        <div className="grid gap-2">
+          <div className="flex items-baseline justify-between text-cn-sm">
+            <span className="text-cn-muted">
+              Question {safeIndex + 1} of {totalQuestions}
+            </span>
+            <span className="font-semibold text-cn-accent">
+              {Math.round(progressPercent)}% answered
+            </span>
           </div>
-          <h2 className="text-2xl font-serif font-bold mb-1.5 text-stone-900">
-            Tell Us About Your Goals
-          </h2>
-          <p className="text-xs font-light leading-relaxed text-stone-500">
-            A few quick questions so we can recommend the right learning pathway for you.
-          </p>
-        </div>
-
-        {totalQuestions > 0 && (
-          <div className="mb-7">
-            <div className="flex items-center justify-between mb-2 text-[10px] font-mono uppercase tracking-wider">
-              <span className="text-stone-400">
-                Question {safeIndex + 1} of {totalQuestions}
-              </span>
-              <span className="text-amber-700 font-bold">
-                {Math.round(progressPercent)}% Complete
-              </span>
-            </div>
-            <div className="h-1 w-full rounded-full bg-stone-100 overflow-hidden">
-              <div
-                className="h-full rounded-full bg-gradient-to-r from-amber-600 to-amber-800 transition-all duration-500 ease-out"
-                style={{ width: `${progressPercent}%` }}
+          {/* The design's `.steps` bar — one segment per question, filled as
+              far as the visitor has got. The continuous bar at the top of the
+              card is the wizard's own five steps, so this one is deliberately
+              a different shape. */}
+          <div className="flex items-center gap-2" aria-hidden="true">
+            {sortedQuestions.map((question, index) => (
+              <i
+                key={question.id}
+                className={`h-1 flex-1 rounded-full transition-colors duration-200 ${
+                  index <= safeIndex ? "bg-cn-accent" : "bg-cn-rule"
+                }`}
               />
-            </div>
+            ))}
           </div>
+        </div>
+      )}
+
+      <form onSubmit={handleSubmit} className="grid gap-8">
+        {currentQuestion ? (
+          // Keyed on the question so each one animates in as it becomes
+          // the active question.
+          <div key={currentQuestion.id} className="tt-enter">
+            <QuestionnaireQuestion
+              question={currentQuestion}
+              value={answers[currentQuestion.id]}
+              onSelect={handleSelect}
+            />
+          </div>
+        ) : (
+          <p className="text-cn-ink-2">
+            No questions are set up right now — continue to see your pathway
+            recommendations.
+          </p>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-8">
-          {currentQuestion ? (
-            // Keyed on the question so each one animates in as it becomes
-            // the active question.
-            <div key={currentQuestion.id} className="tt-enter">
-              <QuestionnaireQuestion
-                question={currentQuestion}
-                value={answers[currentQuestion.id]}
-                onSelect={handleSelect}
-              />
-            </div>
-          ) : (
-            <p className="text-center text-xs font-light text-stone-500">
-              No questions are configured right now — continue to see your pathway
-              recommendations.
-            </p>
-          )}
-
-          <div className="flex items-center gap-3">
-            {safeIndex > 0 && (
-              <button
-                type="button"
-                onClick={() => goToIndex(safeIndex - 1)}
-                className="flex items-center justify-center gap-2 border border-stone-200 text-stone-600 hover:bg-stone-50 font-mono text-xs font-bold uppercase tracking-wider py-3.5 px-5 rounded-xl transition"
-              >
-                <ArrowLeft className="w-3.5 h-3.5" />
-                Back
-              </button>
-            )}
+        <div className="flex items-center gap-3">
+          {safeIndex > 0 && (
             <button
-              type="submit"
-              disabled={!canAdvance || (isLastQuestion && !allAnswered) || isSubmitting}
-              className="flex-1 flex items-center justify-center gap-2 bg-amber-600 hover:bg-amber-500 text-white font-mono text-xs font-extrabold uppercase tracking-wider py-3.5 rounded-xl shadow-md transition-all duration-200 disabled:opacity-50 disabled:cursor-not-allowed"
+              type="button"
+              onClick={() => goToIndex(safeIndex - 1)}
+              className={CN_BTN_SECONDARY}
             >
-              {isSubmitting
-                ? "Submitting..."
-                : isLastQuestion || totalQuestions === 0
-                  ? "Continue"
-                  : "Next Question"}
-              {!isSubmitting && <ArrowRight className="w-3.5 h-3.5" />}
+              <ArrowLeft className="h-[18px] w-[18px]" />
+              Back
             </button>
-          </div>
-        </form>
-      </div>
-    </div>
+          )}
+          <button
+            type="submit"
+            disabled={!canAdvance || (isLastQuestion && !allAnswered) || isSubmitting}
+            className={`${CN_BTN_PRIMARY} flex-1`}
+          >
+            {isSubmitting
+              ? "Submitting..."
+              : isLastQuestion || totalQuestions === 0
+                ? "Continue"
+                : "Next question"}
+            {!isSubmitting && <ArrowRight className="h-[18px] w-[18px]" />}
+          </button>
+        </div>
+      </form>
+    </>
   );
 }

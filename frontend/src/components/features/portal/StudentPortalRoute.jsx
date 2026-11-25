@@ -8,6 +8,7 @@ import { getPortalRouteForRole, ROUTES } from "@/constants/routes";
 import Loader from "@/components/ui/Loader";
 import StudentPortal from "./StudentPortal";
 import { DEFAULT_PORTAL_SLUG, isValidPortalSlug } from "./shell/portalNav";
+import { PORTAL_LOADING_LABEL } from "./portalConstants";
 
 // The client half of the student portal's route: who is allowed in, and
 // which screen the URL asked for. The page itself stays a server component
@@ -32,8 +33,8 @@ export default function StudentPortalRoute({ slug }) {
     if (isUnknownSlug) router.replace(ROUTES.STUDENT_PORTAL);
   }, [isUnknownSlug, router]);
 
-  if (isResolving) return <Loader label="Loading Cool Nerdz portal..." />;
-  if (isWrongRole) return <Loader label="Redirecting..." />;
+  if (isResolving) return <Loader tone="portal" label={PORTAL_LOADING_LABEL} />;
+  if (isWrongRole) return <Loader tone="portal" label="Redirecting..." />;
 
   return <StudentPortal slug={isUnknownSlug ? DEFAULT_PORTAL_SLUG : resolvedSlug} />;
 }

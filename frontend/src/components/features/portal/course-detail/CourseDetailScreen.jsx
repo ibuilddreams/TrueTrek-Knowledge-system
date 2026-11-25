@@ -418,7 +418,7 @@ export default function CourseDetailScreen({ enrollment, onBack }) {
       <>
         {crumbs}
         <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
-          <Loader fullScreen={false} label="Loading course details..." />
+          <Loader fullScreen={false} tone="portal" label="Loading course details..." />
         </div>
       </>
     );

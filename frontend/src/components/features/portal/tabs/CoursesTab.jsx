@@ -188,7 +188,7 @@ export default function CoursesTab() {
     if (isDeepLinkingIntoContent) return <LessonViewPending />;
     return (
       <div className="flex min-h-[50vh] items-center justify-center" aria-busy="true">
-        <Loader fullScreen={false} label="Loading your courses..." />
+        <Loader fullScreen={false} tone="portal" label="Loading your courses..." />
       </div>
     );
   }

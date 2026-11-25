@@ -77,7 +77,7 @@ export default function TodaysQuestBoard({ onNotify, onOpenRewards }) {
   if (isLoading) {
     return (
       <div className="bg-cn-p-card border border-cn-p-line rounded-2xl p-10">
-        <Loader fullScreen={false} label="Loading today's quests..." />
+        <Loader fullScreen={false} tone="portal" label="Loading today's quests..." />
       </div>
     );
   }

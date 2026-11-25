@@ -101,7 +101,7 @@ export default function LiveClassesTab() {
 
         {isLoading ? (
           <div className="flex min-h-[30vh] items-center justify-center" aria-busy="true">
-            <Loader fullScreen={false} label="Loading your classes..." />
+            <Loader fullScreen={false} tone="portal" label="Loading your classes..." />
           </div>
         ) : sessions.length === 0 ? (
           <PortalEmpty

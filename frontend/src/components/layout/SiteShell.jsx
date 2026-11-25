@@ -59,6 +59,10 @@ export default function SiteShell({ children }) {
     ROUTES.PARTNERSHIPS,
     ROUTES.LOGIN,
     ROUTES.SIGNUP,
+    // The onboarding wizard is the screen /signup hands a new student to, and
+    // it carries the same cobalt rail — were it left off this list the navbar
+    // above it would stay porcelain over a white page.
+    ROUTES.ONBOARDING,
   ];
   const COBALT_TREES = [
     ROUTES.CURRICULUM,
