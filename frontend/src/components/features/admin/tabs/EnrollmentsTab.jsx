@@ -238,7 +238,7 @@ export default function EnrollmentsTab() {
         onUpdated={() => loadEnrollments({ force: true })}
       />
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(removingEnrollment)}
         onClose={() => setRemovingEnrollment(null)}
         onConfirm={handleRemoveConfirm}

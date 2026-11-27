@@ -5,6 +5,7 @@ from common.ordering import get_next_order
 from courses.models import Course
 from modules.models import Module
 
+from .constants import MAX_QUESTIONS_PER_QUIZ
 from .models import Choice, Question, Quiz, QuizAnswer, QuizResult
 
 
@@ -62,8 +63,12 @@ class QuizWriteSerializer(serializers.ModelSerializer):
     course = serializers.PrimaryKeyRelatedField(queryset=Course.objects.all(), required=False)
     order = serializers.IntegerField(min_value=1, required=False)
     # Bound matches ai_courses' questions_per_quiz — how many questions the original
-    # quiz should have, and how many an AI-regenerated retry produces each time.
-    number_of_questions = serializers.IntegerField(min_value=1, max_value=20, required=False)
+    # quiz should have, and how many an AI-regenerated retry produces each time. A
+    # retry asks for them in parallel batches (quizzes/ai_generation.py), which is
+    # what keeps a 70-question set inside one synchronous request's budget.
+    number_of_questions = serializers.IntegerField(
+        min_value=1, max_value=MAX_QUESTIONS_PER_QUIZ, required=False
+    )
 
     class Meta:
         model = Quiz
@@ -200,12 +205,28 @@ class StudentChoiceSerializer(serializers.ModelSerializer):
 
 
 class StudentQuestionSerializer(serializers.ModelSerializer):
-    choices = StudentChoiceSerializer(many=True, read_only=True)
+    """The student-facing view of one question *as this attempt serves it*.
+
+    Both order-carrying fields are deliberately the attempt's and not the
+    quiz's: `choices` reads the per-attempt choice order and `order` is the
+    question's position in this attempt, not its authored `Question.order` —
+    which, once the attempt is shuffled, no longer describes anything the
+    student can see. Both are prepared by
+    `services.get_attempt_question_set`, the only supported way to build the
+    objects this serializer is given; `order` would otherwise be a number a
+    client could sort by and quietly undo the shuffle with.
+    """
+
+    choices = serializers.SerializerMethodField()
+    order = serializers.IntegerField(source="display_order", read_only=True)
 
     class Meta:
         model = Question
         fields = ["id", "text", "question_type", "marks", "order", "choices"]
         read_only_fields = fields
+
+    def get_choices(self, obj):
+        return StudentChoiceSerializer(obj.attempt_choices, many=True).data
 
 
 class QuizAvailableSerializer(serializers.ModelSerializer):
@@ -245,14 +266,44 @@ class QuizResultSerializer(serializers.ModelSerializer):
     quiz = serializers.SerializerMethodField()
     attempt_number = serializers.IntegerField(source="attempt.attempt_number", read_only=True)
     attempt_status = serializers.CharField(source="attempt.status", read_only=True)
+    points_awarded = serializers.SerializerMethodField()
 
     class Meta:
         model = QuizResult
-        fields = ["id", "quiz", "attempt_number", "attempt_status", "score", "percentage", "is_passed"]
+        fields = [
+            "id",
+            "quiz",
+            "attempt_number",
+            "attempt_status",
+            "score",
+            "percentage",
+            "is_passed",
+            "points_awarded",
+        ]
         read_only_fields = fields
 
     def get_quiz(self, instance):
         return {"id": instance.attempt.quiz_id, "title": instance.attempt.quiz.title}
+
+    def get_points_awarded(self, instance):
+        """Read back off the ledger rather than recomputed from the score, so
+        this can only ever say what the student was actually paid — including
+        0 for an attempt whose band was never awarded (a third try, or a score
+        that has since been re-graded down). See quizzes/points.py.
+
+        Imported here because `rewards` has a foreign key back into this app.
+        """
+        from rewards.models import PointsTransaction
+
+        awarded = (
+            PointsTransaction.objects.filter(
+                quiz_attempt_id=instance.attempt_id,
+                transaction_type=PointsTransaction.TransactionType.QUIZ_REWARD,
+            )
+            .values_list("amount", flat=True)
+            .first()
+        )
+        return awarded or 0
 
 
 class QuizOrderEntrySerializer(serializers.Serializer):

@@ -412,7 +412,7 @@ export default function CoursesTab() {
         onEnrolled={() => loadEnrollments({ force: true })}
       />
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deletingCourse)}
         onClose={() => setDeletingCourse(null)}
         onConfirm={handleDeleteConfirm}

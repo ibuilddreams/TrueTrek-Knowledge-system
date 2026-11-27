@@ -44,7 +44,7 @@ from quizzes.models import Choice
 from quizzes.models import Question as QuizQuestion
 from quizzes.models import Quiz
 from tiers.models import Tier, TierPathway, TierProgress
-from rewards.models import PointsTransaction
+from rewards.models import PointsTransaction, Reward
 from rewards.services import award_points
 from users.models import UserProfile
 from wargamer.models import RolePlayScenario, RolePlaySession, RolePlayTurn
@@ -1421,6 +1421,59 @@ QUESTIONNAIRE = [
             {"text": "Building and running a business of my own", "weights": {"entrepreneurship": 3}},
             {"text": "Developing the people I lead", "weights": {"coaching": 3, "parent_pathway": 1}},
         ],
+    },
+]
+
+
+# The starter rewards catalog — what points are actually *for*. Seeded rather
+# than left to an admin's first login, because a points balance with an empty
+# catalog behind it is a number that buys nothing, and every other earning
+# surface (drills, quests, role-play, quiz scores) ships with its own catalog
+# already populated.
+#
+# `fulfillment_type` is the operational half and is chosen per reward rather
+# than per `reward_type`: it decides which action Admin → Redemptions offers
+# once a redemption is approved — Schedule for a session, Mark ready for
+# anything handed over or posted, Mark completed for the rest. Getting it
+# wrong doesn't break anything, it just asks an admin to book a meeting about
+# a t-shirt.
+#
+# Upserted by name like QUEST_DEFS, so an admin's own rewards survive and the
+# points required on these stay the client's numbers across reseeds.
+REWARD_DEFS = [
+    {
+        "name": "One-on-One Mentor Session",
+        "description": (
+            "A private 45-minute video session with a Cool Nerds mentor. Bring one thing "
+            "you're stuck on — a recruiting email you can't word, a brand decision, a "
+            "conversation you're dreading — and leave with a plan for it."
+        ),
+        "reward_type": Reward.RewardType.MENTORSHIP,
+        "fulfillment_type": Reward.FulfillmentType.SCHEDULED_SESSION,
+        "duration_minutes": 45,
+        "points_required": 1000,
+    },
+    {
+        "name": "Free Class Access",
+        "description": (
+            "Unlock a course from the catalog at no cost. Tell us which one when you "
+            "redeem and we'll add it to your enrolments."
+        ),
+        "reward_type": Reward.RewardType.EXPERIENCE,
+        "fulfillment_type": Reward.FulfillmentType.DIGITAL_ACCESS,
+        "duration_minutes": None,
+        "points_required": 1500,
+    },
+    {
+        "name": "Cool Nerds Merch Drop",
+        "description": (
+            "Pick an item from the current Cool Nerds merch drop and we'll ship it to "
+            "you. Add your size and shipping address when you redeem."
+        ),
+        "reward_type": Reward.RewardType.MERCHANDISE,
+        "fulfillment_type": Reward.FulfillmentType.PHYSICAL_DELIVERY,
+        "duration_minutes": None,
+        "points_required": 2000,
     },
 ]
 
@@ -2881,6 +2934,9 @@ class Command(BaseCommand):
             self._seed_quests()
             self.stdout.write(self.style.SUCCESS(f"Seeded {len(QUEST_DEFS)} daily quests"))
 
+            self._seed_rewards()
+            self.stdout.write(self.style.SUCCESS(f"Seeded {len(REWARD_DEFS)} reward(s)"))
+
             self._seed_roleplay_scenarios()
             self.stdout.write(
                 self.style.SUCCESS(
@@ -4216,6 +4272,39 @@ class Command(BaseCommand):
                         "score": option_def["score"],
                     },
                 )
+
+    def _seed_rewards(self):
+        """Upserts the starter rewards catalog by name (its natural key).
+
+        Never deletes, like every other upsert here: a reward an admin added
+        through the portal isn't in REWARD_DEFS and must survive, and a seeded
+        reward somebody has already redeemed is referenced by a points ledger
+        entry — `RewardRedemption.reward` is PROTECT, so a delete would fail
+        anyway rather than quietly take the history with it.
+
+        `status` is deliberately *not* in the defaults: a reward an admin
+        deactivated (archived) must stay deactivated across a reseed, which is
+        the whole reason Reward uses Status rather than a boolean. It is set
+        only on creation."""
+        for reward_def in REWARD_DEFS:
+            Reward.objects.update_or_create(
+                name=reward_def["name"],
+                defaults={
+                    "description": reward_def["description"],
+                    "reward_type": reward_def["reward_type"],
+                    "fulfillment_type": reward_def["fulfillment_type"],
+                    "duration_minutes": reward_def["duration_minutes"],
+                    "points_required": reward_def["points_required"],
+                },
+                create_defaults={
+                    "description": reward_def["description"],
+                    "reward_type": reward_def["reward_type"],
+                    "fulfillment_type": reward_def["fulfillment_type"],
+                    "duration_minutes": reward_def["duration_minutes"],
+                    "points_required": reward_def["points_required"],
+                    "status": Status.ACTIVE,
+                },
+            )
 
     def _seed_quests(self):
         """Upserts the starter Daily Quest catalog by title (its natural key).

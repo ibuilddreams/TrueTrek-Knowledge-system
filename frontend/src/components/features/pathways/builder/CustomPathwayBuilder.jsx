@@ -509,7 +509,6 @@ export default function CustomPathwayBuilder() {
       />
 
       <ConfirmDialog
-        variant="cobalt"
         isOpen={isDeleteOpen}
         onClose={() => setIsDeleteOpen(false)}
         onConfirm={() => pendingDelete && deleteMutation.mutate(pendingDelete.id)}

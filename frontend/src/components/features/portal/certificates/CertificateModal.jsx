@@ -11,8 +11,10 @@ export default function CertificateModal({ certificate, studentName, onClose }) 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center bg-cn-p-ink/60 p-4 backdrop-blur-md print:bg-white print:p-0 print:backdrop-blur-none">
       <div className="relative max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-cn-p border border-cn-p-line bg-cn-p-card shadow-cn-p print:max-h-none print:max-w-none print:overflow-visible print:rounded-none print:border-0 print:shadow-none">
-        {/* No pine-to-gold seam: that is the porcelain system's signature, and
-            the portal marks a dialog with its radius and shadow alone. */}
+        {/* A dialog is marked by its radius and shadow alone — the same way
+            `components/ui/Modal` does it. This one is hand-rolled rather than
+            built on Modal because it has to print: the whole certificate is a
+            print target, which needs its own `print:` rules on the overlay. */}
         <CloseButton
           onClick={onClose}
           className="absolute top-4 right-4 z-10 grid h-10 w-10 place-items-center rounded-cn-p-sm bg-cn-p-page text-cn-p-ink-2 transition-colors duration-150 hover:bg-cn-p-line hover:text-cn-p-ink print:hidden"

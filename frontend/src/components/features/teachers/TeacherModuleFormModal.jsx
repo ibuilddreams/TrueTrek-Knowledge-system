@@ -120,7 +120,7 @@ export default function TeacherModuleFormModal({
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={Layers}

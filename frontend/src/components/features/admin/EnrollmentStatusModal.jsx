@@ -56,7 +56,7 @@ export default function EnrollmentStatusModal({ isOpen, onClose, enrollment, onU
   if (!enrollment) return null;
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={Edit3}

@@ -235,7 +235,7 @@ export default function QuestionFormModal({ isOpen, onClose, quizId, question, n
   const isMcq = form.question_type === "MCQ";
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={HelpCircle}

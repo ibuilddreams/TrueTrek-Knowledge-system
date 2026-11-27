@@ -99,7 +99,7 @@ export default function BundleRuleFormModal({ isOpen, onClose, onSaved, rule }) 
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={Percent}

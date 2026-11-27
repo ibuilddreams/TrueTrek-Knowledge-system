@@ -132,7 +132,7 @@ export default function ScheduleRewardModal({ isOpen, onClose, onSaved, redempti
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={Calendar}

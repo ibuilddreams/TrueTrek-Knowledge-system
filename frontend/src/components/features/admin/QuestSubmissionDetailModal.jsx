@@ -32,7 +32,7 @@ export default function QuestSubmissionDetailModal({ isOpen, onClose, submission
   ];
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={onClose}
       icon={FileCheck2}

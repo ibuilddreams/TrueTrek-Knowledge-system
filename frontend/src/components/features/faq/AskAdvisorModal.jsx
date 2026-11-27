@@ -46,7 +46,6 @@ export default function AskAdvisorModal({ isOpen, onClose }) {
     <Modal
       isOpen={isOpen}
       onClose={handleClose}
-      variant="cobalt"
       icon={MessageCircleQuestion}
       title="Ask an Advisor"
       subtitle="An advisor will reply in your Cool Nerdz Portal"

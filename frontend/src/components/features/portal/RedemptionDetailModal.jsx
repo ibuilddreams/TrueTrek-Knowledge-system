@@ -22,7 +22,7 @@ export default function RedemptionDetailModal({ isOpen, onClose, redemption }) {
   const status = redemption.status;
 
   return (
-    <Modal isOpen={isOpen} onClose={onClose} variant="cobalt" icon={Gift} title={redemption.reward?.name} maxWidth="max-w-md">
+    <Modal isOpen={isOpen} onClose={onClose} icon={Gift} title={redemption.reward?.name} maxWidth="max-w-md">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <span className="font-bold text-cn-p-ink">{redemption.points_cost?.toLocaleString()} pts</span>

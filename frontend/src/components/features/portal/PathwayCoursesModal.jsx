@@ -37,7 +37,7 @@ export default function PathwayCoursesModal({ pathway, isOpen, onClose }) {
       maxWidth="max-w-2xl"
     >
       {description && (
-        <p className="text-sm font-light leading-relaxed text-muted mb-5">
+        <p className="text-sm font-light leading-relaxed text-cn-p-ink-2 mb-5">
           {description}
         </p>
       )}
@@ -50,16 +50,16 @@ export default function PathwayCoursesModal({ pathway, isOpen, onClose }) {
 
       {isError && (
         <div className="text-center py-8">
-          <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 bg-cn-p-bad-bg border border-cn-p-bad-bg text-cn-p-bad rounded-2xl flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <p className="text-sm text-muted mb-4">
+          <p className="text-sm text-cn-p-ink-2 mb-4">
             {getApiErrorMessage(error, "Unable to load this pathway's courses right now.")}
           </p>
           <button
             type="button"
             onClick={() => refetch()}
-            className="px-4 py-2 bg-pine hover:bg-moss text-paper text-xs font-mono uppercase tracking-wider rounded-lg transition"
+            className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-xs font-semibold rounded-lg shadow-sm transition cursor-pointer"
           >
             Try again
           </button>
@@ -69,16 +69,16 @@ export default function PathwayCoursesModal({ pathway, isOpen, onClose }) {
       {!isLoading && !isError && data && (
         <>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-[11px] font-mono uppercase tracking-[0.16em] text-pine/80">
+            <p className="text-[11px] font-semibold text-cn-p-ink-2">
               Included courses
             </p>
-            <span className="text-xs font-light text-muted">
+            <span className="text-xs font-light text-cn-p-ink-2">
               {courses.length} course{courses.length === 1 ? "" : "s"}
             </span>
           </div>
 
           {courses.length === 0 ? (
-            <p className="text-sm font-light text-muted py-6 text-center rounded-xl border border-dashed border-line">
+            <p className="text-sm font-light text-cn-p-ink-2 py-6 text-center rounded-xl border border-dashed border-cn-p-line">
               No courses have been added to this pathway yet.
             </p>
           ) : (
@@ -89,12 +89,12 @@ export default function PathwayCoursesModal({ pathway, isOpen, onClose }) {
                   <li key={entry.id}>
                     <Link
                       href={`${ROUTES.STUDENT_PORTAL}/courses?course=${course.id}`}
-                      className="group flex items-center gap-3.5 p-3 rounded-xl border border-line bg-porcelain transition hover:border-gold/50 hover:bg-paper hover:shadow-[0_10px_28px_-22px_rgba(28,25,23,0.35)] focus:outline-none focus-visible:ring-2 focus-visible:ring-pine"
+                      className="group flex items-center gap-3.5 p-3 rounded-xl border border-cn-p-line bg-cn-p-page transition hover:border-cn-p-accent-soft hover:bg-cn-p-card hover:shadow-sm focus:outline-none focus-visible:ring-2 focus-visible:ring-cn-p-accent"
                     >
-                      <span className="w-6 text-center text-[11px] font-mono text-muted shrink-0">
+                      <span className="w-6 text-center text-[11px] font-semibold tabular-nums text-cn-p-ink-2 shrink-0">
                         {String(index + 1).padStart(2, "0")}
                       </span>
-                      <div className="w-12 h-12 rounded-lg border border-line shrink-0 bg-paper overflow-hidden flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-lg border border-cn-p-line shrink-0 bg-cn-p-card overflow-hidden flex items-center justify-center">
                         {course.image ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -104,23 +104,23 @@ export default function PathwayCoursesModal({ pathway, isOpen, onClose }) {
                             referrerPolicy="no-referrer"
                           />
                         ) : (
-                          <BookOpen className="w-4 h-4 text-muted" />
+                          <BookOpen className="w-4 h-4 text-cn-p-ink-2" />
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-ink line-clamp-2 leading-snug">
+                        <p className="text-sm font-semibold text-cn-p-ink line-clamp-2 leading-snug">
                           {course.title}
                         </p>
                         {course.code && (
-                          <p className="text-[11px] font-mono uppercase tracking-wide text-muted mt-0.5">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-cn-p-ink-2 mt-0.5">
                             {course.code}
                           </p>
                         )}
                       </div>
-                      <span className="hidden sm:inline text-[11px] font-mono uppercase tracking-wider text-muted group-hover:text-pine shrink-0">
+                      <span className="hidden sm:inline text-[11px] font-semibold text-cn-p-ink-2 group-hover:text-cn-p-accent shrink-0">
                         Open course
                       </span>
-                      <ArrowRight className="w-4 h-4 text-muted group-hover:text-pine group-hover:translate-x-0.5 transition shrink-0" />
+                      <ArrowRight className="w-4 h-4 text-cn-p-ink-2 group-hover:text-cn-p-accent group-hover:translate-x-0.5 transition shrink-0" />
                     </Link>
                   </li>
                 );

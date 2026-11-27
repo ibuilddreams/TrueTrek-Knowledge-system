@@ -78,7 +78,7 @@ export default function CreateStudentModal({ isOpen, onClose, onCreated }) {
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={UserPlus}

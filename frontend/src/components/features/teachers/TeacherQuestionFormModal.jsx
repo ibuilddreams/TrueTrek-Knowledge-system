@@ -235,7 +235,7 @@ export default function TeacherQuestionFormModal({ isOpen, onClose, quizId, ques
   const isMcq = form.question_type === "MCQ";
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={HelpCircle}

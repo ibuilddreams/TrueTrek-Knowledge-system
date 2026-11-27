@@ -206,7 +206,7 @@ export default function ClassSessionFormModal({ isOpen, onClose, editingSession 
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={Video}

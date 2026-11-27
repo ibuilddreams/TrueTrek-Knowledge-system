@@ -199,7 +199,7 @@ export default function TiersTab() {
         onClose={() => setManagingPathwaysTier(null)}
       />
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deletingTier)}
         onClose={() => setDeletingTier(null)}
         onConfirm={handleDeleteConfirm}

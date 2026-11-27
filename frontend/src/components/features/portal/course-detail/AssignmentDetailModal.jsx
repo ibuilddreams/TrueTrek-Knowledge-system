@@ -48,7 +48,6 @@ export default function AssignmentDetailModal({
           ? `Due ${formatDateTime(assignment.due_date)} · ${assignment.total_marks} marks`
           : ""
       }
-      variant="cobalt"
       maxWidth="max-w-2xl"
     >
       {assignment && (

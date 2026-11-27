@@ -9,6 +9,12 @@ const CHOICE_KEYS = "ABCDEFGH";
 
 const AUTOSAVE_DEBOUNCE_MS = 2000;
 
+// How long a picked answer stays on screen before the next question replaces
+// it. Long enough to see which option took the highlight — answering and
+// having the screen change in the same instant reads as a misclick — and short
+// enough that it never feels like waiting.
+const AUTO_ADVANCE_DELAY_MS = 450;
+
 function formatSeconds(totalSeconds) {
   const minutes = Math.floor(totalSeconds / 60);
   const seconds = totalSeconds % 60;
@@ -58,6 +64,56 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
   const answersRef = useRef(answers);
   const autosaveTimeoutRef = useRef(null);
   const skipNextAutosaveRef = useRef(true);
+  const advanceTimerRef = useRef(null);
+  // Questions this will not carry the student forward from. Answering moves
+  // you on once; coming back to change an answer never does, because a student
+  // who navigated back deliberately is reviewing, and throwing them forward
+  // again fights them for control of the screen.
+  //
+  // Seeded with everything a resumed attempt already had answers for, for the
+  // same reason: somebody picking their half-finished quiz back up is looking
+  // over what they did last time, and correcting an old answer must not launch
+  // them down the paper.
+  const autoAdvancedRef = useRef(new Set(Object.keys(answers).map(Number)));
+
+  function cancelPendingAdvance() {
+    if (advanceTimerRef.current) {
+      clearTimeout(advanceTimerRef.current);
+      advanceTimerRef.current = null;
+    }
+  }
+
+  // Every deliberate move between questions goes through here, so a pending
+  // auto-advance can never land after the student has already moved
+  // themselves — answering and immediately pressing Previous would otherwise
+  // bounce them forward a moment later.
+  function goToQuestion(index) {
+    cancelPendingAdvance();
+    setCurrentIndex(Math.min(Math.max(index, 0), questions.length - 1));
+  }
+
+  // Takes no index: it is only ever called for the question on screen, and its
+  // call site sits inside the choices' `.map`, where `index` already means the
+  // choice's position. Reading `currentIndex` here removes the chance of
+  // handing it the wrong one.
+  function selectChoice(question, choiceId) {
+    setAnswer(question.id, { selectedChoice: choiceId });
+
+    const isLastQuestion = currentIndex >= questions.length - 1;
+    if (isLastQuestion || autoAdvancedRef.current.has(question.id)) return;
+
+    // Re-armed rather than ignored when a second choice is picked inside the
+    // window, so changing your mind resets the pause instead of being
+    // overtaken by the first pick's timer.
+    cancelPendingAdvance();
+    advanceTimerRef.current = setTimeout(() => {
+      advanceTimerRef.current = null;
+      autoAdvancedRef.current.add(question.id);
+      setCurrentIndex((current) => Math.min(questions.length - 1, current + 1));
+    }, AUTO_ADVANCE_DELAY_MS);
+  }
+
+  useEffect(() => cancelPendingAdvance, []);
 
   function buildPayload() {
     return buildAnswersPayload(answers);
@@ -134,7 +190,7 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
       ) : null}
 
       <div className="flex items-center justify-between gap-3">
-        <span className="text-[13px] text-cn-p-ink-2">
+        <span className="text-[13px] text-cn-p-ink-2" aria-live="polite">
           Question {currentIndex + 1} of {questions.length} · {answeredCount} answered
         </span>
         {secondsLeft !== null ? (
@@ -150,19 +206,30 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
           one being answered. */}
       <div className="flex items-center gap-2">
         {questions.map((question, index) => (
+          // The rail is also how a student jumps back. The bar itself is 4px,
+          // so the button is padded out to a 20px target and the padding is
+          // pulled back out of the layout — a 4px tap target is unusable on a
+          // phone, which is where most of these are answered.
           <button
             key={question.id}
             type="button"
-            aria-label={`Go to question ${index + 1}`}
-            onClick={() => setCurrentIndex(index)}
-            className={`h-1 flex-1 rounded-[9px] ${
-              index <= currentIndex
-                ? "bg-cn-p-accent"
-                : answers[question.id] !== undefined
-                  ? "bg-cn-p-accent-soft"
-                  : "bg-cn-p-line"
+            aria-label={`Go to question ${index + 1}${
+              answers[question.id] !== undefined ? " (answered)" : ""
             }`}
-          />
+            aria-current={index === currentIndex ? "step" : undefined}
+            onClick={() => goToQuestion(index)}
+            className="group -my-2 flex-1 cursor-pointer py-2"
+          >
+            <span
+              className={`block h-1 rounded-[9px] transition-colors ${
+                index === currentIndex
+                  ? "bg-cn-p-accent"
+                  : answers[question.id] !== undefined
+                    ? "bg-cn-p-accent-soft group-hover:bg-cn-p-accent"
+                    : "bg-cn-p-line group-hover:bg-cn-p-line-2"
+              }`}
+            />
+          </button>
         ))}
       </div>
 
@@ -187,7 +254,7 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
                 key={choice.id}
                 type="button"
                 aria-pressed={isPicked}
-                onClick={() => setAnswer(currentQuestion.id, { selectedChoice: choice.id })}
+                onClick={() => selectChoice(currentQuestion, choice.id)}
                 className={`flex w-full items-start gap-3.5 rounded-xl border-[1.5px] p-4 text-left transition-[border-color,background-color] duration-150 ${
                   isPicked
                     ? "border-cn-p-accent bg-cn-p-soft"
@@ -210,10 +277,7 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
 
       <div className="flex items-center justify-between gap-3">
         {currentIndex > 0 ? (
-          <PortalButton
-            variant="sec"
-            onClick={() => setCurrentIndex((index) => Math.max(0, index - 1))}
-          >
+          <PortalButton variant="sec" onClick={() => goToQuestion(currentIndex - 1)}>
             Previous
           </PortalButton>
         ) : (
@@ -221,13 +285,21 @@ export default function QuizAttemptRunner({ attempt, isSubmitting, onSubmit }) {
         )}
 
         {currentIndex < questions.length - 1 ? (
-          <PortalButton
-            onClick={() => setCurrentIndex((index) => Math.min(questions.length - 1, index + 1))}
-          >
+          // Kept even though answering moves you on by itself: it is how a
+          // student skips a question they want to come back to, and the only
+          // way forward from a short answer, which has no moment that counts
+          // as "done".
+          <PortalButton onClick={() => goToQuestion(currentIndex + 1)}>
             Next question
           </PortalButton>
         ) : (
-          <PortalButton onClick={() => onSubmit(buildPayload())} disabled={isSubmitting}>
+          <PortalButton
+            onClick={() => {
+              cancelPendingAdvance();
+              onSubmit(buildPayload());
+            }}
+            disabled={isSubmitting}
+          >
             {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
             {isSubmitting && isAiGradedShortAnswer ? "Evaluating your answer…" : "Submit quiz"}
           </PortalButton>

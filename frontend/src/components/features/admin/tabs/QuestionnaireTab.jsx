@@ -179,7 +179,7 @@ export default function QuestionnaireTab() {
         }}
       />
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deletingQuestion)}
         onClose={() => setDeletingQuestion(null)}
         onConfirm={handleDeleteConfirm}

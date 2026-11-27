@@ -18,6 +18,11 @@ import MultiSelect from "@/components/ui/MultiSelect";
 import LearningOutcomesField, {
   cleanLearningOutcomes,
 } from "@/components/features/courses/LearningOutcomesField";
+import {
+  DEFAULT_QUESTIONS_PER_QUIZ,
+  MAX_QUESTIONS_PER_QUIZ,
+  MIN_QUESTIONS_PER_QUIZ,
+} from "@/constants";
 import { getCategories } from "@/services/categoriesService";
 import { getTeachers } from "@/services/teachersService";
 import { getAdminTiers } from "@/services/tiersService";
@@ -77,7 +82,7 @@ const INITIAL_FORM = {
   modules_count: "6",
   lessons_per_module: "4",
   include_quizzes: true,
-  questions_per_quiz: "5",
+  questions_per_quiz: String(DEFAULT_QUESTIONS_PER_QUIZ),
   include_assignments: true,
   ai_grading: true,
   weeks_between_modules: "2",
@@ -315,8 +320,13 @@ export default function AiCourseModal({
       }
       if (form.include_quizzes) {
         const questionsPerQuiz = Number(form.questions_per_quiz);
-        if (!Number.isFinite(questionsPerQuiz) || questionsPerQuiz < 1) {
-          errors.questions_per_quiz = "Questions per quiz must be at least 1.";
+        if (
+          !Number.isFinite(questionsPerQuiz) ||
+          !Number.isInteger(questionsPerQuiz) ||
+          questionsPerQuiz < MIN_QUESTIONS_PER_QUIZ ||
+          questionsPerQuiz > MAX_QUESTIONS_PER_QUIZ
+        ) {
+          errors.questions_per_quiz = `Questions per quiz must be a whole number between ${MIN_QUESTIONS_PER_QUIZ} and ${MAX_QUESTIONS_PER_QUIZ}.`;
         }
       }
       const weeks = Number(form.weeks_between_modules);
@@ -435,7 +445,7 @@ export default function AiCourseModal({
         : "Starting...";
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={Sparkles}
@@ -636,7 +646,9 @@ export default function AiCourseModal({
                   <div className="w-28">
                     <input
                       type="number"
-                      min="1"
+                      min={MIN_QUESTIONS_PER_QUIZ}
+                      max={MAX_QUESTIONS_PER_QUIZ}
+                      step="1"
                       value={form.questions_per_quiz}
                       onChange={updateField("questions_per_quiz")}
                       placeholder="Questions"

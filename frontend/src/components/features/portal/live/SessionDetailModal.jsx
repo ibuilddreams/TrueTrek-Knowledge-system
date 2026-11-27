@@ -161,7 +161,7 @@ export default function SessionDetailModal({
           <button
             type="button"
             onClick={onClose}
-            className="mt-4 px-4 py-2.5 text-xs font-semibold font-semibold rounded-lg border border-cn-p-line text-cn-p-ink-2 hover:text-cn-p-ink hover:bg-cn-p-page transition cursor-pointer"
+            className="mt-4 px-4 py-2.5 text-xs font-semibold rounded-lg border border-cn-p-line text-cn-p-ink-2 hover:text-cn-p-ink hover:bg-cn-p-page transition cursor-pointer"
           >
             Close
           </button>
@@ -177,7 +177,7 @@ export default function SessionDetailModal({
                 <button
                   type="button"
                   onClick={() => onOpenNotes?.(session)}
-                  className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold font-semibold rounded-lg border border-cn-p-line text-cn-p-ink hover:bg-cn-p-page transition cursor-pointer"
+                  className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold rounded-lg border border-cn-p-line text-cn-p-ink hover:bg-cn-p-page transition cursor-pointer"
                 >
                   <NotebookPen className="w-3.5 h-3.5" />
                   Session notes
@@ -188,7 +188,7 @@ export default function SessionDetailModal({
                   href={session.recording_url}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold font-semibold rounded-lg bg-cn-p-accent hover:bg-cn-p-accent-hover text-white shadow-sm transition"
+                  className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold rounded-lg bg-cn-p-accent hover:bg-cn-p-accent-hover text-white shadow-sm transition"
                 >
                   <PlayCircle className="w-3.5 h-3.5" />
                   Play recording
@@ -200,7 +200,7 @@ export default function SessionDetailModal({
               type="button"
               onClick={() => onJoin?.(session)}
               disabled={isBusy}
-              className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold font-semibold rounded-lg bg-cn-p-bad hover:bg-cn-p-bad text-white shadow-sm transition disabled:opacity-50 cursor-pointer"
+              className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold rounded-lg bg-cn-p-bad hover:bg-cn-p-bad text-white shadow-sm transition disabled:opacity-50 cursor-pointer"
             >
               <Radio className="w-3.5 h-3.5" />
               {session.is_hosted_here ? "Join room" : "Join live"}
@@ -210,7 +210,7 @@ export default function SessionDetailModal({
               type="button"
               onClick={() => onCancelRsvp?.(session)}
               disabled={isBusy}
-              className="mt-4 px-4 py-2.5 text-xs font-semibold font-semibold rounded-lg border border-cn-p-line text-cn-p-ink-2 hover:text-cn-p-ink hover:bg-cn-p-page transition disabled:opacity-50 cursor-pointer"
+              className="mt-4 px-4 py-2.5 text-xs font-semibold rounded-lg border border-cn-p-line text-cn-p-ink-2 hover:text-cn-p-ink hover:bg-cn-p-page transition disabled:opacity-50 cursor-pointer"
             >
               Cancel RSVP
             </button>
@@ -219,7 +219,7 @@ export default function SessionDetailModal({
               type="button"
               onClick={() => onRsvp?.(session)}
               disabled={isBusy || session.seats_remaining === 0}
-              className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold font-semibold rounded-lg bg-cn-p-accent hover:bg-cn-p-accent-hover text-white shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="mt-4 inline-flex items-center gap-2 px-5 py-2.5 text-xs font-semibold rounded-lg bg-cn-p-accent hover:bg-cn-p-accent-hover text-white shadow-sm transition disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               <CalendarCheck className="w-3.5 h-3.5" />
               {session.seats_remaining === 0 ? "Session full" : "Save my spot"}

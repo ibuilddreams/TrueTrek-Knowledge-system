@@ -8,10 +8,14 @@ questions via AI instead of repeating the same bank, scoped to the course's
 modules/lessons so the new questions stay relevant to what the student is
 actually being taught.
 
-Same synchronous, single-call pattern as `quizzes/ai_grading.py` and
-`daily_drill/ai_generation.py` — this is a small, fast structured-JSON call,
-not a whole-course job, so it runs inline in the request rather than through
-the backgrounded/polled `ai_courses` job pipeline. Reuses
+Synchronous, like `quizzes/ai_grading.py` and `daily_drill/ai_generation.py`
+— this is structured JSON on the fast model, not a whole-course job, so it
+runs inline in the request rather than through the backgrounded/polled
+`ai_courses` job pipeline. Unlike those two it is not always a *single*
+call: a quiz may ask for up to `constants.MAX_QUESTIONS_PER_QUIZ` (70)
+questions, so the set is asked for in parallel batches of at most
+`REGENERATION_BATCH_SIZE` and reassembled here, which keeps the wall clock
+that of one call while the question count scales. Reuses
 `ai_courses.providers.get_provider()` (no second AI client) and
 `quizzes.question_repair` for the base text/choice repair rules shared with
 `ai_courses`' full-course generation. On top of that, retries are
@@ -22,7 +26,9 @@ teacher in the loop to fall back on for TRUE_FALSE/SHORT_ANSWER edge cases.
 
 import json
 import logging
+import re
 import time
+from concurrent.futures import ThreadPoolExecutor
 
 from django.conf import settings
 
@@ -86,6 +92,27 @@ TRANSPORT_RETRY_BACKOFF_SECONDS = 1
 
 MAX_LESSON_CONTENT_CHARS = 1500
 MAX_CONTEXT_LESSONS = 30
+
+# The most questions asked for in a single provider call. A quiz may ask for up to
+# MAX_QUESTIONS_PER_QUIZ (70), and one structured-JSON call for seventy four-option
+# questions does not come back inside AI_QUIZ_REGENERATION_TIMEOUT_SECONDS (40s) —
+# which is itself held under nginx's 60s proxy_read_timeout, because a student is
+# sitting in front of this request waiting to start. So a large set is asked for in
+# several smaller calls issued *in parallel*: the wall clock stays that of one call
+# while the question count scales. Twenty is the size the single-call path was
+# already sized and timed for.
+REGENERATION_BATCH_SIZE = 20
+
+# Parallel calls cannot see each other's output, so left identical they would return
+# the same obvious questions three times over. Each batch is pointed at a different
+# kind of question instead; _dedupe_questions below is the backstop for the overlap
+# that remains. Cycled if there are ever more batches than entries.
+BATCH_FOCUSES = (
+    "definitions, terminology and the core facts of the material",
+    "applying the material to concrete, realistic situations a learner would meet",
+    "comparing and contrasting ideas, and the misconceptions learners commonly hold",
+    "consequences and trade-offs — what follows from a choice, and what goes wrong without it",
+)
 
 
 class QuizRegenerationError(Exception):
@@ -173,7 +200,20 @@ def build_quiz_regeneration_context(quiz):
     }
 
 
-def build_prompt(context):
+def plan_batches(total):
+    """Split a requested question count into the per-call counts that will be
+    asked for in parallel — as few calls as possible, each no larger than
+    REGENERATION_BATCH_SIZE, and balanced rather than "full, full, remainder"
+    (70 becomes 18/18/17/17, not 20/20/20/10). Balanced because the calls run
+    concurrently and the slowest one is the whole wait: a lone 20 alongside
+    three 10s costs the student the 20."""
+    total = max(1, total)
+    batch_count = -(-total // REGENERATION_BATCH_SIZE)  # ceil
+    base, remainder = divmod(total, batch_count)
+    return [base + 1] * remainder + [base] * (batch_count - remainder)
+
+
+def build_prompt(context, *, batch_size=None, batch_index=0, batch_count=1):
     modules_text = "\n\n".join(
         (
             f"Module: {module['title']}\n{module['description']}\n"
@@ -185,6 +225,24 @@ def build_prompt(context):
         )
         for module in context["modules"]
     ) or "(no lesson content available — write questions from the course/quiz description alone)"
+
+    if batch_size is None:
+        batch_size = context["number_of_questions"]
+
+    # One call asked for on its own says nothing about batches; the student's paper
+    # is the batches combined, so each call is told which share of it it is writing
+    # and what to aim at, or the parallel calls all reach for the same obvious
+    # questions (see BATCH_FOCUSES).
+    batch_block = ""
+    if batch_count > 1:
+        focus = BATCH_FOCUSES[batch_index % len(BATCH_FOCUSES)]
+        batch_block = (
+            f"\nYou are writing part {batch_index + 1} of {batch_count} of this quiz. "
+            f"Other writers are independently writing the other parts from the same "
+            f"material at the same time and cannot see your questions, so stay in your "
+            f"lane: your part must test {focus}. Questions outside that emphasis are "
+            f"another part's job and will be discarded as duplicates.\n"
+        )
 
     return f"""You are a curriculum assessment writer generating a fresh quiz question set for a
 retry attempt on a Life-Education learning management system. The student already
@@ -203,9 +261,9 @@ Quiz description: {context['quiz_description'] or '(none provided)'}
 Passing score: {context['passing_score']}%
 Time limit: {context['time_limit_minutes'] or 'none'} minutes
 
+{batch_block}
 Requirements:
-- Produce exactly {context['number_of_questions']} questions, testing the same material
-  covered above.
+- Produce exactly {batch_size} questions, testing the same material covered above.
 - This must be a materially different set of questions from a typical first pass on
   this material — vary the wording, the specific facts/scenarios tested, and the
   choice ordering. Do not simply reword a small, predictable set of questions.
@@ -237,13 +295,39 @@ def _call_provider(prompt):
         return provider.generate_course(prompt, RESPONSE_SCHEMA, timeout)
 
 
-def generate_quiz_questions(quiz):
-    """Makes one AI call and returns a validated, repaired list of question
-    dicts (same shape ai_courses.writer expects: text/question_type/marks/
-    choices). No DB writes. Raises QuizRegenerationError on any failure."""
+def _normalized_question_text(text):
+    return re.sub(r"\s+", " ", text or "").strip().casefold().rstrip("?.!:;, ")
 
-    context = build_quiz_regeneration_context(quiz)
-    prompt = build_prompt(context)
+
+def _dedupe_questions(questions, warnings):
+    """Drops questions whose text repeats one already kept, comparing on
+    whitespace/case/trailing-punctuation-insensitive text.
+
+    Needed because batches are generated in parallel from the same material
+    by calls that cannot see each other (see BATCH_FOCUSES) — the same
+    question arriving twice is the expected cost of that, not a provider
+    fault. Also catches a single call repeating itself, which a long
+    structured-JSON generation does occasionally."""
+    seen = set()
+    kept = []
+    for question in questions:
+        fingerprint = _normalized_question_text(question["text"])
+        if fingerprint in seen:
+            warnings.append(f"Question '{question['text'][:50]}' repeated an earlier one — dropped.")
+            continue
+        seen.add(fingerprint)
+        kept.append(question)
+    return kept
+
+
+def _run_batch(context, batch_size, batch_index, batch_count):
+    """One provider call — returns its raw (unrepaired) question entries, or
+    raises QuizRegenerationError. Deliberately touches no database: this runs
+    on a pool thread when there is more than one batch, and a pool thread
+    opening its own connection is a connection nobody closes."""
+    prompt = build_prompt(
+        context, batch_size=batch_size, batch_index=batch_index, batch_count=batch_count
+    )
 
     try:
         result = _call_provider(prompt)
@@ -262,7 +346,69 @@ def generate_quiz_questions(quiz):
     if not isinstance(raw_questions, list) or not raw_questions:
         raise QuizRegenerationError("AI response contained no questions.")
 
-    raw_questions = raw_questions[: quiz.number_of_questions]
+    return raw_questions[:batch_size]
+
+
+def _collect_raw_questions(context, batch_sizes, quiz_pk):
+    """Runs every batch and returns (raw entries, failures). Batches run
+    concurrently and their results are read back in submission order, so the
+    assembled paper does not depend on which call happened to finish first.
+
+    A batch that fails is a shortfall, not a failure: the student gets the
+    questions the other batches wrote rather than being refused the attempt
+    altogether. Only every batch failing is fatal, and the caller raises the
+    first failure then — which, for a single-batch quiz, is exactly the
+    single-call behaviour this replaced."""
+    batch_count = len(batch_sizes)
+
+    if batch_count == 1:
+        try:
+            return _run_batch(context, batch_sizes[0], 0, 1), []
+        except QuizRegenerationError as exc:
+            return [], [exc]
+
+    collected = []
+    failures = []
+    with ThreadPoolExecutor(max_workers=batch_count) as pool:
+        futures = [
+            pool.submit(_run_batch, context, batch_size, index, batch_count)
+            for index, batch_size in enumerate(batch_sizes)
+        ]
+        for index, future in enumerate(futures):
+            try:
+                collected.extend(future.result())
+            except QuizRegenerationError as exc:
+                logger.warning(
+                    "Quiz regeneration batch %s/%s failed (quiz %s): %s",
+                    index + 1,
+                    batch_count,
+                    quiz_pk,
+                    exc,
+                )
+                failures.append(exc)
+
+    return collected, failures
+
+
+def generate_quiz_questions(quiz):
+    """Returns a validated, repaired list of question dicts (same shape
+    ai_courses.writer expects: text/question_type/marks/choices) for one
+    retry attempt. No DB writes. Raises QuizRegenerationError if nothing
+    usable came back at all.
+
+    Asks for the set in one provider call per REGENERATION_BATCH_SIZE
+    questions, run in parallel — see that constant for why a 70-question quiz
+    cannot be a single call."""
+
+    context = build_quiz_regeneration_context(quiz)
+    requested = max(1, quiz.number_of_questions)
+    batch_sizes = plan_batches(requested)
+
+    raw_questions, failures = _collect_raw_questions(context, batch_sizes, quiz.pk)
+    if not raw_questions:
+        raise failures[0] if failures else QuizRegenerationError(
+            "AI response contained no questions."
+        )
 
     warnings = []
     questions = []
@@ -272,12 +418,26 @@ def generate_quiz_questions(quiz):
             questions.append(repaired)
 
     questions = _enforce_mcq_four_choices(questions, warnings)
+    questions = _dedupe_questions(questions, warnings)
+    questions = questions[:requested]
 
     for warning in warnings:
         logger.warning("Quiz regeneration repair (quiz %s): %s", quiz.pk, warning)
 
     if not questions:
         raise QuizRegenerationError("No question in the AI response survived validation.")
+
+    if len(questions) < requested:
+        # Not fatal — the attempt is graded out of the questions it was actually
+        # served (services._quiz_total_marks reads the attempt's own set), so a
+        # short paper still scores correctly. Worth a line, because a persistent
+        # shortfall means the prompt or the batch focuses need looking at.
+        logger.warning(
+            "Quiz regeneration produced %s of %s requested questions (quiz %s).",
+            len(questions),
+            requested,
+            quiz.pk,
+        )
 
     return questions
 

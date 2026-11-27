@@ -21,7 +21,7 @@ export default function RedemptionDetailModal({ isOpen, onClose, redemption }) {
   const fulfillment = redemption.fulfillment;
 
   return (
-    <Modal variant="cobalt" isOpen={isOpen} onClose={onClose} title="Redemption details" maxWidth="max-w-lg">
+    <Modal isOpen={isOpen} onClose={onClose} title="Redemption details" maxWidth="max-w-lg">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <div>

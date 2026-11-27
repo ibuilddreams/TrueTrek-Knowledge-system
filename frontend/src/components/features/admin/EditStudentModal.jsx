@@ -78,7 +78,7 @@ export default function EditStudentModal({ isOpen, onClose, student, onUpdated }
   if (!student) return null;
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={Edit3}

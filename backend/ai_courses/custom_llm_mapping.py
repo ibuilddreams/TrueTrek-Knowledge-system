@@ -25,6 +25,8 @@ rather than dropped quietly.
 
 from collections import deque
 
+from quizzes.constants import DEFAULT_QUESTIONS_PER_QUIZ
+
 # Our canonical item kinds — the vocabulary validators.py filters on.
 LESSON = "lesson"
 QUIZ = "quiz"
@@ -180,7 +182,9 @@ def build_request_payload(form_payload, rag_enabled=False):
         "num_modules": int(form_payload["modules_count"]),
         "lessons_per_module": int(form_payload["lessons_per_module"]),
         "include_quizzes": bool(form_payload.get("include_quizzes", True)),
-        "questions_per_quiz": int(form_payload.get("questions_per_quiz") or 5),
+        "questions_per_quiz": int(
+            form_payload.get("questions_per_quiz") or DEFAULT_QUESTIONS_PER_QUIZ
+        ),
         "include_assignments": bool(form_payload.get("include_assignments", True)),
         # Our serializer calls this `ai_grading`; it defaults True there and in
         # writer.py, so the default is repeated here rather than assumed present

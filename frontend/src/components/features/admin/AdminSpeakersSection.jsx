@@ -157,7 +157,7 @@ export default function AdminSpeakersSection() {
         }}
       />
 
-      <ConfirmDialog variant="cobalt"
+      <ConfirmDialog
         isOpen={Boolean(removingSpeaker)}
         onClose={() => setRemovingSpeaker(null)}
         onConfirm={handleRemove}

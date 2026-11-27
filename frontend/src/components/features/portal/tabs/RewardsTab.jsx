@@ -32,7 +32,7 @@ export default function RewardsTab() {
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
       <PortalPageHead
         title="Rewards"
-        subtitle="Earn points from quests, drills and streaks. Spend them on mentorship, merch and access."
+        subtitle="Earn points from quizzes, quests, drills and streaks. Spend them on mentorship, merch and access."
       />
 
       <div className="grid gap-4 sm:grid-cols-3">

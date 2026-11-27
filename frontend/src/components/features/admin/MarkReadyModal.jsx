@@ -12,7 +12,7 @@ export default function MarkReadyModal({ isOpen, onClose, onConfirm, redemption,
   }, [isOpen]);
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={isSubmitting ? undefined : onClose}
       icon={PackageCheck}

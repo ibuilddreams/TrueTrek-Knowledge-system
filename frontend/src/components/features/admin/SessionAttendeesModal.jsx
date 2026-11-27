@@ -49,7 +49,7 @@ export default function SessionAttendeesModal({ isOpen, onClose, session }) {
   ];
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={onClose}
       icon={Users}

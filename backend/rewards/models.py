@@ -192,6 +192,7 @@ class PointsTransaction(BaseModel):
         DRILL_REWARD = "DRILL_REWARD", "Daily Drill Reward"
         QUEST_REWARD = "QUEST_REWARD", "Daily Quest Reward"
         ROLEPLAY_REWARD = "ROLEPLAY_REWARD", "Role-Play Simulator Reward"
+        QUIZ_REWARD = "QUIZ_REWARD", "Quiz Score Reward"
         REDEMPTION = "REDEMPTION", "Reward Redemption"
         REDEMPTION_REFUND = "REDEMPTION_REFUND", "Redemption Refund"
         MANUAL_ADJUSTMENT = "MANUAL_ADJUSTMENT", "Manual Adjustment"
@@ -238,6 +239,13 @@ class PointsTransaction(BaseModel):
         on_delete=models.SET_NULL,
         related_name="points_transactions",
     )
+    quiz_attempt = models.ForeignKey(
+        "quizzes.QuizAttempt",
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name="points_transactions",
+    )
     redemption = models.ForeignKey(
         RewardRedemption,
         null=True,
@@ -276,6 +284,18 @@ class PointsTransaction(BaseModel):
                 fields=["roleplay_session"],
                 condition=models.Q(roleplay_session__isnull=False),
                 name="one_points_transaction_per_roleplay_session",
+            ),
+            # And for a quiz attempt. This one carries more weight than the
+            # three above: grading an attempt is not a one-shot event —
+            # `quizzes.services._recompute_quiz_result` runs again every time
+            # a teacher (or the AI grader) scores one more short answer, so
+            # the award path is *re-entered by design*. quizzes/points.py
+            # checks under a row lock and skips, and this is what the DB does
+            # if two graders ever slip past it at once.
+            models.UniqueConstraint(
+                fields=["quiz_attempt"],
+                condition=models.Q(quiz_attempt__isnull=False),
+                name="one_points_transaction_per_quiz_attempt",
             ),
         ]
 

@@ -36,7 +36,7 @@ export default function StudentPointsDetailModal({ isOpen, onClose, student }) {
 
   return (
     <>
-      <Modal variant="cobalt"
+      <Modal
         isOpen={isOpen}
         onClose={onClose}
         icon={User}

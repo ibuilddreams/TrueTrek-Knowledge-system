@@ -393,7 +393,7 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         nextOrder={modules.length + 1}
       />
 
-      <ConfirmDialog variant="cobalt"
+      <ConfirmDialog
         isOpen={Boolean(deletingModule)}
         onClose={() => setDeletingModule(null)}
         onConfirm={handleDeleteModuleConfirm}
@@ -401,10 +401,9 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         title="Delete module"
         message={`Are you sure you want to delete "${deletingModule?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
-        size="lg"
       />
 
-      <ConfirmDialog variant="cobalt"
+      <ConfirmDialog
         isOpen={Boolean(deletingLesson)}
         onClose={() => setDeletingLesson(null)}
         onConfirm={handleDeleteLessonConfirm}
@@ -412,10 +411,9 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         title="Delete lesson"
         message={`Are you sure you want to delete "${deletingLesson?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
-        size="lg"
       />
 
-      <ConfirmDialog variant="cobalt"
+      <ConfirmDialog
         isOpen={Boolean(deletingAssignment)}
         onClose={() => setDeletingAssignment(null)}
         onConfirm={handleDeleteAssignmentConfirm}
@@ -423,10 +421,9 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         title="Delete assignment"
         message={`Are you sure you want to delete "${deletingAssignment?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
-        size="lg"
       />
 
-      <ConfirmDialog variant="cobalt"
+      <ConfirmDialog
         isOpen={Boolean(deletingQuiz)}
         onClose={() => setDeletingQuiz(null)}
         onConfirm={handleDeleteQuizConfirm}
@@ -434,7 +431,6 @@ export default function CourseContentScreen({ courseId, course, onBack }) {
         title="Delete quiz"
         message={`Are you sure you want to delete "${deletingQuiz?.title}"? This cannot be undone.`}
         confirmLabel="Delete"
-        size="lg"
       />
 
       <TeacherLessonFormModal

@@ -116,7 +116,7 @@ export default function EnrollStudentModal({
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={UserPlus}

@@ -255,7 +255,7 @@ export default function TeacherAssignmentAttachmentsModal({ isOpen, onClose, ass
 
   return (
     <>
-      <Modal variant="cobalt"
+      <Modal
         isOpen={isOpen}
         onClose={onClose}
         icon={Paperclip}
@@ -321,7 +321,7 @@ export default function TeacherAssignmentAttachmentsModal({ isOpen, onClose, ass
         </div>
       </Modal>
 
-      <ConfirmDialog variant="cobalt"
+      <ConfirmDialog
         isOpen={Boolean(deletingAttachment)}
         onClose={() => setDeletingAttachment(null)}
         onConfirm={handleDeleteConfirm}
@@ -329,7 +329,6 @@ export default function TeacherAssignmentAttachmentsModal({ isOpen, onClose, ass
         title="Delete attachment"
         message={`Are you sure you want to delete "${deletingAttachment?.original_name}"? This cannot be undone.`}
         confirmLabel="Delete"
-        size="lg"
       />
     </>
   );

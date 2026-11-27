@@ -21,7 +21,7 @@ export default function RequestDetailModal({ isOpen, onClose, request }) {
   const status = request.status;
 
   return (
-    <Modal variant="cobalt" isOpen={isOpen} onClose={onClose} icon={FileWarning} title={request.title} maxWidth="max-w-lg">
+    <Modal isOpen={isOpen} onClose={onClose} icon={FileWarning} title={request.title} maxWidth="max-w-lg">
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <span className="text-xs text-cn-p-ink-2 font-semibold">

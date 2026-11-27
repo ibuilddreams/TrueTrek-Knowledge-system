@@ -147,7 +147,7 @@ export default function LiveClassesTab() {
         session={attendanceSession}
       />
 
-      <ConfirmDialog variant="cobalt"
+      <ConfirmDialog
         isOpen={Boolean(cancellingSession)}
         onClose={() => setCancellingSession(null)}
         onConfirm={handleConfirmCancel}
@@ -165,7 +165,6 @@ export default function LiveClassesTab() {
         confirmLabel={
           willCancelRatherThanDelete(cancellingSession) ? "Cancel class" : "Delete class"
         }
-        size="lg"
       />
 
       {activeClass && (

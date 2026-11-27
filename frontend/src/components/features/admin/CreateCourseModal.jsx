@@ -317,7 +317,7 @@ export default function CreateCourseModal({ isOpen, onClose, onSaved, course }) 
   const isBusy = isSubmitting || isLoadingCourse;
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={isEditMode ? Edit3 : BookPlus}

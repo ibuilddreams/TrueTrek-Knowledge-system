@@ -84,7 +84,7 @@ export default function TeacherRequestDetailModal({ isOpen, onClose, request }) 
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={FileWarning}

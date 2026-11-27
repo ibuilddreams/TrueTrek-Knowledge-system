@@ -124,7 +124,7 @@ export default function TeacherOnboardingDetailModal({ isOpen, onClose, applicat
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={Gavel}

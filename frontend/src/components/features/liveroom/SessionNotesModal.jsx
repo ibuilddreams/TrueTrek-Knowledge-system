@@ -39,7 +39,7 @@ import {
 function Section({ icon: Icon, title, children }) {
   return (
     <section className="space-y-2">
-      <h3 className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest text-gold">
+      <h3 className="inline-flex items-center gap-2 text-[11px] font-semibold text-cn-p-accent">
         <Icon className="w-3.5 h-3.5" />
         {title}
       </h3>
@@ -108,7 +108,7 @@ export default function SessionNotesModal({ session, isOpen, onClose }) {
       maxWidth="max-w-3xl"
     >
       <div className="space-y-5">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-mono uppercase tracking-wider text-muted">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-semibold text-cn-p-ink-2">
           <span>War Room Live{session?.topic ? ` · ${session.topic}` : ""}</span>
           <span>
             {formatSessionDate(session?.scheduled_at)} ·{" "}
@@ -117,24 +117,24 @@ export default function SessionNotesModal({ session, isOpen, onClose }) {
         </div>
 
         {isLoading && (
-          <div className="rounded-2xl bg-porcelain border border-line py-16 flex flex-col items-center justify-center gap-3">
-            <Loader2 className="w-6 h-6 text-muted animate-spin" />
-            <p className="text-xs font-mono uppercase tracking-wider text-muted">
+          <div className="rounded-2xl bg-cn-p-page border border-cn-p-line py-16 flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-6 h-6 text-cn-p-ink-2 animate-spin" />
+            <p className="text-xs font-semibold text-cn-p-ink-2">
               Fetching the notes…
             </p>
           </div>
         )}
 
         {!isLoading && (isError || !notes) && (
-          <div className="rounded-2xl bg-porcelain border border-line py-14 px-8 flex flex-col items-center justify-center gap-3 text-center">
-            <span className="w-11 h-11 rounded-2xl bg-rose/25 border border-clay/25 text-clay flex items-center justify-center">
+          <div className="rounded-2xl bg-cn-p-page border border-cn-p-line py-14 px-8 flex flex-col items-center justify-center gap-3 text-center">
+            <span className="w-11 h-11 rounded-2xl bg-cn-p-bad-bg border border-cn-p-bad-bg text-cn-p-bad flex items-center justify-center">
               {isPending ? (
                 <Sparkles className="w-5 h-5" />
               ) : (
                 <AlertTriangle className="w-5 h-5" />
               )}
             </span>
-            <p className="text-sm font-light text-muted leading-relaxed max-w-sm">
+            <p className="text-sm font-light text-cn-p-ink-2 leading-relaxed max-w-sm">
               {isError
                 ? getApiErrorMessage(error, "These notes couldn't be loaded.")
                 : isPending
@@ -151,11 +151,11 @@ export default function SessionNotesModal({ session, isOpen, onClose }) {
         {!isLoading && notes && (
           <>
             <div>
-              <h2 className="text-lg font-serif font-bold text-ink leading-snug">
+              <h2 className="text-lg font-extrabold tracking-[-0.02em] text-cn-p-ink leading-snug">
                 {notes.title}
               </h2>
               {notes.summary && (
-                <p className="text-sm text-ink font-light leading-relaxed mt-2">
+                <p className="text-sm text-cn-p-ink font-light leading-relaxed mt-2">
                   {notes.summary}
                 </p>
               )}
@@ -167,7 +167,7 @@ export default function SessionNotesModal({ session, isOpen, onClose }) {
                   {notes.key_topics.map((topic, index) => (
                     <li
                       key={`topic-${index}`}
-                      className="px-3 py-1 rounded-full bg-porcelain border border-line text-xs font-light text-ink"
+                      className="px-3 py-1 rounded-full bg-cn-p-page border border-cn-p-line text-xs font-light text-cn-p-ink"
                     >
                       {topic}
                     </li>
@@ -181,13 +181,13 @@ export default function SessionNotesModal({ session, isOpen, onClose }) {
                 <ul className="space-y-3">
                   {notes.important_points.map((entry, index) => (
                     <li key={`point-${index}`} className="flex items-start gap-2.5">
-                      <span className="mt-2 w-1.5 h-1.5 rounded-full bg-gold shrink-0" />
+                      <span className="mt-2 w-1.5 h-1.5 rounded-full bg-cn-p-accent shrink-0" />
                       <span className="min-w-0">
-                        <span className="block text-sm font-medium text-ink leading-snug">
+                        <span className="block text-sm font-medium text-cn-p-ink leading-snug">
                           {entry.point}
                         </span>
                         {entry.detail && (
-                          <span className="block text-xs text-muted font-light leading-relaxed mt-0.5">
+                          <span className="block text-xs text-cn-p-ink-2 font-light leading-relaxed mt-0.5">
                             {entry.detail}
                           </span>
                         )}
@@ -204,15 +204,15 @@ export default function SessionNotesModal({ session, isOpen, onClose }) {
                   {notes.action_items.map((entry, index) => (
                     <li
                       key={`action-${index}`}
-                      className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-porcelain border border-line"
+                      className="flex items-start gap-2.5 px-3 py-2.5 rounded-xl bg-cn-p-page border border-cn-p-line"
                     >
-                      <CheckSquare className="w-3.5 h-3.5 text-gold mt-0.5 shrink-0" />
+                      <CheckSquare className="w-3.5 h-3.5 text-cn-p-accent mt-0.5 shrink-0" />
                       <span className="min-w-0">
-                        <span className="block text-sm text-ink font-light leading-snug">
+                        <span className="block text-sm text-cn-p-ink font-light leading-snug">
                           {entry.task}
                         </span>
                         {(entry.owner || entry.due) && (
-                          <span className="block text-[11px] font-mono uppercase tracking-wider text-muted mt-1">
+                          <span className="block text-[11px] font-semibold text-cn-p-ink-2 mt-1">
                             {[entry.owner, entry.due].filter(Boolean).join(" · ")}
                           </span>
                         )}
@@ -225,7 +225,7 @@ export default function SessionNotesModal({ session, isOpen, onClose }) {
 
             {notes.next_class && (
               <Section icon={Sparkles} title="Next time">
-                <p className="text-sm text-ink font-light leading-relaxed">
+                <p className="text-sm text-cn-p-ink font-light leading-relaxed">
                   {notes.next_class}
                 </p>
               </Section>
@@ -236,7 +236,7 @@ export default function SessionNotesModal({ session, isOpen, onClose }) {
             {transcript && (
               <section className="space-y-2">
                 <div className="flex flex-wrap items-center justify-between gap-x-4 gap-y-1">
-                  <h3 className="inline-flex items-center gap-2 text-[11px] font-mono uppercase tracking-widest text-gold">
+                  <h3 className="inline-flex items-center gap-2 text-[11px] font-semibold text-cn-p-accent">
                     <ScrollText className="w-3.5 h-3.5" />
                     Transcript
                   </h3>
@@ -244,20 +244,20 @@ export default function SessionNotesModal({ session, isOpen, onClose }) {
                     type="button"
                     onClick={() => setIsTranscriptOpen((open) => !open)}
                     aria-expanded={isTranscriptOpen}
-                    className="text-[11px] font-mono uppercase tracking-wider text-muted hover:text-ink transition-colors cursor-pointer"
+                    className="text-[11px] font-semibold text-cn-p-ink-2 hover:text-cn-p-ink transition-colors cursor-pointer"
                   >
                     {isTranscriptOpen ? "Hide" : "Show"} what was said
                   </button>
                 </div>
                 {isTranscriptOpen && (
-                  <div className="max-h-72 overflow-auto rounded-xl bg-porcelain border border-line p-4 space-y-2">
+                  <div className="max-h-72 overflow-auto rounded-xl bg-cn-p-page border border-cn-p-line p-4 space-y-2">
                     {transcriptTurns.map((turn, index) => (
                       <p
                         key={`turn-${index}`}
-                        className="text-xs text-ink font-light leading-relaxed"
+                        className="text-xs text-cn-p-ink font-light leading-relaxed"
                       >
                         {turn.speaker && (
-                          <span className="font-mono font-bold text-ink">
+                          <span className="font-semibold text-cn-p-ink">
                             {turn.speaker}:{" "}
                           </span>
                         )}
@@ -266,7 +266,7 @@ export default function SessionNotesModal({ session, isOpen, onClose }) {
                     ))}
                   </div>
                 )}
-                <p className="text-[11px] font-light text-muted leading-relaxed">
+                <p className="text-[11px] font-light text-cn-p-ink-2 leading-relaxed">
                   Only the team running War Room Live can see the transcript.
                   Everybody who was in the room gets the notes above, and your
                   copy of the PDF has the conversation under them.
@@ -274,8 +274,8 @@ export default function SessionNotesModal({ session, isOpen, onClose }) {
               </section>
             )}
 
-            <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-line">
-              <p className="text-[11px] font-light text-muted leading-relaxed max-w-sm">
+            <div className="flex flex-wrap items-center justify-between gap-3 pt-4 border-t border-cn-p-line">
+              <p className="text-[11px] font-light text-cn-p-ink-2 leading-relaxed max-w-sm">
                 These notes were written automatically from a transcript of the
                 session and haven&apos;t been checked by anyone who was in it.
                 Treat anything surprising as something to ask about.
@@ -285,7 +285,7 @@ export default function SessionNotesModal({ session, isOpen, onClose }) {
                   type="button"
                   onClick={handleDownload}
                   disabled={isDownloading}
-                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-pine hover:bg-moss disabled:opacity-60 disabled:cursor-not-allowed text-paper text-xs font-semibold font-mono uppercase tracking-wider transition-colors cursor-pointer shrink-0"
+                  className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-cn-p-accent hover:bg-cn-p-accent-hover disabled:opacity-60 disabled:cursor-not-allowed text-white text-xs font-semibold shadow-sm transition-colors cursor-pointer shrink-0"
                 >
                   {isDownloading ? (
                     <Loader2 className="w-3.5 h-3.5 animate-spin" />

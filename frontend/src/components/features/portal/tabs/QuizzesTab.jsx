@@ -8,6 +8,7 @@ import { useStudentQuizAttempts } from "@/hooks/student/useStudentQuizAttempts";
 import { useStudentQuizzes } from "@/hooks/student/useStudentQuizzes";
 import { getStudentEnrollments } from "@/services/studentCoursesService";
 import { getApiErrorMessage } from "@/lib/apiErrors";
+import { getQuizQuestionCount } from "@/lib/curriculumMeta";
 import { formatDate } from "@/lib/adminFormatters";
 import Loader from "@/components/ui/Loader";
 import Pagination from "@/components/ui/Pagination";
@@ -25,7 +26,7 @@ import {
   PortalTr,
 } from "../shell/PortalUI";
 import QuizAttemptHistoryModal from "../history/QuizAttemptHistoryModal";
-import QuizAttemptModal from "../course-detail/QuizAttemptModal";
+import QuizAttemptScreen from "../course-detail/QuizAttemptScreen";
 
 // The design's `SP.quizzes`: one table of every quiz across every course,
 // filtered by a strip of status tabs, with the Course column doing the work the
@@ -95,6 +96,12 @@ export default function QuizzesTab() {
   const [page, setPage] = useState(1);
   const [resultsRef, changePage] = usePaginationAnchor(setPage);
   const [selectedQuizId, setSelectedQuizId] = useState(null);
+  // Lives here, not in QuizAttemptScreen, because it decides what this screen
+  // renders: the list stays up behind the intro dialog, and is replaced by the
+  // attempt once it starts. One source of truth is what stops the two
+  // disagreeing — a stale "an attempt is running" flag would blank the list
+  // while only a dialog was open.
+  const [attemptPhase, setAttemptPhase] = useState("intro");
   const [detailAttemptId, setDetailAttemptId] = useState(null);
 
   const {
@@ -220,6 +227,20 @@ export default function QuizzesTab() {
     [quizzes, selectedQuizId],
   );
 
+  function openQuiz(quizId) {
+    setAttemptPhase("intro");
+    setSelectedQuizId(quizId);
+  }
+
+  function closeQuiz() {
+    setAttemptPhase("intro");
+    setSelectedQuizId(null);
+  }
+
+  // The attempt takes the screen in place of the list; the intro dialog sits
+  // over it, so the list stays visible until the student actually starts.
+  const isAttemptOpen = Boolean(selectedQuiz) && attemptPhase !== "intro";
+
   // One pager serves both tables — the Attempts tab shows a different list, so
   // the active one decides what is being paged.
   const activeRows = tab === "attempts" ? attemptRows : quizRows;
@@ -275,6 +296,12 @@ export default function QuizzesTab() {
   const isAttemptsTab = tab === "attempts";
 
   return (
+    // One `QuizAttemptScreen`, rendered from one place, whatever the phase.
+    // Swapping it between two branches of this return would have made React
+    // tear the first instance down and build a second — and the attempt the
+    // student had just started lives in that instance's state, so it would
+    // have been thrown away at the moment the quiz began.
+    //
     // `grid-cols-[minmax(0,1fr)]`, not a bare `grid`: a grid item defaults to
     // `min-width:auto` and so refuses to shrink below its content, and the
     // table below is wider than a phone. Left alone the column grew to the
@@ -282,6 +309,12 @@ export default function QuizzesTab() {
     // ran off the right edge and the screen scrolled sideways instead of the
     // table scrolling inside its own wrapper.
     <div className="grid grid-cols-[minmax(0,1fr)] gap-6">
+      {/* The list and its chrome step aside while an attempt is running —
+          its page head, course filter and status tabs would be a second set
+          of navigation competing with the quiz. Gated rather than moved, so
+          the markup below is untouched. */}
+      {!isAttemptOpen && (
+        <>
       <PortalPageHead
         title="Quizzes"
         subtitle="Module knowledge checks. Each quiz carries its own pass mark, and you can retake one as many times as you need."
@@ -431,7 +464,7 @@ export default function QuizzesTab() {
                       key={quiz.id}
                       disabled={isLocked}
                       title={isLocked ? quiz.lock_info?.reason : undefined}
-                      onOpen={isLocked ? undefined : () => setSelectedQuizId(quiz.id)}
+                      onOpen={isLocked ? undefined : () => openQuiz(quiz.id)}
                     >
                       <PortalTd>
                         <b className="font-semibold text-cn-p-ink">{quiz.title}</b>
@@ -445,7 +478,7 @@ export default function QuizzesTab() {
                         {quiz.course?.title || "—"}
                       </PortalTd>
                       <PortalTd align="right" numeric className="text-sm text-cn-p-ink-2">
-                        {quiz.number_of_questions ?? "—"}
+                        {getQuizQuestionCount(quiz) || "—"}
                       </PortalTd>
                       <PortalTd align="right" numeric className="text-sm text-cn-p-ink-2">
                         {quiz.attempts_used ?? 0}
@@ -485,13 +518,17 @@ export default function QuizzesTab() {
           )}
         </PortalCard>
       )}
+        </>
+      )}
 
-      <QuizAttemptModal
+      <QuizAttemptScreen
         quiz={selectedQuiz}
         canInteract={
           Boolean(selectedQuiz) && activeCourseIds.has(selectedQuiz.course?.id)
         }
-        onClose={() => setSelectedQuizId(null)}
+        phase={attemptPhase}
+        onPhaseChange={setAttemptPhase}
+        onClose={closeQuiz}
       />
       <QuizAttemptHistoryModal
         attemptId={detailAttemptId}

@@ -169,7 +169,7 @@ export default function TierFormModal({ isOpen, onClose, onSaved, tier }) {
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={isEditMode ? Edit3 : Layers3}

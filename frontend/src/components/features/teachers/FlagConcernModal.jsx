@@ -91,7 +91,7 @@ export default function FlagConcernModal({ isOpen, onClose, studentId, studentNa
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={ShieldAlert}

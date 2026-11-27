@@ -68,7 +68,7 @@ export default function UpdateCourseStatusModal({ isOpen, onClose, course, onUpd
   if (!course) return null;
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={RefreshCw}

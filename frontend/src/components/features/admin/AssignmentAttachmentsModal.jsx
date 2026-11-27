@@ -255,7 +255,7 @@ export default function AssignmentAttachmentsModal({ isOpen, onClose, assignment
 
   return (
     <>
-      <Modal variant="cobalt"
+      <Modal
         isOpen={isOpen}
         onClose={onClose}
         icon={Paperclip}
@@ -320,7 +320,7 @@ export default function AssignmentAttachmentsModal({ isOpen, onClose, assignment
         </div>
       </Modal>
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deletingAttachment)}
         onClose={() => setDeletingAttachment(null)}
         onConfirm={handleDeleteConfirm}

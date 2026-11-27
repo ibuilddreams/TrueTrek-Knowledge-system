@@ -217,7 +217,7 @@ export default function AdminRolePlayScenariosSection({ onViewSessions }) {
         }}
       />
 
-      <ConfirmDialog variant="cobalt"
+      <ConfirmDialog
         isOpen={Boolean(archivingScenario)}
         onClose={() => setArchivingScenario(null)}
         onConfirm={handleArchive}

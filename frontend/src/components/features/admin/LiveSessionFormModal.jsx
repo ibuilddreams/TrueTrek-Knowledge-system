@@ -236,7 +236,7 @@ export default function LiveSessionFormModal({ isOpen, onClose, onSaved, session
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={isEditMode ? Edit3 : Mic}

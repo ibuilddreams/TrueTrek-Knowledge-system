@@ -57,7 +57,6 @@ export default function NewMessageModal({ isOpen, onClose, onConversationStarted
       icon={MessageSquarePlus}
       title="New message"
       subtitle="Start a conversation"
-      variant="cobalt"
       maxWidth="max-w-md"
     >
       <div className="space-y-4">

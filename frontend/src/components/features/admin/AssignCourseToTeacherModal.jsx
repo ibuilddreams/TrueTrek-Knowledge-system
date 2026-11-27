@@ -107,7 +107,6 @@ export default function AssignCourseToTeacherModal({
 
   return (
     <Modal
-      variant="cobalt"
       isOpen={isOpen}
       onClose={onClose}
       icon={BookPlus}
