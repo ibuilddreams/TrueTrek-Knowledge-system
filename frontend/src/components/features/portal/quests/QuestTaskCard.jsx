@@ -33,7 +33,7 @@ export default function QuestTaskCard({ assignment, onComplete, onSkip, isBusy =
         </div>
 
         <div className="flex items-center gap-2 flex-wrap justify-end">
-          <span className="text-[10px] font-semibold text-cn-p-ink-2 font-semibold">
+          <span className="text-[10px] font-semibold text-cn-p-ink-2">
             {quest.category_display}
           </span>
           <span

@@ -190,7 +190,7 @@ export default function TeacherCourseFormModal({ isOpen, onClose, onSaved }) {
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={BookPlus}

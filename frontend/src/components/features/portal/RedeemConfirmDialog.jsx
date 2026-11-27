@@ -18,7 +18,6 @@ export default function RedeemConfirmDialog({ isOpen, onClose, onConfirm, reward
 
   return (
     <Modal
-      variant="cobalt"
       isOpen={isOpen}
       onClose={isConfirming ? undefined : onClose}
       icon={Gift}

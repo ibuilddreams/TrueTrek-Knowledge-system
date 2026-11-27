@@ -249,8 +249,7 @@ export default function TestimonialsTab() {
         </div>
       </div>
 
-      <ConfirmDialog variant="cobalt"
-        size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deletingTestimonial)}
         onClose={() => setDeletingTestimonial(null)}
         onConfirm={handleDeleteConfirm}

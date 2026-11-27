@@ -86,3 +86,16 @@ export function getPortalQuizStatus(quiz) {
   if (attempt.is_passed === false) return { label: "Not passed", tone: "bad" };
   return { label: "Submitted", tone: "blue" };
 }
+
+/**
+ * How many questions this student's next attempt on `quiz` will actually hold.
+ *
+ * Deliberately not `quiz.number_of_questions`, which is the count the quiz is
+ * *configured* for: a first attempt serves the questions a teacher authored,
+ * and a teacher may set the count and write fewer. The server decides which of
+ * the two applies (`quizzes/services.get_student_quizzes`) — this only falls
+ * back for a payload that predates that field.
+ */
+export function getQuizQuestionCount(quiz) {
+  return quiz?.next_attempt_question_count ?? quiz?.number_of_questions ?? 0;
+}

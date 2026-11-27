@@ -3,6 +3,7 @@ from django.contrib.auth import get_user_model
 from rest_framework import serializers
 
 from courses.models import Category, Course
+from quizzes.constants import DEFAULT_QUESTIONS_PER_QUIZ, MAX_QUESTIONS_PER_QUIZ
 from tiers.models import Tier
 
 from .models import AICourseGeneration
@@ -48,7 +49,14 @@ class GenerationRequestSerializer(serializers.Serializer):
     modules_count = serializers.IntegerField(min_value=1, max_value=settings.AI_MAX_MODULES)
     lessons_per_module = serializers.IntegerField(min_value=1, max_value=settings.AI_MAX_LESSONS)
     include_quizzes = serializers.BooleanField(default=True)
-    questions_per_quiz = serializers.IntegerField(min_value=1, max_value=20, default=5)
+    # Bound shared with the quiz API's own number_of_questions — ai_courses writes
+    # straight into quizzes.models, so the two must agree about how big a quiz can be.
+    # Defaults to Quiz.number_of_questions' own default rather than a smaller number
+    # of its own: a generated quiz is a quiz, and an admin who never opened the field
+    # should not get a shorter one than a hand-authored course's.
+    questions_per_quiz = serializers.IntegerField(
+        min_value=1, max_value=MAX_QUESTIONS_PER_QUIZ, default=DEFAULT_QUESTIONS_PER_QUIZ
+    )
     include_assignments = serializers.BooleanField(default=True)
     # Whether the generated quizzes' short-answer questions and generated
     # assignments should default to AI grading (assignments/quizzes.GradingMode.AI)

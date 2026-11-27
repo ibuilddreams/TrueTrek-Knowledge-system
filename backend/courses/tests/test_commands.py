@@ -27,7 +27,12 @@ from pathways.models import Pathway, PathwayCourse
 from live_sessions.models import LiveSession, SessionSpeaker
 from quests.models import DailyQuestAssignment, Quest
 from quizzes.models import Choice, Question as QuizQuestion
-from rewards.models import PointsTransaction, StudentPointsAccount
+from rewards.models import (
+    PointsTransaction,
+    Reward,
+    RewardRedemption,
+    StudentPointsAccount,
+)
 from tiers.models import Tier, TierPathway
 from wargamer.models import RolePlayScenario, RolePlaySession, RolePlayTurn
 
@@ -884,6 +889,63 @@ class SeedDataQuestTests(TestCase):
         assignment.refresh_from_db()
         self.assertEqual(assignment.points_awarded, 15)
         self.assertEqual(assignment.status, DailyQuestAssignment.AssignmentStatus.COMPLETED)
+
+
+class SeedDataRewardTests(TestCase):
+    """The rewards catalog seeds like every other upsert here: it adds and
+    refreshes the seeded set, and never removes anything else."""
+
+    def test_seeds_the_starter_reward_catalog(self):
+        seed_offline()
+
+        self.assertEqual(Reward.objects.count(), len(seed.REWARD_DEFS))
+        for reward_def in seed.REWARD_DEFS:
+            reward = Reward.objects.get(name=reward_def["name"])
+            self.assertEqual(reward.points_required, reward_def["points_required"])
+            self.assertEqual(reward.fulfillment_type, reward_def["fulfillment_type"])
+            self.assertEqual(reward.status, Status.ACTIVE)
+
+    def test_a_session_reward_carries_the_duration_its_scheduling_needs(self):
+        """`schedule_redemption` derives a fulfillment's end_time from the
+        reward's duration_minutes, so a SCHEDULED_SESSION reward without one
+        books a session with no end."""
+        seed_offline()
+
+        for reward in Reward.objects.filter(
+            fulfillment_type=Reward.FulfillmentType.SCHEDULED_SESSION
+        ):
+            self.assertTrue(reward.duration_minutes, reward.name)
+
+    def test_reseeding_preserves_hand_made_rewards_and_redemption_history(self):
+        seed_offline()
+
+        hand_made = Reward.objects.create(name="Admin-authored reward", points_required=50)
+        student = User.objects.filter(role=User.Roles.STUDENT).first()
+        seeded = Reward.objects.get(name=seed.REWARD_DEFS[0]["name"])
+        redemption = RewardRedemption.objects.create(
+            student=student, reward=seeded, points_cost=seeded.points_required
+        )
+
+        seed_offline()
+
+        self.assertTrue(Reward.objects.filter(pk=hand_made.pk).exists())
+        redemption.refresh_from_db()
+        self.assertEqual(redemption.reward_id, seeded.pk)
+        self.assertEqual(redemption.points_cost, seed.REWARD_DEFS[0]["points_required"])
+
+    def test_reseeding_leaves_a_deactivated_reward_deactivated(self):
+        """Reward uses Status rather than a boolean precisely so an admin can
+        retire one without losing its redemption history — a reseed that
+        switched it back on would undo that silently."""
+        seed_offline()
+        seeded = Reward.objects.get(name=seed.REWARD_DEFS[0]["name"])
+        seeded.status = Status.ARCHIVED
+        seeded.save(update_fields=["status"])
+
+        seed_offline()
+
+        seeded.refresh_from_db()
+        self.assertEqual(seeded.status, Status.ARCHIVED)
 
 
 class SeedDataWarRoomLiveTests(TestCase):

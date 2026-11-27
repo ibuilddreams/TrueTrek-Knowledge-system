@@ -205,7 +205,7 @@ export default function QuizQuestionsModal({ isOpen, onClose, quiz }) {
 
   return (
     <>
-      <Modal variant="cobalt"
+      <Modal
         isOpen={isOpen && !isFormOpen}
         onClose={onClose}
         icon={HelpCircle}
@@ -270,7 +270,7 @@ export default function QuizQuestionsModal({ isOpen, onClose, quiz }) {
         quizId={quizId}
       />
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deletingQuestion)}
         onClose={() => setDeletingQuestion(null)}
         onConfirm={() => deleteMutation.mutate(deletingQuestion.id)}

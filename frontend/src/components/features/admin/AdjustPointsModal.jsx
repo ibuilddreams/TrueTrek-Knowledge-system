@@ -85,7 +85,7 @@ export default function AdjustPointsModal({ isOpen, onClose, onAdjusted, student
   if (!student) return null;
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={Sparkles}

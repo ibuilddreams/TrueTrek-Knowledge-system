@@ -8,10 +8,13 @@ import { ROUTES } from "@/constants/routes";
 
 // Shown once a visitor has played the home page's free drill.
 //
-// This is its own overlay rather than `components/ui/Modal`, which is the
-// porcelain/serif dialog the rest of the app uses: on the cobalt home page
-// its pine-to-gold header bar and serif title read as a different product.
-// Everything here is the home page's own palette.
+// This is its own overlay rather than `components/ui/Modal`, because it is a
+// sales panel rather than a dialog: a perk list, its own header art and the
+// home page's own layout, none of which `Modal`'s icon/title/subtitle header
+// has a place for. (It used to be kept apart for a second reason — `Modal`
+// was the porcelain/serif dialog and read as a different product here — but
+// `Modal` is on this same cobalt system now, so only the layout reason is
+// left.)
 const PERKS = [
   {
     icon: Zap,

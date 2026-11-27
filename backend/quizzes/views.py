@@ -51,7 +51,7 @@ from .services import (
     QuizRegenerationError,
     autosave_quiz_attempt,
     finalize_stale_attempts,
-    get_attempt_questions,
+    get_attempt_question_set,
     get_attempt_saved_answers,
     get_attempt_seconds_remaining,
     get_pending_grading_answers,
@@ -582,7 +582,10 @@ class StartQuizAttemptView(generics.GenericAPIView):
                 status_code=503,
             )
 
-        questions = get_attempt_questions(attempt).prefetch_related("choices")
+        # The attempt's own order, not the quiz's authored one — and the same
+        # call the resume path and the review screens make, so a refresh
+        # mid-quiz re-serves the paper exactly as it was first dealt.
+        questions = get_attempt_question_set(attempt)
         data = {
             "attempt_id": attempt.id,
             "attempt_number": attempt.attempt_number,

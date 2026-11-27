@@ -83,7 +83,6 @@ export default function AvatarCropModal({ isOpen, imageSrc, onCancel, onSave }) 
       icon={ImagePlus}
       title="Crop profile photo"
       subtitle="Drag to reposition, zoom to fit."
-      variant="cobalt"
     >
       <div
         className="flex flex-col gap-4"

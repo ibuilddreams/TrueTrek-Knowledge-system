@@ -34,7 +34,7 @@ export default function CancelRedemptionModal({ isOpen, onClose, onConfirm, rede
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={isSubmitting ? undefined : handleClose}
       icon={XCircle}

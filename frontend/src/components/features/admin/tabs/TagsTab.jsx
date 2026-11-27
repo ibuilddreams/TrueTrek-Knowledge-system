@@ -193,7 +193,7 @@ export default function TagsTab() {
         }}
       />
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deletingTag)}
         onClose={() => setDeletingTag(null)}
         onConfirm={handleDeleteConfirm}

@@ -387,7 +387,6 @@ export default function ProfileForm() {
         title="Discard unsaved changes?"
         message="The details you have edited will go back to what they were when this page loaded."
         confirmLabel="Discard changes"
-        variant="cobalt"
       />
     </div>
   );

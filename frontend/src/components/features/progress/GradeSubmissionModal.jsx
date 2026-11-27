@@ -40,7 +40,12 @@ function getFileExtension(name) {
   return dotIndex > -1 ? name.slice(dotIndex + 1).toUpperCase() : "";
 }
 
-export default function GradeSubmissionModal({ row, onClose, courseId, tone = "porcelain" }) {
+// Defaults to cobalt: every call site (Admin and Teacher → Course progress)
+// already passes it, and the porcelain path below is the old admin skin that
+// nothing renders any more. Left reachable via `tone="porcelain"` rather than
+// deleted, but a caller that forgets the prop should get the live design, not
+// a cream dialog over a white screen.
+export default function GradeSubmissionModal({ row, onClose, courseId, tone = "cobalt" }) {
   const skin = makeSkin(tone);
   const queryClient = useQueryClient();
   const [marks, setMarks] = useState("");
@@ -68,7 +73,7 @@ export default function GradeSubmissionModal({ row, onClose, courseId, tone = "p
   });
 
   return (
-    <Modal variant={tone === "cobalt" ? "cobalt" : "classic"}
+    <Modal
       isOpen={Boolean(row)}
       onClose={onClose}
       icon={ClipboardCheck}

@@ -92,7 +92,7 @@ export default function RequestFormModal({ isOpen, onClose }) {
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={FileWarning}

@@ -13,6 +13,7 @@ import {
   getQuizTitleSuggestions,
   updateQuiz,
 } from "@/services/quizzesService";
+import { MAX_QUESTIONS_PER_QUIZ, MIN_QUESTIONS_PER_QUIZ } from "@/constants";
 import { useDebouncedValue } from "@/hooks/useDebouncedValue";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { toastError, toastSuccess } from "@/lib/toast";
@@ -237,11 +238,11 @@ export default function AddQuizModal({ isOpen, onClose, modules = [], defaultMod
     const numberOfQuestions = Number(form.number_of_questions);
     if (
       !Number.isFinite(numberOfQuestions) ||
-      numberOfQuestions < 1 ||
-      numberOfQuestions > 20 ||
+      numberOfQuestions < MIN_QUESTIONS_PER_QUIZ ||
+      numberOfQuestions > MAX_QUESTIONS_PER_QUIZ ||
       !Number.isInteger(numberOfQuestions)
     ) {
-      errors.number_of_questions = "Number of questions must be a whole number between 1 and 20.";
+      errors.number_of_questions = `Number of questions must be a whole number between ${MIN_QUESTIONS_PER_QUIZ} and ${MAX_QUESTIONS_PER_QUIZ}.`;
     }
 
     if (form.available_from && form.available_until) {
@@ -299,7 +300,7 @@ export default function AddQuizModal({ isOpen, onClose, modules = [], defaultMod
 
   return (
     <>
-      <Modal variant="cobalt"
+      <Modal
         isOpen={isOpen && !isQuestionsModalOpen}
         onClose={handleClose}
         icon={HelpCircle}
@@ -423,8 +424,8 @@ export default function AddQuizModal({ isOpen, onClose, modules = [], defaultMod
               <label className={LABEL_CLASS}>Number of Questions</label>
               <input
                 type="number"
-                min="1"
-                max="20"
+                min={MIN_QUESTIONS_PER_QUIZ}
+                max={MAX_QUESTIONS_PER_QUIZ}
                 step="1"
                 value={form.number_of_questions}
                 onChange={updateField("number_of_questions")}
@@ -438,7 +439,8 @@ export default function AddQuizModal({ isOpen, onClose, modules = [], defaultMod
           </div>
           <p className="-mt-2 text-xs text-cn-p-ink-2">
             How many questions each attempt gets — the original quiz and every AI-regenerated retry all use this
-            count.
+            count (up to {MAX_QUESTIONS_PER_QUIZ}). Each attempt is served in its own order, and a retry gets a
+            fresh set of questions rather than this one again.
           </p>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">

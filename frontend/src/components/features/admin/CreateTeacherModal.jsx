@@ -80,7 +80,7 @@ export default function CreateTeacherModal({ isOpen, onClose, onCreated }) {
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={UserPlus}

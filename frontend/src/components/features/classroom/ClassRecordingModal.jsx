@@ -72,7 +72,7 @@ export default function ClassRecordingModal({ session, isOpen, onClose }) {
       maxWidth="max-w-4xl"
     >
       <div className="space-y-4">
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-mono uppercase tracking-wider text-muted">
+        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[11px] font-semibold text-cn-p-ink-2">
           <span>
             {session?.course_code} · {session?.course_title}
           </span>
@@ -84,20 +84,20 @@ export default function ClassRecordingModal({ session, isOpen, onClose }) {
         </div>
 
         {isLoading && (
-          <div className="aspect-video rounded-2xl bg-porcelain border border-line flex flex-col items-center justify-center gap-3">
-            <Loader2 className="w-6 h-6 text-muted animate-spin" />
-            <p className="text-xs font-mono uppercase tracking-wider text-muted">
+          <div className="aspect-video rounded-2xl bg-cn-p-page border border-cn-p-line flex flex-col items-center justify-center gap-3">
+            <Loader2 className="w-6 h-6 text-cn-p-ink-2 animate-spin" />
+            <p className="text-xs font-semibold text-cn-p-ink-2">
               Fetching the recording…
             </p>
           </div>
         )}
 
         {!isLoading && (isError || !url) && (
-          <div className="aspect-video rounded-2xl bg-porcelain border border-line flex flex-col items-center justify-center gap-3 px-8 text-center">
-            <span className="w-11 h-11 rounded-2xl bg-rose/25 border border-clay/25 text-clay flex items-center justify-center">
+          <div className="aspect-video rounded-2xl bg-cn-p-page border border-cn-p-line flex flex-col items-center justify-center gap-3 px-8 text-center">
+            <span className="w-11 h-11 rounded-2xl bg-cn-p-bad-bg border border-cn-p-bad-bg text-cn-p-bad flex items-center justify-center">
               <AlertTriangle className="w-5 h-5" />
             </span>
-            <p className="text-sm font-light text-muted leading-relaxed max-w-sm">
+            <p className="text-sm font-light text-cn-p-ink-2 leading-relaxed max-w-sm">
               {isError
                 ? getApiErrorMessage(error, "This recording couldn't be loaded.")
                 : data?.is_processing
@@ -114,13 +114,13 @@ export default function ClassRecordingModal({ session, isOpen, onClose }) {
             controls
             playsInline
             preload="metadata"
-            className="w-full aspect-video rounded-2xl bg-ink border border-line"
+            className="w-full aspect-video rounded-2xl bg-cn-p-ink border border-cn-p-line"
           />
         )}
 
         {!isLoading && url && !playable && (
-          <div className="aspect-video rounded-2xl bg-porcelain border border-line flex flex-col items-center justify-center gap-4 px-8 text-center">
-            <p className="text-sm font-light text-muted leading-relaxed max-w-sm">
+          <div className="aspect-video rounded-2xl bg-cn-p-page border border-cn-p-line flex flex-col items-center justify-center gap-4 px-8 text-center">
+            <p className="text-sm font-light text-cn-p-ink-2 leading-relaxed max-w-sm">
               This recording is in a streaming format your browser can&apos;t play.
               Safari plays it directly, or you can download it and open it in a
               video player.
@@ -128,7 +128,7 @@ export default function ClassRecordingModal({ session, isOpen, onClose }) {
             <a
               href={url}
               download
-              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-full bg-pine hover:bg-moss text-paper text-xs font-semibold font-mono uppercase tracking-wider transition-colors"
+              className="inline-flex items-center gap-2 px-5 py-2.5 rounded-lg bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-xs font-semibold shadow-sm transition-colors"
             >
               <Download className="w-3.5 h-3.5" />
               Download
@@ -136,7 +136,7 @@ export default function ClassRecordingModal({ session, isOpen, onClose }) {
           </div>
         )}
 
-        <p className="text-[11px] font-light text-muted leading-relaxed">
+        <p className="text-[11px] font-light text-cn-p-ink-2 leading-relaxed">
           This recording is only available to people on this course, and the link
           above is tied to you and expires. Please don&apos;t share it on.
         </p>

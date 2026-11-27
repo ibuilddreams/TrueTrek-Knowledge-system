@@ -272,7 +272,6 @@ export default function AdminStudentDetailScreen({ studentId, onBack }) {
       />
 
       <ConfirmDialog
-        variant="cobalt"
         isOpen={Boolean(pendingRemoval)}
         onClose={() => setPendingRemoval(null)}
         onConfirm={handleRemove}

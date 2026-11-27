@@ -9,7 +9,7 @@ export default function EnrollmentDetailModal({ isOpen, onClose, enrollment }) {
   if (!enrollment) return null;
 
   return (
-    <Modal variant="cobalt" isOpen={isOpen} onClose={onClose} icon={ClipboardList} title="Enrollment details" maxWidth="max-w-md">
+    <Modal isOpen={isOpen} onClose={onClose} icon={ClipboardList} title="Enrollment details" maxWidth="max-w-md">
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h4 className="text-base font-bold text-cn-p-ink">{enrollment.student?.name}</h4>

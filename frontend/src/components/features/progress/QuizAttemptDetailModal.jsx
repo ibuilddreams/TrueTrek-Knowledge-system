@@ -15,7 +15,12 @@ const ATTEMPT_STATUS_NOTES = {
   ABANDONED: "The student never submitted this attempt — it was auto-closed after a long period of inactivity.",
 };
 
-export default function QuizAttemptDetailModal({ attemptId, onClose, courseId, tone = "porcelain" }) {
+// Defaults to cobalt: every call site (Admin and Teacher → Course progress)
+// already passes it, and the porcelain path below is the old admin skin that
+// nothing renders any more. Left reachable via `tone="porcelain"` rather than
+// deleted, but a caller that forgets the prop should get the live design, not
+// a cream dialog over a white screen.
+export default function QuizAttemptDetailModal({ attemptId, onClose, courseId, tone = "cobalt" }) {
   const skin = makeSkin(tone);
   const queryClient = useQueryClient();
   const [gradingAnswerId, setGradingAnswerId] = useState(null);
@@ -68,7 +73,7 @@ export default function QuizAttemptDetailModal({ attemptId, onClose, courseId, t
   const data = detailQuery.data;
 
   return (
-    <Modal variant={tone === "cobalt" ? "cobalt" : "classic"}
+    <Modal
       isOpen={Boolean(attemptId)}
       onClose={onClose}
       icon={ListChecks}

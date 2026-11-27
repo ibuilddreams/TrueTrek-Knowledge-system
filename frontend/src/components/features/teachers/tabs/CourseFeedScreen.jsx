@@ -177,7 +177,7 @@ export default function CourseFeedScreen({ courseId, course, onBack }) {
         ))}
       </div>
 
-      <ConfirmDialog variant="cobalt"
+      <ConfirmDialog
         isOpen={pendingDeleteId !== null}
         onClose={() => setPendingDeleteId(null)}
         onConfirm={() => deleteMutation.mutate(pendingDeleteId)}

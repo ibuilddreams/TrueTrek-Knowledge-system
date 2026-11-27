@@ -54,16 +54,16 @@ export default function PathwayPreviewModal({ pathway, isOpen, onClose, onPurcha
 
       {isError && (
         <div className="text-center py-8">
-          <div className="w-12 h-12 bg-rose-50 border border-rose-100 text-rose-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+          <div className="w-12 h-12 bg-cn-p-bad-bg border border-cn-p-bad-bg text-cn-p-bad rounded-2xl flex items-center justify-center mx-auto mb-4">
             <AlertCircle className="w-6 h-6" />
           </div>
-          <p className="text-sm text-muted mb-4">
+          <p className="text-sm text-cn-p-ink-2 mb-4">
             {getApiErrorMessage(error, "Unable to load this pathway right now.")}
           </p>
           <button
             type="button"
             onClick={() => refetch()}
-            className="px-4 py-2 bg-pine hover:bg-moss text-paper text-xs font-mono uppercase tracking-wider rounded-lg transition"
+            className="px-4 py-2.5 bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-xs font-semibold rounded-lg shadow-sm transition cursor-pointer"
           >
             Try again
           </button>
@@ -73,30 +73,30 @@ export default function PathwayPreviewModal({ pathway, isOpen, onClose, onPurcha
       {!isLoading && !isError && data && (
         <div className="space-y-5">
           {description && (
-            <p className="text-sm font-light leading-relaxed text-muted whitespace-pre-line">
+            <p className="text-sm font-light leading-relaxed text-cn-p-ink-2 whitespace-pre-line">
               {description}
             </p>
           )}
 
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-gold/30 bg-gold/10 p-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 rounded-xl border border-cn-p-line bg-cn-p-soft p-4">
             <div>
-              <p className="text-[11px] font-mono uppercase tracking-[0.16em] text-muted">
+              <p className="text-[11px] font-semibold text-cn-p-ink-2">
                 Pathway price
               </p>
               <div className="flex items-baseline flex-wrap gap-x-2.5 gap-y-0.5">
-                <span className="text-2xl font-serif font-bold text-ink">
+                <span className="text-2xl font-extrabold tracking-[-0.02em] text-cn-p-ink tabular-nums">
                   {formatCoursePrice(bundlePrice)}
                 </span>
                 {showSavings && (
-                  <span className="text-xs font-light text-muted">
+                  <span className="text-xs font-light text-cn-p-ink-2">
                     <span className="line-through">{formatCoursePrice(coursesValue)}</span>
-                    <span className="ml-1.5 font-semibold text-emerald-700">
+                    <span className="ml-1.5 font-semibold text-cn-p-ok">
                       Save {savingsPercent}%
                     </span>
                   </span>
                 )}
               </div>
-              <p className="mt-0.5 flex items-center gap-1.5 text-xs font-light text-muted">
+              <p className="mt-0.5 flex items-center gap-1.5 text-xs font-light text-cn-p-ink-2">
                 <Layers className="w-3.5 h-3.5" />
                 {courses.length} course{courses.length === 1 ? "" : "s"} included
               </p>
@@ -105,7 +105,7 @@ export default function PathwayPreviewModal({ pathway, isOpen, onClose, onPurcha
               type="button"
               onClick={() => onPurchase(pathway)}
               disabled={courses.length === 0}
-              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-pine hover:bg-moss text-paper text-xs font-mono font-bold uppercase tracking-wider transition disabled:opacity-60 disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center gap-2 px-6 py-3 rounded-xl bg-cn-p-accent hover:bg-cn-p-accent-hover text-white text-xs font-semibold shadow-sm transition disabled:opacity-60 disabled:cursor-not-allowed cursor-pointer"
             >
               <ShoppingCart className="w-4 h-4" />
               Purchase pathway
@@ -113,11 +113,11 @@ export default function PathwayPreviewModal({ pathway, isOpen, onClose, onPurcha
           </div>
 
           <div>
-            <p className="text-[11px] font-mono uppercase tracking-[0.16em] mb-3 text-pine/80">
+            <p className="text-[11px] font-semibold mb-3 text-cn-p-ink-2">
               What&apos;s inside
             </p>
             {courses.length === 0 ? (
-              <p className="text-sm font-light text-muted py-6 text-center rounded-xl border border-dashed border-line">
+              <p className="text-sm font-light text-cn-p-ink-2 py-6 text-center rounded-xl border border-dashed border-cn-p-line">
                 No courses have been added to this pathway yet.
               </p>
             ) : (
@@ -127,12 +127,12 @@ export default function PathwayPreviewModal({ pathway, isOpen, onClose, onPurcha
                   return (
                     <li
                       key={entry.id}
-                      className="flex items-center gap-3.5 p-3 rounded-xl border border-line bg-porcelain"
+                      className="flex items-center gap-3.5 p-3 rounded-xl border border-cn-p-line bg-cn-p-page"
                     >
-                      <span className="w-6 text-center text-[11px] font-mono text-muted shrink-0">
+                      <span className="w-6 text-center text-[11px] font-semibold tabular-nums text-cn-p-ink-2 shrink-0">
                         {String(index + 1).padStart(2, "0")}
                       </span>
-                      <div className="w-12 h-12 rounded-lg border border-line shrink-0 bg-paper overflow-hidden flex items-center justify-center">
+                      <div className="w-12 h-12 rounded-lg border border-cn-p-line shrink-0 bg-cn-p-card overflow-hidden flex items-center justify-center">
                         {course.image ? (
                           // eslint-disable-next-line @next/next/no-img-element
                           <img
@@ -142,20 +142,20 @@ export default function PathwayPreviewModal({ pathway, isOpen, onClose, onPurcha
                             referrerPolicy="no-referrer"
                           />
                         ) : (
-                          <BookOpen className="w-4 h-4 text-muted" />
+                          <BookOpen className="w-4 h-4 text-cn-p-ink-2" />
                         )}
                       </div>
                       <div className="min-w-0 flex-1">
-                        <p className="text-sm font-semibold text-ink line-clamp-2 leading-snug">
+                        <p className="text-sm font-semibold text-cn-p-ink line-clamp-2 leading-snug">
                           {course.title}
                         </p>
                         {course.code && (
-                          <p className="text-[11px] font-mono uppercase tracking-wide text-muted mt-0.5">
+                          <p className="text-[11px] font-semibold uppercase tracking-wide text-cn-p-ink-2 mt-0.5">
                             {course.code}
                           </p>
                         )}
                       </div>
-                      <span className="text-xs font-semibold text-muted shrink-0">
+                      <span className="text-xs font-semibold tabular-nums text-cn-p-ink-2 shrink-0">
                         {formatCoursePrice(course.amount)}
                       </span>
                     </li>
@@ -165,7 +165,7 @@ export default function PathwayPreviewModal({ pathway, isOpen, onClose, onPurcha
             )}
           </div>
 
-          <p className="text-xs font-light text-muted">
+          <p className="text-xs font-light text-cn-p-ink-2">
             Purchasing enrolls you in every course above, ready to start right away in
             My courses.
           </p>

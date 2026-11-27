@@ -170,7 +170,7 @@ export default function TeacherQuestionChoicesModal({ isOpen, onClose, question,
 
   return (
     <>
-      <Modal variant="cobalt"
+      <Modal
         isOpen={isOpen}
         onClose={onClose}
         icon={ListChecks}
@@ -228,7 +228,7 @@ export default function TeacherQuestionChoicesModal({ isOpen, onClose, question,
         </div>
       </Modal>
 
-      <ConfirmDialog variant="cobalt"
+      <ConfirmDialog
         isOpen={Boolean(deletingChoice)}
         onClose={() => setDeletingChoice(null)}
         onConfirm={() => deleteMutation.mutate(deletingChoice.id)}
@@ -236,7 +236,6 @@ export default function TeacherQuestionChoicesModal({ isOpen, onClose, question,
         title="Delete choice"
         message={`Are you sure you want to delete "${deletingChoice?.text}"? This cannot be undone.`}
         confirmLabel="Delete"
-        size="lg"
       />
     </>
   );

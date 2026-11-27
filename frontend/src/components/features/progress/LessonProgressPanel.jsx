@@ -21,7 +21,12 @@ import { makeSkin } from "@/lib/portalSkin";
 // Rendered by both the admin and the teacher portal, so the palette comes
 // from the caller: "porcelain" (the default, unchanged) or the signed-in
 // portal's cobalt.
-export default function LessonProgressPanel({ courseId, tone = "porcelain" }) {
+// Defaults to cobalt: every call site (Admin and Teacher → Course progress)
+// already passes it, and the porcelain path below is the old admin skin that
+// nothing renders any more. Left reachable via `tone="porcelain"` rather than
+// deleted, but a caller that forgets the prop should get the live design, not
+// a cream dialog over a white screen.
+export default function LessonProgressPanel({ courseId, tone = "cobalt" }) {
   const skin = makeSkin(tone);
   const [searchInput, setSearchInput] = useState("");
   const debouncedSearch = useDebouncedValue(searchInput, 300);
@@ -213,7 +218,7 @@ export default function LessonProgressPanel({ courseId, tone = "porcelain" }) {
         />
       </div>
 
-      <Modal variant={tone === "cobalt" ? "cobalt" : "classic"}
+      <Modal
         isOpen={Boolean(viewingStudent)}
         onClose={() => setViewingStudent(null)}
         icon={PlayCircle}

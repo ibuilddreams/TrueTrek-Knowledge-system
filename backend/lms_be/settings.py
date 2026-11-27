@@ -637,9 +637,12 @@ AI_GRADING_TIMEOUT_SECONDS = int(os.getenv('AI_GRADING_TIMEOUT_SECONDS', 75))
 
 # Quiz question regeneration (quizzes/ai_generation.py) — every attempt after
 # a student's first on a given quiz gets a freshly AI-generated question set
-# instead of repeating the original bank. One synchronous call for up to
-# ~20 questions of structured JSON on the fast AI_CHAT_MODEL, comparable in
-# size/latency to a single AI-graded submission — but kept deliberately well
+# instead of repeating the original bank. This is the budget for *one* such
+# call: up to REGENERATION_BATCH_SIZE (~20) questions of structured JSON on
+# the fast AI_CHAT_MODEL, comparable in size/latency to a single AI-graded
+# submission. A larger quiz does not get a larger budget — it is split into
+# several calls of this size issued in parallel, so the wall clock stays one
+# call's however many questions are asked for, and this number stays well
 # under nginx's proxy_read_timeout (60s, deploy/nginx/truetrek.conf) rather
 # than reusing AI_GRADING_TIMEOUT_SECONDS (75s), which already exceeds that
 # ceiling. Uses the "don't retry a slow failure" heuristic (see

@@ -1162,7 +1162,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={Layers}
@@ -1317,7 +1317,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
         </div>
       )}
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deletingModule)}
         onClose={() => setDeletingModule(null)}
         onConfirm={handleDeleteConfirm}
@@ -1327,7 +1327,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
         confirmLabel="Delete"
       />
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deletingLesson)}
         onClose={() => setDeletingLesson(null)}
         onConfirm={handleDeleteLessonConfirm}
@@ -1337,7 +1337,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
         confirmLabel="Delete"
       />
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deletingAssignment)}
         onClose={() => setDeletingAssignment(null)}
         onConfirm={handleDeleteAssignmentConfirm}
@@ -1347,7 +1347,7 @@ export default function ManageModulesModal({ isOpen, onClose, course }) {
         confirmLabel="Delete"
       />
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deletingQuiz)}
         onClose={() => setDeletingQuiz(null)}
         onConfirm={handleDeleteQuizConfirm}

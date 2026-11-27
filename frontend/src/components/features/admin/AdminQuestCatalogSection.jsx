@@ -210,7 +210,7 @@ export default function AdminQuestCatalogSection({ onViewSubmissions }) {
         }}
       />
 
-      <ConfirmDialog variant="cobalt"
+      <ConfirmDialog
         isOpen={Boolean(archivingQuest)}
         onClose={() => setArchivingQuest(null)}
         onConfirm={handleArchive}

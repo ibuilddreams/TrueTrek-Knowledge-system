@@ -261,7 +261,7 @@ export default function AdminSessionsSection() {
         />
       )}
 
-      <ConfirmDialog variant="cobalt"
+      <ConfirmDialog
         isOpen={Boolean(removingSession)}
         onClose={() => setRemovingSession(null)}
         onConfirm={handleRemove}

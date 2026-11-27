@@ -187,7 +187,7 @@ export default function ManageTierPathwaysModal({ isOpen, onClose, tier }) {
   const isLoading = tierDetailQuery.isLoading;
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={Layers3}
@@ -255,7 +255,7 @@ export default function ManageTierPathwaysModal({ isOpen, onClose, tier }) {
         </div>
       </div>
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(detachingPathway)}
         onClose={() => setDetachingPathway(null)}
         onConfirm={handleDetachConfirm}

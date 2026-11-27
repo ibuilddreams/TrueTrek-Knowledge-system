@@ -203,7 +203,7 @@ export default function RolePlayScenarioFormModal({ isOpen, onClose, onSaved, sc
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={isEditMode ? Edit3 : Theater}

@@ -35,7 +35,7 @@ export default function InvitationLinkModal({ invitation, onClose }) {
   }
 
   return (
-    <Modal variant="cobalt" isOpen onClose={onClose} icon={Link2} title="Share account access" subtitle="A private invitation to join Cool Nerdz." maxWidth="max-w-xl">
+    <Modal isOpen onClose={onClose} icon={Link2} title="Share account access" subtitle="A private invitation to join Cool Nerdz." maxWidth="max-w-xl">
       <div className="tt-interactive space-y-5">
         <div className={`flex items-start gap-3 rounded-2xl border p-4 ${status.success ? "border-cn-p-accent-soft bg-cn-p-soft" : "border-cn-p-soft bg-cn-p-soft"}`}>
           <StatusIcon className="mt-0.5 h-5 w-5 shrink-0 text-cn-p-accent" />

@@ -2,6 +2,7 @@ from datetime import timedelta
 from decimal import Decimal
 
 from django.db import transaction
+from django.db.models import Count, Q
 from django.utils import timezone
 
 from assignments.models import AssignmentSubmission
@@ -10,6 +11,12 @@ from enrollments.models import Enrollment
 
 from .ai_generation import QuizRegenerationError, generate_quiz_questions, persist_attempt_questions
 from .models import Choice, Question, Quiz, QuizAnswer, QuizAttempt, QuizResult
+from .points import (
+    MAX_REWARDED_ATTEMPT_NUMBER,
+    describe_reward_bands,
+    maybe_award_quiz_score_points,
+)
+from .randomization import new_attempt_seed, shuffled
 
 # Grace window after a timed quiz's deadline before an untouched IN_PROGRESS attempt is
 # auto-finalized as EXPIRED — covers the last autosave/submit round-trip landing late.
@@ -56,6 +63,50 @@ def get_attempt_questions(attempt):
     return Question.objects.filter(attempt=attempt).order_by("order")
 
 
+def get_attempt_question_set(attempt):
+    """This attempt's questions in the exact order it serves them, each
+    carrying `attempt_choices` (its choices in this attempt's order) and
+    `display_order` (its 1-based position here).
+
+    The single place an attempt's presentation order is decided. Every
+    surface that shows a student their questions — starting an attempt,
+    resuming one, and the result/review screens that both the student and
+    their teacher read — goes through this, so the three can never disagree
+    about which question was "number 4"; see quizzes/randomization.py for why
+    the order is derived rather than stored.
+
+    Only MCQ choices are shuffled. A True/False question has exactly two,
+    whose authored order is the one the teacher chose and is worth nothing to
+    permute, and a short-answer question has none."""
+    questions = shuffled(
+        attempt.question_seed,
+        list(get_attempt_questions(attempt).prefetch_related("choices")),
+        key=lambda question: question.pk,
+        namespace="questions",
+    )
+
+    for display_order, question in enumerate(questions, start=1):
+        # Choice carries no `order` field and no Meta ordering, so sort by pk first:
+        # that is the authored order in practice, and it makes an unshuffled attempt
+        # (seed 0 — see NO_SHUFFLE_SEED) render the same way on every request instead
+        # of however Postgres happened to return the rows.
+        choices = sorted(question.choices.all(), key=lambda choice: choice.pk)
+        if question.question_type == Question.QuestionType.MCQ:
+            choices = shuffled(
+                attempt.question_seed,
+                choices,
+                key=lambda choice: choice.pk,
+                # Namespaced per question, or every question's choices would
+                # permute in lockstep and the correct answer would sit in the
+                # same slot all the way down the paper.
+                namespace=f"choices:{question.pk}",
+            )
+        question.attempt_choices = choices
+        question.display_order = display_order
+
+    return questions
+
+
 def get_student_quizzes(student):
     course_ids = list(
         Enrollment.objects.filter(student=student).values_list("course_id", flat=True)
@@ -63,6 +114,9 @@ def get_student_quizzes(student):
     quizzes = list(
         Quiz.objects.filter(course_id__in=course_ids, status=Status.PUBLISHED)
         .select_related("course", "module")
+        .annotate(
+            template_question_count=Count("questions", filter=Q(questions__attempt__isnull=True))
+        )
         .order_by("order", "title")
     )
     quiz_ids = [quiz.id for quiz in quizzes]
@@ -84,10 +138,21 @@ def get_student_quizzes(student):
             latest_attempt_map[attempt.quiz_id] = attempt
 
     now = timezone.now()
+    # One table for every row — it is the same deployment-wide rule, not a
+    # per-quiz setting.
+    reward_bands = describe_reward_bands()
     results = []
     for quiz in quizzes:
         latest = latest_attempt_map.get(quiz.id)
         result = getattr(latest, "result", None) if latest else None
+        attempts_used = attempt_count_map.get(quiz.id, 0)
+        # Which attempt number the student's *next* sitting will carry — the
+        # in-progress one if they are mid-quiz, otherwise one past what they
+        # have used. That is the number the score reward is gated on, so the
+        # panel can say whether this sitting can still earn rather than
+        # offering points the server would refuse to pay.
+        resuming = latest is not None and latest.status == QuizAttempt.AttemptStatus.IN_PROGRESS
+        next_attempt_number = latest.attempt_number if resuming else attempts_used + 1
         available = True
         if quiz.available_from and now < quiz.available_from:
             available = False
@@ -102,7 +167,23 @@ def get_student_quizzes(student):
                 "passing_score": quiz.passing_score,
                 "time_limit_minutes": quiz.time_limit_minutes,
                 "number_of_questions": quiz.number_of_questions,
-                "attempts_used": attempt_count_map.get(quiz.id, 0),
+                # What the student's *next* attempt will actually hold, which is
+                # not always the configured count: a first attempt serves the
+                # questions a teacher authored, and a teacher may set the count
+                # and write fewer. A retry is generated to the configured count,
+                # so that is the honest promise there.
+                "next_attempt_question_count": (
+                    quiz.number_of_questions if attempts_used else quiz.template_question_count
+                ),
+                "attempts_used": attempts_used,
+                # Built from the same table that pays, so the rule a student is
+                # shown cannot drift from the rule applied (quizzes/points.py).
+                "score_reward": {
+                    **reward_bands,
+                    "can_earn_on_next_attempt": (
+                        next_attempt_number <= MAX_REWARDED_ATTEMPT_NUMBER
+                    ),
+                },
                 "short_answer_grading_mode": quiz.short_answer_grading_mode,
                 "available_from": quiz.available_from,
                 "available_until": quiz.available_until,
@@ -185,7 +266,10 @@ def get_student_quiz_attempts(student):
 
 
 def get_quiz_attempt_detail(attempt):
-    questions = get_attempt_questions(attempt).prefetch_related("choices")
+    # The review screen has to replay the paper the student actually sat — same
+    # question order, same choice order — so it reads the attempt's own set rather
+    # than the quiz's authored one.
+    questions = get_attempt_question_set(attempt)
     answers_map = {
         answer.question_id: answer
         for answer in attempt.answers.select_related("selected_choice", "question")
@@ -201,7 +285,7 @@ def get_quiz_attempt_detail(attempt):
                 "is_correct": choice.is_correct,
                 "is_selected": bool(answer and answer.selected_choice_id == choice.id),
             }
-            for choice in question.choices.all()
+            for choice in question.attempt_choices
         ]
         questions_data.append(
             {
@@ -453,7 +537,11 @@ def start_quiz_attempt(student, quiz):
     AI-regenerated question set scoped to this one attempt — generated
     *before* the QuizAttempt row is created (see generate_quiz_questions),
     so a failed AI call leaves zero residue: no attempt, no questions, the
-    student can simply click Attempt Quiz again."""
+    student can simply click Attempt Quiz again.
+
+    Every attempt — the first one included — is given its own question_seed
+    here and nowhere else, which is what puts its questions and their choices
+    in an order unique to it (quizzes/randomization.py)."""
     if quiz.status != Status.PUBLISHED:
         raise QuizAttemptError("This quiz is not currently published.")
 
@@ -478,14 +566,19 @@ def start_quiz_attempt(student, quiz):
     next_attempt_number = len(existing_attempts) + 1
 
     if next_attempt_number == 1:
-        attempt = QuizAttempt.objects.create(student=student, quiz=quiz, attempt_number=1)
+        attempt = QuizAttempt.objects.create(
+            student=student, quiz=quiz, attempt_number=1, question_seed=new_attempt_seed()
+        )
         return attempt, True
 
     # May raise QuizRegenerationError — nothing persisted yet if it does.
     question_dicts = generate_quiz_questions(quiz)
     with transaction.atomic():
         attempt = QuizAttempt.objects.create(
-            student=student, quiz=quiz, attempt_number=next_attempt_number
+            student=student,
+            quiz=quiz,
+            attempt_number=next_attempt_number,
+            question_seed=new_attempt_seed(),
         )
         persist_attempt_questions(attempt, question_dicts)
     return attempt, True
@@ -532,6 +625,14 @@ def _recompute_quiz_result(attempt):
             else QuizAttempt.AttemptStatus.GRADED
         )
         attempt.save(update_fields=["status"])
+
+    # Every path that settles an attempt's marks lands here — the student's own
+    # submit, an expiry, and a teacher or the AI grader scoring one more short
+    # answer days later — which is exactly why the reward hangs off this and not
+    # off submit_quiz_attempt: a quiz with a short-answer question has no final
+    # score at the moment it is handed in. maybe_award_quiz_score_points is
+    # therefore written to be re-entered and pays at most once (quizzes/points.py).
+    maybe_award_quiz_score_points(attempt, result)
 
     return result
 

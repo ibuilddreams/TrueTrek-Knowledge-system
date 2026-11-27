@@ -386,7 +386,7 @@ export default function TeacherAssignmentFormModal({
   const marksSumMismatch = form.grading_mode === "AI" && criteriaMarksSum !== totalMarksNumber;
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={ClipboardCheck}

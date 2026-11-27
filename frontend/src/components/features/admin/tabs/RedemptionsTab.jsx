@@ -263,8 +263,7 @@ export default function RedemptionsTab() {
         redemption={viewingRedemption}
       />
 
-      <ConfirmDialog variant="cobalt"
-        size="lg"
+      <ConfirmDialog
         tone="default"
         isOpen={Boolean(approvingRedemption)}
         onClose={() => setApprovingRedemption(null)}
@@ -289,8 +288,7 @@ export default function RedemptionsTab() {
         isSubmitting={processMutation.isPending}
       />
 
-      <ConfirmDialog variant="cobalt"
-        size="lg"
+      <ConfirmDialog
         tone="default"
         isOpen={Boolean(completingRedemption)}
         onClose={() => setCompletingRedemption(null)}

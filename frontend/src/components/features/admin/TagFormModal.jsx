@@ -80,7 +80,7 @@ export default function TagFormModal({ isOpen, onClose, onSaved, tag }) {
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={TagIcon}

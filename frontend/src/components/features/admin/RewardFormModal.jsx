@@ -16,9 +16,19 @@ const REWARD_TYPE_OPTIONS = [
   { value: "OTHER", label: "Other" },
 ];
 
+// Every value `Reward.FulfillmentType` defines. The first two were the only
+// ones ever offered here, but RedemptionsTab has always been able to action
+// all of them — schedulable types get "Schedule", the handed-over/posted ones
+// get "Mark ready", and the rest go straight to "Mark completed" — so a
+// merch reward had no way to be created as the physical delivery it is.
 const FULFILLMENT_TYPE_OPTIONS = [
   { value: "SCHEDULED_SESSION", label: "Scheduled session" },
   { value: "EVENT_ACCESS", label: "Event access" },
+  { value: "DIGITAL_CODE", label: "Digital code" },
+  { value: "DIGITAL_ACCESS", label: "Digital access" },
+  { value: "PHYSICAL_DELIVERY", label: "Physical delivery" },
+  { value: "PROFILE_BADGE", label: "Profile badge" },
+  { value: "MANUAL_FULFILLMENT", label: "Manual fulfillment" },
 ];
 
 const SCHEDULABLE_FULFILLMENT_TYPES = new Set(["SCHEDULED_SESSION", "EVENT_ACCESS"]);
@@ -146,7 +156,7 @@ export default function RewardFormModal({ isOpen, onClose, onSaved, reward }) {
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={isEditMode ? Edit3 : Gift}

@@ -67,7 +67,7 @@ export default function ClassSessionAttendanceModal({ isOpen, onClose, session }
   ];
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={onClose}
       icon={ClipboardList}

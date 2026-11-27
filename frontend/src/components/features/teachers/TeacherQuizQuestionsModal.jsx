@@ -205,7 +205,7 @@ export default function TeacherQuizQuestionsModal({ isOpen, onClose, quiz }) {
 
   return (
     <>
-      <Modal variant="cobalt"
+      <Modal
         isOpen={isOpen && !isFormOpen}
         onClose={onClose}
         icon={HelpCircle}
@@ -271,7 +271,7 @@ export default function TeacherQuizQuestionsModal({ isOpen, onClose, quiz }) {
         quizId={quizId}
       />
 
-      <ConfirmDialog variant="cobalt"
+      <ConfirmDialog
         isOpen={Boolean(deletingQuestion)}
         onClose={() => setDeletingQuestion(null)}
         onConfirm={() => deleteMutation.mutate(deletingQuestion.id)}
@@ -279,7 +279,6 @@ export default function TeacherQuizQuestionsModal({ isOpen, onClose, quiz }) {
         title="Delete question"
         message="Are you sure you want to delete this question? This cannot be undone."
         confirmLabel="Delete"
-        size="lg"
       />
     </>
   );

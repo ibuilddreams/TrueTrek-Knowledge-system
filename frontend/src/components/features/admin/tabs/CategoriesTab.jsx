@@ -168,7 +168,7 @@ export default function CategoriesTab() {
         }}
       />
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deletingCategory)}
         onClose={() => setDeletingCategory(null)}
         onConfirm={handleDeleteConfirm}

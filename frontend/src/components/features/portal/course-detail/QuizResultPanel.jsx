@@ -1,6 +1,6 @@
 "use client";
 
-import { AlertCircle } from "lucide-react";
+import { AlertCircle, Sparkles } from "lucide-react";
 import Loader from "@/components/ui/Loader";
 import { useQuizAttemptResult } from "@/hooks/student/useQuizAttempt";
 import { PortalButton, PortalRing } from "../shell/PortalUI";
@@ -37,6 +37,10 @@ export default function QuizResultPanel({ attemptId, onClose }) {
   }
 
   const percentage = Math.round(Number(result.percentage));
+  // Read off the ledger by the API, so this is what the student was actually
+  // paid rather than what the score band says they should have been — 0 for a
+  // third attempt, or for a band awarded before a re-grade (quizzes/points.py).
+  const pointsAwarded = Number(result.points_awarded) || 0;
 
   return (
     <div className="flex flex-col items-center gap-5 text-center">
@@ -50,6 +54,13 @@ export default function QuizResultPanel({ attemptId, onClose }) {
         Score: {result.score} · Attempt {result.attempt_number} ·{" "}
         {result.is_passed ? "Passed" : "Not passed"}
       </p>
+
+      {pointsAwarded > 0 && (
+        <p className="flex items-center gap-2 rounded-xl bg-cn-p-ok-bg px-3.5 py-2.5 text-[13px] font-semibold text-cn-p-ok">
+          <Sparkles aria-hidden="true" className="h-4 w-4 flex-none" />
+          <span>+{pointsAwarded.toLocaleString()} reward points for this score</span>
+        </p>
+      )}
 
       {hasPendingGrading && (
         <p className="rounded-xl bg-cn-p-warn-bg px-3.5 py-2.5 text-[13px] text-cn-p-warn">

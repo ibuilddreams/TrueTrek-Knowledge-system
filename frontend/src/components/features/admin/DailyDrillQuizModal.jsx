@@ -135,7 +135,7 @@ export default function DailyDrillQuizModal({ isOpen, onClose, onSaved, schedule
   if (!schedule) return null;
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={HelpCircle}

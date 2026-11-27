@@ -81,7 +81,7 @@ export default function CategoryFormModal({ isOpen, onClose, onSaved, category }
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={FolderPlus}

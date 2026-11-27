@@ -5,7 +5,7 @@ import Modal from "@/components/ui/Modal";
 
 export default function AdminComingSoonModal({ isOpen, onClose, title, description }) {
   return (
-    <Modal variant="cobalt" isOpen={isOpen} onClose={onClose} icon={Sparkles} title={title} subtitle={description} maxWidth="max-w-sm">
+    <Modal isOpen={isOpen} onClose={onClose} icon={Sparkles} title={title} subtitle={description} maxWidth="max-w-sm">
       <div className="flex justify-end mt-2">
         <button
           type="button"

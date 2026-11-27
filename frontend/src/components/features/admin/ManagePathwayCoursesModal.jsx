@@ -164,7 +164,7 @@ export default function ManagePathwayCoursesModal({ isOpen, onClose, pathway }) 
   const isLoading = pathwayDetailQuery.isLoading;
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={Layers}
@@ -232,7 +232,7 @@ export default function ManagePathwayCoursesModal({ isOpen, onClose, pathway }) 
         </div>
       </div>
 
-      <ConfirmDialog variant="cobalt"
+      <ConfirmDialog
         isOpen={Boolean(detachingCourse)}
         onClose={() => setDetachingCourse(null)}
         onConfirm={handleDetachConfirm}
@@ -240,7 +240,6 @@ export default function ManagePathwayCoursesModal({ isOpen, onClose, pathway }) 
         title="Detach course"
         message={`Are you sure you want to detach "${detachingCourse?.course?.title}" from this pathway?`}
         confirmLabel="Detach"
-        size="lg"
       />
     </Modal>
   );

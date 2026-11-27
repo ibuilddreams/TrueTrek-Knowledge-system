@@ -1,10 +1,32 @@
 @import "tailwindcss";
 
 @theme {
-  --font-sans: "Inter", ui-sans-serif, system-ui, -apple-system, sans-serif;
-  --font-serif: "Cambon Light", "Cambon", "Iowan Old Style", Georgia, serif;
-  --font-mono: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas,
-    "Liberation Mono", "Courier New", monospace;
+  /* ======================================================================
+     Type — one family, everywhere.
+
+     `--font-inter` is the Next-hosted Inter that `app/layout.jsx` puts on
+     <html>. Naming it here rather than the bare string "Inter" matters: the
+     family next/font generates is `__Inter_<hash>`, so a literal "Inter"
+     only ever matched a copy the visitor happened to have installed, and
+     `font-sans` quietly fell through to system-ui on every machine without
+     one while <body> rendered the real thing.
+
+     `--font-serif` and `--font-mono` deliberately resolve to the same stack.
+     They are the porcelain design system's display and label faces, and the
+     cobalt rollout left roughly a hundred `font-serif` / `font-mono` classes
+     behind across the portals — a serif dialog heading over a sans portal,
+     monospace buttons under a sans body. Re-pointing the two tokens fixes
+     every one of those at once, which deleting the classes one file at a
+     time could not do without missing some. Nothing in this app sets code in
+     monospace (there is no <pre>/<code> styling anywhere), so no real
+     monospace need is lost. Removing the leftover classes is still worth
+     doing; until then they render as Inter instead of as a different
+     product.
+     ====================================================================== */
+  --font-sans: var(--font-inter, "Inter"), ui-sans-serif, system-ui,
+    -apple-system, sans-serif;
+  --font-serif: var(--font-sans);
+  --font-mono: var(--font-sans);
 
   /* CoolNerdz design system tokens (design.md) — used across every public
      (site) page: Home, Curriculum, Store, Future Clients, Pathways, Tiers,

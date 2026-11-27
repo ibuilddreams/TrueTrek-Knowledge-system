@@ -161,7 +161,7 @@ export default function QuestFormModal({ isOpen, onClose, onSaved, quest }) {
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={isEditMode ? Edit3 : Swords}

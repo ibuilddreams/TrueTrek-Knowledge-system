@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState, Suspense } from "react";
+import { useCallback, useEffect, useState, Suspense } from "react";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Lock } from "lucide-react";
@@ -24,7 +24,6 @@ import {
 } from "./shell/portalNav";
 import { PORTAL_LOADING_LABEL } from "./portalConstants";
 import PortalToast from "./PortalToast";
-import DailyDrillReminderModal from "./DailyDrillReminderModal";
 import BuyCourseModal from "./BuyCourseModal";
 import StudentDashboard from "./dashboard/StudentDashboard";
 import CoursesTab from "./tabs/CoursesTab";
@@ -41,10 +40,6 @@ import StreakTab from "./tabs/StreakTab";
 import AskAdvisorTab from "./tabs/AskAdvisorTab";
 import MessagesScreen from "@/components/features/messaging/MessagesScreen";
 import ProfileForm from "@/components/features/profile/ProfileForm";
-
-// Shown at most once per calendar day (persisted per drill_date so a
-// refresh of the Drill screen doesn't re-nag) — see the reminder effect below.
-const DRILL_REMINDER_STORAGE_PREFIX = "ttl:dailyDrillReminderShown:";
 
 function StudentPortalContent({ slug = DEFAULT_PORTAL_SLUG }) {
   const router = useRouter();
@@ -63,7 +58,6 @@ function StudentPortalContent({ slug = DEFAULT_PORTAL_SLUG }) {
 
   const { displayName } = useStudentProfile(isLoggedIn);
   const [lastNotification, setLastNotification] = useState(null);
-  const [showDrillReminder, setShowDrillReminder] = useState(false);
 
   // A student with no purchased/assigned pathway yet hasn't finished
   // onboarding — send them back into it instead of showing an empty
@@ -135,31 +129,6 @@ function StudentPortalContent({ slug = DEFAULT_PORTAL_SLUG }) {
     router.replace(query ? `${href}?${query}` : href, { scroll: false });
   }, [activeSlug, router, searchParams]);
 
-  // Whether today's drill still needs the student's attention — completion is
-  // represented differently per drill source (see daily_drill.services).
-  const isDrillCompletedToday = useMemo(() => {
-    if (!drillData || drillData.type === "UNAVAILABLE") return true;
-    if (drillData.type === "ADMIN_VIDEO") return drillData.progress?.status === "COMPLETED";
-    return Boolean(drillData.attempted);
-  }, [drillData]);
-
-  // Nudge the student when they open the Daily Drill screen with today's drill
-  // still incomplete — shown at most once per day via localStorage.
-  useEffect(() => {
-    if (activeSlug !== "daily" || !drillData) return;
-    if (drillData.type === "UNAVAILABLE" || isDrillCompletedToday) return;
-
-    const storageKey = `${DRILL_REMINDER_STORAGE_PREFIX}${drillData.drill_date}`;
-    try {
-      if (window.localStorage.getItem(storageKey)) return;
-      window.localStorage.setItem(storageKey, "1");
-    } catch {
-      // localStorage unavailable (private browsing, etc.) — fall through and
-      // still show the reminder rather than silently failing.
-    }
-    setShowDrillReminder(true);
-  }, [activeSlug, drillData, isDrillCompletedToday]);
-
   useEffect(() => {
     if (!lastNotification) return undefined;
     const timer = setTimeout(() => setLastNotification(null), 5000);
@@ -212,13 +181,6 @@ function StudentPortalContent({ slug = DEFAULT_PORTAL_SLUG }) {
     [closeBuyModal, queryClient],
   );
 
-  // The reminder only ever shows while already on the Drill screen, so
-  // "Start Drill" just reveals the content beneath it; "Later" backs out.
-  const handleLaterFromReminder = useCallback(() => {
-    setShowDrillReminder(false);
-    goToSlug(DEFAULT_PORTAL_SLUG);
-  }, [goToSlug]);
-
   if (!isLoggedIn) {
     return (
       <div className="flex min-h-[70vh] items-center justify-center px-6 py-16">
@@ -260,13 +222,6 @@ function StudentPortalContent({ slug = DEFAULT_PORTAL_SLUG }) {
       <PortalToast
         notification={lastNotification}
         onDismiss={() => setLastNotification(null)}
-      />
-
-      <DailyDrillReminderModal
-        isOpen={showDrillReminder}
-        onClose={() => setShowDrillReminder(false)}
-        onLater={handleLaterFromReminder}
-        onStartDrill={() => setShowDrillReminder(false)}
       />
 
       {activeSlug === "dashboard" && <StudentDashboard onNavigate={goToSlug} />}

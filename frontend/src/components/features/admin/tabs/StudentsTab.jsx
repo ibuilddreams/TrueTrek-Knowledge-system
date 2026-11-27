@@ -298,7 +298,7 @@ export default function StudentsTab() {
         </div>
       </div>
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deactivatingStudent)}
         onClose={() => setDeactivatingStudent(null)}
         onConfirm={handleDeactivateConfirm}
@@ -308,7 +308,7 @@ export default function StudentsTab() {
         confirmLabel="Deactivate"
       />
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(activatingStudent)}
         onClose={() => setActivatingStudent(null)}
         onConfirm={handleActivateConfirm}
@@ -318,7 +318,7 @@ export default function StudentsTab() {
         confirmLabel="Activate"
       />
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deletingStudent)}
         onClose={() => setDeletingStudent(null)}
         onConfirm={handleDeleteConfirm}

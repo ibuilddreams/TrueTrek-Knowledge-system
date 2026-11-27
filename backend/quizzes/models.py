@@ -8,6 +8,9 @@ from common.models import BaseModel, Status
 from courses.models import Course
 from modules.models import Module
 
+from .constants import DEFAULT_QUESTIONS_PER_QUIZ
+from .randomization import NO_SHUFFLE_SEED
+
 
 class Quiz(BaseModel):
     class ShortAnswerGradingMode(models.TextChoices):
@@ -25,7 +28,9 @@ class Quiz(BaseModel):
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.DRAFT)
     # How many questions belong to a single attempt: the original quiz's authored/AI-course
     # template set, and every AI-regenerated retry (see Question.attempt below).
-    number_of_questions = models.PositiveIntegerField(default=10, validators=[MinValueValidator(1)])
+    number_of_questions = models.PositiveIntegerField(
+        default=DEFAULT_QUESTIONS_PER_QUIZ, validators=[MinValueValidator(1)]
+    )
     available_from = models.DateTimeField(null=True, blank=True)
     available_until = models.DateTimeField(null=True, blank=True)
     order = models.PositiveIntegerField(default=0)
@@ -109,6 +114,12 @@ class QuizAttempt(BaseModel):
     )
     started_at = models.DateTimeField(auto_now_add=True)
     ended_at = models.DateTimeField(null=True, blank=True)
+    # Seeds this attempt's own question/choice order — see quizzes/randomization.py.
+    # Assigned once, when the attempt is created, and never rewritten: the order a
+    # student sat the quiz in is the order their review screen (and their teacher's)
+    # has to keep showing forever. 0 means "serve the authored order", which is what
+    # every attempt taken before this field existed carries.
+    question_seed = models.PositiveIntegerField(default=NO_SHUFFLE_SEED)
     # Bumped on every autosave while IN_PROGRESS; used to detect genuinely abandoned
     # attempts (as opposed to ones with an active but slow/disconnected client).
     last_activity_at = models.DateTimeField(default=timezone.now)

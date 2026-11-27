@@ -17,7 +17,7 @@ export default function DailyDrillPerformanceModal({ isOpen, onClose, schedule }
   });
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={onClose}
       icon={BarChart3}

@@ -40,7 +40,6 @@ export default function QuizAttemptHistoryModal({ attemptId, onClose }) {
       icon={ListChecks}
       title={data ? data.quiz.title : "Attempt detail"}
       subtitle={data ? `Attempt ${data.attempt_number} · ${data.status}` : ""}
-      variant="cobalt"
       maxWidth="max-w-2xl"
     >
       {isLoading && <Loader fullScreen={false} tone="portal" label="Loading attempt..." />}

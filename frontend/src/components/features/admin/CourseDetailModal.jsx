@@ -224,7 +224,7 @@ export default function CourseDetailModal({ isOpen, onClose, courseId }) {
   }, [isOpen, courseId]);
 
   return (
-    <Modal variant="cobalt" isOpen={isOpen} onClose={onClose} icon={BookOpen} title="Course details" maxWidth="max-w-2xl">
+    <Modal isOpen={isOpen} onClose={onClose} icon={BookOpen} title="Course details" maxWidth="max-w-2xl">
       {isLoading ? (
         <Loader tone="cobalt" fullScreen={false} label="Loading course..." />
       ) : course ? (

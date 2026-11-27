@@ -85,7 +85,6 @@ export default function RoomMessageBubble({ courseId, message }) {
         title="Delete message"
         message="Are you sure you want to delete this message? This cannot be undone."
         confirmLabel="Delete"
-        size="lg"
       />
     </div>
   );

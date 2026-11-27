@@ -140,7 +140,7 @@ export default function SessionSpeakerFormModal({ isOpen, onClose, onSaved, spea
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={isEditMode ? Edit3 : UserRound}

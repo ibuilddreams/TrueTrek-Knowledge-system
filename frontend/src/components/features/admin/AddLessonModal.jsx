@@ -396,7 +396,7 @@ export default function AddLessonModal({
   const orderOptions = buildOrdinalOrderOptions(requiredMaxOrder);
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={Video}

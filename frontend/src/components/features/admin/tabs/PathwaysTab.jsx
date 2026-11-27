@@ -361,7 +361,7 @@ export default function PathwaysTab() {
         }}
       />
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deletingPathway)}
         onClose={() => setDeletingPathway(null)}
         onConfirm={handleDeleteConfirm}
@@ -371,7 +371,7 @@ export default function PathwaysTab() {
         confirmLabel="Delete"
       />
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deletingRule)}
         onClose={() => setDeletingRule(null)}
         onConfirm={handleDeleteRuleConfirm}

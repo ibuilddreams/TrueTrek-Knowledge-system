@@ -170,7 +170,7 @@ export default function QuestionChoicesModal({ isOpen, onClose, question, quizId
 
   return (
     <>
-      <Modal variant="cobalt"
+      <Modal
         isOpen={isOpen}
         onClose={onClose}
         icon={ListChecks}
@@ -227,7 +227,7 @@ export default function QuestionChoicesModal({ isOpen, onClose, question, quizId
         </div>
       </Modal>
 
-      <ConfirmDialog variant="cobalt" size="lg"
+      <ConfirmDialog
         isOpen={Boolean(deletingChoice)}
         onClose={() => setDeletingChoice(null)}
         onConfirm={() => deleteMutation.mutate(deletingChoice.id)}

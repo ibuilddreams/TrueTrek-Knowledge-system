@@ -300,7 +300,7 @@ export default function PathwayFormModal({ isOpen, onClose, onSaved, pathway }) 
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={isEditMode ? Edit3 : Route}

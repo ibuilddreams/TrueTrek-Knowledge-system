@@ -85,7 +85,7 @@ export default function StudentConcernDetailModal({ isOpen, onClose, concern }) 
   };
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={isOpen}
       onClose={handleClose}
       icon={ShieldAlert}

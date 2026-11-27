@@ -37,7 +37,7 @@ export default function RolePlaySessionDetailModal({ sessionId, onClose }) {
   const scenario = data?.scenario;
 
   return (
-    <Modal variant="cobalt"
+    <Modal
       isOpen={Boolean(sessionId)}
       onClose={onClose}
       icon={Theater}

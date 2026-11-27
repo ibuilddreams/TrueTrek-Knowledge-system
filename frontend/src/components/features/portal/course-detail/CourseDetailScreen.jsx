@@ -21,7 +21,11 @@ import { getStudentEnrolledCourseDetail } from "@/services/studentCoursesService
 import CourseFeedSection from "@/components/features/portal/course-detail/CourseFeedSection";
 import { getApiErrorMessage } from "@/lib/apiErrors";
 import { parseCourseDescription } from "@/lib/courseDescription";
-import { getPortalAssignmentStatus, getPortalQuizStatus } from "@/lib/curriculumMeta";
+import {
+  getPortalAssignmentStatus,
+  getPortalQuizStatus,
+  getQuizQuestionCount,
+} from "@/lib/curriculumMeta";
 import { useStudentAssignments } from "@/hooks/student/useStudentAssignments";
 import { useStudentQuizzes } from "@/hooks/student/useStudentQuizzes";
 import Loader from "@/components/ui/Loader";
@@ -225,8 +229,8 @@ function ModuleAccordionItem({
                           <span className="truncate text-cn-p-ink">{quiz.title}</span>
                           <span className="truncate text-xs text-cn-p-ink-2">
                             {[
-                              `${quiz.number_of_questions} question${
-                                quiz.number_of_questions === 1 ? "" : "s"
+                              `${getQuizQuestionCount(quiz)} question${
+                                getQuizQuestionCount(quiz) === 1 ? "" : "s"
                               }`,
                               quiz.time_limit_minutes ? `${quiz.time_limit_minutes} min` : null,
                               quiz.passing_score ? `pass ${quiz.passing_score}%` : null,
